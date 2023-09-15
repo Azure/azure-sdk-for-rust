@@ -137,7 +137,7 @@ pub struct AgreementListResult {
 impl azure_core::Continuable for AgreementListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AgreementListResult {
@@ -152,10 +152,15 @@ pub struct AgreementProperties {
     #[serde(rename = "agreementLink", default, skip_serializing_if = "Option::is_none")]
     pub agreement_link: Option<String>,
     #[doc = "The category of the agreement signed by a customer."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub category: Option<agreement_properties::Category>,
     #[doc = "The mode of acceptance for an agreement."]
-    #[serde(rename = "acceptanceMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "acceptanceMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub acceptance_mode: Option<agreement_properties::AcceptanceMode>,
     #[doc = "Details about billing profile associated with agreement and available only for specific agreements."]
     #[serde(rename = "billingProfileInfo", default, skip_serializing_if = "Option::is_none")]
@@ -351,7 +356,7 @@ pub struct BillingAccountListResult {
 impl azure_core::Continuable for BillingAccountListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BillingAccountListResult {
@@ -369,13 +374,28 @@ pub struct BillingAccountProperties {
     #[serde(rename = "soldTo", default, skip_serializing_if = "Option::is_none")]
     pub sold_to: Option<AddressDetails>,
     #[doc = "The type of agreement."]
-    #[serde(rename = "agreementType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "agreementType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub agreement_type: Option<billing_account_properties::AgreementType>,
     #[doc = "The type of customer."]
-    #[serde(rename = "accountType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "accountType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub account_type: Option<billing_account_properties::AccountType>,
     #[doc = "The current status of the billing account."]
-    #[serde(rename = "accountStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "accountStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub account_status: Option<billing_account_properties::AccountStatus>,
     #[doc = "The billing profiles associated with the billing account. By default this is not populated, unless it's specified in $expand."]
     #[serde(rename = "billingProfiles", default, skip_serializing_if = "Option::is_none")]
@@ -571,7 +591,7 @@ pub struct BillingPermissionsListResult {
 impl azure_core::Continuable for BillingPermissionsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BillingPermissionsListResult {
@@ -684,7 +704,7 @@ pub struct BillingProfileListResult {
 impl azure_core::Continuable for BillingProfileListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BillingProfileListResult {
@@ -702,7 +722,12 @@ pub struct BillingProfileProperties {
     #[serde(rename = "poNumber", default, skip_serializing_if = "Option::is_none")]
     pub po_number: Option<String>,
     #[doc = "Identifies which services and purchases are paid by a billing profile."]
-    #[serde(rename = "billingRelationshipType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "billingRelationshipType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub billing_relationship_type: Option<billing_profile_properties::BillingRelationshipType>,
     #[doc = "Address details."]
     #[serde(rename = "billTo", default, skip_serializing_if = "Option::is_none")]
@@ -737,13 +762,23 @@ pub struct BillingProfileProperties {
     #[serde(rename = "systemId", default, skip_serializing_if = "Option::is_none")]
     pub system_id: Option<String>,
     #[doc = "The status of the billing profile."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<billing_profile_properties::Status>,
     #[doc = "Reason for the specified billing profile status."]
-    #[serde(rename = "statusReasonCode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "statusReasonCode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub status_reason_code: Option<billing_profile_properties::StatusReasonCode>,
     #[doc = "The billing profile spending limit."]
-    #[serde(rename = "spendingLimit", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "spendingLimit",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub spending_limit: Option<billing_profile_properties::SpendingLimit>,
     #[doc = "Identifies the cloud environments that are associated with a billing profile. This is a system managed optional field and gets updated as the billing profile gets associated with accounts in various clouds."]
     #[serde(
@@ -977,13 +1012,28 @@ pub struct BillingPropertyProperties {
     #[serde(rename = "billingProfileDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub billing_profile_display_name: Option<String>,
     #[doc = "The status of the billing profile."]
-    #[serde(rename = "billingProfileStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "billingProfileStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub billing_profile_status: Option<billing_property_properties::BillingProfileStatus>,
     #[doc = "Reason for the specified billing profile status."]
-    #[serde(rename = "billingProfileStatusReasonCode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "billingProfileStatusReasonCode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub billing_profile_status_reason_code: Option<billing_property_properties::BillingProfileStatusReasonCode>,
     #[doc = "The billing profile spending limit."]
-    #[serde(rename = "billingProfileSpendingLimit", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "billingProfileSpendingLimit",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub billing_profile_spending_limit: Option<billing_property_properties::BillingProfileSpendingLimit>,
     #[doc = "The cost center applied to the subscription."]
     #[serde(rename = "costCenter", default, skip_serializing_if = "Option::is_none")]
@@ -1168,7 +1218,7 @@ pub struct BillingRoleAssignmentListResult {
 impl azure_core::Continuable for BillingRoleAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BillingRoleAssignmentListResult {
@@ -1246,7 +1296,7 @@ pub struct BillingRoleDefinitionListResult {
 impl azure_core::Continuable for BillingRoleDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BillingRoleDefinitionListResult {
@@ -1300,7 +1350,12 @@ pub struct BillingSubscriptionProperties {
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
     #[doc = "The current billing status of the subscription."]
-    #[serde(rename = "subscriptionBillingStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "subscriptionBillingStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub subscription_billing_status: Option<billing_subscription_properties::SubscriptionBillingStatus>,
     #[doc = "The amount."]
     #[serde(rename = "lastMonthCharges", default, skip_serializing_if = "Option::is_none")]
@@ -1418,7 +1473,7 @@ pub struct BillingSubscriptionsListResult {
 impl azure_core::Continuable for BillingSubscriptionsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BillingSubscriptionsListResult {
@@ -1460,7 +1515,7 @@ pub struct CustomerListResult {
 impl azure_core::Continuable for CustomerListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomerListResult {
@@ -1486,7 +1541,12 @@ impl CustomerPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomerPolicyProperties {
     #[doc = "The policy that controls whether the users in customer's organization can view charges at pay-as-you-go prices."]
-    #[serde(rename = "viewCharges", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "viewCharges",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub view_charges: Option<customer_policy_properties::ViewCharges>,
 }
 impl CustomerPolicyProperties {
@@ -1611,13 +1671,13 @@ impl DepartmentProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Document {
     #[doc = "The type of the document."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<document::Kind>,
     #[doc = "Document URL."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
     #[doc = "The source of the document. ENF for Brazil and DRS for rest of the world."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub source: Option<document::Source>,
 }
 impl Document {
@@ -1936,7 +1996,7 @@ pub struct InstructionListResult {
 impl azure_core::Continuable for InstructionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InstructionListResult {
@@ -2003,7 +2063,7 @@ pub struct InvoiceListResult {
 impl azure_core::Continuable for InvoiceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InvoiceListResult {
@@ -2021,7 +2081,7 @@ pub struct InvoiceProperties {
     #[serde(rename = "invoiceDate", default, with = "azure_core::date::rfc3339::option")]
     pub invoice_date: Option<time::OffsetDateTime>,
     #[doc = "The current status of the invoice."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<invoice_properties::Status>,
     #[doc = "The amount."]
     #[serde(rename = "amountDue", default, skip_serializing_if = "Option::is_none")]
@@ -2054,7 +2114,12 @@ pub struct InvoiceProperties {
     #[serde(rename = "invoicePeriodEndDate", default, with = "azure_core::date::rfc3339::option")]
     pub invoice_period_end_date: Option<time::OffsetDateTime>,
     #[doc = "Invoice type."]
-    #[serde(rename = "invoiceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "invoiceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub invoice_type: Option<invoice_properties::InvoiceType>,
     #[doc = "Specifies if the invoice is generated as part of monthly invoicing cycle or not. This field is applicable to billing accounts with agreement type Microsoft Customer Agreement."]
     #[serde(rename = "isMonthlyInvoice", default, skip_serializing_if = "Option::is_none")]
@@ -2086,7 +2151,12 @@ pub struct InvoiceProperties {
     #[serde(rename = "rebillDetails", default, skip_serializing_if = "Option::is_none")]
     pub rebill_details: Option<serde_json::Value>,
     #[doc = "The type of the document."]
-    #[serde(rename = "documentType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "documentType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub document_type: Option<invoice_properties::DocumentType>,
     #[doc = "The Id of the active invoice which is originally billed after this invoice was voided. This field is applicable to the void invoices only."]
     #[serde(rename = "billedDocumentId", default, skip_serializing_if = "Option::is_none")]
@@ -2269,7 +2339,7 @@ pub struct InvoiceSectionListResult {
 impl azure_core::Continuable for InvoiceSectionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InvoiceSectionListResult {
@@ -2294,7 +2364,7 @@ pub struct InvoiceSectionListWithCreateSubPermissionResult {
 impl azure_core::Continuable for InvoiceSectionListWithCreateSubPermissionResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InvoiceSectionListWithCreateSubPermissionResult {
@@ -2312,7 +2382,7 @@ pub struct InvoiceSectionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub labels: Option<serde_json::Value>,
     #[doc = "Identifies the state of an invoice section."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<invoice_section_properties::State>,
     #[doc = "The system generated unique identifier for an invoice section."]
     #[serde(rename = "systemId", default, skip_serializing_if = "Option::is_none")]
@@ -2321,7 +2391,12 @@ pub struct InvoiceSectionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[doc = "Possible cloud environments."]
-    #[serde(rename = "targetCloud", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "targetCloud",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub target_cloud: Option<TargetCloud>,
 }
 impl InvoiceSectionProperties {
@@ -2388,13 +2463,28 @@ pub struct InvoiceSectionWithCreateSubPermission {
     #[serde(rename = "billingProfileDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub billing_profile_display_name: Option<String>,
     #[doc = "The status of the billing profile."]
-    #[serde(rename = "billingProfileStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "billingProfileStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub billing_profile_status: Option<invoice_section_with_create_sub_permission::BillingProfileStatus>,
     #[doc = "Reason for the specified billing profile status."]
-    #[serde(rename = "billingProfileStatusReasonCode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "billingProfileStatusReasonCode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub billing_profile_status_reason_code: Option<invoice_section_with_create_sub_permission::BillingProfileStatusReasonCode>,
     #[doc = "The billing profile spending limit."]
-    #[serde(rename = "billingProfileSpendingLimit", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "billingProfileSpendingLimit",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub billing_profile_spending_limit: Option<invoice_section_with_create_sub_permission::BillingProfileSpendingLimit>,
     #[doc = "The system generated unique identifier for a billing profile."]
     #[serde(rename = "billingProfileSystemId", default, skip_serializing_if = "Option::is_none")]
@@ -2614,7 +2704,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -2689,7 +2779,12 @@ pub struct PaymentProperties {
     #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub date: Option<time::OffsetDateTime>,
     #[doc = "The family of payment method."]
-    #[serde(rename = "paymentMethodFamily", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "paymentMethodFamily",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub payment_method_family: Option<payment_properties::PaymentMethodFamily>,
     #[doc = "The type of payment method."]
     #[serde(rename = "paymentMethodType", default, skip_serializing_if = "Option::is_none")]
@@ -2762,13 +2857,28 @@ impl Policy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyProperties {
     #[doc = "The policy that controls whether Azure marketplace purchases are allowed for a billing profile."]
-    #[serde(rename = "marketplacePurchases", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "marketplacePurchases",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub marketplace_purchases: Option<policy_properties::MarketplacePurchases>,
     #[doc = "The policy that controls whether Azure reservation purchases are allowed for a billing profile."]
-    #[serde(rename = "reservationPurchases", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "reservationPurchases",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub reservation_purchases: Option<policy_properties::ReservationPurchases>,
     #[doc = "The policy that controls whether users with Azure RBAC access to a subscription can view its charges."]
-    #[serde(rename = "viewCharges", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "viewCharges",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub view_charges: Option<policy_properties::ViewCharges>,
 }
 impl PolicyProperties {
@@ -2910,7 +3020,12 @@ impl Product {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductProperties {
     #[doc = "Indicates whether auto renewal is turned on or off for a product."]
-    #[serde(rename = "autoRenew", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "autoRenew",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub auto_renew: Option<product_properties::AutoRenew>,
     #[doc = "The display name of the product."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -2925,13 +3040,18 @@ pub struct ProductProperties {
     #[serde(rename = "productType", default, skip_serializing_if = "Option::is_none")]
     pub product_type: Option<String>,
     #[doc = "The current status of the product."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<product_properties::Status>,
     #[doc = "The date when the product will be renewed or canceled."]
     #[serde(rename = "endDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_date: Option<time::OffsetDateTime>,
     #[doc = "The frequency at which the product will be billed."]
-    #[serde(rename = "billingFrequency", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "billingFrequency",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub billing_frequency: Option<product_properties::BillingFrequency>,
     #[doc = "The amount."]
     #[serde(rename = "lastCharge", default, skip_serializing_if = "Option::is_none")]
@@ -3196,7 +3316,7 @@ pub struct ProductsListResult {
 impl azure_core::Continuable for ProductsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProductsListResult {
@@ -3297,7 +3417,7 @@ pub struct PromotionList {
 impl azure_core::Continuable for PromotionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PromotionList {
@@ -3580,7 +3700,7 @@ pub struct ReservationsListResult {
 impl azure_core::Continuable for ReservationsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ReservationsListResult {
@@ -3793,7 +3913,7 @@ pub struct TransactionListResult {
 impl azure_core::Continuable for TransactionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TransactionListResult {
@@ -3805,7 +3925,7 @@ impl TransactionListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TransactionProperties {
     #[doc = "The kind of transaction. Options are all or reservation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<transaction_properties::Kind>,
     #[doc = "The date of transaction."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
@@ -3835,7 +3955,12 @@ pub struct TransactionProperties {
     #[serde(rename = "productDescription", default, skip_serializing_if = "Option::is_none")]
     pub product_description: Option<String>,
     #[doc = "The type of transaction."]
-    #[serde(rename = "transactionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "transactionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub transaction_type: Option<transaction_properties::TransactionType>,
     #[doc = "The amount."]
     #[serde(rename = "transactionAmount", default, skip_serializing_if = "Option::is_none")]
@@ -4028,7 +4153,7 @@ impl TransferProductRequestProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValidateAddressResponse {
     #[doc = "Status of the address validation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<AddressValidationStatus>,
     #[doc = "The list of suggested addresses."]
     #[serde(
@@ -4051,7 +4176,7 @@ impl ValidateAddressResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValidateProductTransferEligibilityError {
     #[doc = "Error code of the transfer validation response."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub code: Option<ProductTransferValidationErrorCode>,
     #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4084,7 +4209,7 @@ impl ValidateProductTransferEligibilityResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValidateSubscriptionTransferEligibilityError {
     #[doc = "Error code of the transfer validation response."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub code: Option<SubscriptionTransferValidationErrorCode>,
     #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

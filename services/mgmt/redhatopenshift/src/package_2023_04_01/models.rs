@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiServerProfile {
     #[doc = "Visibility represents visibility."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub visibility: Option<Visibility>,
     #[doc = "The URL to access the cluster API server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -80,7 +80,12 @@ pub struct ClusterProfile {
     #[serde(rename = "resourceGroupId", default, skip_serializing_if = "Option::is_none")]
     pub resource_group_id: Option<String>,
     #[doc = "FipsValidatedModules determines if FIPS is used."]
-    #[serde(rename = "fipsValidatedModules", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "fipsValidatedModules",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub fips_validated_modules: Option<FipsValidatedModules>,
 }
 impl ClusterProfile {
@@ -202,7 +207,7 @@ pub struct IngressProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Visibility represents visibility."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub visibility: Option<Visibility>,
     #[doc = "The IP of the ingress."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -247,7 +252,7 @@ pub struct MachinePoolList {
 impl azure_core::Continuable for MachinePoolList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MachinePoolList {
@@ -291,7 +296,12 @@ pub struct MasterProfile {
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
     #[doc = "EncryptionAtHost represents encryption at host state"]
-    #[serde(rename = "encryptionAtHost", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "encryptionAtHost",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub encryption_at_host: Option<EncryptionAtHost>,
     #[doc = "The resource ID of an associated DiskEncryptionSet, if applicable."]
     #[serde(rename = "diskEncryptionSetId", default, skip_serializing_if = "Option::is_none")]
@@ -312,7 +322,12 @@ pub struct NetworkProfile {
     #[serde(rename = "serviceCidr", default, skip_serializing_if = "Option::is_none")]
     pub service_cidr: Option<String>,
     #[doc = "The outbound routing strategy used to provide your cluster egress to the internet."]
-    #[serde(rename = "outboundType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "outboundType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub outbound_type: Option<OutboundType>,
 }
 impl NetworkProfile {
@@ -385,7 +400,7 @@ pub struct OpenShiftClusterList {
 impl azure_core::Continuable for OpenShiftClusterList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OpenShiftClusterList {
@@ -397,7 +412,12 @@ impl OpenShiftClusterList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftClusterProperties {
     #[doc = "ProvisioningState represents a provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "ClusterProfile represents a cluster profile."]
     #[serde(rename = "clusterProfile", default, skip_serializing_if = "Option::is_none")]
@@ -491,7 +511,7 @@ pub struct OpenShiftVersionList {
 impl azure_core::Continuable for OpenShiftVersionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OpenShiftVersionList {
@@ -546,7 +566,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -667,7 +687,7 @@ pub struct SecretList {
 impl azure_core::Continuable for SecretList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecretList {
@@ -751,7 +771,7 @@ pub struct SyncIdentityProviderList {
 impl azure_core::Continuable for SyncIdentityProviderList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SyncIdentityProviderList {
@@ -819,7 +839,7 @@ pub struct SyncSetList {
 impl azure_core::Continuable for SyncSetList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SyncSetList {
@@ -939,7 +959,12 @@ pub struct WorkerProfile {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
     #[doc = "EncryptionAtHost represents encryption at host state"]
-    #[serde(rename = "encryptionAtHost", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "encryptionAtHost",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub encryption_at_host: Option<EncryptionAtHost>,
     #[doc = "The resource ID of an associated DiskEncryptionSet, if applicable."]
     #[serde(rename = "diskEncryptionSetId", default, skip_serializing_if = "Option::is_none")]
@@ -957,7 +982,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -966,7 +996,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

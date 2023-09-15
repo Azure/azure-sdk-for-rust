@@ -182,7 +182,7 @@ impl SerialPortListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SerialPortProperties {
     #[doc = "Specifies whether the port is enabled for a serial console connection."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<serial_port_properties::State>,
 }
 impl SerialPortProperties {

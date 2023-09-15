@@ -16,7 +16,12 @@ pub struct ApprovalSettings {
     #[serde(rename = "isRequestorJustificationRequired", default, skip_serializing_if = "Option::is_none")]
     pub is_requestor_justification_required: Option<bool>,
     #[doc = "The type of rule"]
-    #[serde(rename = "approvalMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "approvalMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub approval_mode: Option<approval_settings::ApprovalMode>,
     #[doc = "The approval stages of the request."]
     #[serde(
@@ -151,7 +156,7 @@ pub struct ClassicAdministratorListResult {
 impl azure_core::Continuable for ClassicAdministratorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClassicAdministratorListResult {
@@ -263,7 +268,7 @@ pub struct DenyAssignmentListResult {
 impl azure_core::Continuable for DenyAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DenyAssignmentListResult {
@@ -416,7 +421,7 @@ pub struct EligibleChildResourcesListResult {
 impl azure_core::Continuable for EligibleChildResourcesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EligibleChildResourcesListResult {
@@ -624,7 +629,7 @@ pub struct PermissionGetResult {
 impl azure_core::Continuable for PermissionGetResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PermissionGetResult {
@@ -841,7 +846,7 @@ pub struct ProviderOperationsMetadataListResult {
 impl azure_core::Continuable for ProviderOperationsMetadataListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderOperationsMetadataListResult {
@@ -932,7 +937,7 @@ pub struct RoleAssignmentListResult {
 impl azure_core::Continuable for RoleAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentListResult {
@@ -953,7 +958,12 @@ pub struct RoleAssignmentProperties {
     #[serde(rename = "principalId")]
     pub principal_id: String,
     #[doc = "The principal type of the assigned principal ID."]
-    #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "principalType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub principal_type: Option<role_assignment_properties::PrincipalType>,
     #[doc = "Description of role assignment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1147,7 +1157,7 @@ pub struct RoleAssignmentScheduleInstanceListResult {
 impl azure_core::Continuable for RoleAssignmentScheduleInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentScheduleInstanceListResult {
@@ -1168,7 +1178,12 @@ pub struct RoleAssignmentScheduleInstanceProperties {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[doc = "The principal type of the assigned principal ID."]
-    #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "principalType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub principal_type: Option<role_assignment_schedule_instance_properties::PrincipalType>,
     #[doc = "Id of the master role assignment schedule"]
     #[serde(rename = "roleAssignmentScheduleId", default, skip_serializing_if = "Option::is_none")]
@@ -1177,7 +1192,7 @@ pub struct RoleAssignmentScheduleInstanceProperties {
     #[serde(rename = "originRoleAssignmentId", default, skip_serializing_if = "Option::is_none")]
     pub origin_role_assignment_id: Option<String>,
     #[doc = "The status of the role assignment schedule instance."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<role_assignment_schedule_instance_properties::Status>,
     #[doc = "The startDateTime of the role assignment schedule instance"]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1196,10 +1211,20 @@ pub struct RoleAssignmentScheduleInstanceProperties {
     )]
     pub linked_role_eligibility_schedule_instance_id: Option<String>,
     #[doc = "Assignment type of the role assignment schedule"]
-    #[serde(rename = "assignmentType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "assignmentType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub assignment_type: Option<role_assignment_schedule_instance_properties::AssignmentType>,
     #[doc = "Membership type of the role assignment schedule"]
-    #[serde(rename = "memberType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "memberType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub member_type: Option<role_assignment_schedule_instance_properties::MemberType>,
     #[doc = "The conditions on the role assignment. This limits the resources it can be assigned to. e.g.: @Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1434,7 +1459,7 @@ pub struct RoleAssignmentScheduleListResult {
 impl azure_core::Continuable for RoleAssignmentScheduleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentScheduleListResult {
@@ -1455,7 +1480,12 @@ pub struct RoleAssignmentScheduleProperties {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[doc = "The principal type of the assigned principal ID."]
-    #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "principalType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub principal_type: Option<role_assignment_schedule_properties::PrincipalType>,
     #[doc = "The id of roleAssignmentScheduleRequest used to create this roleAssignmentSchedule"]
     #[serde(rename = "roleAssignmentScheduleRequestId", default, skip_serializing_if = "Option::is_none")]
@@ -1464,13 +1494,23 @@ pub struct RoleAssignmentScheduleProperties {
     #[serde(rename = "linkedRoleEligibilityScheduleId", default, skip_serializing_if = "Option::is_none")]
     pub linked_role_eligibility_schedule_id: Option<String>,
     #[doc = "Assignment type of the role assignment schedule"]
-    #[serde(rename = "assignmentType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "assignmentType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub assignment_type: Option<role_assignment_schedule_properties::AssignmentType>,
     #[doc = "Membership type of the role assignment schedule"]
-    #[serde(rename = "memberType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "memberType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub member_type: Option<role_assignment_schedule_properties::MemberType>,
     #[doc = "The status of the role assignment schedule."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<role_assignment_schedule_properties::Status>,
     #[doc = "Start DateTime when role assignment schedule"]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1756,7 +1796,7 @@ pub struct RoleAssignmentScheduleRequestListResult {
 impl azure_core::Continuable for RoleAssignmentScheduleRequestListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentScheduleRequestListResult {
@@ -1777,13 +1817,18 @@ pub struct RoleAssignmentScheduleRequestProperties {
     #[serde(rename = "principalId")]
     pub principal_id: String,
     #[doc = "The principal type of the assigned principal ID."]
-    #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "principalType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub principal_type: Option<role_assignment_schedule_request_properties::PrincipalType>,
     #[doc = "The type of the role assignment schedule request. Eg: SelfActivate, AdminAssign etc"]
-    #[serde(rename = "requestType")]
+    #[serde(rename = "requestType", with = "azure_core::xml::text_content")]
     pub request_type: role_assignment_schedule_request_properties::RequestType,
     #[doc = "The status of the role assignment schedule request."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<role_assignment_schedule_request_properties::Status>,
     #[doc = "The approvalId of the role assignment schedule request."]
     #[serde(rename = "approvalId", default, skip_serializing_if = "Option::is_none")]
@@ -2047,7 +2092,12 @@ pub mod role_assignment_schedule_request_properties {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct Expiration {
             #[doc = "Type of the role assignment schedule expiration"]
-            #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+            #[serde(
+                rename = "type",
+                default,
+                skip_serializing_if = "Option::is_none",
+                with = "azure_core::xml::text_content"
+            )]
             pub type_: Option<expiration::Type>,
             #[doc = "End DateTime of the role assignment schedule."]
             #[serde(rename = "endDateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -2173,7 +2223,7 @@ pub struct RoleDefinitionListResult {
 impl azure_core::Continuable for RoleDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleDefinitionListResult {
@@ -2324,7 +2374,7 @@ pub struct RoleEligibilityScheduleInstanceListResult {
 impl azure_core::Continuable for RoleEligibilityScheduleInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleEligibilityScheduleInstanceListResult {
@@ -2345,13 +2395,18 @@ pub struct RoleEligibilityScheduleInstanceProperties {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[doc = "The principal type of the assigned principal ID."]
-    #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "principalType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub principal_type: Option<role_eligibility_schedule_instance_properties::PrincipalType>,
     #[doc = "Id of the master role eligibility schedule"]
     #[serde(rename = "roleEligibilityScheduleId", default, skip_serializing_if = "Option::is_none")]
     pub role_eligibility_schedule_id: Option<String>,
     #[doc = "The status of the role eligibility schedule instance"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<role_eligibility_schedule_instance_properties::Status>,
     #[doc = "The startDateTime of the role eligibility schedule instance"]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -2360,7 +2415,12 @@ pub struct RoleEligibilityScheduleInstanceProperties {
     #[serde(rename = "endDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_date_time: Option<time::OffsetDateTime>,
     #[doc = "Membership type of the role eligibility schedule"]
-    #[serde(rename = "memberType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "memberType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub member_type: Option<role_eligibility_schedule_instance_properties::MemberType>,
     #[doc = "The conditions on the role assignment. This limits the resources it can be assigned to. e.g.: @Resource[Microsoft.Storage/storageAccounts/blobServices/containers:ContainerName] StringEqualsIgnoreCase 'foo_storage_container'"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2558,7 +2618,7 @@ pub struct RoleEligibilityScheduleListResult {
 impl azure_core::Continuable for RoleEligibilityScheduleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleEligibilityScheduleListResult {
@@ -2579,16 +2639,26 @@ pub struct RoleEligibilityScheduleProperties {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[doc = "The principal type of the assigned principal ID."]
-    #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "principalType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub principal_type: Option<role_eligibility_schedule_properties::PrincipalType>,
     #[doc = "The id of roleEligibilityScheduleRequest used to create this roleAssignmentSchedule"]
     #[serde(rename = "roleEligibilityScheduleRequestId", default, skip_serializing_if = "Option::is_none")]
     pub role_eligibility_schedule_request_id: Option<String>,
     #[doc = "Membership type of the role eligibility schedule"]
-    #[serde(rename = "memberType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "memberType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub member_type: Option<role_eligibility_schedule_properties::MemberType>,
     #[doc = "The status of the role eligibility schedule."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<role_eligibility_schedule_properties::Status>,
     #[doc = "Start DateTime when role eligibility schedule"]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -2837,7 +2907,7 @@ pub struct RoleEligibilityScheduleRequestListResult {
 impl azure_core::Continuable for RoleEligibilityScheduleRequestListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleEligibilityScheduleRequestListResult {
@@ -2858,13 +2928,18 @@ pub struct RoleEligibilityScheduleRequestProperties {
     #[serde(rename = "principalId")]
     pub principal_id: String,
     #[doc = "The principal type of the assigned principal ID."]
-    #[serde(rename = "principalType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "principalType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub principal_type: Option<role_eligibility_schedule_request_properties::PrincipalType>,
     #[doc = "The type of the role assignment schedule request. Eg: SelfActivate, AdminAssign etc"]
-    #[serde(rename = "requestType")]
+    #[serde(rename = "requestType", with = "azure_core::xml::text_content")]
     pub request_type: role_eligibility_schedule_request_properties::RequestType,
     #[doc = "The status of the role eligibility schedule request."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<role_eligibility_schedule_request_properties::Status>,
     #[doc = "The approvalId of the role eligibility schedule request."]
     #[serde(rename = "approvalId", default, skip_serializing_if = "Option::is_none")]
@@ -3125,7 +3200,12 @@ pub mod role_eligibility_schedule_request_properties {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct Expiration {
             #[doc = "Type of the role eligibility schedule expiration"]
-            #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+            #[serde(
+                rename = "type",
+                default,
+                skip_serializing_if = "Option::is_none",
+                with = "azure_core::xml::text_content"
+            )]
             pub type_: Option<expiration::Type>,
             #[doc = "End DateTime of the role eligibility schedule."]
             #[serde(rename = "endDateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -3274,7 +3354,7 @@ pub struct RoleManagementPolicyAssignmentListResult {
 impl azure_core::Continuable for RoleManagementPolicyAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleManagementPolicyAssignmentListResult {
@@ -3392,7 +3472,7 @@ pub struct RoleManagementPolicyListResult {
 impl azure_core::Continuable for RoleManagementPolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleManagementPolicyListResult {
@@ -3406,13 +3486,28 @@ pub struct RoleManagementPolicyNotificationRule {
     #[serde(flatten)]
     pub role_management_policy_rule: RoleManagementPolicyRule,
     #[doc = "The type of notification."]
-    #[serde(rename = "notificationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "notificationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub notification_type: Option<role_management_policy_notification_rule::NotificationType>,
     #[doc = "The notification level."]
-    #[serde(rename = "notificationLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "notificationLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub notification_level: Option<role_management_policy_notification_rule::NotificationLevel>,
     #[doc = "The recipient type."]
-    #[serde(rename = "recipientType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "recipientType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub recipient_type: Option<role_management_policy_notification_rule::RecipientType>,
     #[doc = "The list of notification recipients."]
     #[serde(
@@ -3606,7 +3701,7 @@ pub struct RoleManagementPolicyRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The type of rule"]
-    #[serde(rename = "ruleType")]
+    #[serde(rename = "ruleType", with = "azure_core::xml::text_content")]
     pub rule_type: RoleManagementPolicyRuleType,
     #[doc = "The role management policy rule target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3726,7 +3821,12 @@ impl Serialize for RoleManagementPolicyRuleType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserSet {
     #[doc = "The type of user."]
-    #[serde(rename = "userType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "userType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub user_type: Option<user_set::UserType>,
     #[doc = "The value indicating whether the user is a backup fallback approver"]
     #[serde(rename = "isBackup", default, skip_serializing_if = "Option::is_none")]

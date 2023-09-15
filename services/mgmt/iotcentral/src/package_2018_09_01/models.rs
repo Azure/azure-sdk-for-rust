@@ -58,7 +58,7 @@ pub struct AppListResult {
 impl azure_core::Continuable for AppListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AppListResult {
@@ -100,7 +100,7 @@ pub struct AppProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub template: Option<String>,
     #[doc = "The current state of the application."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<AppState>,
     #[doc = "The geography the application is in."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -121,6 +121,7 @@ impl AppProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppSkuInfo {
     #[doc = "The name of the SKU."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: app_sku_info::Name,
 }
 impl AppSkuInfo {
@@ -285,7 +286,7 @@ pub struct AppTemplatesResult {
 impl azure_core::Continuable for AppTemplatesResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AppTemplatesResult {
@@ -409,7 +410,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {

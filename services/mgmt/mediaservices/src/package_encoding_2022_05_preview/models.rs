@@ -9,7 +9,7 @@ pub struct AacAudio {
     #[serde(flatten)]
     pub audio: Audio,
     #[doc = "The encoding profile to be used when encoding audio with AAC."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub profile: Option<aac_audio::Profile>,
 }
 impl AacAudio {
@@ -75,7 +75,12 @@ impl AbsoluteClipTime {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessControl {
     #[doc = "The behavior for IP access control in Key Delivery."]
-    #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "defaultAction",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub default_action: Option<access_control::DefaultAction>,
     #[doc = "The IP allow list for access control in Key Delivery. If the default action is set to 'Allow', the IP allow list must be empty."]
     #[serde(
@@ -134,7 +139,7 @@ pub mod access_control {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountEncryption {
     #[doc = "The type of key used to encrypt the Account Key."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: account_encryption::Type,
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_properties: Option<KeyVaultProperties>,
@@ -228,7 +233,7 @@ pub struct AccountFilterCollection {
 impl azure_core::Continuable for AccountFilterCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccountFilterCollection {
@@ -368,7 +373,7 @@ pub struct AssetCollection {
 impl azure_core::Continuable for AssetCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AssetCollection {
@@ -449,7 +454,7 @@ pub struct AssetFilterCollection {
 impl azure_core::Continuable for AssetFilterCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AssetFilterCollection {
@@ -482,7 +487,12 @@ pub struct AssetProperties {
     #[serde(rename = "storageAccountName", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_name: Option<String>,
     #[doc = "The Asset encryption format. One of None or MediaStorageEncryption."]
-    #[serde(rename = "storageEncryptionFormat", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storageEncryptionFormat",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub storage_encryption_format: Option<asset_properties::StorageEncryptionFormat>,
 }
 impl AssetProperties {
@@ -640,7 +650,12 @@ pub struct AssetTrackProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub track: Option<TrackBase>,
     #[doc = "Provisioning state of the asset track."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<asset_track_properties::ProvisioningState>,
 }
 impl AssetTrackProperties {
@@ -700,7 +715,7 @@ pub struct AsyncOperationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Operation status of the async operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<async_operation_result::Status>,
 }
 impl AsyncOperationResult {
@@ -784,7 +799,7 @@ pub struct AudioAnalyzerPreset {
     #[serde(rename = "audioLanguage", default, skip_serializing_if = "Option::is_none")]
     pub audio_language: Option<String>,
     #[doc = "Determines the set of audio analysis operations to be performed. If unspecified, the Standard AudioAnalysisMode would be chosen."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub mode: Option<audio_analyzer_preset::Mode>,
     #[doc = "Dictionary containing key value pairs for parameters not exposed in the preset itself"]
     #[serde(rename = "experimentalOptions", default, skip_serializing_if = "Option::is_none")]
@@ -898,7 +913,12 @@ pub struct AudioTrackDescriptor {
     #[serde(flatten)]
     pub track_descriptor: TrackDescriptor,
     #[doc = "Optional designation for single channel audio tracks.  Can be used to combine the tracks into stereo or multi-channel audio tracks."]
-    #[serde(rename = "channelMapping", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "channelMapping",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub channel_mapping: Option<audio_track_descriptor::ChannelMapping>,
 }
 impl AudioTrackDescriptor {
@@ -970,7 +990,7 @@ pub struct BuiltInStandardEncoderPreset {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub configurations: Option<PresetConfigurations>,
     #[doc = "The built-in preset to be used for encoding videos."]
-    #[serde(rename = "presetName")]
+    #[serde(rename = "presetName", with = "azure_core::xml::text_content")]
     pub preset_name: built_in_standard_encoder_preset::PresetName,
 }
 impl BuiltInStandardEncoderPreset {
@@ -1135,7 +1155,12 @@ impl ClipTime {
 pub struct CmafFormat {
     #[serde(flatten)]
     pub multi_bitrate_format: MultiBitrateFormat,
-    #[serde(rename = "streamingFormat", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "streamingFormat",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub streaming_format: Option<cmaf_format::StreamingFormat>,
 }
 impl CmafFormat {
@@ -1307,7 +1332,7 @@ pub struct ContentKeyPolicyCollection {
 impl azure_core::Continuable for ContentKeyPolicyCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ContentKeyPolicyCollection {
@@ -1341,7 +1366,7 @@ pub struct ContentKeyPolicyFairPlayConfiguration {
     #[serde(rename = "fairPlayPfx")]
     pub fair_play_pfx: String,
     #[doc = "The rental and lease key type."]
-    #[serde(rename = "rentalAndLeaseKeyType")]
+    #[serde(rename = "rentalAndLeaseKeyType", with = "azure_core::xml::text_content")]
     pub rental_and_lease_key_type: content_key_policy_fair_play_configuration::RentalAndLeaseKeyType,
     #[doc = "The rental duration. Must be greater than or equal to 0."]
     #[serde(rename = "rentalDuration")]
@@ -1556,7 +1581,12 @@ pub struct ContentKeyPolicyPlayReadyLicense {
     #[serde(rename = "allowTestDevices")]
     pub allow_test_devices: bool,
     #[doc = "The security level."]
-    #[serde(rename = "securityLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "securityLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub security_level: Option<content_key_policy_play_ready_license::SecurityLevel>,
     #[doc = "The begin date of license"]
     #[serde(rename = "beginDate", default, with = "azure_core::date::rfc3339::option")]
@@ -1577,13 +1607,13 @@ pub struct ContentKeyPolicyPlayReadyLicense {
     #[serde(rename = "playRight", default, skip_serializing_if = "Option::is_none")]
     pub play_right: Option<ContentKeyPolicyPlayReadyPlayRight>,
     #[doc = "The license type."]
-    #[serde(rename = "licenseType")]
+    #[serde(rename = "licenseType", with = "azure_core::xml::text_content")]
     pub license_type: content_key_policy_play_ready_license::LicenseType,
     #[doc = "Base class for content key ID location. A derived class must be used to represent the location."]
     #[serde(rename = "contentKeyLocation")]
     pub content_key_location: ContentKeyPolicyPlayReadyContentKeyLocation,
     #[doc = "The PlayReady content type."]
-    #[serde(rename = "contentType")]
+    #[serde(rename = "contentType", with = "azure_core::xml::text_content")]
     pub content_type: content_key_policy_play_ready_license::ContentType,
 }
 impl ContentKeyPolicyPlayReadyLicense {
@@ -1764,7 +1794,7 @@ pub struct ContentKeyPolicyPlayReadyPlayRight {
     #[serde(rename = "imageConstraintForAnalogComputerMonitorRestriction")]
     pub image_constraint_for_analog_computer_monitor_restriction: bool,
     #[doc = "Configures Unknown output handling settings of the license."]
-    #[serde(rename = "allowPassingVideoContentToUnknownOutput")]
+    #[serde(rename = "allowPassingVideoContentToUnknownOutput", with = "azure_core::xml::text_content")]
     pub allow_passing_video_content_to_unknown_output: content_key_policy_play_ready_play_right::AllowPassingVideoContentToUnknownOutput,
     #[doc = "Specifies the output protection level for uncompressed digital video."]
     #[serde(rename = "uncompressedDigitalVideoOpl", default, skip_serializing_if = "Option::is_none")]
@@ -1985,7 +2015,7 @@ pub struct ContentKeyPolicyTokenRestriction {
     )]
     pub required_claims: Vec<ContentKeyPolicyTokenClaim>,
     #[doc = "The type of token."]
-    #[serde(rename = "restrictionTokenType")]
+    #[serde(rename = "restrictionTokenType", with = "azure_core::xml::text_content")]
     pub restriction_token_type: content_key_policy_token_restriction::RestrictionTokenType,
     #[doc = "The OpenID connect discovery document."]
     #[serde(rename = "openIdConnectDiscoveryDocument", default, skip_serializing_if = "Option::is_none")]
@@ -2192,10 +2222,10 @@ impl DefaultKey {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Deinterlace {
     #[doc = "The field parity for de-interlacing, defaults to Auto."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub parity: Option<deinterlace::Parity>,
     #[doc = "The deinterlacing mode. Defaults to AutoPixelAdaptive."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub mode: Option<deinterlace::Mode>,
 }
 impl Deinterlace {
@@ -2471,13 +2501,18 @@ pub struct FaceDetectorPreset {
     #[serde(flatten)]
     pub preset: Preset,
     #[doc = "Specifies the maximum resolution at which your video is analyzed. The default behavior is \"SourceResolution,\" which will keep the input video at its original resolution when analyzed. Using \"StandardDefinition\" will resize input videos to standard definition while preserving the appropriate aspect ratio. It will only resize if the video is of higher resolution. For example, a 1920x1080 input would be scaled to 640x360 before processing. Switching to \"StandardDefinition\" will reduce the time it takes to process high resolution video. It may also reduce the cost of using this component (see https://azure.microsoft.com/en-us/pricing/details/media-services/#analytics for details). However, faces that end up being too small in the resized video may not be detected."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub resolution: Option<face_detector_preset::Resolution>,
     #[doc = "This mode provides the ability to choose between the following settings: 1) Analyze - For detection only.This mode generates a metadata JSON file marking appearances of faces throughout the video.Where possible, appearances of the same person are assigned the same ID. 2) Combined - Additionally redacts(blurs) detected faces. 3) Redact - This enables a 2-pass process, allowing for selective redaction of a subset of detected faces.It takes in the metadata file from a prior analyze pass, along with the source video, and a user-selected subset of IDs that require redaction."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub mode: Option<face_detector_preset::Mode>,
     #[doc = "Blur type"]
-    #[serde(rename = "blurType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "blurType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub blur_type: Option<face_detector_preset::BlurType>,
     #[doc = "Dictionary containing key value pairs for parameters not exposed in the preset itself"]
     #[serde(rename = "experimentalOptions", default, skip_serializing_if = "Option::is_none")]
@@ -2620,10 +2655,12 @@ pub mod face_detector_preset {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FilterTrackPropertyCondition {
     #[doc = "The track property type."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub property: filter_track_property_condition::Property,
     #[doc = "The track property value."]
     pub value: String,
     #[doc = "The track property condition operation."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub operation: filter_track_property_condition::Operation,
 }
 impl FilterTrackPropertyCondition {
@@ -2744,7 +2781,7 @@ pub struct Filters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deinterlace: Option<Deinterlace>,
     #[doc = "The rotation, if any, to be applied to the input video, before it is encoded. Default is Auto"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub rotation: Option<filters::Rotation>,
     #[doc = "Describes the properties of a rectangular window applied to the input media before processing it."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2867,7 +2904,7 @@ pub struct H264Layer {
     #[serde(flatten)]
     pub video_layer: VideoLayer,
     #[doc = "We currently support Baseline, Main, High, High422, High444. Default is Auto."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub profile: Option<h264_layer::Profile>,
     #[doc = "We currently support Level up to 6.2. The value can be Auto, or a number that matches the H.264 profile. If not specified, the default is Auto, which lets the encoder choose the Level that is appropriate for this layer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2882,7 +2919,12 @@ pub struct H264Layer {
     #[serde(rename = "referenceFrames", default, skip_serializing_if = "Option::is_none")]
     pub reference_frames: Option<i32>,
     #[doc = "The entropy mode to be used for this layer. If not specified, the encoder chooses the mode that is appropriate for the profile and level."]
-    #[serde(rename = "entropyMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "entropyMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub entropy_mode: Option<h264_layer::EntropyMode>,
 }
 impl H264Layer {
@@ -2989,7 +3031,7 @@ pub struct H264Video {
     #[serde(flatten)]
     pub video: Video,
     #[doc = "Tells the encoder how to choose its encoding settings. The default value is Balanced."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub complexity: Option<h264_video::Complexity>,
     #[doc = "The collection of output H.264 layers to be produced by the encoder."]
     #[serde(
@@ -2999,7 +3041,12 @@ pub struct H264Video {
     )]
     pub layers: Vec<H264Layer>,
     #[doc = "The video rate control mode"]
-    #[serde(rename = "rateControlMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rateControlMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub rate_control_mode: Option<h264_video::RateControlMode>,
     #[doc = "Whether or not the encoder should insert key frames at scene changes. If not specified, the default is false. This flag should be set to true only when the encoder is being configured to produce a single output video."]
     #[serde(rename = "sceneChangeDetection", default, skip_serializing_if = "Option::is_none")]
@@ -3106,7 +3153,7 @@ pub struct H265Layer {
     #[serde(flatten)]
     pub h265_video_layer: H265VideoLayer,
     #[doc = "We currently support Main. Default is Auto."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub profile: Option<h265_layer::Profile>,
     #[doc = "We currently support Level up to 6.2. The value can be Auto, or a number that matches the H.265 profile. If not specified, the default is Auto, which lets the encoder choose the Level that is appropriate for this layer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3184,7 +3231,7 @@ pub struct H265Video {
     #[serde(rename = "sceneChangeDetection", default, skip_serializing_if = "Option::is_none")]
     pub scene_change_detection: Option<bool>,
     #[doc = "Tells the encoder how to choose its encoding settings.  Quality will provide for a higher compression ratio but at a higher cost and longer compute time.  Speed will produce a relatively larger file but is faster and more economical. The default value is Balanced."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub complexity: Option<h265_video::Complexity>,
     #[doc = "The collection of output H.265 layers to be produced by the encoder."]
     #[serde(
@@ -3455,7 +3502,7 @@ pub struct JobCollection {
 impl azure_core::Continuable for JobCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobCollection {
@@ -3467,16 +3514,16 @@ impl JobCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobError {
     #[doc = "Error code describing the error."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub code: Option<job_error::Code>,
     #[doc = "A human-readable language-dependent representation of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "Helps with categorization of errors."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub category: Option<job_error::Category>,
     #[doc = "Indicates that it may be possible to retry the Job. If retry is unsuccessful, please contact Azure support via Azure Portal."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub retry: Option<job_error::Retry>,
     #[doc = "An array of details about specific errors that led to this reported error."]
     #[serde(
@@ -3787,7 +3834,7 @@ pub struct JobOutput {
     #[serde(rename = "presetOverride", default, skip_serializing_if = "Option::is_none")]
     pub preset_override: Option<Preset>,
     #[doc = "Describes the state of the JobOutput."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<job_output::State>,
     #[doc = "If the JobOutput is in a Processing state, this contains the Job completion percentage. The value is an estimate and not intended to be used to predict Job completion times. To determine if the JobOutput is complete, use the State property."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3887,7 +3934,7 @@ pub struct JobProperties {
     #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub created: Option<time::OffsetDateTime>,
     #[doc = "The current state of the job."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<job_properties::State>,
     #[doc = "Optional customer supplied description of the Job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3900,7 +3947,7 @@ pub struct JobProperties {
     #[doc = "The outputs for the Job."]
     pub outputs: Vec<JobOutput>,
     #[doc = "Priority with which the job should be processed. Higher priority jobs are processed before lower priority jobs. If not set, the default is normal."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub priority: Option<job_properties::Priority>,
     #[doc = "Customer provided key, value pairs that will be returned in Job and JobOutput state events."]
     #[serde(rename = "correlationData", default, skip_serializing_if = "Option::is_none")]
@@ -4113,7 +4160,7 @@ impl Layer {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListContainerSasInput {
     #[doc = "The permissions to set on the SAS URL."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub permissions: Option<list_container_sas_input::Permissions>,
     #[doc = "The SAS URL expiration time.  This must be less than 24 hours from the current time."]
     #[serde(rename = "expiryTime", default, with = "azure_core::date::rfc3339::option")]
@@ -4273,13 +4320,23 @@ impl LiveEventActionInput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventEncoding {
     #[doc = "Live event type. When encodingType is set to PassthroughBasic or PassthroughStandard, the service simply passes through the incoming video and audio layer(s) to the output. When encodingType is set to Standard or Premium1080p, a live encoder transcodes the incoming stream into multiple bitrates or layers. See https://go.microsoft.com/fwlink/?linkid=2095101 for more information. This property cannot be modified after the live event is created."]
-    #[serde(rename = "encodingType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "encodingType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub encoding_type: Option<live_event_encoding::EncodingType>,
     #[doc = "The optional encoding preset name, used when encodingType is not None. This value is specified at creation time and cannot be updated. If the encodingType is set to Standard, then the default preset name is ‘Default720p’. Else if the encodingType is set to Premium1080p, the default preset is ‘Default1080p’."]
     #[serde(rename = "presetName", default, skip_serializing_if = "Option::is_none")]
     pub preset_name: Option<String>,
     #[doc = "Specifies how the input video will be resized to fit the desired output resolution(s). Default is None"]
-    #[serde(rename = "stretchMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "stretchMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub stretch_mode: Option<live_event_encoding::StretchMode>,
     #[doc = "Use an ISO 8601 time value between 0.5 to 20 seconds to specify the output fragment length for the video and audio tracks of an encoding live event. For example, use PT2S to indicate 2 seconds. For the video track it also defines the key frame interval, or the length of a GoP (group of pictures).   If this value is not set for an encoding live event, the fragment duration defaults to 2 seconds. The value cannot be set for pass-through live events."]
     #[serde(rename = "keyFrameInterval", default, skip_serializing_if = "Option::is_none")]
@@ -4394,7 +4451,7 @@ impl LiveEventEndpoint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveEventInput {
     #[doc = "The input protocol for the live event. This is specified at creation time and cannot be updated."]
-    #[serde(rename = "streamingProtocol")]
+    #[serde(rename = "streamingProtocol", with = "azure_core::xml::text_content")]
     pub streaming_protocol: live_event_input::StreamingProtocol,
     #[doc = "The IP access control for live event input."]
     #[serde(rename = "accessControl", default, skip_serializing_if = "Option::is_none")]
@@ -4516,7 +4573,7 @@ pub struct LiveEventListResult {
 impl azure_core::Continuable for LiveEventListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LiveEventListResult {
@@ -4601,7 +4658,12 @@ pub struct LiveEventProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "The resource state of the live event. See https://go.microsoft.com/fwlink/?linkid=2139012 for more information."]
-    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_state: Option<live_event_properties::ResourceState>,
     #[doc = "The client access policy."]
     #[serde(rename = "crossSiteAccessPolicies", default, skip_serializing_if = "Option::is_none")]
@@ -4756,7 +4818,7 @@ pub struct LiveOutputListResult {
 impl azure_core::Continuable for LiveOutputListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LiveOutputListResult {
@@ -4798,7 +4860,12 @@ pub struct LiveOutputProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "The resource state of the live output."]
-    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_state: Option<live_output_properties::ResourceState>,
 }
 impl LiveOutputProperties {
@@ -4941,7 +5008,7 @@ pub struct MediaServiceCollection {
 impl azure_core::Continuable for MediaServiceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MediaServiceCollection {
@@ -5020,17 +5087,32 @@ pub struct MediaServiceProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub storage_accounts: Vec<StorageAccount>,
-    #[serde(rename = "storageAuthentication", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storageAuthentication",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub storage_authentication: Option<media_service_properties::StorageAuthentication>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<AccountEncryption>,
     #[serde(rename = "keyDelivery", default, skip_serializing_if = "Option::is_none")]
     pub key_delivery: Option<KeyDelivery>,
     #[doc = "Whether or not public network access is allowed for resources under the Media Services account."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<media_service_properties::PublicNetworkAccess>,
     #[doc = "Provisioning state of the Media Services account."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<media_service_properties::ProvisioningState>,
     #[doc = "The Private Endpoint Connections created for the Media Service account."]
     #[serde(
@@ -5209,13 +5291,23 @@ pub struct MetricSpecification {
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
     #[doc = "The metric unit"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub unit: Option<metric_specification::Unit>,
     #[doc = "The metric aggregation type"]
-    #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "aggregationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub aggregation_type: Option<metric_specification::AggregationType>,
     #[doc = "The metric lock aggregation type"]
-    #[serde(rename = "lockAggregationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lockAggregationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lock_aggregation_type: Option<metric_specification::LockAggregationType>,
     #[doc = "Supported aggregation types."]
     #[serde(
@@ -5438,7 +5530,12 @@ pub struct Operation {
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
     #[doc = "Indicates the action type."]
-    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -5660,10 +5757,15 @@ impl Preset {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PresetConfigurations {
     #[doc = "Allows you to configure the encoder settings to control the balance between speed and quality. Example: set Complexity as Speed for faster encoding but less compression efficiency."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub complexity: Option<preset_configurations::Complexity>,
     #[doc = "Sets the interleave mode of the output to control how audio and video are stored in the container format. Example: set InterleavedOutput as NonInterleavedOutput to produce audio-only and video-only outputs in separate MP4 files."]
-    #[serde(rename = "interleaveOutput", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "interleaveOutput",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub interleave_output: Option<preset_configurations::InterleaveOutput>,
     #[doc = "The key frame interval in seconds. Example: set KeyFrameIntervalInSeconds as 2 to reduce the playback buffering for some players."]
     #[serde(rename = "keyFrameIntervalInSeconds", default, skip_serializing_if = "Option::is_none")]
@@ -5823,7 +5925,12 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -5977,7 +6084,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6076,8 +6183,10 @@ pub struct SelectAudioTrackByAttribute {
     #[serde(flatten)]
     pub audio_track_descriptor: AudioTrackDescriptor,
     #[doc = "The TrackAttribute to filter the tracks by."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub attribute: select_audio_track_by_attribute::Attribute,
     #[doc = "The type of AttributeFilter to apply to the TrackAttribute in order to select the tracks."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub filter: select_audio_track_by_attribute::Filter,
     #[doc = "The value to filter the tracks by.  Only used when AttributeFilter.ValueEquals is specified for the Filter property."]
     #[serde(rename = "filterValue", default, skip_serializing_if = "Option::is_none")]
@@ -6201,8 +6310,10 @@ pub struct SelectVideoTrackByAttribute {
     #[serde(flatten)]
     pub video_track_descriptor: VideoTrackDescriptor,
     #[doc = "The TrackAttribute to filter the tracks by."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub attribute: select_video_track_by_attribute::Attribute,
     #[doc = "The type of AttributeFilter to apply to the TrackAttribute in order to select the tracks."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub filter: select_video_track_by_attribute::Filter,
     #[doc = "The value to filter the tracks by.  Only used when AttributeFilter.ValueEquals is specified for the Filter property. For TrackAttribute.Bitrate, this should be an integer value in bits per second (e.g: '1500000').  The TrackAttribute.Language is not supported for video tracks."]
     #[serde(rename = "filterValue", default, skip_serializing_if = "Option::is_none")]
@@ -6375,7 +6486,7 @@ pub struct StorageAccount {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The type of the storage account."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: storage_account::Type,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ResourceIdentity>,
@@ -6513,7 +6624,7 @@ pub struct StreamingEndpointListResult {
 impl azure_core::Continuable for StreamingEndpointListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StreamingEndpointListResult {
@@ -6563,7 +6674,12 @@ pub struct StreamingEndpointProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "The resource state of the streaming endpoint."]
-    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_state: Option<streaming_endpoint_properties::ResourceState>,
     #[doc = "The client access policy."]
     #[serde(rename = "crossSiteAccessPolicies", default, skip_serializing_if = "Option::is_none")]
@@ -6709,7 +6825,7 @@ pub struct StreamingLocatorCollection {
 impl azure_core::Continuable for StreamingLocatorCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StreamingLocatorCollection {
@@ -6723,7 +6839,12 @@ pub struct StreamingLocatorContentKey {
     #[doc = "ID of Content Key"]
     pub id: String,
     #[doc = "Encryption type of Content Key"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<streaming_locator_content_key::Type>,
     #[doc = "Label of Content Key as specified in the Streaming Policy"]
     #[serde(rename = "labelReferenceInStreamingPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -6859,10 +6980,10 @@ impl StreamingLocatorProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StreamingPath {
     #[doc = "Streaming protocol"]
-    #[serde(rename = "streamingProtocol")]
+    #[serde(rename = "streamingProtocol", with = "azure_core::xml::text_content")]
     pub streaming_protocol: streaming_path::StreamingProtocol,
     #[doc = "Encryption scheme"]
-    #[serde(rename = "encryptionScheme")]
+    #[serde(rename = "encryptionScheme", with = "azure_core::xml::text_content")]
     pub encryption_scheme: streaming_path::EncryptionScheme,
     #[doc = "Streaming paths for each protocol and encryptionScheme pair"]
     #[serde(
@@ -7000,7 +7121,7 @@ pub struct StreamingPolicyCollection {
 impl azure_core::Continuable for StreamingPolicyCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StreamingPolicyCollection {
@@ -7149,7 +7270,12 @@ pub struct TextTrack {
     #[serde(rename = "languageCode", default, skip_serializing_if = "Option::is_none")]
     pub language_code: Option<String>,
     #[doc = "When PlayerVisibility is set to \"Visible\", the text track will be present in the DASH manifest or HLS playlist when requested by a client. When the PlayerVisibility is set to \"Hidden\", the text will not be available to the client. The default value is \"Visible\"."]
-    #[serde(rename = "playerVisibility", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "playerVisibility",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub player_visibility: Option<text_track::PlayerVisibility>,
     #[doc = "The HLS setting for a track."]
     #[serde(rename = "hlsSettings", default, skip_serializing_if = "Option::is_none")]
@@ -7235,8 +7361,10 @@ impl TrackDescriptor {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackPropertyCondition {
     #[doc = "Track property type"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub property: track_property_condition::Property,
     #[doc = "Track property condition operation"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub operation: track_property_condition::Operation,
     #[doc = "Track property value"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7400,7 +7528,7 @@ pub struct TransformCollection {
 impl azure_core::Continuable for TransformCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TransformCollection {
@@ -7412,10 +7540,20 @@ impl TransformCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransformOutput {
     #[doc = "A Transform can define more than one outputs. This property defines what the service should do when one output fails - either continue to produce other outputs, or, stop the other outputs. The overall Job state will not reflect failures of outputs that are specified with 'ContinueJob'. The default is 'StopProcessingJob'."]
-    #[serde(rename = "onError", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "onError",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub on_error: Option<transform_output::OnError>,
     #[doc = "Sets the relative priority of the TransformOutputs within a Transform. This sets the priority that the service uses for processing TransformOutputs. The default priority is Normal."]
-    #[serde(rename = "relativePriority", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "relativePriority",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub relative_priority: Option<transform_output::RelativePriority>,
     #[doc = "Base type for all Presets, which define the recipe or instructions on how the input media files should be processed."]
     pub preset: Preset,
@@ -7589,10 +7727,20 @@ pub struct Video {
     #[serde(rename = "keyFrameInterval", default, skip_serializing_if = "Option::is_none")]
     pub key_frame_interval: Option<String>,
     #[doc = "The resizing mode - how the input video will be resized to fit the desired output resolution(s). Default is AutoSize"]
-    #[serde(rename = "stretchMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "stretchMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub stretch_mode: Option<video::StretchMode>,
     #[doc = "The Video Sync Mode"]
-    #[serde(rename = "syncMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "syncMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub sync_mode: Option<video::SyncMode>,
 }
 impl Video {
@@ -7694,7 +7842,12 @@ pub struct VideoAnalyzerPreset {
     #[serde(flatten)]
     pub audio_analyzer_preset: AudioAnalyzerPreset,
     #[doc = "Defines the type of insights that you want the service to generate. The allowed values are 'AudioInsightsOnly', 'VideoInsightsOnly', and 'AllInsights'. The default is AllInsights. If you set this to AllInsights and the input is audio only, then only audio insights are generated. Similarly if the input is video only, then only video insights are generated. It is recommended that you not use AudioInsightsOnly if you expect some of your inputs to be video only; or use VideoInsightsOnly if you expect some of your inputs to be audio only. Your Jobs in such conditions would error out."]
-    #[serde(rename = "insightsToExtract", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "insightsToExtract",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub insights_to_extract: Option<video_analyzer_preset::InsightsToExtract>,
 }
 impl VideoAnalyzerPreset {
@@ -7837,7 +7990,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -7846,7 +8004,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

@@ -109,7 +109,7 @@ pub struct ServerKeyListResult {
 impl azure_core::Continuable for ServerKeyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerKeyListResult {
@@ -121,7 +121,7 @@ impl ServerKeyListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerKeyProperties {
     #[doc = "The key type like  'AzureKeyVault'."]
-    #[serde(rename = "serverKeyType")]
+    #[serde(rename = "serverKeyType", with = "azure_core::xml::text_content")]
     pub server_key_type: server_key_properties::ServerKeyType,
     #[doc = "The URI of the key."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

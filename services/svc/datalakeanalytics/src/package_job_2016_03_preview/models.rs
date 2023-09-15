@@ -18,7 +18,7 @@ pub struct Diagnostics {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "the severity of the error."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<diagnostics::Severity>,
     #[doc = "the starting index of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -126,7 +126,7 @@ pub struct JobErrorDetails {
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<JobInnerError>,
     #[doc = "the severity level of the failure."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<job_error_details::Severity>,
     #[doc = "the ultimate source of the failure (usually either SYSTEM or USER)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -170,7 +170,7 @@ pub struct JobInfoListResult {
 impl azure_core::Continuable for JobInfoListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobInfoListResult {
@@ -187,7 +187,7 @@ pub struct JobInformation {
     #[doc = "the friendly name of the job."]
     pub name: String,
     #[doc = "the job type of the current job (Hive or USql)."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: job_information::Type,
     #[doc = "the user or account that submitted the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -219,10 +219,10 @@ pub struct JobInformation {
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "the job state. When the job is in the Ended state, refer to Result and ErrorMessage for details."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<job_information::State>,
     #[doc = "the result of job execution or the current result of the running job."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub result: Option<job_information::Result>,
     #[doc = "the log folder path to use in the following format: adl://<accountName>.azuredatalakestore.net/system/jobservice/jobs/Usql/2016/03/13/17/18/5fe51957-93bc-4de0-8ddc-c5a4753b068b/logs/."]
     #[serde(rename = "logFolder", default, skip_serializing_if = "Option::is_none")]
@@ -311,7 +311,7 @@ pub struct JobInnerError {
     #[serde(rename = "diagnosticCode", default, skip_serializing_if = "Option::is_none")]
     pub diagnostic_code: Option<i32>,
     #[doc = "the severity level of the failure."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<job_inner_error::Severity>,
     #[doc = "the details of the error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -387,7 +387,12 @@ pub struct JobResource {
     #[serde(rename = "resourcePath", default, skip_serializing_if = "Option::is_none")]
     pub resource_path: Option<String>,
     #[doc = "the job resource type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<job_resource::Type>,
 }
 impl JobResource {
@@ -569,7 +574,12 @@ pub struct USqlJobProperties {
     #[serde(rename = "yarnApplicationTimeStamp", default, skip_serializing_if = "Option::is_none")]
     pub yarn_application_time_stamp: Option<i64>,
     #[doc = "the compile mode for the job."]
-    #[serde(rename = "compileMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "compileMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub compile_mode: Option<u_sql_job_properties::CompileMode>,
 }
 impl USqlJobProperties {

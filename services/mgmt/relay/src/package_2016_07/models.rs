@@ -60,7 +60,7 @@ pub struct AuthorizationRuleListResult {
 impl azure_core::Continuable for AuthorizationRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AuthorizationRuleListResult {
@@ -97,7 +97,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "Specifies the reason for the unavailability of the service."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<UnavailableReason>,
     #[doc = "The detailed info regarding the reason associated with the namespace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -160,7 +160,7 @@ pub struct HybridConnectionListResult {
 impl azure_core::Continuable for HybridConnectionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HybridConnectionListResult {
@@ -245,7 +245,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -257,7 +257,12 @@ impl OperationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegenerateKeysParameters {
     #[doc = "Key that needs to be regenerated."]
-    #[serde(rename = "policyKey", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "policyKey",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub policy_key: Option<regenerate_keys_parameters::PolicyKey>,
 }
 impl RegenerateKeysParameters {
@@ -343,7 +348,7 @@ pub struct RelayNamespaceListResult {
 impl azure_core::Continuable for RelayNamespaceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RelayNamespaceListResult {
@@ -412,8 +417,10 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "Name of this Sku"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: sku::Name,
     #[doc = "The tier of this particular SKU"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub tier: sku::Tier,
 }
 impl Sku {
@@ -542,7 +549,12 @@ impl WcfRelay {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WcfRelayProperties {
     #[doc = "WCFRelay Type."]
-    #[serde(rename = "relayType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "relayType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub relay_type: Option<wcf_relay_properties::RelayType>,
     #[doc = "The time the WCFRelay was created."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -628,7 +640,7 @@ pub struct WcfRelaysListResult {
 impl azure_core::Continuable for WcfRelaysListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WcfRelaysListResult {

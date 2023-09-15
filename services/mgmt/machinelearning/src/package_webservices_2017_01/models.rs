@@ -12,7 +12,7 @@ pub struct AssetItem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Asset's type."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: asset_item::Type,
     #[doc = "Describes the access location for a blob."]
     #[serde(rename = "locationInfo")]
@@ -123,7 +123,12 @@ pub struct AsyncOperationStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Read Only: The provisioning state of the web service. Valid values are Unknown, Provisioning, Succeeded, and Failed."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<async_operation_status::ProvisioningState>,
     #[doc = "The date time that the async operation started."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -205,10 +210,10 @@ impl BlobLocation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ColumnSpecification {
     #[doc = "Data type of the column."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: column_specification::Type,
     #[doc = "Additional format information for the data type."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub format: Option<column_specification::Format>,
     #[doc = "If the data type is categorical, this provides the list of accepted categories."]
     #[serde(
@@ -364,6 +369,7 @@ impl CommitmentPlan {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiagnosticsConfiguration {
     #[doc = "Specifies the verbosity of the diagnostic output. Valid values are: None - disables tracing; Error - collects only error (stderr) traces; All - collects all traces (stdout and stderr)."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub level: diagnostics_configuration::Level,
     #[doc = "Specifies the date and time when the logging will cease. If null, diagnostic collection is not time limited."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
@@ -502,7 +508,7 @@ pub struct GraphParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Graph parameter's type."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: graph_parameter::Type,
     #[doc = "Association links for this parameter to nodes in the graph."]
     pub links: Vec<GraphParameterLink>,
@@ -595,7 +601,12 @@ impl GraphParameterLink {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InputPort {
     #[doc = "Port data type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<input_port::Type>,
 }
 impl InputPort {
@@ -756,7 +767,12 @@ impl OperationEntityListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OutputPort {
     #[doc = "Port data type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<output_port::Type>,
 }
 impl OutputPort {
@@ -824,7 +840,7 @@ pub struct PaginatedWebServicesList {
 impl azure_core::Continuable for PaginatedWebServicesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PaginatedWebServicesList {
@@ -1040,7 +1056,12 @@ pub struct WebServiceProperties {
     #[serde(rename = "modifiedOn", default, with = "azure_core::date::rfc3339::option")]
     pub modified_on: Option<time::OffsetDateTime>,
     #[doc = "Read Only: The provision state of the web service. Valid values are Unknown, Provisioning, Succeeded, and Failed."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<web_service_properties::ProvisioningState>,
     #[doc = "Access keys for the web service calls."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1085,7 +1106,7 @@ pub struct WebServiceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
     #[doc = "Specifies the package type. Valid values are Graph (Specifies a web service published through the Machine Learning Studio) and Code (Specifies a web service published using code such as Python). Note: Code is not supported at this time."]
-    #[serde(rename = "packageType")]
+    #[serde(rename = "packageType", with = "azure_core::xml::text_content")]
     pub package_type: web_service_properties::PackageType,
     #[doc = "When set to true, indicates that the payload size is larger than 3 MB. Otherwise false. If the payload size exceed 3 MB, the payload is stored in a blob and the PayloadsLocation parameter contains the URI of the blob. Otherwise, this will be set to false and Assets, Input, Output, Package, Parameters, ExampleRequest are inline. The Payload sizes is determined by adding the size of the Assets, Input, Output, Package, Parameters, and the ExampleRequest."]
     #[serde(rename = "payloadsInBlobStorage", default, skip_serializing_if = "Option::is_none")]

@@ -190,7 +190,12 @@ pub struct EnvironmentCreationProperties {
     #[serde(rename = "dataRetentionTime")]
     pub data_retention_time: String,
     #[doc = "The behavior the Time Series Insights service should take when the environment's capacity has been exceeded. If \"PauseIngress\" is specified, new events will not be read from the event source. If \"PurgeOldData\" is specified, new events will continue to be read and old events will be deleted from the environment. The default behavior is PurgeOldData."]
-    #[serde(rename = "storageLimitExceededBehavior", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storageLimitExceededBehavior",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub storage_limit_exceeded_behavior: Option<environment_creation_properties::StorageLimitExceededBehavior>,
     #[doc = "The list of partition keys according to which the data in the environment will be ordered."]
     #[serde(
@@ -242,7 +247,12 @@ pub struct EnvironmentMutableProperties {
     #[serde(rename = "dataRetentionTime", default, skip_serializing_if = "Option::is_none")]
     pub data_retention_time: Option<String>,
     #[doc = "The behavior the Time Series Insights service should take when the environment's capacity has been exceeded. If \"PauseIngress\" is specified, new events will not be read from the event source. If \"PurgeOldData\" is specified, new events will continue to be read and old events will be deleted from the environment. The default behavior is PurgeOldData."]
-    #[serde(rename = "storageLimitExceededBehavior", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storageLimitExceededBehavior",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub storage_limit_exceeded_behavior: Option<environment_mutable_properties::StorageLimitExceededBehavior>,
     #[doc = "The list of event properties which will be used to partition data in the environment."]
     #[serde(
@@ -509,6 +519,7 @@ pub struct EventSourceCreateOrUpdateParameters {
     #[serde(flatten)]
     pub create_or_update_tracked_resource_properties: CreateOrUpdateTrackedResourceProperties,
     #[doc = "The kind of the event source."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: event_source_create_or_update_parameters::Kind,
 }
 impl EventSourceCreateOrUpdateParameters {
@@ -570,6 +581,7 @@ pub struct EventSourceResource {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
     #[doc = "The kind of the event source."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: event_source_resource::Kind,
 }
 impl EventSourceResource {
@@ -604,7 +616,7 @@ impl EventSourceUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngressEnvironmentStatus {
     #[doc = "This string represents the state of ingress operations on an environment. It can be \"Disabled\", \"Ready\", \"Running\", \"Paused\" or \"Unknown\""]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<ingress_environment_status::State>,
     #[doc = "An object that contains the details about an environment's state."]
     #[serde(rename = "stateDetails", default, skip_serializing_if = "Option::is_none")]
@@ -754,7 +766,7 @@ impl IoTHubEventSourceUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocalTimestamp {
     #[doc = "An enum that represents the format of the local timestamp property that needs to be set."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub format: Option<local_timestamp::Format>,
     #[doc = "An object that represents the offset information for the local timestamp format specified. Should not be specified for LocalTimestampFormat - Embedded."]
     #[serde(rename = "timeZoneOffset", default, skip_serializing_if = "Option::is_none")]
@@ -843,7 +855,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -858,7 +870,12 @@ pub struct PartitionKeyProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The type of the property."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<partition_key_property::Type>,
 }
 impl PartitionKeyProperty {
@@ -939,7 +956,12 @@ pub struct ReferenceDataSetCreationProperties {
     #[serde(rename = "keyProperties")]
     pub key_properties: Vec<ReferenceDataSetKeyProperty>,
     #[doc = "The reference data set key comparison behavior can be set using this property. By default, the value is 'Ordinal' - which means case sensitive key comparison will be performed while joining reference data with events or while adding new reference data. When 'OrdinalIgnoreCase' is set, case insensitive comparison will be used."]
-    #[serde(rename = "dataStringComparisonBehavior", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataStringComparisonBehavior",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_string_comparison_behavior: Option<reference_data_set_creation_properties::DataStringComparisonBehavior>,
 }
 impl ReferenceDataSetCreationProperties {
@@ -966,7 +988,12 @@ pub struct ReferenceDataSetKeyProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The type of the key property."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<reference_data_set_key_property::Type>,
 }
 impl ReferenceDataSetKeyProperty {
@@ -1068,7 +1095,12 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The time the resource was created."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1083,6 +1115,7 @@ impl ResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The name of this SKU."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: sku::Name,
     #[doc = "The capacity of the sku. This value can be changed to support scale out of environments after they have been created."]
     pub capacity: i32,

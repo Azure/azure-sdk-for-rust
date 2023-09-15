@@ -88,7 +88,7 @@ pub struct DnsForwardingRulesetListResult {
 impl azure_core::Continuable for DnsForwardingRulesetListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DnsForwardingRulesetListResult {
@@ -120,7 +120,12 @@ pub struct DnsForwardingRulesetProperties {
     )]
     pub dns_resolver_outbound_endpoints: Vec<SubResource>,
     #[doc = "The current provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The resourceGuid for the DNS forwarding ruleset."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -173,7 +178,7 @@ pub struct DnsResolverListResult {
 impl azure_core::Continuable for DnsResolverListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DnsResolverListResult {
@@ -200,10 +205,20 @@ pub struct DnsResolverProperties {
     #[serde(rename = "virtualNetwork")]
     pub virtual_network: SubResource,
     #[doc = "The current status of the DNS resolver. This is a read-only property and any attempt to set this value will be ignored."]
-    #[serde(rename = "dnsResolverState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dnsResolverState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub dns_resolver_state: Option<dns_resolver_properties::DnsResolverState>,
     #[doc = "The current provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The Guid property of the resource."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -296,7 +311,7 @@ pub struct ForwardingRuleListResult {
 impl azure_core::Continuable for ForwardingRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ForwardingRuleListResult {
@@ -331,7 +346,12 @@ pub struct ForwardingRulePatchProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
     #[doc = "The state of forwarding rule."]
-    #[serde(rename = "forwardingRuleState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "forwardingRuleState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub forwarding_rule_state: Option<forwarding_rule_patch_properties::ForwardingRuleState>,
 }
 impl ForwardingRulePatchProperties {
@@ -397,10 +417,20 @@ pub struct ForwardingRuleProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
     #[doc = "The state of forwarding rule."]
-    #[serde(rename = "forwardingRuleState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "forwardingRuleState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub forwarding_rule_state: Option<forwarding_rule_properties::ForwardingRuleState>,
     #[doc = "The current provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ForwardingRuleProperties {
@@ -496,7 +526,7 @@ pub struct InboundEndpointListResult {
 impl azure_core::Continuable for InboundEndpointListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InboundEndpointListResult {
@@ -528,7 +558,12 @@ pub struct InboundEndpointProperties {
     )]
     pub ip_configurations: Vec<IpConfiguration>,
     #[doc = "The current provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The Guid property of the resource."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -549,7 +584,12 @@ pub struct IpConfiguration {
     #[serde(rename = "privateIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub private_ip_address: Option<String>,
     #[doc = "Private IP address allocation method."]
-    #[serde(rename = "privateIpAllocationMethod", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "privateIpAllocationMethod",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub private_ip_allocation_method: Option<ip_configuration::PrivateIpAllocationMethod>,
 }
 impl IpConfiguration {
@@ -644,7 +684,7 @@ pub struct OutboundEndpointListResult {
 impl azure_core::Continuable for OutboundEndpointListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OutboundEndpointListResult {
@@ -671,7 +711,12 @@ pub struct OutboundEndpointProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subnet: Option<SubResource>,
     #[doc = "The current provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The Guid property of the resource."]
     #[serde(rename = "resourceGuid", default, skip_serializing_if = "Option::is_none")]
@@ -786,7 +831,7 @@ pub struct SubResourceListResult {
 impl azure_core::Continuable for SubResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SubResourceListResult {
@@ -861,7 +906,7 @@ pub struct VirtualNetworkDnsForwardingRulesetListResult {
 impl azure_core::Continuable for VirtualNetworkDnsForwardingRulesetListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualNetworkDnsForwardingRulesetListResult {
@@ -906,7 +951,7 @@ pub struct VirtualNetworkLinkListResult {
 impl azure_core::Continuable for VirtualNetworkLinkListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualNetworkLinkListResult {
@@ -948,7 +993,12 @@ pub struct VirtualNetworkLinkProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
     #[doc = "The current provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl VirtualNetworkLinkProperties {
@@ -975,7 +1025,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -984,7 +1039,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

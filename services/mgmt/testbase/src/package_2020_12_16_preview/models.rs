@@ -49,10 +49,10 @@ impl AnalysisResultSingletonResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnalysisResultSingletonResourceProperties {
     #[doc = "The grade of a test."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub grade: Option<TestGrade>,
     #[doc = "Type of the Analysis Result."]
-    #[serde(rename = "analysisResultType")]
+    #[serde(rename = "analysisResultType", with = "azure_core::xml::text_content")]
     pub analysis_result_type: analysis_result_singleton_resource_properties::AnalysisResultType,
 }
 impl AnalysisResultSingletonResourceProperties {
@@ -132,7 +132,7 @@ pub struct AvailableOsListResult {
 impl azure_core::Continuable for AvailableOsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AvailableOsListResult {
@@ -235,7 +235,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "The reason for unavailability of a name. Required if nameAvailable == false."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<check_name_availability_result::Reason>,
     #[doc = "The detailed info regarding the reason associated with the name. Required if nameAvailable == false."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -292,9 +292,10 @@ pub struct Command {
     #[doc = "The name of the command."]
     pub name: String,
     #[doc = "The action of the command."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub action: command::Action,
     #[doc = "The type of command content."]
-    #[serde(rename = "contentType")]
+    #[serde(rename = "contentType", with = "azure_core::xml::text_content")]
     pub content_type: command::ContentType,
     #[doc = "The content of the command. The content depends on source type."]
     pub content: String,
@@ -435,7 +436,7 @@ pub struct CustomerEventListResult {
 impl azure_core::Continuable for CustomerEventListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomerEventListResult {
@@ -523,7 +524,7 @@ pub struct EmailEventListResult {
 impl azure_core::Continuable for EmailEventListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EmailEventListResult {
@@ -626,7 +627,7 @@ pub struct FavoriteProcessListResult {
 impl azure_core::Continuable for FavoriteProcessListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FavoriteProcessListResult {
@@ -695,7 +696,7 @@ pub struct FlightingRingListResult {
 impl azure_core::Continuable for FlightingRingListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FlightingRingListResult {
@@ -751,7 +752,7 @@ pub struct IdentifiedFailure {
     #[serde(rename = "failureId", default, skip_serializing_if = "Option::is_none")]
     pub failure_id: Option<String>,
     #[doc = "The category of the failure."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub category: Option<identified_failure::Category>,
     #[doc = "Message that shows information about the failure."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
@@ -906,7 +907,7 @@ pub struct OsUpdateListResult {
 impl azure_core::Continuable for OsUpdateListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OsUpdateListResult {
@@ -933,7 +934,12 @@ pub struct OsUpdateProperties {
     #[serde(rename = "buildRevision", default, skip_serializing_if = "Option::is_none")]
     pub build_revision: Option<String>,
     #[doc = "The type of this release (OS update)."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<os_update_properties::Type>,
     #[doc = "The release version date the tested release (OS update)"]
     #[serde(rename = "releaseVersionDate", default, with = "azure_core::date::rfc3339::option")]
@@ -1023,13 +1029,23 @@ pub struct OsUpdateTestSummary {
     #[serde(rename = "flightingRing", default, skip_serializing_if = "Option::is_none")]
     pub flighting_ring: Option<String>,
     #[doc = "The execution status of a test."]
-    #[serde(rename = "executionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "executionStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub execution_status: Option<TestExecutionStatus>,
     #[doc = "The status of a test."]
-    #[serde(rename = "testStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "testStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub test_status: Option<TestStatus>,
     #[doc = "The grade of a test."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub grade: Option<TestGrade>,
     #[doc = "The run time of the test."]
     #[serde(rename = "testRunTime", default, skip_serializing_if = "Option::is_none")]
@@ -1047,13 +1063,23 @@ impl OsUpdateTestSummary {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OsUpdatesTestSummary {
     #[doc = "The execution status of a test."]
-    #[serde(rename = "executionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "executionStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub execution_status: Option<TestExecutionStatus>,
     #[doc = "The status of a test."]
-    #[serde(rename = "testStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "testStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub test_status: Option<TestStatus>,
     #[doc = "The grade of a test."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub grade: Option<TestGrade>,
     #[doc = "The run time of the last test."]
     #[serde(rename = "testRunTime", default, skip_serializing_if = "Option::is_none")]
@@ -1137,7 +1163,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1194,7 +1220,7 @@ pub struct PackageListResult {
 impl azure_core::Continuable for PackageListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PackageListResult {
@@ -1206,7 +1232,12 @@ impl PackageListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PackageProperties {
     #[doc = "ARM provisioning state, see https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#provisioningstate-property"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Application name"]
     #[serde(rename = "applicationName")]
@@ -1225,7 +1256,12 @@ pub struct PackageProperties {
     #[serde(rename = "targetOSList")]
     pub target_os_list: Vec<TargetOsInfo>,
     #[doc = "The status of the package."]
-    #[serde(rename = "packageStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "packageStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub package_status: Option<package_properties::PackageStatus>,
     #[doc = "The UTC timestamp when the package was last modified."]
     #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1483,7 +1519,7 @@ pub struct RegressionResult {
     #[serde(rename = "fileName", default, skip_serializing_if = "Option::is_none")]
     pub file_name: Option<String>,
     #[doc = "The grade of a test."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub grade: Option<TestGrade>,
     #[doc = "Message that facilitates debugging a particular regression, if any was inferred."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1531,16 +1567,31 @@ pub struct ReliabilityResult {
     #[serde(rename = "hangCount", default, skip_serializing_if = "Option::is_none")]
     pub hang_count: Option<i32>,
     #[doc = "The grade of a test."]
-    #[serde(rename = "regressionGrade", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "regressionGrade",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub regression_grade: Option<TestGrade>,
     #[doc = "The grade of a test."]
-    #[serde(rename = "crashRegressionGrade", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "crashRegressionGrade",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub crash_regression_grade: Option<TestGrade>,
     #[doc = "The details of a regression test."]
     #[serde(rename = "crashRegressionTestDetails", default, skip_serializing_if = "Option::is_none")]
     pub crash_regression_test_details: Option<RegressionTestDetails>,
     #[doc = "The grade of a test."]
-    #[serde(rename = "hangRegressionGrade", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hangRegressionGrade",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub hang_regression_grade: Option<TestGrade>,
     #[doc = "The details of a regression test."]
     #[serde(rename = "hangRegressionTestDetails", default, skip_serializing_if = "Option::is_none")]
@@ -1662,7 +1713,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1671,7 +1727,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1797,10 +1858,15 @@ impl TargetOsInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Test {
     #[doc = "The test type."]
-    #[serde(rename = "testType")]
+    #[serde(rename = "testType", with = "azure_core::xml::text_content")]
     pub test_type: TestType,
     #[doc = "The status of the validation run of the package."]
-    #[serde(rename = "validationRunStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "validationRunStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub validation_run_status: Option<test::ValidationRunStatus>,
     #[doc = "Indicates if this test is active.It doesn't schedule test for not active Test."]
     #[serde(rename = "isActive", default, skip_serializing_if = "Option::is_none")]
@@ -1869,7 +1935,12 @@ pub struct TestAnalysisResult {
     #[serde(rename = "blobData", default, skip_serializing_if = "Option::is_none")]
     pub blob_data: Option<String>,
     #[doc = "The status of the analysis."]
-    #[serde(rename = "testAnalysisStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "testAnalysisStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub test_analysis_status: Option<test_analysis_result::TestAnalysisStatus>,
     #[doc = "The array of identified failures."]
     #[serde(
@@ -1963,7 +2034,7 @@ pub struct TestBaseAccountListResult {
 impl azure_core::Continuable for TestBaseAccountListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestBaseAccountListResult {
@@ -1996,7 +2067,12 @@ impl TestBaseAccountResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TestBaseAccountResourceProperties {
     #[doc = "ARM provisioning state, see https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/Addendum.md#provisioningstate-property"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Describes a Test Base Account SKU."]
     pub sku: TestBaseAccountSku,
@@ -2022,6 +2098,7 @@ pub struct TestBaseAccountSku {
     #[doc = "The name of the SKU. This is typically a letter + number code, such as B0 or S0."]
     pub name: String,
     #[doc = "The tier of this particular SKU."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub tier: test_base_account_sku::Tier,
     #[doc = "The capabilities of a SKU."]
     #[serde(
@@ -2117,7 +2194,7 @@ pub struct TestBaseAccountSkuListResult {
 impl azure_core::Continuable for TestBaseAccountSkuListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestBaseAccountSkuListResult {
@@ -2193,7 +2270,7 @@ pub struct TestBaseAccountUsageDataList {
 impl azure_core::Continuable for TestBaseAccountUsageDataList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestBaseAccountUsageDataList {
@@ -2313,10 +2390,15 @@ pub struct TestResultAnalysisSummary {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The analysis status."]
-    #[serde(rename = "analysisStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "analysisStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub analysis_status: Option<test_result_analysis_summary::AnalysisStatus>,
     #[doc = "The grade of a test."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub grade: Option<TestGrade>,
 }
 impl TestResultAnalysisSummary {
@@ -2391,7 +2473,7 @@ pub struct TestResultListResult {
 impl azure_core::Continuable for TestResultListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestResultListResult {
@@ -2445,13 +2527,23 @@ pub struct TestResultProperties {
     #[serde(rename = "isVideoAvailable", default, skip_serializing_if = "Option::is_none")]
     pub is_video_available: Option<bool>,
     #[doc = "The execution status of a test."]
-    #[serde(rename = "executionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "executionStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub execution_status: Option<TestExecutionStatus>,
     #[doc = "The status of a test."]
-    #[serde(rename = "testStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "testStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub test_status: Option<TestStatus>,
     #[doc = "The grade of a test."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub grade: Option<TestGrade>,
     #[doc = "KB number."]
     #[serde(rename = "kbNumber", default, skip_serializing_if = "Option::is_none")]
@@ -2556,7 +2648,7 @@ pub struct TestSummaryListResult {
 impl azure_core::Continuable for TestSummaryListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestSummaryListResult {
@@ -2580,13 +2672,23 @@ pub struct TestSummaryProperties {
     #[serde(rename = "applicationVersion", default, skip_serializing_if = "Option::is_none")]
     pub application_version: Option<String>,
     #[doc = "The execution status of a test."]
-    #[serde(rename = "executionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "executionStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub execution_status: Option<TestExecutionStatus>,
     #[doc = "The status of a test."]
-    #[serde(rename = "testStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "testStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub test_status: Option<TestStatus>,
     #[doc = "The grade of a test."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub grade: Option<TestGrade>,
     #[doc = "The run time of the last test."]
     #[serde(rename = "testRunTime", default, skip_serializing_if = "Option::is_none")]
@@ -2674,7 +2776,7 @@ pub struct TestTypeListResult {
 impl azure_core::Continuable for TestTypeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestTypeListResult {

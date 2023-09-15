@@ -209,7 +209,7 @@ pub struct NameAvailabilityRequest {
     #[doc = "Resource name to verify."]
     pub name: String,
     #[doc = "Resource type used for verification."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: name_availability_request::Type,
 }
 impl NameAvailabilityRequest {
@@ -239,7 +239,7 @@ pub struct Operation {
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
     #[doc = "The intended executor of the operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<operation::Origin>,
     #[doc = "Additional descriptions for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -492,7 +492,7 @@ pub struct ServerConfigurationListResult {
 impl azure_core::Continuable for ServerConfigurationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerConfigurationListResult {
@@ -515,7 +515,12 @@ pub struct ServerConfigurationProperties {
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
     pub default_value: Option<String>,
     #[doc = "Data type of the configuration."]
-    #[serde(rename = "dataType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_type: Option<server_configuration_properties::DataType>,
     #[doc = "Allowed values of the configuration."]
     #[serde(rename = "allowedValues", default, skip_serializing_if = "Option::is_none")]
@@ -632,7 +637,7 @@ pub struct ServerGroupConfigurationListResult {
 impl azure_core::Continuable for ServerGroupConfigurationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerGroupConfigurationListResult {
@@ -647,7 +652,12 @@ pub struct ServerGroupConfigurationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Data type of the configuration."]
-    #[serde(rename = "dataType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_type: Option<server_group_configuration_properties::DataType>,
     #[doc = "Allowed values of the configuration."]
     #[serde(rename = "allowedValues", default, skip_serializing_if = "Option::is_none")]
@@ -745,7 +755,7 @@ pub struct ServerGroupListResult {
 impl azure_core::Continuable for ServerGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerGroupListResult {
@@ -757,7 +767,12 @@ impl ServerGroupListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerGroupProperties {
     #[doc = "The mode to create a new server group."]
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_mode: Option<server_group_properties::CreateMode>,
     #[doc = "The administrator's login name of servers in server group. Can only be specified when the server is being created (and is required for creation)."]
     #[serde(rename = "administratorLogin", default, skip_serializing_if = "Option::is_none")]
@@ -769,10 +784,20 @@ pub struct ServerGroupProperties {
     #[serde(rename = "backupRetentionDays", default, skip_serializing_if = "Option::is_none")]
     pub backup_retention_days: Option<i32>,
     #[doc = "The PostgreSQL version."]
-    #[serde(rename = "postgresqlVersion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "postgresqlVersion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub postgresql_version: Option<PostgreSqlVersion>,
     #[doc = "The Citus version."]
-    #[serde(rename = "citusVersion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "citusVersion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub citus_version: Option<CitusVersion>,
     #[doc = "If Citus MX is enabled or not for the server group."]
     #[serde(rename = "enableMx", default, skip_serializing_if = "Option::is_none")]
@@ -784,13 +809,18 @@ pub struct ServerGroupProperties {
     #[serde(rename = "enableShardsOnCoordinator", default, skip_serializing_if = "Option::is_none")]
     pub enable_shards_on_coordinator: Option<bool>,
     #[doc = "A state of a server group/server that is visible to user."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<ServerState>,
     #[doc = "The earliest restore point time (ISO8601 format) for server group."]
     #[serde(rename = "earliestRestoreTime", default, with = "azure_core::date::rfc3339::option")]
     pub earliest_restore_time: Option<time::OffsetDateTime>,
     #[doc = "The resource provider type of server group."]
-    #[serde(rename = "resourceProviderType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceProviderType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_provider_type: Option<server_group_properties::ResourceProviderType>,
     #[doc = "The list of server role groups."]
     #[serde(rename = "serverRoleGroups", default, skip_serializing_if = "Option::is_none")]
@@ -955,10 +985,20 @@ pub struct ServerGroupPropertiesForUpdate {
     #[serde(rename = "backupRetentionDays", default, skip_serializing_if = "Option::is_none")]
     pub backup_retention_days: Option<i32>,
     #[doc = "The PostgreSQL version."]
-    #[serde(rename = "postgresqlVersion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "postgresqlVersion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub postgresql_version: Option<PostgreSqlVersion>,
     #[doc = "The Citus version."]
-    #[serde(rename = "citusVersion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "citusVersion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub citus_version: Option<CitusVersion>,
     #[doc = "If shards on coordinator is enabled or not for the server group."]
     #[serde(rename = "enableShardsOnCoordinator", default, skip_serializing_if = "Option::is_none")]
@@ -1029,22 +1069,37 @@ pub struct ServerGroupServerProperties {
     #[serde(rename = "fullyQualifiedDomainName", default, skip_serializing_if = "Option::is_none")]
     pub fully_qualified_domain_name: Option<FullyQualifiedDomainName>,
     #[doc = "The role of a server."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub role: Option<ServerRole>,
     #[doc = "A state of a server group/server that is visible to user."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<ServerState>,
     #[doc = "A state of a server role group/server that is visible to user for HA feature."]
-    #[serde(rename = "haState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "haState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ha_state: Option<ServerHaState>,
     #[doc = "The administrator's login name of a servers in server group."]
     #[serde(rename = "administratorLogin", default, skip_serializing_if = "Option::is_none")]
     pub administrator_login: Option<String>,
     #[doc = "The PostgreSQL version."]
-    #[serde(rename = "postgresqlVersion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "postgresqlVersion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub postgresql_version: Option<PostgreSqlVersion>,
     #[doc = "The Citus version."]
-    #[serde(rename = "citusVersion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "citusVersion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub citus_version: Option<CitusVersion>,
     #[doc = "Availability Zone information of the server group."]
     #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
@@ -1124,7 +1179,12 @@ impl ServerNameItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerProperties {
     #[doc = "The edition of a server (default: GeneralPurpose)."]
-    #[serde(rename = "serverEdition", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "serverEdition",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub server_edition: Option<server_properties::ServerEdition>,
     #[doc = "The storage of a server in MB (max: 2097152 = 2TiB)."]
     #[serde(rename = "storageQuotaInMb", default, skip_serializing_if = "Option::is_none")]
@@ -1230,7 +1290,7 @@ pub struct ServerRoleGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The role of a server."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub role: Option<ServerRole>,
     #[doc = "The number of servers in the server role group."]
     #[serde(rename = "serverCount", default, skip_serializing_if = "Option::is_none")]
@@ -1253,6 +1313,7 @@ impl ServerRoleGroup {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerRoleGroupConfiguration {
     #[doc = "The role of a server."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub role: ServerRole,
     #[doc = "Value of the configuration."]
     pub value: String,
@@ -1350,7 +1411,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1359,7 +1425,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

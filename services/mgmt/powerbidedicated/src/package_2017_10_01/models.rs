@@ -113,10 +113,15 @@ pub struct DedicatedCapacityProperties {
     #[serde(flatten)]
     pub dedicated_capacity_mutable_properties: DedicatedCapacityMutableProperties,
     #[doc = "The current state of PowerBI Dedicated resource. The state is to indicate more states outside of resource provisioning."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<dedicated_capacity_properties::State>,
     #[doc = "The current deployment state of PowerBI Dedicated resource. The provisioningState is to indicate states for resource provisioning."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<dedicated_capacity_properties::ProvisioningState>,
 }
 impl DedicatedCapacityProperties {
@@ -421,7 +426,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -467,7 +472,7 @@ pub struct ResourceSku {
     #[doc = "Name of the SKU level."]
     pub name: String,
     #[doc = "The name of the Azure pricing tier to which the SKU applies."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub tier: Option<resource_sku::Tier>,
     #[doc = "The capacity of the SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

@@ -103,7 +103,7 @@ pub struct ManagedServiceIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Type of managed service identity (where both SystemAssigned and UserAssigned types are allowed)."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: ManagedServiceIdentityType,
     #[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -176,10 +176,15 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -305,7 +310,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -410,7 +415,7 @@ pub struct StorageTaskAssignmentsListResult {
 impl azure_core::Continuable for StorageTaskAssignmentsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageTaskAssignmentsListResult {
@@ -422,15 +427,26 @@ impl StorageTaskAssignmentsListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageTaskOperation {
     #[doc = "The operation to be performed on the object."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: storage_task_operation::Name,
     #[doc = "Key-value parameters for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
     #[doc = "Action to be taken when the operation is successful for a object."]
-    #[serde(rename = "onSuccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "onSuccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub on_success: Option<storage_task_operation::OnSuccess>,
     #[doc = "Action to be taken when the operation fails for a object."]
-    #[serde(rename = "onFailure", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "onFailure",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub on_failure: Option<storage_task_operation::OnFailure>,
 }
 impl StorageTaskOperation {
@@ -590,7 +606,12 @@ pub struct StorageTaskPreviewBlobProperties {
     )]
     pub tags: Vec<StorageTaskPreviewKeyValueProperties>,
     #[doc = "Represents the condition block name that matched blob properties."]
-    #[serde(rename = "matchedBlock", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "matchedBlock",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub matched_block: Option<storage_task_preview_blob_properties::MatchedBlock>,
 }
 impl StorageTaskPreviewBlobProperties {
@@ -687,7 +708,12 @@ pub struct StorageTaskProperties {
     #[doc = "The storage task action represents conditional statements and operations to be performed on target objects."]
     pub action: StorageTaskAction,
     #[doc = "Represents the provisioning state of the storage task."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<storage_task_properties::ProvisioningState>,
     #[doc = "The creation date and time of the storage task in UTC."]
     #[serde(rename = "creationTimeInUtc", default, with = "azure_core::date::rfc3339::option")]
@@ -764,7 +790,12 @@ pub struct StorageTaskReportProperties {
     #[serde(rename = "runStatusError", default, skip_serializing_if = "Option::is_none")]
     pub run_status_error: Option<String>,
     #[doc = "Represents the status of the execution."]
-    #[serde(rename = "runStatusEnum", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "runStatusEnum",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub run_status_enum: Option<storage_task_report_properties::RunStatusEnum>,
     #[doc = "Full path to the verbose report stored in the reporting container as specified in the assignment execution context for the storage account. "]
     #[serde(rename = "summaryReportPath", default, skip_serializing_if = "Option::is_none")]
@@ -776,7 +807,12 @@ pub struct StorageTaskReportProperties {
     #[serde(rename = "taskVersion", default, skip_serializing_if = "Option::is_none")]
     pub task_version: Option<String>,
     #[doc = "Represents the overall result of the execution for the run instance"]
-    #[serde(rename = "runResult", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "runResult",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub run_result: Option<storage_task_report_properties::RunResult>,
 }
 impl StorageTaskReportProperties {
@@ -878,7 +914,7 @@ pub struct StorageTaskReportSummary {
 impl azure_core::Continuable for StorageTaskReportSummary {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageTaskReportSummary {
@@ -921,7 +957,7 @@ pub struct StorageTasksListResult {
 impl azure_core::Continuable for StorageTasksListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageTasksListResult {
@@ -979,7 +1015,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -988,7 +1029,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

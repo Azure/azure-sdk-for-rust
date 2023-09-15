@@ -39,7 +39,12 @@ pub struct AzureBareMetalInstanceProperties {
     #[serde(rename = "azureBareMetalInstanceId", default, skip_serializing_if = "Option::is_none")]
     pub azure_bare_metal_instance_id: Option<String>,
     #[doc = "Resource power state"]
-    #[serde(rename = "powerState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "powerState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub power_state: Option<azure_bare_metal_instance_properties::PowerState>,
     #[doc = "Resource proximity placement group"]
     #[serde(rename = "proximityPlacementGroup", default, skip_serializing_if = "Option::is_none")]
@@ -51,7 +56,12 @@ pub struct AzureBareMetalInstanceProperties {
     #[serde(rename = "partnerNodeId", default, skip_serializing_if = "Option::is_none")]
     pub partner_node_id: Option<String>,
     #[doc = "State of provisioning of the AzureBareMetalInstance"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<azure_bare_metal_instance_properties::ProvisioningState>,
 }
 impl AzureBareMetalInstanceProperties {
@@ -177,7 +187,7 @@ pub struct AzureBareMetalInstancesListResult {
 impl azure_core::Continuable for AzureBareMetalInstancesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AzureBareMetalInstancesListResult {
@@ -271,10 +281,20 @@ impl ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HardwareProfile {
     #[doc = "Name of the hardware type (vendor and/or their product name)"]
-    #[serde(rename = "hardwareType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hardwareType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub hardware_type: Option<hardware_profile::HardwareType>,
     #[doc = "Specifies the AzureBareMetal instance SKU."]
-    #[serde(rename = "azureBareMetalInstanceSize", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "azureBareMetalInstanceSize",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub azure_bare_metal_instance_size: Option<hardware_profile::AzureBareMetalInstanceSize>,
 }
 impl HardwareProfile {

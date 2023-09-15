@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountSasParameters {
     #[doc = "The Map account key to use for signing. Picking `primaryKey` or `secondaryKey` will use the Map account Shared Keys, and using `managedIdentity` will use the auto-renewed private key to sign the SAS."]
-    #[serde(rename = "signingKey")]
+    #[serde(rename = "signingKey", with = "azure_core::xml::text_content")]
     pub signing_key: account_sas_parameters::SigningKey,
     #[doc = "The principal Id also known as the object Id of a User Assigned Managed Identity currently assigned to the Map Account. To assign a Managed Identity of the account, use operation Create or Update an assign a User Assigned Identity resource Id."]
     #[serde(rename = "principalId")]
@@ -156,7 +156,7 @@ pub struct CreatorList {
 impl azure_core::Continuable for CreatorList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CreatorList {
@@ -357,7 +357,7 @@ pub struct ManagedServiceIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Type of managed service identity (where both SystemAssigned and UserAssigned types are allowed)."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: ManagedServiceIdentityType,
     #[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -425,7 +425,7 @@ pub struct MapsAccount {
     #[doc = "The SKU of the Maps Account."]
     pub sku: Sku,
     #[doc = "The Kind of the Maps Account."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<Kind>,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
@@ -516,7 +516,7 @@ pub struct MapsAccountUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[doc = "The Kind of the Maps Account."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<Kind>,
     #[doc = "The SKU of the Maps Account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -550,7 +550,7 @@ pub struct MapsAccounts {
 impl azure_core::Continuable for MapsAccounts {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MapsAccounts {
@@ -562,7 +562,7 @@ impl MapsAccounts {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MapsKeySpecification {
     #[doc = "Whether the operation refers to the primary or secondary key."]
-    #[serde(rename = "keyType")]
+    #[serde(rename = "keyType", with = "azure_core::xml::text_content")]
     pub key_type: maps_key_specification::KeyType,
 }
 impl MapsKeySpecification {
@@ -629,7 +629,7 @@ pub struct MapsOperations {
 impl azure_core::Continuable for MapsOperations {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MapsOperations {
@@ -788,6 +788,7 @@ impl ServiceSpecification {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The name of the SKU, in standard format (such as S0)."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: sku::Name,
     #[doc = "Gets the sku tier. This is based on the SKU name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -904,7 +905,12 @@ pub mod customer_managed_key_encryption {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct KeyEncryptionKeyIdentity {
         #[doc = "Values can be systemAssignedIdentity or userAssignedIdentity"]
-        #[serde(rename = "identityType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "identityType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub identity_type: Option<key_encryption_key_identity::IdentityType>,
         #[doc = "user assigned identity to use for accessing key encryption key Url. Ex: /subscriptions/fa5fc227-a624-475e-b696-cdd604c735bc/resourceGroups/<resource group>/providers/Microsoft.ManagedIdentity/userAssignedIdentities/myId. Mutually exclusive with identityType systemAssignedIdentity and delegatedResourceIdentity."]
         #[serde(rename = "userAssignedIdentityResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -968,7 +974,12 @@ pub mod customer_managed_key_encryption {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Encryption {
     #[doc = "Values are enabled and disabled."]
-    #[serde(rename = "infrastructureEncryption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "infrastructureEncryption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub infrastructure_encryption: Option<encryption::InfrastructureEncryption>,
     #[doc = "All Customer-managed key encryption properties for the resource."]
     #[serde(rename = "customerManagedKeyEncryption", default, skip_serializing_if = "Option::is_none")]
@@ -1028,7 +1039,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1037,7 +1053,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

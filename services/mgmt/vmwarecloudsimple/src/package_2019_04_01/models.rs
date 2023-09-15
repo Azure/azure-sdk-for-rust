@@ -16,7 +16,7 @@ pub struct AvailableOperation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The origin of operation"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<available_operation::Origin>,
     #[doc = "Available operation display property service specification model"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -77,7 +77,7 @@ impl AvailableOperationDisplayPropertyServiceSpecification {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvailableOperationDisplayPropertyServiceSpecificationMetricsItem {
     #[doc = "Metric's aggregation type for e.g. (Average, Total)"]
-    #[serde(rename = "aggregationType")]
+    #[serde(rename = "aggregationType", with = "azure_core::xml::text_content")]
     pub aggregation_type: available_operation_display_property_service_specification_metrics_item::AggregationType,
     #[doc = "Metric's description"]
     #[serde(rename = "displayDescription")]
@@ -150,7 +150,7 @@ pub struct AvailableOperationsListResponse {
 impl azure_core::Continuable for AvailableOperationsListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AvailableOperationsListResponse {
@@ -208,7 +208,12 @@ pub struct CustomizationHostName {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Type of host name"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<customization_host_name::Type>,
 }
 impl CustomizationHostName {
@@ -242,7 +247,12 @@ pub struct CustomizationIpAddress {
     #[serde(rename = "ipAddress", default, skip_serializing_if = "Option::is_none")]
     pub ip_address: Option<String>,
     #[doc = "Customization Specification ip type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<customization_ip_address::Type>,
 }
 impl CustomizationIpAddress {
@@ -294,7 +304,12 @@ pub struct CustomizationIdentity {
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<CustomizationHostName>,
     #[doc = "Identity type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<customization_identity::Type>,
     #[doc = "Windows Identity. User data customization"]
     #[serde(rename = "userData", default, skip_serializing_if = "Option::is_none")]
@@ -360,7 +375,7 @@ pub struct CustomizationPoliciesListResponse {
 impl azure_core::Continuable for CustomizationPoliciesListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomizationPoliciesListResponse {
@@ -404,7 +419,12 @@ pub struct CustomizationPolicyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub specification: Option<CustomizationSpecification>,
     #[doc = "The type of customization (Linux or Windows)"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<customization_policy_properties::Type>,
     #[doc = "Policy version"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -499,7 +519,7 @@ pub struct DedicatedCloudNodeListResponse {
 impl azure_core::Continuable for DedicatedCloudNodeListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DedicatedCloudNodeListResponse {
@@ -547,7 +567,7 @@ pub struct DedicatedCloudNodeProperties {
     #[serde(rename = "skuDescription", default, skip_serializing_if = "Option::is_none")]
     pub sku_description: Option<SkuDescription>,
     #[doc = "Node status, indicates is private cloud set up on this node or not"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<dedicated_cloud_node_properties::Status>,
     #[doc = "VMWare Cluster Name"]
     #[serde(rename = "vmwareClusterName", default, skip_serializing_if = "Option::is_none")]
@@ -634,7 +654,7 @@ pub struct DedicatedCloudServiceListResponse {
 impl azure_core::Continuable for DedicatedCloudServiceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DedicatedCloudServiceListResponse {
@@ -649,7 +669,12 @@ pub struct DedicatedCloudServiceProperties {
     #[serde(rename = "gatewaySubnet")]
     pub gateway_subnet: String,
     #[doc = "indicates whether account onboarded or not in a given region"]
-    #[serde(rename = "isAccountOnboarded", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "isAccountOnboarded",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub is_account_onboarded: Option<dedicated_cloud_service_properties::IsAccountOnboarded>,
     #[doc = "total nodes purchased"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -716,7 +741,7 @@ impl GuestOsCustomization {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestOsnicCustomization {
     #[doc = "IP address allocation method"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub allocation: Option<guest_osnic_customization::Allocation>,
     #[doc = "List of dns servers to use"]
     #[serde(
@@ -829,7 +854,12 @@ pub struct PrivateCloud {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateCloudProperties>,
     #[doc = "Azure Resource type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<private_cloud::Type>,
 }
 impl PrivateCloud {
@@ -863,7 +893,7 @@ pub struct PrivateCloudList {
 impl azure_core::Continuable for PrivateCloudList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateCloudList {
@@ -1034,7 +1064,7 @@ pub struct ResourcePoolsListResponse {
 impl azure_core::Continuable for ResourcePoolsListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourcePoolsListResponse {
@@ -1129,7 +1159,7 @@ pub struct SkuAvailabilityListResponse {
 impl azure_core::Continuable for SkuAvailabilityListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SkuAvailabilityListResponse {
@@ -1170,7 +1200,7 @@ pub struct Usage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<UsageName>,
     #[doc = "The usages' unit"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub unit: Option<usage::Unit>,
 }
 impl Usage {
@@ -1213,7 +1243,7 @@ pub struct UsageListResponse {
 impl azure_core::Continuable for UsageListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UsageListResponse {
@@ -1243,7 +1273,7 @@ pub struct VirtualDisk {
     #[serde(rename = "controllerId")]
     pub controller_id: String,
     #[doc = "Disk's independence mode type"]
-    #[serde(rename = "independenceMode")]
+    #[serde(rename = "independenceMode", with = "azure_core::xml::text_content")]
     pub independence_mode: virtual_disk::IndependenceMode,
     #[doc = "Disk's total size"]
     #[serde(rename = "totalSize")]
@@ -1350,7 +1380,7 @@ pub struct VirtualMachineListResponse {
 impl azure_core::Continuable for VirtualMachineListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualMachineListResponse {
@@ -1394,7 +1424,12 @@ pub struct VirtualMachineProperties {
     #[serde(rename = "guestOS", default, skip_serializing_if = "Option::is_none")]
     pub guest_os: Option<String>,
     #[doc = "The Guest OS type"]
-    #[serde(rename = "guestOSType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "guestOSType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub guest_os_type: Option<virtual_machine_properties::GuestOsType>,
     #[doc = "The list of Virtual NICs"]
     #[serde(
@@ -1422,7 +1457,7 @@ pub struct VirtualMachineProperties {
     #[serde(rename = "resourcePool", default, skip_serializing_if = "Option::is_none")]
     pub resource_pool: Option<ResourcePool>,
     #[doc = "The status of Virtual machine"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<virtual_machine_properties::Status>,
     #[doc = "Virtual Machine Template Id"]
     #[serde(rename = "templateId", default, skip_serializing_if = "Option::is_none")]
@@ -1506,7 +1541,7 @@ pub mod virtual_machine_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineStopMode {
     #[doc = "mode indicates a type of stop operation - reboot, suspend, shutdown or power-off"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub mode: Option<virtual_machine_stop_mode::Mode>,
 }
 impl VirtualMachineStopMode {
@@ -1570,7 +1605,7 @@ pub struct VirtualMachineTemplateListResponse {
 impl azure_core::Continuable for VirtualMachineTemplateListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualMachineTemplateListResponse {
@@ -1716,7 +1751,7 @@ pub struct VirtualNetworkListResponse {
 impl azure_core::Continuable for VirtualNetworkListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualNetworkListResponse {
@@ -1756,7 +1791,7 @@ pub struct VirtualNic {
     #[doc = "Virtual network model"]
     pub network: VirtualNetwork,
     #[doc = "NIC type"]
-    #[serde(rename = "nicType")]
+    #[serde(rename = "nicType", with = "azure_core::xml::text_content")]
     pub nic_type: virtual_nic::NicType,
     #[doc = "Is NIC powered on/off on boot"]
     #[serde(rename = "powerOnBoot", default, skip_serializing_if = "Option::is_none")]

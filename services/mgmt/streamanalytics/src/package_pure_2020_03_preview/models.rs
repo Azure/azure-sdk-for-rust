@@ -33,7 +33,12 @@ pub struct ClusterJob {
     #[serde(rename = "streamingUnits", default, skip_serializing_if = "Option::is_none")]
     pub streaming_units: Option<i32>,
     #[doc = "The current execution state of the streaming job."]
-    #[serde(rename = "jobState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "jobState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub job_state: Option<JobState>,
 }
 impl ClusterJob {
@@ -58,7 +63,7 @@ pub struct ClusterJobListResult {
 impl azure_core::Continuable for ClusterJobListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClusterJobListResult {
@@ -83,7 +88,7 @@ pub struct ClusterListResult {
 impl azure_core::Continuable for ClusterListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClusterListResult {
@@ -101,7 +106,12 @@ pub struct ClusterProperties {
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<String>,
     #[doc = "The status of the cluster provisioning. The three terminal states are: Succeeded, Failed and Canceled"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ClusterProvisioningState>,
     #[doc = "Represents the number of streaming units currently being used on the cluster."]
     #[serde(rename = "capacityAllocated", default, skip_serializing_if = "Option::is_none")]
@@ -160,7 +170,7 @@ impl Serialize for ClusterProvisioningState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterSku {
     #[doc = "Specifies the SKU name of the cluster. Required on PUT (CreateOrUpdate) requests."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub name: Option<cluster_sku::Name>,
     #[doc = "Denotes the number of streaming units the cluster can support. Valid values for this property are multiples of 36 with a minimum value of 36 and maximum value of 216. Required on PUT (CreateOrUpdate) requests."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -360,7 +370,7 @@ pub struct PrivateEndpointListResult {
 impl azure_core::Continuable for PrivateEndpointListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointListResult {

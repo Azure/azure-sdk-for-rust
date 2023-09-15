@@ -17,7 +17,12 @@ pub struct Alias {
     )]
     pub paths: Vec<AliasPath>,
     #[doc = "The type of the alias."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<alias::Type>,
     #[doc = "The default path for an alias."]
     #[serde(rename = "defaultPath", default, skip_serializing_if = "Option::is_none")]
@@ -71,10 +76,15 @@ impl AliasPath {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AliasPathMetadata {
     #[doc = "The type of the token that the alias path is referring to."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<alias_path_metadata::Type>,
     #[doc = "The attributes of the token that the alias path is referring to."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub attributes: Option<alias_path_metadata::Attributes>,
 }
 impl AliasPathMetadata {
@@ -181,7 +191,12 @@ pub struct AliasPattern {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub variable: Option<String>,
     #[doc = "The type of alias pattern"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<alias_pattern::Type>,
 }
 impl AliasPattern {
@@ -318,7 +333,7 @@ pub struct DataPolicyManifestListResult {
 impl azure_core::Continuable for DataPolicyManifestListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataPolicyManifestListResult {
@@ -432,7 +447,12 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The identity type. This is the only required field when adding a system or user assigned identity to a resource."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<identity::Type>,
     #[doc = "The user identity associated with the policy. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -482,7 +502,12 @@ impl ParameterDefinitions {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParameterDefinitionsValue {
     #[doc = "The data type of the parameter."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<parameter_definitions_value::Type>,
     #[doc = "The allowed values for the parameter."]
     #[serde(
@@ -642,7 +667,7 @@ pub struct PolicyAssignmentListResult {
 impl azure_core::Continuable for PolicyAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PolicyAssignmentListResult {
@@ -680,7 +705,12 @@ pub struct PolicyAssignmentProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
     #[doc = "The policy assignment enforcement mode. Possible values are Default and DoNotEnforce."]
-    #[serde(rename = "enforcementMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enforcementMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enforcement_mode: Option<policy_assignment_properties::EnforcementMode>,
     #[doc = "The messages that describe why a resource is non-compliant with the policy."]
     #[serde(
@@ -825,7 +855,7 @@ pub struct PolicyDefinitionListResult {
 impl azure_core::Continuable for PolicyDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PolicyDefinitionListResult {
@@ -837,7 +867,12 @@ impl PolicyDefinitionListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyDefinitionProperties {
     #[doc = "The type of policy definition. Possible values are NotSpecified, BuiltIn, Custom, and Static."]
-    #[serde(rename = "policyType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "policyType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub policy_type: Option<policy_definition_properties::PolicyType>,
     #[doc = "The policy definition mode. Some examples are All, Indexed, Microsoft.KeyVault.Data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -984,7 +1019,7 @@ pub struct PolicyExemptionListResult {
 impl azure_core::Continuable for PolicyExemptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PolicyExemptionListResult {
@@ -1007,7 +1042,7 @@ pub struct PolicyExemptionProperties {
     )]
     pub policy_definition_reference_ids: Vec<String>,
     #[doc = "The policy exemption category. Possible values are Waiver and Mitigated."]
-    #[serde(rename = "exemptionCategory")]
+    #[serde(rename = "exemptionCategory", with = "azure_core::xml::text_content")]
     pub exemption_category: policy_exemption_properties::ExemptionCategory,
     #[doc = "The expiration date and time (in UTC ISO 8601 format yyyy-MM-ddTHH:mm:ssZ) of the policy exemption."]
     #[serde(rename = "expiresOn", default, with = "azure_core::date::rfc3339::option")]
@@ -1116,7 +1151,7 @@ pub struct PolicySetDefinitionListResult {
 impl azure_core::Continuable for PolicySetDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PolicySetDefinitionListResult {
@@ -1128,7 +1163,12 @@ impl PolicySetDefinitionListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicySetDefinitionProperties {
     #[doc = "The type of policy definition. Possible values are NotSpecified, BuiltIn, Custom, and Static."]
-    #[serde(rename = "policyType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "policyType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub policy_type: Option<policy_set_definition_properties::PolicyType>,
     #[doc = "The display name of the policy set definition."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -1325,7 +1365,7 @@ pub struct VariableListResult {
 impl azure_core::Continuable for VariableListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VariableListResult {
@@ -1379,7 +1419,7 @@ pub struct VariableValueListResult {
 impl azure_core::Continuable for VariableValueListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VariableValueListResult {
@@ -1394,7 +1434,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1403,7 +1448,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

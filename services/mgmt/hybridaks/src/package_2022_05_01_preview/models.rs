@@ -128,7 +128,7 @@ pub struct AgentPoolProfile {
     #[serde(rename = "minCount", default, skip_serializing_if = "Option::is_none")]
     pub min_count: Option<i32>,
     #[doc = "Mode - AgentPoolMode represents mode of an agent pool. Possible values include: 'System', 'LB', 'User'. Default is 'User'"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub mode: Option<agent_pool_profile::Mode>,
     #[doc = "NodeLabels - Agent pool node labels to be persisted across all nodes in agent pool."]
     #[serde(rename = "nodeLabels", default, skip_serializing_if = "Option::is_none")]
@@ -142,7 +142,12 @@ pub struct AgentPoolProfile {
     )]
     pub node_taints: Vec<String>,
     #[doc = "OsType - OsType to be used to specify os type. Choose from Linux and Windows. Default to Linux. Possible values include: 'Linux', 'Windows'"]
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "osType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub os_type: Option<agent_pool_profile::OsType>,
     #[doc = "The version of node image"]
     #[serde(rename = "nodeImageVersion", default, skip_serializing_if = "Option::is_none")]
@@ -256,7 +261,12 @@ pub struct ArcAgentProfile {
     #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
     pub agent_version: Option<String>,
     #[doc = "Indicates whether the Arc agents on the provisioned clusters be upgraded automatically to the latest version. Defaults to Enabled."]
-    #[serde(rename = "agentAutoUpgrade", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "agentAutoUpgrade",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub agent_auto_upgrade: Option<arc_agent_profile::AgentAutoUpgrade>,
 }
 impl ArcAgentProfile {
@@ -313,7 +323,12 @@ pub mod arc_agent_profile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ArcAgentStatus {
     #[doc = "Observed deployment state of the Arc Agents on the target cluster. Possible values include: 'pending', 'provisioning', 'provisioned', 'deleting', 'failed', 'upgrading'"]
-    #[serde(rename = "deploymentState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "deploymentState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub deployment_state: Option<arc_agent_status::DeploymentState>,
     #[doc = "Error messages while onboarding/upgrading/uninstalling the Arc agents"]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
@@ -640,13 +655,23 @@ pub struct NetworkProfile {
     #[serde(rename = "loadBalancerProfile", default, skip_serializing_if = "Option::is_none")]
     pub load_balancer_profile: Option<LoadBalancerProfile>,
     #[doc = "LoadBalancerSku - The load balancer sku for the provisioned cluster. Possible values: 'unstacked-haproxy', 'stacked-kube-vip', 'stacked-metallb', 'unmanaged'. The default is 'unmanaged'."]
-    #[serde(rename = "loadBalancerSku", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "loadBalancerSku",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub load_balancer_sku: Option<network_profile::LoadBalancerSku>,
     #[doc = "DNSServiceIP - An IP address assigned to the Kubernetes DNS service. It must be within the Kubernetes service address range specified in serviceCidr."]
     #[serde(rename = "dnsServiceIP", default, skip_serializing_if = "Option::is_none")]
     pub dns_service_ip: Option<String>,
     #[doc = "NetworkPolicy - Network policy used for building Kubernetes network. Possible values include: 'calico', 'flannel'. Default is 'calico'"]
-    #[serde(rename = "networkPolicy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "networkPolicy",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub network_policy: Option<network_profile::NetworkPolicy>,
     #[doc = "PodCidr - A CIDR notation IP range from which to assign pod IPs when kubenet is used."]
     #[serde(rename = "podCidr", default, skip_serializing_if = "Option::is_none")]
@@ -930,7 +955,7 @@ pub struct ResourceProviderOperationList {
 impl azure_core::Continuable for ResourceProviderOperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceProviderOperationList {
@@ -1019,7 +1044,12 @@ pub struct WindowsProfileResponse {
     #[serde(rename = "enableCsiProxy", default, skip_serializing_if = "Option::is_none")]
     pub enable_csi_proxy: Option<bool>,
     #[doc = "LicenseType - The licenseType to use for Windows VMs. Windows_Server is used to enable Azure Hybrid User Benefits for Windows VMs. Possible values include: 'None', 'Windows_Server'"]
-    #[serde(rename = "licenseType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "licenseType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub license_type: Option<windows_profile_response::LicenseType>,
 }
 impl WindowsProfileResponse {
@@ -1147,7 +1177,12 @@ impl AgentPoolProperties {
 #[doc = "The agentPool resource provisioning status definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentPoolProvisioningStatus {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<agent_pool_provisioning_status::ProvisioningState>,
     #[doc = "HybridAKSNodePoolStatus defines the observed state of HybridAKSNodePool"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1345,7 +1380,7 @@ pub struct HybridIdentityMetadataList {
 impl azure_core::Continuable for HybridIdentityMetadataList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HybridIdentityMetadataList {
@@ -1384,7 +1419,7 @@ pub struct ProvisionedClusterIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of identity used for the provisioned cluster. The type SystemAssigned, includes a system created identity. The type None means no identity is assigned to the provisioned cluster."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: provisioned_cluster_identity::Type,
 }
 impl ProvisionedClusterIdentity {
@@ -1501,7 +1536,12 @@ pub struct ProvisionedClustersCommonProperties {
     #[doc = "CloudProviderProfile - The underlying cloud infra provider properties."]
     #[serde(rename = "cloudProviderProfile", default, skip_serializing_if = "Option::is_none")]
     pub cloud_provider_profile: Option<CloudProviderProfile>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<provisioned_clusters_common_properties::ProvisioningState>,
     #[doc = "HybridAKSClusterStatus defines the observed state of HybridAKSCluster"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1750,7 +1790,7 @@ pub struct ProvisionedClustersResponseListResult {
 impl azure_core::Continuable for ProvisionedClustersResponseListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProvisionedClustersResponseListResult {
@@ -1825,7 +1865,7 @@ pub struct StorageSpacesListResult {
 impl azure_core::Continuable for StorageSpacesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageSpacesListResult {
@@ -1852,7 +1892,12 @@ pub struct StorageSpacesProperties {
     pub hci_storage_profile: Option<storage_spaces_properties::HciStorageProfile>,
     #[serde(rename = "vmwareStorageProfile", default, skip_serializing_if = "Option::is_none")]
     pub vmware_storage_profile: Option<storage_spaces_properties::VmwareStorageProfile>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<storage_spaces_properties::ProvisioningState>,
     #[doc = "HybridAKSStorageStatus defines the observed state of HybridAKSStorage"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2006,7 +2051,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2015,7 +2065,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2166,7 +2221,7 @@ pub struct VirtualNetworksListResult {
 impl azure_core::Continuable for VirtualNetworksListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualNetworksListResult {
@@ -2232,7 +2287,12 @@ pub struct VirtualNetworksProperties {
     #[doc = "VLAN Id used by the network"]
     #[serde(rename = "vlanID", default, skip_serializing_if = "Option::is_none")]
     pub vlan_id: Option<String>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<virtual_networks_properties::ProvisioningState>,
     #[doc = "HybridAKSNetworkStatus defines the observed state of HybridAKSNetwork"]
     #[serde(default, skip_serializing_if = "Option::is_none")]

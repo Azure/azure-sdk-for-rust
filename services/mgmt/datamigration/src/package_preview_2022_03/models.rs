@@ -135,7 +135,12 @@ pub mod available_service_sku {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub default: Option<i64>,
         #[doc = "The scalability approach"]
-        #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "scaleType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub scale_type: Option<capacity::ScaleType>,
     }
     impl Capacity {
@@ -253,7 +258,7 @@ pub struct BackupFileInfo {
     #[serde(rename = "familySequenceNumber", default, skip_serializing_if = "Option::is_none")]
     pub family_sequence_number: Option<i64>,
     #[doc = "An enumeration of Status of the log backup file."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<BackupFileStatus>,
 }
 impl BackupFileInfo {
@@ -361,7 +366,12 @@ pub struct BackupSetInfo {
     #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "Enum of the different backup types."]
-    #[serde(rename = "backupType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_type: Option<BackupType>,
     #[doc = "List of files in the backup set"]
     #[serde(
@@ -509,7 +519,7 @@ impl CheckOciDriverTaskProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommandProperties {
     #[doc = "Command type."]
-    #[serde(rename = "commandType")]
+    #[serde(rename = "commandType", with = "azure_core::xml::text_content")]
     pub command_type: command_properties::CommandType,
     #[doc = "Array of errors. This is ignored if submitted."]
     #[serde(
@@ -519,7 +529,7 @@ pub struct CommandProperties {
     )]
     pub errors: Vec<ODataError>,
     #[doc = "The state of the command. This is ignored if submitted."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<command_properties::State>,
 }
 impl CommandProperties {
@@ -661,10 +671,20 @@ pub struct ConnectToSourceMySqlTaskInput {
     #[serde(rename = "sourceConnectionInfo")]
     pub source_connection_info: MySqlConnectionInfo,
     #[doc = "An enumeration of possible target types when migrating from MySQL"]
-    #[serde(rename = "targetPlatform", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "targetPlatform",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub target_platform: Option<MySqlTargetPlatform>,
     #[doc = "Permission group for validations. These groups will run a set of permissions for validating user activity. Select the permission group for the activity that you are performing."]
-    #[serde(rename = "checkPermissionsGroup", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "checkPermissionsGroup",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub check_permissions_group: Option<ServerLevelPermissionsGroup>,
     #[doc = "Flag for whether or not the migration is offline"]
     #[serde(rename = "isOfflineMigration", default, skip_serializing_if = "Option::is_none")]
@@ -907,7 +927,12 @@ pub struct ConnectToSourceSqlServerTaskInput {
     #[serde(rename = "sourceConnectionInfo")]
     pub source_connection_info: SqlConnectionInfo,
     #[doc = "Permission group for validations. These groups will run a set of permissions for validating user activity. Select the permission group for the activity that you are performing."]
-    #[serde(rename = "checkPermissionsGroup", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "checkPermissionsGroup",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub check_permissions_group: Option<ServerLevelPermissionsGroup>,
     #[doc = "Flag for whether to collect databases from source server."]
     #[serde(rename = "collectDatabases", default, skip_serializing_if = "Option::is_none")]
@@ -1023,10 +1048,20 @@ pub struct ConnectToSourceSqlServerTaskOutputDatabaseLevel {
     )]
     pub database_files: Vec<DatabaseFileInfo>,
     #[doc = "An enumeration of SQL Server database compatibility levels"]
-    #[serde(rename = "compatibilityLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "compatibilityLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub compatibility_level: Option<DatabaseCompatLevel>,
     #[doc = "An enumeration of SQL Server Database states"]
-    #[serde(rename = "databaseState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "databaseState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub database_state: Option<DatabaseState>,
 }
 impl ConnectToSourceSqlServerTaskOutputDatabaseLevel {
@@ -1050,7 +1085,12 @@ pub struct ConnectToSourceSqlServerTaskOutputLoginLevel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Enum mapping of SMO LoginType."]
-    #[serde(rename = "loginType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "loginType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub login_type: Option<LoginType>,
     #[doc = "The default database for the login."]
     #[serde(rename = "defaultDatabase", default, skip_serializing_if = "Option::is_none")]
@@ -1741,7 +1781,7 @@ pub struct DataItemMigrationSummaryResult {
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
     pub ended_on: Option<time::OffsetDateTime>,
     #[doc = "Current state of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<MigrationState>,
     #[doc = "Status message"]
     #[serde(rename = "statusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -1771,7 +1811,12 @@ pub struct DataMigrationError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "Error type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<ErrorType>,
 }
 impl DataMigrationError {
@@ -1859,7 +1904,7 @@ pub struct DataMigrationServiceList {
 impl azure_core::Continuable for DataMigrationServiceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataMigrationServiceList {
@@ -1871,7 +1916,12 @@ impl DataMigrationServiceList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataMigrationServiceProperties {
     #[doc = "The resource's provisioning state"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<data_migration_service_properties::ProvisioningState>,
     #[doc = "The public key of the service, used to encrypt secrets sent to the service"]
     #[serde(rename = "publicKey", default, skip_serializing_if = "Option::is_none")]
@@ -1989,7 +2039,12 @@ pub struct Database {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "An enumeration of SQL Server database compatibility levels"]
-    #[serde(rename = "compatibilityLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "compatibilityLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub compatibility_level: Option<DatabaseCompatLevel>,
     #[doc = "Collation name of the database"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2028,7 +2083,12 @@ pub struct Database {
     #[serde(rename = "serverVisibleOnlineCoreCount", default, skip_serializing_if = "Option::is_none")]
     pub server_visible_online_core_count: Option<i64>,
     #[doc = "An enumeration of SQL Server Database states"]
-    #[serde(rename = "databaseState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "databaseState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub database_state: Option<DatabaseState>,
     #[doc = "The unique Server Id"]
     #[serde(rename = "serverId", default, skip_serializing_if = "Option::is_none")]
@@ -2046,7 +2106,12 @@ pub struct DatabaseBackupInfo {
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
     #[doc = "Enum of the different backup types."]
-    #[serde(rename = "backupType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_type: Option<BackupType>,
     #[doc = "The list of backup files for the current database."]
     #[serde(
@@ -2143,7 +2208,12 @@ pub struct DatabaseFileInfo {
     #[serde(rename = "restoreFullName", default, skip_serializing_if = "Option::is_none")]
     pub restore_full_name: Option<String>,
     #[doc = "An enumeration of SQL Server database file types"]
-    #[serde(rename = "fileType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "fileType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub file_type: Option<DatabaseFileType>,
     #[doc = "Size of the file in megabytes"]
     #[serde(rename = "sizeMB", default, skip_serializing_if = "Option::is_none")]
@@ -2170,7 +2240,12 @@ pub struct DatabaseFileInput {
     #[serde(rename = "restoreFullName", default, skip_serializing_if = "Option::is_none")]
     pub restore_full_name: Option<String>,
     #[doc = "An enumeration of SQL Server database file types"]
-    #[serde(rename = "fileType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "fileType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub file_type: Option<DatabaseFileType>,
 }
 impl DatabaseFileInput {
@@ -2264,7 +2339,7 @@ pub struct DatabaseMigrationListResult {
 impl azure_core::Continuable for DatabaseMigrationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DatabaseMigrationListResult {
@@ -2275,6 +2350,7 @@ impl DatabaseMigrationListResult {
 #[doc = "Database Migration Resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseMigrationProperties {
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: database_migration_properties::Kind,
     #[doc = "Resource Id of the target resource (SQL VM or SQL Managed Instance)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2630,7 +2706,12 @@ pub struct DatabaseObjectName {
     #[serde(rename = "schemaName", default, skip_serializing_if = "Option::is_none")]
     pub schema_name: Option<String>,
     #[doc = "An enumeration of type of objects"]
-    #[serde(rename = "objectType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "objectType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub object_type: Option<DatabaseObjectType>,
 }
 impl DatabaseObjectName {
@@ -2864,7 +2945,7 @@ pub struct FileList {
 impl azure_core::Continuable for FileList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FileList {
@@ -3837,7 +3918,12 @@ pub struct MigrateMySqlAzureDbForMySqlSyncTaskOutputDatabaseLevel {
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
     pub ended_on: Option<time::OffsetDateTime>,
     #[doc = "Enum of the different state of database level online migration."]
-    #[serde(rename = "migrationState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "migrationState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub migration_state: Option<SyncDatabaseMigrationReportingState>,
     #[doc = "Number of incoming changes"]
     #[serde(rename = "incomingChanges", default, skip_serializing_if = "Option::is_none")]
@@ -3979,7 +4065,7 @@ pub struct MigrateMySqlAzureDbForMySqlSyncTaskOutputTableLevel {
     #[serde(rename = "fullLoadTotalRows", default, skip_serializing_if = "Option::is_none")]
     pub full_load_total_rows: Option<i64>,
     #[doc = "Enum of the different state of table level online migration."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<SyncTableMigrationState>,
     #[doc = "Total number of applied changes"]
     #[serde(rename = "totalChangesApplied", default, skip_serializing_if = "Option::is_none")]
@@ -4173,7 +4259,12 @@ pub struct MigrateOracleAzureDbPostgreSqlSyncTaskOutputDatabaseLevel {
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
     pub ended_on: Option<time::OffsetDateTime>,
     #[doc = "Enum of the different state of database level online migration."]
-    #[serde(rename = "migrationState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "migrationState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub migration_state: Option<SyncDatabaseMigrationReportingState>,
     #[doc = "Number of incoming changes"]
     #[serde(rename = "incomingChanges", default, skip_serializing_if = "Option::is_none")]
@@ -4315,7 +4406,7 @@ pub struct MigrateOracleAzureDbPostgreSqlSyncTaskOutputTableLevel {
     #[serde(rename = "fullLoadTotalRows", default, skip_serializing_if = "Option::is_none")]
     pub full_load_total_rows: Option<i64>,
     #[doc = "Enum of the different state of table level online migration."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<SyncTableMigrationState>,
     #[doc = "Total number of applied changes"]
     #[serde(rename = "totalChangesApplied", default, skip_serializing_if = "Option::is_none")]
@@ -4481,7 +4572,12 @@ pub struct MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputDatabaseLevel {
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
     pub ended_on: Option<time::OffsetDateTime>,
     #[doc = "Enum of the different state of database level online migration."]
-    #[serde(rename = "migrationState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "migrationState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub migration_state: Option<SyncDatabaseMigrationReportingState>,
     #[doc = "Number of incoming changes"]
     #[serde(rename = "incomingChanges", default, skip_serializing_if = "Option::is_none")]
@@ -4586,13 +4682,23 @@ pub struct MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputMigrationLevel {
     #[serde(rename = "targetServer", default, skip_serializing_if = "Option::is_none")]
     pub target_server: Option<String>,
     #[doc = "An enumeration of source type"]
-    #[serde(rename = "sourceServerType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sourceServerType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub source_server_type: Option<ScenarioSource>,
     #[doc = "An enumeration of target type"]
-    #[serde(rename = "targetServerType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "targetServerType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub target_server_type: Option<ScenarioTarget>,
     #[doc = "Wrapper for replicate reported migration states."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<ReplicateMigrationState>,
     #[doc = "Number of databases to include"]
     #[serde(rename = "databaseCount", default, skip_serializing_if = "Option::is_none")]
@@ -4647,7 +4753,7 @@ pub struct MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputTableLevel {
     #[serde(rename = "fullLoadTotalRows", default, skip_serializing_if = "Option::is_none")]
     pub full_load_total_rows: Option<i64>,
     #[doc = "Enum of the different state of table level online migration."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<SyncTableMigrationState>,
     #[doc = "Total number of applied changes"]
     #[serde(rename = "totalChangesApplied", default, skip_serializing_if = "Option::is_none")]
@@ -4785,10 +4891,10 @@ pub struct MigrateSchemaSqlServerSqlDbTaskOutputDatabaseLevel {
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
     pub database_name: Option<String>,
     #[doc = "Current state of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<MigrationState>,
     #[doc = "Current stage of schema migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub stage: Option<SchemaMigrationStage>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
@@ -4854,7 +4960,7 @@ pub struct MigrateSchemaSqlServerSqlDbTaskOutputMigrationLevel {
     #[serde(flatten)]
     pub migrate_schema_sql_server_sql_db_task_output: MigrateSchemaSqlServerSqlDbTaskOutput,
     #[doc = "Current state of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<MigrationState>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
@@ -5076,7 +5182,12 @@ pub struct MigrateSqlServerSqlDbSyncTaskOutputDatabaseLevel {
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
     pub ended_on: Option<time::OffsetDateTime>,
     #[doc = "Enum of the different state of database level online migration."]
-    #[serde(rename = "migrationState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "migrationState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub migration_state: Option<SyncDatabaseMigrationReportingState>,
     #[doc = "Number of incoming changes"]
     #[serde(rename = "incomingChanges", default, skip_serializing_if = "Option::is_none")]
@@ -5222,7 +5333,7 @@ pub struct MigrateSqlServerSqlDbSyncTaskOutputTableLevel {
     #[serde(rename = "fullLoadTotalRows", default, skip_serializing_if = "Option::is_none")]
     pub full_load_total_rows: Option<i64>,
     #[doc = "Enum of the different state of table level online migration."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<SyncTableMigrationState>,
     #[doc = "Total number of applied changes"]
     #[serde(rename = "totalChangesApplied", default, skip_serializing_if = "Option::is_none")]
@@ -5337,10 +5448,10 @@ pub struct MigrateSqlServerSqlDbTaskOutputDatabaseLevel {
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
     pub ended_on: Option<time::OffsetDateTime>,
     #[doc = "Current state of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<MigrationState>,
     #[doc = "Current stage of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub stage: Option<DatabaseMigrationStage>,
     #[doc = "Status message"]
     #[serde(rename = "statusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -5445,7 +5556,7 @@ pub struct MigrateSqlServerSqlDbTaskOutputMigrationLevel {
     #[serde(rename = "durationInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub duration_in_seconds: Option<i64>,
     #[doc = "Current status of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<MigrationStatus>,
     #[doc = "Migration status message"]
     #[serde(rename = "statusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -5522,7 +5633,7 @@ pub struct MigrateSqlServerSqlDbTaskOutputTableLevel {
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
     pub ended_on: Option<time::OffsetDateTime>,
     #[doc = "Current state of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<MigrationState>,
     #[doc = "Status message"]
     #[serde(rename = "statusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -5682,7 +5793,12 @@ pub struct MigrateSqlServerSqlMiSyncTaskOutputDatabaseLevel {
     #[serde(rename = "sourceDatabaseName", default, skip_serializing_if = "Option::is_none")]
     pub source_database_name: Option<String>,
     #[doc = "Database level migration state."]
-    #[serde(rename = "migrationState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "migrationState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub migration_state: Option<DatabaseMigrationState>,
     #[doc = "Database migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
@@ -5768,7 +5884,7 @@ pub struct MigrateSqlServerSqlMiSyncTaskOutputMigrationLevel {
     #[serde(rename = "databaseCount", default, skip_serializing_if = "Option::is_none")]
     pub database_count: Option<i64>,
     #[doc = "Current state of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<MigrationState>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
@@ -5879,7 +5995,12 @@ pub struct MigrateSqlServerSqlMiTaskInput {
     #[serde(rename = "backupBlobShare")]
     pub backup_blob_share: BlobShare,
     #[doc = "An enumeration of backup modes"]
-    #[serde(rename = "backupMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_mode: Option<BackupMode>,
     #[doc = "Azure Active Directory domain name in the format of 'contoso.com' for federated Azure AD or 'contoso.onmicrosoft.com' for managed domain, required if and only if Windows logins are selected"]
     #[serde(rename = "aadDomainName", default, skip_serializing_if = "Option::is_none")]
@@ -5934,7 +6055,7 @@ pub struct MigrateSqlServerSqlMiTaskOutputAgentJobLevel {
     #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_enabled: Option<bool>,
     #[doc = "Current state of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<MigrationState>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
@@ -5979,10 +6100,10 @@ pub struct MigrateSqlServerSqlMiTaskOutputDatabaseLevel {
     #[serde(rename = "sizeMB", default, skip_serializing_if = "Option::is_none")]
     pub size_mb: Option<f64>,
     #[doc = "Current state of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<MigrationState>,
     #[doc = "Current stage of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub stage: Option<DatabaseMigrationStage>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
@@ -6045,10 +6166,10 @@ pub struct MigrateSqlServerSqlMiTaskOutputLoginLevel {
     #[serde(rename = "loginName", default, skip_serializing_if = "Option::is_none")]
     pub login_name: Option<String>,
     #[doc = "Current state of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<MigrationState>,
     #[doc = "Enum of the different stage of login migration."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub stage: Option<LoginMigrationStage>,
     #[doc = "Login migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
@@ -6093,10 +6214,10 @@ pub struct MigrateSqlServerSqlMiTaskOutputMigrationLevel {
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
     pub ended_on: Option<time::OffsetDateTime>,
     #[doc = "Current status of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<MigrationStatus>,
     #[doc = "Current state of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<MigrationState>,
     #[doc = "Selected agent jobs as a map from name to id"]
     #[serde(rename = "agentJobs", default, skip_serializing_if = "Option::is_none")]
@@ -6274,7 +6395,7 @@ pub struct MigrateSsisTaskOutputMigrationLevel {
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
     pub ended_on: Option<time::OffsetDateTime>,
     #[doc = "Current status of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<MigrationStatus>,
     #[doc = "Migration progress message"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6300,7 +6421,7 @@ pub struct MigrateSsisTaskOutputMigrationLevel {
     )]
     pub exceptions_and_warnings: Vec<ReportableException>,
     #[doc = "Current stage of SSIS migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub stage: Option<SsisMigrationStage>,
 }
 impl MigrateSsisTaskOutputMigrationLevel {
@@ -6331,10 +6452,10 @@ pub struct MigrateSsisTaskOutputProjectLevel {
     #[serde(rename = "projectName", default, skip_serializing_if = "Option::is_none")]
     pub project_name: Option<String>,
     #[doc = "Current state of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<MigrationState>,
     #[doc = "Current stage of SSIS migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub stage: Option<SsisMigrationStage>,
     #[doc = "Migration start time"]
     #[serde(rename = "startedOn", default, with = "azure_core::date::rfc3339::option")]
@@ -6712,7 +6833,7 @@ pub struct MigrationValidationDatabaseLevelResult {
     #[serde(rename = "queryAnalysisValidationResult", default, skip_serializing_if = "Option::is_none")]
     pub query_analysis_validation_result: Option<QueryAnalysisValidationResult>,
     #[doc = "Current status of the validation"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<ValidationStatus>,
 }
 impl MigrationValidationDatabaseLevelResult {
@@ -6742,7 +6863,7 @@ pub struct MigrationValidationDatabaseSummaryResult {
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
     pub ended_on: Option<time::OffsetDateTime>,
     #[doc = "Current status of the validation"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<ValidationStatus>,
 }
 impl MigrationValidationDatabaseSummaryResult {
@@ -6781,7 +6902,7 @@ pub struct MigrationValidationResult {
     #[serde(rename = "summaryResults", default, skip_serializing_if = "Option::is_none")]
     pub summary_results: Option<serde_json::Value>,
     #[doc = "Current status of the validation"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<ValidationStatus>,
 }
 impl MigrationValidationResult {
@@ -6815,7 +6936,7 @@ pub struct MongoDbClusterInfo {
     #[serde(rename = "supportsSharding")]
     pub supports_sharding: bool,
     #[doc = "The type of data source"]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: mongo_db_cluster_info::Type,
     #[doc = "The version of the data source in the form x.y.z (e.g. 3.6.7). Not used if Type is BlobContainer."]
     pub version: String,
@@ -6996,7 +7117,7 @@ pub struct MongoDbConnectionInfo {
     #[serde(rename = "additionalSettings", default, skip_serializing_if = "Option::is_none")]
     pub additional_settings: Option<String>,
     #[doc = "An enumeration of possible authentication types when connecting"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub authentication: Option<AuthenticationType>,
 }
 impl MongoDbConnectionInfo {
@@ -7084,7 +7205,12 @@ pub struct MongoDbError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "The type of error or warning"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<mongo_db_error::Type>,
 }
 impl MongoDbError {
@@ -7193,7 +7319,7 @@ pub struct MongoDbMigrationSettings {
     #[doc = "The databases on the source cluster to migrate to the target. The keys are the names of the databases."]
     pub databases: serde_json::Value,
     #[doc = "Describes how changes will be replicated from the source to the target. The default is OneTime."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub replication: Option<mongo_db_migration_settings::Replication>,
     #[doc = "Describes a connection to a MongoDB data source"]
     pub source: MongoDbConnectionInfo,
@@ -7319,8 +7445,9 @@ pub struct MongoDbProgress {
     #[serde(rename = "qualifiedName", default, skip_serializing_if = "Option::is_none")]
     pub qualified_name: Option<String>,
     #[doc = "The type of progress object"]
-    #[serde(rename = "resultType")]
+    #[serde(rename = "resultType", with = "azure_core::xml::text_content")]
     pub result_type: mongo_db_progress::ResultType,
+    #[serde(with = "azure_core::xml::text_content")]
     pub state: mongo_db_progress::State,
     #[doc = "The total number of document bytes on the source at the beginning of the Copying stage, or -1 if the total size was unknown"]
     #[serde(rename = "totalBytes")]
@@ -7447,6 +7574,7 @@ pub struct MongoDbShardKeyField {
     #[doc = "The name of the field"]
     pub name: String,
     #[doc = "The field ordering"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub order: mongo_db_shard_key_field::Order,
 }
 impl MongoDbShardKeyField {
@@ -7559,7 +7687,7 @@ pub struct MySqlConnectionInfo {
     #[serde(rename = "encryptConnection", default, skip_serializing_if = "Option::is_none")]
     pub encrypt_connection: Option<bool>,
     #[doc = "An enumeration of possible authentication types when connecting"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub authentication: Option<AuthenticationType>,
     #[doc = "Additional connection settings"]
     #[serde(rename = "additionalSettings", default, skip_serializing_if = "Option::is_none")]
@@ -7638,7 +7766,7 @@ pub struct NameAvailabilityResponse {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "The reason why the name is not available, if nameAvailable is false"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<name_availability_response::Reason>,
     #[doc = "The localized reason why the name is not available, if nameAvailable is false"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7740,7 +7868,12 @@ impl NonSqlDataMigrationTable {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NonSqlDataMigrationTableResult {
     #[doc = "Result code of the data migration"]
-    #[serde(rename = "resultCode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resultCode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub result_code: Option<non_sql_data_migration_table_result::ResultCode>,
     #[doc = "Name of the source table"]
     #[serde(rename = "sourceName", default, skip_serializing_if = "Option::is_none")]
@@ -7867,7 +8000,7 @@ pub struct NonSqlMigrationTaskOutput {
     #[serde(rename = "endedOn", default, with = "azure_core::date::rfc3339::option")]
     pub ended_on: Option<time::OffsetDateTime>,
     #[doc = "Current status of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<MigrationStatus>,
     #[doc = "Results of the migration. The key contains the table name and the value the table result object"]
     #[serde(rename = "dataMigrationTableResults", default, skip_serializing_if = "Option::is_none")]
@@ -7939,7 +8072,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -7956,7 +8089,7 @@ pub struct OperationsDefinition {
     pub is_data_action: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationsDisplayDefinition>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<operations_definition::Origin>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
@@ -8041,7 +8174,7 @@ pub struct OracleConnectionInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i64>,
     #[doc = "An enumeration of possible authentication types when connecting"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub authentication: Option<AuthenticationType>,
 }
 impl OracleConnectionInfo {
@@ -8135,7 +8268,7 @@ pub struct PostgreSqlConnectionInfo {
     #[serde(rename = "serverBrandVersion", default, skip_serializing_if = "Option::is_none")]
     pub server_brand_version: Option<String>,
     #[doc = "An enumeration of possible authentication types when connecting"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub authentication: Option<AuthenticationType>,
 }
 impl PostgreSqlConnectionInfo {
@@ -8234,7 +8367,7 @@ pub struct ProjectList {
 impl azure_core::Continuable for ProjectList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProjectList {
@@ -8246,13 +8379,13 @@ impl ProjectList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProjectProperties {
     #[doc = "Source platform of the project"]
-    #[serde(rename = "sourcePlatform")]
+    #[serde(rename = "sourcePlatform", with = "azure_core::xml::text_content")]
     pub source_platform: ProjectSourcePlatform,
     #[doc = "Azure Active Directory Application"]
     #[serde(rename = "azureAuthenticationInfo", default, skip_serializing_if = "Option::is_none")]
     pub azure_authentication_info: Option<AzureActiveDirectoryApp>,
     #[doc = "Target platform of the project"]
-    #[serde(rename = "targetPlatform")]
+    #[serde(rename = "targetPlatform", with = "azure_core::xml::text_content")]
     pub target_platform: ProjectTargetPlatform,
     #[doc = "UTC Date and time when project was created"]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
@@ -8272,7 +8405,12 @@ pub struct ProjectProperties {
     )]
     pub databases_info: Vec<DatabaseInfo>,
     #[doc = "The project's provisioning state"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<project_properties::ProvisioningState>,
 }
 impl ProjectProperties {
@@ -8444,7 +8582,7 @@ impl ProjectTask {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProjectTaskProperties {
     #[doc = "Task type."]
-    #[serde(rename = "taskType")]
+    #[serde(rename = "taskType", with = "azure_core::xml::text_content")]
     pub task_type: project_task_properties::TaskType,
     #[doc = "Array of errors. This is ignored if submitted."]
     #[serde(
@@ -8454,7 +8592,7 @@ pub struct ProjectTaskProperties {
     )]
     pub errors: Vec<ODataError>,
     #[doc = "The state of the task. This is ignored if submitted."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<project_task_properties::State>,
     #[doc = "Array of command properties."]
     #[serde(
@@ -8812,7 +8950,7 @@ pub struct QuotaList {
 impl azure_core::Continuable for QuotaList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl QuotaList {
@@ -9028,7 +9166,12 @@ pub struct ResourceSkuCapacity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<i64>,
     #[doc = "The scale type applicable to the SKU."]
-    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "scaleType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub scale_type: Option<resource_sku_capacity::ScaleType>,
 }
 impl ResourceSkuCapacity {
@@ -9100,7 +9243,12 @@ impl ResourceSkuCosts {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceSkuRestrictions {
     #[doc = "The type of restrictions."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<resource_sku_restrictions::Type>,
     #[doc = "The value of restrictions. If the restriction type is set to location. This would be different locations where the SKU is restricted."]
     #[serde(
@@ -9110,7 +9258,12 @@ pub struct ResourceSkuRestrictions {
     )]
     pub values: Vec<String>,
     #[doc = "The reason code for restriction."]
-    #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "reasonCode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub reason_code: Option<resource_sku_restrictions::ReasonCode>,
 }
 impl ResourceSkuRestrictions {
@@ -9206,7 +9359,7 @@ pub struct ResourceSkusResult {
 impl azure_core::Continuable for ResourceSkusResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceSkusResult {
@@ -9359,10 +9512,20 @@ pub struct SchemaComparisonValidationResultType {
     #[serde(rename = "objectName", default, skip_serializing_if = "Option::is_none")]
     pub object_name: Option<String>,
     #[doc = "An enumeration of type of objects"]
-    #[serde(rename = "objectType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "objectType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub object_type: Option<DatabaseObjectType>,
     #[doc = "Type of the actual difference for the compared object, while performing schema comparison"]
-    #[serde(rename = "updateAction", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "updateAction",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub update_action: Option<UpdateActionType>,
 }
 impl SchemaComparisonValidationResultType {
@@ -9413,7 +9576,12 @@ impl Serialize for SchemaMigrationOption {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SchemaMigrationSetting {
     #[doc = "Option for how schema is extracted and applied to target"]
-    #[serde(rename = "schemaOption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "schemaOption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub schema_option: Option<SchemaMigrationOption>,
     #[doc = "Resource Identifier of a file resource containing the uploaded schema file"]
     #[serde(rename = "fileId", default, skip_serializing_if = "Option::is_none")]
@@ -9636,7 +9804,7 @@ pub struct ServiceSkuList {
 impl azure_core::Continuable for ServiceSkuList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceSkuList {
@@ -9810,7 +9978,7 @@ pub struct SqlConnectionInfo {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[doc = "An enumeration of possible authentication types when connecting"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub authentication: Option<AuthenticationType>,
     #[doc = "Whether to encrypt the connection"]
     #[serde(rename = "encryptConnection", default, skip_serializing_if = "Option::is_none")]
@@ -9822,7 +9990,7 @@ pub struct SqlConnectionInfo {
     #[serde(rename = "trustServerCertificate", default, skip_serializing_if = "Option::is_none")]
     pub trust_server_certificate: Option<bool>,
     #[doc = "An enumeration of source platform types"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub platform: Option<SqlServerSourcePlatform>,
 }
 impl SqlConnectionInfo {
@@ -9943,7 +10111,7 @@ pub struct SqlMigrationListResult {
 impl azure_core::Continuable for SqlMigrationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlMigrationListResult {
@@ -10090,13 +10258,28 @@ impl SqlServerSqlMiSyncTaskInput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SsisMigrationInfo {
     #[doc = "An enumeration of supported source SSIS store type in DMS (classic)"]
-    #[serde(rename = "ssisStoreType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ssisStoreType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ssis_store_type: Option<SsisStoreType>,
     #[doc = "The overwrite option for SSIS object migration, only ignore and overwrite are supported in DMS (classic) now and future may add Reuse option for container object"]
-    #[serde(rename = "projectOverwriteOption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "projectOverwriteOption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub project_overwrite_option: Option<SsisMigrationOverwriteOption>,
     #[doc = "The overwrite option for SSIS object migration, only ignore and overwrite are supported in DMS (classic) now and future may add Reuse option for container object"]
-    #[serde(rename = "environmentOverwriteOption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "environmentOverwriteOption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub environment_overwrite_option: Option<SsisMigrationOverwriteOption>,
 }
 impl SsisMigrationInfo {
@@ -10224,7 +10407,7 @@ pub struct StartMigrationScenarioServerRoleResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Current state of migration"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<MigrationState>,
     #[doc = "Migration exceptions and warnings."]
     #[serde(
@@ -10404,13 +10587,23 @@ impl Serialize for SyncTableMigrationState {
 pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_at: Option<time::OffsetDateTime>,
@@ -10535,7 +10728,7 @@ pub struct TaskList {
 impl azure_core::Continuable for TaskList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TaskList {
@@ -10772,7 +10965,12 @@ pub struct ValidateMigrationInputSqlServerSqlMiTaskInput {
     #[serde(rename = "backupBlobShare")]
     pub backup_blob_share: BlobShare,
     #[doc = "An enumeration of backup modes"]
-    #[serde(rename = "backupMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_mode: Option<BackupMode>,
 }
 impl ValidateMigrationInputSqlServerSqlMiTaskInput {
@@ -10999,7 +11197,7 @@ pub struct ValidationError {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
     #[doc = "Severity of the validation error"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<Severity>,
 }
 impl ValidationError {

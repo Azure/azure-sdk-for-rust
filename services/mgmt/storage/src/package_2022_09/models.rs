@@ -27,7 +27,7 @@ pub struct AccountImmutabilityPolicyProperties {
     #[serde(rename = "immutabilityPeriodSinceCreationInDays", default, skip_serializing_if = "Option::is_none")]
     pub immutability_period_since_creation_in_days: Option<i32>,
     #[doc = "The ImmutabilityPolicy state defines the mode of the policy. Disabled state disables the policy, Unlocked state allows increase and decrease of immutability retention time and also allows toggling allowProtectedAppendWrites property, Locked state only allows the increase of the immutability retention time. A policy can only be created in a Disabled or Unlocked state and can be toggled between the two states. Only a policy in an Unlocked state can transition to a Locked state which cannot be reverted."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<account_immutability_policy_properties::State>,
     #[doc = "This property can only be changed for disabled and unlocked time-based retention policies. When enabled, new blocks can be written to an append blob while maintaining immutability protection and compliance. Only new blocks can be added and any existing blocks cannot be modified or deleted."]
     #[serde(rename = "allowProtectedAppendWrites", default, skip_serializing_if = "Option::is_none")]
@@ -84,19 +84,24 @@ pub mod account_immutability_policy_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountSasParameters {
     #[doc = "The signed services accessible with the account SAS. Possible values include: Blob (b), Queue (q), Table (t), File (f)."]
-    #[serde(rename = "signedServices")]
+    #[serde(rename = "signedServices", with = "azure_core::xml::text_content")]
     pub signed_services: account_sas_parameters::SignedServices,
     #[doc = "The signed resource types that are accessible with the account SAS. Service (s): Access to service-level APIs; Container (c): Access to container-level APIs; Object (o): Access to object-level APIs for blobs, queue messages, table entities, and files."]
-    #[serde(rename = "signedResourceTypes")]
+    #[serde(rename = "signedResourceTypes", with = "azure_core::xml::text_content")]
     pub signed_resource_types: account_sas_parameters::SignedResourceTypes,
     #[doc = "The signed permissions for the account SAS. Possible values include: Read (r), Write (w), Delete (d), List (l), Add (a), Create (c), Update (u) and Process (p)."]
-    #[serde(rename = "signedPermission")]
+    #[serde(rename = "signedPermission", with = "azure_core::xml::text_content")]
     pub signed_permission: account_sas_parameters::SignedPermission,
     #[doc = "An IP address or a range of IP addresses from which to accept requests."]
     #[serde(rename = "signedIp", default, skip_serializing_if = "Option::is_none")]
     pub signed_ip: Option<String>,
     #[doc = "The protocol permitted for a request made with the account SAS."]
-    #[serde(rename = "signedProtocol", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "signedProtocol",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub signed_protocol: Option<account_sas_parameters::SignedProtocol>,
     #[doc = "The time at which the SAS becomes valid."]
     #[serde(rename = "signedStart", default, with = "azure_core::date::rfc3339::option")]
@@ -307,7 +312,12 @@ pub struct ActiveDirectoryProperties {
     #[serde(rename = "samAccountName", default, skip_serializing_if = "Option::is_none")]
     pub sam_account_name: Option<String>,
     #[doc = "Specifies the Active Directory account type for Azure Storage."]
-    #[serde(rename = "accountType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "accountType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub account_type: Option<active_directory_properties::AccountType>,
 }
 impl ActiveDirectoryProperties {
@@ -382,13 +392,18 @@ impl AzureEntityResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFilesIdentityBasedAuthentication {
     #[doc = "Indicates the directory service used. Note that this enum may be extended in the future."]
-    #[serde(rename = "directoryServiceOptions")]
+    #[serde(rename = "directoryServiceOptions", with = "azure_core::xml::text_content")]
     pub directory_service_options: azure_files_identity_based_authentication::DirectoryServiceOptions,
     #[doc = "Settings properties for Active Directory (AD)."]
     #[serde(rename = "activeDirectoryProperties", default, skip_serializing_if = "Option::is_none")]
     pub active_directory_properties: Option<ActiveDirectoryProperties>,
     #[doc = "Default share permission for users using Kerberos authentication if RBAC role is not assigned."]
-    #[serde(rename = "defaultSharePermission", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "defaultSharePermission",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub default_share_permission: Option<azure_files_identity_based_authentication::DefaultSharePermission>,
 }
 impl AzureFilesIdentityBasedAuthentication {
@@ -532,11 +547,13 @@ pub struct BlobInventoryPolicyDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filters: Option<BlobInventoryPolicyFilter>,
     #[doc = "This is a required field, it specifies the format for the inventory files."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub format: blob_inventory_policy_definition::Format,
     #[doc = "This is a required field. This field is used to schedule an inventory formation."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub schedule: blob_inventory_policy_definition::Schedule,
     #[doc = "This is a required field. This field specifies the scope of the inventory created either at the blob or container level."]
-    #[serde(rename = "objectType")]
+    #[serde(rename = "objectType", with = "azure_core::xml::text_content")]
     pub object_type: blob_inventory_policy_definition::ObjectType,
     #[doc = "This is a required field. This field specifies the fields and properties of the object to be included in the inventory. The Schema field value 'Name' is always required. The valid values for this field for the 'Blob' definition.objectType include 'Name, Creation-Time, Last-Modified, Content-Length, Content-MD5, BlobType, AccessTier, AccessTierChangeTime, AccessTierInferred, Tags, Expiry-Time, hdi_isfolder, Owner, Group, Permissions, Acl, Snapshot, VersionId, IsCurrentVersion, Metadata, LastAccessTime, Tags, Etag, ContentType, ContentEncoding, ContentLanguage, ContentCRC64, CacheControl, ContentDisposition, LeaseStatus, LeaseState, LeaseDuration, ServerEncrypted, Deleted, DeletionId, DeletedTime, RemainingRetentionDays, ImmutabilityPolicyUntilDate, ImmutabilityPolicyMode, LegalHold, CopyId, CopyStatus, CopySource, CopyProgress, CopyCompletionTime, CopyStatusDescription, CustomerProvidedKeySha256, RehydratePriority, ArchiveStatus, XmsBlobSequenceNumber, EncryptionScope, IncrementalCopy, TagCount'. For Blob object type schema field value 'DeletedTime' is applicable only for Hns enabled accounts. The valid values for 'Container' definition.objectType include 'Name, Last-Modified, Metadata, LeaseStatus, LeaseState, LeaseDuration, PublicAccess, HasImmutabilityPolicy, HasLegalHold, Etag, DefaultEncryptionScope, DenyEncryptionScopeOverride, ImmutableStorageWithVersioningEnabled, Deleted, Version, DeletedTime, RemainingRetentionDays'. Schema field values 'Expiry-Time, hdi_isfolder, Owner, Group, Permissions, Acl, DeletionId' are valid only for Hns enabled accounts.Schema field values 'Tags, TagCount' are only valid for Non-Hns accounts."]
     #[serde(rename = "schemaFields")]
@@ -762,7 +779,7 @@ pub struct BlobInventoryPolicySchema {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub destination: Option<String>,
     #[doc = "The valid value is Inventory"]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: blob_inventory_policy_schema::Type,
     #[doc = "The storage account blob inventory policy rules. The rule is applied when it is enabled."]
     pub rules: Vec<BlobInventoryPolicyRule>,
@@ -852,7 +869,7 @@ impl BlobRestoreRange {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlobRestoreStatus {
     #[doc = "The status of blob restore progress. Possible values are: - InProgress: Indicates that blob restore is ongoing. - Complete: Indicates that blob restore has been completed successfully. - Failed: Indicates that blob restore is failed."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<blob_restore_status::Status>,
     #[doc = "Failure reason when blob restore is failed."]
     #[serde(rename = "failureReason", default, skip_serializing_if = "Option::is_none")]
@@ -1010,7 +1027,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "Gets the reason that a storage account name could not be used. The Reason element is only returned if NameAvailable is false."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<check_name_availability_result::Reason>,
     #[doc = "Gets an error message explaining the Reason value in more detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1095,19 +1112,39 @@ pub struct ContainerProperties {
     #[serde(rename = "denyEncryptionScopeOverride", default, skip_serializing_if = "Option::is_none")]
     pub deny_encryption_scope_override: Option<bool>,
     #[doc = "Specifies whether data in the container may be accessed publicly and the level of access."]
-    #[serde(rename = "publicAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_access: Option<container_properties::PublicAccess>,
     #[doc = "Returns the date and time the container was last modified."]
     #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
     #[doc = "The lease status of the container."]
-    #[serde(rename = "leaseStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "leaseStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lease_status: Option<container_properties::LeaseStatus>,
     #[doc = "Lease state of the container."]
-    #[serde(rename = "leaseState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "leaseState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lease_state: Option<container_properties::LeaseState>,
     #[doc = "Specifies whether the lease on a container is of infinite or fixed duration, only when the container is leased."]
-    #[serde(rename = "leaseDuration", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "leaseDuration",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lease_duration: Option<container_properties::LeaseDuration>,
     #[doc = "A name-value pair to associate with the container as metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1424,7 +1461,7 @@ pub struct DeletedAccountListResult {
 impl azure_core::Continuable for DeletedAccountListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeletedAccountListResult {
@@ -1496,7 +1533,12 @@ pub struct Encryption {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub services: Option<EncryptionServices>,
     #[doc = "The encryption keySource (provider). Possible values (case-insensitive):  Microsoft.Storage, Microsoft.Keyvault"]
-    #[serde(rename = "keySource", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "keySource",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub key_source: Option<encryption::KeySource>,
     #[doc = "A boolean indicating whether or not the service applies a secondary layer of encryption with platform managed keys for data at rest."]
     #[serde(rename = "requireInfrastructureEncryption", default, skip_serializing_if = "Option::is_none")]
@@ -1624,7 +1666,7 @@ pub struct EncryptionScopeListResult {
 impl azure_core::Continuable for EncryptionScopeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EncryptionScopeListResult {
@@ -1636,10 +1678,10 @@ impl EncryptionScopeListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionScopeProperties {
     #[doc = "The provider for the encryption scope. Possible values (case-insensitive):  Microsoft.Storage, Microsoft.KeyVault."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub source: Option<encryption_scope_properties::Source>,
     #[doc = "The state of the encryption scope. Possible values (case-insensitive):  Enabled, Disabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<encryption_scope_properties::State>,
     #[doc = "Gets the creation date and time of the encryption scope in UTC."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1748,7 +1790,12 @@ pub struct EncryptionService {
     #[serde(rename = "lastEnabledTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_enabled_time: Option<time::OffsetDateTime>,
     #[doc = "Encryption key type to be used for the encryption service. 'Account' key type implies that an account-scoped encryption key will be used. 'Service' key type implies that a default service key is used."]
-    #[serde(rename = "keyType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "keyType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub key_type: Option<encryption_service::KeyType>,
 }
 impl EncryptionService {
@@ -1890,7 +1937,12 @@ pub struct ExtendedLocation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The type of extendedLocation."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<ExtendedLocationType>,
 }
 impl ExtendedLocation {
@@ -2031,7 +2083,7 @@ pub struct FileShareItems {
 impl azure_core::Continuable for FileShareItems {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FileShareItems {
@@ -2052,10 +2104,20 @@ pub struct FileShareProperties {
     #[serde(rename = "shareQuota", default, skip_serializing_if = "Option::is_none")]
     pub share_quota: Option<i64>,
     #[doc = "The authentication protocol that is used for the file share. Can only be specified when creating a share."]
-    #[serde(rename = "enabledProtocols", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enabledProtocols",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enabled_protocols: Option<file_share_properties::EnabledProtocols>,
     #[doc = "The property is for NFS share only. The default is NoRootSquash."]
-    #[serde(rename = "rootSquash", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rootSquash",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub root_squash: Option<file_share_properties::RootSquash>,
     #[doc = "The version of the share."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2070,7 +2132,12 @@ pub struct FileShareProperties {
     #[serde(rename = "remainingRetentionDays", default, skip_serializing_if = "Option::is_none")]
     pub remaining_retention_days: Option<i64>,
     #[doc = "Access tier for specific share. GpV2 account can choose between TransactionOptimized (default), Hot, and Cool. FileStorage account can choose Premium."]
-    #[serde(rename = "accessTier", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "accessTier",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub access_tier: Option<file_share_properties::AccessTier>,
     #[doc = "Indicates the last modification time for share access tier."]
     #[serde(rename = "accessTierChangeTime", default, with = "azure_core::date::rfc3339::option")]
@@ -2082,13 +2149,28 @@ pub struct FileShareProperties {
     #[serde(rename = "shareUsageBytes", default, skip_serializing_if = "Option::is_none")]
     pub share_usage_bytes: Option<i64>,
     #[doc = "The lease status of the share."]
-    #[serde(rename = "leaseStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "leaseStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lease_status: Option<file_share_properties::LeaseStatus>,
     #[doc = "Lease state of the share."]
-    #[serde(rename = "leaseState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "leaseState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lease_state: Option<file_share_properties::LeaseState>,
     #[doc = "Specifies whether the lease on a share is of infinite or fixed duration, only when the share is leased."]
-    #[serde(rename = "leaseDuration", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "leaseDuration",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lease_duration: Option<file_share_properties::LeaseDuration>,
     #[doc = "List of stored access policies specified on the share."]
     #[serde(
@@ -2350,7 +2432,7 @@ pub mod file_share_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GeoReplicationStats {
     #[doc = "The status of the secondary location. Possible values are: - Live: Indicates that the secondary location is active and operational. - Bootstrap: Indicates initial synchronization from the primary location to the secondary location is in progress.This typically occurs when replication is first enabled. - Unavailable: Indicates that the secondary location is temporarily unavailable."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<geo_replication_stats::Status>,
     #[doc = "All primary writes preceding this UTC date/time value are guaranteed to be available for read operations. Primary writes following this point in time may or may not be available for reads. Element may be default value if value of LastSyncTime is not available, this can happen if secondary is offline or we are in bootstrap."]
     #[serde(rename = "lastSyncTime", default, with = "azure_core::date::rfc3339::option")]
@@ -2412,7 +2494,7 @@ pub struct IpRule {
     #[doc = "Specifies the IP or IP range in CIDR format. Only IPV4 address is allowed."]
     pub value: String,
     #[doc = "The action of IP ACL rule."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub action: Option<ip_rule::Action>,
 }
 impl IpRule {
@@ -2443,7 +2525,7 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The identity type."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: identity::Type,
     #[doc = "Gets or sets a list of key value pairs that describe the set of User Assigned identities that will be used with this storage account. The key is the ARM resource identifier of the identity. Only 1 User Assigned identity is permitted here."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -2550,7 +2632,7 @@ pub struct ImmutabilityPolicyProperty {
     #[serde(rename = "immutabilityPeriodSinceCreationInDays", default, skip_serializing_if = "Option::is_none")]
     pub immutability_period_since_creation_in_days: Option<i64>,
     #[doc = "The ImmutabilityPolicy state of a blob container, possible values include: Locked and Unlocked."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<immutability_policy_property::State>,
     #[doc = "This property can only be changed for unlocked time-based retention policies. When enabled, new blocks can be written to an append blob while maintaining immutability protection and compliance. Only new blocks can be added and any existing blocks cannot be modified or deleted. This property cannot be changed with ExtendImmutabilityPolicy API."]
     #[serde(rename = "allowProtectedAppendWrites", default, skip_serializing_if = "Option::is_none")]
@@ -2629,7 +2711,12 @@ pub struct ImmutableStorageWithVersioning {
     #[serde(rename = "timeStamp", default, with = "azure_core::date::rfc3339::option")]
     pub time_stamp: Option<time::OffsetDateTime>,
     #[doc = "This property denotes the container level immutability to object level immutability migration state."]
-    #[serde(rename = "migrationState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "migrationState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub migration_state: Option<immutable_storage_with_versioning::MigrationState>,
 }
 impl ImmutableStorageWithVersioning {
@@ -2741,7 +2828,7 @@ pub struct LastAccessTimeTrackingPolicy {
     #[doc = "When set to true last access time based tracking is enabled."]
     pub enable: bool,
     #[doc = "Name of the policy. The valid value is AccessTimeTracking. This field is currently read only"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub name: Option<last_access_time_tracking_policy::Name>,
     #[doc = "The field specifies blob object tracking granularity in days, typically how often the blob object should be tracked.This field is currently read only with value as 1"]
     #[serde(rename = "trackingGranularityInDays", default, skip_serializing_if = "Option::is_none")]
@@ -2807,6 +2894,7 @@ pub mod last_access_time_tracking_policy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LeaseContainerRequest {
     #[doc = "Specifies the lease action. Can be one of the available actions."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub action: lease_container_request::Action,
     #[doc = "Identifies the lease. Can be specified in any valid GUID string format."]
     #[serde(rename = "leaseId", default, skip_serializing_if = "Option::is_none")]
@@ -2897,6 +2985,7 @@ impl LeaseContainerResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LeaseShareRequest {
     #[doc = "Specifies the lease action. Can be one of the available actions."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub action: lease_share_request::Action,
     #[doc = "Identifies the lease. Can be specified in any valid GUID string format."]
     #[serde(rename = "leaseId", default, skip_serializing_if = "Option::is_none")]
@@ -3091,7 +3180,7 @@ pub struct ListContainerItems {
 impl azure_core::Continuable for ListContainerItems {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListContainerItems {
@@ -3139,7 +3228,7 @@ pub struct ListQueueResource {
 impl azure_core::Continuable for ListQueueResource {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListQueueResource {
@@ -3191,7 +3280,7 @@ pub struct ListTableResource {
 impl azure_core::Continuable for ListTableResource {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListTableResource {
@@ -3446,7 +3535,7 @@ pub struct ManagementPolicyRule {
     #[doc = "A rule name can contain any combination of alpha numeric characters. Rule name is case-sensitive. It must be unique within a policy."]
     pub name: String,
     #[doc = "The valid value is Lifecycle"]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: management_policy_rule::Type,
     #[doc = "An object that defines the Lifecycle rule. Each definition is made up with a filters set and an actions set."]
     pub definition: ManagementPolicyDefinition,
@@ -3614,7 +3703,7 @@ impl Multichannel {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkRuleSet {
     #[doc = "Specifies whether traffic is bypassed for Logging/Metrics/AzureServices. Possible values are any combination of Logging|Metrics|AzureServices (For example, \"Logging, Metrics\"), or None to bypass none of those traffics."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub bypass: Option<network_rule_set::Bypass>,
     #[doc = "Sets the resource access rules"]
     #[serde(
@@ -3641,7 +3730,7 @@ pub struct NetworkRuleSet {
     )]
     pub ip_rules: Vec<IpRule>,
     #[doc = "Specifies the default action of allow or deny when no other rules match."]
-    #[serde(rename = "defaultAction")]
+    #[serde(rename = "defaultAction", with = "azure_core::xml::text_content")]
     pub default_action: network_rule_set::DefaultAction,
 }
 impl NetworkRuleSet {
@@ -3987,7 +4076,12 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -4141,7 +4235,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4308,7 +4402,12 @@ pub struct Restriction {
     )]
     pub values: Vec<String>,
     #[doc = "The reason for the restriction. As of now this can be \"QuotaId\" or \"NotAvailableForSubscription\". Quota Id is set when the SKU has requiredQuotas parameter as the subscription does not belong to that quota. The \"NotAvailableForSubscription\" is related to capacity at DC."]
-    #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "reasonCode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub reason_code: Option<restriction::ReasonCode>,
 }
 impl Restriction {
@@ -4360,7 +4459,12 @@ pub mod restriction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoutingPreference {
     #[doc = "Routing Choice defines the kind of network routing opted by the user."]
-    #[serde(rename = "routingChoice", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "routingChoice",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub routing_choice: Option<routing_preference::RoutingChoice>,
     #[doc = "A boolean flag which indicates whether microsoft routing storage endpoints are to be published"]
     #[serde(rename = "publishMicrosoftEndpoints", default, skip_serializing_if = "Option::is_none")]
@@ -4436,7 +4540,7 @@ pub struct SasPolicy {
     #[serde(rename = "sasExpirationPeriod")]
     pub sas_expiration_period: String,
     #[doc = "The SAS expiration action. Can only be Log."]
-    #[serde(rename = "expirationAction")]
+    #[serde(rename = "expirationAction", with = "azure_core::xml::text_content")]
     pub expiration_action: sas_policy::ExpirationAction,
 }
 impl SasPolicy {
@@ -4497,16 +4601,31 @@ pub struct ServiceSasParameters {
     #[serde(rename = "canonicalizedResource")]
     pub canonicalized_resource: String,
     #[doc = "The signed services accessible with the service SAS. Possible values include: Blob (b), Container (c), File (f), Share (s)."]
-    #[serde(rename = "signedResource", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "signedResource",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub signed_resource: Option<service_sas_parameters::SignedResource>,
     #[doc = "The signed permissions for the service SAS. Possible values include: Read (r), Write (w), Delete (d), List (l), Add (a), Create (c), Update (u) and Process (p)."]
-    #[serde(rename = "signedPermission", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "signedPermission",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub signed_permission: Option<service_sas_parameters::SignedPermission>,
     #[doc = "An IP address or a range of IP addresses from which to accept requests."]
     #[serde(rename = "signedIp", default, skip_serializing_if = "Option::is_none")]
     pub signed_ip: Option<String>,
     #[doc = "The protocol permitted for a request made with the account SAS."]
-    #[serde(rename = "signedProtocol", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "signedProtocol",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub signed_protocol: Option<service_sas_parameters::SignedProtocol>,
     #[doc = "The time at which the SAS becomes valid."]
     #[serde(rename = "signedStart", default, with = "azure_core::date::rfc3339::option")]
@@ -4720,9 +4839,10 @@ impl SignedIdentifier {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The SKU name. Required for account creation; optional for update. Note that in older versions, SKU name was called accountType."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: SkuName,
     #[doc = "The SKU tier. This is based on the SKU name."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub tier: Option<Tier>,
 }
 impl Sku {
@@ -4734,15 +4854,16 @@ impl Sku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkuInformation {
     #[doc = "The SKU name. Required for account creation; optional for update. Note that in older versions, SKU name was called accountType."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: SkuName,
     #[doc = "The SKU tier. This is based on the SKU name."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub tier: Option<Tier>,
     #[doc = "The type of the resource, usually it is 'storageAccounts'."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
     #[doc = "Indicates the type of storage account."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<sku_information::Kind>,
     #[doc = "The set of locations that the SKU is available. This will be supported and registered Azure Geo Regions (e.g. West US, East US, Southeast Asia, etc.)."]
     #[serde(
@@ -4930,7 +5051,7 @@ pub struct StorageAccount {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
     #[doc = "Gets the Kind."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<storage_account::Kind>,
     #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5006,7 +5127,7 @@ pub struct StorageAccountCheckNameAvailabilityParameters {
     #[doc = "The storage account name."]
     pub name: String,
     #[doc = "The type of resource, Microsoft.Storage/storageAccounts"]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: storage_account_check_name_availability_parameters::Type,
 }
 impl StorageAccountCheckNameAvailabilityParameters {
@@ -5029,6 +5150,7 @@ pub struct StorageAccountCreateParameters {
     #[doc = "The SKU of the storage account."]
     pub sku: Sku,
     #[doc = "Required. Indicates the type of storage account."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: storage_account_create_parameters::Kind,
     #[doc = "Required. Gets or sets the location of the resource. This will be one of the supported and registered Azure Geo Regions (e.g. West US, East US, Southeast Asia, etc.). The geo region of a resource cannot be changed once it is created, but if an identical geo region is specified on update, the request will succeed."]
     pub location: String,
@@ -5135,7 +5257,7 @@ pub struct StorageAccountKey {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[doc = "Permissions for the key -- read-only or full permissions."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub permissions: Option<storage_account_key::Permissions>,
     #[doc = "Creation time of the key, in round trip date format."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
@@ -5188,7 +5310,7 @@ pub struct StorageAccountListResult {
 impl azure_core::Continuable for StorageAccountListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageAccountListResult {
@@ -5227,7 +5349,12 @@ impl StorageAccountMicrosoftEndpoints {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountProperties {
     #[doc = "Gets the status of the storage account at the time the operation was called."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<storage_account_properties::ProvisioningState>,
     #[doc = "The URIs that are used to perform a retrieval of a public blob, queue, table, web or dfs object."]
     #[serde(rename = "primaryEndpoints", default, skip_serializing_if = "Option::is_none")]
@@ -5236,7 +5363,12 @@ pub struct StorageAccountProperties {
     #[serde(rename = "primaryLocation", default, skip_serializing_if = "Option::is_none")]
     pub primary_location: Option<String>,
     #[doc = "Gets the status indicating whether the primary location of the storage account is available or unavailable."]
-    #[serde(rename = "statusOfPrimary", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "statusOfPrimary",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub status_of_primary: Option<storage_account_properties::StatusOfPrimary>,
     #[doc = "Gets the timestamp of the most recent instance of a failover to the secondary location. Only the most recent timestamp is retained. This element is not returned if there has never been a failover instance. Only available if the accountType is Standard_GRS or Standard_RAGRS."]
     #[serde(rename = "lastGeoFailoverTime", default, with = "azure_core::date::rfc3339::option")]
@@ -5245,7 +5377,12 @@ pub struct StorageAccountProperties {
     #[serde(rename = "secondaryLocation", default, skip_serializing_if = "Option::is_none")]
     pub secondary_location: Option<String>,
     #[doc = "Gets the status indicating whether the secondary location of the storage account is available or unavailable. Only available if the SKU name is Standard_GRS or Standard_RAGRS."]
-    #[serde(rename = "statusOfSecondary", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "statusOfSecondary",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub status_of_secondary: Option<storage_account_properties::StatusOfSecondary>,
     #[doc = "Gets the creation date and time of the storage account in UTC."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
@@ -5269,7 +5406,12 @@ pub struct StorageAccountProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encryption: Option<Encryption>,
     #[doc = "Required for storage accounts where kind = BlobStorage. The access tier is used for billing. The 'Premium' access tier is the default value for premium block blobs storage account type and it cannot be changed for the premium block blobs storage account type."]
-    #[serde(rename = "accessTier", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "accessTier",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub access_tier: Option<storage_account_properties::AccessTier>,
     #[doc = "Settings for Azure Files identity based authentication."]
     #[serde(rename = "azureFilesIdentityBasedAuthentication", default, skip_serializing_if = "Option::is_none")]
@@ -5296,7 +5438,12 @@ pub struct StorageAccountProperties {
     #[serde(rename = "failoverInProgress", default, skip_serializing_if = "Option::is_none")]
     pub failover_in_progress: Option<bool>,
     #[doc = "Allow large file shares if sets to Enabled. It cannot be disabled once it is enabled."]
-    #[serde(rename = "largeFileSharesState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "largeFileSharesState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub large_file_shares_state: Option<storage_account_properties::LargeFileSharesState>,
     #[doc = "List of private endpoint connection associated with the specified storage account"]
     #[serde(
@@ -5316,7 +5463,12 @@ pub struct StorageAccountProperties {
     #[serde(rename = "allowBlobPublicAccess", default, skip_serializing_if = "Option::is_none")]
     pub allow_blob_public_access: Option<bool>,
     #[doc = "Set the minimum TLS version to be permitted on requests to storage. The default interpretation is TLS 1.0 for this property."]
-    #[serde(rename = "minimumTlsVersion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "minimumTlsVersion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub minimum_tls_version: Option<storage_account_properties::MinimumTlsVersion>,
     #[doc = "Indicates whether the storage account permits requests to be authorized with the account access key via Shared Key. If false, then all requests, including shared access signatures, must be authorized with Azure Active Directory (Azure AD). The default value is null, which is equivalent to true."]
     #[serde(rename = "allowSharedKeyAccess", default, skip_serializing_if = "Option::is_none")]
@@ -5331,19 +5483,34 @@ pub struct StorageAccountProperties {
     #[serde(rename = "defaultToOAuthAuthentication", default, skip_serializing_if = "Option::is_none")]
     pub default_to_o_auth_authentication: Option<bool>,
     #[doc = "Allow or disallow public network access to Storage Account. Value is optional but if passed in, must be 'Enabled' or 'Disabled'."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<storage_account_properties::PublicNetworkAccess>,
     #[doc = "This property enables and defines account-level immutability. Enabling the feature auto-enables Blob Versioning."]
     #[serde(rename = "immutableStorageWithVersioning", default, skip_serializing_if = "Option::is_none")]
     pub immutable_storage_with_versioning: Option<ImmutableStorageAccount>,
     #[doc = "Restrict copy to and from Storage Accounts within an AAD tenant or with Private Links to the same VNet."]
-    #[serde(rename = "allowedCopyScope", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allowedCopyScope",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub allowed_copy_scope: Option<storage_account_properties::AllowedCopyScope>,
     #[doc = "This defines the sku conversion status object for asynchronous sku conversions."]
     #[serde(rename = "storageAccountSkuConversionStatus", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_sku_conversion_status: Option<StorageAccountSkuConversionStatus>,
     #[doc = "Allows you to specify the type of endpoint. Set this to AzureDNSZone to create a large number of accounts in a single subscription, which creates accounts in an Azure DNS Zone and the endpoint URL will have an alphanumeric DNS Zone identifier."]
-    #[serde(rename = "dnsEndpointType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dnsEndpointType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub dns_endpoint_type: Option<storage_account_properties::DnsEndpointType>,
 }
 impl StorageAccountProperties {
@@ -5580,10 +5747,20 @@ pub mod storage_account_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountPropertiesCreateParameters {
     #[doc = "Restrict copy to and from Storage Accounts within an AAD tenant or with Private Links to the same VNet."]
-    #[serde(rename = "allowedCopyScope", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allowedCopyScope",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub allowed_copy_scope: Option<storage_account_properties_create_parameters::AllowedCopyScope>,
     #[doc = "Allow or disallow public network access to Storage Account. Value is optional but if passed in, must be 'Enabled' or 'Disabled'."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<storage_account_properties_create_parameters::PublicNetworkAccess>,
     #[doc = "SasPolicy assigned to the storage account."]
     #[serde(rename = "sasPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -5601,7 +5778,12 @@ pub struct StorageAccountPropertiesCreateParameters {
     #[serde(rename = "networkAcls", default, skip_serializing_if = "Option::is_none")]
     pub network_acls: Option<NetworkRuleSet>,
     #[doc = "Required for storage accounts where kind = BlobStorage. The access tier is used for billing. The 'Premium' access tier is the default value for premium block blobs storage account type and it cannot be changed for the premium block blobs storage account type."]
-    #[serde(rename = "accessTier", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "accessTier",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub access_tier: Option<storage_account_properties_create_parameters::AccessTier>,
     #[doc = "Settings for Azure Files identity based authentication."]
     #[serde(rename = "azureFilesIdentityBasedAuthentication", default, skip_serializing_if = "Option::is_none")]
@@ -5619,7 +5801,12 @@ pub struct StorageAccountPropertiesCreateParameters {
     #[serde(rename = "isHnsEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_hns_enabled: Option<bool>,
     #[doc = "Allow large file shares if sets to Enabled. It cannot be disabled once it is enabled."]
-    #[serde(rename = "largeFileSharesState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "largeFileSharesState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub large_file_shares_state: Option<storage_account_properties_create_parameters::LargeFileSharesState>,
     #[doc = "Routing preference defines the type of network, either microsoft or internet routing to be used to deliver the user data, the default option is microsoft routing"]
     #[serde(rename = "routingPreference", default, skip_serializing_if = "Option::is_none")]
@@ -5628,7 +5815,12 @@ pub struct StorageAccountPropertiesCreateParameters {
     #[serde(rename = "allowBlobPublicAccess", default, skip_serializing_if = "Option::is_none")]
     pub allow_blob_public_access: Option<bool>,
     #[doc = "Set the minimum TLS version to be permitted on requests to storage. The default interpretation is TLS 1.0 for this property."]
-    #[serde(rename = "minimumTlsVersion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "minimumTlsVersion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub minimum_tls_version: Option<storage_account_properties_create_parameters::MinimumTlsVersion>,
     #[doc = "Indicates whether the storage account permits requests to be authorized with the account access key via Shared Key. If false, then all requests, including shared access signatures, must be authorized with Azure Active Directory (Azure AD). The default value is null, which is equivalent to true."]
     #[serde(rename = "allowSharedKeyAccess", default, skip_serializing_if = "Option::is_none")]
@@ -5646,7 +5838,12 @@ pub struct StorageAccountPropertiesCreateParameters {
     #[serde(rename = "immutableStorageWithVersioning", default, skip_serializing_if = "Option::is_none")]
     pub immutable_storage_with_versioning: Option<ImmutableStorageAccount>,
     #[doc = "Allows you to specify the type of endpoint. Set this to AzureDNSZone to create a large number of accounts in a single subscription, which creates accounts in an Azure DNS Zone and the endpoint URL will have an alphanumeric DNS Zone identifier."]
-    #[serde(rename = "dnsEndpointType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dnsEndpointType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub dns_endpoint_type: Option<storage_account_properties_create_parameters::DnsEndpointType>,
 }
 impl StorageAccountPropertiesCreateParameters {
@@ -5871,7 +6068,12 @@ pub struct StorageAccountPropertiesUpdateParameters {
     #[serde(rename = "keyPolicy", default, skip_serializing_if = "Option::is_none")]
     pub key_policy: Option<KeyPolicy>,
     #[doc = "Required for storage accounts where kind = BlobStorage. The access tier is used for billing. The 'Premium' access tier is the default value for premium block blobs storage account type and it cannot be changed for the premium block blobs storage account type."]
-    #[serde(rename = "accessTier", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "accessTier",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub access_tier: Option<storage_account_properties_update_parameters::AccessTier>,
     #[doc = "Settings for Azure Files identity based authentication."]
     #[serde(rename = "azureFilesIdentityBasedAuthentication", default, skip_serializing_if = "Option::is_none")]
@@ -5889,7 +6091,12 @@ pub struct StorageAccountPropertiesUpdateParameters {
     #[serde(rename = "networkAcls", default, skip_serializing_if = "Option::is_none")]
     pub network_acls: Option<NetworkRuleSet>,
     #[doc = "Allow large file shares if sets to Enabled. It cannot be disabled once it is enabled."]
-    #[serde(rename = "largeFileSharesState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "largeFileSharesState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub large_file_shares_state: Option<storage_account_properties_update_parameters::LargeFileSharesState>,
     #[doc = "Routing preference defines the type of network, either microsoft or internet routing to be used to deliver the user data, the default option is microsoft routing"]
     #[serde(rename = "routingPreference", default, skip_serializing_if = "Option::is_none")]
@@ -5898,7 +6105,12 @@ pub struct StorageAccountPropertiesUpdateParameters {
     #[serde(rename = "allowBlobPublicAccess", default, skip_serializing_if = "Option::is_none")]
     pub allow_blob_public_access: Option<bool>,
     #[doc = "Set the minimum TLS version to be permitted on requests to storage. The default interpretation is TLS 1.0 for this property."]
-    #[serde(rename = "minimumTlsVersion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "minimumTlsVersion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub minimum_tls_version: Option<storage_account_properties_update_parameters::MinimumTlsVersion>,
     #[doc = "Indicates whether the storage account permits requests to be authorized with the account access key via Shared Key. If false, then all requests, including shared access signatures, must be authorized with Azure Active Directory (Azure AD). The default value is null, which is equivalent to true."]
     #[serde(rename = "allowSharedKeyAccess", default, skip_serializing_if = "Option::is_none")]
@@ -5910,16 +6122,31 @@ pub struct StorageAccountPropertiesUpdateParameters {
     #[serde(rename = "defaultToOAuthAuthentication", default, skip_serializing_if = "Option::is_none")]
     pub default_to_o_auth_authentication: Option<bool>,
     #[doc = "Allow or disallow public network access to Storage Account. Value is optional but if passed in, must be 'Enabled' or 'Disabled'."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<storage_account_properties_update_parameters::PublicNetworkAccess>,
     #[doc = "This property enables and defines account-level immutability. Enabling the feature auto-enables Blob Versioning."]
     #[serde(rename = "immutableStorageWithVersioning", default, skip_serializing_if = "Option::is_none")]
     pub immutable_storage_with_versioning: Option<ImmutableStorageAccount>,
     #[doc = "Restrict copy to and from Storage Accounts within an AAD tenant or with Private Links to the same VNet."]
-    #[serde(rename = "allowedCopyScope", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allowedCopyScope",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub allowed_copy_scope: Option<storage_account_properties_update_parameters::AllowedCopyScope>,
     #[doc = "Allows you to specify the type of endpoint. Set this to AzureDNSZone to create a large number of accounts in a single subscription, which creates accounts in an Azure DNS Zone and the endpoint URL will have an alphanumeric DNS Zone identifier."]
-    #[serde(rename = "dnsEndpointType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dnsEndpointType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub dns_endpoint_type: Option<storage_account_properties_update_parameters::DnsEndpointType>,
 }
 impl StorageAccountPropertiesUpdateParameters {
@@ -6144,10 +6371,20 @@ impl StorageAccountRegenerateKeyParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageAccountSkuConversionStatus {
     #[doc = "This property indicates the current sku conversion status."]
-    #[serde(rename = "skuConversionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "skuConversionStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub sku_conversion_status: Option<storage_account_sku_conversion_status::SkuConversionStatus>,
     #[doc = "The SKU name. Required for account creation; optional for update. Note that in older versions, SKU name was called accountType."]
-    #[serde(rename = "targetSkuName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "targetSkuName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub target_sku_name: Option<SkuName>,
     #[doc = "This property represents the sku conversion start time."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
@@ -6219,7 +6456,7 @@ pub struct StorageAccountUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageAccountPropertiesUpdateParameters>,
     #[doc = "Optional. Indicates the type of storage account. Currently only StorageV2 value supported by server."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<storage_account_update_parameters::Kind>,
 }
 impl StorageAccountUpdateParameters {
@@ -6472,7 +6709,7 @@ impl TrackedResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateHistoryProperty {
     #[doc = "The ImmutabilityPolicy update type of a blob container, possible values include: put, lock and extend."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub update: Option<update_history_property::Update>,
     #[doc = "The immutability period for the blobs in the container since the policy creation, in days."]
     #[serde(rename = "immutabilityPeriodSinceCreationInDays", default, skip_serializing_if = "Option::is_none")]
@@ -6550,7 +6787,7 @@ pub mod update_history_property {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Usage {
     #[doc = "Gets the unit of measurement."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub unit: Option<usage::Unit>,
     #[doc = "Gets the current count of the allocated resources in the subscription."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
@@ -6638,10 +6875,10 @@ pub struct VirtualNetworkRule {
     #[doc = "Resource ID of a subnet, for example: /subscriptions/{subscriptionId}/resourceGroups/{groupName}/providers/Microsoft.Network/virtualNetworks/{vnetName}/subnets/{subnetName}."]
     pub id: String,
     #[doc = "The action of virtual network rule."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub action: Option<virtual_network_rule::Action>,
     #[doc = "Gets the state of virtual network rule."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<virtual_network_rule::State>,
 }
 impl VirtualNetworkRule {
@@ -6716,7 +6953,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -6725,7 +6967,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

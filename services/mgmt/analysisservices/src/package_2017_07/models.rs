@@ -33,10 +33,20 @@ pub struct AnalysisServicesServerMutableProperties {
     #[serde(rename = "gatewayDetails", default, skip_serializing_if = "Option::is_none")]
     pub gateway_details: Option<GatewayDetails>,
     #[doc = "The managed mode of the server (0 = not managed, 1 = managed)."]
-    #[serde(rename = "managedMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "managedMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub managed_mode: Option<analysis_services_server_mutable_properties::ManagedMode>,
     #[doc = "The server monitor mode for AS server"]
-    #[serde(rename = "serverMonitorMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "serverMonitorMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub server_monitor_mode: Option<analysis_services_server_mutable_properties::ServerMonitorMode>,
 }
 impl AnalysisServicesServerMutableProperties {
@@ -59,10 +69,15 @@ pub struct AnalysisServicesServerProperties {
     #[serde(flatten)]
     pub analysis_services_server_mutable_properties: AnalysisServicesServerMutableProperties,
     #[doc = "The current state of Analysis Services resource. The state is to indicate more states outside of resource provisioning."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<analysis_services_server_properties::State>,
     #[doc = "The current deployment state of Analysis Services resource. The provisioningState is to indicate states for resource provisioning."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<analysis_services_server_properties::ProvisioningState>,
     #[doc = "The full name of the Analysis Services resource."]
     #[serde(rename = "serverFullName", default, skip_serializing_if = "Option::is_none")]
@@ -398,7 +413,7 @@ impl GatewayListStatusError {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayListStatusLive {
     #[doc = "Live message of list gateway. Status: 0 - Live"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<gateway_list_status_live::Status>,
 }
 impl GatewayListStatusLive {
@@ -581,7 +596,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -672,7 +687,7 @@ pub struct ResourceSku {
     #[doc = "Name of the SKU level."]
     pub name: String,
     #[doc = "The name of the Azure pricing tier to which the SKU applies."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub tier: Option<resource_sku::Tier>,
 }
 impl ResourceSku {

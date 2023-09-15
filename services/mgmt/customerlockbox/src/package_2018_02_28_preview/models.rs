@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Approval {
     #[doc = "Approval decision to the Lockbox request."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<approval::Status>,
     #[doc = "Reason of the decision"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -79,7 +79,12 @@ pub mod error_additional_info {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Info {
         #[doc = "The status of the request."]
-        #[serde(rename = "currentStatus", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "currentStatus",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub current_status: Option<LockboxRequestStatus>,
     }
     impl Info {
@@ -163,7 +168,7 @@ pub struct LockboxRequestResponseProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub justification: Option<String>,
     #[doc = "The status of the request."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<LockboxRequestStatus>,
     #[doc = "The creation time of the request."]
     #[serde(rename = "createdDateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -325,7 +330,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -350,7 +355,7 @@ pub struct RequestListResult {
 impl azure_core::Continuable for RequestListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RequestListResult {

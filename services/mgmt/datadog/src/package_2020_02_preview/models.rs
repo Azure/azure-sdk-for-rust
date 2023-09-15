@@ -73,7 +73,7 @@ pub struct DatadogAgreementResourceListResponse {
 impl azure_core::Continuable for DatadogAgreementResourceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DatadogAgreementResourceListResponse {
@@ -122,7 +122,7 @@ pub struct DatadogApiKeyListResponse {
 impl azure_core::Continuable for DatadogApiKeyListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DatadogApiKeyListResponse {
@@ -174,7 +174,7 @@ pub struct DatadogHostListResponse {
 impl azure_core::Continuable for DatadogHostListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DatadogHostListResponse {
@@ -278,7 +278,7 @@ pub struct DatadogMonitorResourceListResponse {
 impl azure_core::Continuable for DatadogMonitorResourceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DatadogMonitorResourceListResponse {
@@ -348,10 +348,20 @@ impl DatadogSetPasswordLink {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatadogSingleSignOnProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Various states of the SSO resource"]
-    #[serde(rename = "singleSignOnState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "singleSignOnState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub single_sign_on_state: Option<SingleSignOnStates>,
     #[doc = "The Id of the Enterprise App used for Single sign-on."]
     #[serde(rename = "enterpriseAppId", default, skip_serializing_if = "Option::is_none")]
@@ -401,7 +411,7 @@ pub struct DatadogSingleSignOnResourceListResponse {
 impl azure_core::Continuable for DatadogSingleSignOnResourceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DatadogSingleSignOnResourceListResponse {
@@ -439,7 +449,7 @@ pub struct FilteringTag {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[doc = "Valid actions for a filtering tag. Exclusion takes priority over inclusion."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub action: Option<TagAction>,
 }
 impl FilteringTag {
@@ -456,7 +466,12 @@ pub struct IdentityProperties {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Identity type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<ManagedIdentityTypes>,
 }
 impl IdentityProperties {
@@ -529,7 +544,7 @@ pub struct LinkedResourceListResponse {
 impl azure_core::Continuable for LinkedResourceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LinkedResourceListResponse {
@@ -661,13 +676,28 @@ impl MetricRules {
 #[doc = "Properties specific to the monitor resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Flag specifying if the resource monitoring is enabled or disabled."]
-    #[serde(rename = "monitoringStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "monitoringStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub monitoring_status: Option<MonitoringStatus>,
     #[doc = "Flag specifying the Marketplace Subscription Status of the resource. If payment is not made in time, the resource will go in Suspended state."]
-    #[serde(rename = "marketplaceSubscriptionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "marketplaceSubscriptionStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub marketplace_subscription_status: Option<MarketplaceSubscriptionStatus>,
     #[doc = "Datadog organization properties"]
     #[serde(rename = "datadogOrganizationProperties", default, skip_serializing_if = "Option::is_none")]
@@ -675,7 +705,12 @@ pub struct MonitorProperties {
     #[doc = "User info"]
     #[serde(rename = "userInfo", default, skip_serializing_if = "Option::is_none")]
     pub user_info: Option<UserInfo>,
-    #[serde(rename = "liftrResourceCategory", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "liftrResourceCategory",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub liftr_resource_category: Option<LiftrResourceCategories>,
     #[doc = "The priority of the resource."]
     #[serde(rename = "liftrResourcePreference", default, skip_serializing_if = "Option::is_none")]
@@ -690,7 +725,12 @@ impl MonitorProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorUpdateProperties {
     #[doc = "Flag specifying if the resource monitoring is enabled or disabled."]
-    #[serde(rename = "monitoringStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "monitoringStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub monitoring_status: Option<MonitoringStatus>,
 }
 impl MonitorUpdateProperties {
@@ -739,7 +779,7 @@ pub struct MonitoredResourceListResponse {
 impl azure_core::Continuable for MonitoredResourceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MonitoredResourceListResponse {
@@ -827,7 +867,7 @@ pub struct MonitoringTagRulesListResponse {
 impl azure_core::Continuable for MonitoringTagRulesListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MonitoringTagRulesListResponse {
@@ -838,7 +878,12 @@ impl MonitoringTagRulesListResponse {
 #[doc = "Definition of the properties for a TagRules resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitoringTagRulesProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Set of rules for sending logs for the Monitor resource."]
     #[serde(rename = "logRules", default, skip_serializing_if = "Option::is_none")]
@@ -890,7 +935,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {

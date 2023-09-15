@@ -118,7 +118,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -169,7 +169,7 @@ pub struct PartnerProperties {
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "this is the management partner state: Active or Deleted"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<ManagementPartnerState>,
 }
 impl PartnerProperties {

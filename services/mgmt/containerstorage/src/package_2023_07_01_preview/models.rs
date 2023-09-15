@@ -22,6 +22,7 @@ pub type AssignmentId = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssignmentStatus {
     #[doc = "Status of the assignment resource"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub state: AssignmentStatusState,
     #[doc = "Reason for the status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -80,7 +81,12 @@ pub struct AzureDisk {
     #[serde(rename = "resourceGroup", default, skip_serializing_if = "Option::is_none")]
     pub resource_group: Option<String>,
     #[doc = "SKU of the underlying managed disk"]
-    #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "skuName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub sku_name: Option<AzureDiskSkuName>,
     #[doc = "Encryption key properties for the pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -204,7 +210,12 @@ pub struct ElasticSan {
     #[serde(rename = "resourceGroup", default, skip_serializing_if = "Option::is_none")]
     pub resource_group: Option<String>,
     #[doc = "ElasticSAN SKUs"]
-    #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "skuName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub sku_name: Option<ElasticSanSkuName>,
     #[doc = "Encryption key properties for the pool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -401,7 +412,7 @@ pub struct ManagedServiceIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Type of managed service identity (where both SystemAssigned and UserAssigned types are allowed)."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: ManagedServiceIdentityType,
     #[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -474,10 +485,15 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -603,7 +619,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -640,7 +656,7 @@ pub struct PoolListResult {
 impl azure_core::Continuable for PoolListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PoolListResult {
@@ -652,7 +668,12 @@ impl PoolListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PoolProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Status of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -671,7 +692,12 @@ pub struct PoolProperties {
     #[serde(rename = "poolType")]
     pub pool_type: PoolType,
     #[doc = "Reclaim policy"]
-    #[serde(rename = "reclaimPolicy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "reclaimPolicy",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub reclaim_policy: Option<ReclaimPolicy>,
     #[doc = "List of resources that should have access to the pool. Typically ARM references to AKS clusters or ACI Container Groups. For local and standard this must be a single reference. For ElasticSAN there can be many."]
     #[serde(
@@ -938,6 +964,7 @@ impl Serialize for ResourceOperationStatusState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceOperationalStatus {
     #[doc = "State of the resource."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub state: ResourceOperationStatusState,
     #[doc = "Reason for state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -986,7 +1013,7 @@ pub struct SnapshotListResult {
 impl azure_core::Continuable for SnapshotListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SnapshotListResult {
@@ -998,7 +1025,12 @@ impl SnapshotListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnapshotProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Status of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1084,7 +1116,7 @@ pub struct VolumeListResult {
 impl azure_core::Continuable for VolumeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VolumeListResult {
@@ -1096,7 +1128,12 @@ impl VolumeListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VolumeProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Status of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1209,7 +1246,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1218,7 +1260,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

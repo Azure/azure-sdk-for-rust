@@ -51,7 +51,12 @@ pub struct AgentOptions {
     #[serde(rename = "hugepagesCount")]
     pub hugepages_count: i64,
     #[doc = "The size of the hugepages to allocate."]
-    #[serde(rename = "hugepagesSize", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hugepagesSize",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub hugepages_size: Option<agent_options::HugepagesSize>,
 }
 impl AgentOptions {
@@ -152,6 +157,7 @@ pub struct AgentPoolConfiguration {
     )]
     pub labels: Vec<KubernetesLabel>,
     #[doc = "The selection of how this agent pool is utilized, either as a system pool or a user pool. System pools run the features and critical services for the Kubernetes Cluster, while user pools are dedicated to user workloads. Every Kubernetes cluster must contain at least one system node pool with at least one node."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub mode: agent_pool_configuration::Mode,
     #[doc = "The taints applied to the nodes in this agent pool."]
     #[serde(
@@ -240,7 +246,7 @@ pub struct AgentPoolList {
 impl azure_core::Continuable for AgentPoolList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AgentPoolList {
@@ -293,7 +299,12 @@ pub struct AgentPoolProperties {
     #[doc = "The number of virtual machines that use this configuration."]
     pub count: i64,
     #[doc = "The current status of the agent pool."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<agent_pool_properties::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -309,9 +320,15 @@ pub struct AgentPoolProperties {
     )]
     pub labels: Vec<KubernetesLabel>,
     #[doc = "The selection of how this agent pool is utilized, either as a system pool or a user pool. System pools run the features and critical services for the Kubernetes Cluster, while user pools are dedicated to user workloads. Every Kubernetes cluster must contain at least one system node pool with at least one node."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub mode: agent_pool_properties::Mode,
     #[doc = "The provisioning state of the agent pool."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<agent_pool_properties::ProvisioningState>,
     #[doc = "The taints applied to the nodes in this agent pool."]
     #[serde(
@@ -520,7 +537,12 @@ impl AttachedNetworkConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableUpgrade {
     #[doc = "The version lifecycle indicator."]
-    #[serde(rename = "availabilityLifecycle", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "availabilityLifecycle",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub availability_lifecycle: Option<available_upgrade::AvailabilityLifecycle>,
     #[doc = "The version available for upgrading."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -657,7 +679,7 @@ impl BareMetalMachineConfigurationData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BareMetalMachineCordonParameters {
     #[doc = "The indicator of whether to evacuate the node workload when the bare metal machine is cordoned."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub evacuate: Option<bare_metal_machine_cordon_parameters::Evacuate>,
 }
 impl BareMetalMachineCordonParameters {
@@ -747,7 +769,7 @@ pub struct BareMetalMachineKeySetList {
 impl azure_core::Continuable for BareMetalMachineKeySetList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BareMetalMachineKeySetList {
@@ -801,7 +823,12 @@ pub struct BareMetalMachineKeySetProperties {
     #[serde(rename = "azureGroupId")]
     pub azure_group_id: String,
     #[doc = "The more detailed status of the key set."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<bare_metal_machine_key_set_properties::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -819,10 +846,15 @@ pub struct BareMetalMachineKeySetProperties {
     #[serde(rename = "osGroupName", default, skip_serializing_if = "Option::is_none")]
     pub os_group_name: Option<String>,
     #[doc = "The access level allowed for the users in this key set."]
-    #[serde(rename = "privilegeLevel")]
+    #[serde(rename = "privilegeLevel", with = "azure_core::xml::text_content")]
     pub privilege_level: bare_metal_machine_key_set_properties::PrivilegeLevel,
     #[doc = "The provisioning state of the bare metal machine key set."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<bare_metal_machine_key_set_properties::ProvisioningState>,
     #[doc = "The unique list of permitted users."]
     #[serde(rename = "userList")]
@@ -999,7 +1031,7 @@ pub struct BareMetalMachineList {
 impl azure_core::Continuable for BareMetalMachineList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BareMetalMachineList {
@@ -1034,7 +1066,12 @@ impl BareMetalMachinePatchProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BareMetalMachinePowerOffParameters {
     #[doc = "The indicator of whether to skip the graceful OS shutdown and power off the bare metal machine immediately."]
-    #[serde(rename = "skipShutdown", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "skipShutdown",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub skip_shutdown: Option<bare_metal_machine_power_off_parameters::SkipShutdown>,
 }
 impl BareMetalMachinePowerOffParameters {
@@ -1112,10 +1149,20 @@ pub struct BareMetalMachineProperties {
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<String>,
     #[doc = "The cordon status of the bare metal machine."]
-    #[serde(rename = "cordonStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "cordonStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cordon_status: Option<bare_metal_machine_properties::CordonStatus>,
     #[doc = "The more detailed status of the bare metal machine."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<bare_metal_machine_properties::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -1157,10 +1204,20 @@ pub struct BareMetalMachineProperties {
     #[serde(rename = "osImage", default, skip_serializing_if = "Option::is_none")]
     pub os_image: Option<String>,
     #[doc = "The power state derived from the baseboard management controller."]
-    #[serde(rename = "powerState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "powerState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub power_state: Option<bare_metal_machine_properties::PowerState>,
     #[doc = "The provisioning state of the bare metal machine."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<bare_metal_machine_properties::ProvisioningState>,
     #[doc = "The resource ID of the rack where this bare metal machine resides."]
     #[serde(rename = "rackId")]
@@ -1169,7 +1226,12 @@ pub struct BareMetalMachineProperties {
     #[serde(rename = "rackSlot")]
     pub rack_slot: i64,
     #[doc = "The indicator of whether the bare metal machine is ready to receive workloads."]
-    #[serde(rename = "readyState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "readyState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ready_state: Option<bare_metal_machine_properties::ReadyState>,
     #[doc = "The serial number of the bare metal machine."]
     #[serde(rename = "serialNumber")]
@@ -1514,7 +1576,12 @@ impl BareMetalMachineRunReadCommandsParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BgpAdvertisement {
     #[doc = "The indicator of if this advertisement is also made to the network fabric associated with the Network Cloud Cluster. This field is ignored if fabricPeeringEnabled is set to False."]
-    #[serde(rename = "advertiseToFabric", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "advertiseToFabric",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub advertise_to_fabric: Option<bgp_advertisement::AdvertiseToFabric>,
     #[doc = "The names of the BGP communities to be associated with the announcement, utilizing a BGP community string in 1234:1234 format."]
     #[serde(
@@ -1608,7 +1675,12 @@ pub struct BgpServiceLoadBalancerConfiguration {
     )]
     pub bgp_peers: Vec<ServiceLoadBalancerBgpPeer>,
     #[doc = "The indicator to specify if the load balancer peers with the network fabric."]
-    #[serde(rename = "fabricPeeringEnabled", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "fabricPeeringEnabled",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub fabric_peering_enabled: Option<bgp_service_load_balancer_configuration::FabricPeeringEnabled>,
     #[doc = "The list of pools of IP addresses that can be allocated to Load Balancer services."]
     #[serde(
@@ -1702,7 +1774,7 @@ pub struct BmcKeySetList {
 impl azure_core::Continuable for BmcKeySetList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BmcKeySetList {
@@ -1748,7 +1820,12 @@ pub struct BmcKeySetProperties {
     #[serde(rename = "azureGroupId")]
     pub azure_group_id: String,
     #[doc = "The more detailed status of the key set."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<bmc_key_set_properties::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -1760,10 +1837,15 @@ pub struct BmcKeySetProperties {
     #[serde(rename = "lastValidation", default, with = "azure_core::date::rfc3339::option")]
     pub last_validation: Option<time::OffsetDateTime>,
     #[doc = "The access level allowed for the users in this key set."]
-    #[serde(rename = "privilegeLevel")]
+    #[serde(rename = "privilegeLevel", with = "azure_core::xml::text_content")]
     pub privilege_level: bmc_key_set_properties::PrivilegeLevel,
     #[doc = "The provisioning state of the baseboard management controller key set."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<bmc_key_set_properties::ProvisioningState>,
     #[doc = "The unique list of permitted users."]
     #[serde(rename = "userList")]
@@ -1956,7 +2038,7 @@ pub struct CloudServicesNetworkList {
 impl azure_core::Continuable for CloudServicesNetworkList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CloudServicesNetworkList {
@@ -1988,7 +2070,12 @@ pub struct CloudServicesNetworkPatchProperties {
     )]
     pub additional_egress_endpoints: Vec<EgressEndpoint>,
     #[doc = "The indicator of whether the platform default endpoints are allowed for the egress traffic."]
-    #[serde(rename = "enableDefaultEgressEndpoints", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enableDefaultEgressEndpoints",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enable_default_egress_endpoints: Option<cloud_services_network_patch_properties::EnableDefaultEgressEndpoints>,
 }
 impl CloudServicesNetworkPatchProperties {
@@ -2063,13 +2150,23 @@ pub struct CloudServicesNetworkProperties {
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<String>,
     #[doc = "The more detailed status of the cloud services network."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<cloud_services_network_properties::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
     pub detailed_status_message: Option<String>,
     #[doc = "The indicator of whether the platform default endpoints are allowed for the egress traffic."]
-    #[serde(rename = "enableDefaultEgressEndpoints", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enableDefaultEgressEndpoints",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enable_default_egress_endpoints: Option<cloud_services_network_properties::EnableDefaultEgressEndpoints>,
     #[doc = "The full list of additional and default egress endpoints that are currently enabled."]
     #[serde(
@@ -2091,7 +2188,12 @@ pub struct CloudServicesNetworkProperties {
     #[serde(rename = "interfaceName", default, skip_serializing_if = "Option::is_none")]
     pub interface_name: Option<String>,
     #[doc = "The provisioning state of the cloud services network."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<cloud_services_network_properties::ProvisioningState>,
     #[doc = "Field Deprecated. These fields will be empty/omitted. The list of virtual machine resource IDs, excluding any Hybrid AKS virtual machines, that are currently using this cloud services network."]
     #[serde(
@@ -2254,7 +2356,12 @@ impl Cluster {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterAvailableUpgradeVersion {
     #[doc = "The indicator of whether the control plane will be impacted during the upgrade."]
-    #[serde(rename = "controlImpact", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "controlImpact",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub control_impact: Option<cluster_available_upgrade_version::ControlImpact>,
     #[doc = "The expected duration needed for this upgrade."]
     #[serde(rename = "expectedDuration", default, skip_serializing_if = "Option::is_none")]
@@ -2269,7 +2376,12 @@ pub struct ClusterAvailableUpgradeVersion {
     #[serde(rename = "targetClusterVersion", default, skip_serializing_if = "Option::is_none")]
     pub target_cluster_version: Option<String>,
     #[doc = "The indicator of whether the workload will be impacted during the upgrade."]
-    #[serde(rename = "workloadImpact", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workloadImpact",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub workload_impact: Option<cluster_available_upgrade_version::WorkloadImpact>,
 }
 impl ClusterAvailableUpgradeVersion {
@@ -2432,7 +2544,7 @@ pub struct ClusterList {
 impl azure_core::Continuable for ClusterList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClusterList {
@@ -2470,7 +2582,7 @@ pub struct ClusterManagerList {
 impl azure_core::Continuable for ClusterManagerList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClusterManagerList {
@@ -2511,7 +2623,12 @@ pub struct ClusterManagerProperties {
     )]
     pub cluster_versions: Vec<ClusterAvailableVersion>,
     #[doc = "The detailed status that provides additional information about the cluster manager."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<cluster_manager_properties::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -2524,7 +2641,12 @@ pub struct ClusterManagerProperties {
     #[serde(rename = "managerExtendedLocation", default, skip_serializing_if = "Option::is_none")]
     pub manager_extended_location: Option<ExtendedLocation>,
     #[doc = "The provisioning state of the cluster manager."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<cluster_manager_properties::ProvisioningState>,
     #[doc = "Field deprecated, this value will no longer influence the cluster manager allocation process and will be removed in a future version. The size of the Azure virtual machines to use for hosting the cluster manager resource."]
     #[serde(rename = "vmSize", default, skip_serializing_if = "Option::is_none")]
@@ -2676,7 +2798,7 @@ pub struct ClusterMetricsConfigurationList {
 impl azure_core::Continuable for ClusterMetricsConfigurationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClusterMetricsConfigurationList {
@@ -2722,7 +2844,12 @@ pub struct ClusterMetricsConfigurationProperties {
     #[serde(rename = "collectionInterval")]
     pub collection_interval: i64,
     #[doc = "The more detailed status of the metrics configuration."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<cluster_metrics_configuration_properties::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -2744,7 +2871,12 @@ pub struct ClusterMetricsConfigurationProperties {
     )]
     pub enabled_metrics: Vec<String>,
     #[doc = "The provisioning state of the metrics configuration."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<cluster_metrics_configuration_properties::ProvisioningState>,
 }
 impl ClusterMetricsConfigurationProperties {
@@ -2900,7 +3032,12 @@ pub struct ClusterProperties {
     #[serde(rename = "clusterCapacity", default, skip_serializing_if = "Option::is_none")]
     pub cluster_capacity: Option<ClusterCapacity>,
     #[doc = "The latest heartbeat status between the cluster manager and the cluster."]
-    #[serde(rename = "clusterConnectionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "clusterConnectionStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cluster_connection_status: Option<cluster_properties::ClusterConnectionStatus>,
     #[serde(rename = "clusterExtendedLocation", default, skip_serializing_if = "Option::is_none")]
     pub cluster_extended_location: Option<ExtendedLocation>,
@@ -2908,7 +3045,12 @@ pub struct ClusterProperties {
     #[serde(rename = "clusterLocation", default, skip_serializing_if = "Option::is_none")]
     pub cluster_location: Option<String>,
     #[doc = "The latest connectivity status between cluster manager and the cluster."]
-    #[serde(rename = "clusterManagerConnectionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "clusterManagerConnectionStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cluster_manager_connection_status: Option<cluster_properties::ClusterManagerConnectionStatus>,
     #[doc = "The resource ID of the cluster manager that manages this cluster. This is set by the Cluster Manager when the cluster is created."]
     #[serde(rename = "clusterManagerId", default, skip_serializing_if = "Option::is_none")]
@@ -2916,7 +3058,7 @@ pub struct ClusterProperties {
     #[serde(rename = "clusterServicePrincipal", default, skip_serializing_if = "Option::is_none")]
     pub cluster_service_principal: Option<ServicePrincipalInformation>,
     #[doc = "The type of rack configuration for the cluster."]
-    #[serde(rename = "clusterType")]
+    #[serde(rename = "clusterType", with = "azure_core::xml::text_content")]
     pub cluster_type: cluster_properties::ClusterType,
     #[doc = "The current runtime version of the cluster."]
     #[serde(rename = "clusterVersion")]
@@ -2932,7 +3074,12 @@ pub struct ClusterProperties {
     )]
     pub compute_rack_definitions: Vec<RackDefinition>,
     #[doc = "The current detailed status of the cluster."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<cluster_properties::DetailedStatus>,
     #[doc = "The descriptive message about the detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -2948,7 +3095,12 @@ pub struct ClusterProperties {
     #[serde(rename = "networkFabricId")]
     pub network_fabric_id: String,
     #[doc = "The provisioning state of the cluster."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<cluster_properties::ProvisioningState>,
     #[doc = "The support end date of the runtime version of the cluster."]
     #[serde(rename = "supportExpiryDate", default, skip_serializing_if = "Option::is_none")]
@@ -3250,7 +3402,7 @@ pub struct ConsoleList {
 impl azure_core::Continuable for ConsoleList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConsoleList {
@@ -3274,7 +3426,7 @@ impl ConsolePatchParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConsolePatchProperties {
     #[doc = "The credentials used to login to the image repository that has access to the specified image."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub enabled: Option<console_patch_properties::Enabled>,
     #[doc = "The date and time after which the key will be disallowed access."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
@@ -3330,12 +3482,18 @@ pub mod console_patch_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsoleProperties {
     #[doc = "The more detailed status of the console."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<console_properties::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
     pub detailed_status_message: Option<String>,
     #[doc = "The indicator of whether the console access is enabled."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub enabled: console_properties::Enabled,
     #[doc = "The date and time after which the key will be disallowed access."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
@@ -3344,7 +3502,12 @@ pub struct ConsoleProperties {
     #[serde(rename = "privateLinkServiceId", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_id: Option<String>,
     #[doc = "The provisioning state of the virtual machine console."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<console_properties::ProvisioningState>,
     #[serde(rename = "sshPublicKey")]
     pub ssh_public_key: SshPublicKey,
@@ -3633,7 +3796,12 @@ impl ExtendedLocation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FeatureStatus {
     #[doc = "The status representing the state of this feature."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<feature_status::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -3743,7 +3911,7 @@ pub struct HardwareValidationStatus {
     #[serde(rename = "lastValidationTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_validation_time: Option<time::OffsetDateTime>,
     #[doc = "The outcome of the hardware validation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub result: Option<hardware_validation_status::Result>,
 }
 impl HardwareValidationStatus {
@@ -3836,6 +4004,7 @@ pub struct InitialAgentPoolConfiguration {
     )]
     pub labels: Vec<KubernetesLabel>,
     #[doc = "The selection of how this agent pool is utilized, either as a system pool or a user pool. System pools run the features and critical services for the Kubernetes Cluster, while user pools are dedicated to user workloads. Every Kubernetes cluster must contain at least one system node pool with at least one node."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub mode: initial_agent_pool_configuration::Mode,
     #[doc = "The name that will be used for the agent pool resource representing this agent pool."]
     pub name: String,
@@ -3916,12 +4085,22 @@ pub struct IpAddressPool {
     #[doc = "The list of IP address ranges. Each range can be a either a subnet in CIDR format or an explicit start-end range of IP addresses."]
     pub addresses: Vec<String>,
     #[doc = "The indicator to determine if automatic allocation from the pool should occur."]
-    #[serde(rename = "autoAssign", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "autoAssign",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub auto_assign: Option<ip_address_pool::AutoAssign>,
     #[doc = "The name used to identify this IP address pool for association with a BGP advertisement."]
     pub name: String,
     #[doc = "The indicator to prevent the use of IP addresses ending with .0 and .255 for this pool. Enabling this option will only use IP addresses between .1 and .254 inclusive."]
-    #[serde(rename = "onlyUseHostIps", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "onlyUseHostIps",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub only_use_host_ips: Option<ip_address_pool::OnlyUseHostIps>,
 }
 impl IpAddressPool {
@@ -4047,7 +4226,7 @@ pub struct KeySetUserStatus {
     #[serde(rename = "azureUserName", default, skip_serializing_if = "Option::is_none")]
     pub azure_user_name: Option<String>,
     #[doc = "The indicator of whether the user is currently deployed for access."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<key_set_user_status::Status>,
     #[doc = "The additional information describing the current status of this user, if any available."]
     #[serde(rename = "statusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -4131,7 +4310,7 @@ pub struct KubernetesClusterList {
 impl azure_core::Continuable for KubernetesClusterList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl KubernetesClusterList {
@@ -4154,7 +4333,12 @@ pub struct KubernetesClusterNode {
     #[serde(rename = "cpuCores", default, skip_serializing_if = "Option::is_none")]
     pub cpu_cores: Option<i64>,
     #[doc = "The detailed state of this node."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<kubernetes_cluster_node::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -4179,7 +4363,7 @@ pub struct KubernetesClusterNode {
     #[serde(rename = "memorySizeGB", default, skip_serializing_if = "Option::is_none")]
     pub memory_size_gb: Option<i64>,
     #[doc = "The mode of the agent pool containing this node. Not applicable for control plane nodes."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub mode: Option<kubernetes_cluster_node::Mode>,
     #[doc = "The name of this node, as realized in the Kubernetes cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4193,10 +4377,15 @@ pub struct KubernetesClusterNode {
     )]
     pub network_attachments: Vec<NetworkAttachment>,
     #[doc = "The power state of this node."]
-    #[serde(rename = "powerState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "powerState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub power_state: Option<kubernetes_cluster_node::PowerState>,
     #[doc = "The role of this node in the cluster."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub role: Option<kubernetes_cluster_node::Role>,
     #[doc = "The list of taints that have been assigned to the agent pool containing this node."]
     #[serde(
@@ -4441,7 +4630,12 @@ pub struct KubernetesClusterProperties {
     #[serde(rename = "controlPlaneNodeConfiguration")]
     pub control_plane_node_configuration: ControlPlaneNodeConfiguration,
     #[doc = "The current status of the Kubernetes cluster."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<kubernetes_cluster_properties::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -4472,7 +4666,12 @@ pub struct KubernetesClusterProperties {
     )]
     pub nodes: Vec<KubernetesClusterNode>,
     #[doc = "The provisioning state of the Kubernetes cluster resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<kubernetes_cluster_properties::ProvisioningState>,
 }
 impl KubernetesClusterProperties {
@@ -4640,7 +4839,12 @@ pub struct L2NetworkAttachmentConfiguration {
     #[serde(rename = "networkId")]
     pub network_id: String,
     #[doc = "The indicator of how this network will be utilized by the Kubernetes cluster."]
-    #[serde(rename = "pluginType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "pluginType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub plugin_type: Option<l2_network_attachment_configuration::PluginType>,
 }
 impl L2NetworkAttachmentConfiguration {
@@ -4723,7 +4927,7 @@ pub struct L2NetworkList {
 impl azure_core::Continuable for L2NetworkList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl L2NetworkList {
@@ -4756,7 +4960,12 @@ pub struct L2NetworkProperties {
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<String>,
     #[doc = "The more detailed status of the L2 network."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<l2_network_properties::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -4770,7 +4979,12 @@ pub struct L2NetworkProperties {
     )]
     pub hybrid_aks_clusters_associated_ids: Vec<String>,
     #[doc = "Field Deprecated. The field was previously optional, now it will have no defined behavior and will be ignored. The network plugin type for Hybrid AKS."]
-    #[serde(rename = "hybridAksPluginType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hybridAksPluginType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub hybrid_aks_plugin_type: Option<l2_network_properties::HybridAksPluginType>,
     #[doc = "The default interface name for this L2 network in the virtual machine. This name can be overridden by the name supplied in the network attachment configuration of that virtual machine."]
     #[serde(rename = "interfaceName", default, skip_serializing_if = "Option::is_none")]
@@ -4779,7 +4993,12 @@ pub struct L2NetworkProperties {
     #[serde(rename = "l2IsolationDomainId")]
     pub l2_isolation_domain_id: String,
     #[doc = "The provisioning state of the L2 network."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<l2_network_properties::ProvisioningState>,
     #[doc = "Field Deprecated. These fields will be empty/omitted. The list of virtual machine resource ID(s), excluding any Hybrid AKS virtual machines, that are currently using this L2 network."]
     #[serde(
@@ -4958,13 +5177,23 @@ impl L3Network {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct L3NetworkAttachmentConfiguration {
     #[doc = "The indication of whether this network will or will not perform IP address management and allocate IP addresses when attached."]
-    #[serde(rename = "ipamEnabled", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ipamEnabled",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ipam_enabled: Option<l3_network_attachment_configuration::IpamEnabled>,
     #[doc = "The resource ID of the network that is being configured for attachment."]
     #[serde(rename = "networkId")]
     pub network_id: String,
     #[doc = "The indicator of how this network will be utilized by the Kubernetes cluster."]
-    #[serde(rename = "pluginType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "pluginType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub plugin_type: Option<l3_network_attachment_configuration::PluginType>,
 }
 impl L3NetworkAttachmentConfiguration {
@@ -5090,7 +5319,7 @@ pub struct L3NetworkList {
 impl azure_core::Continuable for L3NetworkList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl L3NetworkList {
@@ -5123,7 +5352,12 @@ pub struct L3NetworkProperties {
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<String>,
     #[doc = "The more detailed status of the L3 network."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<l3_network_properties::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -5137,16 +5371,31 @@ pub struct L3NetworkProperties {
     )]
     pub hybrid_aks_clusters_associated_ids: Vec<String>,
     #[doc = "Field Deprecated. The field was previously optional, now it will have no defined behavior and will be ignored. The indicator of whether or not to disable IPAM allocation on the network attachment definition injected into the Hybrid AKS Cluster."]
-    #[serde(rename = "hybridAksIpamEnabled", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hybridAksIpamEnabled",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub hybrid_aks_ipam_enabled: Option<l3_network_properties::HybridAksIpamEnabled>,
     #[doc = "Field Deprecated. The field was previously optional, now it will have no defined behavior and will be ignored. The network plugin type for Hybrid AKS."]
-    #[serde(rename = "hybridAksPluginType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hybridAksPluginType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub hybrid_aks_plugin_type: Option<l3_network_properties::HybridAksPluginType>,
     #[doc = "The default interface name for this L3 network in the virtual machine. This name can be overridden by the name supplied in the network attachment configuration of that virtual machine."]
     #[serde(rename = "interfaceName", default, skip_serializing_if = "Option::is_none")]
     pub interface_name: Option<String>,
     #[doc = "The type of the IP address allocation, defaulted to \"DualStack\"."]
-    #[serde(rename = "ipAllocationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ipAllocationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ip_allocation_type: Option<l3_network_properties::IpAllocationType>,
     #[doc = "The IPV4 prefix (CIDR) assigned to this L3 network. Required when the IP allocation type\nis IPV4 or DualStack."]
     #[serde(rename = "ipv4ConnectedPrefix", default, skip_serializing_if = "Option::is_none")]
@@ -5158,7 +5407,12 @@ pub struct L3NetworkProperties {
     #[serde(rename = "l3IsolationDomainId")]
     pub l3_isolation_domain_id: String,
     #[doc = "The provisioning state of the L3 network."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<l3_network_properties::ProvisioningState>,
     #[doc = "Field Deprecated. These fields will be empty/omitted. The list of virtual machine resource IDs, excluding any Hybrid AKS virtual machines, that are currently using this L3 network."]
     #[serde(
@@ -5438,10 +5692,15 @@ pub struct MachineDisk {
     #[serde(rename = "capacityGB", default, skip_serializing_if = "Option::is_none")]
     pub capacity_gb: Option<i64>,
     #[doc = "The connection type of the rack SKU resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub connection: Option<machine_disk::Connection>,
     #[doc = "The disk type of rack SKU resource."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<machine_disk::Type>,
 }
 impl MachineDisk {
@@ -5539,7 +5798,12 @@ pub mod machine_disk {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineSkuProperties {
     #[doc = "The type of bootstrap protocol used."]
-    #[serde(rename = "bootstrapProtocol", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "bootstrapProtocol",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub bootstrap_protocol: Option<machine_sku_properties::BootstrapProtocol>,
     #[doc = "The count of CPU cores for this machine."]
     #[serde(rename = "cpuCores", default, skip_serializing_if = "Option::is_none")]
@@ -5658,10 +5922,15 @@ pub struct NetworkAttachment {
     #[serde(rename = "attachedNetworkId")]
     pub attached_network_id: String,
     #[doc = "The indicator of whether this is the default gateway.\nOnly one of the attached networks (including the CloudServicesNetwork attachment) for a single machine may be specified as True."]
-    #[serde(rename = "defaultGateway", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "defaultGateway",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub default_gateway: Option<network_attachment::DefaultGateway>,
     #[doc = "The IP allocation mechanism for the virtual machine.\nDynamic and Static are only valid for l3Network which may also specify Disabled.\nOtherwise, Disabled is the only permitted value."]
-    #[serde(rename = "ipAllocationMethod")]
+    #[serde(rename = "ipAllocationMethod", with = "azure_core::xml::text_content")]
     pub ip_allocation_method: network_attachment::IpAllocationMethod,
     #[doc = "The IPv4 address of the virtual machine.\n\nThis field is used only if the attached network has IPAllocationType of IPV4 or DualStack.\n\nIf IPAllocationMethod is:\nStatic - this field must contain a user specified IPv4 address from within the subnet specified in the attached network.\nDynamic - this field is read-only, but will be populated with an address from within the subnet specified in the attached network.\nDisabled - this field will be empty."]
     #[serde(rename = "ipv4Address", default, skip_serializing_if = "Option::is_none")]
@@ -5819,7 +6088,12 @@ pub struct NetworkInterface {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub address: Option<String>,
     #[doc = "The connection type of the device."]
-    #[serde(rename = "deviceConnectionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "deviceConnectionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub device_connection_type: Option<network_interface::DeviceConnectionType>,
     #[doc = "The model name of the device."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5910,10 +6184,15 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -6039,7 +6318,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -6050,10 +6329,20 @@ impl OperationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OsDisk {
     #[doc = "The strategy for creating the OS disk."]
-    #[serde(rename = "createOption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createOption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_option: Option<os_disk::CreateOption>,
     #[doc = "The strategy for deleting the OS disk."]
-    #[serde(rename = "deleteOption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "deleteOption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub delete_option: Option<os_disk::DeleteOption>,
     #[doc = "The size of the disk in gigabytes. Required if the createOption is Ephemeral."]
     #[serde(rename = "diskSizeGB")]
@@ -6231,7 +6520,7 @@ pub struct RackList {
 impl azure_core::Continuable for RackList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RackList {
@@ -6261,13 +6550,23 @@ pub struct RackProperties {
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<String>,
     #[doc = "The more detailed status of the rack."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<rack_properties::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
     pub detailed_status_message: Option<String>,
     #[doc = "The provisioning state of the rack resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<rack_properties::ProvisioningState>,
     #[doc = "The free-form description of the rack location. (e.g. “DTN Datacenter, Floor 3, Isle 9, Rack 2B”)"]
     #[serde(rename = "rackLocation")]
@@ -6408,7 +6707,7 @@ pub struct RackSkuList {
 impl azure_core::Continuable for RackSkuList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RackSkuList {
@@ -6441,10 +6740,20 @@ pub struct RackSkuProperties {
     #[serde(rename = "maxClusterSlots", default, skip_serializing_if = "Option::is_none")]
     pub max_cluster_slots: Option<i64>,
     #[doc = "The provisioning state of the rack SKU resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<rack_sku_properties::ProvisioningState>,
     #[doc = "The type of the rack."]
-    #[serde(rename = "rackType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rackType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub rack_type: Option<rack_sku_properties::RackType>,
     #[doc = "The list of appliance SKUs and associated rack slot for the storage appliance(s) in this rack model."]
     #[serde(
@@ -6583,10 +6892,20 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceLoadBalancerBgpPeer {
     #[doc = "The indicator of BFD enablement for this BgpPeer."]
-    #[serde(rename = "bfdEnabled", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "bfdEnabled",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub bfd_enabled: Option<service_load_balancer_bgp_peer::BfdEnabled>,
     #[doc = "The indicator to enable multi-hop peering support."]
-    #[serde(rename = "bgpMultiHop", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "bgpMultiHop",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub bgp_multi_hop: Option<service_load_balancer_bgp_peer::BgpMultiHop>,
     #[doc = "The requested BGP hold time value. This field uses ISO 8601 duration format, for example P1H."]
     #[serde(rename = "holdTime", default, skip_serializing_if = "Option::is_none")]
@@ -6823,7 +7142,7 @@ pub struct StorageApplianceList {
 impl azure_core::Continuable for StorageApplianceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageApplianceList {
@@ -6869,7 +7188,12 @@ pub struct StorageApplianceProperties {
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<String>,
     #[doc = "The detailed status of the storage appliance."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<storage_appliance_properties::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -6878,7 +7202,12 @@ pub struct StorageApplianceProperties {
     #[serde(rename = "managementIpv4Address", default, skip_serializing_if = "Option::is_none")]
     pub management_ipv4_address: Option<String>,
     #[doc = "The provisioning state of the storage appliance."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<storage_appliance_properties::ProvisioningState>,
     #[doc = "The resource ID of the rack where this storage appliance resides."]
     #[serde(rename = "rackId")]
@@ -6887,10 +7216,20 @@ pub struct StorageApplianceProperties {
     #[serde(rename = "rackSlot")]
     pub rack_slot: i64,
     #[doc = "The indicator of whether the storage appliance supports remote vendor management."]
-    #[serde(rename = "remoteVendorManagementFeature", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "remoteVendorManagementFeature",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub remote_vendor_management_feature: Option<storage_appliance_properties::RemoteVendorManagementFeature>,
     #[doc = "The indicator of whether the remote vendor management feature is enabled or disabled, or unsupported if it is an unsupported feature."]
-    #[serde(rename = "remoteVendorManagementStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "remoteVendorManagementStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub remote_vendor_management_status: Option<storage_appliance_properties::RemoteVendorManagementStatus>,
     #[doc = "The serial number for the storage appliance."]
     #[serde(rename = "serialNumber")]
@@ -7188,7 +7527,12 @@ pub struct TrunkedNetworkAttachmentConfiguration {
     #[serde(rename = "networkId")]
     pub network_id: String,
     #[doc = "The indicator of how this network will be utilized by the Kubernetes cluster."]
-    #[serde(rename = "pluginType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "pluginType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub plugin_type: Option<trunked_network_attachment_configuration::PluginType>,
 }
 impl TrunkedNetworkAttachmentConfiguration {
@@ -7271,7 +7615,7 @@ pub struct TrunkedNetworkList {
 impl azure_core::Continuable for TrunkedNetworkList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TrunkedNetworkList {
@@ -7304,7 +7648,12 @@ pub struct TrunkedNetworkProperties {
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<String>,
     #[doc = "The more detailed status of the trunked network."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<trunked_network_properties::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -7318,7 +7667,12 @@ pub struct TrunkedNetworkProperties {
     )]
     pub hybrid_aks_clusters_associated_ids: Vec<String>,
     #[doc = "Field Deprecated. The field was previously optional, now it will have no defined behavior and will be ignored. The network plugin type for Hybrid AKS."]
-    #[serde(rename = "hybridAksPluginType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hybridAksPluginType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub hybrid_aks_plugin_type: Option<trunked_network_properties::HybridAksPluginType>,
     #[doc = "The default interface name for this trunked network in the virtual machine. This name can be overridden by the name supplied in the network attachment configuration of that virtual machine."]
     #[serde(rename = "interfaceName", default, skip_serializing_if = "Option::is_none")]
@@ -7327,7 +7681,12 @@ pub struct TrunkedNetworkProperties {
     #[serde(rename = "isolationDomainIds")]
     pub isolation_domain_ids: Vec<String>,
     #[doc = "The provisioning state of the trunked network."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<trunked_network_properties::ProvisioningState>,
     #[doc = "Field Deprecated. These fields will be empty/omitted. The list of virtual machine resource IDs, excluding any Hybrid AKS virtual machines, that are currently using this trunked network."]
     #[serde(
@@ -7492,9 +7851,10 @@ pub mod trunked_network_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidationThreshold {
     #[doc = "Selection of how the type evaluation is applied to the cluster calculation."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub grouping: validation_threshold::Grouping,
     #[doc = "Selection of how the threshold should be evaluated."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: validation_threshold::Type,
     #[doc = "The numeric threshold value."]
     pub value: i64,
@@ -7614,7 +7974,7 @@ pub struct VirtualMachineList {
 impl azure_core::Continuable for VirtualMachineList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualMachineList {
@@ -7648,15 +8008,16 @@ impl VirtualMachinePatchProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachinePlacementHint {
     #[doc = "The specification of whether this hint supports affinity or anti-affinity with the referenced resources."]
-    #[serde(rename = "hintType")]
+    #[serde(rename = "hintType", with = "azure_core::xml::text_content")]
     pub hint_type: virtual_machine_placement_hint::HintType,
     #[doc = "The resource ID of the target object that the placement hints will be checked against, e.g., the bare metal node to host the virtual machine."]
     #[serde(rename = "resourceId")]
     pub resource_id: String,
     #[doc = "The indicator of whether the hint is a hard or soft requirement during scheduling."]
-    #[serde(rename = "schedulingExecution")]
+    #[serde(rename = "schedulingExecution", with = "azure_core::xml::text_content")]
     pub scheduling_execution: virtual_machine_placement_hint::SchedulingExecution,
     #[doc = "The scope for the virtual machine affinity or anti-affinity placement hint. It should always be \"Machine\" in the case of node affinity."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub scope: virtual_machine_placement_hint::Scope,
 }
 impl VirtualMachinePlacementHint {
@@ -7791,7 +8152,12 @@ pub mod virtual_machine_placement_hint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachinePowerOffParameters {
     #[doc = "The indicator of whether to skip the graceful OS shutdown and power off the virtual machine immediately."]
-    #[serde(rename = "skipShutdown", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "skipShutdown",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub skip_shutdown: Option<virtual_machine_power_off_parameters::SkipShutdown>,
 }
 impl VirtualMachinePowerOffParameters {
@@ -7856,7 +8222,12 @@ pub struct VirtualMachineProperties {
     #[serde(rename = "bareMetalMachineId", default, skip_serializing_if = "Option::is_none")]
     pub bare_metal_machine_id: Option<String>,
     #[doc = "Selects the boot method for the virtual machine."]
-    #[serde(rename = "bootMethod", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "bootMethod",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub boot_method: Option<virtual_machine_properties::BootMethod>,
     #[serde(rename = "cloudServicesNetworkAttachment")]
     pub cloud_services_network_attachment: NetworkAttachment,
@@ -7867,13 +8238,23 @@ pub struct VirtualMachineProperties {
     #[serde(rename = "cpuCores")]
     pub cpu_cores: i64,
     #[doc = "The more detailed status of the virtual machine."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<virtual_machine_properties::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
     pub detailed_status_message: Option<String>,
     #[doc = "Field Deprecated, the value will be ignored if provided. The indicator of whether one of the specified CPU cores is isolated to run the emulator thread for this virtual machine."]
-    #[serde(rename = "isolateEmulatorThread", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "isolateEmulatorThread",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub isolate_emulator_thread: Option<virtual_machine_properties::IsolateEmulatorThread>,
     #[doc = "The memory size of the virtual machine in GB."]
     #[serde(rename = "memorySizeGB")]
@@ -7898,10 +8279,20 @@ pub struct VirtualMachineProperties {
     )]
     pub placement_hints: Vec<VirtualMachinePlacementHint>,
     #[doc = "The power state of the virtual machine."]
-    #[serde(rename = "powerState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "powerState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub power_state: Option<virtual_machine_properties::PowerState>,
     #[doc = "The provisioning state of the virtual machine."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<virtual_machine_properties::ProvisioningState>,
     #[doc = "The list of ssh public keys. Each key will be added to the virtual machine using the cloud-init ssh_authorized_keys mechanism for the adminUsername."]
     #[serde(
@@ -7917,10 +8308,20 @@ pub struct VirtualMachineProperties {
     #[serde(rename = "userData", default, skip_serializing_if = "Option::is_none")]
     pub user_data: Option<String>,
     #[doc = "Field Deprecated, use virtualizationModel instead. The type of the virtio interface."]
-    #[serde(rename = "virtioInterface", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "virtioInterface",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub virtio_interface: Option<virtual_machine_properties::VirtioInterface>,
     #[doc = "The type of the device model to use."]
-    #[serde(rename = "vmDeviceModel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "vmDeviceModel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub vm_device_model: Option<virtual_machine_properties::VmDeviceModel>,
     #[doc = "The virtual machine image that is currently provisioned to the OS disk, using the full url and tag notation used to pull the image."]
     #[serde(rename = "vmImage")]
@@ -8309,7 +8710,7 @@ pub struct VolumeList {
 impl azure_core::Continuable for VolumeList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VolumeList {
@@ -8339,13 +8740,23 @@ pub struct VolumeProperties {
     )]
     pub attached_to: Vec<String>,
     #[doc = "The more detailed status of the volume."]
-    #[serde(rename = "detailedStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "detailedStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub detailed_status: Option<volume_properties::DetailedStatus>,
     #[doc = "The descriptive message about the current detailed status."]
     #[serde(rename = "detailedStatusMessage", default, skip_serializing_if = "Option::is_none")]
     pub detailed_status_message: Option<String>,
     #[doc = "The provisioning state of the volume."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<volume_properties::ProvisioningState>,
     #[doc = "The unique identifier of the volume."]
     #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
@@ -8458,7 +8869,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -8467,7 +8883,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

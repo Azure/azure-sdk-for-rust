@@ -40,10 +40,10 @@ pub struct Arp {
     #[serde(rename = "priorityLevel")]
     pub priority_level: ArpPriorityLevel,
     #[doc = "Preemption capability."]
-    #[serde(rename = "preemptCap")]
+    #[serde(rename = "preemptCap", with = "azure_core::xml::text_content")]
     pub preempt_cap: PreemptionCapability,
     #[doc = "Preemption vulnerability."]
-    #[serde(rename = "preemptVuln")]
+    #[serde(rename = "preemptVuln", with = "azure_core::xml::text_content")]
     pub preempt_vuln: PreemptionVulnerability,
 }
 impl Arp {
@@ -146,7 +146,7 @@ pub struct AttachedDataNetworkListResult {
 impl azure_core::Continuable for AttachedDataNetworkListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AttachedDataNetworkListResult {
@@ -158,7 +158,12 @@ impl AttachedDataNetworkListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AttachedDataNetworkPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Interface properties"]
     #[serde(rename = "userPlaneDataInterface")]
@@ -280,7 +285,7 @@ pub type BitRateRm = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateProvisioning {
     #[doc = "The certificate's provisioning state"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<certificate_provisioning::State>,
     #[doc = "Reason for certificate provisioning failure."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -337,10 +342,20 @@ pub mod certificate_provisioning {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommonSimPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The state of the SIM resource."]
-    #[serde(rename = "simState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "simState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub sim_state: Option<SimState>,
     #[doc = "The provisioning state of a resource e.g. SIM/SIM policy on a site. The dictionary keys will ARM resource IDs in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MobileNetwork/mobileNetworks/{mobileNetworkName}/sites/{siteName}. The dictionary values will be from the \"SiteProvisioningState\" enum."]
     #[serde(rename = "siteProvisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -469,13 +484,28 @@ pub struct DataNetworkConfiguration {
     #[serde(rename = "allocationAndRetentionPriorityLevel", default, skip_serializing_if = "Option::is_none")]
     pub allocation_and_retention_priority_level: Option<ArpPriorityLevel>,
     #[doc = "Preemption capability."]
-    #[serde(rename = "preemptionCapability", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "preemptionCapability",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub preemption_capability: Option<PreemptionCapability>,
     #[doc = "Preemption vulnerability."]
-    #[serde(rename = "preemptionVulnerability", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "preemptionVulnerability",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub preemption_vulnerability: Option<PreemptionVulnerability>,
     #[doc = "PDU session type (IPv4/IPv6)."]
-    #[serde(rename = "defaultSessionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "defaultSessionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub default_session_type: Option<PduSessionType>,
     #[doc = "Allowed session types in addition to the default session type. Must not duplicate the default session type."]
     #[serde(
@@ -525,7 +555,7 @@ pub struct DataNetworkListResult {
 impl azure_core::Continuable for DataNetworkListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataNetworkListResult {
@@ -537,7 +567,12 @@ impl DataNetworkListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataNetworkPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "An optional description for this data network."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -703,7 +738,7 @@ impl HttpsServerCertificate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Installation {
     #[doc = "The installation state of the packet core."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<InstallationState>,
     #[doc = "Reference to an Azure Async Operation ID."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -806,7 +841,7 @@ impl KeyVaultKey {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalDiagnosticsAccessConfiguration {
     #[doc = "How to authenticate users who access local diagnostics APIs."]
-    #[serde(rename = "authenticationType")]
+    #[serde(rename = "authenticationType", with = "azure_core::xml::text_content")]
     pub authentication_type: local_diagnostics_access_configuration::AuthenticationType,
     #[doc = "HTTPS server certificate configuration."]
     #[serde(rename = "httpsServerCertificate", default, skip_serializing_if = "Option::is_none")]
@@ -871,7 +906,7 @@ pub struct ManagedServiceIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Type of managed service identity (where both SystemAssigned and UserAssigned types are allowed)."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: ManagedServiceIdentityType,
     #[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -968,7 +1003,7 @@ pub struct MobileNetworkListResult {
 impl azure_core::Continuable for MobileNetworkListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MobileNetworkListResult {
@@ -980,7 +1015,12 @@ impl MobileNetworkListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MobileNetworkPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Public land mobile network (PLMN) ID."]
     #[serde(rename = "publicLandMobileNetworkIdentifier")]
@@ -1013,7 +1053,7 @@ impl MobileNetworkResourceId {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NaptConfiguration {
     #[doc = "Whether network address and port translation is enabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub enabled: Option<NaptEnabled>,
     #[doc = "Range of port numbers to use as translated ports on each translated address.\nIf not specified and NAPT is enabled, this range defaults to 1,024 - 49,999.\n(Ports under 1,024 should not be used because these are special purpose ports reserved by IANA. Ports 50,000 and above are reserved for non-NAPT use.)"]
     #[serde(rename = "portRange", default, skip_serializing_if = "Option::is_none")]
@@ -1171,7 +1211,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -1228,7 +1268,7 @@ pub struct PacketCoreControlPlaneListResult {
 impl azure_core::Continuable for PacketCoreControlPlaneListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PacketCoreControlPlaneListResult {
@@ -1240,7 +1280,12 @@ impl PacketCoreControlPlaneListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PacketCoreControlPlanePropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The installation state of the packet core."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1250,7 +1295,12 @@ pub struct PacketCoreControlPlanePropertiesFormat {
     #[doc = "The platform where the packet core is deployed."]
     pub platform: PlatformConfiguration,
     #[doc = "The core network technology generation (5G core or EPC / 4G core)."]
-    #[serde(rename = "coreNetworkTechnology", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "coreNetworkTechnology",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub core_network_technology: Option<CoreNetworkType>,
     #[doc = "The version of the packet core software that is deployed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1262,6 +1312,7 @@ pub struct PacketCoreControlPlanePropertiesFormat {
     #[serde(rename = "controlPlaneAccessInterface")]
     pub control_plane_access_interface: InterfaceProperties,
     #[doc = "The SKU of the packet core control plane resource. The SKU list may change over time when a new SKU gets added or an exiting SKU gets removed."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub sku: BillingSku,
     #[doc = "The MTU (in bytes) signaled to the UE. The same MTU is set on the user plane data links for all data networks. The MTU set on the user plane access link is calculated to be 60 bytes greater than this value to allow for GTP encapsulation."]
     #[serde(rename = "ueMtu", default, skip_serializing_if = "Option::is_none")]
@@ -1330,7 +1381,7 @@ pub struct PacketCoreControlPlaneVersionListResult {
 impl azure_core::Continuable for PacketCoreControlPlaneVersionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PacketCoreControlPlaneVersionListResult {
@@ -1342,7 +1393,12 @@ impl PacketCoreControlPlaneVersionListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PacketCoreControlPlaneVersionPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Platform specific packet core control plane version properties."]
     #[serde(
@@ -1390,7 +1446,7 @@ pub struct PacketCoreDataPlaneListResult {
 impl azure_core::Continuable for PacketCoreDataPlaneListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PacketCoreDataPlaneListResult {
@@ -1402,7 +1458,12 @@ impl PacketCoreDataPlaneListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PacketCoreDataPlanePropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Interface properties"]
     #[serde(rename = "userPlaneAccessInterface")]
@@ -1429,7 +1490,12 @@ pub struct PccRuleConfiguration {
     #[serde(rename = "ruleQosPolicy", default, skip_serializing_if = "Option::is_none")]
     pub rule_qos_policy: Option<PccRuleQosPolicy>,
     #[doc = "Traffic control permission."]
-    #[serde(rename = "trafficControl", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "trafficControl",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub traffic_control: Option<TrafficControlPermission>,
     #[doc = "The set of data flow templates to use for this data flow policy rule."]
     #[serde(rename = "serviceDataFlowTemplates")]
@@ -1559,10 +1625,20 @@ impl PinholeTimeouts {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Platform {
     #[doc = "The platform type where packet core is deployed. The contents of this enum can change."]
-    #[serde(rename = "platformType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "platformType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub platform_type: Option<PlatformType>,
     #[doc = "The state of this packet core control plane version."]
-    #[serde(rename = "versionState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "versionState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub version_state: Option<VersionState>,
     #[doc = "The minimum software version of the platform where this packet core version can be deployed."]
     #[serde(rename = "minimumPlatformSoftwareVersion", default, skip_serializing_if = "Option::is_none")]
@@ -1571,10 +1647,20 @@ pub struct Platform {
     #[serde(rename = "maximumPlatformSoftwareVersion", default, skip_serializing_if = "Option::is_none")]
     pub maximum_platform_software_version: Option<String>,
     #[doc = "Indicates whether this is the recommended version to use for new packet core control plane deployments."]
-    #[serde(rename = "recommendedVersion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "recommendedVersion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub recommended_version: Option<RecommendedVersion>,
     #[doc = "Indicates whether this version is obsolete."]
-    #[serde(rename = "obsoleteVersion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "obsoleteVersion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub obsolete_version: Option<ObsoleteVersion>,
 }
 impl Platform {
@@ -1586,7 +1672,7 @@ impl Platform {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PlatformConfiguration {
     #[doc = "The platform type where packet core is deployed. The contents of this enum can change."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: PlatformType,
     #[doc = "Reference to an Azure Stack Edge device resource."]
     #[serde(rename = "azureStackEdgeDevice", default, skip_serializing_if = "Option::is_none")]
@@ -1858,10 +1944,20 @@ pub struct QosPolicy {
     #[serde(rename = "allocationAndRetentionPriorityLevel", default, skip_serializing_if = "Option::is_none")]
     pub allocation_and_retention_priority_level: Option<ArpPriorityLevel>,
     #[doc = "Preemption capability."]
-    #[serde(rename = "preemptionCapability", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "preemptionCapability",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub preemption_capability: Option<PreemptionCapability>,
     #[doc = "Preemption vulnerability."]
-    #[serde(rename = "preemptionVulnerability", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "preemptionVulnerability",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub preemption_vulnerability: Option<PreemptionVulnerability>,
     #[doc = "Aggregate maximum bit rate."]
     #[serde(rename = "maximumBitRate")]
@@ -2000,6 +2096,7 @@ pub struct ServiceDataFlowTemplate {
     #[serde(rename = "templateName")]
     pub template_name: String,
     #[doc = "Service data flow direction."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub direction: SdfDirection,
     #[doc = "A list of the allowed protocol(s) for this flow. If you want this flow to be able to use any protocol within the internet protocol suite, use the value `ip`. If you only want to allow a selection of protocols, you must use the corresponding IANA Assigned Internet Protocol Number for each protocol, as described in https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml. For example, for UDP, you must use 17. If you use the value `ip` then you must leave the field `port` unspecified."]
     pub protocol: Vec<String>,
@@ -2042,7 +2139,7 @@ pub struct ServiceListResult {
 impl azure_core::Continuable for ServiceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceListResult {
@@ -2054,7 +2151,12 @@ impl ServiceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "A precedence value that is used to decide between services when identifying the QoS values to use for a particular SIM. A lower value means a higher priority. This value should be unique among all services configured in the mobile network."]
     #[serde(rename = "servicePrecedence")]
@@ -2151,7 +2253,7 @@ pub struct SimGroupListResult {
 impl azure_core::Continuable for SimGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SimGroupListResult {
@@ -2163,7 +2265,12 @@ impl SimGroupListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SimGroupPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "An Azure key vault key."]
     #[serde(rename = "encryptionKey", default, skip_serializing_if = "Option::is_none")]
@@ -2205,7 +2312,7 @@ pub struct SimListResult {
 impl azure_core::Continuable for SimListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SimListResult {
@@ -2272,7 +2379,7 @@ pub struct SimPolicyListResult {
 impl azure_core::Continuable for SimPolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SimPolicyListResult {
@@ -2284,7 +2391,12 @@ impl SimPolicyListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SimPolicyPropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The provisioning state of a resource e.g. SIM/SIM policy on a site. The dictionary keys will ARM resource IDs in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MobileNetwork/mobileNetworks/{mobileNetworkName}/sites/{siteName}. The dictionary values will be from the \"SiteProvisioningState\" enum."]
     #[serde(rename = "siteProvisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -2467,7 +2579,7 @@ pub struct SiteListResult {
 impl azure_core::Continuable for SiteListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SiteListResult {
@@ -2479,7 +2591,12 @@ impl SiteListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SitePropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "An array of IDs of the network functions deployed in the site. Deleting the site will delete any network functions that are deployed in the site."]
     #[serde(
@@ -2617,7 +2734,7 @@ pub struct SliceListResult {
 impl azure_core::Continuable for SliceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SliceListResult {
@@ -2629,7 +2746,12 @@ impl SliceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SlicePropertiesFormat {
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Single-network slice selection assistance information (S-NSSAI)."]
     pub snssai: Snssai,
@@ -2828,7 +2950,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2837,7 +2964,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

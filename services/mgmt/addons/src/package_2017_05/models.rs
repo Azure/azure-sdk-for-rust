@@ -7,7 +7,12 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CanonicalSupportPlanProperties {
     #[doc = "The provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<canonical_support_plan_properties::ProvisioningState>,
 }
 impl CanonicalSupportPlanProperties {

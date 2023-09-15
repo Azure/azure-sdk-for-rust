@@ -103,7 +103,7 @@ pub struct FluidRelayContainerList {
 impl azure_core::Continuable for FluidRelayContainerList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FluidRelayContainerList {
@@ -121,7 +121,12 @@ pub struct FluidRelayContainerProperties {
     #[serde(rename = "frsContainerId", default, skip_serializing_if = "Option::is_none")]
     pub frs_container_id: Option<String>,
     #[doc = "Provision states for FluidRelay RP"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<fluid_relay_container_properties::ProvisioningState>,
 }
 impl FluidRelayContainerProperties {
@@ -248,7 +253,7 @@ pub struct FluidRelayServerList {
 impl azure_core::Continuable for FluidRelayServerList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FluidRelayServerList {
@@ -266,7 +271,12 @@ pub struct FluidRelayServerProperties {
     #[serde(rename = "fluidRelayEndpoints", default, skip_serializing_if = "Option::is_none")]
     pub fluid_relay_endpoints: Option<FluidRelayEndpoints>,
     #[doc = "Provision states for FluidRelay RP"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<fluid_relay_server_properties::ProvisioningState>,
 }
 impl FluidRelayServerProperties {
@@ -344,7 +354,12 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The identity type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<identity::Type>,
     #[doc = "The list of user identities associated with the resource."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -405,7 +420,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -446,7 +461,7 @@ impl ProxyResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RegenerateKeyRequest {
     #[doc = "The key to regenerate."]
-    #[serde(rename = "keyName")]
+    #[serde(rename = "keyName", with = "azure_core::xml::text_content")]
     pub key_name: regenerate_key_request::KeyName,
 }
 impl RegenerateKeyRequest {
@@ -510,7 +525,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -519,7 +539,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

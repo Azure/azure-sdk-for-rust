@@ -171,7 +171,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "The reason of name availability result"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<CheckNameUnavailableReason>,
     #[doc = "The message if name is unavailable"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -269,7 +269,7 @@ pub struct KeyDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The rank of the EngagementFabric account key"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub rank: Option<KeyRank>,
     #[doc = "The value of the key"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -414,6 +414,7 @@ pub struct RegenerateKeyParameter {
     #[doc = "The name of key to be regenerated"]
     pub name: String,
     #[doc = "The rank of the EngagementFabric account key"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub rank: KeyRank,
 }
 impl RegenerateKeyParameter {

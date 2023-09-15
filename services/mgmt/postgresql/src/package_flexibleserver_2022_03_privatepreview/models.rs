@@ -10,7 +10,12 @@ pub struct Backup {
     #[serde(rename = "backupRetentionDays", default, skip_serializing_if = "Option::is_none")]
     pub backup_retention_days: Option<i32>,
     #[doc = "A value indicating whether Geo-Redundant backup is enabled on the server."]
-    #[serde(rename = "geoRedundantBackup", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "geoRedundantBackup",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub geo_redundant_backup: Option<backup::GeoRedundantBackup>,
     #[doc = "The earliest restore point time (ISO8601 format) for server."]
     #[serde(rename = "earliestRestoreDate", default, with = "azure_core::date::rfc3339::option")]
@@ -82,6 +87,7 @@ impl CachedServerName {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CachedServerNameRequest {
     #[doc = "The version of a server."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub version: ServerVersion,
     #[doc = "Storage properties of a server"]
     pub storage: Storage,
@@ -110,7 +116,7 @@ pub struct CapabilitiesListResult {
 impl azure_core::Continuable for CapabilitiesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CapabilitiesListResult {
@@ -216,7 +222,7 @@ pub struct ConfigurationListResult {
 impl azure_core::Continuable for ConfigurationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConfigurationListResult {
@@ -237,7 +243,12 @@ pub struct ConfigurationProperties {
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
     pub default_value: Option<String>,
     #[doc = "Data type of the configuration."]
-    #[serde(rename = "dataType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_type: Option<configuration_properties::DataType>,
     #[doc = "Allowed values of the configuration."]
     #[serde(rename = "allowedValues", default, skip_serializing_if = "Option::is_none")]
@@ -344,7 +355,7 @@ pub struct DatabaseListResult {
 impl azure_core::Continuable for DatabaseListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DatabaseListResult {
@@ -467,7 +478,7 @@ pub struct FirewallRuleListResult {
 impl azure_core::Continuable for FirewallRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FirewallRuleListResult {
@@ -528,10 +539,10 @@ impl FlexibleServerEditionCapability {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HighAvailability {
     #[doc = "The HA mode for the server."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub mode: Option<high_availability::Mode>,
     #[doc = "A state of a HA server that is visible to user."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<high_availability::State>,
     #[doc = "availability zone information of the standby."]
     #[serde(rename = "standbyAvailabilityZone", default, skip_serializing_if = "Option::is_none")]
@@ -710,7 +721,7 @@ pub struct NameAvailability {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "The name availability reason."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<name_availability::Reason>,
 }
 impl NameAvailability {
@@ -776,7 +787,12 @@ impl NameAvailabilityRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Network {
     #[doc = "public network access is enabled or not"]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<network::PublicNetworkAccess>,
     #[doc = "delegated subnet arm resource id."]
     #[serde(rename = "delegatedSubnetResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -861,7 +877,7 @@ pub struct Operation {
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
     #[doc = "The intended executor of the operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<operation::Origin>,
     #[doc = "Additional descriptions for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -993,7 +1009,12 @@ pub struct RestartParameter {
     #[serde(rename = "restartWithFailover", default, skip_serializing_if = "Option::is_none")]
     pub restart_with_failover: Option<bool>,
     #[doc = "Failover mode."]
-    #[serde(rename = "failoverMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "failoverMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub failover_mode: Option<restart_parameter::FailoverMode>,
 }
 impl RestartParameter {
@@ -1104,7 +1125,7 @@ pub struct ServerBackupListResult {
 impl azure_core::Continuable for ServerBackupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerBackupListResult {
@@ -1167,7 +1188,7 @@ pub struct ServerListResult {
 impl azure_core::Continuable for ServerListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerListResult {
@@ -1185,13 +1206,13 @@ pub struct ServerProperties {
     #[serde(rename = "administratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
     pub administrator_login_password: Option<String>,
     #[doc = "The version of a server."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub version: Option<ServerVersion>,
     #[doc = "The minor version of the server."]
     #[serde(rename = "minorVersion", default, skip_serializing_if = "Option::is_none")]
     pub minor_version: Option<String>,
     #[doc = "A state of a server that is visible to user."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<server_properties::State>,
     #[doc = "The fully qualified domain name of a server."]
     #[serde(rename = "fullyQualifiedDomainName", default, skip_serializing_if = "Option::is_none")]
@@ -1221,7 +1242,12 @@ pub struct ServerProperties {
     #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
     pub availability_zone: Option<String>,
     #[doc = "The mode to create a new PostgreSQL server."]
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_mode: Option<server_properties::CreateMode>,
 }
 impl ServerProperties {
@@ -1338,7 +1364,12 @@ pub struct ServerPropertiesForUpdate {
     #[serde(rename = "maintenanceWindow", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_window: Option<MaintenanceWindow>,
     #[doc = "The mode to update a new PostgreSQL server."]
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_mode: Option<server_properties_for_update::CreateMode>,
 }
 impl ServerPropertiesForUpdate {
@@ -1459,6 +1490,7 @@ pub struct Sku {
     #[doc = "The name of the sku, typically, tier + family + cores, e.g. Standard_D4s_v3."]
     pub name: String,
     #[doc = "The tier of the particular SKU, e.g. Burstable."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub tier: sku::Tier,
 }
 impl Sku {
@@ -1648,7 +1680,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1657,7 +1694,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

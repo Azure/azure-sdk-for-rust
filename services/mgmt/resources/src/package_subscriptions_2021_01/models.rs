@@ -32,7 +32,7 @@ pub struct CheckResourceNameResult {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "Is the resource name Allowed or Reserved"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<check_resource_name_result::Status>,
 }
 impl CheckResourceNameResult {
@@ -235,7 +235,12 @@ pub struct Location {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The location type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<location::Type>,
     #[doc = "The display name of the location."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -287,10 +292,20 @@ impl LocationListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocationMetadata {
     #[doc = "The type of the region."]
-    #[serde(rename = "regionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "regionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub region_type: Option<location_metadata::RegionType>,
     #[doc = "The category of the region."]
-    #[serde(rename = "regionCategory", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "regionCategory",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub region_category: Option<location_metadata::RegionCategory>,
     #[doc = "The geography group of the location."]
     #[serde(rename = "geographyGroup", default, skip_serializing_if = "Option::is_none")]
@@ -533,7 +548,7 @@ pub struct Subscription {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The subscription state. Possible values are Enabled, Warned, PastDue, Disabled, and Deleted."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<subscription::State>,
     #[doc = "Subscription policies."]
     #[serde(rename = "subscriptionPolicies", default, skip_serializing_if = "Option::is_none")]
@@ -612,7 +627,12 @@ pub struct SubscriptionPolicies {
     #[serde(rename = "quotaId", default, skip_serializing_if = "Option::is_none")]
     pub quota_id: Option<String>,
     #[doc = "The subscription spending limit."]
-    #[serde(rename = "spendingLimit", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "spendingLimit",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub spending_limit: Option<subscription_policies::SpendingLimit>,
 }
 impl SubscriptionPolicies {
@@ -640,7 +660,12 @@ pub struct TenantIdDescription {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Category of the tenant."]
-    #[serde(rename = "tenantCategory", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "tenantCategory",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub tenant_category: Option<tenant_id_description::TenantCategory>,
     #[doc = "Country/region name of the address for the tenant."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

@@ -26,10 +26,15 @@ pub struct SparkBatchJob {
     #[serde(rename = "artifactId", default, skip_serializing_if = "Option::is_none")]
     pub artifact_id: Option<String>,
     #[doc = "The job type."]
-    #[serde(rename = "jobType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "jobType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub job_type: Option<spark_batch_job::JobType>,
     #[doc = "The Spark batch job result."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub result: Option<spark_batch_job::Result>,
     #[serde(rename = "schedulerInfo", default, skip_serializing_if = "Option::is_none")]
     pub scheduler_info: Option<SparkScheduler>,
@@ -55,7 +60,7 @@ pub struct SparkBatchJob {
     #[serde(rename = "appInfo", default, skip_serializing_if = "Option::is_none")]
     pub app_info: Option<serde_json::Value>,
     #[doc = "The batch state"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<spark_batch_job::State>,
     #[doc = "The log lines."]
     #[serde(
@@ -437,7 +442,12 @@ pub struct SparkScheduler {
     pub ended_at: Option<time::OffsetDateTime>,
     #[serde(rename = "cancellationRequestedAt", default, with = "azure_core::date::rfc3339::option")]
     pub cancellation_requested_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "currentState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub current_state: Option<spark_scheduler::CurrentState>,
 }
 impl SparkScheduler {
@@ -492,7 +502,7 @@ pub struct SparkServiceError {
     pub message: Option<String>,
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub source: Option<spark_service_error::Source>,
 }
 impl SparkServiceError {
@@ -555,7 +565,12 @@ pub struct SparkServicePlugin {
     pub monitoring_started_at: Option<time::OffsetDateTime>,
     #[serde(rename = "cleanupStartedAt", default, with = "azure_core::date::rfc3339::option")]
     pub cleanup_started_at: Option<time::OffsetDateTime>,
-    #[serde(rename = "currentState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "currentState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub current_state: Option<spark_service_plugin::CurrentState>,
 }
 impl SparkServicePlugin {
@@ -628,9 +643,14 @@ pub struct SparkSession {
     pub submitter_id: Option<String>,
     #[serde(rename = "artifactId", default, skip_serializing_if = "Option::is_none")]
     pub artifact_id: Option<String>,
-    #[serde(rename = "jobType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "jobType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub job_type: Option<spark_session::JobType>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub result: Option<spark_session::Result>,
     #[serde(rename = "schedulerInfo", default, skip_serializing_if = "Option::is_none")]
     pub scheduler_info: Option<SparkScheduler>,
@@ -651,7 +671,7 @@ pub struct SparkSession {
     #[serde(rename = "appInfo", default, skip_serializing_if = "Option::is_none")]
     pub app_info: Option<serde_json::Value>,
     #[doc = "The session state."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<spark_session::State>,
     #[serde(
         default,
@@ -961,7 +981,7 @@ pub struct SparkStatement {
     pub id: i32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<spark_statement::State>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output: Option<SparkStatementOutput>,
@@ -1062,7 +1082,7 @@ impl SparkStatementCollection {
 pub struct SparkStatementOptions {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<spark_statement_options::Kind>,
 }
 impl SparkStatementOptions {

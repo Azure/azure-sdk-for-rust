@@ -269,10 +269,20 @@ impl EnvironmentSettingFragment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentSettingProperties {
     #[doc = "Describes the readiness of this environment setting"]
-    #[serde(rename = "publishingState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publishingState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub publishing_state: Option<environment_setting_properties::PublishingState>,
     #[doc = "Describes the user's progress in configuring their environment setting"]
-    #[serde(rename = "configurationState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "configurationState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub configuration_state: Option<environment_setting_properties::ConfigurationState>,
     #[doc = "Describes the environment and its resource settings"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -402,7 +412,12 @@ pub mod environment_setting_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnvironmentSettingPropertiesFragment {
     #[doc = "Describes the user's progress in configuring their environment setting"]
-    #[serde(rename = "configurationState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "configurationState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub configuration_state: Option<environment_setting_properties_fragment::ConfigurationState>,
     #[doc = "Describes the environment and its resource settings"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -469,7 +484,7 @@ pub mod environment_setting_properties_fragment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnvironmentSize {
     #[doc = "The size category"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub name: Option<environment_size::Name>,
     #[doc = "Represents a set of compute sizes that can serve this given size type"]
     #[serde(
@@ -540,7 +555,7 @@ pub mod environment_size {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnvironmentSizeFragment {
     #[doc = "The size category"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub name: Option<environment_size_fragment::Name>,
     #[doc = "Represents a set of compute sizes that can serve this given size type"]
     #[serde(
@@ -942,7 +957,12 @@ pub struct LabProperties {
     #[serde(rename = "usageQuota", default, skip_serializing_if = "Option::is_none")]
     pub usage_quota: Option<String>,
     #[doc = "Lab user access mode (open to all vs. restricted to those listed on the lab)."]
-    #[serde(rename = "userAccessMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "userAccessMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub user_access_mode: Option<lab_properties::UserAccessMode>,
     #[doc = "Lab creator name"]
     #[serde(rename = "createdByUserPrincipalName", default, skip_serializing_if = "Option::is_none")]
@@ -1015,7 +1035,12 @@ pub struct LabPropertiesFragment {
     #[serde(rename = "usageQuota", default, skip_serializing_if = "Option::is_none")]
     pub usage_quota: Option<String>,
     #[doc = "Lab user access mode (open to all vs. restricted to those listed on the lab)."]
-    #[serde(rename = "userAccessMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "userAccessMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub user_access_mode: Option<lab_properties_fragment::UserAccessMode>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -1316,7 +1341,12 @@ pub struct PersonalPreferencesOperationsPayload {
     #[serde(rename = "labAccountResourceId", default, skip_serializing_if = "Option::is_none")]
     pub lab_account_resource_id: Option<String>,
     #[doc = "Enum indicating if user is adding or removing a favorite lab"]
-    #[serde(rename = "addRemove", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "addRemove",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub add_remove: Option<personal_preferences_operations_payload::AddRemove>,
     #[doc = "Resource Id of the lab to add/remove from the favorites list"]
     #[serde(rename = "labResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -1384,7 +1414,7 @@ pub struct ProviderOperationResult {
 impl azure_core::Continuable for ProviderOperationResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderOperationResult {
@@ -1580,7 +1610,7 @@ pub struct ResourceSettingCreationParameters {
     #[serde(rename = "galleryImageResourceId")]
     pub gallery_image_resource_id: String,
     #[doc = "The size of the virtual machine"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub size: Option<resource_setting_creation_parameters::Size>,
     #[doc = "Creation parameters for Reference Vm"]
     #[serde(rename = "referenceVmCreationParameters")]
@@ -1652,7 +1682,7 @@ pub struct ResourceSettings {
     #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
     pub image_name: Option<String>,
     #[doc = "The size of the virtual machine"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub size: Option<resource_settings::Size>,
     #[doc = "The translated compute cores of the virtual machine"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1722,7 +1752,7 @@ pub struct ResourceSettingsFragment {
     #[serde(rename = "galleryImageResourceId", default, skip_serializing_if = "Option::is_none")]
     pub gallery_image_resource_id: Option<String>,
     #[doc = "The size of the virtual machine"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub size: Option<resource_settings_fragment::Size>,
     #[doc = "Details of a Reference Vm"]
     #[serde(rename = "referenceVm", default, skip_serializing_if = "Option::is_none")]
@@ -1792,7 +1822,7 @@ pub struct ResponseWithContinuationEnvironmentSetting {
 impl azure_core::Continuable for ResponseWithContinuationEnvironmentSetting {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationEnvironmentSetting {
@@ -1817,7 +1847,7 @@ pub struct ResponseWithContinuationEnvironment {
 impl azure_core::Continuable for ResponseWithContinuationEnvironment {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationEnvironment {
@@ -1842,7 +1872,7 @@ pub struct ResponseWithContinuationGalleryImage {
 impl azure_core::Continuable for ResponseWithContinuationGalleryImage {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationGalleryImage {
@@ -1867,7 +1897,7 @@ pub struct ResponseWithContinuationLabAccount {
 impl azure_core::Continuable for ResponseWithContinuationLabAccount {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationLabAccount {
@@ -1892,7 +1922,7 @@ pub struct ResponseWithContinuationLab {
 impl azure_core::Continuable for ResponseWithContinuationLab {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationLab {
@@ -1917,7 +1947,7 @@ pub struct ResponseWithContinuationUser {
 impl azure_core::Continuable for ResponseWithContinuationUser {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationUser {
@@ -1929,7 +1959,12 @@ impl ResponseWithContinuationUser {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SizeAvailability {
     #[doc = "The category of the size (Basic, Standard, Performance)."]
-    #[serde(rename = "sizeCategory", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sizeCategory",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub size_category: Option<size_availability::SizeCategory>,
     #[doc = "Whether or not this size category is available"]
     #[serde(rename = "isAvailable", default, skip_serializing_if = "Option::is_none")]

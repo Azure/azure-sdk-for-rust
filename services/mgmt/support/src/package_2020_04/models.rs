@@ -9,7 +9,7 @@ pub struct CheckNameAvailabilityInput {
     #[doc = "The resource name to validate."]
     pub name: String,
     #[doc = "The type of resource."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: check_name_availability_input::Type,
 }
 impl CheckNameAvailabilityInput {
@@ -71,10 +71,20 @@ impl CommunicationDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommunicationDetailsProperties {
     #[doc = "Communication type."]
-    #[serde(rename = "communicationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "communicationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub communication_type: Option<communication_details_properties::CommunicationType>,
     #[doc = "Direction of communication."]
-    #[serde(rename = "communicationDirection", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "communicationDirection",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub communication_direction: Option<communication_details_properties::CommunicationDirection>,
     #[doc = "Email address of the sender. This property is required if called by a service principal."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -197,7 +207,7 @@ pub struct CommunicationsListResult {
 impl azure_core::Continuable for CommunicationsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CommunicationsListResult {
@@ -215,7 +225,7 @@ pub struct ContactProfile {
     #[serde(rename = "lastName")]
     pub last_name: String,
     #[doc = "Preferred contact method."]
-    #[serde(rename = "preferredContactMethod")]
+    #[serde(rename = "preferredContactMethod", with = "azure_core::xml::text_content")]
     pub preferred_contact_method: contact_profile::PreferredContactMethod,
     #[doc = "Primary email address."]
     #[serde(rename = "primaryEmailAddress")]
@@ -649,6 +659,7 @@ pub struct SupportTicketDetailsProperties {
     #[serde(rename = "problemClassificationDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub problem_classification_display_name: Option<String>,
     #[doc = "A value that indicates the urgency of the case, which in turn determines the response time according to the service level agreement of the technical support plan you have with Azure. Note: 'Highest critical impact', also known as the 'Emergency - Severe impact' level in the Azure portal is reserved only for our Premium customers."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub severity: support_ticket_details_properties::Severity,
     #[doc = "Enrollment Id associated with the support ticket."]
     #[serde(rename = "enrollmentId", default, skip_serializing_if = "Option::is_none")]
@@ -793,7 +804,7 @@ pub struct SupportTicketsListResult {
 impl azure_core::Continuable for SupportTicketsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SupportTicketsListResult {
@@ -823,7 +834,12 @@ pub struct UpdateContactProfile {
     #[serde(rename = "lastName", default, skip_serializing_if = "Option::is_none")]
     pub last_name: Option<String>,
     #[doc = "Preferred contact method."]
-    #[serde(rename = "preferredContactMethod", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "preferredContactMethod",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub preferred_contact_method: Option<update_contact_profile::PreferredContactMethod>,
     #[doc = "Primary email address."]
     #[serde(rename = "primaryEmailAddress", default, skip_serializing_if = "Option::is_none")]
@@ -900,10 +916,10 @@ pub mod update_contact_profile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateSupportTicket {
     #[doc = "Severity level."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<update_support_ticket::Severity>,
     #[doc = "Status to be updated on the ticket."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<update_support_ticket::Status>,
     #[doc = "Contact information associated with the support ticket."]
     #[serde(rename = "contactDetails", default, skip_serializing_if = "Option::is_none")]

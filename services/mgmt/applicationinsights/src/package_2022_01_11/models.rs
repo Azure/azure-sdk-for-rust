@@ -198,10 +198,20 @@ pub struct ApplicationInsightsComponentAnalyticsItem {
     #[serde(rename = "Version", default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[doc = "Enum indicating if this item definition is owned by a specific user or is shared between all users with access to the Application Insights component."]
-    #[serde(rename = "Scope", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "Scope",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub scope: Option<application_insights_component_analytics_item::Scope>,
     #[doc = "Enum indicating the type of the Analytics item."]
-    #[serde(rename = "Type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "Type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<application_insights_component_analytics_item::Type>,
     #[doc = "Date and time in UTC when this item was created."]
     #[serde(rename = "TimeCreated", default, skip_serializing_if = "Option::is_none")]
@@ -500,7 +510,12 @@ pub struct ApplicationInsightsComponentFavorite {
     #[serde(rename = "FavoriteId", default, skip_serializing_if = "Option::is_none")]
     pub favorite_id: Option<String>,
     #[doc = "Enum indicating if this favorite definition is owned by a specific user or is shared between all users with access to the Application Insights component."]
-    #[serde(rename = "FavoriteType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "FavoriteType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub favorite_type: Option<application_insights_component_favorite::FavoriteType>,
     #[doc = "The source of the favorite definition."]
     #[serde(rename = "SourceType", default, skip_serializing_if = "Option::is_none")]
@@ -679,7 +694,7 @@ pub struct ApplicationInsightsComponentListResult {
 impl azure_core::Continuable for ApplicationInsightsComponentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationInsightsComponentListResult {
@@ -770,13 +785,23 @@ pub struct ApplicationInsightsComponentProperties {
     #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Type of application being monitored."]
-    #[serde(rename = "Application_Type")]
+    #[serde(rename = "Application_Type", with = "azure_core::xml::text_content")]
     pub application_type: application_insights_component_properties::ApplicationType,
     #[doc = "Used by the Application Insights system to determine what kind of flow this component was created by. This is to be set to 'Bluefield' when creating/updating a component via the REST API."]
-    #[serde(rename = "Flow_Type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "Flow_Type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub flow_type: Option<application_insights_component_properties::FlowType>,
     #[doc = "Describes what tool created this Application Insights component. Customers using this API should set this to the default 'rest'."]
-    #[serde(rename = "Request_Source", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "Request_Source",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub request_source: Option<application_insights_component_properties::RequestSource>,
     #[doc = "Application Insights Instrumentation key. A read-only value that applications can use to identify the destination for all telemetry sent to Azure Application Insights. This value will be supplied upon construction of each new Application Insights component."]
     #[serde(rename = "InstrumentationKey", default, skip_serializing_if = "Option::is_none")]
@@ -826,13 +851,28 @@ pub struct ApplicationInsightsComponentProperties {
     )]
     pub private_link_scoped_resources: Vec<PrivateLinkScopedResource>,
     #[doc = "The network access type for operating on the Application Insights Component. By default it is Enabled"]
-    #[serde(rename = "publicNetworkAccessForIngestion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccessForIngestion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access_for_ingestion: Option<PublicNetworkAccessType>,
     #[doc = "The network access type for operating on the Application Insights Component. By default it is Enabled"]
-    #[serde(rename = "publicNetworkAccessForQuery", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccessForQuery",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access_for_query: Option<PublicNetworkAccessType>,
     #[doc = "Indicates the flow of the ingestion."]
-    #[serde(rename = "IngestionMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "IngestionMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ingestion_mode: Option<application_insights_component_properties::IngestionMode>,
     #[doc = "Disable Non-AAD based Auth."]
     #[serde(rename = "DisableLocalAuth", default, skip_serializing_if = "Option::is_none")]
@@ -1172,6 +1212,7 @@ impl ComponentPurgeResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComponentPurgeStatusResponse {
     #[doc = "Status of the operation represented by the requested Id."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: component_purge_status_response::Status,
 }
 impl ComponentPurgeStatusResponse {
@@ -1418,7 +1459,7 @@ pub struct ManagedServiceIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Type of managed service identity (where both SystemAssigned and UserAssigned types are allowed)."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: ManagedServiceIdentityType,
     #[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -1484,7 +1525,7 @@ pub struct MyWorkbook {
     #[serde(flatten)]
     pub my_workbook_resource: MyWorkbookResource,
     #[doc = "The kind of workbook. Choices are user and shared."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<my_workbook::Kind>,
     #[doc = "Properties that contain a private workbook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1565,7 +1606,12 @@ pub struct MyWorkbookManagedIdentity {
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
     pub user_assigned_identities: Option<MyWorkbookUserAssignedIdentities>,
     #[doc = "The identity type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<my_workbook_managed_identity::Type>,
 }
 impl MyWorkbookManagedIdentity {
@@ -1692,7 +1738,7 @@ pub struct MyWorkbooksListResult {
 impl azure_core::Continuable for MyWorkbooksListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MyWorkbooksListResult {
@@ -1774,7 +1820,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1972,7 +2018,7 @@ pub struct WebTest {
     #[serde(flatten)]
     pub webtests_resource: WebtestsResource,
     #[doc = "The kind of web test that this web test watches. Choices are ping and multistep."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<web_test::Kind>,
     #[doc = "Metadata describing a web test for an Azure resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2037,7 +2083,7 @@ pub struct WebTestProperties {
     #[serde(rename = "Timeout", default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<i32>,
     #[doc = "The kind of web test this is, valid choices are ping and multistep."]
-    #[serde(rename = "Kind")]
+    #[serde(rename = "Kind", with = "azure_core::xml::text_content")]
     pub kind: web_test_properties::Kind,
     #[doc = "Allow for retries should this WebTest fail."]
     #[serde(rename = "RetryEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -2387,7 +2433,7 @@ pub struct WorkbookResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<serde_json::Value>,
     #[doc = "The kind of workbook. Only valid value is shared."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<workbook_resource::Kind>,
     #[doc = "Resource etag"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2662,7 +2708,7 @@ impl WorkbookTemplatesListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkbookUpdateParameters {
     #[doc = "The kind of workbook. Only valid value is shared."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<workbook_update_parameters::Kind>,
     #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2734,7 +2780,7 @@ pub struct WorkbooksListResult {
 impl azure_core::Continuable for WorkbooksListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkbooksListResult {
@@ -2749,7 +2795,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2758,7 +2809,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2866,7 +2922,7 @@ pub struct WebTestListResult {
 impl azure_core::Continuable for WebTestListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WebTestListResult {

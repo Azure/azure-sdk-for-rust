@@ -98,7 +98,7 @@ pub struct ManagedNetworkGroup {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedNetworkGroupProperties>,
     #[doc = "Responsibility role under which this Managed Network Group will be created"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<managed_network_group::Kind>,
 }
 impl ManagedNetworkGroup {
@@ -161,7 +161,7 @@ pub struct ManagedNetworkGroupListResult {
 impl azure_core::Continuable for ManagedNetworkGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedNetworkGroupListResult {
@@ -227,7 +227,7 @@ pub struct ManagedNetworkListResult {
 impl azure_core::Continuable for ManagedNetworkListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedNetworkListResult {
@@ -266,7 +266,7 @@ pub struct ManagedNetworkPeeringPolicyListResult {
 impl azure_core::Continuable for ManagedNetworkPeeringPolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedNetworkPeeringPolicyListResult {
@@ -280,7 +280,7 @@ pub struct ManagedNetworkPeeringPolicyProperties {
     #[serde(flatten)]
     pub resource_properties: ResourceProperties,
     #[doc = "Gets or sets the connectivity type of a network structure policy"]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: managed_network_peering_policy_properties::Type,
     #[doc = "Generic pointer to a resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -454,7 +454,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -510,7 +510,12 @@ impl ResourceId {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProperties {
     #[doc = "Provisioning state of the ManagedNetwork resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<resource_properties::ProvisioningState>,
     #[doc = "A unique read-only string that changes whenever the resource is updated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -635,7 +640,7 @@ pub struct ScopeAssignmentListResult {
 impl azure_core::Continuable for ScopeAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScopeAssignmentListResult {

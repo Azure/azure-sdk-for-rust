@@ -180,7 +180,7 @@ pub struct WorkspaceListResult {
 impl azure_core::Continuable for WorkspaceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceListResult {
@@ -198,10 +198,20 @@ pub struct WorkspaceProperties {
     #[serde(rename = "ownerEmail")]
     pub owner_email: String,
     #[doc = "The type of this workspace."]
-    #[serde(rename = "workspaceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workspaceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub workspace_type: Option<workspace_properties::WorkspaceType>,
     #[doc = "The current state of workspace resource."]
-    #[serde(rename = "workspaceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workspaceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub workspace_state: Option<workspace_properties::WorkspaceState>,
     #[doc = "The immutable id associated with this workspace."]
     #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
@@ -257,7 +267,12 @@ pub mod workspace_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspacePropertiesUpdateParameters {
     #[doc = "The current state of workspace resource."]
-    #[serde(rename = "workspaceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workspaceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub workspace_state: Option<workspace_properties_update_parameters::WorkspaceState>,
     #[doc = "The key vault identifier used for encrypted workspaces."]
     #[serde(rename = "keyVaultIdentifierId", default, skip_serializing_if = "Option::is_none")]

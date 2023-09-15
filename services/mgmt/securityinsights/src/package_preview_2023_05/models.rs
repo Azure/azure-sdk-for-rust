@@ -349,7 +349,7 @@ pub struct ActionsList {
 impl azure_core::Continuable for ActionsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ActionsList {
@@ -390,7 +390,12 @@ pub struct ActivityEntityQueriesProperties {
     #[serde(rename = "queryDefinitions", default, skip_serializing_if = "Option::is_none")]
     pub query_definitions: Option<activity_entity_queries_properties::QueryDefinitions>,
     #[doc = "The type of the entity"]
-    #[serde(rename = "inputEntityType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "inputEntityType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub input_entity_type: Option<EntityInnerType>,
     #[doc = "List of the fields of the source entity that are required to run the query"]
     #[serde(
@@ -494,7 +499,12 @@ pub struct ActivityEntityQueryTemplateProperties {
     )]
     pub data_types: Vec<DataTypeDefinitions>,
     #[doc = "The type of the entity"]
-    #[serde(rename = "inputEntityType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "inputEntityType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub input_entity_type: Option<EntityInnerType>,
     #[doc = "List of the fields of the source entity that are required to run the query"]
     #[serde(
@@ -676,7 +686,12 @@ impl Serialize for AlertProperty {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertPropertyMapping {
     #[doc = "The V3 alert property"]
-    #[serde(rename = "alertProperty", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "alertProperty",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub alert_property: Option<AlertProperty>,
     #[doc = "the column name to use to override this property"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -693,6 +708,7 @@ pub struct AlertRule {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
     #[doc = "The kind of the alert rule"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: AlertRuleKindEnum,
 }
 impl AlertRule {
@@ -758,6 +774,7 @@ pub struct AlertRuleTemplate {
     #[serde(flatten)]
     pub resource: Resource,
     #[doc = "The kind of the alert rule"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: AlertRuleKindEnum,
 }
 impl AlertRuleTemplate {
@@ -815,7 +832,7 @@ pub struct AlertRuleTemplatePropertiesBase {
     )]
     pub required_data_connectors: Vec<AlertRuleTemplateDataSource>,
     #[doc = "The alert rule template status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<AlertRuleTemplateStatus>,
 }
 impl AlertRuleTemplatePropertiesBase {
@@ -899,7 +916,7 @@ pub struct AlertRuleTemplatesList {
 impl azure_core::Continuable for AlertRuleTemplatesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertRuleTemplatesList {
@@ -927,7 +944,7 @@ pub struct AlertRulesList {
 impl azure_core::Continuable for AlertRulesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertRulesList {
@@ -1100,7 +1117,7 @@ pub struct AnomalySecurityMlAnalyticsSettingsProperties {
     #[doc = "The frequency that this SecurityMLAnalyticsSettings will be run."]
     pub frequency: String,
     #[doc = "The anomaly SecurityMLAnalyticsSettings status"]
-    #[serde(rename = "settingsStatus")]
+    #[serde(rename = "settingsStatus", with = "azure_core::xml::text_content")]
     pub settings_status: AnomalySecurityMlAnalyticsSettingsStatus,
     #[doc = "Determines whether this anomaly security ml analytics settings is a default settings"]
     #[serde(rename = "isDefaultSettings")]
@@ -1351,7 +1368,7 @@ impl AutomationRule {
 pub struct AutomationRuleAction {
     pub order: i32,
     #[doc = "The type of the automation rule action."]
-    #[serde(rename = "actionType")]
+    #[serde(rename = "actionType", with = "azure_core::xml::text_content")]
     pub action_type: ActionType,
 }
 impl AutomationRuleAction {
@@ -1377,7 +1394,7 @@ impl AutomationRuleAddIncidentTaskAction {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationRuleBooleanCondition {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub operator: Option<AutomationRuleBooleanConditionSupportedOperator>,
     #[serde(
         rename = "innerConditions",
@@ -1431,7 +1448,7 @@ impl Serialize for AutomationRuleBooleanConditionSupportedOperator {
 #[doc = "Describes an automation rule condition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationRuleCondition {
-    #[serde(rename = "conditionType")]
+    #[serde(rename = "conditionType", with = "azure_core::xml::text_content")]
     pub condition_type: ConditionType,
 }
 impl AutomationRuleCondition {
@@ -1586,9 +1603,19 @@ impl Serialize for AutomationRulePropertyArrayChangedConditionSupportedChangeTyp
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationRulePropertyArrayChangedValuesCondition {
-    #[serde(rename = "arrayType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "arrayType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub array_type: Option<AutomationRulePropertyArrayChangedConditionSupportedArrayType>,
-    #[serde(rename = "changeType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "changeType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub change_type: Option<AutomationRulePropertyArrayChangedConditionSupportedChangeType>,
 }
 impl AutomationRulePropertyArrayChangedValuesCondition {
@@ -1674,9 +1701,19 @@ impl Serialize for AutomationRulePropertyArrayConditionSupportedArrayType {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationRulePropertyArrayValuesCondition {
-    #[serde(rename = "arrayType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "arrayType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub array_type: Option<AutomationRulePropertyArrayConditionSupportedArrayType>,
-    #[serde(rename = "arrayConditionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "arrayConditionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub array_condition_type: Option<AutomationRulePropertyArrayConditionSupportedArrayConditionType>,
     #[serde(
         rename = "itemConditions",
@@ -2104,11 +2141,21 @@ impl Serialize for AutomationRulePropertyConditionSupportedProperty {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationRulePropertyValuesChangedCondition {
-    #[serde(rename = "propertyName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "propertyName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub property_name: Option<AutomationRulePropertyChangedConditionSupportedPropertyType>,
-    #[serde(rename = "changeType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "changeType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub change_type: Option<AutomationRulePropertyChangedConditionSupportedChangedType>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub operator: Option<AutomationRulePropertyConditionSupportedOperator>,
     #[serde(
         rename = "propertyValues",
@@ -2126,9 +2173,14 @@ impl AutomationRulePropertyValuesChangedCondition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationRulePropertyValuesCondition {
     #[doc = "The property to evaluate in an automation rule property condition."]
-    #[serde(rename = "propertyName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "propertyName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub property_name: Option<AutomationRulePropertyConditionSupportedProperty>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub operator: Option<AutomationRulePropertyConditionSupportedOperator>,
     #[serde(
         rename = "propertyValues",
@@ -2168,9 +2220,9 @@ pub struct AutomationRuleTriggeringLogic {
     #[doc = "Determines when the automation rule should automatically expire and be disabled."]
     #[serde(rename = "expirationTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_time_utc: Option<time::OffsetDateTime>,
-    #[serde(rename = "triggersOn")]
+    #[serde(rename = "triggersOn", with = "azure_core::xml::text_content")]
     pub triggers_on: TriggersOn,
-    #[serde(rename = "triggersWhen")]
+    #[serde(rename = "triggersWhen", with = "azure_core::xml::text_content")]
     pub triggers_when: TriggersWhen,
     #[doc = "The conditions to evaluate to determine if the automation rule should be triggered on a given object."]
     #[serde(
@@ -2205,7 +2257,7 @@ pub struct AutomationRulesList {
 impl azure_core::Continuable for AutomationRulesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AutomationRulesList {
@@ -2217,7 +2269,7 @@ impl AutomationRulesList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Availability {
     #[doc = "The connector Availability Status"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<availability::Status>,
     #[doc = "Set connector as preview"]
     #[serde(rename = "isPreview", default, skip_serializing_if = "Option::is_none")]
@@ -2395,6 +2447,7 @@ pub struct BillingStatistic {
     #[serde(flatten)]
     pub azure_entity_resource: AzureEntityResource,
     #[doc = "The kind of the billing statistic"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: BillingStatisticKindEnum,
 }
 impl BillingStatistic {
@@ -2452,7 +2505,7 @@ pub struct BillingStatisticList {
 impl azure_core::Continuable for BillingStatisticList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BillingStatisticList {
@@ -2565,7 +2618,7 @@ pub struct BookmarkList {
 impl azure_core::Continuable for BookmarkList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BookmarkList {
@@ -3174,7 +3227,12 @@ impl ConnectedEntity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectivityCriteria {
     #[doc = "type of connectivity"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<connectivity_criteria::Type>,
     #[doc = "Queries for checking connectivity"]
     #[serde(
@@ -3234,7 +3292,7 @@ pub struct ConnectorInstructionModelBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
     #[doc = "The kind of the setting"]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: connector_instruction_model_base::Type,
 }
 impl ConnectorInstructionModelBase {
@@ -3301,7 +3359,12 @@ impl Content {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentPathMap {
     #[doc = "The content type of a source control path."]
-    #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "contentType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub content_type: Option<ContentType>,
     #[doc = "The path to the content."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3355,6 +3418,7 @@ pub struct CustomEntityQuery {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
     #[doc = "The kind of the entity query that supports put request."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: CustomEntityQueryKind,
 }
 impl CustomEntityQuery {
@@ -3454,6 +3518,7 @@ pub struct DataConnector {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
     #[doc = "The kind of the data connector"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: DataConnectorKind,
 }
 impl DataConnector {
@@ -3505,7 +3570,7 @@ impl Serialize for DataConnectorAuthorizationState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataConnectorConnectBody {
     #[doc = "The authentication kind used to poll the data"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<data_connector_connect_body::Kind>,
     #[doc = "The API key of the audit server."]
     #[serde(rename = "apiKey", default, skip_serializing_if = "Option::is_none")]
@@ -3595,6 +3660,7 @@ pub mod data_connector_connect_body {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnectorDataTypeCommon {
     #[doc = "Describe whether this data type connection is enabled or not."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub state: data_connector_data_type_common::State,
 }
 impl DataConnectorDataTypeCommon {
@@ -3787,7 +3853,7 @@ pub struct DataConnectorList {
 impl azure_core::Continuable for DataConnectorList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataConnectorList {
@@ -3799,10 +3865,20 @@ impl DataConnectorList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataConnectorRequirementsState {
     #[doc = "Describes the state of user's authorization for a connector kind."]
-    #[serde(rename = "authorizationState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authorizationState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authorization_state: Option<DataConnectorAuthorizationState>,
     #[doc = "Describes the state of user's license for a connector kind."]
-    #[serde(rename = "licenseState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "licenseState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub license_state: Option<DataConnectorLicenseState>,
 }
 impl DataConnectorRequirementsState {
@@ -3838,6 +3914,7 @@ impl DataConnectorWithAlertsProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnectorsCheckRequirements {
     #[doc = "The kind of the data connector"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: DataConnectorKind,
 }
 impl DataConnectorsCheckRequirements {
@@ -3864,10 +3941,20 @@ pub struct Deployment {
     #[serde(rename = "deploymentId", default, skip_serializing_if = "Option::is_none")]
     pub deployment_id: Option<String>,
     #[doc = "The current state of the deployment."]
-    #[serde(rename = "deploymentState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "deploymentState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub deployment_state: Option<DeploymentState>,
     #[doc = "Status while trying to fetch the deployment information."]
-    #[serde(rename = "deploymentResult", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "deploymentResult",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub deployment_result: Option<DeploymentResult>,
     #[doc = "The time when the deployment finished."]
     #[serde(rename = "deploymentTime", default, with = "azure_core::date::rfc3339::option")]
@@ -3924,7 +4011,12 @@ impl Serialize for DeploymentFetchStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentInfo {
     #[doc = "Status while trying to fetch the deployment information."]
-    #[serde(rename = "deploymentFetchStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "deploymentFetchStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub deployment_fetch_status: Option<DeploymentFetchStatus>,
     #[doc = "Description about a deployment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4309,6 +4401,7 @@ pub struct Entity {
     #[serde(flatten)]
     pub resource: Resource,
     #[doc = "The kind of the entity"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: EntityInnerKind,
 }
 impl Entity {
@@ -4720,7 +4813,7 @@ pub struct EntityList {
 impl azure_core::Continuable for EntityList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EntityList {
@@ -4754,7 +4847,12 @@ impl EntityManualTriggerRequestBody {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EntityMapping {
     #[doc = "The V3 type of the mapped entity"]
-    #[serde(rename = "entityType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "entityType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub entity_type: Option<EntityMappingType>,
     #[doc = "array of field mappings for the given entity mapping"]
     #[serde(
@@ -4887,6 +4985,7 @@ pub struct EntityQuery {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
     #[doc = "The kind of the entity query"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: EntityQueryKind,
 }
 impl EntityQuery {
@@ -4910,6 +5009,7 @@ pub struct EntityQueryItem {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "The kind of the entity query"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: EntityQueryKind,
 }
 impl EntityQueryItem {
@@ -4934,7 +5034,12 @@ pub struct EntityQueryItemProperties {
     )]
     pub data_types: Vec<serde_json::Value>,
     #[doc = "The type of the entity"]
-    #[serde(rename = "inputEntityType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "inputEntityType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub input_entity_type: Option<EntityInnerType>,
     #[doc = "Data types for template"]
     #[serde(
@@ -5004,7 +5109,7 @@ pub struct EntityQueryList {
 impl azure_core::Continuable for EntityQueryList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EntityQueryList {
@@ -5018,6 +5123,7 @@ pub struct EntityQueryTemplate {
     #[serde(flatten)]
     pub resource: Resource,
     #[doc = "The kind of the entity query template."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: EntityQueryTemplateKind,
 }
 impl EntityQueryTemplate {
@@ -5075,7 +5181,7 @@ pub struct EntityQueryTemplateList {
 impl azure_core::Continuable for EntityQueryTemplateList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EntityQueryTemplateList {
@@ -5087,6 +5193,7 @@ impl EntityQueryTemplateList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EntityTimelineItem {
     #[doc = "The entity query kind"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: EntityTimelineKind,
 }
 impl EntityTimelineItem {
@@ -5291,7 +5398,12 @@ impl Serialize for EventGroupingAggregationKind {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventGroupingSettings {
     #[doc = "The event grouping aggregation kinds"]
-    #[serde(rename = "aggregationKind", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "aggregationKind",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub aggregation_kind: Option<EventGroupingAggregationKind>,
 }
 impl EventGroupingSettings {
@@ -5314,7 +5426,12 @@ pub struct ExpansionEntityQueriesProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The type of the entity"]
-    #[serde(rename = "inputEntityType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "inputEntityType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub input_entity_type: Option<EntityInnerType>,
     #[doc = "List of the fields of the source entity that are required to run the query"]
     #[serde(
@@ -5370,7 +5487,7 @@ pub struct ExpansionResultAggregation {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The kind of the entity"]
-    #[serde(rename = "entityKind")]
+    #[serde(rename = "entityKind", with = "azure_core::xml::text_content")]
     pub entity_kind: EntityInnerKind,
 }
 impl ExpansionResultAggregation {
@@ -5469,7 +5586,7 @@ pub struct FileImportList {
 impl azure_core::Continuable for FileImportList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FileImportList {
@@ -5481,10 +5598,10 @@ impl FileImportList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileImportProperties {
     #[doc = "Describes how to ingest the records in the file."]
-    #[serde(rename = "ingestionMode")]
+    #[serde(rename = "ingestionMode", with = "azure_core::xml::text_content")]
     pub ingestion_mode: file_import_properties::IngestionMode,
     #[doc = "The content type of this file."]
-    #[serde(rename = "contentType")]
+    #[serde(rename = "contentType", with = "azure_core::xml::text_content")]
     pub content_type: file_import_properties::ContentType,
     #[doc = "The time the file was imported."]
     #[serde(rename = "createdTimeUTC", default, with = "azure_core::date::rfc3339::option")]
@@ -5509,7 +5626,7 @@ pub struct FileImportProperties {
     #[doc = "The source for the data in the file."]
     pub source: String,
     #[doc = "The state of the file import."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<file_import_properties::State>,
     #[doc = "The number of records in the file."]
     #[serde(rename = "totalRecordCount", default, skip_serializing_if = "Option::is_none")]
@@ -5680,7 +5797,12 @@ pub mod file_import_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileMetadata {
     #[doc = "The format of the file"]
-    #[serde(rename = "fileFormat", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "fileFormat",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub file_format: Option<file_metadata::FileFormat>,
     #[doc = "The name of the file."]
     #[serde(rename = "fileName", default, skip_serializing_if = "Option::is_none")]
@@ -5692,7 +5814,12 @@ pub struct FileMetadata {
     #[serde(rename = "fileContentUri", default, skip_serializing_if = "Option::is_none")]
     pub file_content_uri: Option<String>,
     #[doc = "Indicates whether the file was deleted from the storage account."]
-    #[serde(rename = "deleteStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "deleteStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub delete_status: Option<file_metadata::DeleteStatus>,
 }
 impl FileMetadata {
@@ -5834,7 +5961,7 @@ pub struct FusionAlertRuleProperties {
     #[serde(rename = "lastModifiedUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_utc: Option<time::OffsetDateTime>,
     #[doc = "The severity of the alert"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<AlertSeverityEnum>,
     #[doc = "The tactics of the alert rule"]
     #[serde(
@@ -5911,10 +6038,10 @@ pub struct FusionAlertRuleTemplateProperties {
     )]
     pub required_data_connectors: Vec<AlertRuleTemplateDataSource>,
     #[doc = "The alert rule template status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<AlertRuleTemplateStatus>,
     #[doc = "The severity of the alert"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<AlertSeverityEnum>,
     #[doc = "The tactics of the alert rule template"]
     #[serde(
@@ -6036,6 +6163,7 @@ impl FusionSubTypeSeverityFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FusionSubTypeSeverityFiltersItem {
     #[doc = "The severity of the alert"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub severity: AlertSeverityEnum,
     #[doc = "Determines whether this severity is enabled or disabled for this source subtype consumed in Fusion detection."]
     pub enabled: bool,
@@ -6198,6 +6326,7 @@ impl GcpRequestProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetInsightsErrorKind {
     #[doc = "the query kind"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: get_insights_error_kind::Kind,
     #[doc = "the query id"]
     #[serde(rename = "queryId", default, skip_serializing_if = "Option::is_none")]
@@ -6333,7 +6462,7 @@ pub struct GroupingConfiguration {
     #[serde(rename = "lookbackDuration")]
     pub lookback_duration: String,
     #[doc = "Grouping matching method. When method is Selected at least one of groupByEntities, groupByAlertDetails, groupByCustomDetails must be provided and not empty."]
-    #[serde(rename = "matchingMethod")]
+    #[serde(rename = "matchingMethod", with = "azure_core::xml::text_content")]
     pub matching_method: grouping_configuration::MatchingMethod,
     #[doc = "A list of entity types to group by (when matchingMethod is Selected). Only entities defined in the current alert rule may be used."]
     #[serde(
@@ -6460,7 +6589,7 @@ pub struct HuntCommentList {
 impl azure_core::Continuable for HuntCommentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HuntCommentList {
@@ -6491,7 +6620,7 @@ pub struct HuntList {
 impl azure_core::Continuable for HuntList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HuntList {
@@ -6515,7 +6644,12 @@ pub struct HuntOwner {
     #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
     pub user_principal_name: Option<String>,
     #[doc = "The type of the owner the hunt is assigned to."]
-    #[serde(rename = "ownerType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ownerType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub owner_type: Option<hunt_owner::OwnerType>,
 }
 impl HuntOwner {
@@ -6574,10 +6708,15 @@ pub struct HuntProperties {
     #[doc = "The description of the hunt"]
     pub description: String,
     #[doc = "The status of the hunt."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<hunt_properties::Status>,
     #[doc = "The hypothesis status of the hunt."]
-    #[serde(rename = "hypothesisStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hypothesisStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub hypothesis_status: Option<hunt_properties::HypothesisStatus>,
     #[doc = "A list of mitre attack tactics the hunt is associated with"]
     #[serde(
@@ -6737,7 +6876,7 @@ pub struct HuntRelationList {
 impl azure_core::Continuable for HuntRelationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HuntRelationList {
@@ -7037,7 +7176,7 @@ pub struct IncidentCommentList {
 impl azure_core::Continuable for IncidentCommentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IncidentCommentList {
@@ -7116,7 +7255,7 @@ impl IncidentEntitiesResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncidentEntitiesResultsMetadata {
     #[doc = "The kind of the entity"]
-    #[serde(rename = "entityKind")]
+    #[serde(rename = "entityKind", with = "azure_core::xml::text_content")]
     pub entity_kind: EntityInnerKind,
     #[doc = "Total number of aggregations of the given kind in the incident related entities result."]
     pub count: i32,
@@ -7133,7 +7272,7 @@ pub struct IncidentInfo {
     #[serde(rename = "incidentId", default, skip_serializing_if = "Option::is_none")]
     pub incident_id: Option<String>,
     #[doc = "The severity of the incident"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<IncidentSeverityEnum>,
     #[doc = "The title of the incident"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7154,7 +7293,12 @@ pub struct IncidentLabel {
     #[serde(rename = "labelName")]
     pub label_name: String,
     #[doc = "The type of the label"]
-    #[serde(rename = "labelType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "labelType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub label_type: Option<IncidentLabelType>,
 }
 impl IncidentLabel {
@@ -7213,7 +7357,7 @@ pub struct IncidentList {
 impl azure_core::Continuable for IncidentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IncidentList {
@@ -7237,7 +7381,12 @@ pub struct IncidentOwnerInfo {
     #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
     pub user_principal_name: Option<String>,
     #[doc = "The type of the owner the incident is assigned to."]
-    #[serde(rename = "ownerType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ownerType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub owner_type: Option<incident_owner_info::OwnerType>,
 }
 impl IncidentOwnerInfo {
@@ -7295,14 +7444,21 @@ pub struct IncidentProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The severity of the incident"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub severity: IncidentSeverityEnum,
     #[doc = "The status of the incident"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: IncidentStatusEnum,
     #[doc = "The reason the incident was closed"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub classification: Option<IncidentClassificationEnum>,
     #[doc = "The classification reason the incident was closed with"]
-    #[serde(rename = "classificationReason", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "classificationReason",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub classification_reason: Option<IncidentClassificationReasonEnum>,
     #[doc = "Describes the reason the incident was closed"]
     #[serde(rename = "classificationComment", default, skip_serializing_if = "Option::is_none")]
@@ -7385,16 +7541,21 @@ impl IncidentProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IncidentPropertiesAction {
     #[doc = "The severity of the incident"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<IncidentSeverityEnum>,
     #[doc = "The status of the incident"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<IncidentStatusEnum>,
     #[doc = "The reason the incident was closed"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub classification: Option<IncidentClassificationEnum>,
     #[doc = "The classification reason the incident was closed with"]
-    #[serde(rename = "classificationReason", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "classificationReason",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub classification_reason: Option<IncidentClassificationReasonEnum>,
     #[doc = "Describes the reason the incident was closed."]
     #[serde(rename = "classificationComment", default, skip_serializing_if = "Option::is_none")]
@@ -7523,7 +7684,7 @@ pub struct IncidentTaskList {
 impl azure_core::Continuable for IncidentTaskList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IncidentTaskList {
@@ -7538,6 +7699,7 @@ pub struct IncidentTaskProperties {
     #[doc = "The description of the task"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: IncidentTaskStatus,
     #[doc = "The time the task was created"]
     #[serde(rename = "createdTimeUtc", default, with = "azure_core::date::rfc3339::option")]
@@ -7876,7 +8038,7 @@ pub struct JobList {
 impl azure_core::Continuable for JobList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobList {
@@ -7898,7 +8060,12 @@ pub struct JobProperties {
     )]
     pub items: Vec<JobItem>,
     #[doc = "State of the job"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<job_properties::ProvisioningState>,
     #[doc = "The time the job started"]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -8147,7 +8314,7 @@ pub struct MlBehaviorAnalyticsAlertRuleProperties {
     #[serde(rename = "lastModifiedUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_utc: Option<time::OffsetDateTime>,
     #[doc = "The severity of the alert"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<AlertSeverityEnum>,
     #[doc = "The tactics of the alert rule"]
     #[serde(
@@ -8203,6 +8370,7 @@ pub mod ml_behavior_analytics_alert_rule_template {
         #[serde(flatten)]
         pub alert_rule_template_with_mitre_properties: AlertRuleTemplateWithMitreProperties,
         #[doc = "The severity of the alert"]
+        #[serde(with = "azure_core::xml::text_content")]
         pub severity: AlertSeverityEnum,
     }
     impl Properties {
@@ -8400,7 +8568,7 @@ pub struct MetadataList {
 impl azure_core::Continuable for MetadataList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MetadataList {
@@ -8535,7 +8703,7 @@ pub struct MicrosoftSecurityIncidentCreationAlertRuleCommonProperties {
     )]
     pub display_names_exclude_filter: Vec<String>,
     #[doc = "The alerts' productName on which the cases will be generated"]
-    #[serde(rename = "productFilter")]
+    #[serde(rename = "productFilter", with = "azure_core::xml::text_content")]
     pub product_filter: MicrosoftSecurityProductName,
     #[doc = "the alerts' severities on which the cases will be generated"]
     #[serde(
@@ -8631,7 +8799,12 @@ pub struct MicrosoftSecurityIncidentCreationAlertRuleTemplateProperties {
     )]
     pub display_names_exclude_filter: Vec<String>,
     #[doc = "The alerts' productName on which the cases will be generated"]
-    #[serde(rename = "productFilter", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "productFilter",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub product_filter: Option<MicrosoftSecurityProductName>,
     #[doc = "the alerts' severities on which the cases will be generated"]
     #[serde(
@@ -8842,6 +9015,7 @@ pub struct NrtAlertRuleProperties {
     #[serde(rename = "suppressionEnabled")]
     pub suppression_enabled: bool,
     #[doc = "The severity of the alert"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub severity: AlertSeverityEnum,
     #[doc = "Incident Configuration property bag."]
     #[serde(rename = "incidentConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -9070,7 +9244,7 @@ pub struct OfficeConsentList {
 impl azure_core::Continuable for OfficeConsentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OfficeConsentList {
@@ -9338,7 +9512,7 @@ pub struct OperationsList {
 impl azure_core::Continuable for OperationsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationsList {
@@ -9501,7 +9675,7 @@ pub struct QueryBasedAlertRuleTemplateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub query: Option<String>,
     #[doc = "The severity of the alert"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<AlertSeverityEnum>,
     #[doc = "The version of this template - in format <a.b.c>, where all are numbers. For example <1.0.2>."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9554,8 +9728,10 @@ pub struct Recommendation {
     #[serde(rename = "recommendationTypeId")]
     pub recommendation_type_id: String,
     #[doc = "Categories of recommendations."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub category: RecommendationCategory,
     #[doc = "Context of recommendation."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub context: RecommendationContext,
     #[doc = "Id of the workspace this recommendation refers to."]
     #[serde(rename = "workspaceId")]
@@ -9563,8 +9739,10 @@ pub struct Recommendation {
     #[doc = "List of actions to take for this recommendation."]
     pub actions: Vec<RecommendedAction>,
     #[doc = "State of recommendation."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub state: RecommendationState,
     #[doc = "Priority of recommendation."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub priority: RecommendationPriority,
     #[doc = "The time stamp (UTC) when the recommendation was last evaluated."]
     #[serde(rename = "lastEvaluatedTimeUtc", with = "azure_core::date::rfc3339")]
@@ -9722,7 +9900,7 @@ impl RecommendationList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendationPatch {
     #[doc = "State of recommendation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<RecommendationState>,
     #[doc = "The time stamp (UTC) when the recommendation should be displayed again."]
     #[serde(rename = "hideUntilTimeUtc", default, with = "azure_core::date::rfc3339::option")]
@@ -9825,7 +10003,7 @@ pub struct RecommendedAction {
     #[serde(rename = "linkUrl")]
     pub link_url: String,
     #[doc = "Represents the state the recommendation action is currently in."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<ActionState>,
 }
 impl RecommendedAction {
@@ -9863,7 +10041,7 @@ pub struct RelationList {
 impl azure_core::Continuable for RelationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RelationList {
@@ -9931,7 +10109,7 @@ pub struct RepoList {
 impl azure_core::Continuable for RepoList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RepoList {
@@ -10069,7 +10247,7 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceProvider {
     #[doc = "Provider name"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub provider: Option<resource_provider::Provider>,
     #[doc = "Permission description text"]
     #[serde(rename = "permissionsDisplayText", default, skip_serializing_if = "Option::is_none")]
@@ -10078,7 +10256,7 @@ pub struct ResourceProvider {
     #[serde(rename = "providerDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub provider_display_name: Option<String>,
     #[doc = "Permission provider scope"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub scope: Option<resource_provider::Scope>,
     #[doc = "Required permissions for the connector"]
     #[serde(rename = "requiredPermissions", default, skip_serializing_if = "Option::is_none")]
@@ -10282,10 +10460,15 @@ pub struct ScheduledAlertRuleCommonProperties {
     #[serde(rename = "queryPeriod", default, skip_serializing_if = "Option::is_none")]
     pub query_period: Option<String>,
     #[doc = "The severity of the alert"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<AlertSeverityEnum>,
     #[doc = "The operation against the threshold that triggers alert rule."]
-    #[serde(rename = "triggerOperator", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "triggerOperator",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub trigger_operator: Option<AlertRuleTriggerOperator>,
     #[doc = "The threshold triggers this alert rule."]
     #[serde(rename = "triggerThreshold", default, skip_serializing_if = "Option::is_none")]
@@ -10419,7 +10602,7 @@ pub struct ScheduledAlertRuleTemplateProperties {
     )]
     pub required_data_connectors: Vec<AlertRuleTemplateDataSource>,
     #[doc = "The alert rule template status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<AlertRuleTemplateStatus>,
     #[doc = "The query that creates alerts for this rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10431,10 +10614,15 @@ pub struct ScheduledAlertRuleTemplateProperties {
     #[serde(rename = "queryPeriod", default, skip_serializing_if = "Option::is_none")]
     pub query_period: Option<String>,
     #[doc = "The severity of the alert"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<AlertSeverityEnum>,
     #[doc = "The operation against the threshold that triggers alert rule."]
-    #[serde(rename = "triggerOperator", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "triggerOperator",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub trigger_operator: Option<AlertRuleTriggerOperator>,
     #[doc = "The threshold triggers this alert rule."]
     #[serde(rename = "triggerThreshold", default, skip_serializing_if = "Option::is_none")]
@@ -10506,7 +10694,12 @@ pub struct SecurityAlertProperties {
     #[serde(rename = "compromisedEntity", default, skip_serializing_if = "Option::is_none")]
     pub compromised_entity: Option<String>,
     #[doc = "The confidence level of this alert."]
-    #[serde(rename = "confidenceLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "confidenceLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub confidence_level: Option<security_alert_properties::ConfidenceLevel>,
     #[doc = "The confidence reasons"]
     #[serde(
@@ -10520,7 +10713,12 @@ pub struct SecurityAlertProperties {
     #[serde(rename = "confidenceScore", default, skip_serializing_if = "Option::is_none")]
     pub confidence_score: Option<f64>,
     #[doc = "The confidence score calculation status, i.e. indicating if score calculation is pending for this alert, not applicable or final."]
-    #[serde(rename = "confidenceScoreStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "confidenceScoreStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub confidence_score_status: Option<security_alert_properties::ConfidenceScoreStatus>,
     #[doc = "Alert description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10529,7 +10727,7 @@ pub struct SecurityAlertProperties {
     #[serde(rename = "endTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub end_time_utc: Option<time::OffsetDateTime>,
     #[doc = "Holds the alert intent stage(s) mapping for this alert."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub intent: Option<security_alert_properties::Intent>,
     #[doc = "The identifier of the alert inside the product which generated the alert."]
     #[serde(rename = "providerAlertId", default, skip_serializing_if = "Option::is_none")]
@@ -10555,13 +10753,13 @@ pub struct SecurityAlertProperties {
     )]
     pub remediation_steps: Vec<String>,
     #[doc = "The severity of the alert"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<AlertSeverityEnum>,
     #[doc = "The impact start time of the alert (the time of the first event contributing to the alert)."]
     #[serde(rename = "startTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub start_time_utc: Option<time::OffsetDateTime>,
     #[doc = "The lifecycle status of the alert."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<security_alert_properties::Status>,
     #[doc = "Holds the product identifier of the alert for the product."]
     #[serde(rename = "systemAlertId", default, skip_serializing_if = "Option::is_none")]
@@ -10801,6 +10999,7 @@ pub struct SecurityAlertTimelineItem {
     #[serde(rename = "displayName")]
     pub display_name: String,
     #[doc = "The severity of the alert"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub severity: AlertSeverityEnum,
     #[doc = "The alert end time."]
     #[serde(rename = "endTimeUtc", with = "azure_core::date::rfc3339")]
@@ -10815,7 +11014,7 @@ pub struct SecurityAlertTimelineItem {
     #[serde(rename = "alertType")]
     pub alert_type: String,
     #[doc = "The intent of the alert."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub intent: Option<security_alert_timeline_item::Intent>,
     #[doc = "The techniques of the alert."]
     #[serde(
@@ -10922,6 +11121,7 @@ pub struct SecurityMlAnalyticsSetting {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
     #[doc = "The kind of security ML analytics settings"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: SecurityMlAnalyticsSettingsKindEnum,
 }
 impl SecurityMlAnalyticsSetting {
@@ -10999,7 +11199,7 @@ pub struct SecurityMlAnalyticsSettingsList {
 impl azure_core::Continuable for SecurityMlAnalyticsSettingsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecurityMlAnalyticsSettingsList {
@@ -11074,6 +11274,7 @@ pub struct Settings {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
     #[doc = "The kind of the setting"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: settings::Kind,
 }
 impl Settings {
@@ -11154,7 +11355,7 @@ pub struct SourceControlList {
 impl azure_core::Continuable for SourceControlList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SourceControlList {
@@ -11169,7 +11370,7 @@ pub struct SourceControlProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The version of the source control."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub version: Option<Version>,
     #[doc = "The display name of the source control"]
     #[serde(rename = "displayName")]
@@ -11178,7 +11379,7 @@ pub struct SourceControlProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The type of repository."]
-    #[serde(rename = "repoType")]
+    #[serde(rename = "repoType", with = "azure_core::xml::text_content")]
     pub repo_type: RepoType,
     #[doc = "Array of source control content types."]
     #[serde(rename = "contentTypes")]
@@ -11379,7 +11580,7 @@ pub struct ThreatIntelligenceAlertRuleProperties {
     #[serde(rename = "lastModifiedUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_utc: Option<time::OffsetDateTime>,
     #[doc = "The severity of the alert"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<AlertSeverityEnum>,
     #[doc = "The tactics of the alert rule"]
     #[serde(
@@ -11435,6 +11636,7 @@ pub mod threat_intelligence_alert_rule_template {
         #[serde(flatten)]
         pub alert_rule_template_with_mitre_properties: AlertRuleTemplateWithMitreProperties,
         #[doc = "The severity of the alert"]
+        #[serde(with = "azure_core::xml::text_content")]
         pub severity: AlertSeverityEnum,
     }
     impl Properties {
@@ -11746,6 +11948,7 @@ pub struct ThreatIntelligenceInformation {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
     #[doc = "The kind of the threat intelligence entity"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: ThreatIntelligenceResourceInnerKind,
 }
 impl ThreatIntelligenceInformation {
@@ -11768,7 +11971,7 @@ pub struct ThreatIntelligenceInformationList {
 impl azure_core::Continuable for ThreatIntelligenceInformationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ThreatIntelligenceInformationList {
@@ -11943,7 +12146,12 @@ pub struct ThreatIntelligenceSortingCriteria {
     #[serde(rename = "itemKey", default, skip_serializing_if = "Option::is_none")]
     pub item_key: Option<String>,
     #[doc = "Sorting order (ascending/descending/unsorted)."]
-    #[serde(rename = "sortOrder", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sortOrder",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub sort_order: Option<ThreatIntelligenceSortingOrder>,
 }
 impl ThreatIntelligenceSortingCriteria {
@@ -12077,7 +12285,7 @@ pub struct TiTaxiiDataConnectorProperties {
     #[serde(rename = "taxiiLookbackPeriod", default, with = "azure_core::date::rfc3339::option")]
     pub taxii_lookback_period: Option<time::OffsetDateTime>,
     #[doc = "The polling frequency for the TAXII server."]
-    #[serde(rename = "pollingFrequency")]
+    #[serde(rename = "pollingFrequency", with = "azure_core::xml::text_content")]
     pub polling_frequency: ti_taxii_data_connector_properties::PollingFrequency,
     #[doc = "The available data types for Threat Intelligence TAXII data connector."]
     #[serde(rename = "dataTypes")]
@@ -12151,6 +12359,7 @@ pub struct TimelineAggregation {
     #[doc = "the total items found for a kind"]
     pub count: i32,
     #[doc = "The entity query kind"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: EntityTimelineKind,
 }
 impl TimelineAggregation {
@@ -12162,6 +12371,7 @@ impl TimelineAggregation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimelineError {
     #[doc = "The entity query kind"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: EntityTimelineKind,
     #[doc = "the query id"]
     #[serde(rename = "queryId", default, skip_serializing_if = "Option::is_none")]
@@ -12230,7 +12440,7 @@ pub struct TriggeredAnalyticsRuleRunProperties {
     #[serde(rename = "triggeredAnalyticsRuleRunId")]
     pub triggered_analytics_rule_run_id: String,
     #[doc = "The triggered analytics rule run provisioning state"]
-    #[serde(rename = "provisioningState")]
+    #[serde(rename = "provisioningState", with = "azure_core::xml::text_content")]
     pub provisioning_state: ProvisioningState,
     #[serde(rename = "ruleRunAdditionalData", default, skip_serializing_if = "Option::is_none")]
     pub rule_run_additional_data: Option<serde_json::Value>,
@@ -12261,7 +12471,7 @@ pub struct TriggeredAnalyticsRuleRuns {
 impl azure_core::Continuable for TriggeredAnalyticsRuleRuns {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TriggeredAnalyticsRuleRuns {
@@ -12459,7 +12669,7 @@ pub struct WatchlistItemList {
 impl azure_core::Continuable for WatchlistItemList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WatchlistItemList {
@@ -12529,7 +12739,7 @@ pub struct WatchlistList {
 impl azure_core::Continuable for WatchlistList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WatchlistList {
@@ -12552,7 +12762,12 @@ pub struct WatchlistProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
     #[doc = "The sourceType of the watchlist"]
-    #[serde(rename = "sourceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sourceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub source_type: Option<watchlist_properties::SourceType>,
     #[doc = "The time the watchlist was created"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
@@ -12723,7 +12938,7 @@ pub struct WorkspaceManagerAssignmentList {
 impl azure_core::Continuable for WorkspaceManagerAssignmentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceManagerAssignmentList {
@@ -12741,7 +12956,12 @@ pub struct WorkspaceManagerAssignmentProperties {
     #[serde(rename = "lastJobEndTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_job_end_time: Option<time::OffsetDateTime>,
     #[doc = "State of the last job associated to this assignment"]
-    #[serde(rename = "lastJobProvisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastJobProvisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_job_provisioning_state: Option<workspace_manager_assignment_properties::LastJobProvisioningState>,
     #[doc = "List of resources included in this workspace manager assignment"]
     pub items: Vec<AssignmentItem>,
@@ -12826,7 +13046,7 @@ pub struct WorkspaceManagerConfigurationList {
 impl azure_core::Continuable for WorkspaceManagerConfigurationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceManagerConfigurationList {
@@ -12838,6 +13058,7 @@ impl WorkspaceManagerConfigurationList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceManagerConfigurationProperties {
     #[doc = "The current mode of the workspace manager configuration"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub mode: workspace_manager_configuration_properties::Mode,
 }
 impl WorkspaceManagerConfigurationProperties {
@@ -12911,7 +13132,7 @@ pub struct WorkspaceManagerGroupList {
 impl azure_core::Continuable for WorkspaceManagerGroupList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceManagerGroupList {
@@ -12985,7 +13206,7 @@ pub struct WorkspaceManagerMembersList {
 impl azure_core::Continuable for WorkspaceManagerMembersList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceManagerMembersList {
@@ -13031,7 +13252,7 @@ pub struct JobItem {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[doc = "Status of the item publication"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<job_item::Status>,
     #[doc = "The time the item publishing was completed"]
     #[serde(rename = "executionTime", default, with = "azure_core::date::rfc3339::option")]
@@ -13143,7 +13364,7 @@ pub struct MetadataDependencies {
     #[serde(rename = "contentId", default, skip_serializing_if = "Option::is_none")]
     pub content_id: Option<MetadataContentId>,
     #[doc = "The kind of content the metadata is for."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<MetadataKind>,
     #[doc = "Version of the content.  Default and recommended format is numeric (e.g. 1, 1.0, 1.0.0, 1.0.0.0), following ARM template best practices.  Can also be any string, but then we cannot guarantee any version checks"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -13152,7 +13373,7 @@ pub struct MetadataDependencies {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Operator used for list of dependencies in criteria array."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub operator: Option<metadata_dependencies::Operator>,
     #[doc = "This is the list of dependencies we must fulfill, according to the AND/OR operator"]
     #[serde(
@@ -13490,6 +13711,7 @@ pub type MetadataProviders = Vec<String>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataSource {
     #[doc = "Source type of the content"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: metadata_source::Kind,
     #[doc = "Name of the content source.  The repo name, solution name, LA workspace name etc."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -13555,6 +13777,7 @@ pub mod metadata_source {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetadataSupport {
     #[doc = "Type of support for content item"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub tier: metadata_support::Tier,
     #[doc = "Name of the support contact. Company or person."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -13672,7 +13895,7 @@ pub struct PackageList {
 impl azure_core::Continuable for PackageList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PackageList {
@@ -13701,19 +13924,34 @@ pub struct PackageProperties {
     #[serde(rename = "contentId")]
     pub content_id: MetadataContentId,
     #[doc = "The package kind"]
-    #[serde(rename = "contentKind")]
+    #[serde(rename = "contentKind", with = "azure_core::xml::text_content")]
     pub content_kind: MetadataPackageKind,
     #[doc = "Version of the content.  Default and recommended format is numeric (e.g. 1, 1.0, 1.0.0, 1.0.0.0), following ARM template best practices.  Can also be any string, but then we cannot guarantee any version checks"]
     #[serde(rename = "contentSchemaVersion", default, skip_serializing_if = "Option::is_none")]
     pub content_schema_version: Option<MetadataVersion>,
     #[doc = "The boolean value the metadata is for."]
-    #[serde(rename = "isNew", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "isNew",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub is_new: Option<MetadataTrueFalseFlag>,
     #[doc = "The boolean value the metadata is for."]
-    #[serde(rename = "isPreview", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "isPreview",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub is_preview: Option<MetadataTrueFalseFlag>,
     #[doc = "The boolean value the metadata is for."]
-    #[serde(rename = "isFeatured", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "isFeatured",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub is_featured: Option<MetadataTrueFalseFlag>,
     #[doc = "Version of the content.  Default and recommended format is numeric (e.g. 1, 1.0, 1.0.0, 1.0.0.0), following ARM template best practices.  Can also be any string, but then we cannot guarantee any version checks"]
     pub version: MetadataVersion,
@@ -13799,7 +14037,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -13808,7 +14051,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
@@ -13916,7 +14164,7 @@ pub struct TemplateList {
 impl azure_core::Continuable for TemplateList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TemplateList {
@@ -13953,7 +14201,7 @@ pub struct TemplateProperties {
     #[serde(rename = "displayName")]
     pub display_name: MetadataDisplayName,
     #[doc = "The kind of content the metadata is for."]
-    #[serde(rename = "contentKind")]
+    #[serde(rename = "contentKind", with = "azure_core::xml::text_content")]
     pub content_kind: MetadataKind,
     #[doc = "The original source of the content item, where it comes from."]
     pub source: MetadataSource,
@@ -14003,7 +14251,12 @@ pub struct TemplateProperties {
     #[serde(rename = "packageId", default, skip_serializing_if = "Option::is_none")]
     pub package_id: Option<MetadataContentId>,
     #[doc = "The package kind"]
-    #[serde(rename = "packageKind", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "packageKind",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub package_kind: Option<MetadataPackageKind>,
     #[doc = "DisplayName of the content."]
     #[serde(rename = "packageName", default, skip_serializing_if = "Option::is_none")]

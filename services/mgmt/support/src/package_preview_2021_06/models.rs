@@ -28,7 +28,12 @@ pub struct LookUpResourceIdRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identifier: Option<String>,
     #[doc = "The type of resource."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<look_up_resource_id_request::Type>,
 }
 impl LookUpResourceIdRequest {

@@ -28,7 +28,12 @@ impl Acr {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ArtifactGenerationProperties {
     #[doc = "The programming language used."]
-    #[serde(rename = "generationLanguage", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "generationLanguage",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub generation_language: Option<GenerationLanguage>,
     #[doc = "The version of the language image used for execution in the generated dockerfile."]
     #[serde(rename = "languageVersion", default, skip_serializing_if = "Option::is_none")]
@@ -49,13 +54,28 @@ pub struct ArtifactGenerationProperties {
     #[serde(rename = "manifestOutputDirectory", default, skip_serializing_if = "Option::is_none")]
     pub manifest_output_directory: Option<String>,
     #[doc = "The mode of generation to be used for generating Dockerfiles."]
-    #[serde(rename = "dockerfileGenerationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dockerfileGenerationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub dockerfile_generation_mode: Option<DockerfileGenerationMode>,
     #[doc = "The mode of generation to be used for generating Manifest."]
-    #[serde(rename = "manifestGenerationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "manifestGenerationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub manifest_generation_mode: Option<ManifestGenerationMode>,
     #[doc = "Determines the type of manifests to be generated."]
-    #[serde(rename = "manifestType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "manifestType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub manifest_type: Option<GenerationManifestType>,
     #[doc = "The name of the image to be generated."]
     #[serde(rename = "imageName", default, skip_serializing_if = "Option::is_none")]
@@ -126,7 +146,12 @@ impl DeleteWorkflowResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentProperties {
     #[doc = "Determines the type of manifests within the repository."]
-    #[serde(rename = "manifestType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "manifestType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub manifest_type: Option<ManifestType>,
     #[serde(
         rename = "kubeManifestLocations",
@@ -482,12 +507,22 @@ pub struct GitHubWorkflowProfile {
     #[serde(rename = "pullNumber", default, skip_serializing_if = "Option::is_none")]
     pub pull_number: Option<i32>,
     #[doc = "The status of the Pull Request submitted against the users repository."]
-    #[serde(rename = "prStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "prStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub pr_status: Option<PullRequestStatus>,
     #[serde(rename = "lastWorkflowRun", default, skip_serializing_if = "Option::is_none")]
     pub last_workflow_run: Option<WorkflowRun>,
     #[doc = "Determines the authorization status of requests."]
-    #[serde(rename = "authStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub auth_status: Option<AuthorizationStatus>,
 }
 impl GitHubWorkflowProfile {
@@ -607,10 +642,15 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -880,7 +920,7 @@ pub struct WorkflowListResult {
 impl azure_core::Continuable for WorkflowListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkflowListResult {
@@ -915,7 +955,12 @@ pub struct WorkflowRun {
     #[serde(rename = "lastRunAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_run_at: Option<time::OffsetDateTime>,
     #[doc = "Describes the status of the workflow run"]
-    #[serde(rename = "workflowRunStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workflowRunStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub workflow_run_status: Option<WorkflowRunStatus>,
 }
 impl WorkflowRun {
@@ -972,7 +1017,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -981,7 +1031,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

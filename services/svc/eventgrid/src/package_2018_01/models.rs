@@ -466,7 +466,7 @@ pub struct AcsEmailDeliveryReportReceivedEventData {
     #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
     #[doc = "The status of the email. Any value other than Delivered is considered failed."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<acs_email_delivery_report_received_event_data::Status>,
     #[doc = "Detailed information about the status if any"]
     #[serde(rename = "deliveryStatusDetails", default, skip_serializing_if = "Option::is_none")]
@@ -559,7 +559,12 @@ pub struct AcsEmailEngagementTrackingReportReceivedEventData {
     #[serde(rename = "userAgent", default, skip_serializing_if = "Option::is_none")]
     pub user_agent: Option<String>,
     #[doc = "The type of engagement user have with email"]
-    #[serde(rename = "engagementType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "engagementType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub engagement_type: Option<acs_email_engagement_tracking_report_received_event_data::EngagementType>,
 }
 impl AcsEmailEngagementTrackingReportReceivedEventData {
@@ -694,13 +699,28 @@ pub struct AcsRecordingFileStatusUpdatedEventData {
     #[serde(rename = "recordingDurationMs", default, skip_serializing_if = "Option::is_none")]
     pub recording_duration_ms: Option<i64>,
     #[doc = "The recording content type- AudioVideo, or Audio"]
-    #[serde(rename = "recordingContentType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "recordingContentType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub recording_content_type: Option<acs_recording_file_status_updated_event_data::RecordingContentType>,
     #[doc = "The recording  channel type - Mixed, Unmixed"]
-    #[serde(rename = "recordingChannelType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "recordingChannelType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub recording_channel_type: Option<acs_recording_file_status_updated_event_data::RecordingChannelType>,
     #[doc = "The recording format type - Mp4, Mp3, Wav"]
-    #[serde(rename = "recordingFormatType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "recordingFormatType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub recording_format_type: Option<acs_recording_file_status_updated_event_data::RecordingFormatType>,
     #[doc = "The reason for ending recording session"]
     #[serde(rename = "sessionEndReason", default, skip_serializing_if = "Option::is_none")]
@@ -1298,7 +1318,7 @@ impl AppConfigurationKeyValueModifiedEventData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppEventTypeDetail {
     #[doc = "Type of action of the operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub action: Option<app_event_type_detail::Action>,
 }
 impl AppEventTypeDetail {
@@ -1358,13 +1378,18 @@ pub mod app_event_type_detail {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppServicePlanEventTypeDetail {
     #[doc = "Kind of environment where app service plan is."]
-    #[serde(rename = "stampKind", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "stampKind",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub stamp_kind: Option<app_service_plan_event_type_detail::StampKind>,
     #[doc = "Type of action on the app service plan."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub action: Option<app_service_plan_event_type_detail::Action>,
     #[doc = "Asynchronous operation status of the operation on the app service plan."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<AsyncStatus>,
 }
 impl AppServicePlanEventTypeDetail {
@@ -1954,7 +1979,12 @@ pub struct DataBoxCopyCompletedEventData {
     #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
     pub serial_number: Option<String>,
     #[doc = "Schema of DataBox Stage Name enumeration."]
-    #[serde(rename = "stageName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "stageName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub stage_name: Option<DataBoxStageName>,
     #[doc = "The time at which the stage happened."]
     #[serde(rename = "stageTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1972,7 +2002,12 @@ pub struct DataBoxCopyStartedEventData {
     #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
     pub serial_number: Option<String>,
     #[doc = "Schema of DataBox Stage Name enumeration."]
-    #[serde(rename = "stageName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "stageName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub stage_name: Option<DataBoxStageName>,
     #[doc = "The time at which the stage happened."]
     #[serde(rename = "stageTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1990,7 +2025,12 @@ pub struct DataBoxOrderCompletedEventData {
     #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
     pub serial_number: Option<String>,
     #[doc = "Schema of DataBox Stage Name enumeration."]
-    #[serde(rename = "stageName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "stageName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub stage_name: Option<DataBoxStageName>,
     #[doc = "The time at which the stage happened."]
     #[serde(rename = "stageTime", default, with = "azure_core::date::rfc3339::option")]
@@ -2378,7 +2418,12 @@ impl HealthcareDicomImageUpdatedEventData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthcareFhirResourceCreatedEventData {
     #[doc = "Schema of FHIR resource type enumeration."]
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_type: Option<HealthcareFhirResourceType>,
     #[doc = "Domain name of FHIR account for this resource."]
     #[serde(rename = "resourceFhirAccount", default, skip_serializing_if = "Option::is_none")]
@@ -2399,7 +2444,12 @@ impl HealthcareFhirResourceCreatedEventData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthcareFhirResourceDeletedEventData {
     #[doc = "Schema of FHIR resource type enumeration."]
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_type: Option<HealthcareFhirResourceType>,
     #[doc = "Domain name of FHIR account for this resource."]
     #[serde(rename = "resourceFhirAccount", default, skip_serializing_if = "Option::is_none")]
@@ -2819,7 +2869,12 @@ impl Serialize for HealthcareFhirResourceType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HealthcareFhirResourceUpdatedEventData {
     #[doc = "Schema of FHIR resource type enumeration."]
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_type: Option<HealthcareFhirResourceType>,
     #[doc = "Domain name of FHIR account for this resource."]
     #[serde(rename = "resourceFhirAccount", default, skip_serializing_if = "Option::is_none")]
@@ -3454,16 +3509,16 @@ impl MediaJobCancelingEventData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobError {
     #[doc = "Error code describing the error."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub code: Option<media_job_error::Code>,
     #[doc = "A human-readable language-dependent representation of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "Helps with categorization of errors."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub category: Option<media_job_error::Category>,
     #[doc = "Indicates that it may be possible to retry the Job. If retry is unsuccessful, please contact Azure support via Azure Portal."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub retry: Option<media_job_error::Retry>,
     #[doc = "An array of details about specific errors that led to this reported error."]
     #[serde(
@@ -3577,6 +3632,7 @@ pub struct MediaJobOutput {
     #[doc = "Gets the Job output progress."]
     pub progress: i64,
     #[doc = "Gets the Job output state."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub state: media_job_output::State,
 }
 impl MediaJobOutput {
@@ -3709,7 +3765,12 @@ impl MediaJobOutputScheduledEventData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobOutputStateChangeEventData {
     #[doc = "The previous state of the Job."]
-    #[serde(rename = "previousState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "previousState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub previous_state: Option<media_job_output_state_change_event_data::PreviousState>,
     #[doc = "The event data for a Job output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3763,10 +3824,15 @@ impl MediaJobScheduledEventData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MediaJobStateChangeEventData {
     #[doc = "The previous state of the Job."]
-    #[serde(rename = "previousState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "previousState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub previous_state: Option<media_job_state_change_event_data::PreviousState>,
     #[doc = "The new state of the Job."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<media_job_state_change_event_data::State>,
     #[doc = "Gets the Job correlation data."]
     #[serde(rename = "correlationData", default, skip_serializing_if = "Option::is_none")]
@@ -4100,7 +4166,7 @@ pub struct MicrosoftTeamsUserIdentifierModel {
     #[serde(rename = "isAnonymous", default, skip_serializing_if = "Option::is_none")]
     pub is_anonymous: Option<bool>,
     #[doc = "The cloud that the identifier belongs to."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub cloud: Option<CommunicationCloudEnvironmentModel>,
 }
 impl MicrosoftTeamsUserIdentifierModel {
@@ -5219,7 +5285,7 @@ impl StorageLifecyclePolicyCompletedEventData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageTaskCompletedEventData {
     #[doc = "The status for a storage task."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<storage_task_completed_event_data::Status>,
     #[doc = "The time at which a storage task was completed."]
     #[serde(rename = "completedDateTime", default, with = "azure_core::date::rfc3339::option")]

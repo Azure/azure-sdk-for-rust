@@ -95,7 +95,7 @@ pub struct ApplicationResourceList {
 impl azure_core::Continuable for ApplicationResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationResourceList {
@@ -162,7 +162,7 @@ pub struct ApplicationTypeResourceList {
 impl azure_core::Continuable for ApplicationTypeResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationTypeResourceList {
@@ -225,7 +225,7 @@ pub struct ApplicationTypeVersionResourceList {
 impl azure_core::Continuable for ApplicationTypeVersionResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationTypeVersionResourceList {
@@ -305,7 +305,12 @@ pub struct ApplicationUpgradePolicy {
     #[serde(rename = "instanceCloseDelayDuration", default, skip_serializing_if = "Option::is_none")]
     pub instance_close_delay_duration: Option<i64>,
     #[doc = "The mode used to monitor health during a rolling upgrade. The values are Monitored, and UnmonitoredAuto."]
-    #[serde(rename = "upgradeMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "upgradeMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub upgrade_mode: Option<RollingUpgradeMode>,
     #[doc = "The maximum amount of time to block processing of an upgrade domain and prevent loss of availability when there are unexpected issues. When this timeout expires, processing of the upgrade domain will proceed regardless of availability loss issues. The timeout is reset at the start of each upgrade domain. Valid values are between 0 and 42949672925 inclusive. (unsigned 32-bit integer)."]
     #[serde(rename = "upgradeReplicaSetCheckTimeout", default, skip_serializing_if = "Option::is_none")]
@@ -741,7 +746,12 @@ pub type ForceRestart = bool;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FrontendConfiguration {
     #[doc = "The IP address type.\n"]
-    #[serde(rename = "ipAddressType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ipAddressType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ip_address_type: Option<IpAddressType>,
     #[doc = "The resource Id of the Load Balancer backend address pool that the VM instances of the node type are associated with. The format of the resource Id is '/subscriptions/<subscriptionId>/resourceGroups/<resourceGroupName>/providers/Microsoft.Network/loadBalancers/<loadBalancerName>/backendAddressPools/<backendAddressPoolName>'."]
     #[serde(rename = "loadBalancerBackendAddressPoolId", default, skip_serializing_if = "Option::is_none")]
@@ -831,12 +841,13 @@ pub struct LoadBalancingRule {
     #[serde(rename = "backendPort")]
     pub backend_port: i32,
     #[doc = "The reference to the transport protocol used by the load balancing rule."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub protocol: load_balancing_rule::Protocol,
     #[doc = "The prob port used by the load balancing rule. Acceptable values are between 1 and 65535."]
     #[serde(rename = "probePort", default, skip_serializing_if = "Option::is_none")]
     pub probe_port: Option<i32>,
     #[doc = "the reference to the load balancer probe used by the load balancing rule."]
-    #[serde(rename = "probeProtocol")]
+    #[serde(rename = "probeProtocol", with = "azure_core::xml::text_content")]
     pub probe_protocol: load_balancing_rule::ProbeProtocol,
     #[doc = "The probe request path. Only supported for HTTP/HTTPS probes."]
     #[serde(rename = "probeRequestPath", default, skip_serializing_if = "Option::is_none")]
@@ -1092,7 +1103,7 @@ pub struct ManagedClusterListResult {
 impl azure_core::Continuable for ManagedClusterListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedClusterListResult {
@@ -1116,7 +1127,12 @@ pub struct ManagedClusterProperties {
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<String>,
     #[doc = "The current state of the cluster.\n"]
-    #[serde(rename = "clusterState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "clusterState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cluster_state: Option<ClusterState>,
     #[doc = "List of thumbprints of the cluster certificates."]
     #[serde(
@@ -1176,16 +1192,31 @@ pub struct ManagedClusterProperties {
     )]
     pub fabric_settings: Vec<SettingsSectionDescription>,
     #[doc = "The provisioning state of the managed resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ManagedResourceProvisioningState>,
     #[doc = "The Service Fabric runtime version of the cluster. This property is required when **clusterUpgradeMode** is set to 'Manual'. To get list of available Service Fabric versions for new clusters use [ClusterVersion API](./ClusterVersion.md). To get the list of available version for existing clusters use **availableClusterVersions**."]
     #[serde(rename = "clusterCodeVersion", default, skip_serializing_if = "Option::is_none")]
     pub cluster_code_version: Option<String>,
     #[doc = "The upgrade mode of the cluster when new Service Fabric runtime version is available.\n"]
-    #[serde(rename = "clusterUpgradeMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "clusterUpgradeMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cluster_upgrade_mode: Option<ClusterUpgradeMode>,
     #[doc = "Indicates when new cluster runtime version upgrades will be applied after they are released. By default is Wave0."]
-    #[serde(rename = "clusterUpgradeCadence", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "clusterUpgradeCadence",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cluster_upgrade_cadence: Option<ClusterUpgradeCadence>,
     #[doc = "List of add-on features to enable on the cluster."]
     #[serde(
@@ -1300,7 +1331,12 @@ pub struct ManagedClusterVersionDetails {
     #[serde(rename = "supportExpiryUtc", default, skip_serializing_if = "Option::is_none")]
     pub support_expiry_utc: Option<String>,
     #[doc = "Cluster operating system, the default will be Windows"]
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "osType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub os_type: Option<OsType>,
 }
 impl ManagedClusterVersionDetails {
@@ -1318,7 +1354,12 @@ pub struct ManagedIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of managed identity for the resource."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<ManagedIdentityType>,
     #[doc = "The list of user identities associated with the resource. The user identity dictionary key references will be ARM resource ids in the form:\n'/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'.\n"]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -1453,7 +1494,7 @@ pub struct ManagedVmSizesResult {
 impl azure_core::Continuable for ManagedVmSizesResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedVmSizesResult {
@@ -1524,6 +1565,7 @@ pub struct NetworkSecurityRule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Network protocol this rule applies to."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub protocol: network_security_rule::Protocol,
     #[doc = "The CIDR or source IP ranges."]
     #[serde(
@@ -1570,10 +1612,12 @@ pub struct NetworkSecurityRule {
     #[serde(rename = "destinationPortRange", default, skip_serializing_if = "Option::is_none")]
     pub destination_port_range: Option<String>,
     #[doc = "The network traffic is allowed or denied."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub access: network_security_rule::Access,
     #[doc = "The priority of the rule. The value can be in the range 1000 to 3000. Values outside this range are reserved for Service Fabric ManagerCluster Resource Provider. The priority number must be unique for each rule in the collection. The lower the priority number, the higher the priority of the rule."]
     pub priority: i32,
     #[doc = "Network security rule direction."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub direction: network_security_rule::Direction,
 }
 impl NetworkSecurityRule {
@@ -1803,7 +1847,7 @@ pub struct NodeTypeListResult {
 impl azure_core::Continuable for NodeTypeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NodeTypeListResult {
@@ -1828,7 +1872,7 @@ pub struct NodeTypeListSkuResult {
 impl azure_core::Continuable for NodeTypeListSkuResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NodeTypeListSkuResult {
@@ -1849,7 +1893,12 @@ pub struct NodeTypeProperties {
     #[serde(rename = "dataDiskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub data_disk_size_gb: Option<i32>,
     #[doc = "Managed data disk type. IOPS and throughput are given by the disk size, to see more information go to https://docs.microsoft.com/en-us/azure/virtual-machines/disks-types.\n"]
-    #[serde(rename = "dataDiskType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataDiskType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_disk_type: Option<DiskType>,
     #[doc = "Managed data disk letter. It can not use the reserved letter C or D and it can not change after created."]
     #[serde(rename = "dataDiskLetter", default, skip_serializing_if = "Option::is_none")]
@@ -1934,7 +1983,12 @@ pub struct NodeTypeProperties {
     #[serde(rename = "enableEncryptionAtHost", default, skip_serializing_if = "Option::is_none")]
     pub enable_encryption_at_host: Option<bool>,
     #[doc = "The provisioning state of the managed resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ManagedResourceProvisioningState>,
     #[doc = "Specifies whether the network interface is accelerated networking-enabled."]
     #[serde(rename = "enableAcceleratedNetworking", default, skip_serializing_if = "Option::is_none")]
@@ -1968,7 +2022,12 @@ pub struct NodeTypeProperties {
     #[serde(rename = "spotRestoreTimeout", default, skip_serializing_if = "Option::is_none")]
     pub spot_restore_timeout: Option<String>,
     #[doc = "Specifies the eviction policy for virtual machines in a SPOT node type."]
-    #[serde(rename = "evictionPolicy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "evictionPolicy",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub eviction_policy: Option<EvictionPolicyType>,
     #[doc = "Indicates the resource id of the vm image. This parameter is used for custom vm image."]
     #[serde(rename = "vmImageResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -2049,7 +2108,12 @@ pub struct NodeTypeSkuCapacity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<i32>,
     #[doc = "Node type capacity scale type.\n"]
-    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "scaleType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub scale_type: Option<NodeTypeSkuScaleType>,
 }
 impl NodeTypeSkuCapacity {
@@ -2148,7 +2212,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -2219,7 +2283,7 @@ impl Serialize for OsType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Partition {
     #[doc = "Enumerates the ways that a service can be partitioned."]
-    #[serde(rename = "partitionScheme")]
+    #[serde(rename = "partitionScheme", with = "azure_core::xml::text_content")]
     pub partition_scheme: PartitionScheme,
 }
 impl Partition {
@@ -2414,7 +2478,7 @@ impl Serialize for RollingUpgradeMode {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RollingUpgradeMonitoringPolicy {
     #[doc = "The compensating action to perform when a Monitored upgrade encounters monitoring policy or health policy violations. Invalid indicates the failure action is invalid. Rollback specifies that the upgrade will start rolling back automatically. Manual indicates that the upgrade will switch to UnmonitoredManual upgrade mode."]
-    #[serde(rename = "failureAction")]
+    #[serde(rename = "failureAction", with = "azure_core::xml::text_content")]
     pub failure_action: rolling_upgrade_monitoring_policy::FailureAction,
     #[doc = "The amount of time to wait after completing an upgrade domain before applying health policies. It is interpreted as a string representing an ISO 8601 duration with following format \"hh:mm:ss.fff\"."]
     #[serde(rename = "healthCheckWaitDuration")]
@@ -2495,6 +2559,7 @@ pub mod rolling_upgrade_monitoring_policy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScalingMechanism {
     #[doc = "Enumerates the ways that a service can be partitioned."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: ServiceScalingMechanismKind,
 }
 impl ScalingMechanism {
@@ -2525,6 +2590,7 @@ pub type ScalingPolicyList = Vec<ScalingPolicy>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScalingTrigger {
     #[doc = "Enumerates the ways that a service can be partitioned."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: ServiceScalingTriggerKind,
 }
 impl ScalingTrigger {
@@ -2536,6 +2602,7 @@ impl ScalingTrigger {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceCorrelation {
     #[doc = "The service correlation scheme."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub scheme: ServiceCorrelationScheme,
     #[doc = "The full ARM Resource ID describing the service resource"]
     #[serde(rename = "serviceName")]
@@ -2647,7 +2714,7 @@ pub struct ServiceLoadMetric {
     #[doc = "The name of the metric. If the service chooses to report load during runtime, the load metric name should match the name that is specified in Name exactly. Note that metric names are case sensitive."]
     pub name: String,
     #[doc = "Determines the metric weight relative to the other metrics that are configured for this service. During runtime, if two metrics end up in conflict, the Cluster Resource Manager prefers the metric with the higher weight."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub weight: Option<ServiceLoadMetricWeight>,
     #[doc = "Used only for Stateful services. The default amount of load, as a number, that this service creates for this metric when it is a Primary replica."]
     #[serde(rename = "primaryDefaultLoad", default, skip_serializing_if = "Option::is_none")]
@@ -2746,7 +2813,7 @@ pub type ServicePlacementPoliciesList = Vec<ServicePlacementPolicy>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePlacementPolicy {
     #[doc = "The type of placement policy for a service fabric service. Following are the possible values."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: ServicePlacementPolicyType,
 }
 impl ServicePlacementPolicy {
@@ -2882,7 +2949,7 @@ pub struct ServiceResourceList {
 impl azure_core::Continuable for ServiceResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceResourceList {
@@ -2899,7 +2966,7 @@ pub struct ServiceResourceProperties {
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
     #[doc = "The kind of service (Stateless or Stateful)."]
-    #[serde(rename = "serviceKind")]
+    #[serde(rename = "serviceKind", with = "azure_core::xml::text_content")]
     pub service_kind: ServiceKind,
     #[doc = "The name of the service type"]
     #[serde(rename = "serviceTypeName")]
@@ -2908,7 +2975,12 @@ pub struct ServiceResourceProperties {
     #[serde(rename = "partitionDescription")]
     pub partition_description: Partition,
     #[doc = "The activation Mode of the service package"]
-    #[serde(rename = "servicePackageActivationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "servicePackageActivationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub service_package_activation_mode: Option<service_resource_properties::ServicePackageActivationMode>,
 }
 impl ServiceResourceProperties {
@@ -2979,7 +3051,12 @@ pub struct ServiceResourcePropertiesBase {
     #[serde(rename = "servicePlacementPolicies", default, skip_serializing_if = "Option::is_none")]
     pub service_placement_policies: Option<ServicePlacementPoliciesList>,
     #[doc = "Specifies the move cost for the service."]
-    #[serde(rename = "defaultMoveCost", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "defaultMoveCost",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub default_move_cost: Option<MoveCost>,
     #[doc = "Scaling policies for this service."]
     #[serde(rename = "scalingPolicies", default, skip_serializing_if = "Option::is_none")]
@@ -3159,6 +3236,7 @@ impl SingletonPartitionScheme {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "Sku Name."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: SkuName,
 }
 impl Sku {
@@ -3290,10 +3368,20 @@ pub struct Subnet {
     #[serde(rename = "enableIpv6", default, skip_serializing_if = "Option::is_none")]
     pub enable_ipv6: Option<bool>,
     #[doc = "Enable or Disable apply network policies on private end point in the subnet."]
-    #[serde(rename = "privateEndpointNetworkPolicies", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "privateEndpointNetworkPolicies",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub private_endpoint_network_policies: Option<subnet::PrivateEndpointNetworkPolicies>,
     #[doc = "Enable or Disable apply network policies on private link service in the subnet."]
-    #[serde(rename = "privateLinkServiceNetworkPolicies", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "privateLinkServiceNetworkPolicies",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub private_link_service_network_policies: Option<subnet::PrivateLinkServiceNetworkPolicies>,
     #[doc = "Full resource id for the network security group."]
     #[serde(rename = "networkSecurityGroupId", default, skip_serializing_if = "Option::is_none")]
@@ -3607,7 +3695,7 @@ pub struct VmssDataDisk {
     #[serde(rename = "diskSizeGB")]
     pub disk_size_gb: i32,
     #[doc = "Managed data disk type. IOPS and throughput are given by the disk size, to see more information go to https://docs.microsoft.com/en-us/azure/virtual-machines/disks-types.\n"]
-    #[serde(rename = "diskType")]
+    #[serde(rename = "diskType", with = "azure_core::xml::text_content")]
     pub disk_type: DiskType,
     #[doc = "Managed data disk letter. It can not use the reserved letter C or D and it can not change after created."]
     #[serde(rename = "diskLetter")]

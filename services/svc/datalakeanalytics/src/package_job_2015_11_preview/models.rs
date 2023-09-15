@@ -119,7 +119,7 @@ pub struct JobErrorDetails {
     #[serde(rename = "InnerError", default, skip_serializing_if = "Option::is_none")]
     pub inner_error: Option<JobInnerError>,
     #[doc = "Gets the severity level of the failure."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<job_error_details::Severity>,
     #[doc = "Gets the ultimate source of the failure (usually either SYSTEM or USER)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -162,7 +162,7 @@ pub struct JobInfoListResult {
 impl azure_core::Continuable for JobInfoListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobInfoListResult {
@@ -179,7 +179,7 @@ pub struct JobInformation {
     #[doc = "Gets or sets the friendly name of the job."]
     pub name: String,
     #[doc = "Gets or sets the job type of the current job (Hive or USql)."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: job_information::Type,
     #[doc = "Gets or sets the user or account that submitted the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -211,10 +211,10 @@ pub struct JobInformation {
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "Gets the job state. When the job is in the Ended state, refer to Result and ErrorMessage for details."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<job_information::State>,
     #[doc = "Gets the result of job execution or the current result of the running job."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub result: Option<job_information::Result>,
     #[doc = "Gets the job state audit records, indicating when various operations have been performed on this job."]
     #[serde(
@@ -290,7 +290,7 @@ pub struct JobInnerError {
     #[serde(rename = "diagnosticCode", default, skip_serializing_if = "Option::is_none")]
     pub diagnostic_code: Option<i32>,
     #[doc = "Gets the severity level of the failure."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<job_inner_error::Severity>,
     #[doc = "Gets the details of the error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -365,7 +365,12 @@ pub struct JobResource {
     #[serde(rename = "resourcePath", default, skip_serializing_if = "Option::is_none")]
     pub resource_path: Option<String>,
     #[doc = "Gets or sets the job resource type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<job_resource::Type>,
 }
 impl JobResource {
@@ -533,7 +538,12 @@ pub struct USqlJobProperties {
     #[serde(rename = "yarnApplicationTimeStamp", default, skip_serializing_if = "Option::is_none")]
     pub yarn_application_time_stamp: Option<i64>,
     #[doc = "Gets or sets the compile mode for the job."]
-    #[serde(rename = "compileMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "compileMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub compile_mode: Option<u_sql_job_properties::CompileMode>,
 }
 impl USqlJobProperties {

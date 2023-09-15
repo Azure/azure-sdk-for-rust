@@ -27,6 +27,7 @@ pub struct Addon {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
     #[doc = "Addon type."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: addon::Kind,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
@@ -98,7 +99,7 @@ pub struct AddonList {
 impl azure_core::Continuable for AddonList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AddonList {
@@ -195,7 +196,7 @@ pub struct AlertList {
 impl azure_core::Continuable for AlertList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertList {
@@ -219,7 +220,7 @@ pub struct AlertProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recommendation: Option<String>,
     #[doc = "Severity of the alert."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<alert_properties::Severity>,
     #[doc = "Error details for the alert."]
     #[serde(rename = "errorDetails", default, skip_serializing_if = "Option::is_none")]
@@ -322,13 +323,28 @@ pub struct ArcAddonProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[doc = "Host OS supported by the Arc addon."]
-    #[serde(rename = "hostPlatform", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hostPlatform",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub host_platform: Option<arc_addon_properties::HostPlatform>,
     #[doc = "Platform where the runtime is hosted."]
-    #[serde(rename = "hostPlatformType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hostPlatformType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub host_platform_type: Option<arc_addon_properties::HostPlatformType>,
     #[doc = "Addon Provisioning State"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<arc_addon_properties::ProvisioningState>,
 }
 impl ArcAddonProperties {
@@ -479,7 +495,7 @@ pub struct AsymmetricEncryptedSecret {
     #[serde(rename = "encryptionCertThumbprint", default, skip_serializing_if = "Option::is_none")]
     pub encryption_cert_thumbprint: Option<String>,
     #[doc = "The algorithm used to encrypt \"Value\"."]
-    #[serde(rename = "encryptionAlgorithm")]
+    #[serde(rename = "encryptionAlgorithm", with = "azure_core::xml::text_content")]
     pub encryption_algorithm: asymmetric_encrypted_secret::EncryptionAlgorithm,
 }
 impl AsymmetricEncryptedSecret {
@@ -557,7 +573,7 @@ pub struct AzureContainerInfo {
     #[serde(rename = "containerName")]
     pub container_name: String,
     #[doc = "Storage format used for the file represented by the share."]
-    #[serde(rename = "dataFormat")]
+    #[serde(rename = "dataFormat", with = "azure_core::xml::text_content")]
     pub data_format: azure_container_info::DataFormat,
 }
 impl AzureContainerInfo {
@@ -671,7 +687,7 @@ pub struct BandwidthSchedulesList {
 impl azure_core::Continuable for BandwidthSchedulesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BandwidthSchedulesList {
@@ -685,7 +701,7 @@ pub struct ClientAccessRight {
     #[doc = "IP of the client."]
     pub client: String,
     #[doc = "Type of access to be allowed for the client."]
-    #[serde(rename = "accessPermission")]
+    #[serde(rename = "accessPermission", with = "azure_core::xml::text_content")]
     pub access_permission: client_access_right::AccessPermission,
 }
 impl ClientAccessRight {
@@ -768,13 +784,18 @@ impl CloudEdgeManagementRole {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudEdgeManagementRoleProperties {
     #[doc = "Local Edge Management Status"]
-    #[serde(rename = "localManagementStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "localManagementStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub local_management_status: Option<cloud_edge_management_role_properties::LocalManagementStatus>,
     #[doc = "Details about Edge Profile for the resource"]
     #[serde(rename = "edgeProfile", default, skip_serializing_if = "Option::is_none")]
     pub edge_profile: Option<EdgeProfile>,
     #[doc = "Role status."]
-    #[serde(rename = "roleStatus")]
+    #[serde(rename = "roleStatus", with = "azure_core::xml::text_content")]
     pub role_status: cloud_edge_management_role_properties::RoleStatus,
 }
 impl CloudEdgeManagementRoleProperties {
@@ -1103,7 +1124,7 @@ pub struct ContainerList {
 impl azure_core::Continuable for ContainerList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ContainerList {
@@ -1115,10 +1136,15 @@ impl ContainerList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerProperties {
     #[doc = "Current status of the container."]
-    #[serde(rename = "containerStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "containerStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub container_status: Option<container_properties::ContainerStatus>,
     #[doc = "DataFormat for Container"]
-    #[serde(rename = "dataFormat")]
+    #[serde(rename = "dataFormat", with = "azure_core::xml::text_content")]
     pub data_format: container_properties::DataFormat,
     #[doc = "Fields for tracking refresh job on the share or container."]
     #[serde(rename = "refreshDetails", default, skip_serializing_if = "Option::is_none")]
@@ -1267,7 +1293,7 @@ pub struct DataBoxEdgeDevice {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ResourceIdentity>,
     #[doc = "The kind of the device."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<data_box_edge_device::Kind>,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
@@ -1368,7 +1394,12 @@ pub struct DataBoxEdgeDeviceExtendedInfoPatch {
     #[serde(rename = "channelIntegrityKeyVersion", default, skip_serializing_if = "Option::is_none")]
     pub channel_integrity_key_version: Option<String>,
     #[doc = "For changing or to initiate the resync to key-vault set the status to KeyVaultSyncPending, rest of the status will not be applicable."]
-    #[serde(rename = "syncStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "syncStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub sync_status: Option<data_box_edge_device_extended_info_patch::SyncStatus>,
 }
 impl DataBoxEdgeDeviceExtendedInfoPatch {
@@ -1449,13 +1480,23 @@ pub struct DataBoxEdgeDeviceExtendedInfoProperties {
     #[serde(rename = "channelIntegrityKeyVersion", default, skip_serializing_if = "Option::is_none")]
     pub channel_integrity_key_version: Option<String>,
     #[doc = "Key vault sync status"]
-    #[serde(rename = "keyVaultSyncStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "keyVaultSyncStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub key_vault_sync_status: Option<data_box_edge_device_extended_info_properties::KeyVaultSyncStatus>,
     #[doc = "Device secrets, will be returned only with ODataFilter $expand=deviceSecrets"]
     #[serde(rename = "deviceSecrets", default, skip_serializing_if = "Option::is_none")]
     pub device_secrets: Option<serde_json::Value>,
     #[doc = "Cluster Witness Type"]
-    #[serde(rename = "clusterWitnessType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "clusterWitnessType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cluster_witness_type: Option<data_box_edge_device_extended_info_properties::ClusterWitnessType>,
     #[doc = "The witness location of file share."]
     #[serde(rename = "fileShareWitnessLocation", default, skip_serializing_if = "Option::is_none")]
@@ -1582,7 +1623,7 @@ pub struct DataBoxEdgeDeviceList {
 impl azure_core::Continuable for DataBoxEdgeDeviceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataBoxEdgeDeviceList {
@@ -1615,7 +1656,12 @@ pub struct DataBoxEdgeDeviceProperties {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
     #[doc = "The status of the Data Box Edge/Gateway device."]
-    #[serde(rename = "dataBoxEdgeDeviceStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataBoxEdgeDeviceStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_box_edge_device_status: Option<data_box_edge_device_properties::DataBoxEdgeDeviceStatus>,
     #[doc = "The Serial Number of Data Box Edge/Gateway device."]
     #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
@@ -1627,7 +1673,12 @@ pub struct DataBoxEdgeDeviceProperties {
     #[serde(rename = "modelDescription", default, skip_serializing_if = "Option::is_none")]
     pub model_description: Option<String>,
     #[doc = "The type of the Data Box Edge/Gateway device."]
-    #[serde(rename = "deviceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "deviceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub device_type: Option<data_box_edge_device_properties::DeviceType>,
     #[doc = "The Data Box Edge/Gateway device name."]
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
@@ -1800,13 +1851,13 @@ pub struct DataBoxEdgeSku {
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
     pub resource_type: Option<String>,
     #[doc = "The Sku name."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub name: Option<data_box_edge_sku::Name>,
     #[doc = "The Sku kind."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
     #[doc = "The Sku tier."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub tier: Option<data_box_edge_sku::Tier>,
     #[doc = "The Sku kind."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1845,13 +1896,18 @@ pub struct DataBoxEdgeSku {
     )]
     pub costs: Vec<SkuCost>,
     #[doc = "Sku can be signed up by customer or not."]
-    #[serde(rename = "signupOption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "signupOption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub signup_option: Option<data_box_edge_sku::SignupOption>,
     #[doc = "Availability of the Sku as preview/stable."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub version: Option<data_box_edge_sku::Version>,
     #[doc = "Links to the next set of results"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub availability: Option<data_box_edge_sku::Availability>,
     #[doc = "List of Shipment Types supported by this SKU"]
     #[serde(
@@ -2157,7 +2213,7 @@ pub struct DataBoxEdgeSkuList {
 impl azure_core::Continuable for DataBoxEdgeSkuList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataBoxEdgeSkuList {
@@ -2169,7 +2225,12 @@ impl DataBoxEdgeSkuList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataResidency {
     #[doc = "DataResidencyType enum"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<data_residency::Type>,
 }
 impl DataResidency {
@@ -2379,7 +2440,7 @@ pub struct EdgeProfileSubscription {
     #[doc = "ARM ID of the subscription"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<edge_profile_subscription::State>,
     #[serde(rename = "registrationDate", default, skip_serializing_if = "Option::is_none")]
     pub registration_date: Option<String>,
@@ -2640,13 +2701,28 @@ pub struct IoTAddonProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[doc = "Host OS supported by the IoT addon."]
-    #[serde(rename = "hostPlatform", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hostPlatform",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub host_platform: Option<io_t_addon_properties::HostPlatform>,
     #[doc = "Platform where the runtime is hosted."]
-    #[serde(rename = "hostPlatformType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hostPlatformType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub host_platform_type: Option<io_t_addon_properties::HostPlatformType>,
     #[doc = "Addon Provisioning State"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<io_t_addon_properties::ProvisioningState>,
 }
 impl IoTAddonProperties {
@@ -2866,7 +2942,7 @@ impl IoTRole {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTRoleProperties {
     #[doc = "Host OS supported by the IoT role."]
-    #[serde(rename = "hostPlatform")]
+    #[serde(rename = "hostPlatform", with = "azure_core::xml::text_content")]
     pub host_platform: io_t_role_properties::HostPlatform,
     #[doc = "Metadata of IoT device/IoT Edge device to be configured."]
     #[serde(rename = "ioTDeviceDetails")]
@@ -2886,13 +2962,18 @@ pub struct IoTRoleProperties {
     #[serde(rename = "ioTEdgeAgentInfo", default, skip_serializing_if = "Option::is_none")]
     pub io_t_edge_agent_info: Option<IoTEdgeAgentInfo>,
     #[doc = "Platform where the Iot runtime is hosted."]
-    #[serde(rename = "hostPlatformType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hostPlatformType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub host_platform_type: Option<io_t_role_properties::HostPlatformType>,
     #[doc = "Compute infrastructure Resource"]
     #[serde(rename = "computeResource", default, skip_serializing_if = "Option::is_none")]
     pub compute_resource: Option<ComputeResource>,
     #[doc = "Role status."]
-    #[serde(rename = "roleStatus")]
+    #[serde(rename = "roleStatus", with = "azure_core::xml::text_content")]
     pub role_status: io_t_role_properties::RoleStatus,
 }
 impl IoTRoleProperties {
@@ -3078,7 +3159,7 @@ pub struct Job {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "The current status of the job."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<job::Status>,
     #[doc = "The UTC date and time at which the job started."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -3200,10 +3281,20 @@ impl JobErrorItem {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobProperties {
     #[doc = "The type of the job."]
-    #[serde(rename = "jobType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "jobType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub job_type: Option<job_properties::JobType>,
     #[doc = "Current stage of the update operation."]
-    #[serde(rename = "currentStage", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "currentStage",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub current_stage: Option<job_properties::CurrentStage>,
     #[doc = "Details about the download progress of update."]
     #[serde(rename = "downloadProgress", default, skip_serializing_if = "Option::is_none")]
@@ -3460,13 +3551,23 @@ impl KubernetesRoleNetwork {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KubernetesRoleProperties {
     #[doc = "Host OS supported by the Kubernetes role."]
-    #[serde(rename = "hostPlatform")]
+    #[serde(rename = "hostPlatform", with = "azure_core::xml::text_content")]
     pub host_platform: kubernetes_role_properties::HostPlatform,
     #[doc = "State of Kubernetes deployment"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<kubernetes_role_properties::ProvisioningState>,
     #[doc = "Platform where the runtime is hosted."]
-    #[serde(rename = "hostPlatformType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hostPlatformType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub host_platform_type: Option<kubernetes_role_properties::HostPlatformType>,
     #[doc = "Kubernetes cluster configuration"]
     #[serde(rename = "kubernetesClusterInfo")]
@@ -3475,7 +3576,7 @@ pub struct KubernetesRoleProperties {
     #[serde(rename = "kubernetesRoleResources")]
     pub kubernetes_role_resources: KubernetesRoleResources,
     #[doc = "Role status."]
-    #[serde(rename = "roleStatus")]
+    #[serde(rename = "roleStatus", with = "azure_core::xml::text_content")]
     pub role_status: kubernetes_role_properties::RoleStatus,
 }
 impl KubernetesRoleProperties {
@@ -3712,7 +3813,12 @@ pub struct KubernetesRoleStorageClassInfo {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "If provisioned storage is posix compliant."]
-    #[serde(rename = "posixCompliant", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "posixCompliant",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub posix_compliant: Option<kubernetes_role_storage_class_info::PosixCompliant>,
 }
 impl KubernetesRoleStorageClassInfo {
@@ -3819,7 +3925,7 @@ pub struct MecRoleProperties {
     #[serde(rename = "resourceUniqueId", default, skip_serializing_if = "Option::is_none")]
     pub resource_unique_id: Option<String>,
     #[doc = "Role status."]
-    #[serde(rename = "roleStatus")]
+    #[serde(rename = "roleStatus", with = "azure_core::xml::text_content")]
     pub role_status: mec_role_properties::RoleStatus,
 }
 impl MecRoleProperties {
@@ -3990,10 +4096,15 @@ pub struct MetricSpecificationV1 {
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
     #[doc = "Metric units."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub unit: Option<metric_specification_v1::Unit>,
     #[doc = "Metric aggregation type."]
-    #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "aggregationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub aggregation_type: Option<metric_specification_v1::AggregationType>,
     #[doc = "Metric dimensions, other than default dimension which is resource."]
     #[serde(
@@ -4006,7 +4117,7 @@ pub struct MetricSpecificationV1 {
     #[serde(rename = "fillGapWithZero", default, skip_serializing_if = "Option::is_none")]
     pub fill_gap_with_zero: Option<bool>,
     #[doc = "Metric category."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub category: Option<metric_specification_v1::Category>,
     #[doc = "Resource name override."]
     #[serde(rename = "resourceIdDimensionNameOverride", default, skip_serializing_if = "Option::is_none")]
@@ -4206,7 +4317,7 @@ pub struct MonitoringMetricConfigurationList {
 impl azure_core::Continuable for MonitoringMetricConfigurationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MonitoringMetricConfigurationList {
@@ -4239,10 +4350,20 @@ pub struct MountPointMap {
     #[serde(rename = "mountPoint", default, skip_serializing_if = "Option::is_none")]
     pub mount_point: Option<String>,
     #[doc = "Mounting type."]
-    #[serde(rename = "mountType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "mountType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub mount_type: Option<mount_point_map::MountType>,
     #[doc = "Role type."]
-    #[serde(rename = "roleType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "roleType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub role_type: Option<mount_point_map::RoleType>,
 }
 impl MountPointMap {
@@ -4374,13 +4495,23 @@ pub struct NetworkAdapter {
     #[serde(rename = "linkSpeed", default, skip_serializing_if = "Option::is_none")]
     pub link_speed: Option<i64>,
     #[doc = "Value indicating whether this adapter is valid."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<network_adapter::Status>,
     #[doc = "Value indicating whether this adapter is RDMA capable."]
-    #[serde(rename = "rdmaStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rdmaStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub rdma_status: Option<network_adapter::RdmaStatus>,
     #[doc = "Value indicating whether this adapter has DHCP enabled."]
-    #[serde(rename = "dhcpStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dhcpStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub dhcp_status: Option<network_adapter::DhcpStatus>,
     #[doc = "Details related to the IPv4 address configuration."]
     #[serde(rename = "ipv4Configuration", default, skip_serializing_if = "Option::is_none")]
@@ -4523,7 +4654,12 @@ pub mod network_adapter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkAdapterPosition {
     #[doc = "The network group."]
-    #[serde(rename = "networkGroup", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "networkGroup",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub network_group: Option<network_adapter_position::NetworkGroup>,
     #[doc = "The port."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4633,7 +4769,12 @@ pub struct NodeInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Node type - Master/Worker"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<node_info::Type>,
     #[doc = "IP Configuration of the Kubernetes node."]
     #[serde(
@@ -4708,7 +4849,7 @@ pub struct NodeList {
 impl azure_core::Continuable for NodeList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NodeList {
@@ -4720,7 +4861,12 @@ impl NodeList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodeProperties {
     #[doc = "The current status of the individual node"]
-    #[serde(rename = "nodeStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "nodeStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub node_status: Option<node_properties::NodeStatus>,
     #[doc = "Serial number of the Chassis"]
     #[serde(rename = "nodeChassisSerialNumber", default, skip_serializing_if = "Option::is_none")]
@@ -4906,7 +5052,7 @@ pub struct OperationsList {
 impl azure_core::Continuable for OperationsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationsList {
@@ -4951,7 +5097,7 @@ pub struct OrderList {
 impl azure_core::Continuable for OrderList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OrderList {
@@ -5002,7 +5148,12 @@ pub struct OrderProperties {
     )]
     pub return_tracking_info: Vec<TrackingInfo>,
     #[doc = "ShipmentType of the order"]
-    #[serde(rename = "shipmentType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "shipmentType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub shipment_type: Option<order_properties::ShipmentType>,
 }
 impl OrderProperties {
@@ -5066,6 +5217,7 @@ pub mod order_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrderStatus {
     #[doc = "Status of the order as per the allowed status types."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: order_status::Status,
     #[doc = "Time of status update."]
     #[serde(rename = "updateDateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -5236,7 +5388,7 @@ impl PeriodicTimerSourceInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProactiveLogCollectionSettingsProperties {
     #[doc = "Proactive diagnostic collection consent flag"]
-    #[serde(rename = "userConsent")]
+    #[serde(rename = "userConsent", with = "azure_core::xml::text_content")]
     pub user_consent: proactive_log_collection_settings_properties::UserConsent,
 }
 impl ProactiveLogCollectionSettingsProperties {
@@ -5288,7 +5440,12 @@ pub mod proactive_log_collection_settings_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RawCertificateData {
     #[doc = "The authentication type."]
-    #[serde(rename = "authenticationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authenticationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authentication_type: Option<raw_certificate_data::AuthenticationType>,
     #[doc = "The base64 encoded certificate raw data."]
     pub certificate: String,
@@ -5366,10 +5523,20 @@ impl RefreshDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RemoteSupportSettings {
     #[doc = "Remote application type"]
-    #[serde(rename = "remoteApplicationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "remoteApplicationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub remote_application_type: Option<remote_support_settings::RemoteApplicationType>,
     #[doc = "Access level allowed for this remote application type"]
-    #[serde(rename = "accessLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "accessLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub access_level: Option<remote_support_settings::AccessLevel>,
     #[doc = "Expiration time stamp"]
     #[serde(rename = "expirationTimeStampInUTC", default, with = "azure_core::date::rfc3339::option")]
@@ -5471,7 +5638,12 @@ pub mod remote_support_settings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceIdentity {
     #[doc = "Identity type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<resource_identity::Type>,
     #[doc = "Service Principal Id backing the Msi"]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -5531,7 +5703,12 @@ pub mod resource_identity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceMoveDetails {
     #[doc = "Denotes whether move operation is in progress"]
-    #[serde(rename = "operationInProgress", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "operationInProgress",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub operation_in_progress: Option<resource_move_details::OperationInProgress>,
     #[doc = "Denotes the timeout of the operation to finish"]
     #[serde(
@@ -5594,6 +5771,7 @@ pub struct Role {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
     #[doc = "Role type."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: role::Kind,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
@@ -5678,7 +5856,7 @@ pub struct RoleList {
 impl azure_core::Continuable for RoleList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleList {
@@ -5785,7 +5963,7 @@ pub struct ShareAccessRight {
     #[serde(rename = "shareId")]
     pub share_id: String,
     #[doc = "Type of access to be allowed on the share for this user."]
-    #[serde(rename = "accessType")]
+    #[serde(rename = "accessType", with = "azure_core::xml::text_content")]
     pub access_type: share_access_right::AccessType,
 }
 impl ShareAccessRight {
@@ -5852,7 +6030,7 @@ pub struct ShareList {
 impl azure_core::Continuable for ShareList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ShareList {
@@ -5867,16 +6045,16 @@ pub struct ShareProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Current status of the share."]
-    #[serde(rename = "shareStatus")]
+    #[serde(rename = "shareStatus", with = "azure_core::xml::text_content")]
     pub share_status: share_properties::ShareStatus,
     #[doc = "Current monitoring status of the share."]
-    #[serde(rename = "monitoringStatus")]
+    #[serde(rename = "monitoringStatus", with = "azure_core::xml::text_content")]
     pub monitoring_status: share_properties::MonitoringStatus,
     #[doc = "Azure container mapping of the endpoint."]
     #[serde(rename = "azureContainerInfo", default, skip_serializing_if = "Option::is_none")]
     pub azure_container_info: Option<AzureContainerInfo>,
     #[doc = "Access protocol to be used by the share."]
-    #[serde(rename = "accessProtocol")]
+    #[serde(rename = "accessProtocol", with = "azure_core::xml::text_content")]
     pub access_protocol: share_properties::AccessProtocol,
     #[doc = "Mapping of users and corresponding access rights on the share (required for SMB protocol)."]
     #[serde(
@@ -5906,7 +6084,12 @@ pub struct ShareProperties {
     )]
     pub share_mappings: Vec<MountPointMap>,
     #[doc = "Data policy of the share."]
-    #[serde(rename = "dataPolicy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataPolicy",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_policy: Option<share_properties::DataPolicy>,
 }
 impl ShareProperties {
@@ -6093,10 +6276,10 @@ pub mod share_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[doc = "SKU name."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub name: Option<sku::Name>,
     #[doc = "The SKU tier. This is based on the SKU name."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub tier: Option<sku::Tier>,
 }
 impl Sku {
@@ -6375,7 +6558,7 @@ pub struct StorageAccountCredentialList {
 impl azure_core::Continuable for StorageAccountCredentialList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageAccountCredentialList {
@@ -6398,13 +6581,13 @@ pub struct StorageAccountCredentialProperties {
     #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
     pub connection_string: Option<String>,
     #[doc = "Signifies whether SSL needs to be enabled or not."]
-    #[serde(rename = "sslStatus")]
+    #[serde(rename = "sslStatus", with = "azure_core::xml::text_content")]
     pub ssl_status: storage_account_credential_properties::SslStatus,
     #[doc = "Blob end point for private clouds."]
     #[serde(rename = "blobDomainName", default, skip_serializing_if = "Option::is_none")]
     pub blob_domain_name: Option<String>,
     #[doc = "Type of storage accessed on the storage account."]
-    #[serde(rename = "accountType")]
+    #[serde(rename = "accountType", with = "azure_core::xml::text_content")]
     pub account_type: storage_account_credential_properties::AccountType,
     #[doc = "Id of the storage account."]
     #[serde(rename = "storageAccountId", default, skip_serializing_if = "Option::is_none")]
@@ -6522,7 +6705,7 @@ pub struct StorageAccountList {
 impl azure_core::Continuable for StorageAccountList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageAccountList {
@@ -6537,10 +6720,15 @@ pub struct StorageAccountProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Current status of the storage account"]
-    #[serde(rename = "storageAccountStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storageAccountStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub storage_account_status: Option<storage_account_properties::StorageAccountStatus>,
     #[doc = "Data policy of the storage Account."]
-    #[serde(rename = "dataPolicy")]
+    #[serde(rename = "dataPolicy", with = "azure_core::xml::text_content")]
     pub data_policy: storage_account_properties::DataPolicy,
     #[doc = "Storage Account Credential Id"]
     #[serde(rename = "storageAccountCredentialId", default, skip_serializing_if = "Option::is_none")]
@@ -6740,6 +6928,7 @@ pub struct Trigger {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
     #[doc = "Trigger Kind."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: trigger::Kind,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
@@ -6811,7 +7000,7 @@ pub struct TriggerList {
 impl azure_core::Continuable for TriggerList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TriggerList {
@@ -6845,7 +7034,12 @@ pub struct UpdateDetails {
     #[serde(rename = "updateSize", default, skip_serializing_if = "Option::is_none")]
     pub update_size: Option<f64>,
     #[doc = "Type of the Update"]
-    #[serde(rename = "updateType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "updateType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub update_type: Option<update_details::UpdateType>,
     #[doc = "Target Version number"]
     #[serde(rename = "targetVersion", default, skip_serializing_if = "Option::is_none")]
@@ -6857,13 +7051,23 @@ pub struct UpdateDetails {
     #[serde(rename = "estimatedInstallTimeInMins", default, skip_serializing_if = "Option::is_none")]
     pub estimated_install_time_in_mins: Option<i32>,
     #[doc = "Indicates if updates are available and at least one of the updates needs a reboot."]
-    #[serde(rename = "rebootBehavior", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rebootBehavior",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub reboot_behavior: Option<update_details::RebootBehavior>,
     #[doc = "Impact of Installing an updateType"]
-    #[serde(rename = "installationImpact", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "installationImpact",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub installation_impact: Option<update_details::InstallationImpact>,
     #[doc = "Status of the update."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<update_details::Status>,
 }
 impl UpdateDetails {
@@ -7038,7 +7242,12 @@ pub mod update_details {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateDownloadProgress {
     #[doc = "The download phase."]
-    #[serde(rename = "downloadPhase", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "downloadPhase",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub download_phase: Option<update_download_progress::DownloadPhase>,
     #[doc = "Percentage of completion."]
     #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
@@ -7165,7 +7374,12 @@ pub struct UpdateSummaryProperties {
     #[serde(rename = "lastCompletedDownloadJobId", default, skip_serializing_if = "Option::is_none")]
     pub last_completed_download_job_id: Option<String>,
     #[doc = "JobStatus of the last ran download job."]
-    #[serde(rename = "lastDownloadJobStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastDownloadJobStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_download_job_status: Option<update_summary_properties::LastDownloadJobStatus>,
     #[doc = "The time when the Last Install job was completed successfully on the appliance"]
     #[serde(rename = "lastSuccessfulInstallJobDateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -7177,7 +7391,12 @@ pub struct UpdateSummaryProperties {
     #[serde(rename = "lastCompletedInstallJobId", default, skip_serializing_if = "Option::is_none")]
     pub last_completed_install_job_id: Option<String>,
     #[doc = "JobStatus of the last ran install job."]
-    #[serde(rename = "lastInstallJobStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastInstallJobStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_install_job_status: Option<update_summary_properties::LastInstallJobStatus>,
     #[doc = "The number of updates available for the current device version as per the last device scan."]
     #[serde(rename = "totalNumberOfUpdatesAvailable", default, skip_serializing_if = "Option::is_none")]
@@ -7189,10 +7408,20 @@ pub struct UpdateSummaryProperties {
     #[serde(rename = "totalNumberOfUpdatesPendingInstall", default, skip_serializing_if = "Option::is_none")]
     pub total_number_of_updates_pending_install: Option<i32>,
     #[doc = "Indicates if updates are available and at least one of the updates needs a reboot."]
-    #[serde(rename = "rebootBehavior", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rebootBehavior",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub reboot_behavior: Option<update_summary_properties::RebootBehavior>,
     #[doc = "The current update operation."]
-    #[serde(rename = "ongoingUpdateOperation", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ongoingUpdateOperation",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ongoing_update_operation: Option<update_summary_properties::OngoingUpdateOperation>,
     #[doc = "The job ID of the download job in progress."]
     #[serde(rename = "inProgressDownloadJobId", default, skip_serializing_if = "Option::is_none")]
@@ -7433,7 +7662,12 @@ impl UploadCertificateRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UploadCertificateResponse {
     #[doc = "Specifies authentication type."]
-    #[serde(rename = "authType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub auth_type: Option<upload_certificate_response::AuthType>,
     #[doc = "The resource ID of the Data Box Edge/Gateway device."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -7529,7 +7763,7 @@ pub struct UserAccessRight {
     #[serde(rename = "userId")]
     pub user_id: String,
     #[doc = "Type of access to be allowed for the user."]
-    #[serde(rename = "accessType")]
+    #[serde(rename = "accessType", with = "azure_core::xml::text_content")]
     pub access_type: user_access_right::AccessType,
 }
 impl UserAccessRight {
@@ -7596,7 +7830,7 @@ pub struct UserList {
 impl azure_core::Continuable for UserList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UserList {
@@ -7619,7 +7853,7 @@ pub struct UserProperties {
     )]
     pub share_access_rights: Vec<ShareAccessRight>,
     #[doc = "Type of the user."]
-    #[serde(rename = "userType")]
+    #[serde(rename = "userType", with = "azure_core::xml::text_content")]
     pub user_type: user_properties::UserType,
 }
 impl UserProperties {
@@ -7722,7 +7956,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -7731,7 +7970,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

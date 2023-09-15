@@ -133,7 +133,7 @@ pub struct As2MdnSettings {
     #[doc = "The value indicating whether to send inbound MDN to message box."]
     #[serde(rename = "sendInboundMDNToMessageBox")]
     pub send_inbound_mdn_to_message_box: bool,
-    #[serde(rename = "micHashingAlgorithm")]
+    #[serde(rename = "micHashingAlgorithm", with = "azure_core::xml::text_content")]
     pub mic_hashing_algorithm: HashingAlgorithm,
 }
 impl As2MdnSettings {
@@ -346,9 +346,14 @@ pub struct As2ValidationSettings {
     #[doc = "The value indicating whether to check for certificate revocation list on receive."]
     #[serde(rename = "checkCertificateRevocationListOnReceive")]
     pub check_certificate_revocation_list_on_receive: bool,
-    #[serde(rename = "encryptionAlgorithm")]
+    #[serde(rename = "encryptionAlgorithm", with = "azure_core::xml::text_content")]
     pub encryption_algorithm: EncryptionAlgorithm,
-    #[serde(rename = "signingAlgorithm", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "signingAlgorithm",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub signing_algorithm: Option<SigningAlgorithm>,
 }
 impl As2ValidationSettings {
@@ -903,9 +908,9 @@ pub struct EdifactDelimiterOverride {
     #[doc = "The repetition separator."]
     #[serde(rename = "repetitionSeparator")]
     pub repetition_separator: i32,
-    #[serde(rename = "segmentTerminatorSuffix")]
+    #[serde(rename = "segmentTerminatorSuffix", with = "azure_core::xml::text_content")]
     pub segment_terminator_suffix: SegmentTerminatorSuffix,
-    #[serde(rename = "decimalPointIndicator")]
+    #[serde(rename = "decimalPointIndicator", with = "azure_core::xml::text_content")]
     pub decimal_point_indicator: EdifactDecimalIndicator,
     #[doc = "The release indicator."]
     #[serde(rename = "releaseIndicator")]
@@ -1213,11 +1218,11 @@ pub struct EdifactFramingSettings {
     #[doc = "The repetition separator."]
     #[serde(rename = "repetitionSeparator")]
     pub repetition_separator: i32,
-    #[serde(rename = "characterSet")]
+    #[serde(rename = "characterSet", with = "azure_core::xml::text_content")]
     pub character_set: EdifactCharacterSet,
-    #[serde(rename = "decimalPointIndicator")]
+    #[serde(rename = "decimalPointIndicator", with = "azure_core::xml::text_content")]
     pub decimal_point_indicator: EdifactDecimalIndicator,
-    #[serde(rename = "segmentTerminatorSuffix")]
+    #[serde(rename = "segmentTerminatorSuffix", with = "azure_core::xml::text_content")]
     pub segment_terminator_suffix: SegmentTerminatorSuffix,
 }
 impl EdifactFramingSettings {
@@ -1250,7 +1255,7 @@ impl EdifactFramingSettings {
 #[doc = "The Edifact message filter for odata query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EdifactMessageFilter {
-    #[serde(rename = "messageFilterType")]
+    #[serde(rename = "messageFilterType", with = "azure_core::xml::text_content")]
     pub message_filter_type: MessageFilterType,
 }
 impl EdifactMessageFilter {
@@ -1470,7 +1475,7 @@ pub struct EdifactValidationOverride {
     #[doc = "The value indicating whether to allow leading and trailing spaces and zeroes."]
     #[serde(rename = "allowLeadingAndTrailingSpacesAndZeroes")]
     pub allow_leading_and_trailing_spaces_and_zeroes: bool,
-    #[serde(rename = "trailingSeparatorPolicy")]
+    #[serde(rename = "trailingSeparatorPolicy", with = "azure_core::xml::text_content")]
     pub trailing_separator_policy: TrailingSeparatorPolicy,
     #[doc = "The value indicating whether to trim leading and trailing spaces and zeroes."]
     #[serde(rename = "trimLeadingAndTrailingSpacesAndZeroes")]
@@ -1527,7 +1532,7 @@ pub struct EdifactValidationSettings {
     #[doc = "The value indicating whether to trim leading and trailing spaces and zeroes."]
     #[serde(rename = "trimLeadingAndTrailingSpacesAndZeroes")]
     pub trim_leading_and_trailing_spaces_and_zeroes: bool,
-    #[serde(rename = "trailingSeparatorPolicy")]
+    #[serde(rename = "trailingSeparatorPolicy", with = "azure_core::xml::text_content")]
     pub trailing_separator_policy: TrailingSeparatorPolicy,
 }
 impl EdifactValidationSettings {
@@ -1734,7 +1739,12 @@ pub struct GetCallbackUrlParameters {
     #[doc = "The expiry time."]
     #[serde(rename = "notAfter", default, with = "azure_core::date::rfc3339::option")]
     pub not_after: Option<time::OffsetDateTime>,
-    #[serde(rename = "keyType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "keyType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub key_type: Option<KeyType>,
 }
 impl GetCallbackUrlParameters {
@@ -1828,7 +1838,7 @@ impl IntegrationAccountAgreement {
 #[doc = "The integration account agreement filter for odata query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountAgreementFilter {
-    #[serde(rename = "agreementType")]
+    #[serde(rename = "agreementType", with = "azure_core::xml::text_content")]
     pub agreement_type: AgreementType,
 }
 impl IntegrationAccountAgreementFilter {
@@ -1853,7 +1863,7 @@ pub struct IntegrationAccountAgreementListResult {
 impl azure_core::Continuable for IntegrationAccountAgreementListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IntegrationAccountAgreementListResult {
@@ -1873,7 +1883,7 @@ pub struct IntegrationAccountAgreementProperties {
     #[doc = "The metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
-    #[serde(rename = "agreementType")]
+    #[serde(rename = "agreementType", with = "azure_core::xml::text_content")]
     pub agreement_type: AgreementType,
     #[doc = "The integration account partner that is set as host partner for this agreement."]
     #[serde(rename = "hostPartner")]
@@ -1945,7 +1955,7 @@ pub struct IntegrationAccountCertificateListResult {
 impl azure_core::Continuable for IntegrationAccountCertificateListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IntegrationAccountCertificateListResult {
@@ -1994,7 +2004,7 @@ pub struct IntegrationAccountListResult {
 impl azure_core::Continuable for IntegrationAccountListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IntegrationAccountListResult {
@@ -2021,7 +2031,7 @@ impl IntegrationAccountMap {
 #[doc = "The integration account map filter for odata query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountMapFilter {
-    #[serde(rename = "mapType")]
+    #[serde(rename = "mapType", with = "azure_core::xml::text_content")]
     pub map_type: MapType,
 }
 impl IntegrationAccountMapFilter {
@@ -2046,7 +2056,7 @@ pub struct IntegrationAccountMapListResult {
 impl azure_core::Continuable for IntegrationAccountMapListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IntegrationAccountMapListResult {
@@ -2057,7 +2067,7 @@ impl IntegrationAccountMapListResult {
 #[doc = "The integration account map."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountMapProperties {
-    #[serde(rename = "mapType")]
+    #[serde(rename = "mapType", with = "azure_core::xml::text_content")]
     pub map_type: MapType,
     #[doc = "The parameters schema of integration account map."]
     #[serde(rename = "parametersSchema", default, skip_serializing_if = "Option::is_none")]
@@ -2129,7 +2139,7 @@ impl IntegrationAccountPartner {
 #[doc = "The integration account partner filter for odata query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountPartnerFilter {
-    #[serde(rename = "partnerType")]
+    #[serde(rename = "partnerType", with = "azure_core::xml::text_content")]
     pub partner_type: PartnerType,
 }
 impl IntegrationAccountPartnerFilter {
@@ -2154,7 +2164,7 @@ pub struct IntegrationAccountPartnerListResult {
 impl azure_core::Continuable for IntegrationAccountPartnerListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IntegrationAccountPartnerListResult {
@@ -2165,7 +2175,7 @@ impl IntegrationAccountPartnerListResult {
 #[doc = "The integration account partner properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountPartnerProperties {
-    #[serde(rename = "partnerType")]
+    #[serde(rename = "partnerType", with = "azure_core::xml::text_content")]
     pub partner_type: PartnerType,
     #[doc = "The created time."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
@@ -2216,7 +2226,7 @@ impl IntegrationAccountSchema {
 #[doc = "The integration account schema filter for odata query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountSchemaFilter {
-    #[serde(rename = "schemaType")]
+    #[serde(rename = "schemaType", with = "azure_core::xml::text_content")]
     pub schema_type: SchemaType,
 }
 impl IntegrationAccountSchemaFilter {
@@ -2241,7 +2251,7 @@ pub struct IntegrationAccountSchemaListResult {
 impl azure_core::Continuable for IntegrationAccountSchemaListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IntegrationAccountSchemaListResult {
@@ -2252,7 +2262,7 @@ impl IntegrationAccountSchemaListResult {
 #[doc = "The integration account schema properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountSchemaProperties {
-    #[serde(rename = "schemaType")]
+    #[serde(rename = "schemaType", with = "azure_core::xml::text_content")]
     pub schema_type: SchemaType,
     #[doc = "The target namespace of the schema."]
     #[serde(rename = "targetNamespace", default, skip_serializing_if = "Option::is_none")]
@@ -2343,7 +2353,7 @@ pub struct IntegrationAccountSessionListResult {
 impl azure_core::Continuable for IntegrationAccountSessionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IntegrationAccountSessionListResult {
@@ -2371,6 +2381,7 @@ impl IntegrationAccountSessionProperties {
 #[doc = "The integration account sku."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationAccountSku {
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: IntegrationAccountSkuName,
 }
 impl IntegrationAccountSku {
@@ -2747,7 +2758,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -2803,7 +2814,7 @@ pub struct OperationResultProperties {
     #[doc = "The workflow run action correlation properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub correlation: Option<RunActionCorrelation>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<WorkflowStatus>,
     #[doc = "The workflow scope repetition code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3013,7 +3024,7 @@ impl RecurrenceSchedule {
 #[doc = "The recurrence schedule occurrence."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecurrenceScheduleOccurrence {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub day: Option<DayOfWeek>,
     #[doc = "The occurrence."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3027,7 +3038,12 @@ impl RecurrenceScheduleOccurrence {
 #[doc = "The access key regenerate action content."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegenerateActionParameter {
-    #[serde(rename = "keyType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "keyType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub key_type: Option<KeyType>,
 }
 impl RegenerateActionParameter {
@@ -3101,7 +3117,7 @@ pub struct RequestHistoryListResult {
 impl azure_core::Continuable for RequestHistoryListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RequestHistoryListResult {
@@ -3359,6 +3375,7 @@ impl Serialize for SigningAlgorithm {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The sku name."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: SkuName,
     #[doc = "The resource reference."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3468,12 +3485,12 @@ impl Serialize for TrackEventsOperationOptions {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackingEvent {
     #[doc = "The event level."]
-    #[serde(rename = "eventLevel")]
+    #[serde(rename = "eventLevel", with = "azure_core::xml::text_content")]
     pub event_level: EventLevel,
     #[serde(rename = "eventTime", with = "azure_core::date::rfc3339")]
     pub event_time: time::OffsetDateTime,
     #[doc = "The tracking record type."]
-    #[serde(rename = "recordType")]
+    #[serde(rename = "recordType", with = "azure_core::xml::text_content")]
     pub record_type: TrackingRecordType,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<TrackingEventErrorInfo>,
@@ -3505,7 +3522,12 @@ pub struct TrackingEventsDefinition {
     #[serde(rename = "sourceType")]
     pub source_type: String,
     #[doc = "The track events operation options."]
-    #[serde(rename = "trackEventsOptions", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "trackEventsOptions",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub track_events_options: Option<TrackEventsOperationOptions>,
     pub events: Vec<TrackingEvent>,
 }
@@ -3694,7 +3716,7 @@ impl Workflow {
 #[doc = "The workflow filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowFilter {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<WorkflowState>,
 }
 impl WorkflowFilter {
@@ -3719,7 +3741,7 @@ pub struct WorkflowListResult {
 impl azure_core::Continuable for WorkflowListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkflowListResult {
@@ -3743,7 +3765,12 @@ impl WorkflowOutputParameter {
 #[doc = "The workflow parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowParameter {
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<ParameterType>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<Object>,
@@ -3761,7 +3788,12 @@ impl WorkflowParameter {
 #[doc = "The workflow properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<WorkflowProvisioningState>,
     #[doc = "Gets the created time."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
@@ -3769,7 +3801,7 @@ pub struct WorkflowProperties {
     #[doc = "Gets the changed time."]
     #[serde(rename = "changedTime", default, with = "azure_core::date::rfc3339::option")]
     pub changed_time: Option<time::OffsetDateTime>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<WorkflowState>,
     #[doc = "Gets the version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3905,7 +3937,7 @@ impl WorkflowRunAction {
 #[doc = "The workflow run action filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRunActionFilter {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<WorkflowStatus>,
 }
 impl WorkflowRunActionFilter {
@@ -3930,7 +3962,7 @@ pub struct WorkflowRunActionListResult {
 impl azure_core::Continuable for WorkflowRunActionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkflowRunActionListResult {
@@ -3947,7 +3979,7 @@ pub struct WorkflowRunActionProperties {
     #[doc = "Gets the end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<WorkflowStatus>,
     #[doc = "Gets the code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4041,7 +4073,7 @@ impl WorkflowRunActionRepetitionProperties {
 #[doc = "The workflow run filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowRunFilter {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<WorkflowStatus>,
 }
 impl WorkflowRunFilter {
@@ -4066,7 +4098,7 @@ pub struct WorkflowRunListResult {
 impl azure_core::Continuable for WorkflowRunListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkflowRunListResult {
@@ -4086,7 +4118,7 @@ pub struct WorkflowRunProperties {
     #[doc = "Gets the end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<WorkflowStatus>,
     #[doc = "Gets the code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4151,7 +4183,7 @@ pub struct WorkflowRunTrigger {
     #[doc = "Gets the code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<WorkflowStatus>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Object>,
@@ -4320,7 +4352,7 @@ impl WorkflowTriggerCallbackUrl {
 #[doc = "The workflow trigger filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowTriggerFilter {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<WorkflowState>,
 }
 impl WorkflowTriggerFilter {
@@ -4351,7 +4383,7 @@ impl WorkflowTriggerHistory {
 #[doc = "The workflow trigger history filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowTriggerHistoryFilter {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<WorkflowStatus>,
 }
 impl WorkflowTriggerHistoryFilter {
@@ -4376,7 +4408,7 @@ pub struct WorkflowTriggerHistoryListResult {
 impl azure_core::Continuable for WorkflowTriggerHistoryListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkflowTriggerHistoryListResult {
@@ -4393,7 +4425,7 @@ pub struct WorkflowTriggerHistoryProperties {
     #[doc = "Gets the end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<WorkflowStatus>,
     #[doc = "Gets the code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4465,7 +4497,7 @@ pub struct WorkflowTriggerListResult {
 impl azure_core::Continuable for WorkflowTriggerListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkflowTriggerListResult {
@@ -4476,7 +4508,12 @@ impl WorkflowTriggerListResult {
 #[doc = "The workflow trigger properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowTriggerProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<WorkflowTriggerProvisioningState>,
     #[doc = "Gets the created time."]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
@@ -4484,9 +4521,9 @@ pub struct WorkflowTriggerProperties {
     #[doc = "Gets the changed time."]
     #[serde(rename = "changedTime", default, with = "azure_core::date::rfc3339::option")]
     pub changed_time: Option<time::OffsetDateTime>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<WorkflowState>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<WorkflowStatus>,
     #[doc = "Gets the last execution time."]
     #[serde(rename = "lastExecutionTime", default, with = "azure_core::date::rfc3339::option")]
@@ -4577,7 +4614,7 @@ impl Serialize for WorkflowTriggerProvisioningState {
 #[doc = "The workflow trigger recurrence."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkflowTriggerRecurrence {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub frequency: Option<RecurrenceFrequency>,
     #[doc = "The interval."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4631,7 +4668,7 @@ pub struct WorkflowVersionListResult {
 impl azure_core::Continuable for WorkflowVersionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkflowVersionListResult {
@@ -4648,7 +4685,7 @@ pub struct WorkflowVersionProperties {
     #[doc = "Gets the changed time."]
     #[serde(rename = "changedTime", default, with = "azure_core::date::rfc3339::option")]
     pub changed_time: Option<time::OffsetDateTime>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<WorkflowState>,
     #[doc = "Gets the version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4872,7 +4909,7 @@ pub struct X12DelimiterOverrides {
     #[doc = "The segment terminator."]
     #[serde(rename = "segmentTerminator")]
     pub segment_terminator: i32,
-    #[serde(rename = "segmentTerminatorSuffix")]
+    #[serde(rename = "segmentTerminatorSuffix", with = "azure_core::xml::text_content")]
     pub segment_terminator_suffix: SegmentTerminatorSuffix,
     #[doc = "The replacement character."]
     #[serde(rename = "replaceCharacter")]
@@ -4933,9 +4970,9 @@ pub struct X12EnvelopeOverride {
     #[doc = "The functional identifier code."]
     #[serde(rename = "functionalIdentifierCode", default, skip_serializing_if = "Option::is_none")]
     pub functional_identifier_code: Option<String>,
-    #[serde(rename = "dateFormat")]
+    #[serde(rename = "dateFormat", with = "azure_core::xml::text_content")]
     pub date_format: X12DateFormat,
-    #[serde(rename = "timeFormat")]
+    #[serde(rename = "timeFormat", with = "azure_core::xml::text_content")]
     pub time_format: X12TimeFormat,
 }
 impl X12EnvelopeOverride {
@@ -5030,11 +5067,11 @@ pub struct X12EnvelopeSettings {
     #[doc = "The value indicating whether to overwrite existing transaction set control number."]
     #[serde(rename = "overwriteExistingTransactionSetControlNumber")]
     pub overwrite_existing_transaction_set_control_number: bool,
-    #[serde(rename = "groupHeaderDateFormat")]
+    #[serde(rename = "groupHeaderDateFormat", with = "azure_core::xml::text_content")]
     pub group_header_date_format: X12DateFormat,
-    #[serde(rename = "groupHeaderTimeFormat")]
+    #[serde(rename = "groupHeaderTimeFormat", with = "azure_core::xml::text_content")]
     pub group_header_time_format: X12TimeFormat,
-    #[serde(rename = "usageIndicator")]
+    #[serde(rename = "usageIndicator", with = "azure_core::xml::text_content")]
     pub usage_indicator: UsageIndicator,
 }
 impl X12EnvelopeSettings {
@@ -5107,9 +5144,9 @@ pub struct X12FramingSettings {
     #[doc = "The segment terminator."]
     #[serde(rename = "segmentTerminator")]
     pub segment_terminator: i32,
-    #[serde(rename = "characterSet")]
+    #[serde(rename = "characterSet", with = "azure_core::xml::text_content")]
     pub character_set: X12CharacterSet,
-    #[serde(rename = "segmentTerminatorSuffix")]
+    #[serde(rename = "segmentTerminatorSuffix", with = "azure_core::xml::text_content")]
     pub segment_terminator_suffix: SegmentTerminatorSuffix,
 }
 impl X12FramingSettings {
@@ -5136,7 +5173,7 @@ impl X12FramingSettings {
 #[doc = "The X12 message filter for odata query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X12MessageFilter {
-    #[serde(rename = "messageFilterType")]
+    #[serde(rename = "messageFilterType", with = "azure_core::xml::text_content")]
     pub message_filter_type: MessageFilterType,
 }
 impl X12MessageFilter {
@@ -5429,7 +5466,7 @@ pub struct X12ValidationOverride {
     #[doc = "The value indicating whether to trim leading and trailing spaces and zeroes."]
     #[serde(rename = "trimLeadingAndTrailingSpacesAndZeroes")]
     pub trim_leading_and_trailing_spaces_and_zeroes: bool,
-    #[serde(rename = "trailingSeparatorPolicy")]
+    #[serde(rename = "trailingSeparatorPolicy", with = "azure_core::xml::text_content")]
     pub trailing_separator_policy: TrailingSeparatorPolicy,
 }
 impl X12ValidationOverride {
@@ -5483,7 +5520,7 @@ pub struct X12ValidationSettings {
     #[doc = "The value indicating whether to trim leading and trailing spaces and zeroes."]
     #[serde(rename = "trimLeadingAndTrailingSpacesAndZeroes")]
     pub trim_leading_and_trailing_spaces_and_zeroes: bool,
-    #[serde(rename = "trailingSeparatorPolicy")]
+    #[serde(rename = "trailingSeparatorPolicy", with = "azure_core::xml::text_content")]
     pub trailing_separator_policy: TrailingSeparatorPolicy,
 }
 impl X12ValidationSettings {

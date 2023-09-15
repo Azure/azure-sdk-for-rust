@@ -64,7 +64,12 @@ impl AccountKeyMetadata {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AnalyticalStorageConfiguration {
     #[doc = "Describes the types of schema for analytical storage."]
-    #[serde(rename = "schemaType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "schemaType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub schema_type: Option<AnalyticalStorageSchemaType>,
 }
 impl AnalyticalStorageConfiguration {
@@ -112,7 +117,12 @@ impl Serialize for AnalyticalStorageSchemaType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiProperties {
     #[doc = "Describes the ServerVersion of an a MongoDB account."]
-    #[serde(rename = "serverVersion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "serverVersion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub server_version: Option<api_properties::ServerVersion>,
 }
 impl ApiProperties {
@@ -331,7 +341,7 @@ impl BackupInformation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupPolicy {
     #[doc = "Describes the mode of backups."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: BackupPolicyType,
     #[doc = "The object representing the state of the migration between the backup policies."]
     #[serde(rename = "migrationState", default, skip_serializing_if = "Option::is_none")]
@@ -349,10 +359,15 @@ impl BackupPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupPolicyMigrationState {
     #[doc = "Describes the status of migration between backup policy types."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<BackupPolicyMigrationStatus>,
     #[doc = "Describes the mode of backups."]
-    #[serde(rename = "targetType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "targetType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub target_type: Option<BackupPolicyType>,
     #[doc = "Time at which the backup policy migration started (ISO-8601 format)."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -951,7 +966,7 @@ pub struct CheckNameAvailabilityResponse {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "The reason why the given name is not available."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<check_name_availability_response::Reason>,
     #[doc = "Detailed reason why the given name is available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1188,7 +1203,12 @@ pub mod cluster_resource {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "The status of the resource at the time the operation was called."]
-        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "provisioningState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub provisioning_state: Option<ManagedCassandraProvisioningState>,
         #[doc = "To create an empty cluster, omit this field or set it to null. To restore a backup into a new cluster, set this field to the resource id of the backup."]
         #[serde(rename = "restoreFromBackupId", default, skip_serializing_if = "Option::is_none")]
@@ -1203,7 +1223,12 @@ pub mod cluster_resource {
         #[serde(rename = "clusterNameOverride", default, skip_serializing_if = "Option::is_none")]
         pub cluster_name_override: Option<String>,
         #[doc = "Which authentication method Cassandra should use to authenticate clients. 'None' turns off authentication, so should not be used except in emergencies. 'Cassandra' is the default password based authentication. The default is 'Cassandra'."]
-        #[serde(rename = "authenticationMethod", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "authenticationMethod",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub authentication_method: Option<properties::AuthenticationMethod>,
         #[doc = "Initial password for clients connecting as admin to the cluster. Should be changed after cluster creation. Returns null on GET. This field only applies when the authenticationMethod field is 'Cassandra'."]
         #[serde(rename = "initialCassandraAdminPassword", default, skip_serializing_if = "Option::is_none")]
@@ -1375,7 +1400,7 @@ pub struct CompositePath {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
     #[doc = "Sort order for composite paths."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub order: Option<composite_path::Order>,
 }
 impl CompositePath {
@@ -1430,7 +1455,7 @@ pub type CompositePathList = Vec<CompositePath>;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConflictResolutionPolicy {
     #[doc = "Indicates the conflict resolution mode."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub mode: Option<conflict_resolution_policy::Mode>,
     #[doc = "The conflict resolution path in the case of LastWriterWins mode."]
     #[serde(rename = "conflictResolutionPath", default, skip_serializing_if = "Option::is_none")]
@@ -1492,7 +1517,12 @@ pub mod conflict_resolution_policy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectionError {
     #[doc = "The kind of connection error that occurred."]
-    #[serde(rename = "connectionState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "connectionState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub connection_state: Option<connection_error::ConnectionState>,
     #[doc = "The IP of host that originated the failed connection."]
     #[serde(rename = "iPFrom", default, skip_serializing_if = "Option::is_none")]
@@ -1621,7 +1651,7 @@ impl Serialize for ConnectorOffer {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsistencyPolicy {
     #[doc = "The default consistency level and configuration settings of the Cosmos DB account."]
-    #[serde(rename = "defaultConsistencyLevel")]
+    #[serde(rename = "defaultConsistencyLevel", with = "azure_core::xml::text_content")]
     pub default_consistency_level: consistency_policy::DefaultConsistencyLevel,
     #[doc = "When used with the Bounded Staleness consistency level, this value represents the number of stale requests tolerated. Accepted range for this value is 1 – 2,147,483,647. Required when defaultConsistencyPolicy is set to 'BoundedStaleness'."]
     #[serde(rename = "maxStalenessPrefix", default, skip_serializing_if = "Option::is_none")]
@@ -1662,7 +1692,7 @@ pub struct ContainerPartitionKey {
     )]
     pub paths: Vec<Path>,
     #[doc = "Indicates the kind of algorithm used for partitioning. For MultiHash, multiple partition keys (upto three maximum) are supported for container create"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<container_partition_key::Kind>,
     #[doc = "Indicates the version of the partition key definition"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1768,7 +1798,7 @@ impl ContinuousModeBackupPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContinuousModeProperties {
     #[doc = "Enum to indicate type of Continuous backup tier."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub tier: Option<ContinuousTier>,
 }
 impl ContinuousModeProperties {
@@ -1992,7 +2022,12 @@ pub mod data_center_resource {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "The status of the resource at the time the operation was called."]
-        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "provisioningState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub provisioning_state: Option<ManagedCassandraProvisioningState>,
         #[doc = "The region this data center should be created in."]
         #[serde(rename = "dataCenterLocation", default, skip_serializing_if = "Option::is_none")]
@@ -2050,6 +2085,7 @@ pub mod data_center_resource {
 #[doc = "Base class for all DataTransfer source/sink"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataTransferDataSourceSink {
+    #[serde(with = "azure_core::xml::text_content")]
     pub component: data_transfer_data_source_sink::Component,
 }
 impl DataTransferDataSourceSink {
@@ -2125,7 +2161,7 @@ pub struct DataTransferJobFeedResults {
 impl azure_core::Continuable for DataTransferJobFeedResults {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataTransferJobFeedResults {
@@ -2245,10 +2281,20 @@ pub struct DatabaseAccountConnectionString {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Kind of the connection string key"]
-    #[serde(rename = "keyKind", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "keyKind",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub key_kind: Option<database_account_connection_string::KeyKind>,
     #[doc = "Type of the connection string"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<database_account_connection_string::Type>,
 }
 impl DatabaseAccountConnectionString {
@@ -2358,7 +2404,7 @@ pub struct DatabaseAccountCreateUpdateParameters {
     #[serde(flatten)]
     pub arm_resource_properties: ArmResourceProperties,
     #[doc = "Indicates the type of database account. This can only be set at database account creation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<database_account_create_update_parameters::Kind>,
     #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2434,7 +2480,7 @@ pub struct DatabaseAccountCreateUpdateProperties {
     #[doc = "An array that contains the georeplication locations enabled for the Cosmos DB account."]
     pub locations: Vec<Location>,
     #[doc = "The offer type for the Cosmos DB database account."]
-    #[serde(rename = "databaseAccountOfferType")]
+    #[serde(rename = "databaseAccountOfferType", with = "azure_core::xml::text_content")]
     pub database_account_offer_type: DatabaseAccountOfferType,
     #[doc = "Array of IpAddressOrRange objects."]
     #[serde(rename = "ipRules", default, skip_serializing_if = "Option::is_none")]
@@ -2467,7 +2513,12 @@ pub struct DatabaseAccountCreateUpdateProperties {
     #[serde(rename = "enableCassandraConnector", default, skip_serializing_if = "Option::is_none")]
     pub enable_cassandra_connector: Option<bool>,
     #[doc = "The cassandra connector offer type for the Cosmos DB C* database account."]
-    #[serde(rename = "connectorOffer", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "connectorOffer",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub connector_offer: Option<ConnectorOffer>,
     #[doc = "Disable write operations on metadata resources (databases, containers, throughput) via account keys"]
     #[serde(rename = "disableKeyBasedMetadataWriteAccess", default, skip_serializing_if = "Option::is_none")]
@@ -2479,7 +2530,12 @@ pub struct DatabaseAccountCreateUpdateProperties {
     #[serde(rename = "defaultIdentity", default, skip_serializing_if = "Option::is_none")]
     pub default_identity: Option<String>,
     #[doc = "Whether requests from Public Network are allowed"]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<PublicNetworkAccess>,
     #[doc = "Flag to indicate whether Free Tier is enabled."]
     #[serde(rename = "enableFreeTier", default, skip_serializing_if = "Option::is_none")]
@@ -2493,7 +2549,12 @@ pub struct DatabaseAccountCreateUpdateProperties {
     #[serde(rename = "analyticalStorageConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub analytical_storage_configuration: Option<AnalyticalStorageConfiguration>,
     #[doc = "Enum to indicate the mode of account creation."]
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_mode: Option<CreateMode>,
     #[doc = "The object representing the policy for taking backups on an account."]
     #[serde(rename = "backupPolicy", default, skip_serializing_if = "Option::is_none")]
@@ -2506,7 +2567,12 @@ pub struct DatabaseAccountCreateUpdateProperties {
     )]
     pub cors: Vec<CorsPolicy>,
     #[doc = "Indicates what services are allowed to bypass firewall checks."]
-    #[serde(rename = "networkAclBypass", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "networkAclBypass",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub network_acl_bypass: Option<NetworkAclBypass>,
     #[doc = "An array that contains the Resource Ids for Network Acl Bypass for the Cosmos DB account."]
     #[serde(
@@ -2541,7 +2607,12 @@ pub struct DatabaseAccountCreateUpdateProperties {
     #[serde(rename = "enableBurstCapacity", default, skip_serializing_if = "Option::is_none")]
     pub enable_burst_capacity: Option<bool>,
     #[doc = "Indicates the minimum allowed Tls version. The default is Tls 1.0, except for Cassandra and Mongo API's, which only work with Tls 1.2."]
-    #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "minimalTlsVersion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub minimal_tls_version: Option<MinimalTlsVersion>,
 }
 impl DatabaseAccountCreateUpdateProperties {
@@ -2593,7 +2664,12 @@ pub struct DatabaseAccountGetProperties {
     #[serde(rename = "documentEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub document_endpoint: Option<String>,
     #[doc = "The offer type for the Cosmos DB database account."]
-    #[serde(rename = "databaseAccountOfferType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "databaseAccountOfferType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub database_account_offer_type: Option<DatabaseAccountOfferType>,
     #[doc = "Array of IpAddressOrRange objects."]
     #[serde(rename = "ipRules", default, skip_serializing_if = "Option::is_none")]
@@ -2668,7 +2744,12 @@ pub struct DatabaseAccountGetProperties {
     #[serde(rename = "enableCassandraConnector", default, skip_serializing_if = "Option::is_none")]
     pub enable_cassandra_connector: Option<bool>,
     #[doc = "The cassandra connector offer type for the Cosmos DB C* database account."]
-    #[serde(rename = "connectorOffer", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "connectorOffer",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub connector_offer: Option<ConnectorOffer>,
     #[doc = "Disable write operations on metadata resources (databases, containers, throughput) via account keys"]
     #[serde(rename = "disableKeyBasedMetadataWriteAccess", default, skip_serializing_if = "Option::is_none")]
@@ -2680,7 +2761,12 @@ pub struct DatabaseAccountGetProperties {
     #[serde(rename = "defaultIdentity", default, skip_serializing_if = "Option::is_none")]
     pub default_identity: Option<String>,
     #[doc = "Whether requests from Public Network are allowed"]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<PublicNetworkAccess>,
     #[doc = "Flag to indicate whether Free Tier is enabled."]
     #[serde(rename = "enableFreeTier", default, skip_serializing_if = "Option::is_none")]
@@ -2697,7 +2783,12 @@ pub struct DatabaseAccountGetProperties {
     #[serde(rename = "instanceId", default, skip_serializing_if = "Option::is_none")]
     pub instance_id: Option<String>,
     #[doc = "Enum to indicate the mode of account creation."]
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_mode: Option<CreateMode>,
     #[doc = "Parameters to indicate the information about the restore."]
     #[serde(rename = "restoreParameters", default, skip_serializing_if = "Option::is_none")]
@@ -2713,7 +2804,12 @@ pub struct DatabaseAccountGetProperties {
     )]
     pub cors: Vec<CorsPolicy>,
     #[doc = "Indicates what services are allowed to bypass firewall checks."]
-    #[serde(rename = "networkAclBypass", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "networkAclBypass",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub network_acl_bypass: Option<NetworkAclBypass>,
     #[doc = "An array that contains the Resource Ids for Network Acl Bypass for the Cosmos DB account."]
     #[serde(
@@ -2745,7 +2841,12 @@ pub struct DatabaseAccountGetProperties {
     #[serde(rename = "enableBurstCapacity", default, skip_serializing_if = "Option::is_none")]
     pub enable_burst_capacity: Option<bool>,
     #[doc = "Indicates the minimum allowed Tls version. The default is Tls 1.0, except for Cassandra and Mongo API's, which only work with Tls 1.2."]
-    #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "minimalTlsVersion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub minimal_tls_version: Option<MinimalTlsVersion>,
 }
 impl DatabaseAccountGetProperties {
@@ -2759,7 +2860,7 @@ pub struct DatabaseAccountGetResults {
     #[serde(flatten)]
     pub arm_resource_properties: ArmResourceProperties,
     #[doc = "Indicates the type of database account. This can only be set at database account creation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<database_account_get_results::Kind>,
     #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2904,7 +3005,7 @@ pub enum DatabaseAccountOfferType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseAccountRegenerateKeyParameters {
     #[doc = "The access key to regenerate."]
-    #[serde(rename = "keyKind")]
+    #[serde(rename = "keyKind", with = "azure_core::xml::text_content")]
     pub key_kind: database_account_regenerate_key_parameters::KeyKind,
 }
 impl DatabaseAccountRegenerateKeyParameters {
@@ -3025,7 +3126,12 @@ pub struct DatabaseAccountUpdateProperties {
     #[serde(rename = "enableCassandraConnector", default, skip_serializing_if = "Option::is_none")]
     pub enable_cassandra_connector: Option<bool>,
     #[doc = "The cassandra connector offer type for the Cosmos DB C* database account."]
-    #[serde(rename = "connectorOffer", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "connectorOffer",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub connector_offer: Option<ConnectorOffer>,
     #[doc = "Disable write operations on metadata resources (databases, containers, throughput) via account keys"]
     #[serde(rename = "disableKeyBasedMetadataWriteAccess", default, skip_serializing_if = "Option::is_none")]
@@ -3037,7 +3143,12 @@ pub struct DatabaseAccountUpdateProperties {
     #[serde(rename = "defaultIdentity", default, skip_serializing_if = "Option::is_none")]
     pub default_identity: Option<String>,
     #[doc = "Whether requests from Public Network are allowed"]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<PublicNetworkAccess>,
     #[doc = "Flag to indicate whether Free Tier is enabled."]
     #[serde(rename = "enableFreeTier", default, skip_serializing_if = "Option::is_none")]
@@ -3061,7 +3172,12 @@ pub struct DatabaseAccountUpdateProperties {
     )]
     pub cors: Vec<CorsPolicy>,
     #[doc = "Indicates what services are allowed to bypass firewall checks."]
-    #[serde(rename = "networkAclBypass", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "networkAclBypass",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub network_acl_bypass: Option<NetworkAclBypass>,
     #[doc = "An array that contains the Resource Ids for Network Acl Bypass for the Cosmos DB account."]
     #[serde(
@@ -3093,7 +3209,12 @@ pub struct DatabaseAccountUpdateProperties {
     #[serde(rename = "enableBurstCapacity", default, skip_serializing_if = "Option::is_none")]
     pub enable_burst_capacity: Option<bool>,
     #[doc = "Indicates the minimum allowed Tls version. The default is Tls 1.0, except for Cassandra and Mongo API's, which only work with Tls 1.2."]
-    #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "minimalTlsVersion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub minimal_tls_version: Option<MinimalTlsVersion>,
 }
 impl DatabaseAccountUpdateProperties {
@@ -3147,7 +3268,12 @@ impl DatabaseRestoreResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticLogSettings {
     #[doc = "Describe the level of detail with which queries are to be logged."]
-    #[serde(rename = "enableFullTextQuery", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enableFullTextQuery",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enable_full_text_query: Option<diagnostic_log_settings::EnableFullTextQuery>,
 }
 impl DiagnosticLogSettings {
@@ -3326,7 +3452,7 @@ pub struct FirewallRuleListResult {
 impl azure_core::Continuable for FirewallRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FirewallRuleListResult {
@@ -3338,7 +3464,12 @@ impl FirewallRuleListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirewallRuleProperties {
     #[doc = "The provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The start IP address of the mongo cluster firewall rule. Must be IPv4 format."]
     #[serde(rename = "startIpAddress")]
@@ -3586,7 +3717,12 @@ pub struct GremlinDatabaseResource {
     #[serde(rename = "restoreParameters", default, skip_serializing_if = "Option::is_none")]
     pub restore_parameters: Option<ResourceRestoreParameters>,
     #[doc = "Enum to indicate the mode of account creation."]
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_mode: Option<CreateMode>,
 }
 impl GremlinDatabaseResource {
@@ -3724,7 +3860,12 @@ pub struct GremlinGraphResource {
     #[serde(rename = "restoreParameters", default, skip_serializing_if = "Option::is_none")]
     pub restore_parameters: Option<ResourceRestoreParameters>,
     #[doc = "Enum to indicate the mode of account creation."]
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_mode: Option<CreateMode>,
 }
 impl GremlinGraphResource {
@@ -3766,13 +3907,18 @@ impl IncludedPath {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Indexes {
     #[doc = "The datatype for which the indexing behavior is applied to."]
-    #[serde(rename = "dataType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_type: Option<indexes::DataType>,
     #[doc = "The precision of the index. -1 is maximum precision."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub precision: Option<i64>,
     #[doc = "Indicates the type of index."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<indexes::Kind>,
 }
 impl Indexes {
@@ -3884,7 +4030,12 @@ pub struct IndexingPolicy {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub automatic: Option<bool>,
     #[doc = "Indicates the indexing mode."]
-    #[serde(rename = "indexingMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "indexingMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub indexing_mode: Option<indexing_policy::IndexingMode>,
     #[doc = "List of paths to include in the indexing"]
     #[serde(
@@ -4186,7 +4337,7 @@ pub struct LocationProperties {
     )]
     pub is_subscription_region_access_allowed_for_az: Option<bool>,
     #[doc = "Enum to indicate current buildout status of the region."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<location_properties::Status>,
 }
 impl LocationProperties {
@@ -4277,7 +4428,12 @@ pub struct ManagedCassandraManagedServiceIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of the resource."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<managed_cassandra_managed_service_identity::Type>,
 }
 impl ManagedCassandraManagedServiceIdentity {
@@ -4474,7 +4630,12 @@ pub struct ManagedServiceIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of identity used for the resource. The type 'SystemAssigned,UserAssigned' includes both an implicitly created identity and a set of user assigned identities. The type 'None' will remove any identities from the service."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<managed_service_identity::Type>,
     #[doc = "The list of user identities associated with resource. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -4587,7 +4748,7 @@ pub struct Metric {
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<String>,
     #[doc = "The unit of the metric."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub unit: Option<UnitType>,
     #[doc = "A metric name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4633,10 +4794,15 @@ pub struct MetricDefinition {
     )]
     pub metric_availabilities: Vec<MetricAvailability>,
     #[doc = "The primary aggregation type of the metric."]
-    #[serde(rename = "primaryAggregationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "primaryAggregationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub primary_aggregation_type: Option<metric_definition::PrimaryAggregationType>,
     #[doc = "The unit of the metric."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub unit: Option<UnitType>,
     #[doc = "The resource uri of the database."]
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
@@ -4857,7 +5023,7 @@ pub struct MongoClusterListResult {
 impl azure_core::Continuable for MongoClusterListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MongoClusterListResult {
@@ -4869,7 +5035,12 @@ impl MongoClusterListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MongoClusterProperties {
     #[doc = "The mode to create a mongo cluster."]
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_mode: Option<mongo_cluster_properties::CreateMode>,
     #[doc = "Parameters used for restore operations"]
     #[serde(rename = "restoreParameters", default, skip_serializing_if = "Option::is_none")]
@@ -4890,10 +5061,20 @@ pub struct MongoClusterProperties {
     #[serde(rename = "earliestRestoreTime", default, skip_serializing_if = "Option::is_none")]
     pub earliest_restore_time: Option<String>,
     #[doc = "The provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The status of the resource at the time the operation was called."]
-    #[serde(rename = "clusterStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "clusterStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cluster_status: Option<MongoClusterStatus>,
     #[doc = "The list of node group specifications for the cluster. Must include one node group spec with kind = 'Shard'."]
     #[serde(rename = "nodeGroupSpecs", default, skip_serializing_if = "Option::is_none")]
@@ -5127,7 +5308,12 @@ pub struct MongoDbCollectionResource {
     #[serde(rename = "restoreParameters", default, skip_serializing_if = "Option::is_none")]
     pub restore_parameters: Option<ResourceRestoreParameters>,
     #[doc = "Enum to indicate the mode of account creation."]
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_mode: Option<CreateMode>,
 }
 impl MongoDbCollectionResource {
@@ -5230,7 +5416,12 @@ pub struct MongoDbDatabaseResource {
     #[serde(rename = "restoreParameters", default, skip_serializing_if = "Option::is_none")]
     pub restore_parameters: Option<ResourceRestoreParameters>,
     #[doc = "Enum to indicate the mode of account creation."]
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_mode: Option<CreateMode>,
 }
 impl MongoDbDatabaseResource {
@@ -5343,7 +5534,12 @@ pub struct MongoRoleDefinitionResource {
     #[serde(rename = "roleName", default, skip_serializing_if = "Option::is_none")]
     pub role_name: Option<String>,
     #[doc = "Indicates whether the Role Definition was built-in or user created."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<mongo_role_definition_resource::Type>,
     #[doc = "The database name for which access is being granted for this Role Definition."]
     #[serde(rename = "databaseName", default, skip_serializing_if = "Option::is_none")]
@@ -5486,7 +5682,7 @@ pub struct NodeGroupSpec {
     #[serde(flatten)]
     pub node_group_properties: NodeGroupProperties,
     #[doc = "The kind of a node in the mongo cluster."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<NodeKind>,
     #[doc = "The number of nodes in the node group."]
     #[serde(rename = "nodeCount", default, skip_serializing_if = "Option::is_none")]
@@ -5666,7 +5862,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -5823,7 +6019,7 @@ pub struct PercentileMetric {
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<String>,
     #[doc = "The unit of the metric."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub unit: Option<UnitType>,
     #[doc = "A metric name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5923,7 +6119,12 @@ pub struct PeriodicModeProperties {
     #[serde(rename = "backupRetentionIntervalInHours", default, skip_serializing_if = "Option::is_none")]
     pub backup_retention_interval_in_hours: Option<i32>,
     #[doc = "Enum to indicate type of backup storage redundancy."]
-    #[serde(rename = "backupStorageRedundancy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupStorageRedundancy",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_storage_redundancy: Option<BackupStorageRedundancy>,
 }
 impl PeriodicModeProperties {
@@ -6309,7 +6510,7 @@ impl RedistributeThroughputProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedistributeThroughputPropertiesResource {
     #[doc = "ThroughputPolicy to apply for throughput redistribution"]
-    #[serde(rename = "throughputPolicy")]
+    #[serde(rename = "throughputPolicy", with = "azure_core::xml::text_content")]
     pub throughput_policy: redistribute_throughput_properties_resource::ThroughputPolicy,
     #[doc = "Array of PhysicalPartitionThroughputInfoResource objects."]
     #[serde(rename = "targetPhysicalPartitionThroughputInfo")]
@@ -6397,7 +6598,7 @@ pub struct RegionalServiceResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "Describes the status of a service."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<ServiceResourceStatus>,
 }
 impl RegionalServiceResource {
@@ -6474,7 +6675,12 @@ pub struct RestorableDatabaseAccountProperties {
     #[serde(rename = "deletionTime", default, with = "azure_core::date::rfc3339::option")]
     pub deletion_time: Option<time::OffsetDateTime>,
     #[doc = "Enum to indicate the API type of the restorable database account."]
-    #[serde(rename = "apiType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "apiType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub api_type: Option<ApiType>,
     #[doc = "List of regions where the of the database account can be restored from."]
     #[serde(
@@ -6554,7 +6760,12 @@ pub mod restorable_gremlin_database_properties {
         #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
         pub rid: Option<String>,
         #[doc = "Enum to indicate the operation type of the event."]
-        #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "operationType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub operation_type: Option<OperationType>,
         #[doc = "The time when this database event happened."]
         #[serde(rename = "eventTimestamp", default, skip_serializing_if = "Option::is_none")]
@@ -6636,7 +6847,12 @@ pub mod restorable_gremlin_graph_properties {
         #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
         pub rid: Option<String>,
         #[doc = "Enum to indicate the operation type of the event."]
-        #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "operationType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub operation_type: Option<OperationType>,
         #[doc = "The time when this graph event happened."]
         #[serde(rename = "eventTimestamp", default, skip_serializing_if = "Option::is_none")]
@@ -6790,7 +7006,12 @@ pub mod restorable_mongodb_collection_properties {
         #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
         pub rid: Option<String>,
         #[doc = "Enum to indicate the operation type of the event."]
-        #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "operationType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub operation_type: Option<OperationType>,
         #[doc = "The time when this collection event happened."]
         #[serde(rename = "eventTimestamp", default, skip_serializing_if = "Option::is_none")]
@@ -6872,7 +7093,12 @@ pub mod restorable_mongodb_database_properties {
         #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
         pub rid: Option<String>,
         #[doc = "Enum to indicate the operation type of the event."]
-        #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "operationType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub operation_type: Option<OperationType>,
         #[doc = "The time when this database event happened."]
         #[serde(rename = "eventTimestamp", default, skip_serializing_if = "Option::is_none")]
@@ -7005,7 +7231,12 @@ pub mod restorable_sql_container_properties {
         #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
         pub rid: Option<String>,
         #[doc = "Enum to indicate the operation type of the event."]
-        #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "operationType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub operation_type: Option<OperationType>,
         #[doc = "The when this container event happened."]
         #[serde(rename = "eventTimestamp", default, skip_serializing_if = "Option::is_none")]
@@ -7113,7 +7344,12 @@ pub mod restorable_sql_database_properties {
         #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
         pub rid: Option<String>,
         #[doc = "Enum to indicate the operation type of the event."]
-        #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "operationType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub operation_type: Option<OperationType>,
         #[doc = "The time when this database event happened."]
         #[serde(rename = "eventTimestamp", default, skip_serializing_if = "Option::is_none")]
@@ -7280,7 +7516,12 @@ pub mod restorable_table_properties {
         #[serde(rename = "_rid", default, skip_serializing_if = "Option::is_none")]
         pub rid: Option<String>,
         #[doc = "Enum to indicate the operation type of the event."]
-        #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "operationType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub operation_type: Option<OperationType>,
         #[doc = "The time when this table event happened."]
         #[serde(rename = "eventTimestamp", default, skip_serializing_if = "Option::is_none")]
@@ -7366,7 +7607,12 @@ pub struct RestoreParameters {
     #[serde(flatten)]
     pub restore_parameters_base: RestoreParametersBase,
     #[doc = "Describes the mode of the restore."]
-    #[serde(rename = "restoreMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "restoreMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub restore_mode: Option<restore_parameters::RestoreMode>,
     #[doc = "The id of the restorable database account from which the restore has to be initiated. For example: /subscriptions/{subscriptionId}/providers/Microsoft.DocumentDB/locations/{location}/restorableDatabaseAccounts/{restorableDatabaseAccountName}"]
     #[serde(rename = "restoreSource", default, skip_serializing_if = "Option::is_none")]
@@ -7555,13 +7801,23 @@ impl ServiceResourceCreateUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceResourceCreateUpdateProperties {
     #[doc = "Instance type for the service."]
-    #[serde(rename = "instanceSize", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "instanceSize",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub instance_size: Option<ServiceResourceInstanceSize>,
     #[doc = "Instance count for the service."]
     #[serde(rename = "instanceCount", default, skip_serializing_if = "Option::is_none")]
     pub instance_count: Option<i32>,
     #[doc = "ServiceType for the service."]
-    #[serde(rename = "serviceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "serviceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub service_type: Option<ServiceType>,
 }
 impl ServiceResourceCreateUpdateProperties {
@@ -7640,16 +7896,21 @@ pub struct ServiceResourceProperties {
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Instance type for the service."]
-    #[serde(rename = "instanceSize", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "instanceSize",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub instance_size: Option<ServiceResourceInstanceSize>,
     #[doc = "Instance count for the service."]
     #[serde(rename = "instanceCount", default, skip_serializing_if = "Option::is_none")]
     pub instance_count: Option<i32>,
     #[doc = "ServiceType for the service."]
-    #[serde(rename = "serviceType")]
+    #[serde(rename = "serviceType", with = "azure_core::xml::text_content")]
     pub service_type: ServiceType,
     #[doc = "Describes the status of a service."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<ServiceResourceStatus>,
 }
 impl ServiceResourceProperties {
@@ -7926,7 +8187,12 @@ pub struct SqlContainerResource {
     #[serde(rename = "restoreParameters", default, skip_serializing_if = "Option::is_none")]
     pub restore_parameters: Option<ResourceRestoreParameters>,
     #[doc = "Enum to indicate the mode of account creation."]
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_mode: Option<CreateMode>,
     #[doc = "Materialized View definition for the container."]
     #[serde(rename = "materializedViewDefinition", default, skip_serializing_if = "Option::is_none")]
@@ -8063,7 +8329,12 @@ pub struct SqlDatabaseResource {
     #[serde(rename = "restoreParameters", default, skip_serializing_if = "Option::is_none")]
     pub restore_parameters: Option<ResourceRestoreParameters>,
     #[doc = "Enum to indicate the mode of account creation."]
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_mode: Option<CreateMode>,
 }
 impl SqlDatabaseResource {
@@ -8247,7 +8518,12 @@ pub struct SqlRoleDefinitionResource {
     #[serde(rename = "roleName", default, skip_serializing_if = "Option::is_none")]
     pub role_name: Option<String>,
     #[doc = "Indicates whether the Role Definition was built-in or user created."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<sql_role_definition_resource::Type>,
     #[doc = "A set of fully qualified Scopes at or below which Role Assignments may be created using this Role Definition. This will allow application of this Role Definition on the entire database account or any underlying Database / Collection. Must have at least one element. Scopes higher than Database account are not enforceable as assignable Scopes. Note that resources referenced in assignable Scopes need not exist."]
     #[serde(
@@ -8456,10 +8732,20 @@ pub struct SqlTriggerResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub body: Option<String>,
     #[doc = "Type of the Trigger"]
-    #[serde(rename = "triggerType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "triggerType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub trigger_type: Option<sql_trigger_resource::TriggerType>,
     #[doc = "The operation the trigger is associated with"]
-    #[serde(rename = "triggerOperation", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "triggerOperation",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub trigger_operation: Option<sql_trigger_resource::TriggerOperation>,
 }
 impl SqlTriggerResource {
@@ -8735,7 +9021,12 @@ pub struct TableResource {
     #[serde(rename = "restoreParameters", default, skip_serializing_if = "Option::is_none")]
     pub restore_parameters: Option<ResourceRestoreParameters>,
     #[doc = "Enum to indicate the mode of account creation."]
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_mode: Option<CreateMode>,
 }
 impl TableResource {
@@ -8947,7 +9238,7 @@ impl Serialize for UnitType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Usage {
     #[doc = "The unit of the metric."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub unit: Option<UnitType>,
     #[doc = "A metric name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9026,7 +9317,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -9035,7 +9331,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

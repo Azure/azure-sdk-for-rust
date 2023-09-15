@@ -102,7 +102,7 @@ pub struct ArtifactListResult {
 impl azure_core::Continuable for ArtifactListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ArtifactListResult {
@@ -151,7 +151,12 @@ pub struct CatalogItemAction {
     )]
     pub parameters: Vec<CatalogItemParameter>,
     #[doc = "The type of action."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<ActionType>,
     #[doc = "Name of the custom action type"]
     #[serde(rename = "typeName", default, skip_serializing_if = "Option::is_none")]
@@ -177,7 +182,7 @@ pub struct CatalogItemListResult {
 impl azure_core::Continuable for CatalogItemListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CatalogItemListResult {
@@ -201,7 +206,12 @@ pub struct CatalogItemParameter {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<serde_json::Value>,
     #[doc = "The type of data a parameter accepts."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<ParameterType>,
     #[doc = "Whether or not this parameter is read-only.  If true, default should have a value."]
     #[serde(rename = "readOnly", default, skip_serializing_if = "Option::is_none")]
@@ -267,7 +277,7 @@ pub struct CatalogItemVersion {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub runner: Option<String>,
     #[doc = "Enable or disable status. Indicates whether the property applied to is either enabled or disabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<EnableStatus>,
     #[doc = "Whether the version is eligible to be the latest version."]
     #[serde(rename = "eligibleForLatestVersion", default, skip_serializing_if = "Option::is_none")]
@@ -290,7 +300,7 @@ pub struct CatalogItemVersionListResult {
 impl azure_core::Continuable for CatalogItemVersionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CatalogItemVersionListResult {
@@ -362,7 +372,12 @@ pub struct DevBox {
     #[serde(rename = "actionState", default, skip_serializing_if = "Option::is_none")]
     pub action_state: Option<String>,
     #[doc = "The power states of a Dev Box."]
-    #[serde(rename = "powerState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "powerState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub power_state: Option<PowerState>,
     #[doc = "A unique identifier for the Dev Box. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)."]
     #[serde(rename = "uniqueId", default, skip_serializing_if = "Option::is_none")]
@@ -374,7 +389,12 @@ pub struct DevBox {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "The operating system type."]
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "osType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub os_type: Option<OsType>,
     #[doc = "User identifier of the user this vm is assigned to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -391,7 +411,12 @@ pub struct DevBox {
     #[doc = "Creation time of this Dev Box"]
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
-    #[serde(rename = "localAdministrator", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "localAdministrator",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub local_administrator: Option<LocalAdminStatus>,
 }
 impl DevBox {
@@ -428,7 +453,7 @@ pub struct DevBoxListResult {
 impl azure_core::Continuable for DevBoxListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DevBoxListResult {
@@ -518,7 +543,7 @@ pub struct EnvironmentListResult {
 impl azure_core::Continuable for EnvironmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EnvironmentListResult {
@@ -536,7 +561,7 @@ pub struct EnvironmentType {
     #[serde(rename = "deploymentTargetId", default, skip_serializing_if = "Option::is_none")]
     pub deployment_target_id: Option<String>,
     #[doc = "Enable or disable status. Indicates whether the property applied to is either enabled or disabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<EnableStatus>,
 }
 impl EnvironmentType {
@@ -556,7 +581,7 @@ pub struct EnvironmentTypeListResult {
 impl azure_core::Continuable for EnvironmentTypeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EnvironmentTypeListResult {
@@ -780,7 +805,12 @@ pub struct Pool {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "The operating system type."]
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "osType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub os_type: Option<OsType>,
     #[doc = "Hardware specifications for the Dev Box."]
     #[serde(rename = "hardwareProfile", default, skip_serializing_if = "Option::is_none")]
@@ -791,7 +821,12 @@ pub struct Pool {
     #[doc = "Specifies information about the image used"]
     #[serde(rename = "imageReference", default, skip_serializing_if = "Option::is_none")]
     pub image_reference: Option<ImageReference>,
-    #[serde(rename = "localAdministrator", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "localAdministrator",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub local_administrator: Option<LocalAdminStatus>,
 }
 impl Pool {
@@ -811,7 +846,7 @@ pub struct PoolListResult {
 impl azure_core::Continuable for PoolListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PoolListResult {
@@ -889,7 +924,7 @@ pub struct ProjectListResult {
 impl azure_core::Continuable for ProjectListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProjectListResult {
@@ -934,10 +969,15 @@ pub struct Schedule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The supported types for a scheduled task."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<ScheduledType>,
     #[doc = "The frequency of task execution."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub frequency: Option<ScheduledFrequency>,
     #[doc = "The target time to trigger the action. The format is HH:MM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -963,7 +1003,7 @@ pub struct ScheduleListResult {
 impl azure_core::Continuable for ScheduleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScheduleListResult {
@@ -1010,10 +1050,10 @@ impl Serialize for ScheduledFrequency {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledTask {
     #[doc = "The supported types for a scheduled task."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: ScheduledTaskType,
     #[doc = "Enable or disable status. Indicates whether the property applied to is either enabled or disabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub enabled: Option<EnableStatus>,
     #[doc = "Date/time by which the environment should expire"]
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]

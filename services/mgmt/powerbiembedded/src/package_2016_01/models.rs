@@ -6,8 +6,10 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureSku {
     #[doc = "SKU name"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: azure_sku::Name,
     #[doc = "SKU tier"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub tier: azure_sku::Tier,
 }
 impl AzureSku {
@@ -108,7 +110,7 @@ pub struct CheckNameResponse {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "Reason why the workspace collection name cannot be used."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<check_name_response::Reason>,
     #[doc = "Message indicating an unavailable name due to a conflict, or a description of the naming rules that are violated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -343,7 +345,12 @@ impl WorkspaceCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceCollectionAccessKey {
     #[doc = "Key name"]
-    #[serde(rename = "keyName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "keyName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub key_name: Option<workspace_collection_access_key::KeyName>,
 }
 impl WorkspaceCollectionAccessKey {

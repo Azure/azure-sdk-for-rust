@@ -131,7 +131,7 @@ pub struct PrivateZoneListResult {
 impl azure_core::Continuable for PrivateZoneListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateZoneListResult {
@@ -169,7 +169,12 @@ pub struct PrivateZoneProperties {
     )]
     pub number_of_virtual_network_links_with_registration: Option<i64>,
     #[doc = "The provisioning state of the resource. This is a read-only property and any attempt to set this value will be ignored."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<private_zone_properties::ProvisioningState>,
 }
 impl PrivateZoneProperties {
@@ -291,7 +296,7 @@ pub struct RecordSetListResult {
 impl azure_core::Continuable for RecordSetListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RecordSetListResult {
@@ -522,7 +527,7 @@ pub struct VirtualNetworkLinkListResult {
 impl azure_core::Continuable for VirtualNetworkLinkListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualNetworkLinkListResult {
@@ -540,10 +545,20 @@ pub struct VirtualNetworkLinkProperties {
     #[serde(rename = "registrationEnabled", default, skip_serializing_if = "Option::is_none")]
     pub registration_enabled: Option<bool>,
     #[doc = "The status of the virtual network link to the Private DNS zone. Possible values are 'InProgress' and 'Done'. This is a read-only property and any attempt to set this value will be ignored."]
-    #[serde(rename = "virtualNetworkLinkState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "virtualNetworkLinkState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub virtual_network_link_state: Option<virtual_network_link_properties::VirtualNetworkLinkState>,
     #[doc = "The provisioning state of the resource. This is a read-only property and any attempt to set this value will be ignored."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<virtual_network_link_properties::ProvisioningState>,
 }
 impl VirtualNetworkLinkProperties {

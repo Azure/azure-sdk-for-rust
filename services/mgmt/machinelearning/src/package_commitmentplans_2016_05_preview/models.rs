@@ -90,7 +90,7 @@ pub struct CommitmentAssociationListResult {
 impl azure_core::Continuable for CommitmentAssociationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CommitmentAssociationListResult {
@@ -158,7 +158,7 @@ pub struct CommitmentPlanListResult {
 impl azure_core::Continuable for CommitmentPlanListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CommitmentPlanListResult {
@@ -358,7 +358,7 @@ pub struct PlanUsageHistoryListResult {
 impl azure_core::Continuable for PlanUsageHistoryListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PlanUsageHistoryListResult {
@@ -441,7 +441,12 @@ pub struct SkuCapacity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<i64>,
     #[doc = "The scale type applicable to the sku."]
-    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "scaleType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub scale_type: Option<sku_capacity::ScaleType>,
 }
 impl SkuCapacity {
@@ -534,7 +539,12 @@ impl SkuListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuRestrictions {
     #[doc = "The type of restrictions."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<sku_restrictions::Type>,
     #[doc = "The value of restrictions. If the restriction type is set to location. This would be different locations where the SKU is restricted."]
     #[serde(
@@ -544,7 +554,12 @@ pub struct SkuRestrictions {
     )]
     pub values: Vec<String>,
     #[doc = "The reason for restriction."]
-    #[serde(rename = "reasonCode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "reasonCode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub reason_code: Option<sku_restrictions::ReasonCode>,
 }
 impl SkuRestrictions {

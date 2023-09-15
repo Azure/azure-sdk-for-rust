@@ -88,7 +88,7 @@ pub struct HealthMonitorList {
 impl azure_core::Continuable for HealthMonitorList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HealthMonitorList {
@@ -111,9 +111,19 @@ pub struct HealthMonitorProperties {
     #[doc = "Name of the parent monitor."]
     #[serde(rename = "parentMonitorName", default, skip_serializing_if = "Option::is_none")]
     pub parent_monitor_name: Option<String>,
-    #[serde(rename = "previousMonitorState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "previousMonitorState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub previous_monitor_state: Option<HealthState>,
-    #[serde(rename = "currentMonitorState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "currentMonitorState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub current_monitor_state: Option<HealthState>,
     #[doc = "Timestamp of the monitor's last health evaluation."]
     #[serde(rename = "evaluationTimestamp", default, skip_serializing_if = "Option::is_none")]
@@ -165,7 +175,7 @@ pub struct HealthMonitorStateChangeList {
 impl azure_core::Continuable for HealthMonitorStateChangeList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HealthMonitorStateChangeList {
@@ -191,9 +201,19 @@ pub struct HealthMonitorStateChangeProperties {
     #[doc = "Timestamp of the monitor's last health state change."]
     #[serde(rename = "currentStateFirstObservedTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub current_state_first_observed_timestamp: Option<String>,
-    #[serde(rename = "previousMonitorState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "previousMonitorState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub previous_monitor_state: Option<HealthState>,
-    #[serde(rename = "currentMonitorState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "currentMonitorState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub current_monitor_state: Option<HealthState>,
     #[doc = "Evidence validating the monitor's current health state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -306,7 +326,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {

@@ -62,7 +62,7 @@ pub struct DeploymentDeviceState {
     #[serde(rename = "movedOnToNewDeployment")]
     pub moved_on_to_new_deployment: bool,
     #[doc = "Deployment state."]
-    #[serde(rename = "deviceState")]
+    #[serde(rename = "deviceState", with = "azure_core::xml::text_content")]
     pub device_state: DeviceDeploymentState,
 }
 impl DeploymentDeviceState {
@@ -86,7 +86,12 @@ pub struct DeploymentDeviceStatesFilter {
     #[serde(rename = "moduleId", default, skip_serializing_if = "Option::is_none")]
     pub module_id: Option<String>,
     #[doc = "The deployment device state."]
-    #[serde(rename = "deviceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "deviceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub device_state: Option<DeviceState>,
 }
 impl DeploymentDeviceStatesFilter {
@@ -106,7 +111,7 @@ pub struct DeploymentDeviceStatesList {
 impl azure_core::Continuable for DeploymentDeviceStatesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeploymentDeviceStatesList {
@@ -175,7 +180,7 @@ impl Serialize for DeploymentState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentStatus {
     #[doc = "Deployment state."]
-    #[serde(rename = "deploymentState")]
+    #[serde(rename = "deploymentState", with = "azure_core::xml::text_content")]
     pub deployment_state: DeploymentState,
     #[doc = "The total number of devices in the deployment."]
     #[serde(rename = "totalDevices", default, skip_serializing_if = "Option::is_none")]
@@ -217,7 +222,7 @@ pub struct DeploymentsList {
 impl azure_core::Continuable for DeploymentsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeploymentsList {
@@ -248,7 +253,12 @@ pub struct Device {
     #[serde(rename = "lastAttemptedUpdateId", default, skip_serializing_if = "Option::is_none")]
     pub last_attempted_update_id: Option<UpdateId>,
     #[doc = "Deployment state."]
-    #[serde(rename = "deploymentStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "deploymentStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub deployment_status: Option<DeviceDeploymentState>,
     #[doc = "Update identifier."]
     #[serde(rename = "installedUpdateId", default, skip_serializing_if = "Option::is_none")]
@@ -315,7 +325,7 @@ pub struct DeviceClassesList {
 impl azure_core::Continuable for DeviceClassesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceClassesList {
@@ -385,6 +395,7 @@ pub struct DeviceOperation {
     #[serde(rename = "operationId")]
     pub operation_id: String,
     #[doc = "Operation status."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: OperationStatus,
     #[doc = "Error details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -432,7 +443,7 @@ pub struct DeviceOperationsList {
 impl azure_core::Continuable for DeviceOperationsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceOperationsList {
@@ -514,7 +525,7 @@ pub struct DeviceTagsList {
 impl azure_core::Continuable for DeviceTagsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceTagsList {
@@ -552,7 +563,7 @@ pub struct DevicesList {
 impl azure_core::Continuable for DevicesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DevicesList {
@@ -633,7 +644,7 @@ pub struct Group {
     #[serde(rename = "groupId")]
     pub group_id: String,
     #[doc = "Supported group types."]
-    #[serde(rename = "groupType")]
+    #[serde(rename = "groupType", with = "azure_core::xml::text_content")]
     pub group_type: GroupType,
     #[doc = "IoT Hub tags."]
     pub tags: Vec<String>,
@@ -734,7 +745,7 @@ pub struct GroupsList {
 impl azure_core::Continuable for GroupsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GroupsList {
@@ -913,7 +924,7 @@ pub struct LogCollectionOperation {
     #[serde(rename = "lastActionDateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_action_date_time: Option<String>,
     #[doc = "Operation status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<OperationStatusWithoutUndefinedOption>,
 }
 impl LogCollectionOperation {
@@ -941,7 +952,7 @@ pub struct LogCollectionOperationDetailedStatus {
     #[serde(rename = "lastActionDateTime", default, skip_serializing_if = "Option::is_none")]
     pub last_action_date_time: Option<String>,
     #[doc = "Operation status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<OperationStatusWithoutUndefinedOption>,
     #[doc = "Status of the devices in the operation"]
     #[serde(
@@ -984,6 +995,7 @@ pub struct LogCollectionOperationDeviceStatus {
     #[serde(rename = "moduleId", default, skip_serializing_if = "Option::is_none")]
     pub module_id: Option<String>,
     #[doc = "Operation status."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: OperationStatusWithoutUndefinedOption,
     #[doc = "Log upload result code"]
     #[serde(rename = "resultCode", default, skip_serializing_if = "Option::is_none")]
@@ -1019,7 +1031,7 @@ pub struct LogCollectionOperationList {
 impl azure_core::Continuable for LogCollectionOperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LogCollectionOperationList {
@@ -1031,7 +1043,7 @@ impl LogCollectionOperationList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationFilter {
     #[doc = "Operation status filter."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<OperationFilterStatus>,
 }
 impl OperationFilter {
@@ -1164,7 +1176,12 @@ impl Serialize for OperationStatusWithoutUndefinedOption {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Step {
     #[doc = "Step type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<step::Type>,
     #[doc = "Step description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1280,7 +1297,7 @@ pub struct StringsList {
 impl azure_core::Continuable for StringsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StringsList {
@@ -1315,7 +1332,7 @@ pub struct UpdatableDevicesList {
 impl azure_core::Continuable for UpdatableDevicesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UpdatableDevicesList {
@@ -1509,7 +1526,7 @@ pub struct UpdateIdsList {
 impl azure_core::Continuable for UpdateIdsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UpdateIdsList {
@@ -1529,7 +1546,7 @@ pub struct UpdateList {
 impl azure_core::Continuable for UpdateList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UpdateList {
@@ -1544,6 +1561,7 @@ pub struct UpdateOperation {
     #[serde(rename = "operationId")]
     pub operation_id: String,
     #[doc = "Operation status."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: OperationStatus,
     #[doc = "Update identifier."]
     #[serde(rename = "updateId", default, skip_serializing_if = "Option::is_none")]
@@ -1599,7 +1617,7 @@ pub struct UpdateOperationsList {
 impl azure_core::Continuable for UpdateOperationsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UpdateOperationsList {

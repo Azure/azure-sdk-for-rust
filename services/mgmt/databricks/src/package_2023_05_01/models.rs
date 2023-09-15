@@ -44,7 +44,7 @@ pub struct AccessConnectorListResult {
 impl azure_core::Continuable for AccessConnectorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccessConnectorListResult {
@@ -55,7 +55,12 @@ impl AccessConnectorListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessConnectorProperties {
     #[doc = "Provisioning status of the accessConnector."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<access_connector_properties::ProvisioningState>,
 }
 impl AccessConnectorProperties {
@@ -160,7 +165,12 @@ pub type CreatedDateTime = time::OffsetDateTime;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Encryption {
     #[doc = "The encryption keySource (provider). Possible values (case-insensitive):  Default, Microsoft.Keyvault"]
-    #[serde(rename = "keySource", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "keySource",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub key_source: Option<encryption::KeySource>,
     #[doc = "The name of KeyVault key."]
     #[serde(rename = "KeyName", default, skip_serializing_if = "Option::is_none")]
@@ -242,7 +252,7 @@ impl EncryptionEntitiesDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionV2 {
     #[doc = "The encryption keySource (provider). Possible values (case-insensitive):  Microsoft.Keyvault"]
-    #[serde(rename = "keySource")]
+    #[serde(rename = "keySource", with = "azure_core::xml::text_content")]
     pub key_source: encryption_v2::KeySource,
     #[doc = "Key Vault input properties for encryption."]
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
@@ -480,7 +490,7 @@ impl GroupIdInformationProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedDiskEncryption {
     #[doc = "The encryption keySource (provider). Possible values (case-insensitive):  Microsoft.Keyvault"]
-    #[serde(rename = "keySource")]
+    #[serde(rename = "keySource", with = "azure_core::xml::text_content")]
     pub key_source: managed_disk_encryption::KeySource,
     #[doc = "Key Vault input properties for encryption."]
     #[serde(rename = "keyVaultProperties")]
@@ -587,7 +597,7 @@ pub struct ManagedServiceIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Type of managed service identity (where both SystemAssigned and UserAssigned types are allowed)."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: ManagedServiceIdentityType,
     #[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -703,7 +713,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -827,7 +837,12 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -900,7 +915,7 @@ pub struct PrivateEndpointConnectionsList {
 impl azure_core::Continuable for PrivateEndpointConnectionsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionsList {
@@ -925,7 +940,7 @@ pub struct PrivateLinkResourcesList {
 impl azure_core::Continuable for PrivateLinkResourcesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkResourcesList {
@@ -937,6 +952,7 @@ impl PrivateLinkResourcesList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The status of a private endpoint connection"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: private_link_service_connection_state::Status,
     #[doc = "The description for the current state of a private endpoint connection"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1170,7 +1186,7 @@ pub struct VirtualNetworkPeeringList {
 impl azure_core::Continuable for VirtualNetworkPeeringList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualNetworkPeeringList {
@@ -1206,10 +1222,20 @@ pub struct VirtualNetworkPeeringPropertiesFormat {
     #[serde(rename = "remoteAddressSpace", default, skip_serializing_if = "Option::is_none")]
     pub remote_address_space: Option<AddressSpace>,
     #[doc = "The status of the virtual network peering."]
-    #[serde(rename = "peeringState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "peeringState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub peering_state: Option<virtual_network_peering_properties_format::PeeringState>,
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<PeeringProvisioningState>,
 }
 impl VirtualNetworkPeeringPropertiesFormat {
@@ -1322,7 +1348,12 @@ impl Workspace {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceCustomBooleanParameter {
     #[doc = "Provisioning status of the workspace."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<WorkspaceCustomParameterType>,
     #[doc = "The value which should be used for this field."]
     pub value: bool,
@@ -1336,7 +1367,12 @@ impl WorkspaceCustomBooleanParameter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceCustomObjectParameter {
     #[doc = "Provisioning status of the workspace."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<WorkspaceCustomParameterType>,
     #[doc = "The value which should be used for this field."]
     pub value: serde_json::Value,
@@ -1446,7 +1482,12 @@ impl WorkspaceCustomParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceCustomStringParameter {
     #[doc = "Provisioning status of the workspace."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<WorkspaceCustomParameterType>,
     #[doc = "The value which should be used for this field."]
     pub value: String,
@@ -1460,7 +1501,12 @@ impl WorkspaceCustomStringParameter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceEncryptionParameter {
     #[doc = "Provisioning status of the workspace."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<WorkspaceCustomParameterType>,
     #[doc = "The object that contains details of encryption used on the workspace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1488,7 +1534,7 @@ pub struct WorkspaceListResult {
 impl azure_core::Continuable for WorkspaceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceListResult {
@@ -1506,7 +1552,12 @@ pub struct WorkspaceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<WorkspaceCustomParameters>,
     #[doc = "Provisioning status of the workspace."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The blob URI where the UI definition file is located."]
     #[serde(rename = "uiDefinitionUri", default, skip_serializing_if = "Option::is_none")]
@@ -1554,10 +1605,20 @@ pub struct WorkspaceProperties {
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "The network access type for accessing workspace. Set value to disabled to access workspace only via private link."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<workspace_properties::PublicNetworkAccess>,
     #[doc = "Gets or sets a value indicating whether data plane (clusters) to control plane communication happen over private endpoint. Supported values are 'AllRules' and 'NoAzureDatabricksRules'. 'NoAzureServiceRules' value is for internal use only."]
-    #[serde(rename = "requiredNsgRules", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "requiredNsgRules",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub required_nsg_rules: Option<workspace_properties::RequiredNsgRules>,
 }
 impl WorkspaceProperties {
@@ -1710,7 +1771,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1719,7 +1785,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

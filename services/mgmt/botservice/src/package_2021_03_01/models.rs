@@ -109,7 +109,12 @@ pub struct BotProperties {
     #[serde(rename = "manifestUrl", default, skip_serializing_if = "Option::is_none")]
     pub manifest_url: Option<String>,
     #[doc = "Microsoft App Type for the bot"]
-    #[serde(rename = "msaAppType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "msaAppType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub msa_app_type: Option<bot_properties::MsaAppType>,
     #[doc = "Microsoft App Id for the bot"]
     #[serde(rename = "msaAppId")]
@@ -169,7 +174,12 @@ pub struct BotProperties {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Whether the bot is in an isolated network"]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<bot_properties::PublicNetworkAccess>,
     #[doc = "Whether the bot is streaming supported"]
     #[serde(rename = "isStreamingSupported", default, skip_serializing_if = "Option::is_none")]
@@ -344,7 +354,7 @@ pub struct BotResponseList {
 impl azure_core::Continuable for BotResponseList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BotResponseList {
@@ -395,7 +405,7 @@ pub struct ChannelResponseList {
 impl azure_core::Continuable for ChannelResponseList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ChannelResponseList {
@@ -574,7 +584,7 @@ pub struct ConnectionSettingResponseList {
 impl azure_core::Continuable for ConnectionSettingResponseList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConnectionSettingResponseList {
@@ -700,7 +710,12 @@ pub struct EmailChannelProperties {
     #[serde(rename = "emailAddress")]
     pub email_address: String,
     #[doc = "Email channel auth method. 0 Password (Default); 1 Graph."]
-    #[serde(rename = "authMethod", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authMethod",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub auth_method: Option<EmailChannelAuthMethod>,
     #[doc = "The password for the email address. Value only returned through POST to the action Channel List API, otherwise empty."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1150,7 +1165,7 @@ pub struct OperationEntityListResult {
 impl azure_core::Continuable for OperationEntityListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationEntityListResult {
@@ -1191,7 +1206,7 @@ pub struct Resource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
     #[doc = "Indicates the type of bot service"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<Kind>,
     #[doc = "Entity Tag"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1440,6 +1455,7 @@ pub struct SiteInfo {
     #[serde(rename = "siteName")]
     pub site_name: String,
     #[doc = "Determines which key is to be regenerated"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub key: site_info::Key,
 }
 impl SiteInfo {
@@ -1462,9 +1478,10 @@ pub mod site_info {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The name of SKU."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: SkuName,
     #[doc = "Gets the sku tier. This is based on the SKU name."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub tier: Option<sku::Tier>,
 }
 impl Sku {

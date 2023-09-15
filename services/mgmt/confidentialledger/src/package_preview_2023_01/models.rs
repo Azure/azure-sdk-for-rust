@@ -13,7 +13,12 @@ pub struct AadBasedSecurityPrincipal {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "LedgerRole associated with the Security Principal of Ledger"]
-    #[serde(rename = "ledgerRoleName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ledgerRoleName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ledger_role_name: Option<LedgerRoleName>,
 }
 impl AadBasedSecurityPrincipal {
@@ -28,7 +33,12 @@ pub struct CertBasedSecurityPrincipal {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cert: Option<String>,
     #[doc = "LedgerRole associated with the Security Principal of Ledger"]
-    #[serde(rename = "ledgerRoleName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ledgerRoleName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ledger_role_name: Option<LedgerRoleName>,
 }
 impl CertBasedSecurityPrincipal {
@@ -70,7 +80,7 @@ pub struct CheckNameAvailabilityResponse {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "The reason why the given name is not available."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<check_name_availability_response::Reason>,
     #[doc = "Detailed reason why the given name is available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -155,7 +165,7 @@ pub struct ConfidentialLedgerList {
 impl azure_core::Continuable for ConfidentialLedgerList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConfidentialLedgerList {
@@ -206,7 +216,12 @@ impl Serialize for ConfidentialLedgerType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentType {
     #[doc = "Object representing LanguageRuntime for Manged CCF."]
-    #[serde(rename = "languageRuntime", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "languageRuntime",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub language_runtime: Option<LanguageRuntime>,
     #[doc = "Source Uri containing ManagedCCF code"]
     #[serde(rename = "appSourceUri", default, skip_serializing_if = "Option::is_none")]
@@ -338,13 +353,28 @@ pub struct LedgerProperties {
     #[serde(rename = "ledgerInternalNamespace", default, skip_serializing_if = "Option::is_none")]
     pub ledger_internal_namespace: Option<String>,
     #[doc = "Object representing RunningState for Confidential Ledger."]
-    #[serde(rename = "runningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "runningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub running_state: Option<RunningState>,
     #[doc = "Type of the ledger. Private means transaction data is encrypted."]
-    #[serde(rename = "ledgerType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ledgerType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ledger_type: Option<ConfidentialLedgerType>,
     #[doc = "Object representing ProvisioningState for Confidential Ledger."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Array of all AAD based Security Principals."]
     #[serde(
@@ -441,7 +471,7 @@ pub struct ManagedCcfList {
 impl azure_core::Continuable for ManagedCcfList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedCcfList {
@@ -473,7 +503,12 @@ pub struct ManagedCcfProperties {
     #[serde(rename = "deploymentType", default, skip_serializing_if = "Option::is_none")]
     pub deployment_type: Option<DeploymentType>,
     #[doc = "Object representing ProvisioningState for Confidential Ledger."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Number of CCF nodes in the Managed CCF."]
     #[serde(rename = "nodeCount", default, skip_serializing_if = "Option::is_none")]
@@ -626,7 +661,7 @@ pub struct ResourceProviderOperationList {
 impl azure_core::Continuable for ResourceProviderOperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceProviderOperationList {
@@ -704,7 +739,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -713,7 +753,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

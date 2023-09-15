@@ -7,7 +7,12 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentUpdatePatchProperties {
     #[doc = "The type of maintenance for session host components."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<agent_update_patch_properties::Type>,
     #[doc = "Whether to use localTime of the virtual machine."]
     #[serde(rename = "useSessionHostLocalTime", default, skip_serializing_if = "Option::is_none")]
@@ -73,7 +78,12 @@ pub mod agent_update_patch_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AgentUpdateProperties {
     #[doc = "The type of maintenance for session host components."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<agent_update_properties::Type>,
     #[doc = "Whether to use localTime of the virtual machine."]
     #[serde(rename = "useSessionHostLocalTime", default, skip_serializing_if = "Option::is_none")]
@@ -192,7 +202,7 @@ pub struct ApplicationGroupList {
 impl azure_core::Continuable for ApplicationGroupList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationGroupList {
@@ -254,7 +264,7 @@ pub struct ApplicationGroupProperties {
     #[serde(rename = "workspaceArmPath", default, skip_serializing_if = "Option::is_none")]
     pub workspace_arm_path: Option<String>,
     #[doc = "Resource Type of ApplicationGroup."]
-    #[serde(rename = "applicationGroupType")]
+    #[serde(rename = "applicationGroupType", with = "azure_core::xml::text_content")]
     pub application_group_type: application_group_properties::ApplicationGroupType,
     #[doc = "Is cloud pc resource."]
     #[serde(rename = "cloudPcResource", default, skip_serializing_if = "Option::is_none")]
@@ -334,7 +344,7 @@ pub struct ApplicationList {
 impl azure_core::Continuable for ApplicationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationList {
@@ -370,7 +380,12 @@ pub struct ApplicationPatchProperties {
     #[serde(rename = "filePath", default, skip_serializing_if = "Option::is_none")]
     pub file_path: Option<String>,
     #[doc = "Specifies whether this published application can be launched with command line arguments provided by the client, command line arguments specified at publish time, or no command line arguments at all."]
-    #[serde(rename = "commandLineSetting", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "commandLineSetting",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub command_line_setting: Option<application_patch_properties::CommandLineSetting>,
     #[doc = "Command Line Arguments for Application."]
     #[serde(rename = "commandLineArguments", default, skip_serializing_if = "Option::is_none")]
@@ -391,7 +406,12 @@ pub struct ApplicationPatchProperties {
     #[serde(rename = "msixPackageApplicationId", default, skip_serializing_if = "Option::is_none")]
     pub msix_package_application_id: Option<String>,
     #[doc = "Resource Type of Application."]
-    #[serde(rename = "applicationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "applicationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub application_type: Option<application_patch_properties::ApplicationType>,
 }
 impl ApplicationPatchProperties {
@@ -500,10 +520,15 @@ pub struct ApplicationProperties {
     #[serde(rename = "msixPackageApplicationId", default, skip_serializing_if = "Option::is_none")]
     pub msix_package_application_id: Option<String>,
     #[doc = "Resource Type of Application."]
-    #[serde(rename = "applicationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "applicationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub application_type: Option<application_properties::ApplicationType>,
     #[doc = "Specifies whether this published application can be launched with command line arguments provided by the client, command line arguments specified at publish time, or no command line arguments at all."]
-    #[serde(rename = "commandLineSetting")]
+    #[serde(rename = "commandLineSetting", with = "azure_core::xml::text_content")]
     pub command_line_setting: application_properties::CommandLineSetting,
     #[doc = "Command Line Arguments for Application."]
     #[serde(rename = "commandLineArguments", default, skip_serializing_if = "Option::is_none")]
@@ -690,7 +715,7 @@ pub struct DesktopList {
 impl azure_core::Continuable for DesktopList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DesktopList {
@@ -783,7 +808,7 @@ pub struct ExpandMsixImageList {
 impl azure_core::Continuable for ExpandMsixImageList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExpandMsixImageList {
@@ -886,7 +911,7 @@ pub struct HostPoolList {
 impl azure_core::Continuable for HostPoolList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HostPoolList {
@@ -927,10 +952,20 @@ pub struct HostPoolPatchProperties {
     #[serde(rename = "maxSessionLimit", default, skip_serializing_if = "Option::is_none")]
     pub max_session_limit: Option<i32>,
     #[doc = "PersonalDesktopAssignment type for HostPool."]
-    #[serde(rename = "personalDesktopAssignmentType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "personalDesktopAssignmentType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub personal_desktop_assignment_type: Option<host_pool_patch_properties::PersonalDesktopAssignmentType>,
     #[doc = "The type of the load balancer."]
-    #[serde(rename = "loadBalancerType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "loadBalancerType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub load_balancer_type: Option<host_pool_patch_properties::LoadBalancerType>,
     #[doc = "The ring number of HostPool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -954,16 +989,31 @@ pub struct HostPoolPatchProperties {
     #[serde(rename = "ssoClientSecretKeyVaultPath", default, skip_serializing_if = "Option::is_none")]
     pub sso_client_secret_key_vault_path: Option<String>,
     #[doc = "The type of single sign on Secret Type."]
-    #[serde(rename = "ssoSecretType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ssoSecretType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub sso_secret_type: Option<host_pool_patch_properties::SsoSecretType>,
     #[doc = "The type of preferred application group type, default to Desktop Application Group"]
-    #[serde(rename = "preferredAppGroupType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "preferredAppGroupType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub preferred_app_group_type: Option<host_pool_patch_properties::PreferredAppGroupType>,
     #[doc = "The flag to turn on/off StartVMOnConnect feature."]
     #[serde(rename = "startVMOnConnect", default, skip_serializing_if = "Option::is_none")]
     pub start_vm_on_connect: Option<bool>,
     #[doc = "Enabled to allow this resource to be access from the public network"]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<host_pool_patch_properties::PublicNetworkAccess>,
     #[doc = "The session host configuration for updating agent, monitoring agent, and stack component."]
     #[serde(rename = "agentUpdate", default, skip_serializing_if = "Option::is_none")]
@@ -1189,10 +1239,15 @@ pub struct HostPoolProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "HostPool type for desktop."]
-    #[serde(rename = "hostPoolType")]
+    #[serde(rename = "hostPoolType", with = "azure_core::xml::text_content")]
     pub host_pool_type: host_pool_properties::HostPoolType,
     #[doc = "PersonalDesktopAssignment type for HostPool."]
-    #[serde(rename = "personalDesktopAssignmentType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "personalDesktopAssignmentType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub personal_desktop_assignment_type: Option<host_pool_properties::PersonalDesktopAssignmentType>,
     #[doc = "Custom rdp property of HostPool."]
     #[serde(rename = "customRdpProperty", default, skip_serializing_if = "Option::is_none")]
@@ -1201,7 +1256,7 @@ pub struct HostPoolProperties {
     #[serde(rename = "maxSessionLimit", default, skip_serializing_if = "Option::is_none")]
     pub max_session_limit: Option<i32>,
     #[doc = "The type of the load balancer."]
-    #[serde(rename = "loadBalancerType")]
+    #[serde(rename = "loadBalancerType", with = "azure_core::xml::text_content")]
     pub load_balancer_type: host_pool_properties::LoadBalancerType,
     #[doc = "The ring number of HostPool."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1233,10 +1288,15 @@ pub struct HostPoolProperties {
     #[serde(rename = "ssoClientSecretKeyVaultPath", default, skip_serializing_if = "Option::is_none")]
     pub sso_client_secret_key_vault_path: Option<String>,
     #[doc = "The type of single sign on Secret Type."]
-    #[serde(rename = "ssoSecretType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ssoSecretType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub sso_secret_type: Option<host_pool_properties::SsoSecretType>,
     #[doc = "The type of preferred application group type, default to Desktop Application Group"]
-    #[serde(rename = "preferredAppGroupType")]
+    #[serde(rename = "preferredAppGroupType", with = "azure_core::xml::text_content")]
     pub preferred_app_group_type: host_pool_properties::PreferredAppGroupType,
     #[doc = "The flag to turn on/off StartVMOnConnect feature."]
     #[serde(rename = "startVMOnConnect", default, skip_serializing_if = "Option::is_none")]
@@ -1245,7 +1305,12 @@ pub struct HostPoolProperties {
     #[serde(rename = "cloudPcResource", default, skip_serializing_if = "Option::is_none")]
     pub cloud_pc_resource: Option<bool>,
     #[doc = "Enabled allows this resource to be accessed from both public and private networks, Disabled allows this resource to only be accessed via private endpoints"]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<host_pool_properties::PublicNetworkAccess>,
     #[doc = "The session host configuration for updating agent, monitoring agent, and stack component."]
     #[serde(rename = "agentUpdate", default, skip_serializing_if = "Option::is_none")]
@@ -1544,7 +1609,12 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The identity type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<identity::Type>,
 }
 impl Identity {
@@ -1627,7 +1697,7 @@ pub struct MsixPackageList {
 impl azure_core::Continuable for MsixPackageList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MsixPackageList {
@@ -1726,7 +1796,12 @@ pub struct MaintenanceWindowPatchProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hour: Option<i32>,
     #[doc = "Day of the week."]
-    #[serde(rename = "dayOfWeek", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dayOfWeek",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub day_of_week: Option<maintenance_window_patch_properties::DayOfWeek>,
 }
 impl MaintenanceWindowPatchProperties {
@@ -1755,7 +1830,12 @@ pub struct MaintenanceWindowProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hour: Option<i32>,
     #[doc = "Day of the week."]
-    #[serde(rename = "dayOfWeek", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dayOfWeek",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub day_of_week: Option<maintenance_window_properties::DayOfWeek>,
 }
 impl MaintenanceWindowProperties {
@@ -1907,7 +1987,7 @@ pub struct PrivateEndpointConnectionListResultWithSystemData {
 impl azure_core::Continuable for PrivateEndpointConnectionListResultWithSystemData {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionListResultWithSystemData {
@@ -1925,7 +2005,12 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -2062,7 +2147,7 @@ pub struct PrivateLinkResourceListResult {
 impl azure_core::Continuable for PrivateLinkResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkResourceListResult {
@@ -2102,7 +2187,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2137,7 +2222,12 @@ pub struct RegistrationInfo {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
     #[doc = "The type of resetting the token."]
-    #[serde(rename = "registrationTokenOperation", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "registrationTokenOperation",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub registration_token_operation: Option<registration_info::RegistrationTokenOperation>,
 }
 impl RegistrationInfo {
@@ -2194,7 +2284,12 @@ pub struct RegistrationInfoPatch {
     #[serde(rename = "expirationTime", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_time: Option<time::OffsetDateTime>,
     #[doc = "The type of resetting the token."]
-    #[serde(rename = "registrationTokenOperation", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "registrationTokenOperation",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub registration_token_operation: Option<registration_info_patch::RegistrationTokenOperation>,
 }
 impl RegistrationInfoPatch {
@@ -2363,7 +2458,7 @@ pub struct ResourceProviderOperationList {
 impl azure_core::Continuable for ResourceProviderOperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceProviderOperationList {
@@ -2423,7 +2518,7 @@ pub struct ScalingPlanList {
 impl azure_core::Continuable for ScalingPlanList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScalingPlanList {
@@ -2519,7 +2614,7 @@ pub struct ScalingPlanPersonalScheduleList {
 impl azure_core::Continuable for ScalingPlanPersonalScheduleList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScalingPlanPersonalScheduleList {
@@ -2554,19 +2649,39 @@ pub struct ScalingPlanPersonalScheduleProperties {
     #[serde(rename = "rampUpStartTime", default, skip_serializing_if = "Option::is_none")]
     pub ramp_up_start_time: Option<Time>,
     #[doc = "The desired startup behavior during the ramp up period for personal vms in the hostpool."]
-    #[serde(rename = "rampUpAutoStartHosts", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rampUpAutoStartHosts",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ramp_up_auto_start_hosts: Option<scaling_plan_personal_schedule_properties::RampUpAutoStartHosts>,
     #[doc = "The desired configuration of Start VM On Connect for the hostpool during the ramp up phase. If this is disabled, session hosts must be turned on using rampUpAutoStartHosts or by turning them on manually."]
-    #[serde(rename = "rampUpStartVMOnConnect", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rampUpStartVMOnConnect",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ramp_up_start_vm_on_connect: Option<scaling_plan_personal_schedule_properties::RampUpStartVmOnConnect>,
     #[doc = "Action to be taken after a user disconnect during the ramp up period."]
-    #[serde(rename = "rampUpActionOnDisconnect", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rampUpActionOnDisconnect",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ramp_up_action_on_disconnect: Option<scaling_plan_personal_schedule_properties::RampUpActionOnDisconnect>,
     #[doc = "The time in minutes to wait before performing the desired session handling action when a user disconnects during the ramp up period."]
     #[serde(rename = "rampUpMinutesToWaitOnDisconnect", default, skip_serializing_if = "Option::is_none")]
     pub ramp_up_minutes_to_wait_on_disconnect: Option<i32>,
     #[doc = "Action to be taken after a logoff during the ramp up period."]
-    #[serde(rename = "rampUpActionOnLogoff", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rampUpActionOnLogoff",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ramp_up_action_on_logoff: Option<scaling_plan_personal_schedule_properties::RampUpActionOnLogoff>,
     #[doc = "The time in minutes to wait before performing the desired session handling action when a user logs off during the ramp up period."]
     #[serde(rename = "rampUpMinutesToWaitOnLogoff", default, skip_serializing_if = "Option::is_none")]
@@ -2575,16 +2690,31 @@ pub struct ScalingPlanPersonalScheduleProperties {
     #[serde(rename = "peakStartTime", default, skip_serializing_if = "Option::is_none")]
     pub peak_start_time: Option<Time>,
     #[doc = "The desired configuration of Start VM On Connect for the hostpool during the peak phase."]
-    #[serde(rename = "peakStartVMOnConnect", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "peakStartVMOnConnect",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub peak_start_vm_on_connect: Option<scaling_plan_personal_schedule_properties::PeakStartVmOnConnect>,
     #[doc = "Action to be taken after a user disconnect during the peak period."]
-    #[serde(rename = "peakActionOnDisconnect", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "peakActionOnDisconnect",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub peak_action_on_disconnect: Option<scaling_plan_personal_schedule_properties::PeakActionOnDisconnect>,
     #[doc = "The time in minutes to wait before performing the desired session handling action when a user disconnects during the peak period."]
     #[serde(rename = "peakMinutesToWaitOnDisconnect", default, skip_serializing_if = "Option::is_none")]
     pub peak_minutes_to_wait_on_disconnect: Option<i32>,
     #[doc = "Action to be taken after a logoff during the peak period."]
-    #[serde(rename = "peakActionOnLogoff", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "peakActionOnLogoff",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub peak_action_on_logoff: Option<scaling_plan_personal_schedule_properties::PeakActionOnLogoff>,
     #[doc = "The time in minutes to wait before performing the desired session handling action when a user logs off during the peak period."]
     #[serde(rename = "peakMinutesToWaitOnLogoff", default, skip_serializing_if = "Option::is_none")]
@@ -2593,16 +2723,31 @@ pub struct ScalingPlanPersonalScheduleProperties {
     #[serde(rename = "rampDownStartTime", default, skip_serializing_if = "Option::is_none")]
     pub ramp_down_start_time: Option<Time>,
     #[doc = "The desired configuration of Start VM On Connect for the hostpool during the ramp down phase."]
-    #[serde(rename = "rampDownStartVMOnConnect", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rampDownStartVMOnConnect",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ramp_down_start_vm_on_connect: Option<scaling_plan_personal_schedule_properties::RampDownStartVmOnConnect>,
     #[doc = "Action to be taken after a user disconnect during the ramp down period."]
-    #[serde(rename = "rampDownActionOnDisconnect", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rampDownActionOnDisconnect",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ramp_down_action_on_disconnect: Option<scaling_plan_personal_schedule_properties::RampDownActionOnDisconnect>,
     #[doc = "The time in minutes to wait before performing the desired session handling action when a user disconnects during the ramp down period."]
     #[serde(rename = "rampDownMinutesToWaitOnDisconnect", default, skip_serializing_if = "Option::is_none")]
     pub ramp_down_minutes_to_wait_on_disconnect: Option<i32>,
     #[doc = "Action to be taken after a logoff during the ramp down period."]
-    #[serde(rename = "rampDownActionOnLogoff", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rampDownActionOnLogoff",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ramp_down_action_on_logoff: Option<scaling_plan_personal_schedule_properties::RampDownActionOnLogoff>,
     #[doc = "The time in minutes to wait before performing the desired session handling action when a user logs off during the ramp down period."]
     #[serde(rename = "rampDownMinutesToWaitOnLogoff", default, skip_serializing_if = "Option::is_none")]
@@ -2611,16 +2756,31 @@ pub struct ScalingPlanPersonalScheduleProperties {
     #[serde(rename = "offPeakStartTime", default, skip_serializing_if = "Option::is_none")]
     pub off_peak_start_time: Option<Time>,
     #[doc = "The desired configuration of Start VM On Connect for the hostpool during the off-peak phase."]
-    #[serde(rename = "offPeakStartVMOnConnect", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "offPeakStartVMOnConnect",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub off_peak_start_vm_on_connect: Option<scaling_plan_personal_schedule_properties::OffPeakStartVmOnConnect>,
     #[doc = "Action to be taken after a user disconnect during the off-peak period."]
-    #[serde(rename = "offPeakActionOnDisconnect", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "offPeakActionOnDisconnect",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub off_peak_action_on_disconnect: Option<scaling_plan_personal_schedule_properties::OffPeakActionOnDisconnect>,
     #[doc = "The time in minutes to wait before performing the desired session handling action when a user disconnects during the off-peak period."]
     #[serde(rename = "offPeakMinutesToWaitOnDisconnect", default, skip_serializing_if = "Option::is_none")]
     pub off_peak_minutes_to_wait_on_disconnect: Option<i32>,
     #[doc = "Action to be taken after a logoff during the off-peak period."]
-    #[serde(rename = "offPeakActionOnLogoff", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "offPeakActionOnLogoff",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub off_peak_action_on_logoff: Option<scaling_plan_personal_schedule_properties::OffPeakActionOnLogoff>,
     #[doc = "The time in minutes to wait before performing the desired session handling action when a user logs off during the off-peak period."]
     #[serde(rename = "offPeakMinutesToWaitOnLogoff", default, skip_serializing_if = "Option::is_none")]
@@ -3180,7 +3340,7 @@ pub struct ScalingPlanPooledScheduleList {
 impl azure_core::Continuable for ScalingPlanPooledScheduleList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScalingPlanPooledScheduleList {
@@ -3217,7 +3377,12 @@ pub struct ScalingPlanPooledScheduleProperties {
     #[serde(rename = "rampUpStartTime", default, skip_serializing_if = "Option::is_none")]
     pub ramp_up_start_time: Option<Time>,
     #[doc = "Load balancing algorithm for ramp up period."]
-    #[serde(rename = "rampUpLoadBalancingAlgorithm", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rampUpLoadBalancingAlgorithm",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ramp_up_load_balancing_algorithm: Option<scaling_plan_pooled_schedule_properties::RampUpLoadBalancingAlgorithm>,
     #[doc = "Minimum host percentage for ramp up period."]
     #[serde(rename = "rampUpMinimumHostsPct", default, skip_serializing_if = "Option::is_none")]
@@ -3229,13 +3394,23 @@ pub struct ScalingPlanPooledScheduleProperties {
     #[serde(rename = "peakStartTime", default, skip_serializing_if = "Option::is_none")]
     pub peak_start_time: Option<Time>,
     #[doc = "Load balancing algorithm for peak period."]
-    #[serde(rename = "peakLoadBalancingAlgorithm", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "peakLoadBalancingAlgorithm",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub peak_load_balancing_algorithm: Option<scaling_plan_pooled_schedule_properties::PeakLoadBalancingAlgorithm>,
     #[doc = "The time for a scaling action to occur."]
     #[serde(rename = "rampDownStartTime", default, skip_serializing_if = "Option::is_none")]
     pub ramp_down_start_time: Option<Time>,
     #[doc = "Load balancing algorithm for ramp down period."]
-    #[serde(rename = "rampDownLoadBalancingAlgorithm", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rampDownLoadBalancingAlgorithm",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ramp_down_load_balancing_algorithm: Option<scaling_plan_pooled_schedule_properties::RampDownLoadBalancingAlgorithm>,
     #[doc = "Minimum host percentage for ramp down period."]
     #[serde(rename = "rampDownMinimumHostsPct", default, skip_serializing_if = "Option::is_none")]
@@ -3247,7 +3422,12 @@ pub struct ScalingPlanPooledScheduleProperties {
     #[serde(rename = "rampDownForceLogoffUsers", default, skip_serializing_if = "Option::is_none")]
     pub ramp_down_force_logoff_users: Option<bool>,
     #[doc = "Specifies when to stop hosts during ramp down period."]
-    #[serde(rename = "rampDownStopHostsWhen", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rampDownStopHostsWhen",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ramp_down_stop_hosts_when: Option<scaling_plan_pooled_schedule_properties::RampDownStopHostsWhen>,
     #[doc = "Number of minutes to wait to stop hosts during ramp down period."]
     #[serde(rename = "rampDownWaitTimeMinutes", default, skip_serializing_if = "Option::is_none")]
@@ -3259,7 +3439,12 @@ pub struct ScalingPlanPooledScheduleProperties {
     #[serde(rename = "offPeakStartTime", default, skip_serializing_if = "Option::is_none")]
     pub off_peak_start_time: Option<Time>,
     #[doc = "Load balancing algorithm for off-peak period."]
-    #[serde(rename = "offPeakLoadBalancingAlgorithm", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "offPeakLoadBalancingAlgorithm",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub off_peak_load_balancing_algorithm: Option<scaling_plan_pooled_schedule_properties::OffPeakLoadBalancingAlgorithm>,
 }
 impl ScalingPlanPooledScheduleProperties {
@@ -3471,7 +3656,12 @@ pub struct ScalingPlanProperties {
     #[serde(rename = "timeZone")]
     pub time_zone: String,
     #[doc = "HostPool type for desktop."]
-    #[serde(rename = "hostPoolType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hostPoolType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub host_pool_type: Option<scaling_plan_properties::HostPoolType>,
     #[doc = "Exclusion tag for scaling plan."]
     #[serde(rename = "exclusionTag", default, skip_serializing_if = "Option::is_none")]
@@ -3567,7 +3757,12 @@ pub struct ScalingSchedule {
     #[serde(rename = "rampUpStartTime", default, skip_serializing_if = "Option::is_none")]
     pub ramp_up_start_time: Option<Time>,
     #[doc = "Load balancing algorithm for ramp up period."]
-    #[serde(rename = "rampUpLoadBalancingAlgorithm", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rampUpLoadBalancingAlgorithm",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ramp_up_load_balancing_algorithm: Option<scaling_schedule::RampUpLoadBalancingAlgorithm>,
     #[doc = "Minimum host percentage for ramp up period."]
     #[serde(rename = "rampUpMinimumHostsPct", default, skip_serializing_if = "Option::is_none")]
@@ -3579,13 +3774,23 @@ pub struct ScalingSchedule {
     #[serde(rename = "peakStartTime", default, skip_serializing_if = "Option::is_none")]
     pub peak_start_time: Option<Time>,
     #[doc = "Load balancing algorithm for peak period."]
-    #[serde(rename = "peakLoadBalancingAlgorithm", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "peakLoadBalancingAlgorithm",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub peak_load_balancing_algorithm: Option<scaling_schedule::PeakLoadBalancingAlgorithm>,
     #[doc = "The time for a scaling action to occur."]
     #[serde(rename = "rampDownStartTime", default, skip_serializing_if = "Option::is_none")]
     pub ramp_down_start_time: Option<Time>,
     #[doc = "Load balancing algorithm for ramp down period."]
-    #[serde(rename = "rampDownLoadBalancingAlgorithm", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rampDownLoadBalancingAlgorithm",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ramp_down_load_balancing_algorithm: Option<scaling_schedule::RampDownLoadBalancingAlgorithm>,
     #[doc = "Minimum host percentage for ramp down period."]
     #[serde(rename = "rampDownMinimumHostsPct", default, skip_serializing_if = "Option::is_none")]
@@ -3597,7 +3802,12 @@ pub struct ScalingSchedule {
     #[serde(rename = "rampDownForceLogoffUsers", default, skip_serializing_if = "Option::is_none")]
     pub ramp_down_force_logoff_users: Option<bool>,
     #[doc = "Specifies when to stop hosts during ramp down period."]
-    #[serde(rename = "rampDownStopHostsWhen", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rampDownStopHostsWhen",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ramp_down_stop_hosts_when: Option<scaling_schedule::RampDownStopHostsWhen>,
     #[doc = "Number of minutes to wait to stop hosts during ramp down period."]
     #[serde(rename = "rampDownWaitTimeMinutes", default, skip_serializing_if = "Option::is_none")]
@@ -3609,7 +3819,12 @@ pub struct ScalingSchedule {
     #[serde(rename = "offPeakStartTime", default, skip_serializing_if = "Option::is_none")]
     pub off_peak_start_time: Option<Time>,
     #[doc = "Load balancing algorithm for off-peak period."]
-    #[serde(rename = "offPeakLoadBalancingAlgorithm", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "offPeakLoadBalancingAlgorithm",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub off_peak_load_balancing_algorithm: Option<scaling_schedule::OffPeakLoadBalancingAlgorithm>,
 }
 impl ScalingSchedule {
@@ -3876,10 +4091,20 @@ impl SessionHostHealthCheckFailureDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SessionHostHealthCheckReport {
     #[doc = "Represents the name of the health check operation performed."]
-    #[serde(rename = "healthCheckName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "healthCheckName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub health_check_name: Option<session_host_health_check_report::HealthCheckName>,
     #[doc = "Represents the Health state of the health check we performed."]
-    #[serde(rename = "healthCheckResult", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "healthCheckResult",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub health_check_result: Option<session_host_health_check_report::HealthCheckResult>,
     #[doc = "Contains details on the failure."]
     #[serde(rename = "additionalFailureDetails", default, skip_serializing_if = "Option::is_none")]
@@ -4008,7 +4233,7 @@ pub struct SessionHostList {
 impl azure_core::Continuable for SessionHostList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SessionHostList {
@@ -4079,7 +4304,7 @@ pub struct SessionHostProperties {
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
     #[doc = "Status for a SessionHost."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<session_host_properties::Status>,
     #[doc = "The timestamp of the status."]
     #[serde(rename = "statusTimestamp", default, with = "azure_core::date::rfc3339::option")]
@@ -4091,7 +4316,12 @@ pub struct SessionHostProperties {
     #[serde(rename = "sxSStackVersion", default, skip_serializing_if = "Option::is_none")]
     pub sx_s_stack_version: Option<String>,
     #[doc = "Update state of a SessionHost."]
-    #[serde(rename = "updateState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "updateState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub update_state: Option<session_host_properties::UpdateState>,
     #[doc = "The timestamp of the last update."]
     #[serde(rename = "lastUpdateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -4223,7 +4453,7 @@ pub struct Sku {
     #[doc = "The name of the SKU. Ex - P3. It is typically a letter+number code"]
     pub name: String,
     #[doc = "This field is required to be implemented by the Resource Provider if the service has more than one tier, but is not required on a PUT."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub tier: Option<sku::Tier>,
     #[doc = "The SKU size. When the name field is the combination of tier and some other value, this would be the standalone code. "]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4288,7 +4518,7 @@ pub struct StartMenuItemList {
 impl azure_core::Continuable for StartMenuItemList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StartMenuItemList {
@@ -4367,7 +4597,7 @@ pub struct UserSessionList {
 impl azure_core::Continuable for UserSessionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UserSessionList {
@@ -4385,10 +4615,20 @@ pub struct UserSessionProperties {
     #[serde(rename = "userPrincipalName", default, skip_serializing_if = "Option::is_none")]
     pub user_principal_name: Option<String>,
     #[doc = "Application type of application."]
-    #[serde(rename = "applicationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "applicationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub application_type: Option<user_session_properties::ApplicationType>,
     #[doc = "State of user session."]
-    #[serde(rename = "sessionState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sessionState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub session_state: Option<user_session_properties::SessionState>,
     #[doc = "The active directory user name."]
     #[serde(rename = "activeDirectoryUserName", default, skip_serializing_if = "Option::is_none")]
@@ -4521,7 +4761,7 @@ pub struct WorkspaceList {
 impl azure_core::Continuable for WorkspaceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceList {
@@ -4562,7 +4802,12 @@ pub struct WorkspacePatchProperties {
     )]
     pub application_group_references: Vec<String>,
     #[doc = "Enabled to allow this resource to be access from the public network"]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<workspace_patch_properties::PublicNetworkAccess>,
 }
 impl WorkspacePatchProperties {
@@ -4634,7 +4879,12 @@ pub struct WorkspaceProperties {
     #[serde(rename = "cloudPcResource", default, skip_serializing_if = "Option::is_none")]
     pub cloud_pc_resource: Option<bool>,
     #[doc = "Enabled allows this resource to be accessed from both public and private networks, Disabled allows this resource to only be accessed via private endpoints"]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<workspace_properties::PublicNetworkAccess>,
     #[doc = "List of private endpoint connection associated with the specified resource"]
     #[serde(
@@ -4697,7 +4947,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -4706,7 +4961,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

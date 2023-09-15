@@ -14,10 +14,10 @@ pub struct BatchQueryRequest {
     #[doc = "The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)"]
     pub body: QueryBody,
     #[doc = "The query path of a single request in a batch, defaults to /query"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub path: Option<batch_query_request::Path>,
     #[doc = "The method of a single request in a batch, defaults to POST"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub method: Option<batch_query_request::Method>,
     #[doc = "Primary Workspace ID of the query. This is the Workspace ID from the Properties blade in the Azure portal."]
     pub workspace: String,
@@ -125,7 +125,12 @@ pub struct Column {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The data type of this column."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<LogsColumnType>,
 }
 impl Column {

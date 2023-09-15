@@ -23,7 +23,7 @@ pub struct AssociatedResourcesListResult {
 impl azure_core::Continuable for AssociatedResourcesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AssociatedResourcesListResult {
@@ -151,7 +151,7 @@ pub struct FederatedIdentityCredentialsListResult {
 impl azure_core::Continuable for FederatedIdentityCredentialsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FederatedIdentityCredentialsListResult {
@@ -249,7 +249,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -368,7 +368,7 @@ pub struct UserAssignedIdentitiesListResult {
 impl azure_core::Continuable for UserAssignedIdentitiesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UserAssignedIdentitiesListResult {

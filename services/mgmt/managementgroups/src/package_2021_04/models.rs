@@ -34,7 +34,12 @@ pub struct CheckNameAvailabilityRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "fully qualified resource type which includes provider namespace"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<check_name_availability_request::Type>,
 }
 impl CheckNameAvailabilityRequest {
@@ -58,7 +63,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "Required if nameAvailable == false. Invalid indicates the name provided does not match the resource provider's naming requirements (incorrect length, unsupported characters, etc.) AlreadyExists indicates that the name is already in use and is therefore unavailable."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<check_name_availability_result::Reason>,
     #[doc = "Required if nameAvailable == false. Localized. If reason == invalid, provide the user with the reason why the given name is invalid, and provide the resource naming requirements so that the user can select a valid name. If reason == AlreadyExists, explain that is already in use, and direct them to select a different name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -82,7 +87,12 @@ pub mod check_name_availability_result {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreateManagementGroupChildInfo {
     #[doc = "The type of child resource."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<ManagementGroupChildType>,
     #[doc = "The fully qualified ID for the child resource (management group or subscription).  For example, /providers/Microsoft.Management/managementGroups/0000000-0000-0000-0000-000000000000"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -271,7 +281,7 @@ pub struct DescendantListResult {
 impl azure_core::Continuable for DescendantListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DescendantListResult {
@@ -319,7 +329,7 @@ pub struct EntityHierarchyItemProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The users specific permissions to this item."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub permissions: Option<Permissions>,
     #[doc = "The list of children."]
     #[serde(
@@ -368,10 +378,15 @@ pub struct EntityInfoProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<EntityParentGroupInfo>,
     #[doc = "The users specific permissions to this item."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub permissions: Option<Permissions>,
     #[doc = "The users specific permissions to this item."]
-    #[serde(rename = "inheritedPermissions", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "inheritedPermissions",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub inherited_permissions: Option<Permissions>,
     #[serde(rename = "numberOfDescendants", default, skip_serializing_if = "Option::is_none")]
     pub number_of_descendants: Option<i64>,
@@ -423,7 +438,7 @@ pub struct EntityListResult {
 impl azure_core::Continuable for EntityListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EntityListResult {
@@ -575,7 +590,7 @@ pub struct ListSubscriptionUnderManagementGroup {
 impl azure_core::Continuable for ListSubscriptionUnderManagementGroup {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListSubscriptionUnderManagementGroup {
@@ -608,7 +623,12 @@ impl ManagementGroup {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementGroupChildInfo {
     #[doc = "The type of child resource."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<ManagementGroupChildType>,
     #[doc = "The fully qualified ID for the child resource (management group or subscription).  For example, /providers/Microsoft.Management/managementGroups/0000000-0000-0000-0000-000000000000"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -737,7 +757,7 @@ pub struct ManagementGroupListResult {
 impl azure_core::Continuable for ManagementGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagementGroupListResult {
@@ -838,7 +858,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -961,7 +981,7 @@ pub struct TenantBackfillStatusResult {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The status of the Tenant Backfill"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<tenant_backfill_status_result::Status>,
 }
 impl TenantBackfillStatusResult {

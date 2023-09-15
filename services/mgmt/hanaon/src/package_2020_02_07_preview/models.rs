@@ -131,7 +131,7 @@ pub struct ProviderInstanceListResult {
 impl azure_core::Continuable for ProviderInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderInstanceListResult {
@@ -152,7 +152,12 @@ pub struct ProviderInstanceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<String>,
     #[doc = "State of provisioning of the provider instance"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<provider_instance_properties::ProvisioningState>,
 }
 impl ProviderInstanceProperties {
@@ -273,7 +278,7 @@ pub struct SapMonitorListResult {
 impl azure_core::Continuable for SapMonitorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SapMonitorListResult {
@@ -285,7 +290,12 @@ impl SapMonitorListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapMonitorProperties {
     #[doc = "State of provisioning of the HanaInstance"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<sap_monitor_properties::ProvisioningState>,
     #[doc = "The name of the resource group the SAP Monitor resources get deployed into."]
     #[serde(rename = "managedResourceGroupName", default, skip_serializing_if = "Option::is_none")]

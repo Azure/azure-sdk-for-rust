@@ -377,7 +377,12 @@ pub struct ArtifactSourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
     #[doc = "The artifact source's type."]
-    #[serde(rename = "sourceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sourceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub source_type: Option<artifact_source_properties::SourceType>,
     #[doc = "The folder containing artifacts."]
     #[serde(rename = "folderPath", default, skip_serializing_if = "Option::is_none")]
@@ -392,7 +397,7 @@ pub struct ArtifactSourceProperties {
     #[serde(rename = "securityToken", default, skip_serializing_if = "Option::is_none")]
     pub security_token: Option<String>,
     #[doc = "Indicates if the artifact source is enabled (values: Enabled, Disabled)."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<artifact_source_properties::Status>,
     #[doc = "The artifact source's creation date."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
@@ -496,7 +501,12 @@ pub struct ArtifactSourcePropertiesFragment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
     #[doc = "The artifact source's type."]
-    #[serde(rename = "sourceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sourceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub source_type: Option<artifact_source_properties_fragment::SourceType>,
     #[doc = "The folder containing artifacts."]
     #[serde(rename = "folderPath", default, skip_serializing_if = "Option::is_none")]
@@ -511,7 +521,7 @@ pub struct ArtifactSourcePropertiesFragment {
     #[serde(rename = "securityToken", default, skip_serializing_if = "Option::is_none")]
     pub security_token: Option<String>,
     #[doc = "Indicates if the artifact source is enabled (values: Enabled, Disabled)."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<artifact_source_properties_fragment::Status>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -624,7 +634,12 @@ pub struct AttachNewDataDiskOptions {
     #[serde(rename = "diskName", default, skip_serializing_if = "Option::is_none")]
     pub disk_name: Option<String>,
     #[doc = "The storage type for the disk (i.e. Standard, Premium)."]
-    #[serde(rename = "diskType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "diskType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub disk_type: Option<attach_new_data_disk_options::DiskType>,
 }
 impl AttachNewDataDiskOptions {
@@ -900,10 +915,20 @@ pub struct CostThresholdProperties {
     #[serde(rename = "percentageThreshold", default, skip_serializing_if = "Option::is_none")]
     pub percentage_threshold: Option<PercentageCostThresholdProperties>,
     #[doc = "Indicates whether this threshold will be displayed on cost charts."]
-    #[serde(rename = "displayOnChart", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "displayOnChart",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub display_on_chart: Option<cost_threshold_properties::DisplayOnChart>,
     #[doc = "Indicates whether notifications will be sent when this threshold is exceeded."]
-    #[serde(rename = "sendNotificationWhenExceeded", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sendNotificationWhenExceeded",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub send_notification_when_exceeded: Option<cost_threshold_properties::SendNotificationWhenExceeded>,
     #[doc = "Indicates the datetime when notifications were last sent for this threshold."]
     #[serde(rename = "notificationSent", default, skip_serializing_if = "Option::is_none")]
@@ -1050,7 +1075,7 @@ pub struct CustomImagePropertiesCustom {
     #[serde(rename = "sysPrep", default, skip_serializing_if = "Option::is_none")]
     pub sys_prep: Option<bool>,
     #[doc = "The OS type of the custom image (i.e. Windows, Linux)"]
-    #[serde(rename = "osType")]
+    #[serde(rename = "osType", with = "azure_core::xml::text_content")]
     pub os_type: custom_image_properties_custom::OsType,
 }
 impl CustomImagePropertiesCustom {
@@ -1132,7 +1157,12 @@ pub struct DataDiskProperties {
     #[serde(rename = "existingLabDiskId", default, skip_serializing_if = "Option::is_none")]
     pub existing_lab_disk_id: Option<String>,
     #[doc = "Caching option for a data disk (i.e. None, ReadOnly, ReadWrite)."]
-    #[serde(rename = "hostCaching", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hostCaching",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub host_caching: Option<data_disk_properties::HostCaching>,
 }
 impl DataDiskProperties {
@@ -1250,7 +1280,12 @@ impl Disk {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiskProperties {
     #[doc = "The storage type for the disk (i.e. Standard, Premium)."]
-    #[serde(rename = "diskType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "diskType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub disk_type: Option<disk_properties::DiskType>,
     #[doc = "The size of the disk in Gibibytes."]
     #[serde(rename = "diskSizeGiB", default, skip_serializing_if = "Option::is_none")]
@@ -1441,7 +1476,12 @@ impl EvaluatePoliciesResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Event {
     #[doc = "The event type for which this notification is enabled (i.e. AutoShutdown, Cost)"]
-    #[serde(rename = "eventName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "eventName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub event_name: Option<event::EventName>,
 }
 impl Event {
@@ -1493,7 +1533,12 @@ pub mod event {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventFragment {
     #[doc = "The event type for which this notification is enabled (i.e. AutoShutdown, Cost)"]
-    #[serde(rename = "eventName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "eventName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub event_name: Option<event_fragment::EventName>,
 }
 impl EventFragment {
@@ -1755,7 +1800,12 @@ pub struct GenerateArmTemplateRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "Options for uploading the files for the artifact. UploadFilesAndGenerateSasTokens is the default value."]
-    #[serde(rename = "fileUploadOptions", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "fileUploadOptions",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub file_upload_options: Option<generate_arm_template_request::FileUploadOptions>,
 }
 impl GenerateArmTemplateRequest {
@@ -1878,7 +1928,12 @@ impl IdentityProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundNatRule {
     #[doc = "The transport protocol for the endpoint."]
-    #[serde(rename = "transportProtocol", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "transportProtocol",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub transport_protocol: Option<inbound_nat_rule::TransportProtocol>,
     #[doc = "The external endpoint port of the inbound connection. Possible values range between 1 and 65535, inclusive. If unspecified, a value will be allocated automatically."]
     #[serde(rename = "frontendPort", default, skip_serializing_if = "Option::is_none")]
@@ -1936,7 +1991,12 @@ pub mod inbound_nat_rule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InboundNatRuleFragment {
     #[doc = "The transport protocol for the endpoint."]
-    #[serde(rename = "transportProtocol", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "transportProtocol",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub transport_protocol: Option<inbound_nat_rule_fragment::TransportProtocol>,
     #[doc = "The external endpoint port of the inbound connection. Possible values range between 1 and 65535, inclusive. If unspecified, a value will be allocated automatically."]
     #[serde(rename = "frontendPort", default, skip_serializing_if = "Option::is_none")]
@@ -2030,7 +2090,12 @@ pub struct LabCostDetailsProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cost: Option<f64>,
     #[doc = "The type of the cost."]
-    #[serde(rename = "costType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "costType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cost_type: Option<lab_cost_details_properties::CostType>,
 }
 impl LabCostDetailsProperties {
@@ -2174,13 +2239,23 @@ pub struct LabProperties {
     #[serde(rename = "vaultName", default, skip_serializing_if = "Option::is_none")]
     pub vault_name: Option<String>,
     #[doc = "Type of storage used by the lab. It can be either Premium or Standard. Default is Premium."]
-    #[serde(rename = "labStorageType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "labStorageType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lab_storage_type: Option<lab_properties::LabStorageType>,
     #[doc = "The creation date of the lab."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
     pub created_date: Option<time::OffsetDateTime>,
     #[doc = "The setting to enable usage of premium data disks.\r\nWhen its value is 'Enabled', creation of standard or premium data disks is allowed.\r\nWhen its value is 'Disabled', only creation of standard data disks is allowed."]
-    #[serde(rename = "premiumDataDisks", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "premiumDataDisks",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub premium_data_disks: Option<lab_properties::PremiumDataDisks>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -2275,10 +2350,20 @@ pub mod lab_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LabPropertiesFragment {
     #[doc = "Type of storage used by the lab. It can be either Premium or Standard. Default is Premium."]
-    #[serde(rename = "labStorageType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "labStorageType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lab_storage_type: Option<lab_properties_fragment::LabStorageType>,
     #[doc = "The setting to enable usage of premium data disks.\r\nWhen its value is 'Enabled', creation of standard or premium data disks is allowed.\r\nWhen its value is 'Disabled', only creation of standard data disks is allowed."]
-    #[serde(rename = "premiumDataDisks", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "premiumDataDisks",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub premium_data_disks: Option<lab_properties_fragment::PremiumDataDisks>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -2543,7 +2628,12 @@ pub struct LabVirtualMachineCreationParameterProperties {
     #[serde(rename = "storageType", default, skip_serializing_if = "Option::is_none")]
     pub storage_type: Option<String>,
     #[doc = "Tells source of creation of lab virtual machine. Output property only."]
-    #[serde(rename = "virtualMachineCreationSource", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "virtualMachineCreationSource",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub virtual_machine_creation_source: Option<lab_virtual_machine_creation_parameter_properties::VirtualMachineCreationSource>,
     #[doc = "The resource ID of the environment that contains this virtual machine, if any."]
     #[serde(rename = "environmentId", default, skip_serializing_if = "Option::is_none")]
@@ -2703,7 +2793,12 @@ pub struct LabVirtualMachineProperties {
     #[serde(rename = "storageType", default, skip_serializing_if = "Option::is_none")]
     pub storage_type: Option<String>,
     #[doc = "Tells source of creation of lab virtual machine. Output property only."]
-    #[serde(rename = "virtualMachineCreationSource", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "virtualMachineCreationSource",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub virtual_machine_creation_source: Option<lab_virtual_machine_properties::VirtualMachineCreationSource>,
     #[doc = "The resource ID of the environment that contains this virtual machine, if any."]
     #[serde(rename = "environmentId", default, skip_serializing_if = "Option::is_none")]
@@ -2846,7 +2941,12 @@ pub struct LabVirtualMachinePropertiesFragment {
     #[serde(rename = "storageType", default, skip_serializing_if = "Option::is_none")]
     pub storage_type: Option<String>,
     #[doc = "Tells source of creation of lab virtual machine. Output property only."]
-    #[serde(rename = "virtualMachineCreationSource", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "virtualMachineCreationSource",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub virtual_machine_creation_source: Option<lab_virtual_machine_properties_fragment::VirtualMachineCreationSource>,
     #[doc = "The resource ID of the environment that contains this virtual machine, if any."]
     #[serde(rename = "environmentId", default, skip_serializing_if = "Option::is_none")]
@@ -2907,7 +3007,12 @@ pub mod lab_virtual_machine_properties_fragment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinuxOsInfo {
     #[doc = "The state of the Linux OS (i.e. NonDeprovisioned, DeprovisionRequested, DeprovisionApplied)."]
-    #[serde(rename = "linuxOsState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "linuxOsState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub linux_os_state: Option<linux_os_info::LinuxOsState>,
 }
 impl LinuxOsInfo {
@@ -3122,7 +3227,7 @@ impl NotificationChannelPropertiesFragment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationSettings {
     #[doc = "If notifications are enabled for this schedule (i.e. Enabled, Disabled)."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<notification_settings::Status>,
     #[doc = "Time in minutes before event at which notification will be sent."]
     #[serde(rename = "timeInMinutes", default, skip_serializing_if = "Option::is_none")]
@@ -3180,7 +3285,7 @@ pub mod notification_settings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationSettingsFragment {
     #[doc = "If notifications are enabled for this schedule (i.e. Enabled, Disabled)."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<notification_settings_fragment::Status>,
     #[doc = "Time in minutes before event at which notification will be sent."]
     #[serde(rename = "timeInMinutes", default, skip_serializing_if = "Option::is_none")]
@@ -3238,7 +3343,12 @@ pub mod notification_settings_fragment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotifyParameters {
     #[doc = "The type of event (i.e. AutoShutdown, Cost)"]
-    #[serde(rename = "eventName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "eventName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub event_name: Option<notify_parameters::EventName>,
     #[doc = "Properties for the notification in json format."]
     #[serde(rename = "jsonPayload", default, skip_serializing_if = "Option::is_none")]
@@ -3347,7 +3457,12 @@ pub struct OperationResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[doc = "The status code for the operation."]
-    #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "statusCode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub status_code: Option<operation_result::StatusCode>,
     #[doc = "Error details for the operation in case of a failure."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3560,10 +3675,15 @@ pub struct PolicyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The status of the policy."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<policy_properties::Status>,
     #[doc = "The fact name of the policy (e.g. LabVmCount, LabVmSize, MaxVmsAllowedPerLab, etc."]
-    #[serde(rename = "factName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "factName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub fact_name: Option<policy_properties::FactName>,
     #[doc = "The fact data of the policy."]
     #[serde(rename = "factData", default, skip_serializing_if = "Option::is_none")]
@@ -3572,7 +3692,12 @@ pub struct PolicyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub threshold: Option<String>,
     #[doc = "The evaluator type of the policy (i.e. AllowedValuesPolicy, MaxValuePolicy)."]
-    #[serde(rename = "evaluatorType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "evaluatorType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub evaluator_type: Option<policy_properties::EvaluatorType>,
     #[doc = "The creation date of the policy."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
@@ -3722,10 +3847,15 @@ pub struct PolicyPropertiesFragment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The status of the policy."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<policy_properties_fragment::Status>,
     #[doc = "The fact name of the policy (e.g. LabVmCount, LabVmSize, MaxVmsAllowedPerLab, etc."]
-    #[serde(rename = "factName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "factName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub fact_name: Option<policy_properties_fragment::FactName>,
     #[doc = "The fact data of the policy."]
     #[serde(rename = "factData", default, skip_serializing_if = "Option::is_none")]
@@ -3734,7 +3864,12 @@ pub struct PolicyPropertiesFragment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub threshold: Option<String>,
     #[doc = "The evaluator type of the policy (i.e. AllowedValuesPolicy, MaxValuePolicy)."]
-    #[serde(rename = "evaluatorType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "evaluatorType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub evaluator_type: Option<policy_properties_fragment::EvaluatorType>,
     #[doc = "The provisioning status of the resource."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -3913,7 +4048,12 @@ impl PolicyViolation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Port {
     #[doc = "Protocol type of the port."]
-    #[serde(rename = "transportProtocol", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "transportProtocol",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub transport_protocol: Option<port::TransportProtocol>,
     #[doc = "Backend port of the target virtual machine."]
     #[serde(rename = "backendPort", default, skip_serializing_if = "Option::is_none")]
@@ -3968,7 +4108,12 @@ pub mod port {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortFragment {
     #[doc = "Protocol type of the port."]
-    #[serde(rename = "transportProtocol", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "transportProtocol",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub transport_protocol: Option<port_fragment::TransportProtocol>,
     #[doc = "Backend port of the target virtual machine."]
     #[serde(rename = "backendPort", default, skip_serializing_if = "Option::is_none")]
@@ -4036,7 +4181,7 @@ pub struct ProviderOperationResult {
 impl azure_core::Continuable for ProviderOperationResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderOperationResult {
@@ -4085,7 +4230,7 @@ pub struct ResponseWithContinuationArmTemplate {
 impl azure_core::Continuable for ResponseWithContinuationArmTemplate {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationArmTemplate {
@@ -4110,7 +4255,7 @@ pub struct ResponseWithContinuationArtifactSource {
 impl azure_core::Continuable for ResponseWithContinuationArtifactSource {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationArtifactSource {
@@ -4135,7 +4280,7 @@ pub struct ResponseWithContinuationArtifact {
 impl azure_core::Continuable for ResponseWithContinuationArtifact {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationArtifact {
@@ -4160,7 +4305,7 @@ pub struct ResponseWithContinuationCustomImage {
 impl azure_core::Continuable for ResponseWithContinuationCustomImage {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationCustomImage {
@@ -4185,7 +4330,7 @@ pub struct ResponseWithContinuationDisk {
 impl azure_core::Continuable for ResponseWithContinuationDisk {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationDisk {
@@ -4210,7 +4355,7 @@ pub struct ResponseWithContinuationDtlEnvironment {
 impl azure_core::Continuable for ResponseWithContinuationDtlEnvironment {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationDtlEnvironment {
@@ -4235,7 +4380,7 @@ pub struct ResponseWithContinuationFormula {
 impl azure_core::Continuable for ResponseWithContinuationFormula {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationFormula {
@@ -4260,7 +4405,7 @@ pub struct ResponseWithContinuationGalleryImage {
 impl azure_core::Continuable for ResponseWithContinuationGalleryImage {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationGalleryImage {
@@ -4285,7 +4430,7 @@ pub struct ResponseWithContinuationLabVhd {
 impl azure_core::Continuable for ResponseWithContinuationLabVhd {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationLabVhd {
@@ -4310,7 +4455,7 @@ pub struct ResponseWithContinuationLabVirtualMachine {
 impl azure_core::Continuable for ResponseWithContinuationLabVirtualMachine {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationLabVirtualMachine {
@@ -4335,7 +4480,7 @@ pub struct ResponseWithContinuationLab {
 impl azure_core::Continuable for ResponseWithContinuationLab {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationLab {
@@ -4360,7 +4505,7 @@ pub struct ResponseWithContinuationNotificationChannel {
 impl azure_core::Continuable for ResponseWithContinuationNotificationChannel {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationNotificationChannel {
@@ -4385,7 +4530,7 @@ pub struct ResponseWithContinuationPolicy {
 impl azure_core::Continuable for ResponseWithContinuationPolicy {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationPolicy {
@@ -4410,7 +4555,7 @@ pub struct ResponseWithContinuationSchedule {
 impl azure_core::Continuable for ResponseWithContinuationSchedule {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationSchedule {
@@ -4435,7 +4580,7 @@ pub struct ResponseWithContinuationSecret {
 impl azure_core::Continuable for ResponseWithContinuationSecret {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationSecret {
@@ -4460,7 +4605,7 @@ pub struct ResponseWithContinuationServiceRunner {
 impl azure_core::Continuable for ResponseWithContinuationServiceRunner {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationServiceRunner {
@@ -4485,7 +4630,7 @@ pub struct ResponseWithContinuationUser {
 impl azure_core::Continuable for ResponseWithContinuationUser {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationUser {
@@ -4510,7 +4655,7 @@ pub struct ResponseWithContinuationVirtualNetwork {
 impl azure_core::Continuable for ResponseWithContinuationVirtualNetwork {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationVirtualNetwork {
@@ -4567,7 +4712,7 @@ impl ScheduleFragment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduleProperties {
     #[doc = "The status of the schedule (i.e. Enabled, Disabled)"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<schedule_properties::Status>,
     #[doc = "The task type of the schedule (e.g. LabVmsShutdownTask, LabVmAutoStart)."]
     #[serde(rename = "taskType", default, skip_serializing_if = "Option::is_none")]
@@ -4649,7 +4794,7 @@ pub mod schedule_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SchedulePropertiesFragment {
     #[doc = "The status of the schedule (i.e. Enabled, Disabled)"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<schedule_properties_fragment::Status>,
     #[doc = "The task type of the schedule (e.g. LabVmsShutdownTask, LabVmAutoStart)."]
     #[serde(rename = "taskType", default, skip_serializing_if = "Option::is_none")]
@@ -4858,7 +5003,12 @@ pub struct Subnet {
     #[serde(rename = "labSubnetName", default, skip_serializing_if = "Option::is_none")]
     pub lab_subnet_name: Option<String>,
     #[doc = "The permission policy of the subnet for allowing public IP addresses (i.e. Allow, Deny))."]
-    #[serde(rename = "allowPublicIp", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allowPublicIp",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub allow_public_ip: Option<subnet::AllowPublicIp>,
 }
 impl Subnet {
@@ -4918,7 +5068,12 @@ pub struct SubnetFragment {
     #[serde(rename = "labSubnetName", default, skip_serializing_if = "Option::is_none")]
     pub lab_subnet_name: Option<String>,
     #[doc = "The permission policy of the subnet for allowing public IP addresses (i.e. Allow, Deny))."]
-    #[serde(rename = "allowPublicIp", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allowPublicIp",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub allow_public_ip: Option<subnet_fragment::AllowPublicIp>,
 }
 impl SubnetFragment {
@@ -4978,10 +5133,20 @@ pub struct SubnetOverride {
     #[serde(rename = "labSubnetName", default, skip_serializing_if = "Option::is_none")]
     pub lab_subnet_name: Option<String>,
     #[doc = "Indicates whether this subnet can be used during virtual machine creation (i.e. Allow, Deny)."]
-    #[serde(rename = "useInVmCreationPermission", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "useInVmCreationPermission",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub use_in_vm_creation_permission: Option<subnet_override::UseInVmCreationPermission>,
     #[doc = "Indicates whether public IP addresses can be assigned to virtual machines on this subnet (i.e. Allow, Deny)."]
-    #[serde(rename = "usePublicIpAddressPermission", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "usePublicIpAddressPermission",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub use_public_ip_address_permission: Option<subnet_override::UsePublicIpAddressPermission>,
     #[doc = "Configuration for public IP address sharing."]
     #[serde(rename = "sharedPublicIpAddressConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -5086,10 +5251,20 @@ pub struct SubnetOverrideFragment {
     #[serde(rename = "labSubnetName", default, skip_serializing_if = "Option::is_none")]
     pub lab_subnet_name: Option<String>,
     #[doc = "Indicates whether this subnet can be used during virtual machine creation (i.e. Allow, Deny)."]
-    #[serde(rename = "useInVmCreationPermission", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "useInVmCreationPermission",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub use_in_vm_creation_permission: Option<subnet_override_fragment::UseInVmCreationPermission>,
     #[doc = "Indicates whether public IP addresses can be assigned to virtual machines on this subnet (i.e. Allow, Deny)."]
-    #[serde(rename = "usePublicIpAddressPermission", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "usePublicIpAddressPermission",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub use_public_ip_address_permission: Option<subnet_override_fragment::UsePublicIpAddressPermission>,
     #[doc = "Configuration for public IP address sharing."]
     #[serde(rename = "sharedPublicIpAddressConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -5222,7 +5397,7 @@ impl SubnetSharedPublicIpAddressConfigurationFragment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TargetCostProperties {
     #[doc = "Target cost status"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<target_cost_properties::Status>,
     #[doc = "Lab target cost"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5242,7 +5417,12 @@ pub struct TargetCostProperties {
     #[serde(rename = "cycleEndDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub cycle_end_date_time: Option<time::OffsetDateTime>,
     #[doc = "Reporting cycle type."]
-    #[serde(rename = "cycleType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "cycleType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cycle_type: Option<target_cost_properties::CycleType>,
 }
 impl TargetCostProperties {
@@ -5641,7 +5821,12 @@ impl WeekDetailsFragment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WindowsOsInfo {
     #[doc = "The state of the Windows OS (i.e. NonSysprepped, SysprepRequested, SysprepApplied)."]
-    #[serde(rename = "windowsOsState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "windowsOsState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub windows_os_state: Option<windows_os_info::WindowsOsState>,
 }
 impl WindowsOsInfo {

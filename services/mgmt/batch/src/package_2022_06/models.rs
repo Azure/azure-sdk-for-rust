@@ -46,7 +46,7 @@ impl ApplicationPackage {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationPackageProperties {
     #[doc = "The current state of the application package."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<application_package_properties::State>,
     #[doc = "The format of the application package, if the package is active."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -176,7 +176,12 @@ pub struct AutoStorageBaseProperties {
     #[serde(rename = "storageAccountId")]
     pub storage_account_id: String,
     #[doc = "The authentication mode which the Batch service will use to manage the auto-storage account."]
-    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authenticationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authentication_mode: Option<auto_storage_base_properties::AuthenticationMode>,
     #[doc = "The reference to a user assigned identity associated with the Batch pool which a compute node will use."]
     #[serde(rename = "nodeIdentityReference", default, skip_serializing_if = "Option::is_none")]
@@ -225,9 +230,14 @@ impl AutoStorageProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoUserSpecification {
     #[doc = "The default value is Pool. If the pool is running Windows a value of Task should be specified if stricter isolation between tasks is required. For example, if the task mutates the registry in a way which could impact other tasks, or if certificates have been specified on the pool which should not be accessible by normal tasks but should be accessible by start tasks."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub scope: Option<auto_user_specification::Scope>,
-    #[serde(rename = "elevationLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "elevationLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub elevation_level: Option<ElevationLevel>,
 }
 impl AutoUserSpecification {
@@ -355,13 +365,23 @@ pub struct BatchAccountCreateProperties {
     #[serde(rename = "autoStorage", default, skip_serializing_if = "Option::is_none")]
     pub auto_storage: Option<AutoStorageBaseProperties>,
     #[doc = "The allocation mode for creating pools in the Batch account."]
-    #[serde(rename = "poolAllocationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "poolAllocationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub pool_allocation_mode: Option<PoolAllocationMode>,
     #[doc = "Identifies the Azure key vault associated with a Batch account."]
     #[serde(rename = "keyVaultReference", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_reference: Option<KeyVaultReference>,
     #[doc = "The network access type for operating on the resources in the Batch account."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<PublicNetworkAccessType>,
     #[doc = "Network profile for Batch account, which contains network rule settings for each endpoint."]
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
@@ -393,7 +413,7 @@ pub struct BatchAccountIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of identity used for the Batch account."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: batch_account_identity::Type,
     #[doc = "The list of user identities associated with the Batch account."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -454,7 +474,7 @@ pub struct BatchAccountListResult {
 impl azure_core::Continuable for BatchAccountListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BatchAccountListResult {
@@ -472,16 +492,31 @@ pub struct BatchAccountProperties {
     #[serde(rename = "nodeManagementEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub node_management_endpoint: Option<String>,
     #[doc = "The provisioned state of the resource"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<batch_account_properties::ProvisioningState>,
     #[doc = "The allocation mode for creating pools in the Batch account."]
-    #[serde(rename = "poolAllocationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "poolAllocationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub pool_allocation_mode: Option<PoolAllocationMode>,
     #[doc = "Identifies the Azure key vault associated with a Batch account."]
     #[serde(rename = "keyVaultReference", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_reference: Option<KeyVaultReference>,
     #[doc = "The network access type for operating on the resources in the Batch account."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<PublicNetworkAccessType>,
     #[doc = "Network profile for Batch account, which contains network rule settings for each endpoint."]
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
@@ -552,7 +587,7 @@ pub mod batch_account_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BatchAccountRegenerateKeyParameters {
     #[doc = "The type of account key to regenerate."]
-    #[serde(rename = "keyName")]
+    #[serde(rename = "keyName", with = "azure_core::xml::text_content")]
     pub key_name: batch_account_regenerate_key_parameters::KeyName,
 }
 impl BatchAccountRegenerateKeyParameters {
@@ -605,7 +640,12 @@ pub struct BatchAccountUpdateProperties {
     )]
     pub allowed_authentication_modes: Vec<AuthenticationMode>,
     #[doc = "The network access type for operating on the resources in the Batch account."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<PublicNetworkAccessType>,
     #[doc = "Network profile for Batch account, which contains network rule settings for each endpoint."]
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
@@ -632,7 +672,7 @@ impl BatchLocationQuota {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BatchPoolIdentity {
     #[doc = "The type of identity used for the Batch Pool."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: batch_pool_identity::Type,
     #[doc = "The list of user identities associated with the Batch pool."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -708,7 +748,7 @@ pub struct CertificateBaseProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
     #[doc = "The format of the certificate - either Pfx or Cer. If omitted, the default is Pfx."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub format: Option<certificate_base_properties::Format>,
 }
 impl CertificateBaseProperties {
@@ -764,12 +804,22 @@ impl CertificateCreateOrUpdateProperties {
 pub struct CertificateProperties {
     #[serde(flatten)]
     pub certificate_base_properties: CertificateBaseProperties,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<certificate_properties::ProvisioningState>,
     #[serde(rename = "provisioningStateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
     pub provisioning_state_transition_time: Option<time::OffsetDateTime>,
     #[doc = "The previous provisioned state of the resource"]
-    #[serde(rename = "previousProvisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "previousProvisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub previous_provisioning_state: Option<certificate_properties::PreviousProvisioningState>,
     #[serde(
         rename = "previousProvisioningStateTransitionTime",
@@ -809,7 +859,12 @@ pub mod certificate_properties {
 pub struct CertificateReference {
     pub id: String,
     #[doc = "The default value is currentUser. This property is applicable only for pools configured with Windows nodes (that is, created with cloudServiceConfiguration, or with virtualMachineConfiguration using a Windows image reference). For Linux compute nodes, the certificates are stored in a directory inside the task working directory and an environment variable AZ_BATCH_CERTIFICATES_DIR is supplied to the task to query for this location. For certificates with visibility of 'remoteUser', a 'certs' directory is created in the user's home directory (e.g., /home/{user-name}/certs) and certificates are placed in that directory."]
-    #[serde(rename = "storeLocation", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storeLocation",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub store_location: Option<certificate_reference::StoreLocation>,
     #[doc = "This property is applicable only for pools configured with Windows nodes (that is, created with cloudServiceConfiguration, or with virtualMachineConfiguration using a Windows image reference). Common store names include: My, Root, CA, Trust, Disallowed, TrustedPeople, TrustedPublisher, AuthRoot, AddressBook, but any custom store name can also be used. The default value is My."]
     #[serde(rename = "storeName", default, skip_serializing_if = "Option::is_none")]
@@ -846,7 +901,7 @@ pub struct CheckNameAvailabilityParameters {
     #[doc = "The name to check for availability"]
     pub name: String,
     #[doc = "The resource type."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: check_name_availability_parameters::Type,
 }
 impl CheckNameAvailabilityParameters {
@@ -870,7 +925,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "Gets the reason that a Batch account name could not be used. The Reason element is only returned if NameAvailable is false."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<check_name_availability_result::Reason>,
     #[doc = "Gets an error message explaining the Reason value in more detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -971,7 +1026,7 @@ impl ComputeNodeIdentityReference {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerConfiguration {
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: container_configuration::Type,
     #[doc = "This is the full image reference, as would be specified to \"docker pull\". An image will be sourced from the default Docker registry unless the image is fully qualified with an alternative registry."]
     #[serde(
@@ -1029,11 +1084,16 @@ impl ContainerRegistry {
 pub struct DataDisk {
     #[doc = "The lun is used to uniquely identify each data disk. If attaching multiple disks, each should have a distinct lun. The value must be between 0 and 63, inclusive."]
     pub lun: i32,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub caching: Option<CachingType>,
     #[serde(rename = "diskSizeGB")]
     pub disk_size_gb: i32,
-    #[serde(rename = "storageAccountType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storageAccountType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub storage_account_type: Option<StorageAccountType>,
 }
 impl DataDisk {
@@ -1103,7 +1163,7 @@ pub struct DetectorListResult {
 impl azure_core::Continuable for DetectorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DetectorListResult {
@@ -1145,7 +1205,7 @@ pub enum DiffDiskPlacement {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiffDiskSettings {
     #[doc = "This property can be used by user in the request to choose which location the operating system should be in. e.g., cache disk space for Ephemeral OS disk provisioning. For more information on Ephemeral OS disk size requirements, please refer to Ephemeral OS disk size requirements for Windows VMs at https://docs.microsoft.com/en-us/azure/virtual-machines/windows/ephemeral-os-disks#size-requirements and Linux VMs at https://docs.microsoft.com/en-us/azure/virtual-machines/linux/ephemeral-os-disks#size-requirements"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub placement: Option<DiffDiskPlacement>,
 }
 impl DiffDiskSettings {
@@ -1178,7 +1238,12 @@ pub enum ElevationLevel {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionProperties {
     #[doc = "Type of the key source."]
-    #[serde(rename = "keySource", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "keySource",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub key_source: Option<encryption_properties::KeySource>,
     #[doc = "KeyVault configuration when using an encryption KeySource of Microsoft.KeyVault."]
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
@@ -1204,7 +1269,7 @@ pub mod encryption_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EndpointAccessProfile {
     #[doc = "Default action for endpoint access. It is only applicable when publicNetworkAccess is enabled."]
-    #[serde(rename = "defaultAction")]
+    #[serde(rename = "defaultAction", with = "azure_core::xml::text_content")]
     pub default_action: endpoint_access_profile::DefaultAction,
     #[doc = "Array of IP ranges to filter client IP address."]
     #[serde(
@@ -1289,7 +1354,12 @@ pub struct FixedScaleSettings {
     #[doc = "At least one of targetDedicatedNodes, targetLowPriorityNodes must be set."]
     #[serde(rename = "targetLowPriorityNodes", default, skip_serializing_if = "Option::is_none")]
     pub target_low_priority_nodes: Option<i32>,
-    #[serde(rename = "nodeDeallocationOption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "nodeDeallocationOption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub node_deallocation_option: Option<ComputeNodeDeallocationOption>,
 }
 impl FixedScaleSettings {
@@ -1308,6 +1378,7 @@ pub enum IpAddressProvisioningType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IpRule {
     #[doc = "Action when client IP address is matched."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub action: ip_rule::Action,
     #[doc = "IPv4 address, or IPv4 address range in CIDR format."]
     pub value: String,
@@ -1352,6 +1423,7 @@ impl ImageReference {
 pub struct InboundNatPool {
     #[doc = "The name must be unique within a Batch pool, can contain letters, numbers, underscores, periods, and hyphens. Names must start with a letter or number, must end with a letter, number, or underscore, and cannot exceed 77 characters.  If any invalid values are provided the request fails with HTTP status code 400."]
     pub name: String,
+    #[serde(with = "azure_core::xml::text_content")]
     pub protocol: inbound_nat_pool::Protocol,
     #[doc = "This must be unique within a Batch pool. Acceptable values are between 1 and 65535 except for 22, 3389, 29876 and 29877 as these are reserved. If any reserved values are provided the request fails with HTTP status code 400."]
     #[serde(rename = "backendPort")]
@@ -1458,7 +1530,7 @@ pub struct ListApplicationPackagesResult {
 impl azure_core::Continuable for ListApplicationPackagesResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListApplicationPackagesResult {
@@ -1483,7 +1555,7 @@ pub struct ListApplicationsResult {
 impl azure_core::Continuable for ListApplicationsResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListApplicationsResult {
@@ -1508,7 +1580,7 @@ pub struct ListCertificatesResult {
 impl azure_core::Continuable for ListCertificatesResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListCertificatesResult {
@@ -1533,7 +1605,7 @@ pub struct ListPoolsResult {
 impl azure_core::Continuable for ListPoolsResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListPoolsResult {
@@ -1558,7 +1630,7 @@ pub struct ListPrivateEndpointConnectionsResult {
 impl azure_core::Continuable for ListPrivateEndpointConnectionsResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListPrivateEndpointConnectionsResult {
@@ -1583,7 +1655,7 @@ pub struct ListPrivateLinkResourcesResult {
 impl azure_core::Continuable for ListPrivateLinkResourcesResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListPrivateLinkResourcesResult {
@@ -1643,7 +1715,12 @@ pub struct NetworkConfiguration {
     #[doc = "The virtual network must be in the same region and subscription as the Azure Batch account. The specified subnet should have enough free IP addresses to accommodate the number of nodes in the pool. If the subnet doesn't have enough free IP addresses, the pool will partially allocate compute nodes and a resize error will occur. The 'MicrosoftAzureBatch' service principal must have the 'Classic Virtual Machine Contributor' Role-Based Access Control (RBAC) role for the specified VNet. The specified subnet must allow communication from the Azure Batch service to be able to schedule tasks on the compute nodes. This can be verified by checking if the specified VNet has any associated Network Security Groups (NSG). If communication to the compute nodes in the specified subnet is denied by an NSG, then the Batch service will set the state of the compute nodes to unusable. If the specified VNet has any associated Network Security Groups (NSG), then a few reserved system ports must be enabled for inbound communication. For pools created with a virtual machine configuration, enable ports 29876 and 29877, as well as port 22 for Linux and port 3389 for Windows. For pools created with a cloud service configuration, enable ports 10100, 20100, and 30100. Also enable outbound connections to Azure Storage on port 443. For cloudServiceConfiguration pools, only 'classic' VNETs are supported. For more details see: https://docs.microsoft.com/en-us/azure/batch/batch-api-basics#virtual-network-vnet-and-firewall-configuration"]
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
-    #[serde(rename = "dynamicVNetAssignmentScope", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dynamicVNetAssignmentScope",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub dynamic_v_net_assignment_scope: Option<network_configuration::DynamicVNetAssignmentScope>,
     #[serde(rename = "endpointConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_configuration: Option<PoolEndpointConfiguration>,
@@ -1685,6 +1762,7 @@ impl NetworkProfile {
 pub struct NetworkSecurityGroupRule {
     #[doc = "Priorities within a pool must be unique and are evaluated in order of priority. The lower the number the higher the priority. For example, rules could be specified with order numbers of 150, 250, and 350. The rule with the order number of 150 takes precedence over the rule that has an order of 250. Allowed priorities are 150 to 4096. If any reserved or duplicate values are provided the request fails with HTTP status code 400."]
     pub priority: i32,
+    #[serde(with = "azure_core::xml::text_content")]
     pub access: network_security_group_rule::Access,
     #[doc = "Valid values are a single IP address (i.e. 10.10.10.10), IP subnet (i.e. 192.168.1.0/24), default tag, or * (for all addresses).  If any other values are provided the request fails with HTTP status code 400."]
     #[serde(rename = "sourceAddressPrefix")]
@@ -1720,7 +1798,7 @@ pub mod network_security_group_rule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NodePlacementConfiguration {
     #[doc = "The default value is regional."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub policy: Option<NodePlacementPolicyType>,
 }
 impl NodePlacementConfiguration {
@@ -1798,7 +1876,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1842,7 +1920,7 @@ pub struct OutboundEnvironmentEndpointCollection {
 impl azure_core::Continuable for OutboundEnvironmentEndpointCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OutboundEnvironmentEndpointCollection {
@@ -1895,11 +1973,21 @@ pub struct PoolProperties {
     pub last_modified: Option<time::OffsetDateTime>,
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<pool_properties::ProvisioningState>,
     #[serde(rename = "provisioningStateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
     pub provisioning_state_transition_time: Option<time::OffsetDateTime>,
-    #[serde(rename = "allocationState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allocationState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub allocation_state: Option<pool_properties::AllocationState>,
     #[serde(rename = "allocationStateTransitionTime", default, with = "azure_core::date::rfc3339::option")]
     pub allocation_state_transition_time: Option<time::OffsetDateTime>,
@@ -1918,7 +2006,12 @@ pub struct PoolProperties {
     #[serde(rename = "autoScaleRun", default, skip_serializing_if = "Option::is_none")]
     pub auto_scale_run: Option<AutoScaleRun>,
     #[doc = "This imposes restrictions on which nodes can be assigned to the pool. Enabling this value can reduce the chance of the requested number of nodes to be allocated in the pool. If not specified, this value defaults to 'Disabled'."]
-    #[serde(rename = "interNodeCommunication", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "interNodeCommunication",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub inter_node_communication: Option<pool_properties::InterNodeCommunication>,
     #[doc = "The network configuration for a pool."]
     #[serde(rename = "networkConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -2033,7 +2126,12 @@ impl PrivateEndpointConnection {
 #[doc = "Private endpoint connection properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<private_endpoint_connection_properties::ProvisioningState>,
     #[doc = "The private endpoint of the private endpoint connection."]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
@@ -2110,6 +2208,7 @@ impl PrivateLinkResourceProperties {
 #[doc = "The private link service connection state of the private endpoint connection"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateLinkServiceConnectionState {
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: PrivateLinkServiceConnectionStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -2156,7 +2255,7 @@ impl ProxyResource {
 #[doc = "The public IP Address configuration of the networking configuration of a Pool."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PublicIpAddressConfiguration {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub provision: Option<IpAddressProvisioningType>,
     #[doc = "The number of IPs specified here limits the maximum size of the Pool - 100 dedicated nodes or 100 Spot/low-priority nodes can be allocated for each public IP. For example, a pool needing 250 dedicated VMs would need at least 3 public IPs specified. Each element of this collection is of the form: /subscriptions/{subscription}/resourceGroups/{group}/providers/Microsoft.Network/publicIPAddresses/{ip}."]
     #[serde(
@@ -2215,7 +2314,12 @@ pub struct ResizeOperationStatus {
     #[doc = "The default value is 15 minutes. The minimum value is 5 minutes. If you specify a value less than 5 minutes, the Batch service returns an error; if you are calling the REST API directly, the HTTP status code is 400 (Bad Request)."]
     #[serde(rename = "resizeTimeout", default, skip_serializing_if = "Option::is_none")]
     pub resize_timeout: Option<String>,
-    #[serde(rename = "nodeDeallocationOption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "nodeDeallocationOption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub node_deallocation_option: Option<ComputeNodeDeallocationOption>,
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
@@ -2391,7 +2495,7 @@ pub struct SupportedSkusResult {
 impl azure_core::Continuable for SupportedSkusResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SupportedSkusResult {
@@ -2409,7 +2513,12 @@ pub struct TaskContainerSettings {
     pub image_name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub registry: Option<ContainerRegistry>,
-    #[serde(rename = "workingDirectory", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workingDirectory",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub working_directory: Option<task_container_settings::WorkingDirectory>,
 }
 impl TaskContainerSettings {
@@ -2432,7 +2541,7 @@ pub mod task_container_settings {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskSchedulingPolicy {
-    #[serde(rename = "nodeFillType")]
+    #[serde(rename = "nodeFillType", with = "azure_core::xml::text_content")]
     pub node_fill_type: task_scheduling_policy::NodeFillType,
 }
 impl TaskSchedulingPolicy {
@@ -2452,7 +2561,12 @@ pub mod task_scheduling_policy {
 pub struct UserAccount {
     pub name: String,
     pub password: String,
-    #[serde(rename = "elevationLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "elevationLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub elevation_level: Option<ElevationLevel>,
     #[serde(rename = "linuxUserConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub linux_user_configuration: Option<LinuxUserConfiguration>,
@@ -2621,7 +2735,12 @@ impl WindowsConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WindowsUserConfiguration {
     #[doc = "Specifies login mode for the user. The default value for VirtualMachineConfiguration pools is interactive mode and for CloudServiceConfiguration pools is batch mode."]
-    #[serde(rename = "loginMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "loginMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub login_mode: Option<windows_user_configuration::LoginMode>,
 }
 impl WindowsUserConfiguration {

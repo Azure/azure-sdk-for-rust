@@ -50,11 +50,12 @@ impl Application {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationArtifact {
     #[doc = "The managed application artifact name."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: ApplicationArtifactName,
     #[doc = "The managed application artifact blob uri."]
     pub uri: String,
     #[doc = "The managed application artifact type."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: ApplicationArtifactType,
 }
 impl ApplicationArtifact {
@@ -178,11 +179,12 @@ impl ApplicationDefinition {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationDefinitionArtifact {
     #[doc = "The managed application artifact name."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: ApplicationDefinitionArtifactName,
     #[doc = "The managed application definition artifact blob uri."]
     pub uri: String,
     #[doc = "The managed application artifact type."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: ApplicationArtifactType,
 }
 impl ApplicationDefinitionArtifact {
@@ -252,7 +254,7 @@ pub struct ApplicationDefinitionListResult {
 impl azure_core::Continuable for ApplicationDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationDefinitionListResult {
@@ -276,7 +278,7 @@ impl ApplicationDefinitionPatchable {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationDefinitionProperties {
     #[doc = "The managed application lock level."]
-    #[serde(rename = "lockLevel")]
+    #[serde(rename = "lockLevel", with = "azure_core::xml::text_content")]
     pub lock_level: ApplicationLockLevel,
     #[doc = "The managed application definition display name."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -358,7 +360,7 @@ impl ApplicationDefinitionProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationDeploymentPolicy {
     #[doc = "The deployment mode."]
-    #[serde(rename = "deploymentMode")]
+    #[serde(rename = "deploymentMode", with = "azure_core::xml::text_content")]
     pub deployment_mode: DeploymentMode,
 }
 impl ApplicationDeploymentPolicy {
@@ -373,7 +375,12 @@ pub struct ApplicationJitAccessPolicy {
     #[serde(rename = "jitAccessEnabled")]
     pub jit_access_enabled: bool,
     #[doc = "The Jit approval mode."]
-    #[serde(rename = "jitApprovalMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "jitApprovalMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub jit_approval_mode: Option<JitApprovalMode>,
     #[doc = "The JIT approvers"]
     #[serde(
@@ -414,7 +421,7 @@ pub struct ApplicationListResult {
 impl azure_core::Continuable for ApplicationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationListResult {
@@ -472,7 +479,7 @@ impl Serialize for ApplicationManagementMode {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationManagementPolicy {
     #[doc = "The management mode."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub mode: Option<ApplicationManagementMode>,
 }
 impl ApplicationManagementPolicy {
@@ -620,7 +627,12 @@ pub struct ApplicationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub outputs: Option<serde_json::Value>,
     #[doc = "Provisioning status of the managed application."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Managed application billing details definition."]
     #[serde(rename = "billingDetails", default, skip_serializing_if = "Option::is_none")]
@@ -639,7 +651,12 @@ pub struct ApplicationProperties {
     )]
     pub authorizations: Vec<ApplicationAuthorization>,
     #[doc = "The management mode."]
-    #[serde(rename = "managementMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "managementMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub management_mode: Option<ApplicationManagementMode>,
     #[doc = "The application package contact information."]
     #[serde(rename = "customerSupport", default, skip_serializing_if = "Option::is_none")]
@@ -798,7 +815,12 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The identity type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<identity::Type>,
     #[doc = "The list of user identities associated with the resource. The user identity dictionary key references will be resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -866,7 +888,12 @@ pub struct JitApproverDefinition {
     #[doc = "The approver service principal Id."]
     pub id: String,
     #[doc = "The approver type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<jit_approver_definition::Type>,
     #[doc = "The approver display name."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -1023,10 +1050,20 @@ pub struct JitRequestProperties {
     #[serde(rename = "jitSchedulingPolicy")]
     pub jit_scheduling_policy: JitSchedulingPolicy,
     #[doc = "Provisioning status of the managed application."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The JIT request state."]
-    #[serde(rename = "jitRequestState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "jitRequestState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub jit_request_state: Option<JitRequestState>,
     #[doc = "The application client details to track the entity creating/updating the managed app resource."]
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
@@ -1106,7 +1143,7 @@ impl Serialize for JitRequestState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JitSchedulingPolicy {
     #[doc = "The JIT request scheduling type."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: JitSchedulingType,
     pub duration: String,
     #[doc = "The start time of the request."]
@@ -1240,10 +1277,15 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -1369,7 +1411,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1631,9 +1673,10 @@ pub struct UpdateAccessDefinition {
     #[doc = "The JIT request metadata."]
     pub metadata: JitRequestMetadata,
     #[doc = "The JIT status."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: Status,
     #[doc = "The sub status."]
-    #[serde(rename = "subStatus")]
+    #[serde(rename = "subStatus", with = "azure_core::xml::text_content")]
     pub sub_status: SubStatus,
 }
 impl UpdateAccessDefinition {
@@ -1654,7 +1697,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1663,7 +1711,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

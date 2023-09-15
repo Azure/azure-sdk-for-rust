@@ -56,7 +56,7 @@ pub struct SelfServicePoliciesList {
 impl azure_core::Continuable for SelfServicePoliciesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SelfServicePoliciesList {
@@ -98,6 +98,7 @@ impl SelfServicePolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SelfServicePolicyDecisionRule {
     #[doc = "The effect for rule"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub effect: self_service_policy_decision_rule::Effect,
     #[doc = "This is field will indicate the role of a self service policy."]
     #[serde(rename = "purviewRoleName")]

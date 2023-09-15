@@ -37,7 +37,7 @@ pub struct ElasticSanList {
 impl azure_core::Continuable for ElasticSanList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ElasticSanList {
@@ -59,7 +59,12 @@ pub struct ElasticSanProperties {
     )]
     pub availability_zones: Vec<AvailabilityZone>,
     #[doc = "Provisioning state of the iSCSI Target."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Base size of the Elastic San appliance in TiB."]
     #[serde(rename = "baseSizeTiB")]
@@ -254,10 +259,15 @@ pub struct IscsiTargetInfo {
     #[serde(rename = "targetPortalPort", default, skip_serializing_if = "Option::is_none")]
     pub target_portal_port: Option<i32>,
     #[doc = "Provisioning state of the iSCSI Target."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Operational status of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<OperationalStatus>,
 }
 impl IscsiTargetInfo {
@@ -295,10 +305,15 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -539,7 +554,12 @@ impl PrivateEndpointConnectionListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
     #[doc = "Provisioning state of the iSCSI Target."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Response for PrivateEndpoint"]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
@@ -672,7 +692,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -786,9 +806,10 @@ impl SkuCapability {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The sku name."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: SkuName,
     #[doc = "The sku tier."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub tier: Option<SkuTier>,
 }
 impl Sku {
@@ -800,9 +821,10 @@ impl Sku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkuInformation {
     #[doc = "The sku name."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: SkuName,
     #[doc = "The sku tier."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub tier: Option<SkuTier>,
     #[doc = "The type of the resource."]
     #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
@@ -964,7 +986,12 @@ impl Serialize for SkuTier {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceCreationData {
     #[doc = "This enumerates the possible sources of a volume creation."]
-    #[serde(rename = "createSource", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createSource",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_source: Option<source_creation_data::CreateSource>,
     #[doc = "If createOption is Copy, this is the ARM id of the source snapshot or disk. If createOption is Restore, this is the ARM-like id of the source disk restore point."]
     #[serde(rename = "sourceUri", default, skip_serializing_if = "Option::is_none")]
@@ -1046,10 +1073,10 @@ pub struct VirtualNetworkRule {
     #[doc = "Resource ID of a subnet, for example: /subscriptions/{subscriptionId}/resourceGroups/{groupName}/providers/Microsoft.Network/virtualNetworks/{vnetName}/subnets/{subnetName}."]
     pub id: String,
     #[doc = "The action of virtual network rule."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub action: Option<virtual_network_rule::Action>,
     #[doc = "Gets the state of virtual network rule."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<virtual_network_rule::State>,
 }
 impl VirtualNetworkRule {
@@ -1135,7 +1162,7 @@ pub struct VolumeGroupList {
 impl azure_core::Continuable for VolumeGroupList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VolumeGroupList {
@@ -1147,13 +1174,23 @@ impl VolumeGroupList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VolumeGroupProperties {
     #[doc = "Provisioning state of the iSCSI Target."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Storage Target type."]
-    #[serde(rename = "protocolType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "protocolType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub protocol_type: Option<StorageTargetType>,
     #[doc = "The type of key used to encrypt the data of the disk."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub encryption: Option<EncryptionType>,
     #[doc = "A set of rules governing the network accessibility."]
     #[serde(rename = "networkAcls", default, skip_serializing_if = "Option::is_none")]
@@ -1188,10 +1225,15 @@ impl VolumeGroupUpdate {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VolumeGroupUpdateProperties {
     #[doc = "Storage Target type."]
-    #[serde(rename = "protocolType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "protocolType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub protocol_type: Option<StorageTargetType>,
     #[doc = "The type of key used to encrypt the data of the disk."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub encryption: Option<EncryptionType>,
     #[doc = "A set of rules governing the network accessibility."]
     #[serde(rename = "networkAcls", default, skip_serializing_if = "Option::is_none")]
@@ -1219,7 +1261,7 @@ pub struct VolumeList {
 impl azure_core::Continuable for VolumeList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VolumeList {
@@ -1284,7 +1326,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1293,7 +1340,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

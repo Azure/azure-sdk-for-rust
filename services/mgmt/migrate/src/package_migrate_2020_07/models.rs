@@ -13,7 +13,12 @@ pub struct AgentConfiguration {
     pub dependency_agent_version: Option<String>,
     #[serde(rename = "dependencyAgentRevision", default, skip_serializing_if = "Option::is_none")]
     pub dependency_agent_revision: Option<String>,
-    #[serde(rename = "rebootStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rebootStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub reboot_status: Option<agent_configuration::RebootStatus>,
     #[serde(rename = "clockGranularity", default, skip_serializing_if = "Option::is_none")]
     pub clock_granularity: Option<i32>,
@@ -401,7 +406,7 @@ pub struct HyperVClusterCollection {
 impl azure_core::Continuable for HyperVClusterCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HyperVClusterCollection {
@@ -519,7 +524,7 @@ pub struct HyperVHostCollection {
 impl azure_core::Continuable for HyperVHostCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HyperVHostCollection {
@@ -596,7 +601,7 @@ pub struct HyperVJobCollection {
 impl azure_core::Continuable for HyperVJobCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HyperVJobCollection {
@@ -642,7 +647,7 @@ pub struct HyperVMachineCollection {
 impl azure_core::Continuable for HyperVMachineCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HyperVMachineCollection {
@@ -675,7 +680,12 @@ pub struct HyperVMachineProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[doc = "Value indicating whether the VM is highly available."]
-    #[serde(rename = "highAvailability", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "highAvailability",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub high_availability: Option<hyper_v_machine_properties::HighAvailability>,
     #[doc = "Max memory of the virtual machine in MB."]
     #[serde(rename = "maxMemoryMB", default, skip_serializing_if = "Option::is_none")]
@@ -857,7 +867,7 @@ pub struct HyperVRunAsAccountCollection {
 impl azure_core::Continuable for HyperVRunAsAccountCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HyperVRunAsAccountCollection {
@@ -934,7 +944,7 @@ pub struct HyperVSitesResultList {
 impl azure_core::Continuable for HyperVSitesResultList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HyperVSitesResultList {
@@ -944,7 +954,12 @@ impl HyperVSitesResultList {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HypervisorConfiguration {
-    #[serde(rename = "hypervisorType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hypervisorType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub hypervisor_type: Option<hypervisor_configuration::HypervisorType>,
     #[serde(rename = "nativeHostMachineId", default, skip_serializing_if = "Option::is_none")]
     pub native_host_machine_id: Option<String>,
@@ -1024,9 +1039,19 @@ impl JobProperties {
 pub struct Machine {
     #[serde(rename = "properties.timestamp", default, with = "azure_core::date::rfc3339::option")]
     pub properties_timestamp: Option<time::OffsetDateTime>,
-    #[serde(rename = "properties.monitoringState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "properties.monitoringState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub properties_monitoring_state: Option<machine::PropertiesMonitoringState>,
-    #[serde(rename = "properties.virtualizationState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "properties.virtualizationState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub properties_virtualization_state: Option<machine::PropertiesVirtualizationState>,
     #[serde(rename = "properties.displayName", default, skip_serializing_if = "Option::is_none")]
     pub properties_display_name: Option<String>,
@@ -1095,7 +1120,12 @@ pub struct MachineResourcesConfiguration {
     pub cpus: Option<i32>,
     #[serde(rename = "cpuSpeed", default, skip_serializing_if = "Option::is_none")]
     pub cpu_speed: Option<i32>,
-    #[serde(rename = "cpuSpeedAccuracy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "cpuSpeedAccuracy",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cpu_speed_accuracy: Option<machine_resources_configuration::CpuSpeedAccuracy>,
 }
 impl MachineResourcesConfiguration {
@@ -1159,7 +1189,7 @@ pub struct MasterSiteList {
 impl azure_core::Continuable for MasterSiteList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MasterSiteList {
@@ -1171,7 +1201,12 @@ impl MasterSiteList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MasterSiteProperties {
     #[doc = "Gets or sets the state of public network access."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<master_site_properties::PublicNetworkAccess>,
     #[doc = "Value indicating whether multiple sites per site type are allowed."]
     #[serde(rename = "allowMultipleSites", default, skip_serializing_if = "Option::is_none")]
@@ -1294,11 +1329,11 @@ impl OperatingSystem {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperatingSystemConfiguration {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub family: Option<operating_system_configuration::Family>,
     #[serde(rename = "fullName", default, skip_serializing_if = "Option::is_none")]
     pub full_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub bitness: Option<operating_system_configuration::Bitness>,
 }
 impl OperatingSystemConfiguration {
@@ -1493,7 +1528,12 @@ impl PrivateEndpointConnectionCollection {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionProperties {
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<private_endpoint_connection_properties::ProvisioningState>,
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub private_endpoint: Option<ResourceId>,
@@ -1580,7 +1620,7 @@ impl PrivateLinkResourceProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<private_link_service_connection_state::Status>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -1619,7 +1659,12 @@ pub struct RunAsAccountProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "Credential type of the run as account."]
-    #[serde(rename = "credentialType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "credentialType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub credential_type: Option<run_as_account_properties::CredentialType>,
     #[doc = "Timestamp marking run as account creation."]
     #[serde(rename = "createdTimestamp", default, skip_serializing_if = "Option::is_none")]
@@ -1817,7 +1862,7 @@ pub struct SiteHealthSummaryCollection {
 impl azure_core::Continuable for SiteHealthSummaryCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SiteHealthSummaryCollection {
@@ -1942,7 +1987,7 @@ pub struct VCenterCollection {
 impl azure_core::Continuable for VCenterCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VCenterCollection {
@@ -2006,7 +2051,7 @@ pub struct VmWareSitesResultList {
 impl azure_core::Continuable for VmWareSitesResultList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VmWareSitesResultList {
@@ -2030,7 +2075,12 @@ pub struct VMwareDisk {
     #[serde(rename = "diskScrubbingPolicy", default, skip_serializing_if = "Option::is_none")]
     pub disk_scrubbing_policy: Option<String>,
     #[doc = "Disk mode property used for identifying independent disks."]
-    #[serde(rename = "diskMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "diskMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub disk_mode: Option<v_mware_disk::DiskMode>,
     #[doc = "Bytes allocated for the disk."]
     #[serde(rename = "maxSizeInBytes", default, skip_serializing_if = "Option::is_none")]
@@ -2145,7 +2195,7 @@ pub struct VMwareJobCollection {
 impl azure_core::Continuable for VMwareJobCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VMwareJobCollection {
@@ -2191,7 +2241,7 @@ pub struct VMwareMachineCollection {
 impl azure_core::Continuable for VMwareMachineCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VMwareMachineCollection {
@@ -2399,7 +2449,7 @@ pub struct VMwareRunAsAccountCollection {
 impl azure_core::Continuable for VMwareRunAsAccountCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VMwareRunAsAccountCollection {
@@ -2459,7 +2509,12 @@ impl VMwareSiteUsage {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineConfiguration {
-    #[serde(rename = "virtualMachineType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "virtualMachineType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub virtual_machine_type: Option<virtual_machine_configuration::VirtualMachineType>,
     #[serde(rename = "nativeMachineId", default, skip_serializing_if = "Option::is_none")]
     pub native_machine_id: Option<String>,
@@ -2527,7 +2582,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2536,7 +2596,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

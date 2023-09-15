@@ -115,7 +115,12 @@ pub struct EndpointProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<String>,
     #[doc = "The status of the endpoint. If the endpoint is Enabled, it is probed for endpoint health and is included in the traffic routing method."]
-    #[serde(rename = "endpointStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "endpointStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub endpoint_status: Option<endpoint_properties::EndpointStatus>,
     #[doc = "The weight of this endpoint when using the 'Weighted' traffic routing method. Possible values are from 1 to 1000."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -127,7 +132,12 @@ pub struct EndpointProperties {
     #[serde(rename = "endpointLocation", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_location: Option<String>,
     #[doc = "The monitoring status of the endpoint."]
-    #[serde(rename = "endpointMonitorStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "endpointMonitorStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub endpoint_monitor_status: Option<endpoint_properties::EndpointMonitorStatus>,
     #[doc = "The minimum number of endpoints that must be available in the child profile in order for the parent profile to be considered available. Only applicable to endpoint of type 'NestedEndpoints'."]
     #[serde(rename = "minChildEndpoints", default, skip_serializing_if = "Option::is_none")]
@@ -314,10 +324,15 @@ impl HeatMapProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorConfig {
     #[doc = "The profile-level monitoring status of the Traffic Manager profile."]
-    #[serde(rename = "profileMonitorStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "profileMonitorStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub profile_monitor_status: Option<monitor_config::ProfileMonitorStatus>,
     #[doc = "The protocol (HTTP, HTTPS or TCP) used to probe for endpoint health."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub protocol: Option<monitor_config::Protocol>,
     #[doc = "The TCP port used to probe for endpoint health."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -484,10 +499,20 @@ impl ProfileListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileProperties {
     #[doc = "The status of the Traffic Manager profile."]
-    #[serde(rename = "profileStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "profileStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub profile_status: Option<profile_properties::ProfileStatus>,
     #[doc = "The traffic routing method of the Traffic Manager profile."]
-    #[serde(rename = "trafficRoutingMethod", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "trafficRoutingMethod",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub traffic_routing_method: Option<profile_properties::TrafficRoutingMethod>,
     #[doc = "Class containing DNS settings in a Traffic Manager profile."]
     #[serde(rename = "dnsConfig", default, skip_serializing_if = "Option::is_none")]
@@ -503,7 +528,12 @@ pub struct ProfileProperties {
     )]
     pub endpoints: Vec<Endpoint>,
     #[doc = "Indicates whether Traffic View is 'Enabled' or 'Disabled' for the Traffic Manager profile. Null, indicates 'Disabled'. Enabling this feature will increase the cost of the Traffic Manage profile."]
-    #[serde(rename = "trafficViewEnrollmentStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "trafficViewEnrollmentStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub traffic_view_enrollment_status: Option<profile_properties::TrafficViewEnrollmentStatus>,
 }
 impl ProfileProperties {

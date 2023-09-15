@@ -113,7 +113,12 @@ pub struct AzureDataExplorerOutputDataSourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub table: Option<String>,
     #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
-    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authenticationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authentication_mode: Option<AuthenticationMode>,
 }
 impl AzureDataExplorerOutputDataSourceProperties {
@@ -159,7 +164,12 @@ pub struct AzureDataLakeStoreOutputDataSourceProperties {
     #[serde(rename = "timeFormat", default, skip_serializing_if = "Option::is_none")]
     pub time_format: Option<String>,
     #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
-    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authenticationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authentication_mode: Option<AuthenticationMode>,
 }
 impl AzureDataLakeStoreOutputDataSourceProperties {
@@ -273,7 +283,12 @@ pub struct AzureMachineLearningServiceFunctionBindingRetrievalProperties {
     #[serde(rename = "executeEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub execute_endpoint: Option<String>,
     #[doc = "The function type."]
-    #[serde(rename = "udfType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "udfType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub udf_type: Option<UdfType>,
 }
 impl AzureMachineLearningServiceFunctionBindingRetrievalProperties {
@@ -406,7 +421,12 @@ pub struct AzureMachineLearningStudioFunctionBindingRetrievalProperties {
     #[serde(rename = "executeEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub execute_endpoint: Option<String>,
     #[doc = "The function type."]
-    #[serde(rename = "udfType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "udfType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub udf_type: Option<UdfType>,
 }
 impl AzureMachineLearningStudioFunctionBindingRetrievalProperties {
@@ -509,7 +529,12 @@ pub struct AzureSqlDatabaseDataSourceProperties {
     #[serde(rename = "maxWriterCount", default, skip_serializing_if = "Option::is_none")]
     pub max_writer_count: Option<f64>,
     #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
-    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authenticationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authentication_mode: Option<AuthenticationMode>,
 }
 impl AzureSqlDatabaseDataSourceProperties {
@@ -578,7 +603,12 @@ pub struct AzureSqlReferenceInputDataSourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
     #[doc = "Indicates the type of data refresh option."]
-    #[serde(rename = "refreshType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "refreshType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub refresh_type: Option<RefreshType>,
     #[doc = "This element is associated with the datasource element. This indicates how frequently the data will be fetched from the database. It is of DateTime format."]
     #[serde(rename = "refreshRate", default, skip_serializing_if = "Option::is_none")]
@@ -590,7 +620,12 @@ pub struct AzureSqlReferenceInputDataSourceProperties {
     #[serde(rename = "deltaSnapshotQuery", default, skip_serializing_if = "Option::is_none")]
     pub delta_snapshot_query: Option<String>,
     #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
-    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authenticationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authentication_mode: Option<AuthenticationMode>,
 }
 impl AzureSqlReferenceInputDataSourceProperties {
@@ -617,7 +652,12 @@ pub struct AzureSynapseDataSourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
     #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
-    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authenticationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authentication_mode: Option<AuthenticationMode>,
 }
 impl AzureSynapseDataSourceProperties {
@@ -729,7 +769,12 @@ pub struct BlobDataSourceProperties {
     #[serde(rename = "timeFormat", default, skip_serializing_if = "Option::is_none")]
     pub time_format: Option<String>,
     #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
-    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authenticationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authentication_mode: Option<AuthenticationMode>,
 }
 impl BlobDataSourceProperties {
@@ -763,7 +808,12 @@ pub struct BlobOutputDataSourceProperties {
     #[serde(rename = "blobPathPrefix", default, skip_serializing_if = "Option::is_none")]
     pub blob_path_prefix: Option<String>,
     #[doc = "Determines whether blob blocks are either committed automatically or appended."]
-    #[serde(rename = "blobWriteMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "blobWriteMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub blob_write_mode: Option<BlobWriteMode>,
 }
 impl BlobOutputDataSourceProperties {
@@ -912,7 +962,12 @@ pub struct CSharpFunctionBindingProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub method: Option<String>,
     #[doc = "Refresh modes for Stream Analytics functions."]
-    #[serde(rename = "updateMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "updateMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub update_mode: Option<UpdateMode>,
 }
 impl CSharpFunctionBindingProperties {
@@ -927,7 +982,12 @@ pub struct CSharpFunctionBindingRetrievalProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub script: Option<String>,
     #[doc = "The function type."]
-    #[serde(rename = "udfType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "udfType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub udf_type: Option<UdfType>,
 }
 impl CSharpFunctionBindingRetrievalProperties {
@@ -994,7 +1054,12 @@ pub struct ClusterJob {
     #[serde(rename = "streamingUnits", default, skip_serializing_if = "Option::is_none")]
     pub streaming_units: Option<i32>,
     #[doc = "The current execution state of the streaming job."]
-    #[serde(rename = "jobState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "jobState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub job_state: Option<JobState>,
 }
 impl ClusterJob {
@@ -1019,7 +1084,7 @@ pub struct ClusterJobListResult {
 impl azure_core::Continuable for ClusterJobListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClusterJobListResult {
@@ -1044,7 +1109,7 @@ pub struct ClusterListResult {
 impl azure_core::Continuable for ClusterListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClusterListResult {
@@ -1062,7 +1127,12 @@ pub struct ClusterProperties {
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
     pub cluster_id: Option<String>,
     #[doc = "The status of the cluster provisioning. The three terminal states are: Succeeded, Failed and Canceled"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ClusterProvisioningState>,
     #[doc = "Represents the number of streaming units currently being used on the cluster."]
     #[serde(rename = "capacityAllocated", default, skip_serializing_if = "Option::is_none")]
@@ -1121,7 +1191,7 @@ impl Serialize for ClusterProvisioningState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterSku {
     #[doc = "Specifies the SKU name of the cluster. Required on PUT (CreateOrUpdate) requests."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub name: Option<cluster_sku::Name>,
     #[doc = "Denotes the number of streaming units the cluster can support. Valid values for this property are multiples of 36 with a minimum value of 36 and maximum value of 216. Required on PUT (CreateOrUpdate) requests."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1229,10 +1299,15 @@ pub struct CompileQuery {
     )]
     pub functions: Vec<QueryFunction>,
     #[doc = "Describes the type of the job. Valid values are `Cloud` and 'Edge'."]
-    #[serde(rename = "jobType")]
+    #[serde(rename = "jobType", with = "azure_core::xml::text_content")]
     pub job_type: compile_query::JobType,
     #[doc = "Controls certain runtime behaviors of the streaming job."]
-    #[serde(rename = "compatibilityLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "compatibilityLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub compatibility_level: Option<CompatibilityLevel>,
 }
 impl CompileQuery {
@@ -1290,7 +1365,7 @@ pub mod compile_query {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Compression {
     #[doc = "Indicates the type of compression that the input uses. Required on PUT (CreateOrReplace) requests."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: CompressionType,
 }
 impl Compression {
@@ -1366,7 +1441,7 @@ pub struct CsvSerializationProperties {
     #[serde(rename = "fieldDelimiter", default, skip_serializing_if = "Option::is_none")]
     pub field_delimiter: Option<String>,
     #[doc = "Specifies the encoding of the incoming data in the case of input and the encoding of outgoing data in the case of output."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub encoding: Option<Encoding>,
 }
 impl CsvSerializationProperties {
@@ -1519,7 +1594,12 @@ pub struct DocumentDbOutputDataSourceProperties {
     #[serde(rename = "documentId", default, skip_serializing_if = "Option::is_none")]
     pub document_id: Option<String>,
     #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
-    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authenticationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authentication_mode: Option<AuthenticationMode>,
 }
 impl DocumentDbOutputDataSourceProperties {
@@ -1703,7 +1783,7 @@ pub struct EventGridStreamInputDataSourceProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subscriber: Option<EventHubV2StreamInputDataSource>,
     #[doc = "Supported Event Grid schema types."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub schema: Option<EventGridEventSchemaType>,
     #[doc = "A list of one or more Azure Storage accounts. Required on PUT (CreateOrReplace) requests."]
     #[serde(
@@ -2061,7 +2141,7 @@ pub struct FunctionListResult {
 impl azure_core::Continuable for FunctionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FunctionListResult {
@@ -2186,7 +2266,12 @@ impl GatewayMessageBusStreamInputDataSourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GetStreamingJobSkuResult {
     #[doc = "The type of resource the SKU applies to."]
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_type: Option<get_streaming_job_sku_result::ResourceType>,
     #[doc = "The properties that are associated with a SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2244,7 +2329,7 @@ pub mod get_streaming_job_sku_result {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Sku {
         #[doc = "The name of the SKU."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub name: Option<sku::Name>,
     }
     impl Sku {
@@ -2308,7 +2393,7 @@ pub struct GetStreamingJobSkuResults {
 impl azure_core::Continuable for GetStreamingJobSkuResults {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GetStreamingJobSkuResults {
@@ -2368,7 +2453,7 @@ pub struct InputListResult {
 impl azure_core::Continuable for InputListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InputListResult {
@@ -2455,7 +2540,12 @@ impl Serialize for InputWatermarkMode {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InputWatermarkProperties {
     #[doc = "The input watermark mode."]
-    #[serde(rename = "watermarkMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "watermarkMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub watermark_mode: Option<InputWatermarkMode>,
 }
 impl InputWatermarkProperties {
@@ -2540,7 +2630,12 @@ pub struct JavaScriptFunctionBindingRetrievalProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub script: Option<String>,
     #[doc = "The function type."]
-    #[serde(rename = "udfType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "udfType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub udf_type: Option<UdfType>,
 }
 impl JavaScriptFunctionBindingRetrievalProperties {
@@ -2624,7 +2719,12 @@ pub struct JobStorageAccount {
     #[serde(flatten)]
     pub storage_account: StorageAccount,
     #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
-    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authenticationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authentication_mode: Option<AuthenticationMode>,
 }
 impl JobStorageAccount {
@@ -2690,10 +2790,10 @@ impl JsonSerialization {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JsonSerializationProperties {
     #[doc = "Specifies the encoding of the incoming data in the case of input and the encoding of outgoing data in the case of output."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub encoding: Option<Encoding>,
     #[doc = "Specifies the format of the JSON the output will be written in. The currently supported values are 'lineSeparated' indicating the output will be formatted by having each JSON object separated by a new line and 'array' indicating the output will be formatted as an array of JSON objects."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub format: Option<JsonOutputSerializationFormat>,
 }
 impl JsonSerializationProperties {
@@ -2793,7 +2893,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -2881,7 +2981,7 @@ pub struct OutputListResult {
 impl azure_core::Continuable for OutputListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OutputListResult {
@@ -3013,7 +3113,12 @@ impl Serialize for OutputWatermarkMode {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OutputWatermarkProperties {
     #[doc = "The output watermark mode."]
-    #[serde(rename = "watermarkMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "watermarkMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub watermark_mode: Option<OutputWatermarkMode>,
     #[doc = "Describes the maximal delta between the fastest and slowest partitions, so the out of order window that catches all necessary events in downstream jobs is well defined."]
     #[serde(
@@ -3075,7 +3180,12 @@ pub struct PostgreSqlDataSourceProperties {
     #[serde(rename = "maxWriterCount", default, skip_serializing_if = "Option::is_none")]
     pub max_writer_count: Option<f64>,
     #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
-    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authenticationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authentication_mode: Option<AuthenticationMode>,
 }
 impl PostgreSqlDataSourceProperties {
@@ -3146,7 +3256,12 @@ pub struct PowerBiOutputDataSourceProperties {
     #[serde(rename = "groupName", default, skip_serializing_if = "Option::is_none")]
     pub group_name: Option<String>,
     #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
-    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authenticationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authentication_mode: Option<AuthenticationMode>,
 }
 impl PowerBiOutputDataSourceProperties {
@@ -3188,7 +3303,7 @@ pub struct PrivateEndpointListResult {
 impl azure_core::Continuable for PrivateEndpointListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointListResult {
@@ -3401,7 +3516,7 @@ pub struct QueryTestingResult {
     #[serde(flatten)]
     pub error: Error,
     #[doc = "The status of the query testing request."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<QueryTestingResultStatus>,
     #[doc = "The SAS URL to the outputs payload."]
     #[serde(rename = "outputUri", default, skip_serializing_if = "Option::is_none")]
@@ -3580,7 +3695,12 @@ pub struct RefreshConfiguration {
     #[serde(rename = "refreshInterval", default, skip_serializing_if = "Option::is_none")]
     pub refresh_interval: Option<String>,
     #[doc = "This property indicates which data refresh option to use, Blocking or Nonblocking."]
-    #[serde(rename = "refreshType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "refreshType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub refresh_type: Option<UpdatableUdfRefreshType>,
 }
 impl RefreshConfiguration {
@@ -3687,7 +3807,7 @@ pub struct SampleInputResult {
     #[serde(flatten)]
     pub error: Error,
     #[doc = "The status of the sample input request."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<SampleInputResultStatus>,
     #[doc = "Diagnostics messages. E.g. message indicating some partitions from the input have no data."]
     #[serde(
@@ -3774,7 +3894,7 @@ impl ScaleStreamingJobParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Serialization {
     #[doc = "Indicates the type of serialization that the input or output uses. Required on PUT (CreateOrReplace) requests."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: EventSerializationType,
 }
 impl Serialization {
@@ -3795,7 +3915,12 @@ pub struct ServiceBusDataSourceProperties {
     #[serde(rename = "sharedAccessPolicyKey", default, skip_serializing_if = "Option::is_none")]
     pub shared_access_policy_key: Option<String>,
     #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
-    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authenticationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authentication_mode: Option<AuthenticationMode>,
 }
 impl ServiceBusDataSourceProperties {
@@ -3891,7 +4016,7 @@ impl ServiceBusTopicOutputDataSourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[doc = "The name of the SKU. Required on PUT (CreateOrReplace) requests."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub name: Option<sku::Name>,
     #[doc = "The capacity of the SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3953,7 +4078,12 @@ pub struct SkuCapacity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default: Option<i32>,
     #[doc = "The scale type applicable to the SKU."]
-    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "scaleType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub scale_type: Option<sku_capacity::ScaleType>,
     #[doc = "Specifies the valid streaming units a streaming job can scale to."]
     #[serde(
@@ -4018,7 +4148,12 @@ pub mod sku_capacity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StartStreamingJobParameters {
     #[doc = "Value may be JobStartTime, CustomTime, or LastOutputEventTime to indicate whether the starting point of the output event stream should start whenever the job is started, start at a custom user time stamp specified via the outputStartTime property, or start from the last event output time."]
-    #[serde(rename = "outputStartMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "outputStartMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub output_start_mode: Option<OutputStartMode>,
     #[doc = "Value is either an ISO-8601 formatted time stamp that indicates the starting point of the output event stream, or null to indicate that the output event stream will start whenever the streaming job is started. This property must have a value if outputStartMode is set to CustomTime."]
     #[serde(rename = "outputStartTime", default, with = "azure_core::date::rfc3339::option")]
@@ -4039,7 +4174,12 @@ pub struct StorageAccount {
     #[serde(rename = "accountKey", default, skip_serializing_if = "Option::is_none")]
     pub account_key: Option<String>,
     #[doc = "Authentication Mode. Valid modes are `ConnectionString`, `Msi` and 'UserToken'."]
-    #[serde(rename = "authenticationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authenticationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authentication_mode: Option<AuthenticationMode>,
 }
 impl StorageAccount {
@@ -4113,7 +4253,7 @@ pub struct StreamingJobListResult {
 impl azure_core::Continuable for StreamingJobListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StreamingJobListResult {
@@ -4137,10 +4277,20 @@ pub struct StreamingJobProperties {
     #[serde(rename = "jobState", default, skip_serializing_if = "Option::is_none")]
     pub job_state: Option<String>,
     #[doc = "Describes the type of the job. Valid modes are `Cloud` and 'Edge'."]
-    #[serde(rename = "jobType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "jobType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub job_type: Option<streaming_job_properties::JobType>,
     #[doc = "Value may be JobStartTime, CustomTime, or LastOutputEventTime to indicate whether the starting point of the output event stream should start whenever the job is started, start at a custom user time stamp specified via the outputStartTime property, or start from the last event output time."]
-    #[serde(rename = "outputStartMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "outputStartMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub output_start_mode: Option<OutputStartMode>,
     #[doc = "Value is either an ISO-8601 formatted time stamp that indicates the starting point of the output event stream, or null to indicate that the output event stream will start whenever the streaming job is started. This property must have a value if outputStartMode is set to CustomTime."]
     #[serde(rename = "outputStartTime", default, with = "azure_core::date::rfc3339::option")]
@@ -4149,10 +4299,20 @@ pub struct StreamingJobProperties {
     #[serde(rename = "lastOutputEventTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_output_event_time: Option<time::OffsetDateTime>,
     #[doc = "Indicates the policy to apply to events that arrive out of order in the input event stream."]
-    #[serde(rename = "eventsOutOfOrderPolicy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "eventsOutOfOrderPolicy",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub events_out_of_order_policy: Option<EventsOutOfOrderPolicy>,
     #[doc = "Indicates the policy to apply to events that arrive at the output and cannot be written to the external storage due to being malformed (missing column values, column values of wrong type or size)."]
-    #[serde(rename = "outputErrorPolicy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "outputErrorPolicy",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub output_error_policy: Option<OutputErrorPolicy>,
     #[doc = "The maximum tolerable delay in seconds where out-of-order events can be adjusted to be back in order."]
     #[serde(rename = "eventsOutOfOrderMaxDelayInSeconds", default, skip_serializing_if = "Option::is_none")]
@@ -4164,7 +4324,12 @@ pub struct StreamingJobProperties {
     #[serde(rename = "dataLocale", default, skip_serializing_if = "Option::is_none")]
     pub data_locale: Option<String>,
     #[doc = "Controls certain runtime behaviors of the streaming job."]
-    #[serde(rename = "compatibilityLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "compatibilityLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub compatibility_level: Option<CompatibilityLevel>,
     #[doc = "Value is an ISO-8601 formatted UTC timestamp indicating when the streaming job was created."]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
@@ -4200,7 +4365,12 @@ pub struct StreamingJobProperties {
     #[serde(rename = "jobStorageAccount", default, skip_serializing_if = "Option::is_none")]
     pub job_storage_account: Option<JobStorageAccount>,
     #[doc = "Valid values are JobStorageAccount and SystemAccount. If set to JobStorageAccount, this requires the user to also specify jobStorageAccount property. ."]
-    #[serde(rename = "contentStoragePolicy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "contentStoragePolicy",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub content_storage_policy: Option<streaming_job_properties::ContentStoragePolicy>,
     #[doc = "The storage account where the custom code artifacts are located."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4363,7 +4533,7 @@ pub struct TestDatasourceResult {
     #[serde(flatten)]
     pub error: Error,
     #[doc = "The status of the test input or output request."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<TestDatasourceResultStatus>,
 }
 impl TestDatasourceResult {

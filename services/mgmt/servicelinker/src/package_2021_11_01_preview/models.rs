@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthInfoBase {
     #[doc = "The authentication type."]
-    #[serde(rename = "authType")]
+    #[serde(rename = "authType", with = "azure_core::xml::text_content")]
     pub auth_type: AuthType,
 }
 impl AuthInfoBase {
@@ -146,7 +146,7 @@ pub struct LinkerList {
 impl azure_core::Continuable for LinkerList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LinkerList {
@@ -176,7 +176,12 @@ pub struct LinkerProperties {
     #[serde(rename = "authInfo", default, skip_serializing_if = "Option::is_none")]
     pub auth_info: Option<AuthInfoBase>,
     #[doc = "The application client type"]
-    #[serde(rename = "clientType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "clientType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub client_type: Option<linker_properties::ClientType>,
     #[doc = "The provisioning state. "]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -292,10 +297,15 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -421,7 +431,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -606,7 +616,12 @@ impl UserAssignedIdentityAuthInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VNetSolution {
     #[doc = "Type of VNet solution."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<v_net_solution::Type>,
 }
 impl VNetSolution {
@@ -663,7 +678,12 @@ pub struct ValidateResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Specifies if the linker is healthy."]
-    #[serde(rename = "linkerStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "linkerStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub linker_status: Option<validate_result::LinkerStatus>,
     #[doc = "The reason of the error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -678,7 +698,12 @@ pub struct ValidateResult {
     #[serde(rename = "targetId", default, skip_serializing_if = "Option::is_none")]
     pub target_id: Option<String>,
     #[doc = "The authentication type."]
-    #[serde(rename = "authType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub auth_type: Option<AuthType>,
 }
 impl ValidateResult {
@@ -734,7 +759,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -743,7 +773,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

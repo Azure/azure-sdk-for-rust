@@ -7,13 +7,18 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Acl {
     #[doc = "the access control list (ACL) entry type. UserObj and GroupObj denote the owning user and group, respectively."]
-    #[serde(rename = "aceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "aceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ace_type: Option<acl::AceType>,
     #[doc = "the Azure AD object ID of the user or group being specified in the access control list (ACL) entry."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[doc = "the permission type of the access control list (ACL) entry."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub permission: Option<acl::Permission>,
 }
 impl Acl {
@@ -118,12 +123,13 @@ pub mod acl {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AclCreateOrUpdateParameters {
     #[doc = "the access control list (ACL) entry type. UserObj and GroupObj denote the owning user and group, respectively."]
-    #[serde(rename = "aceType")]
+    #[serde(rename = "aceType", with = "azure_core::xml::text_content")]
     pub ace_type: acl_create_or_update_parameters::AceType,
     #[doc = "the Azure AD object ID of the user or group being specified in the access control list (ACL) entry."]
     #[serde(rename = "principalId")]
     pub principal_id: String,
     #[doc = "the permission type of the access control list (ACL) entry."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub permission: acl_create_or_update_parameters::Permission,
 }
 impl AclCreateOrUpdateParameters {
@@ -236,7 +242,7 @@ pub mod acl_create_or_update_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AclDeleteParameters {
     #[doc = "the access control list (ACL) entry type. UserObj and GroupObj denote the owning user and group, respectively."]
-    #[serde(rename = "aceType")]
+    #[serde(rename = "aceType", with = "azure_core::xml::text_content")]
     pub ace_type: acl_delete_parameters::AceType,
     #[doc = "the Azure AD object ID of the user or group being specified in the access control list (ACL) entry."]
     #[serde(rename = "principalId")]
@@ -549,7 +555,12 @@ impl USqlAssemblyDependencyInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct USqlAssemblyFileInfo {
     #[doc = "the assembly file type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<u_sql_assembly_file_info::Type>,
     #[doc = "The original path to the assembly file."]
     #[serde(rename = "originalPath", default, skip_serializing_if = "Option::is_none")]

@@ -172,7 +172,7 @@ impl CodeSigningAccount {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CodeSigningSubmissionOptions {
     #[doc = "Algorithms supported for signing."]
-    #[serde(rename = "signatureAlgorithm")]
+    #[serde(rename = "signatureAlgorithm", with = "azure_core::xml::text_content")]
     pub signature_algorithm: SignatureAlgorithm,
     #[doc = "Content digest to codesign."]
     pub digest: String,
@@ -226,7 +226,7 @@ pub struct PagedExtendedKeyUsage {
 impl azure_core::Continuable for PagedExtendedKeyUsage {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PagedExtendedKeyUsage {

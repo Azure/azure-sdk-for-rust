@@ -48,7 +48,12 @@ pub struct AddressProperties {
     #[serde(rename = "contactDetails")]
     pub contact_details: ContactDetails,
     #[doc = "Status of address validation."]
-    #[serde(rename = "addressValidationStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "addressValidationStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub address_validation_status: Option<address_properties::AddressValidationStatus>,
 }
 impl AddressProperties {
@@ -139,7 +144,7 @@ pub struct AddressResourceList {
 impl azure_core::Continuable for AddressResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AddressResourceList {
@@ -181,10 +186,20 @@ impl AddressUpdateProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailabilityInformation {
     #[doc = "Current availability stage of the product."]
-    #[serde(rename = "availabilityStage", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "availabilityStage",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub availability_stage: Option<availability_information::AvailabilityStage>,
     #[doc = "Reason why the product is disabled."]
-    #[serde(rename = "disabledReason", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "disabledReason",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub disabled_reason: Option<availability_information::DisabledReason>,
     #[doc = "Message for why the product is disabled."]
     #[serde(rename = "disabledReasonMessage", default, skip_serializing_if = "Option::is_none")]
@@ -321,7 +336,12 @@ pub struct BasicInformation {
     #[serde(rename = "hierarchyInformation", default, skip_serializing_if = "Option::is_none")]
     pub hierarchy_information: Option<HierarchyInformation>,
     #[doc = "The entity responsible for fulfillment of the item at the given hierarchy level."]
-    #[serde(rename = "fulfilledBy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "fulfilledBy",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub fulfilled_by: Option<basic_information::FulfilledBy>,
 }
 impl BasicInformation {
@@ -379,7 +399,12 @@ pub struct BillingMeterDetails {
     #[serde(rename = "meterDetails", default, skip_serializing_if = "Option::is_none")]
     pub meter_details: Option<MeterDetails>,
     #[doc = "Represents Metering type (eg one-time or recurrent)."]
-    #[serde(rename = "meteringType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "meteringType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub metering_type: Option<billing_meter_details::MeteringType>,
     #[doc = "Frequency of recurrence."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -509,7 +534,12 @@ impl ChildConfigurationFilter {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChildConfigurationProperties {
     #[doc = "Child configuration type."]
-    #[serde(rename = "childConfigurationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "childConfigurationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub child_configuration_type: Option<child_configuration_properties::ChildConfigurationType>,
     #[doc = "Flag to indicate if the child configuration is part of the base configuration, which means the customer need not pass this configuration in OptInAdditionalConfigurations while placing an order, it will be shipped by default."]
     #[serde(rename = "isPartOfBaseConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -578,7 +608,12 @@ pub struct ChildConfigurationProperties {
     #[serde(rename = "hierarchyInformation", default, skip_serializing_if = "Option::is_none")]
     pub hierarchy_information: Option<HierarchyInformation>,
     #[doc = "The entity responsible for fulfillment of the item at the given hierarchy level."]
-    #[serde(rename = "fulfilledBy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "fulfilledBy",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub fulfilled_by: Option<child_configuration_properties::FulfilledBy>,
 }
 impl ChildConfigurationProperties {
@@ -709,7 +744,12 @@ pub struct ConfigurationDeviceDetails {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quantity: Option<i32>,
     #[doc = "Identification type of the configuration."]
-    #[serde(rename = "identificationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "identificationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub identification_type: Option<configuration_device_details::IdentificationType>,
     #[doc = "List of device details."]
     #[serde(
@@ -846,7 +886,7 @@ pub struct Configurations {
 impl azure_core::Continuable for Configurations {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl Configurations {
@@ -964,7 +1004,12 @@ impl CustomerSubscriptionRegisteredFeatures {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Description {
     #[doc = "Type of description."]
-    #[serde(rename = "descriptionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "descriptionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub description_type: Option<description::DescriptionType>,
     #[doc = "Short description of the product system."]
     #[serde(rename = "shortDescription", default, skip_serializing_if = "Option::is_none")]
@@ -1068,7 +1113,12 @@ pub struct Dimensions {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub width: Option<f64>,
     #[doc = "Unit for the dimensions of length, height and width."]
-    #[serde(rename = "lengthHeightUnit", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lengthHeightUnit",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub length_height_unit: Option<dimensions::LengthHeightUnit>,
     #[doc = "Weight of the device."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1077,7 +1127,12 @@ pub struct Dimensions {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub depth: Option<f64>,
     #[doc = "Unit for the dimensions of weight."]
-    #[serde(rename = "weightUnit", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "weightUnit",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub weight_unit: Option<dimensions::WeightUnit>,
 }
 impl Dimensions {
@@ -1185,7 +1240,12 @@ impl DisplayInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionPreferences {
     #[doc = "Double encryption status as entered by the customer. It is compulsory to give this parameter if the 'Deny' or 'Disabled' policy is configured."]
-    #[serde(rename = "doubleEncryptionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "doubleEncryptionStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub double_encryption_status: Option<encryption_preferences::DoubleEncryptionStatus>,
 }
 impl EncryptionPreferences {
@@ -1303,7 +1363,7 @@ impl ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FilterableProperty {
     #[doc = "Type of product filter."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: filterable_property::Type,
     #[doc = "Values to be filtered."]
     #[serde(rename = "supportedValues")]
@@ -1420,7 +1480,12 @@ impl HierarchyInformation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageInformation {
     #[doc = "Type of the image."]
-    #[serde(rename = "imageType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "imageType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub image_type: Option<image_information::ImageType>,
     #[doc = "Url of the image."]
     #[serde(rename = "imageUrl", default, skip_serializing_if = "Option::is_none")]
@@ -1477,7 +1542,12 @@ pub mod image_information {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Link {
     #[doc = "Type of link."]
-    #[serde(rename = "linkType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "linkType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub link_type: Option<link::LinkType>,
     #[doc = "Url of the link."]
     #[serde(rename = "linkUrl", default, skip_serializing_if = "Option::is_none")]
@@ -1554,13 +1624,18 @@ impl ManagementResourcePreferences {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MeterDetails {
     #[doc = "Represents billing type."]
-    #[serde(rename = "billingType")]
+    #[serde(rename = "billingType", with = "azure_core::xml::text_content")]
     pub billing_type: meter_details::BillingType,
     #[doc = "Billing unit applicable for Pav2 billing."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub multiplier: Option<f64>,
     #[doc = "Charging type."]
-    #[serde(rename = "chargingType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "chargingType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub charging_type: Option<meter_details::ChargingType>,
 }
 impl MeterDetails {
@@ -1653,7 +1728,7 @@ pub mod meter_details {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NotificationPreference {
     #[doc = "Name of the stage."]
-    #[serde(rename = "stageName")]
+    #[serde(rename = "stageName", with = "azure_core::xml::text_content")]
     pub stage_name: notification_preference::StageName,
     #[doc = "Notification is required or not."]
     #[serde(rename = "sendNotification")]
@@ -1720,10 +1795,15 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -1849,7 +1929,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1864,10 +1944,15 @@ pub struct OrderItemDetails {
     #[serde(rename = "productDetails")]
     pub product_details: ProductDetails,
     #[doc = "Order item type."]
-    #[serde(rename = "orderItemType")]
+    #[serde(rename = "orderItemType", with = "azure_core::xml::text_content")]
     pub order_item_type: order_item_details::OrderItemType,
     #[doc = "Defines the mode of the Order item."]
-    #[serde(rename = "orderItemMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "orderItemMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub order_item_mode: Option<order_item_details::OrderItemMode>,
     #[doc = "Resource stage details."]
     #[serde(rename = "currentStage", default, skip_serializing_if = "Option::is_none")]
@@ -1901,16 +1986,31 @@ pub struct OrderItemDetails {
     #[serde(rename = "cancellationReason", default, skip_serializing_if = "Option::is_none")]
     pub cancellation_reason: Option<String>,
     #[doc = "Describes whether the order item is cancellable or not."]
-    #[serde(rename = "cancellationStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "cancellationStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cancellation_status: Option<order_item_details::CancellationStatus>,
     #[doc = "Describes whether the order item is deletable or not."]
-    #[serde(rename = "deletionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "deletionStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub deletion_status: Option<order_item_details::DeletionStatus>,
     #[doc = "Return reason."]
     #[serde(rename = "returnReason", default, skip_serializing_if = "Option::is_none")]
     pub return_reason: Option<String>,
     #[doc = "Describes whether the order item is returnable or not."]
-    #[serde(rename = "returnStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "returnStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub return_status: Option<order_item_details::ReturnStatus>,
     #[doc = "List of parent RP details supported for configuration."]
     #[serde(
@@ -2201,7 +2301,7 @@ pub struct OrderItemResourceList {
 impl azure_core::Continuable for OrderItemResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OrderItemResourceList {
@@ -2270,7 +2370,12 @@ pub struct OrderProperties {
     )]
     pub order_stage_history: Vec<StageDetails>,
     #[doc = "Order mode."]
-    #[serde(rename = "orderMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "orderMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub order_mode: Option<order_properties::OrderMode>,
 }
 impl OrderProperties {
@@ -2355,7 +2460,7 @@ pub struct OrderResourceList {
 impl azure_core::Continuable for OrderResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OrderResourceList {
@@ -2428,10 +2533,20 @@ pub struct ProductDetails {
     #[serde(rename = "hierarchyInformation")]
     pub hierarchy_information: HierarchyInformation,
     #[doc = "Double encryption status of the configuration. Read-only field."]
-    #[serde(rename = "productDoubleEncryptionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "productDoubleEncryptionStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub product_double_encryption_status: Option<product_details::ProductDoubleEncryptionStatus>,
     #[doc = "Identification type of the configuration."]
-    #[serde(rename = "identificationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "identificationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub identification_type: Option<product_details::IdentificationType>,
     #[doc = "Device details."]
     #[serde(rename = "parentDeviceDetails", default, skip_serializing_if = "Option::is_none")]
@@ -2560,7 +2675,7 @@ pub struct ProductFamilies {
 impl azure_core::Continuable for ProductFamilies {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProductFamilies {
@@ -2585,7 +2700,7 @@ pub struct ProductFamiliesMetadata {
 impl azure_core::Continuable for ProductFamiliesMetadata {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProductFamiliesMetadata {
@@ -2872,7 +2987,12 @@ pub struct ShippingAddress {
     #[serde(rename = "companyName", default, skip_serializing_if = "Option::is_none")]
     pub company_name: Option<String>,
     #[doc = "Type of address."]
-    #[serde(rename = "addressType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "addressType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub address_type: Option<shipping_address::AddressType>,
 }
 impl ShippingAddress {
@@ -2952,10 +3072,20 @@ impl Specification {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StageDetails {
     #[doc = "Stage status."]
-    #[serde(rename = "stageStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "stageStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub stage_status: Option<stage_details::StageStatus>,
     #[doc = "Stage name."]
-    #[serde(rename = "stageName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "stageName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub stage_name: Option<stage_details::StageName>,
     #[doc = "Display name of the resource stage."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -3098,7 +3228,7 @@ impl TrackedResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TransportPreferences {
     #[doc = "Indicates Shipment Logistics type that the customer preferred."]
-    #[serde(rename = "preferredShipmentType")]
+    #[serde(rename = "preferredShipmentType", with = "azure_core::xml::text_content")]
     pub preferred_shipment_type: transport_preferences::PreferredShipmentType,
 }
 impl TransportPreferences {
@@ -3153,7 +3283,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -3162,7 +3297,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

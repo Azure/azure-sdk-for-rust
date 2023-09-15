@@ -99,7 +99,7 @@ pub struct ClusterList {
 impl azure_core::Continuable for ClusterList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClusterList {
@@ -113,7 +113,12 @@ pub struct ClusterProperties {
     #[serde(flatten)]
     pub management_cluster: ManagementCluster,
     #[doc = "The state of the cluster provisioning"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ClusterProvisioningState>,
 }
 impl ClusterProperties {
@@ -288,7 +293,7 @@ pub struct ExpressRouteAuthorizationList {
 impl azure_core::Continuable for ExpressRouteAuthorizationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExpressRouteAuthorizationList {
@@ -300,7 +305,12 @@ impl ExpressRouteAuthorizationList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExpressRouteAuthorizationProperties {
     #[doc = "The state of the  ExpressRoute Circuit Authorization provisioning"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<express_route_authorization_properties::ProvisioningState>,
     #[doc = "The ID of the ExpressRoute Circuit Authorization"]
     #[serde(rename = "expressRouteAuthorizationId", default, skip_serializing_if = "Option::is_none")]
@@ -387,7 +397,7 @@ pub struct HcxEnterpriseSiteList {
 impl azure_core::Continuable for HcxEnterpriseSiteList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HcxEnterpriseSiteList {
@@ -402,7 +412,7 @@ pub struct HcxEnterpriseSiteProperties {
     #[serde(rename = "activationKey", default, skip_serializing_if = "Option::is_none")]
     pub activation_key: Option<String>,
     #[doc = "The status of the HCX Enterprise Site"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<hcx_enterprise_site_properties::Status>,
 }
 impl HcxEnterpriseSiteProperties {
@@ -479,7 +489,7 @@ pub struct IdentitySource {
     #[serde(rename = "secondaryServer", default, skip_serializing_if = "Option::is_none")]
     pub secondary_server: Option<String>,
     #[doc = "Protect LDAP communication using SSL certificate (LDAPS)"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub ssl: Option<identity_source::Ssl>,
     #[doc = "The ID of an Active Directory user with a minimum of read-only access to Base DN for users and group"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -557,7 +567,12 @@ pub struct ManagementCluster {
     #[serde(flatten)]
     pub cluster_update_properties: ClusterUpdateProperties,
     #[doc = "The state of the cluster provisioning"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ClusterProvisioningState>,
     #[doc = "The identity"]
     #[serde(rename = "clusterId", default, skip_serializing_if = "Option::is_none")]
@@ -728,7 +743,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -784,7 +799,7 @@ pub struct PrivateCloudList {
 impl azure_core::Continuable for PrivateCloudList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateCloudList {
@@ -798,7 +813,12 @@ pub struct PrivateCloudProperties {
     #[serde(flatten)]
     pub private_cloud_update_properties: PrivateCloudUpdateProperties,
     #[doc = "The provisioning state"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<private_cloud_properties::ProvisioningState>,
     #[doc = "An ExpressRoute Circuit"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -921,7 +941,7 @@ pub struct PrivateCloudUpdateProperties {
     #[serde(rename = "managementCluster", default, skip_serializing_if = "Option::is_none")]
     pub management_cluster: Option<ManagementCluster>,
     #[doc = "Connectivity to internet is enabled or disabled"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub internet: Option<private_cloud_update_properties::Internet>,
     #[doc = "vCenter Single Sign On Identity Sources"]
     #[serde(
@@ -989,7 +1009,12 @@ pub struct Quota {
     #[serde(rename = "hostsRemaining", default, skip_serializing_if = "Option::is_none")]
     pub hosts_remaining: Option<serde_json::Value>,
     #[doc = "Host quota is active for current subscription"]
-    #[serde(rename = "quotaEnabled", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "quotaEnabled",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub quota_enabled: Option<quota::QuotaEnabled>,
 }
 impl Quota {
@@ -1112,7 +1137,7 @@ impl TrackedResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Trial {
     #[doc = "Trial status"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<trial::Status>,
     #[doc = "Number of trial hosts available"]
     #[serde(rename = "availableHosts", default, skip_serializing_if = "Option::is_none")]

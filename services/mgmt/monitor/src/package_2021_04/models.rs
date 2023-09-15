@@ -505,6 +505,7 @@ pub struct AlertingAction {
     #[serde(flatten)]
     pub action: Action,
     #[doc = "Severity Level of Alert"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub severity: AlertSeverity,
     #[doc = "Azure action group"]
     #[serde(rename = "aznsAction", default, skip_serializing_if = "Option::is_none")]
@@ -589,6 +590,7 @@ impl AutomationRunbookReceiver {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoscaleNotification {
     #[doc = "the operation associated with the notification and its value must be \"scale\""]
+    #[serde(with = "azure_core::xml::text_content")]
     pub operation: autoscale_notification::Operation,
     #[doc = "Email notification of an autoscale event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -707,7 +709,7 @@ pub struct AutoscaleSettingResourceCollection {
 impl azure_core::Continuable for AutoscaleSettingResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AutoscaleSettingResourceCollection {
@@ -836,7 +838,7 @@ pub struct AzureMonitorPrivateLinkScopeListResult {
 impl azure_core::Continuable for AzureMonitorPrivateLinkScopeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AzureMonitorPrivateLinkScopeListResult {
@@ -1015,7 +1017,12 @@ pub struct DataCollectionEndpoint {
     #[serde(rename = "networkAcls", default, skip_serializing_if = "Option::is_none")]
     pub network_acls: Option<serde_json::Value>,
     #[doc = "The resource provisioning state. This property is READ-ONLY."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<data_collection_endpoint::ProvisioningState>,
 }
 impl DataCollectionEndpoint {
@@ -1081,7 +1088,7 @@ pub struct DataCollectionEndpointResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[doc = "The kind of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<data_collection_endpoint_resource::Kind>,
     #[doc = "Fully qualified ID of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1166,7 +1173,7 @@ pub struct DataCollectionEndpointResourceListResult {
 impl azure_core::Continuable for DataCollectionEndpointResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataCollectionEndpointResourceListResult {
@@ -1198,7 +1205,12 @@ pub struct DataCollectionRule {
     )]
     pub data_flows: Vec<DataFlow>,
     #[doc = "The resource provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<data_collection_rule::ProvisioningState>,
 }
 impl DataCollectionRule {
@@ -1265,7 +1277,12 @@ pub struct DataCollectionRuleAssociation {
     #[serde(rename = "dataCollectionEndpointId", default, skip_serializing_if = "Option::is_none")]
     pub data_collection_endpoint_id: Option<String>,
     #[doc = "The resource provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<data_collection_rule_association::ProvisioningState>,
 }
 impl DataCollectionRuleAssociation {
@@ -1358,7 +1375,7 @@ pub struct DataCollectionRuleAssociationProxyOnlyResourceListResult {
 impl azure_core::Continuable for DataCollectionRuleAssociationProxyOnlyResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataCollectionRuleAssociationProxyOnlyResourceListResult {
@@ -1378,7 +1395,7 @@ pub struct DataCollectionRuleResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
     #[doc = "The kind of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<data_collection_rule_resource::Kind>,
     #[doc = "Fully qualified ID of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1463,7 +1480,7 @@ pub struct DataCollectionRuleResourceListResult {
 impl azure_core::Continuable for DataCollectionRuleResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataCollectionRuleResourceListResult {
@@ -1609,7 +1626,12 @@ impl DiagnosticSettings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettingsCategory {
     #[doc = "The type of the diagnostic settings category."]
-    #[serde(rename = "categoryType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "categoryType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub category_type: Option<diagnostic_settings_category::CategoryType>,
 }
 impl DiagnosticSettingsCategory {
@@ -1692,6 +1714,7 @@ pub struct Dimension {
     #[doc = "Name of the dimension"]
     pub name: String,
     #[doc = "Operator for dimension values"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub operator: dimension::Operator,
     #[doc = "List of dimension values"]
     pub values: Vec<String>,
@@ -1745,9 +1768,10 @@ pub struct DynamicMetricCriteria {
     #[serde(flatten)]
     pub multi_metric_criteria: MultiMetricCriteria,
     #[doc = "The operator used to compare the metric value against the threshold."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub operator: dynamic_metric_criteria::Operator,
     #[doc = "The extent of deviation required to trigger an alert. This will affect how tight the threshold is to the metric series pattern."]
-    #[serde(rename = "alertSensitivity")]
+    #[serde(rename = "alertSensitivity", with = "azure_core::xml::text_content")]
     pub alert_sensitivity: dynamic_metric_criteria::AlertSensitivity,
     #[doc = "The minimum number of violations required within the selected lookback time window required to raise an alert."]
     #[serde(rename = "failingPeriods")]
@@ -1906,7 +1930,7 @@ pub struct EmailReceiver {
     #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
     pub use_common_alert_schema: Option<bool>,
     #[doc = "Indicates the status of the receiver. Receivers that are not Enabled will not receive any communications."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<ReceiverStatus>,
 }
 impl EmailReceiver {
@@ -2127,7 +2151,7 @@ pub struct EventData {
     #[serde(rename = "httpRequest", default, skip_serializing_if = "Option::is_none")]
     pub http_request: Option<HttpRequestInfo>,
     #[doc = "the event level"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub level: Option<event_data::Level>,
     #[doc = "the resource group name of the impacted resource."]
     #[serde(rename = "resourceGroupName", default, skip_serializing_if = "Option::is_none")]
@@ -2198,7 +2222,7 @@ pub struct EventDataCollection {
 impl azure_core::Continuable for EventDataCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EventDataCollection {
@@ -2400,13 +2424,23 @@ impl LogAnalyticsDestination {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogMetricTrigger {
     #[doc = "Result Condition Evaluation criteria."]
-    #[serde(rename = "thresholdOperator", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "thresholdOperator",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub threshold_operator: Option<ConditionalOperator>,
     #[doc = "The threshold of the metric trigger."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub threshold: Option<f64>,
     #[doc = "Metric Trigger Evaluation Type"]
-    #[serde(rename = "metricTriggerType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "metricTriggerType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub metric_trigger_type: Option<MetricTriggerType>,
     #[doc = "Evaluation of metric on a particular column"]
     #[serde(rename = "metricColumn", default, skip_serializing_if = "Option::is_none")]
@@ -2509,13 +2543,18 @@ pub struct LogSearchRule {
     #[serde(rename = "autoMitigate", default, skip_serializing_if = "Option::is_none")]
     pub auto_mitigate: Option<bool>,
     #[doc = "The flag which indicates whether the Log Search rule is enabled. Value should be true or false"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub enabled: Option<log_search_rule::Enabled>,
     #[doc = "Last time the rule was updated in IS08601 format."]
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
     #[doc = "Provisioning state of the scheduled query rule"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<log_search_rule::ProvisioningState>,
     #[doc = "Specifies the log search query."]
     pub source: Source,
@@ -2629,7 +2668,7 @@ pub mod log_search_rule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogSearchRulePatch {
     #[doc = "The flag which indicates whether the Log Search rule is enabled. Value should be true or false"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub enabled: Option<log_search_rule_patch::Enabled>,
 }
 impl LogSearchRulePatch {
@@ -2804,7 +2843,7 @@ impl LogsIngestionEndpointSpec {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementEventAggregationCondition {
     #[doc = "Operators allowed in the rule condition."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub operator: Option<ConditionOperator>,
     #[doc = "The threshold value that activates the alert."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2870,6 +2909,7 @@ pub struct Metric {
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
     #[doc = "The unit of the metric."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub unit: Unit,
     #[doc = "the time series returned when a data query is performed."]
     pub timeseries: Vec<TimeSeriesElement>,
@@ -2907,7 +2947,7 @@ impl MetricAlertAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertCriteria {
     #[doc = "specifies the type of the alert criteria."]
-    #[serde(rename = "odata.type")]
+    #[serde(rename = "odata.type", with = "azure_core::xml::text_content")]
     pub odata_type: metric_alert_criteria::OdataType,
 }
 impl MetricAlertCriteria {
@@ -3349,6 +3389,7 @@ pub struct MetricCriteria {
     #[serde(flatten)]
     pub multi_metric_criteria: MultiMetricCriteria,
     #[doc = "the criteria operator."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub operator: metric_criteria::Operator,
     #[doc = "the criteria threshold value that activates the alert."]
     pub threshold: f64,
@@ -3430,13 +3471,23 @@ pub struct MetricDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
     #[doc = "The class of the metric."]
-    #[serde(rename = "metricClass", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "metricClass",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub metric_class: Option<MetricClass>,
     #[doc = "The unit of the metric."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub unit: Option<Unit>,
     #[doc = "the aggregation type of the metric."]
-    #[serde(rename = "primaryAggregationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "primaryAggregationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub primary_aggregation_type: Option<AggregationType>,
     #[doc = "the collection of what aggregation types are supported."]
     #[serde(
@@ -3515,7 +3566,7 @@ pub struct MetricNamespace {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Kind of namespace"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub classification: Option<NamespaceClassification>,
     #[doc = "The fully qualified metric namespace name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3612,14 +3663,16 @@ pub struct MetricTrigger {
     #[serde(rename = "timeGrain")]
     pub time_grain: String,
     #[doc = "the metric statistic type. How the metrics from multiple instances are combined."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub statistic: metric_trigger::Statistic,
     #[doc = "the range of time in which instance data is collected. This value must be greater than the delay in metric collection, which can vary from resource-to-resource. Must be between 12 hours and 5 minutes."]
     #[serde(rename = "timeWindow")]
     pub time_window: String,
     #[doc = "time aggregation type. How the data that is collected should be combined over time. The default value is Average."]
-    #[serde(rename = "timeAggregation")]
+    #[serde(rename = "timeAggregation", with = "azure_core::xml::text_content")]
     pub time_aggregation: metric_trigger::TimeAggregation,
     #[doc = "the operator that is used to compare the metric data and the threshold."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub operator: metric_trigger::Operator,
     #[doc = "the threshold of the metric that triggers the scale action."]
     pub threshold: f64,
@@ -3773,7 +3826,7 @@ impl MetricValue {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MultiMetricCriteria {
     #[doc = "Specifies the type of threshold criteria"]
-    #[serde(rename = "criterionType")]
+    #[serde(rename = "criterionType", with = "azure_core::xml::text_content")]
     pub criterion_type: multi_metric_criteria::CriterionType,
     #[doc = "Name of the criteria."]
     pub name: String,
@@ -3784,7 +3837,7 @@ pub struct MultiMetricCriteria {
     #[serde(rename = "metricNamespace", default, skip_serializing_if = "Option::is_none")]
     pub metric_namespace: Option<String>,
     #[doc = "the criteria time aggregation types."]
-    #[serde(rename = "timeAggregation")]
+    #[serde(rename = "timeAggregation", with = "azure_core::xml::text_content")]
     pub time_aggregation: multi_metric_criteria::TimeAggregation,
     #[doc = "List of dimension conditions."]
     #[serde(
@@ -3941,7 +3994,12 @@ impl Serialize for NamespaceClassification {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkRuleSet {
     #[doc = "The configuration to set whether network access from public internet to the endpoints are allowed."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<network_rule_set::PublicNetworkAccess>,
 }
 impl NetworkRuleSet {
@@ -4132,7 +4190,7 @@ pub struct PrivateEndpointConnectionListResult {
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionListResult {
@@ -4201,7 +4259,7 @@ pub struct PrivateLinkResourceListResult {
 impl azure_core::Continuable for PrivateLinkResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkResourceListResult {
@@ -4360,6 +4418,7 @@ pub enum ReceiverStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Recurrence {
     #[doc = "the recurrence frequency. How often the schedule profile should take effect. This value must be Week, meaning each week will have the same set of profiles. For example, to set a daily schedule, set **schedule** to every day of the week. The frequency property specifies that the schedule is repeated weekly."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub frequency: recurrence::Frequency,
     #[doc = "The scheduling constraints for when the profile begins."]
     pub schedule: RecurrentSchedule,
@@ -4693,9 +4752,10 @@ impl RuleWebhookAction {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScaleAction {
     #[doc = "the scale direction. Whether the scaling action increases or decreases the number of instances."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub direction: scale_action::Direction,
     #[doc = "the type of action that should occur when the scale rule fires."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: scale_action::Type,
     #[doc = "the number of instances that are involved in the scaling action. This value must be 1 or greater. The default value is 1."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4771,7 +4831,7 @@ pub struct ScaleRuleMetricDimension {
     #[serde(rename = "DimensionName")]
     pub dimension_name: String,
     #[doc = "the dimension operator. Only 'Equals' and 'NotEquals' are supported. 'Equals' being equal to any of the values. 'NotEquals' being not equal to all of the values"]
-    #[serde(rename = "Operator")]
+    #[serde(rename = "Operator", with = "azure_core::xml::text_content")]
     pub operator: scale_rule_metric_dimension::Operator,
     #[doc = "list of dimension values. For example: [\"App1\",\"App2\"]."]
     #[serde(rename = "Values")]
@@ -4875,7 +4935,7 @@ pub struct ScopedResourceListResult {
 impl azure_core::Continuable for ScopedResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScopedResourceListResult {
@@ -4920,6 +4980,7 @@ impl SenderAuthorization {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SingleBaseline {
     #[doc = "the sensitivity of the baseline."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub sensitivity: single_baseline::Sensitivity,
     #[doc = "The low thresholds of the baseline."]
     #[serde(rename = "lowThresholds")]
@@ -5014,7 +5075,7 @@ pub struct SmsReceiver {
     #[serde(rename = "phoneNumber")]
     pub phone_number: String,
     #[doc = "Indicates the status of the receiver. Receivers that are not Enabled will not receive any communications."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<ReceiverStatus>,
 }
 impl SmsReceiver {
@@ -5045,7 +5106,12 @@ pub struct Source {
     #[serde(rename = "dataSourceId")]
     pub data_source_id: String,
     #[doc = "Set value to 'ResultAccount'"]
-    #[serde(rename = "queryType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "queryType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub query_type: Option<QueryType>,
 }
 impl Source {
@@ -5111,6 +5177,7 @@ pub struct ThresholdRuleCondition {
     #[serde(flatten)]
     pub rule_condition: RuleCondition,
     #[doc = "Operators allowed in the rule condition."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub operator: ConditionOperator,
     #[doc = "the threshold value that activates the alert."]
     pub threshold: f64,
@@ -5118,7 +5185,12 @@ pub struct ThresholdRuleCondition {
     #[serde(rename = "windowSize", default, skip_serializing_if = "Option::is_none")]
     pub window_size: Option<String>,
     #[doc = "Aggregation operators allowed in a rule."]
-    #[serde(rename = "timeAggregation", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "timeAggregation",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub time_aggregation: Option<TimeAggregationOperator>,
 }
 impl ThresholdRuleCondition {
@@ -5226,7 +5298,7 @@ impl TimeWindow {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TriggerCondition {
     #[doc = "Result Condition Evaluation criteria."]
-    #[serde(rename = "thresholdOperator")]
+    #[serde(rename = "thresholdOperator", with = "azure_core::xml::text_content")]
     pub threshold_operator: ConditionalOperator,
     #[doc = "Result or count threshold based on which rule should be triggered."]
     pub threshold: f64,
@@ -5325,10 +5397,10 @@ pub mod vm_insights_onboarding_status {
         #[serde(rename = "resourceId")]
         pub resource_id: String,
         #[doc = "The onboarding status for the resource. Note that, a higher level scope, e.g., resource group or subscription, is considered onboarded if at least one resource under it is onboarded."]
-        #[serde(rename = "onboardingStatus")]
+        #[serde(rename = "onboardingStatus", with = "azure_core::xml::text_content")]
         pub onboarding_status: properties::OnboardingStatus,
         #[doc = "The status of VM Insights data from the resource. When reported as `present` the data array will contain information about the data containers to which data for the specified resource is being routed."]
-        #[serde(rename = "dataStatus")]
+        #[serde(rename = "dataStatus", with = "azure_core::xml::text_content")]
         pub data_status: properties::DataStatus,
         #[doc = "Containers that currently store VM Insights data for the specified resource."]
         #[serde(
@@ -5595,7 +5667,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -5604,7 +5681,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

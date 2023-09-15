@@ -69,7 +69,7 @@ pub struct Extension {
     #[doc = "The extension name. Supported values are: <br><br>**AgentlessDiscoveryForKubernetes** - API-based discovery of information about Kubernetes cluster architecture, workload objects, and setup. Required for Kubernetes inventory, identity and network exposure detection, attack path analysis and risk hunting as part of the cloud security explorer.\r\nAvailable for CloudPosture plan.<br><br>**OnUploadMalwareScanning** - Limits the GB to be scanned per month for each storage account within the subscription. Once this limit reached on a given storage account, Blobs won't be scanned during current calendar month.\r\nAvailable for StorageAccounts plan.<br><br>**SensitiveDataDiscovery** - Sensitive data discovery identifies Blob storage container with sensitive data such as credentials, credit cards, and more, to help prioritize and investigate security events.\r\nAvailable for StorageAccounts and CloudPosture plans.<br><br>**ContainerRegistriesVulnerabilityAssessments** - Provides vulnerability management for images stored in your container registries.\r\nAvailable for CloudPosture and Containers plans."]
     pub name: String,
     #[doc = "Indicates whether the extension is enabled."]
-    #[serde(rename = "isEnabled")]
+    #[serde(rename = "isEnabled", with = "azure_core::xml::text_content")]
     pub is_enabled: extension::IsEnabled,
     #[doc = "Property values associated with the extension."]
     #[serde(rename = "additionalExtensionProperties", default, skip_serializing_if = "Option::is_none")]
@@ -132,7 +132,7 @@ pub mod extension {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationStatus {
     #[doc = "The operation status code."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub code: Option<operation_status::Code>,
     #[doc = "Additional information regarding the success/failure of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -212,7 +212,7 @@ impl PricingList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PricingProperties {
     #[doc = "The pricing tier value. Microsoft Defender for Cloud is provided in two pricing tiers: free and standard. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
-    #[serde(rename = "pricingTier")]
+    #[serde(rename = "pricingTier", with = "azure_core::xml::text_content")]
     pub pricing_tier: pricing_properties::PricingTier,
     #[doc = "The sub-plan selected for a Standard pricing configuration, when more than one sub-plan is available. Each sub-plan enables a set of security features. When not specified, full plan is applied."]
     #[serde(rename = "subPlan", default, skip_serializing_if = "Option::is_none")]

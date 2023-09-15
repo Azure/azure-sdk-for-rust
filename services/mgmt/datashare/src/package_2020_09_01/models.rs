@@ -129,7 +129,12 @@ pub struct AdlsGen2FileDataSetMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
     #[doc = "Gets the status of the data set mapping."]
-    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataSetMappingStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_set_mapping_status: Option<adls_gen2_file_data_set_mapping_properties::DataSetMappingStatus>,
     #[doc = "File path within the file system."]
     #[serde(rename = "filePath")]
@@ -138,10 +143,20 @@ pub struct AdlsGen2FileDataSetMappingProperties {
     #[serde(rename = "fileSystem")]
     pub file_system: String,
     #[doc = "Type of output file"]
-    #[serde(rename = "outputType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "outputType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub output_type: Option<adls_gen2_file_data_set_mapping_properties::OutputType>,
     #[doc = "Provisioning state of the data set mapping."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<adls_gen2_file_data_set_mapping_properties::ProvisioningState>,
     #[doc = "Resource group of storage account."]
     #[serde(rename = "resourceGroup")]
@@ -371,13 +386,23 @@ pub struct AdlsGen2FileSystemDataSetMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
     #[doc = "Gets the status of the data set mapping."]
-    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataSetMappingStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_set_mapping_status: Option<adls_gen2_file_system_data_set_mapping_properties::DataSetMappingStatus>,
     #[doc = "The file system name."]
     #[serde(rename = "fileSystem")]
     pub file_system: String,
     #[doc = "Provisioning state of the data set mapping."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<adls_gen2_file_system_data_set_mapping_properties::ProvisioningState>,
     #[doc = "Resource group of storage account."]
     #[serde(rename = "resourceGroup")]
@@ -557,7 +582,12 @@ pub struct AdlsGen2FolderDataSetMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
     #[doc = "Gets the status of the data set mapping."]
-    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataSetMappingStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_set_mapping_status: Option<adls_gen2_folder_data_set_mapping_properties::DataSetMappingStatus>,
     #[doc = "File system to which the folder belongs."]
     #[serde(rename = "fileSystem")]
@@ -566,7 +596,12 @@ pub struct AdlsGen2FolderDataSetMappingProperties {
     #[serde(rename = "folderPath")]
     pub folder_path: String,
     #[doc = "Provisioning state of the data set mapping."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<adls_gen2_folder_data_set_mapping_properties::ProvisioningState>,
     #[doc = "Resource group of storage account."]
     #[serde(rename = "resourceGroup")]
@@ -754,7 +789,7 @@ pub struct AccountList {
 impl azure_core::Continuable for AccountList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccountList {
@@ -769,7 +804,12 @@ pub struct AccountProperties {
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "Provisioning state of the Account"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<account_properties::ProvisioningState>,
     #[doc = "Email of the user who created the resource"]
     #[serde(rename = "userEmail", default, skip_serializing_if = "Option::is_none")]
@@ -880,10 +920,20 @@ pub struct BlobContainerMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
     #[doc = "Gets the status of the data set mapping."]
-    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataSetMappingStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_set_mapping_status: Option<blob_container_mapping_properties::DataSetMappingStatus>,
     #[doc = "Provisioning state of the data set mapping."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<blob_container_mapping_properties::ProvisioningState>,
     #[doc = "Resource group of storage account."]
     #[serde(rename = "resourceGroup")]
@@ -1095,12 +1145,22 @@ pub struct BlobFolderMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
     #[doc = "Gets the status of the data set mapping."]
-    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataSetMappingStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_set_mapping_status: Option<blob_folder_mapping_properties::DataSetMappingStatus>,
     #[doc = "Prefix for blob folder"]
     pub prefix: String,
     #[doc = "Provisioning state of the data set mapping."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<blob_folder_mapping_properties::ProvisioningState>,
     #[doc = "Resource group of storage account."]
     #[serde(rename = "resourceGroup")]
@@ -1265,16 +1325,31 @@ pub struct BlobMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
     #[doc = "Gets the status of the data set mapping."]
-    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataSetMappingStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_set_mapping_status: Option<blob_mapping_properties::DataSetMappingStatus>,
     #[doc = "File path within the source data set"]
     #[serde(rename = "filePath")]
     pub file_path: String,
     #[doc = "File output type"]
-    #[serde(rename = "outputType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "outputType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub output_type: Option<blob_mapping_properties::OutputType>,
     #[doc = "Provisioning state of the data set mapping."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<blob_mapping_properties::ProvisioningState>,
     #[doc = "Resource group of storage account."]
     #[serde(rename = "resourceGroup")]
@@ -1496,7 +1571,7 @@ pub struct ConsumerInvitationList {
 impl azure_core::Continuable for ConsumerInvitationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConsumerInvitationList {
@@ -1520,7 +1595,12 @@ pub struct ConsumerInvitationProperties {
     #[serde(rename = "invitationId")]
     pub invitation_id: String,
     #[doc = "The status of the invitation."]
-    #[serde(rename = "invitationStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "invitationStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub invitation_status: Option<consumer_invitation_properties::InvitationStatus>,
     #[doc = "invitation location"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1644,7 +1724,7 @@ pub struct ConsumerSourceDataSetList {
 impl azure_core::Continuable for ConsumerSourceDataSetList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConsumerSourceDataSetList {
@@ -1668,7 +1748,12 @@ pub struct ConsumerSourceDataSetProperties {
     #[serde(rename = "dataSetPath", default, skip_serializing_if = "Option::is_none")]
     pub data_set_path: Option<String>,
     #[doc = "Type of data set"]
-    #[serde(rename = "dataSetType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataSetType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_set_type: Option<consumer_source_data_set_properties::DataSetType>,
 }
 impl ConsumerSourceDataSetProperties {
@@ -1748,6 +1833,7 @@ pub struct DataSet {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
     #[doc = "Kind of data set."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: data_set::Kind,
 }
 impl DataSet {
@@ -1834,7 +1920,7 @@ pub struct DataSetList {
 impl azure_core::Continuable for DataSetList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataSetList {
@@ -1848,6 +1934,7 @@ pub struct DataSetMapping {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
     #[doc = "Kind of data set mapping."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: data_set_mapping::Kind,
 }
 impl DataSetMapping {
@@ -1930,7 +2017,7 @@ pub struct DataSetMappingList {
 impl azure_core::Continuable for DataSetMappingList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataSetMappingList {
@@ -2028,7 +2115,12 @@ pub struct EmailRegistration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
     #[doc = "Registration status"]
-    #[serde(rename = "registrationStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "registrationStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub registration_status: Option<email_registration::RegistrationStatus>,
     #[doc = "The tenant to register"]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -2093,7 +2185,12 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "Identity Type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<identity::Type>,
 }
 impl Identity {
@@ -2165,7 +2262,7 @@ pub struct InvitationList {
 impl azure_core::Continuable for InvitationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InvitationList {
@@ -2183,7 +2280,12 @@ pub struct InvitationProperties {
     #[serde(rename = "invitationId", default, skip_serializing_if = "Option::is_none")]
     pub invitation_id: Option<String>,
     #[doc = "The status of the invitation."]
-    #[serde(rename = "invitationStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "invitationStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub invitation_status: Option<invitation_properties::InvitationStatus>,
     #[doc = "The time the recipient responded to the invitation."]
     #[serde(rename = "respondedAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2292,7 +2394,12 @@ pub struct KustoClusterDataSetMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
     #[doc = "Gets the status of the data set mapping."]
-    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataSetMappingStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_set_mapping_status: Option<kusto_cluster_data_set_mapping_properties::DataSetMappingStatus>,
     #[doc = "Resource id of the sink kusto cluster."]
     #[serde(rename = "kustoClusterResourceId")]
@@ -2301,7 +2408,12 @@ pub struct KustoClusterDataSetMappingProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "Provisioning state of the data set mapping."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<kusto_cluster_data_set_mapping_properties::ProvisioningState>,
 }
 impl KustoClusterDataSetMappingProperties {
@@ -2411,7 +2523,12 @@ pub struct KustoClusterDataSetProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "Provisioning state of the kusto cluster data set."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<kusto_cluster_data_set_properties::ProvisioningState>,
 }
 impl KustoClusterDataSetProperties {
@@ -2506,7 +2623,12 @@ pub struct KustoDatabaseDataSetMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
     #[doc = "Gets the status of the data set mapping."]
-    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataSetMappingStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_set_mapping_status: Option<kusto_database_data_set_mapping_properties::DataSetMappingStatus>,
     #[doc = "Resource id of the sink kusto cluster."]
     #[serde(rename = "kustoClusterResourceId")]
@@ -2515,7 +2637,12 @@ pub struct KustoDatabaseDataSetMappingProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "Provisioning state of the data set mapping."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<kusto_database_data_set_mapping_properties::ProvisioningState>,
 }
 impl KustoDatabaseDataSetMappingProperties {
@@ -2625,7 +2752,12 @@ pub struct KustoDatabaseDataSetProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "Provisioning state of the kusto database data set."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<kusto_database_data_set_properties::ProvisioningState>,
 }
 impl KustoDatabaseDataSetProperties {
@@ -2696,7 +2828,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -2873,6 +3005,7 @@ pub struct OperationResponse {
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "Operation state of the long running operation."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: operation_response::Status,
 }
 impl OperationResponse {
@@ -2959,7 +3092,7 @@ pub struct ProviderShareSubscriptionList {
 impl azure_core::Continuable for ProviderShareSubscriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderShareSubscriptionList {
@@ -2998,7 +3131,12 @@ pub struct ProviderShareSubscriptionProperties {
     #[serde(rename = "shareSubscriptionObjectId", default, skip_serializing_if = "Option::is_none")]
     pub share_subscription_object_id: Option<String>,
     #[doc = "Gets the status of share subscription"]
-    #[serde(rename = "shareSubscriptionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "shareSubscriptionStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub share_subscription_status: Option<provider_share_subscription_properties::ShareSubscriptionStatus>,
 }
 impl ProviderShareSubscriptionProperties {
@@ -3075,7 +3213,12 @@ impl ProxyDto {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduledSourceShareSynchronizationSettingProperties {
     #[doc = "Recurrence Interval"]
-    #[serde(rename = "recurrenceInterval", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "recurrenceInterval",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub recurrence_interval: Option<scheduled_source_share_synchronization_setting_properties::RecurrenceInterval>,
     #[doc = "Synchronization time"]
     #[serde(rename = "synchronizationTime", default, with = "azure_core::date::rfc3339::option")]
@@ -3166,10 +3309,15 @@ pub struct ScheduledSynchronizationSettingProperties {
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "Gets or sets the provisioning state"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<scheduled_synchronization_setting_properties::ProvisioningState>,
     #[doc = "Recurrence Interval"]
-    #[serde(rename = "recurrenceInterval")]
+    #[serde(rename = "recurrenceInterval", with = "azure_core::xml::text_content")]
     pub recurrence_interval: scheduled_synchronization_setting_properties::RecurrenceInterval,
     #[doc = "Synchronization time"]
     #[serde(rename = "synchronizationTime", with = "azure_core::date::rfc3339")]
@@ -3295,19 +3443,34 @@ pub struct ScheduledTriggerProperties {
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "Gets the provisioning state"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<scheduled_trigger_properties::ProvisioningState>,
     #[doc = "Recurrence Interval"]
-    #[serde(rename = "recurrenceInterval")]
+    #[serde(rename = "recurrenceInterval", with = "azure_core::xml::text_content")]
     pub recurrence_interval: scheduled_trigger_properties::RecurrenceInterval,
     #[doc = "Synchronization mode"]
-    #[serde(rename = "synchronizationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "synchronizationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub synchronization_mode: Option<scheduled_trigger_properties::SynchronizationMode>,
     #[doc = "Synchronization time"]
     #[serde(rename = "synchronizationTime", with = "azure_core::date::rfc3339")]
     pub synchronization_time: time::OffsetDateTime,
     #[doc = "Gets the trigger state"]
-    #[serde(rename = "triggerStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "triggerStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub trigger_status: Option<scheduled_trigger_properties::TriggerStatus>,
     #[doc = "Name of the user who created the trigger."]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
@@ -3513,7 +3676,7 @@ pub struct ShareList {
 impl azure_core::Continuable for ShareList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ShareList {
@@ -3531,10 +3694,20 @@ pub struct ShareProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Gets or sets the provisioning state"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<share_properties::ProvisioningState>,
     #[doc = "Share kind."]
-    #[serde(rename = "shareKind", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "shareKind",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub share_kind: Option<share_properties::ShareKind>,
     #[doc = "Share terms."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3662,7 +3835,7 @@ pub struct ShareSubscriptionList {
 impl azure_core::Continuable for ShareSubscriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ShareSubscriptionList {
@@ -3692,19 +3865,34 @@ pub struct ShareSubscriptionProperties {
     #[serde(rename = "providerTenantName", default, skip_serializing_if = "Option::is_none")]
     pub provider_tenant_name: Option<String>,
     #[doc = "Provisioning state of the share subscription"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<share_subscription_properties::ProvisioningState>,
     #[doc = "Description of share"]
     #[serde(rename = "shareDescription", default, skip_serializing_if = "Option::is_none")]
     pub share_description: Option<String>,
     #[doc = "Kind of share"]
-    #[serde(rename = "shareKind", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "shareKind",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub share_kind: Option<share_subscription_properties::ShareKind>,
     #[doc = "Name of the share"]
     #[serde(rename = "shareName", default, skip_serializing_if = "Option::is_none")]
     pub share_name: Option<String>,
     #[doc = "Gets the current status of share subscription."]
-    #[serde(rename = "shareSubscriptionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "shareSubscriptionStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub share_subscription_status: Option<share_subscription_properties::ShareSubscriptionStatus>,
     #[doc = "Terms of a share"]
     #[serde(rename = "shareTerms", default, skip_serializing_if = "Option::is_none")]
@@ -3886,7 +4074,12 @@ pub struct ShareSubscriptionSynchronization {
     #[serde(rename = "synchronizationId")]
     pub synchronization_id: String,
     #[doc = "Synchronization Mode"]
-    #[serde(rename = "synchronizationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "synchronizationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub synchronization_mode: Option<share_subscription_synchronization::SynchronizationMode>,
 }
 impl ShareSubscriptionSynchronization {
@@ -3954,7 +4147,7 @@ pub struct ShareSubscriptionSynchronizationList {
 impl azure_core::Continuable for ShareSubscriptionSynchronizationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ShareSubscriptionSynchronizationList {
@@ -3993,7 +4186,12 @@ pub struct ShareSynchronization {
     #[serde(rename = "synchronizationId", default, skip_serializing_if = "Option::is_none")]
     pub synchronization_id: Option<String>,
     #[doc = "Synchronization mode"]
-    #[serde(rename = "synchronizationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "synchronizationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub synchronization_mode: Option<share_synchronization::SynchronizationMode>,
 }
 impl ShareSynchronization {
@@ -4053,7 +4251,7 @@ pub struct ShareSynchronizationList {
 impl azure_core::Continuable for ShareSynchronizationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ShareSynchronizationList {
@@ -4065,6 +4263,7 @@ impl ShareSynchronizationList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceShareSynchronizationSetting {
     #[doc = "Kind of synchronization setting on share."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: source_share_synchronization_setting::Kind,
 }
 impl SourceShareSynchronizationSetting {
@@ -4122,7 +4321,7 @@ pub struct SourceShareSynchronizationSettingList {
 impl azure_core::Continuable for SourceShareSynchronizationSettingList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SourceShareSynchronizationSettingList {
@@ -4173,10 +4372,20 @@ pub struct SqlDbTableDataSetMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
     #[doc = "Gets the status of the data set mapping."]
-    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataSetMappingStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_set_mapping_status: Option<sql_db_table_data_set_mapping_properties::DataSetMappingStatus>,
     #[doc = "Provisioning state of the data set mapping."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<sql_db_table_data_set_mapping_properties::ProvisioningState>,
     #[doc = "Schema of the table. Default value is dbo."]
     #[serde(rename = "schemaName")]
@@ -4360,13 +4569,23 @@ pub struct SqlDwTableDataSetMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
     #[doc = "Gets the status of the data set mapping."]
-    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataSetMappingStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_set_mapping_status: Option<sql_dw_table_data_set_mapping_properties::DataSetMappingStatus>,
     #[doc = "DataWarehouse name of the source data set"]
     #[serde(rename = "dataWarehouseName")]
     pub data_warehouse_name: String,
     #[doc = "Provisioning state of the data set mapping."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<sql_dw_table_data_set_mapping_properties::ProvisioningState>,
     #[doc = "Schema of the table. Default value is dbo."]
     #[serde(rename = "schemaName")]
@@ -4546,10 +4765,20 @@ pub struct SynapseWorkspaceSqlPoolTableDataSetMappingProperties {
     #[serde(rename = "dataSetId")]
     pub data_set_id: String,
     #[doc = "Gets the status of the data set mapping."]
-    #[serde(rename = "dataSetMappingStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataSetMappingStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_set_mapping_status: Option<synapse_workspace_sql_pool_table_data_set_mapping_properties::DataSetMappingStatus>,
     #[doc = "Provisioning state of the data set mapping."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<synapse_workspace_sql_pool_table_data_set_mapping_properties::ProvisioningState>,
     #[doc = "Resource id of the Synapse Workspace SQL Pool Table"]
     #[serde(rename = "synapseWorkspaceSqlPoolTableResourceId")]
@@ -4673,7 +4902,12 @@ pub struct SynchronizationDetails {
     #[serde(rename = "dataSetId", default, skip_serializing_if = "Option::is_none")]
     pub data_set_id: Option<String>,
     #[doc = "Type of the data set"]
-    #[serde(rename = "dataSetType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataSetType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_set_type: Option<synchronization_details::DataSetType>,
     #[doc = "Duration of data set level copy"]
     #[serde(rename = "durationMs", default, skip_serializing_if = "Option::is_none")]
@@ -4798,7 +5032,7 @@ pub struct SynchronizationDetailsList {
 impl azure_core::Continuable for SynchronizationDetailsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SynchronizationDetailsList {
@@ -4812,6 +5046,7 @@ pub struct SynchronizationSetting {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
     #[doc = "Kind of synchronization setting."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: synchronization_setting::Kind,
 }
 impl SynchronizationSetting {
@@ -4872,7 +5107,7 @@ pub struct SynchronizationSettingList {
 impl azure_core::Continuable for SynchronizationSettingList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SynchronizationSettingList {
@@ -4884,7 +5119,12 @@ impl SynchronizationSettingList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Synchronize {
     #[doc = "Mode of synchronization used in triggers and snapshot sync. Incremental by default"]
-    #[serde(rename = "synchronizationMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "synchronizationMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub synchronization_mode: Option<synchronize::SynchronizationMode>,
 }
 impl Synchronize {
@@ -4942,7 +5182,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The type of identity that last modified the resource."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
@@ -4951,7 +5196,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
 }
 impl SystemData {
@@ -5050,6 +5300,7 @@ pub struct Trigger {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
     #[doc = "Kind of synchronization on trigger."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: trigger::Kind,
 }
 impl Trigger {
@@ -5110,7 +5361,7 @@ pub struct TriggerList {
 impl azure_core::Continuable for TriggerList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TriggerList {

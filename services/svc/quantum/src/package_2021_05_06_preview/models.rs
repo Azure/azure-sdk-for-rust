@@ -72,7 +72,7 @@ pub struct JobDetails {
     #[serde(rename = "outputDataFormat", default, skip_serializing_if = "Option::is_none")]
     pub output_data_format: Option<String>,
     #[doc = "The job status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<job_details::Status>,
     #[doc = "The creation time of the job."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
@@ -186,7 +186,7 @@ pub struct JobDetailsList {
 impl azure_core::Continuable for JobDetailsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobDetailsList {
@@ -198,6 +198,7 @@ impl JobDetailsList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JsonPatchDocument {
     #[doc = "The operation to be performed."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub op: json_patch_document::Op,
     #[doc = "A JSON-Pointer."]
     pub path: String,
@@ -280,7 +281,12 @@ pub struct ProviderStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Provider availability."]
-    #[serde(rename = "currentAvailability", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "currentAvailability",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub current_availability: Option<provider_status::CurrentAvailability>,
     #[serde(
         default,
@@ -352,7 +358,7 @@ pub struct ProviderStatusList {
 impl azure_core::Continuable for ProviderStatusList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderStatusList {
@@ -367,7 +373,7 @@ pub struct Quota {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dimension: Option<String>,
     #[doc = "The scope at which the quota is applied."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub scope: Option<quota::Scope>,
     #[doc = "The unique identifier for the provider."]
     #[serde(rename = "providerId", default, skip_serializing_if = "Option::is_none")]
@@ -382,7 +388,7 @@ pub struct Quota {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<f64>,
     #[doc = "The time period in which the quota's underlying meter is accumulated. Based on calendar year. 'None' is used for concurrent quotas."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub period: Option<quota::Period>,
 }
 impl Quota {
@@ -483,7 +489,7 @@ pub struct QuotaList {
 impl azure_core::Continuable for QuotaList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl QuotaList {
@@ -528,7 +534,12 @@ pub struct TargetStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Target availability."]
-    #[serde(rename = "currentAvailability", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "currentAvailability",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub current_availability: Option<target_status::CurrentAvailability>,
     #[doc = "Average queue time in seconds."]
     #[serde(rename = "averageQueueTime", default, skip_serializing_if = "Option::is_none")]

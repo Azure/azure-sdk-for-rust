@@ -18,7 +18,7 @@ pub struct AccountListSupportedImagesResult {
 impl azure_core::Continuable for AccountListSupportedImagesResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccountListSupportedImagesResult {
@@ -51,7 +51,7 @@ pub struct ApplicationListResult {
 impl azure_core::Continuable for ApplicationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationListResult {
@@ -425,7 +425,7 @@ pub struct CertificateListResult {
 impl azure_core::Continuable for CertificateListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CertificateListResult {
@@ -597,7 +597,7 @@ pub struct CloudJobListPreparationAndReleaseTaskStatusResult {
 impl azure_core::Continuable for CloudJobListPreparationAndReleaseTaskStatusResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CloudJobListPreparationAndReleaseTaskStatusResult {
@@ -619,7 +619,7 @@ pub struct CloudJobListResult {
 impl azure_core::Continuable for CloudJobListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CloudJobListResult {
@@ -696,7 +696,7 @@ pub struct CloudJobScheduleListResult {
 impl azure_core::Continuable for CloudJobScheduleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CloudJobScheduleListResult {
@@ -877,7 +877,7 @@ pub struct CloudPoolListResult {
 impl azure_core::Continuable for CloudPoolListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CloudPoolListResult {
@@ -1019,7 +1019,7 @@ pub struct CloudTaskListResult {
 impl azure_core::Continuable for CloudTaskListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CloudTaskListResult {
@@ -1257,7 +1257,7 @@ pub struct ComputeNodeListResult {
 impl azure_core::Continuable for ComputeNodeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ComputeNodeListResult {
@@ -2940,7 +2940,7 @@ pub struct NodeFileListResult {
 impl azure_core::Continuable for NodeFileListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NodeFileListResult {
@@ -3314,7 +3314,7 @@ pub struct PoolListUsageMetricsResult {
 impl azure_core::Continuable for PoolListUsageMetricsResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PoolListUsageMetricsResult {
@@ -3355,7 +3355,7 @@ pub struct PoolNodeCountsListResult {
 impl azure_core::Continuable for PoolNodeCountsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PoolNodeCountsListResult {

@@ -56,10 +56,15 @@ pub struct ConfigDataProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exclude: Option<bool>,
     #[doc = "Minimum percentage threshold for Advisor low CPU utilization evaluation. Valid only for subscriptions. Valid values: 5 (default), 10, 15 or 20."]
-    #[serde(rename = "lowCpuThreshold", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lowCpuThreshold",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub low_cpu_threshold: Option<config_data_properties::LowCpuThreshold>,
     #[doc = "Minimum duration for Advisor low CPU utilization evaluation. Valid only for subscriptions. Valid values: 7 (default), 14, 21, 30, 60 or 90."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub duration: Option<config_data_properties::Duration>,
     #[doc = "Advisor digest configuration. Valid only for subscriptions"]
     #[serde(
@@ -190,7 +195,7 @@ pub struct ConfigurationListResult {
 impl azure_core::Continuable for ConfigurationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConfigurationListResult {
@@ -221,7 +226,7 @@ pub struct DigestConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
     #[doc = "State of digest configuration."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<digest_config::State>,
 }
 impl DigestConfig {
@@ -307,7 +312,7 @@ pub struct MetadataEntityListResult {
 impl azure_core::Continuable for MetadataEntityListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MetadataEntityListResult {
@@ -419,7 +424,7 @@ pub struct OperationEntityListResult {
 impl azure_core::Continuable for OperationEntityListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationEntityListResult {
@@ -443,7 +448,12 @@ impl PredictionRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PredictionRequestProperties {
     #[doc = "Type of the prediction."]
-    #[serde(rename = "predictionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "predictionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub prediction_type: Option<prediction_request_properties::PredictionType>,
     #[doc = "Extended properties are arguments specific for each prediction type."]
     #[serde(rename = "extendedProperties", default, skip_serializing_if = "Option::is_none")]
@@ -511,13 +521,18 @@ pub struct PredictionResponseProperties {
     #[serde(rename = "extendedProperties", default, skip_serializing_if = "Option::is_none")]
     pub extended_properties: Option<serde_json::Value>,
     #[doc = "Type of the prediction."]
-    #[serde(rename = "predictionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "predictionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub prediction_type: Option<prediction_response_properties::PredictionType>,
     #[doc = "The category of the recommendation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub category: Option<prediction_response_properties::Category>,
     #[doc = "The business impact of the recommendation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub impact: Option<prediction_response_properties::Impact>,
     #[doc = "The resource type identified by Advisor."]
     #[serde(rename = "impactedField", default, skip_serializing_if = "Option::is_none")]
@@ -658,10 +673,10 @@ pub mod prediction_response_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendationProperties {
     #[doc = "The category of the recommendation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub category: Option<recommendation_properties::Category>,
     #[doc = "The business impact of the recommendation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub impact: Option<recommendation_properties::Impact>,
     #[doc = "The resource type identified by Advisor."]
     #[serde(rename = "impactedField", default, skip_serializing_if = "Option::is_none")]
@@ -679,7 +694,7 @@ pub struct RecommendationProperties {
     #[serde(rename = "recommendationTypeId", default, skip_serializing_if = "Option::is_none")]
     pub recommendation_type_id: Option<String>,
     #[doc = "The potential risk of not implementing the recommendation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub risk: Option<recommendation_properties::Risk>,
     #[doc = "A summary of the recommendation."]
     #[serde(rename = "shortDescription", default, skip_serializing_if = "Option::is_none")]
@@ -926,7 +941,7 @@ pub struct ResourceRecommendationBaseListResult {
 impl azure_core::Continuable for ResourceRecommendationBaseListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceRecommendationBaseListResult {
@@ -980,7 +995,7 @@ pub struct SuppressionContractListResult {
 impl azure_core::Continuable for SuppressionContractListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SuppressionContractListResult {

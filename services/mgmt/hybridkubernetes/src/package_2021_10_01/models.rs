@@ -36,7 +36,7 @@ pub struct ConnectedClusterIdentity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of identity used for the connected cluster. The type 'SystemAssigned, includes a system created identity. The type 'None' means no identity is assigned to the connected cluster."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: connected_cluster_identity::Type,
 }
 impl ConnectedClusterIdentity {
@@ -79,7 +79,7 @@ pub struct ConnectedClusterList {
 impl azure_core::Continuable for ConnectedClusterList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConnectedClusterList {
@@ -129,7 +129,12 @@ pub struct ConnectedClusterProperties {
     #[serde(rename = "agentVersion", default, skip_serializing_if = "Option::is_none")]
     pub agent_version: Option<String>,
     #[doc = "The current deployment state of connectedClusters."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ConnectedClusterProvisioningState>,
     #[doc = "The Kubernetes distribution running on this connected cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -151,7 +156,12 @@ pub struct ConnectedClusterProperties {
     #[serde(rename = "lastConnectivityTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_connectivity_time: Option<time::OffsetDateTime>,
     #[doc = "Represents the connectivity status of the connected cluster."]
-    #[serde(rename = "connectivityStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "connectivityStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub connectivity_status: Option<connected_cluster_properties::ConnectivityStatus>,
 }
 impl ConnectedClusterProperties {
@@ -388,7 +398,7 @@ impl HybridConnectionConfig {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListClusterUserCredentialProperties {
     #[doc = "The mode of client authentication."]
-    #[serde(rename = "authenticationMethod")]
+    #[serde(rename = "authenticationMethod", with = "azure_core::xml::text_content")]
     pub authentication_method: list_cluster_user_credential_properties::AuthenticationMethod,
     #[doc = "Boolean value to indicate whether the request is for client side proxy or not"]
     #[serde(rename = "clientProxy")]
@@ -499,7 +509,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -532,7 +542,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -541,7 +556,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource modification (UTC)."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

@@ -235,7 +235,12 @@ pub struct FileUrl {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filename: Option<String>,
     #[doc = "Integer representation of the file type (0 = JMX_FILE, 1 = USER_PROPERTIES, 2 = ADDITIONAL_ARTIFACTS)"]
-    #[serde(rename = "fileType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "fileType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub file_type: Option<FileType>,
     #[doc = "Expiry time of the file"]
     #[serde(rename = "expireTime", default, with = "azure_core::date::rfc3339::option")]
@@ -260,7 +265,7 @@ pub struct FileUrlList {
 impl azure_core::Continuable for FileUrlList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FileUrlList {
@@ -616,7 +621,7 @@ pub struct TestModelResourceList {
 impl azure_core::Continuable for TestModelResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestModelResourceList {
@@ -716,7 +721,7 @@ pub struct TestRunModelResourceList {
 impl azure_core::Continuable for TestRunModelResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestRunModelResourceList {

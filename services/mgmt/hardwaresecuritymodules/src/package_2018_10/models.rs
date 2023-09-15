@@ -63,7 +63,7 @@ pub struct DedicatedHsmListResult {
 impl azure_core::Continuable for DedicatedHsmListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DedicatedHsmListResult {
@@ -157,7 +157,12 @@ pub struct DedicatedHsmProperties {
     #[serde(rename = "statusMessage", default, skip_serializing_if = "Option::is_none")]
     pub status_message: Option<String>,
     #[doc = "Provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<dedicated_hsm_properties::ProvisioningState>,
 }
 impl DedicatedHsmProperties {
@@ -331,7 +336,7 @@ impl ResourceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[doc = "SKU of the dedicated HSM"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub name: Option<sku::Name>,
 }
 impl Sku {

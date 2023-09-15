@@ -10,7 +10,7 @@ pub struct CheckAvailabilityResponse {
     #[serde(rename = "isAvailable", default, skip_serializing_if = "Option::is_none")]
     pub is_available: Option<bool>,
     #[doc = "<code>Invalid</code> indicates the name provided does not match Azure App Service naming requirements. <code>AlreadyExists</code> indicates that the name is already in use and is therefore unavailable."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<check_availability_response::Reason>,
     #[doc = "If reason == invalid, provide the user with the reason why the given name is invalid, and provide the resource naming requirements so that the user can select a valid name. If reason == AlreadyExists, explain that resource name is already in use, and direct them to select a different name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -115,7 +115,7 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The identity type."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: identity::Type,
     #[doc = "Gets or sets a list of key value pairs that describe the set of User Assigned identities that will be used with this storage account. The key is the ARM resource identifier of the identity. Only 1 User Assigned identity is permitted here."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -192,7 +192,7 @@ pub struct KeyVaultProperties {
     #[serde(rename = "keyVaultResourceId")]
     pub key_vault_resource_id: String,
     #[doc = "Status of the KeyVault connection."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<key_vault_properties::Status>,
 }
 impl KeyVaultProperties {
@@ -434,7 +434,7 @@ pub struct QuotaAvailabilityRequest {
     #[doc = "Name of the resource to verify."]
     pub name: String,
     #[doc = "Resource type used for verification."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: quota_availability_request::Type,
     #[doc = "Resource group name."]
     #[serde(rename = "resourceGroup")]
@@ -530,7 +530,7 @@ pub struct ResourceNameAvailabilityRequest {
     #[doc = "Resource name to verify."]
     pub name: String,
     #[doc = "Resource type used for verification."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: resource_name_availability_request::Type,
     #[doc = "Resource group name."]
     #[serde(rename = "resourceGroup")]
@@ -714,7 +714,12 @@ impl UserAssignedIdentity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountEncryption {
     #[doc = "The encryption keySource (provider). Possible values (case-insensitive):  Microsoft.NetApp, Microsoft.KeyVault"]
-    #[serde(rename = "keySource", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "keySource",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub key_source: Option<account_encryption::KeySource>,
     #[doc = "Properties of key vault."]
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
@@ -820,7 +825,7 @@ pub struct ActiveDirectory {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dns: Option<String>,
     #[doc = "Status of the Active Directory"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<active_directory::Status>,
     #[doc = "Any details in regards to the Status of the Active Directory"]
     #[serde(rename = "statusDetails", default, skip_serializing_if = "Option::is_none")]
@@ -1144,7 +1149,12 @@ pub struct BackupProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
     #[doc = "Type of backup Manual or Scheduled"]
-    #[serde(rename = "backupType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_type: Option<backup_properties::BackupType>,
     #[doc = "Failure reason"]
     #[serde(rename = "failureReason", default, skip_serializing_if = "Option::is_none")]
@@ -1208,10 +1218,20 @@ pub struct BackupStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub healthy: Option<bool>,
     #[doc = "Status of the backup mirror relationship"]
-    #[serde(rename = "relationshipStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "relationshipStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub relationship_status: Option<backup_status::RelationshipStatus>,
     #[doc = "The status of the backup"]
-    #[serde(rename = "mirrorState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "mirrorState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub mirror_state: Option<backup_status::MirrorState>,
     #[doc = "Reason for the unhealthy backup relationship"]
     #[serde(rename = "unhealthyReason", default, skip_serializing_if = "Option::is_none")]
@@ -1384,7 +1404,7 @@ pub struct CapacityPoolList {
 impl azure_core::Continuable for CapacityPoolList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CapacityPoolList {
@@ -1513,7 +1533,12 @@ pub struct ExportPolicyRule {
     #[serde(rename = "hasRootAccess", default, skip_serializing_if = "Option::is_none")]
     pub has_root_access: Option<bool>,
     #[doc = "This parameter specifies who is authorized to change the ownership of a file. restricted - Only root user can change the ownership of the file. unrestricted - Non-root users can change ownership of files that they own."]
-    #[serde(rename = "chownMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "chownMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub chown_mode: Option<export_policy_rule::ChownMode>,
 }
 impl ExportPolicyRule {
@@ -1748,7 +1773,7 @@ pub struct NetAppAccountList {
 impl azure_core::Continuable for NetAppAccountList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetAppAccountList {
@@ -1826,7 +1851,12 @@ pub struct PoolPatchProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub size: Option<i64>,
     #[doc = "The qos type of the pool"]
-    #[serde(rename = "qosType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "qosType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub qos_type: Option<pool_patch_properties::QosType>,
     #[doc = "If enabled (true) the pool can contain cool Access enabled volumes."]
     #[serde(rename = "coolAccess", default, skip_serializing_if = "Option::is_none")]
@@ -1891,7 +1921,7 @@ pub struct PoolProperties {
     #[doc = "Provisioned size of the pool (in bytes). Allowed values are in 1TiB chunks (value must be multiply of 4398046511104)."]
     pub size: i64,
     #[doc = "The service level of the file system"]
-    #[serde(rename = "serviceLevel")]
+    #[serde(rename = "serviceLevel", with = "azure_core::xml::text_content")]
     pub service_level: ServiceLevel,
     #[doc = "Azure lifecycle management"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -1903,13 +1933,23 @@ pub struct PoolProperties {
     #[serde(rename = "utilizedThroughputMibps", default, skip_serializing_if = "Option::is_none")]
     pub utilized_throughput_mibps: Option<f64>,
     #[doc = "The qos type of the pool"]
-    #[serde(rename = "qosType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "qosType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub qos_type: Option<pool_properties::QosType>,
     #[doc = "If enabled (true) the pool can contain cool Access enabled volumes."]
     #[serde(rename = "coolAccess", default, skip_serializing_if = "Option::is_none")]
     pub cool_access: Option<bool>,
     #[doc = "Encryption type of the capacity pool, set encryption type for data at rest for this pool and all volumes in it. This value can only be set when creating new pool."]
-    #[serde(rename = "encryptionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "encryptionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub encryption_type: Option<pool_properties::EncryptionType>,
 }
 impl PoolProperties {
@@ -2030,7 +2070,12 @@ impl ReestablishReplicationRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegionInfo {
     #[doc = "Provides storage to network proximity information in the region."]
-    #[serde(rename = "storageToNetworkProximity", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storageToNetworkProximity",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub storage_to_network_proximity: Option<region_info::StorageToNetworkProximity>,
     #[doc = "Provides logical availability zone mappings for the subscription for a region."]
     #[serde(
@@ -2106,10 +2151,20 @@ impl RelocateVolumeRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Replication {
     #[doc = "Indicates whether the local volume is the source or destination for the Volume Replication"]
-    #[serde(rename = "endpointType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "endpointType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub endpoint_type: Option<replication::EndpointType>,
     #[doc = "Schedule"]
-    #[serde(rename = "replicationSchedule", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "replicationSchedule",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub replication_schedule: Option<replication::ReplicationSchedule>,
     #[doc = "The resource ID of the remote volume."]
     #[serde(rename = "remoteVolumeResourceId")]
@@ -2219,10 +2274,20 @@ pub struct ReplicationObject {
     #[serde(rename = "replicationId", default, skip_serializing_if = "Option::is_none")]
     pub replication_id: Option<String>,
     #[doc = "Indicates whether the local volume is the source or destination for the Volume Replication"]
-    #[serde(rename = "endpointType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "endpointType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub endpoint_type: Option<replication_object::EndpointType>,
     #[doc = "Schedule"]
-    #[serde(rename = "replicationSchedule", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "replicationSchedule",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub replication_schedule: Option<replication_object::ReplicationSchedule>,
     #[doc = "The resource ID of the remote volume."]
     #[serde(rename = "remoteVolumeResourceId")]
@@ -2333,10 +2398,20 @@ pub struct ReplicationStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub healthy: Option<bool>,
     #[doc = "Status of the mirror relationship"]
-    #[serde(rename = "relationshipStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "relationshipStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub relationship_status: Option<replication_status::RelationshipStatus>,
     #[doc = "The status of the replication"]
-    #[serde(rename = "mirrorState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "mirrorState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub mirror_state: Option<replication_status::MirrorState>,
     #[doc = "The progress of the replication"]
     #[serde(rename = "totalProgress", default, skip_serializing_if = "Option::is_none")]
@@ -2462,10 +2537,20 @@ pub struct RestoreStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub healthy: Option<bool>,
     #[doc = "Status of the restore SnapMirror relationship"]
-    #[serde(rename = "relationshipStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "relationshipStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub relationship_status: Option<restore_status::RelationshipStatus>,
     #[doc = "The status of the restore"]
-    #[serde(rename = "mirrorState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "mirrorState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub mirror_state: Option<restore_status::MirrorState>,
     #[doc = "Reason for the unhealthy restore relationship"]
     #[serde(rename = "unhealthyReason", default, skip_serializing_if = "Option::is_none")]
@@ -2981,7 +3066,7 @@ pub struct SubvolumesList {
 impl azure_core::Continuable for SubvolumesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SubvolumesList {
@@ -2996,7 +3081,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -3005,7 +3095,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
@@ -3319,7 +3414,12 @@ pub struct VolumeGroupMetaData {
     #[serde(rename = "groupDescription", default, skip_serializing_if = "Option::is_none")]
     pub group_description: Option<String>,
     #[doc = "Application Type"]
-    #[serde(rename = "applicationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "applicationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub application_type: Option<volume_group_meta_data::ApplicationType>,
     #[doc = "Application specific identifier"]
     #[serde(rename = "applicationIdentifier", default, skip_serializing_if = "Option::is_none")]
@@ -3451,7 +3551,7 @@ pub struct VolumeList {
 impl azure_core::Continuable for VolumeList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VolumeList {
@@ -3490,7 +3590,12 @@ impl VolumePatch {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VolumePatchProperties {
     #[doc = "The service level of the file system"]
-    #[serde(rename = "serviceLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "serviceLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub service_level: Option<ServiceLevel>,
     #[doc = "Maximum storage quota allowed for a file system in bytes. This is a soft quota used for alerting only. Minimum size is 100 GiB. Upper limit is 100TiB, 500Tib for LargeVolume. Specified in bytes."]
     #[serde(rename = "usageThreshold", default, skip_serializing_if = "Option::is_none")]
@@ -3571,7 +3676,12 @@ pub struct VolumeProperties {
     #[serde(rename = "creationToken")]
     pub creation_token: String,
     #[doc = "The service level of the file system"]
-    #[serde(rename = "serviceLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "serviceLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub service_level: Option<ServiceLevel>,
     #[doc = "Maximum storage quota allowed for a file system in bytes. This is a soft quota used for alerting only. Minimum size is 100 GiB. Upper limit is 100TiB, 500Tib for LargeVolume. Specified in bytes."]
     #[serde(rename = "usageThreshold")]
@@ -3606,13 +3716,23 @@ pub struct VolumeProperties {
     #[serde(rename = "subnetId")]
     pub subnet_id: String,
     #[doc = "Basic network, or Standard features available to the volume."]
-    #[serde(rename = "networkFeatures", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "networkFeatures",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub network_features: Option<volume_properties::NetworkFeatures>,
     #[doc = "Network Sibling Set ID for the the group of volumes sharing networking resources."]
     #[serde(rename = "networkSiblingSetId", default, skip_serializing_if = "Option::is_none")]
     pub network_sibling_set_id: Option<String>,
     #[doc = "Provides storage to network proximity information for the volume."]
-    #[serde(rename = "storageToNetworkProximity", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storageToNetworkProximity",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub storage_to_network_proximity: Option<volume_properties::StorageToNetworkProximity>,
     #[doc = "List of mount targets"]
     #[serde(
@@ -3638,16 +3758,31 @@ pub struct VolumeProperties {
     #[serde(rename = "kerberosEnabled", default, skip_serializing_if = "Option::is_none")]
     pub kerberos_enabled: Option<bool>,
     #[doc = "The security style of volume, default unix, defaults to ntfs for dual protocol or CIFS protocol"]
-    #[serde(rename = "securityStyle", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "securityStyle",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub security_style: Option<volume_properties::SecurityStyle>,
     #[doc = "Enables encryption for in-flight smb3 data. Only applicable for SMB/DualProtocol volume. To be used with swagger version 2020-08-01 or later"]
     #[serde(rename = "smbEncryption", default, skip_serializing_if = "Option::is_none")]
     pub smb_encryption: Option<bool>,
     #[doc = "Enables access based enumeration share property for SMB Shares. Only applicable for SMB/DualProtocol volume"]
-    #[serde(rename = "smbAccessBasedEnumeration", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "smbAccessBasedEnumeration",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub smb_access_based_enumeration: Option<volume_properties::SmbAccessBasedEnumeration>,
     #[doc = "Enables non browsable property for SMB Shares. Only applicable for SMB/DualProtocol volume"]
-    #[serde(rename = "smbNonBrowsable", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "smbNonBrowsable",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub smb_non_browsable: Option<volume_properties::SmbNonBrowsable>,
     #[doc = "Enables continuously available share property for smb volume. Only applicable for SMB volume"]
     #[serde(rename = "smbContinuouslyAvailable", default, skip_serializing_if = "Option::is_none")]
@@ -3655,7 +3790,12 @@ pub struct VolumeProperties {
     #[serde(rename = "throughputMibps", default, skip_serializing_if = "Option::is_none")]
     pub throughput_mibps: Option<f64>,
     #[doc = "Source of key used to encrypt data in volume. Applicable if NetApp account has encryption.keySource = 'Microsoft.KeyVault'. Possible values (case-insensitive) are: 'Microsoft.NetApp, Microsoft.KeyVault'"]
-    #[serde(rename = "encryptionKeySource", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "encryptionKeySource",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub encryption_key_source: Option<volume_properties::EncryptionKeySource>,
     #[doc = "The resource ID of private endpoint for KeyVault. It must reside in the same VNET as the volume. Only applicable if encryptionKeySource = 'Microsoft.KeyVault'."]
     #[serde(rename = "keyVaultPrivateEndpointResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -3676,7 +3816,12 @@ pub struct VolumeProperties {
     #[serde(rename = "cloneProgress", default, skip_serializing_if = "Option::is_none")]
     pub clone_progress: Option<i32>,
     #[doc = "Specifies whether the volume is enabled for Azure VMware Solution (AVS) datastore purpose"]
-    #[serde(rename = "avsDataStore", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "avsDataStore",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub avs_data_store: Option<volume_properties::AvsDataStore>,
     #[doc = "Specifies if default quota is enabled for the volume."]
     #[serde(rename = "isDefaultQuotaEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -3717,7 +3862,12 @@ pub struct VolumeProperties {
     )]
     pub placement_rules: Vec<PlacementKeyValuePairs>,
     #[doc = "Flag indicating whether subvolume operations are enabled on the volume"]
-    #[serde(rename = "enableSubvolumes", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enableSubvolumes",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enable_subvolumes: Option<volume_properties::EnableSubvolumes>,
 }
 impl VolumeProperties {
@@ -4192,13 +4342,23 @@ impl VolumeQuotaRulesList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VolumeQuotaRulesProperties {
     #[doc = "Gets the status of the VolumeQuotaRule at the time the operation was called."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<NetappProvisioningState>,
     #[doc = "Size of quota"]
     #[serde(rename = "quotaSizeInKiBs", default, skip_serializing_if = "Option::is_none")]
     pub quota_size_in_ki_bs: Option<i64>,
     #[doc = "Type of quota"]
-    #[serde(rename = "quotaType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "quotaType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub quota_type: Option<volume_quota_rules_properties::QuotaType>,
     #[doc = "UserID/GroupID/SID based on the quota target type. UserID and groupID can be found by running ‘id’ or ‘getent’ command for the user or group and SID can be found by running <wmic useraccount where name='user-name' get sid>"]
     #[serde(rename = "quotaTarget", default, skip_serializing_if = "Option::is_none")]

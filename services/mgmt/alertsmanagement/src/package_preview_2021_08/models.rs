@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Action {
     #[doc = "Action that should be applied."]
-    #[serde(rename = "actionType")]
+    #[serde(rename = "actionType", with = "azure_core::xml::text_content")]
     pub action_type: action::ActionType,
 }
 impl Action {
@@ -139,7 +139,7 @@ pub struct AlertProcessingRulesList {
 impl azure_core::Continuable for AlertProcessingRulesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertProcessingRulesList {
@@ -151,10 +151,10 @@ impl AlertProcessingRulesList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Condition {
     #[doc = "Field for a given condition."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub field: Option<condition::Field>,
     #[doc = "Operator for a given condition."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub operator: Option<condition::Operator>,
     #[doc = "List of values to match for a given condition."]
     #[serde(
@@ -423,7 +423,7 @@ impl PatchProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Recurrence {
     #[doc = "Specifies when the recurrence should be applied."]
-    #[serde(rename = "recurrenceType")]
+    #[serde(rename = "recurrenceType", with = "azure_core::xml::text_content")]
     pub recurrence_type: recurrence::RecurrenceType,
     #[doc = "Start time for recurrence."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
@@ -604,7 +604,12 @@ impl AlertModification {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertModificationItem {
     #[doc = "Reason for the modification"]
-    #[serde(rename = "modificationEvent", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "modificationEvent",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub modification_event: Option<alert_modification_item::ModificationEvent>,
     #[doc = "Old value"]
     #[serde(rename = "oldValue", default, skip_serializing_if = "Option::is_none")]
@@ -700,7 +705,7 @@ pub struct AlertsList {
 impl azure_core::Continuable for AlertsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertsList {
@@ -724,7 +729,7 @@ impl AlertsMetaData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertsMetaDataProperties {
     #[doc = "Identification of the information to be retrieved by API call"]
-    #[serde(rename = "metadataIdentifier")]
+    #[serde(rename = "metadataIdentifier", with = "azure_core::xml::text_content")]
     pub metadata_identifier: alerts_meta_data_properties::MetadataIdentifier,
 }
 impl AlertsMetaDataProperties {
@@ -900,16 +905,31 @@ impl ErrorResponseBody {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Essentials {
     #[doc = "Severity of alert Sev0 being highest and Sev4 being lowest."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<essentials::Severity>,
     #[doc = "The type of signal the alert is based on, which could be metrics, logs or activity logs."]
-    #[serde(rename = "signalType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "signalType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub signal_type: Option<essentials::SignalType>,
     #[doc = "Alert object state, which can be modified by the user."]
-    #[serde(rename = "alertState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "alertState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub alert_state: Option<essentials::AlertState>,
     #[doc = "Condition of the rule at the monitor service. It represents whether the underlying conditions have crossed the defined alert rule thresholds."]
-    #[serde(rename = "monitorCondition", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "monitorCondition",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub monitor_condition: Option<essentials::MonitorCondition>,
     #[doc = "Target ARM resource, on which alert got created."]
     #[serde(rename = "targetResource", default, skip_serializing_if = "Option::is_none")]
@@ -924,7 +944,12 @@ pub struct Essentials {
     #[serde(rename = "targetResourceType", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_type: Option<String>,
     #[doc = "Monitor service on which the rule(monitor) is set."]
-    #[serde(rename = "monitorService", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "monitorService",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub monitor_service: Option<essentials::MonitorService>,
     #[doc = "Rule(monitor) which fired alert instance. Depending on the monitor service,  this would be ARM id or name of the rule."]
     #[serde(rename = "alertRule", default, skip_serializing_if = "Option::is_none")]
@@ -1247,7 +1272,7 @@ pub struct OperationsList {
 impl azure_core::Continuable for OperationsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationsList {
@@ -1302,7 +1327,12 @@ impl SmartGroupModification {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SmartGroupModificationItem {
     #[doc = "Reason for the modification"]
-    #[serde(rename = "modificationEvent", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "modificationEvent",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub modification_event: Option<smart_group_modification_item::ModificationEvent>,
     #[doc = "Old value"]
     #[serde(rename = "oldValue", default, skip_serializing_if = "Option::is_none")]
@@ -1368,10 +1398,15 @@ pub struct SmartGroupProperties {
     #[serde(rename = "alertsCount", default, skip_serializing_if = "Option::is_none")]
     pub alerts_count: Option<i64>,
     #[doc = "Smart group state"]
-    #[serde(rename = "smartGroupState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "smartGroupState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub smart_group_state: Option<smart_group_properties::SmartGroupState>,
     #[doc = "Severity of smart group is the highest(Sev0 >... > Sev4) severity of all the alerts in the group."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<smart_group_properties::Severity>,
     #[doc = "Creation time of smart group. Date-Time in ISO-8601 format."]
     #[serde(rename = "startDateTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1548,7 +1583,7 @@ pub struct SmartGroupsList {
 impl azure_core::Continuable for SmartGroupsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SmartGroupsList {
@@ -1563,7 +1598,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1572,7 +1612,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

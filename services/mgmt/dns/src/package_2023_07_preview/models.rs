@@ -256,7 +256,7 @@ pub struct DnssecConfigListResult {
 impl azure_core::Continuable for DnssecConfigListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DnssecConfigListResult {
@@ -409,7 +409,7 @@ pub struct RecordSetListResult {
 impl azure_core::Continuable for RecordSetListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RecordSetListResult {
@@ -751,7 +751,7 @@ pub struct ZoneListResult {
 impl azure_core::Continuable for ZoneListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ZoneListResult {
@@ -780,7 +780,12 @@ pub struct ZoneProperties {
     )]
     pub name_servers: Vec<String>,
     #[doc = "The type of this DNS zone (Public or Private)."]
-    #[serde(rename = "zoneType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "zoneType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub zone_type: Option<zone_properties::ZoneType>,
     #[doc = "A list of references to virtual networks that register hostnames in this DNS zone. This is a only when ZoneType is Private."]
     #[serde(
@@ -845,7 +850,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -854,7 +864,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

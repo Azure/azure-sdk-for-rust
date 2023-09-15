@@ -84,7 +84,7 @@ pub struct FeatureOperationsListResult {
 impl azure_core::Continuable for FeatureOperationsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FeatureOperationsListResult {
@@ -178,7 +178,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -237,7 +237,7 @@ pub mod subscription_feature_registration {
         #[serde(rename = "providerNamespace", default, skip_serializing_if = "Option::is_none")]
         pub provider_namespace: Option<String>,
         #[doc = "The state."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub state: Option<properties::State>,
         #[doc = "Authorization Profile"]
         #[serde(rename = "authorizationProfile", default, skip_serializing_if = "Option::is_none")]
@@ -255,7 +255,12 @@ pub mod subscription_feature_registration {
         #[serde(rename = "documentationLink", default, skip_serializing_if = "Option::is_none")]
         pub documentation_link: Option<String>,
         #[doc = "The feature approval type."]
-        #[serde(rename = "approvalType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "approvalType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub approval_type: Option<properties::ApprovalType>,
         #[doc = "Indicates whether feature should be displayed in Portal."]
         #[serde(rename = "shouldFeatureDisplayInPortal", default, skip_serializing_if = "Option::is_none")]
@@ -376,7 +381,7 @@ pub struct SubscriptionFeatureRegistrationList {
 impl azure_core::Continuable for SubscriptionFeatureRegistrationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SubscriptionFeatureRegistrationList {

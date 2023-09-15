@@ -21,7 +21,7 @@ impl AdcCatalog {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdcCatalogProperties {
     #[doc = "Azure data catalog SKU."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub sku: Option<adc_catalog_properties::Sku>,
     #[doc = "Azure data catalog units."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

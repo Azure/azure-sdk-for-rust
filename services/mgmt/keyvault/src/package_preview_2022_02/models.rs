@@ -31,7 +31,12 @@ impl AccessPolicyEntry {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Action {
     #[doc = "The type of action."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<action::Type>,
 }
 impl Action {
@@ -92,7 +97,7 @@ pub struct CheckMhsmNameAvailabilityResult {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "The reason that a managed hsm name could not be used. The reason element is only returned if NameAvailable is false."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<check_mhsm_name_availability_result::Reason>,
     #[doc = "An error message explaining the Reason value in more detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -150,7 +155,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "The reason that a vault name could not be used. The Reason element is only returned if NameAvailable is false."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<check_name_availability_result::Reason>,
     #[doc = "An error message explaining the Reason value in more detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -240,7 +245,7 @@ pub struct DeletedManagedHsmListResult {
 impl azure_core::Continuable for DeletedManagedHsmListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeletedManagedHsmListResult {
@@ -313,7 +318,7 @@ pub struct DeletedVaultListResult {
 impl azure_core::Continuable for DeletedVaultListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeletedVaultListResult {
@@ -471,7 +476,12 @@ pub struct KeyAttributes {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated: Option<i64>,
     #[doc = "The deletion recovery level currently in effect for the object. If it contains 'Purgeable', then the object can be permanently deleted by a privileged user; otherwise, only the system can purge the object at the end of the retention interval."]
-    #[serde(rename = "recoveryLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "recoveryLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub recovery_level: Option<key_attributes::RecoveryLevel>,
     #[doc = "Indicates if the private key can be exported."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -561,7 +571,7 @@ pub struct KeyListResult {
 impl azure_core::Continuable for KeyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl KeyListResult {
@@ -576,7 +586,7 @@ pub struct KeyProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attributes: Option<KeyAttributes>,
     #[doc = "The type of the key. For valid values, see JsonWebKeyType."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kty: Option<key_properties::Kty>,
     #[serde(
         rename = "keyOps",
@@ -589,7 +599,12 @@ pub struct KeyProperties {
     #[serde(rename = "keySize", default, skip_serializing_if = "Option::is_none")]
     pub key_size: Option<i32>,
     #[doc = "The elliptic curve name. For valid values, see JsonWebKeyCurveName."]
-    #[serde(rename = "curveName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "curveName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub curve_name: Option<key_properties::CurveName>,
     #[doc = "The URI to retrieve the current version of the key."]
     #[serde(rename = "keyUri", default, skip_serializing_if = "Option::is_none")]
@@ -776,10 +791,15 @@ impl MhsmipRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MhsmNetworkRuleSet {
     #[doc = "Tells what traffic can bypass network rules. This can be 'AzureServices' or 'None'.  If not specified the default is 'AzureServices'."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub bypass: Option<mhsm_network_rule_set::Bypass>,
     #[doc = "The default action when no rule from ipRules and from virtualNetworkRules match. This is only used after the bypass property has been evaluated."]
-    #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "defaultAction",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub default_action: Option<mhsm_network_rule_set::DefaultAction>,
     #[doc = "The list of IP address rules."]
     #[serde(
@@ -947,7 +967,12 @@ pub struct MhsmPrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<MhsmPrivateLinkServiceConnectionState>,
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<MhsmPrivateEndpointConnectionProvisioningState>,
 }
 impl MhsmPrivateEndpointConnectionProperties {
@@ -1017,7 +1042,7 @@ pub struct MhsmPrivateEndpointConnectionsListResult {
 impl azure_core::Continuable for MhsmPrivateEndpointConnectionsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MhsmPrivateEndpointConnectionsListResult {
@@ -1128,13 +1153,18 @@ impl MhsmPrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MhsmPrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<MhsmPrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval or rejection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "A message indicating if changes on the service provider require any updates on the consumer."]
-    #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionsRequired",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub actions_required: Option<mhsm_private_link_service_connection_state::ActionsRequired>,
 }
 impl MhsmPrivateLinkServiceConnectionState {
@@ -1195,7 +1225,12 @@ impl MhsmVirtualNetworkRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedHsmSecurityDomainProperties {
     #[doc = "Activation Status"]
-    #[serde(rename = "activationStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "activationStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub activation_status: Option<managed_hsm_security_domain_properties::ActivationStatus>,
     #[doc = "Activation Status Message."]
     #[serde(rename = "activationStatusMessage", default, skip_serializing_if = "Option::is_none")]
@@ -1299,7 +1334,7 @@ pub struct ManagedHsmListResult {
 impl azure_core::Continuable for ManagedHsmListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedHsmListResult {
@@ -1334,13 +1369,23 @@ pub struct ManagedHsmProperties {
     #[serde(rename = "enablePurgeProtection", default, skip_serializing_if = "Option::is_none")]
     pub enable_purge_protection: Option<bool>,
     #[doc = "The create mode to indicate whether the resource is being created or is being recovered from a deleted resource."]
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_mode: Option<managed_hsm_properties::CreateMode>,
     #[doc = "Resource Status Message."]
     #[serde(rename = "statusMessage", default, skip_serializing_if = "Option::is_none")]
     pub status_message: Option<String>,
     #[doc = "Provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<managed_hsm_properties::ProvisioningState>,
     #[doc = "A set of rules governing the network accessibility of a managed hsm pool."]
     #[serde(rename = "networkAcls", default, skip_serializing_if = "Option::is_none")]
@@ -1354,7 +1399,12 @@ pub struct ManagedHsmProperties {
     )]
     pub private_endpoint_connections: Vec<MhsmPrivateEndpointConnectionItem>,
     #[doc = "Control permission to the managed HSM from public networks."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<managed_hsm_properties::PublicNetworkAccess>,
     #[doc = "The scheduled purge date in UTC."]
     #[serde(rename = "scheduledPurgeDate", default, with = "azure_core::date::rfc3339::option")]
@@ -1504,8 +1554,10 @@ impl ManagedHsmResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedHsmSku {
     #[doc = "SKU Family of the managed HSM Pool"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub family: managed_hsm_sku::Family,
     #[doc = "SKU of the managed HSM Pool"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: managed_hsm_sku::Name,
 }
 impl ManagedHsmSku {
@@ -1621,10 +1673,15 @@ impl MetricSpecification {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkRuleSet {
     #[doc = "Tells what traffic can bypass network rules. This can be 'AzureServices' or 'None'.  If not specified the default is 'AzureServices'."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub bypass: Option<network_rule_set::Bypass>,
     #[doc = "The default action when no rule from ipRules and from virtualNetworkRules match. This is only used after the bypass property has been evaluated."]
-    #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "defaultAction",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub default_action: Option<network_rule_set::DefaultAction>,
     #[doc = "The list of IP address rules."]
     #[serde(
@@ -1790,7 +1847,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1911,7 +1968,7 @@ pub struct PrivateEndpointConnectionListResult {
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionListResult {
@@ -1929,7 +1986,12 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
     pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionState>,
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -2085,13 +2147,18 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval or rejection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "A message indicating if changes on the service provider require any updates on the consumer."]
-    #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionsRequired",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub actions_required: Option<private_link_service_connection_state::ActionsRequired>,
 }
 impl PrivateLinkServiceConnectionState {
@@ -2178,7 +2245,7 @@ pub struct ResourceListResult {
 impl azure_core::Continuable for ResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceListResult {
@@ -2262,7 +2329,7 @@ pub struct SecretListResult {
 impl azure_core::Continuable for SecretListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecretListResult {
@@ -2356,8 +2423,10 @@ impl ServiceSpecification {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "SKU family name"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub family: sku::Family,
     #[doc = "SKU name to specify whether the key vault is a standard vault or a premium vault."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: sku::Name,
 }
 impl Sku {
@@ -2418,7 +2487,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<IdentityType>,
     #[doc = "The timestamp of the key vault resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2427,7 +2501,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<IdentityType>,
     #[doc = "The timestamp of the key vault resource last modification (UTC)."]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2536,7 +2615,7 @@ pub struct VaultCheckNameAvailabilityParameters {
     #[doc = "The vault name."]
     pub name: String,
     #[doc = "The type of resource, Microsoft.KeyVault/vaults"]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: vault_check_name_availability_parameters::Type,
 }
 impl VaultCheckNameAvailabilityParameters {
@@ -2590,7 +2669,7 @@ pub struct VaultListResult {
 impl azure_core::Continuable for VaultListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VaultListResult {
@@ -2649,7 +2728,12 @@ pub struct VaultPatchProperties {
     #[serde(rename = "softDeleteRetentionInDays", default, skip_serializing_if = "Option::is_none")]
     pub soft_delete_retention_in_days: Option<i32>,
     #[doc = "The vault's create mode to indicate whether the vault need to be recovered or not."]
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_mode: Option<vault_patch_properties::CreateMode>,
     #[doc = "Property specifying whether protection against purge is enabled for this vault. Setting this property to true activates protection against purge for this vault and its content - only the Key Vault service may initiate a hard, irrecoverable deletion. The setting is effective only if soft delete is also enabled. Enabling this functionality is irreversible - that is, the property does not accept false as its value."]
     #[serde(rename = "enablePurgeProtection", default, skip_serializing_if = "Option::is_none")]
@@ -2718,7 +2802,12 @@ pub struct VaultProperties {
     #[serde(rename = "enableRbacAuthorization", default, skip_serializing_if = "Option::is_none")]
     pub enable_rbac_authorization: Option<bool>,
     #[doc = "The vault's create mode to indicate whether the vault need to be recovered or not."]
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_mode: Option<vault_properties::CreateMode>,
     #[doc = "Property specifying whether protection against purge is enabled for this vault. Setting this property to true activates protection against purge for this vault and its content - only the Key Vault service may initiate a hard, irrecoverable deletion. The setting is effective only if soft delete is also enabled. Enabling this functionality is irreversible - that is, the property does not accept false as its value."]
     #[serde(rename = "enablePurgeProtection", default, skip_serializing_if = "Option::is_none")]
@@ -2727,7 +2816,12 @@ pub struct VaultProperties {
     #[serde(rename = "networkAcls", default, skip_serializing_if = "Option::is_none")]
     pub network_acls: Option<NetworkRuleSet>,
     #[doc = "Provisioning state of the vault."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<vault_properties::ProvisioningState>,
     #[doc = "List of private endpoint connections associated with the key vault."]
     #[serde(

@@ -6,7 +6,12 @@ use std::str::FromStr;
 #[doc = "Describes an Azure resource with kind"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AadConnectivityState {
-    #[serde(rename = "connectivityState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "connectivityState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub connectivity_state: Option<aad_connectivity_state::ConnectivityState>,
 }
 impl AadConnectivityState {
@@ -118,21 +123,41 @@ impl AdaptiveApplicationControlGroup {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdaptiveApplicationControlGroupData {
     #[doc = "The application control policy enforcement/protection mode of the machine group"]
-    #[serde(rename = "enforcementMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enforcementMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enforcement_mode: Option<EnforcementMode>,
     #[doc = "The protection mode of the collection/file types. Exe/Msi/Script are used for Windows, Executable is used for Linux."]
     #[serde(rename = "protectionMode", default, skip_serializing_if = "Option::is_none")]
     pub protection_mode: Option<ProtectionMode>,
     #[doc = "The configuration status of the machines group or machine or rule"]
-    #[serde(rename = "configurationStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "configurationStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub configuration_status: Option<ConfigurationStatus>,
     #[doc = "The initial recommendation status of the machine group or machine"]
-    #[serde(rename = "recommendationStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "recommendationStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub recommendation_status: Option<RecommendationStatus>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub issues: Option<AdaptiveApplicationControlIssuesSummaries>,
     #[doc = "The source type of the machine group"]
-    #[serde(rename = "sourceSystem", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sourceSystem",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub source_system: Option<SourceSystem>,
     #[serde(rename = "vmRecommendations", default, skip_serializing_if = "Option::is_none")]
     pub vm_recommendations: Option<VmRecommendations>,
@@ -173,7 +198,7 @@ pub enum AdaptiveApplicationControlIssue {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdaptiveApplicationControlIssueSummary {
     #[doc = "An alert that machines within a group can have"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub issue: Option<AdaptiveApplicationControlIssue>,
     #[doc = "The number of machines in the group that have this alert"]
     #[serde(rename = "numberOfVms", default, skip_serializing_if = "Option::is_none")]
@@ -259,7 +284,7 @@ pub struct AdaptiveNetworkHardeningsList {
 impl azure_core::Continuable for AdaptiveNetworkHardeningsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AdaptiveNetworkHardeningsList {
@@ -271,7 +296,7 @@ impl AdaptiveNetworkHardeningsList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdditionalData {
     #[doc = "Sub-assessment resource type"]
-    #[serde(rename = "assessedResourceType")]
+    #[serde(rename = "assessedResourceType", with = "azure_core::xml::text_content")]
     pub assessed_resource_type: additional_data::AssessedResourceType,
 }
 impl AdditionalData {
@@ -330,7 +355,12 @@ pub struct AdditionalWorkspacesProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace: Option<String>,
     #[doc = "Workspace type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<additional_workspaces_properties::Type>,
     #[doc = "List of data types sent to workspace"]
     #[serde(
@@ -474,7 +504,7 @@ pub struct AlertList {
 impl azure_core::Continuable for AlertList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertList {
@@ -504,10 +534,10 @@ pub struct AlertProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The risk level of the threat that was detected. Learn more: https://docs.microsoft.com/en-us/azure/security-center/security-center-alerts-overview#how-are-alerts-classified."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<alert_properties::Severity>,
     #[doc = "The kill chain related intent behind the alert. For list of supported values, and explanations of Azure Security Center's supported kill chain intents."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub intent: Option<alert_properties::Intent>,
     #[doc = "The UTC time of the first event or activity included in the alert in ISO8601 format."]
     #[serde(rename = "startTimeUtc", default, with = "azure_core::date::rfc3339::option")]
@@ -535,7 +565,7 @@ pub struct AlertProperties {
     #[serde(rename = "vendorName", default, skip_serializing_if = "Option::is_none")]
     pub vendor_name: Option<String>,
     #[doc = "The life cycle status of the alert."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<alert_properties::Status>,
     #[doc = "Links related to the alert"]
     #[serde(
@@ -799,6 +829,7 @@ impl AlertSimulatorRequestBody {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertSimulatorRequestProperties {
     #[doc = "The kind of alert simulation."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: alert_simulator_request_properties::Kind,
 }
 impl AlertSimulatorRequestProperties {
@@ -898,6 +929,7 @@ pub struct AlertsSuppressionRuleProperties {
     #[doc = "The reason for dismissing the alert"]
     pub reason: String,
     #[doc = "Possible states of the rule"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub state: alerts_suppression_rule_properties::State,
     #[doc = "Any comment regarding the rule"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -939,7 +971,7 @@ pub struct AlertsSuppressionRulesList {
 impl azure_core::Continuable for AlertsSuppressionRulesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertsSuppressionRulesList {
@@ -963,7 +995,7 @@ pub struct AllowedConnectionsList {
 impl azure_core::Continuable for AllowedConnectionsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AllowedConnectionsList {
@@ -1087,7 +1119,7 @@ pub struct ApplicationCondition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[doc = "The application Condition's Operator, for example Contains for id or In for list of possible IDs, see examples"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub operator: Option<application_condition::Operator>,
 }
 impl ApplicationCondition {
@@ -1156,7 +1188,7 @@ pub struct ApplicationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The application source, what it affects, e.g. Assessments"]
-    #[serde(rename = "sourceResourceType")]
+    #[serde(rename = "sourceResourceType", with = "azure_core::xml::text_content")]
     pub source_resource_type: application_properties::SourceResourceType,
     #[doc = "The application conditionSets - see examples"]
     #[serde(rename = "conditionSets")]
@@ -1227,7 +1259,7 @@ pub struct ApplicationsList {
 impl azure_core::Continuable for ApplicationsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationsList {
@@ -1265,7 +1297,7 @@ pub struct AscLocationList {
 impl azure_core::Continuable for AscLocationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AscLocationList {
@@ -1297,6 +1329,7 @@ impl AssessmentLinks {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssessmentStatus {
     #[doc = "Programmatic code for the status of the assessment"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub code: assessment_status::Code,
     #[doc = "Programmatic code for the cause of the assessment status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1409,7 +1442,12 @@ impl AtaSolutionProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthenticationDetailsProperties {
     #[doc = "State of the multi-cloud connector"]
-    #[serde(rename = "authenticationProvisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authenticationProvisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authentication_provisioning_state: Option<authentication_details_properties::AuthenticationProvisioningState>,
     #[doc = "The permissions detected in the cloud account."]
     #[serde(
@@ -1420,7 +1458,7 @@ pub struct AuthenticationDetailsProperties {
     )]
     pub granted_permissions: Vec<PermissionProperty>,
     #[doc = "Connect to your cloud account, for AWS use either account credentials or role-based authentication. For GCP use account organization credentials."]
-    #[serde(rename = "authenticationType")]
+    #[serde(rename = "authenticationType", with = "azure_core::xml::text_content")]
     pub authentication_type: authentication_details_properties::AuthenticationType,
 }
 impl AuthenticationDetailsProperties {
@@ -1549,7 +1587,7 @@ pub struct AutoProvisioningSettingList {
 impl azure_core::Continuable for AutoProvisioningSettingList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AutoProvisioningSettingList {
@@ -1561,7 +1599,7 @@ impl AutoProvisioningSettingList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoProvisioningSettingProperties {
     #[doc = "Describes what kind of security agent provisioning action to take"]
-    #[serde(rename = "autoProvision")]
+    #[serde(rename = "autoProvision", with = "azure_core::xml::text_content")]
     pub auto_provision: auto_provisioning_setting_properties::AutoProvision,
 }
 impl AutoProvisioningSettingProperties {
@@ -1627,7 +1665,7 @@ impl Automation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationAction {
     #[doc = "The type of the action that will be triggered by the Automation"]
-    #[serde(rename = "actionType")]
+    #[serde(rename = "actionType", with = "azure_core::xml::text_content")]
     pub action_type: automation_action::ActionType,
 }
 impl AutomationAction {
@@ -1752,7 +1790,7 @@ pub struct AutomationList {
 impl azure_core::Continuable for AutomationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AutomationList {
@@ -1830,7 +1868,12 @@ impl AutomationScope {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutomationSource {
     #[doc = "A valid event source type."]
-    #[serde(rename = "eventSource", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "eventSource",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub event_source: Option<automation_source::EventSource>,
     #[doc = "A set of rules which evaluate upon event interception. A logical disjunction is applied between defined rule sets (logical 'or')."]
     #[serde(
@@ -1915,13 +1958,18 @@ pub struct AutomationTriggeringRule {
     #[serde(rename = "propertyJPath", default, skip_serializing_if = "Option::is_none")]
     pub property_j_path: Option<String>,
     #[doc = "The data type of the compared operands (string, integer, floating point number or a boolean [true/false]]"]
-    #[serde(rename = "propertyType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "propertyType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub property_type: Option<automation_triggering_rule::PropertyType>,
     #[doc = "The expected value."]
     #[serde(rename = "expectedValue", default, skip_serializing_if = "Option::is_none")]
     pub expected_value: Option<String>,
     #[doc = "A valid comparer operator to use. A case-insensitive comparison will be applied for String PropertyType."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub operator: Option<automation_triggering_rule::Operator>,
 }
 impl AutomationTriggeringRule {
@@ -2118,7 +2166,7 @@ impl AwsEnvironmentData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AwsOrganizationalData {
     #[doc = "The multi cloud account's membership type in the organization"]
-    #[serde(rename = "organizationMembershipType")]
+    #[serde(rename = "organizationMembershipType", with = "azure_core::xml::text_content")]
     pub organization_membership_type: aws_organizational_data::OrganizationMembershipType,
 }
 impl AwsOrganizationalData {
@@ -2291,7 +2339,7 @@ pub struct BaselineAdjustedResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub baseline: Option<Baseline>,
     #[doc = "The rule result status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<RuleStatus>,
     #[doc = "Results the are not in baseline."]
     #[serde(
@@ -2523,7 +2571,7 @@ pub struct ComplianceList {
 impl azure_core::Continuable for ComplianceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ComplianceList {
@@ -2580,7 +2628,7 @@ pub struct ComplianceResultList {
 impl azure_core::Continuable for ComplianceResultList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ComplianceResultList {
@@ -2592,7 +2640,12 @@ impl ComplianceResultList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComplianceResultProperties {
     #[doc = "The status of the resource regarding a single assessment"]
-    #[serde(rename = "resourceStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_status: Option<compliance_result_properties::ResourceStatus>,
 }
 impl ComplianceResultProperties {
@@ -2669,7 +2722,7 @@ pub struct Condition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[doc = "The governance rule Condition's Operator, for example Equals for severity or In for list of assessments, see examples"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub operator: Option<condition::Operator>,
 }
 impl Condition {
@@ -2852,7 +2905,7 @@ pub struct ConnectorSettingList {
 impl azure_core::Continuable for ConnectorSettingList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConnectorSettingList {
@@ -3027,7 +3080,7 @@ pub struct CustomEntityStoreAssignmentsListResult {
 impl azure_core::Continuable for CustomEntityStoreAssignmentsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomEntityStoreAssignmentsListResult {
@@ -3108,7 +3161,7 @@ pub struct DeviceSecurityGroupList {
 impl azure_core::Continuable for DeviceSecurityGroupList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceSecurityGroupList {
@@ -3202,7 +3255,7 @@ pub struct DiscoveredSecuritySolutionList {
 impl azure_core::Continuable for DiscoveredSecuritySolutionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DiscoveredSecuritySolutionList {
@@ -3213,7 +3266,7 @@ impl DiscoveredSecuritySolutionList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiscoveredSecuritySolutionProperties {
     #[doc = "The security family of the discovered solution"]
-    #[serde(rename = "securityFamily")]
+    #[serde(rename = "securityFamily", with = "azure_core::xml::text_content")]
     pub security_family: discovered_security_solution_properties::SecurityFamily,
     #[doc = "The security solutions' image offer"]
     pub offer: String,
@@ -3331,7 +3384,7 @@ pub enum EnforcementSupport {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentData {
     #[doc = "The type of the environment data."]
-    #[serde(rename = "environmentType")]
+    #[serde(rename = "environmentType", with = "azure_core::xml::text_content")]
     pub environment_type: environment_data::EnvironmentType,
 }
 impl EnvironmentData {
@@ -3433,7 +3486,7 @@ impl ExternalSecuritySolution {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExternalSecuritySolutionKind {
     #[doc = "The kind of the external solution"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<external_security_solution_kind::Kind>,
 }
 impl ExternalSecuritySolutionKind {
@@ -3501,7 +3554,7 @@ pub struct ExternalSecuritySolutionList {
 impl azure_core::Continuable for ExternalSecuritySolutionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExternalSecuritySolutionList {
@@ -3634,7 +3687,7 @@ impl GcpCredentialsDetailsProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GcpOrganizationalData {
     #[doc = "The multi cloud account's membership type in the organization"]
-    #[serde(rename = "organizationMembershipType")]
+    #[serde(rename = "organizationMembershipType", with = "azure_core::xml::text_content")]
     pub organization_membership_type: gcp_organizational_data::OrganizationMembershipType,
 }
 impl GcpOrganizationalData {
@@ -3868,7 +3921,7 @@ pub struct GovernanceAssignmentsList {
 impl azure_core::Continuable for GovernanceAssignmentsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GovernanceAssignmentsList {
@@ -3945,7 +3998,7 @@ pub struct GovernanceRuleList {
 impl azure_core::Continuable for GovernanceRuleList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GovernanceRuleList {
@@ -3978,7 +4031,12 @@ impl GovernanceRuleMetadata {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GovernanceRuleOwnerSource {
     #[doc = "The owner type for the governance rule owner source"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<governance_rule_owner_source::Type>,
     #[doc = "The source value e.g. tag key like owner name or email address"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4054,10 +4112,10 @@ pub struct GovernanceRuleProperties {
     #[serde(rename = "isDisabled", default, skip_serializing_if = "Option::is_none")]
     pub is_disabled: Option<bool>,
     #[doc = "The rule type of the governance rule, defines the source of the rule e.g. Integrated"]
-    #[serde(rename = "ruleType")]
+    #[serde(rename = "ruleType", with = "azure_core::xml::text_content")]
     pub rule_type: governance_rule_properties::RuleType,
     #[doc = "The governance rule source, what the rule affects, e.g. Assessments"]
-    #[serde(rename = "sourceResourceType")]
+    #[serde(rename = "sourceResourceType", with = "azure_core::xml::text_content")]
     pub source_resource_type: governance_rule_properties::SourceResourceType,
     #[doc = "Excluded scopes, filter out the descendants of the scope (on management scopes)"]
     #[serde(
@@ -4230,10 +4288,15 @@ impl HttpD2cMessagesNotInAllowedRange {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HybridComputeSettingsProperties {
     #[doc = "State of the service principal and its secret"]
-    #[serde(rename = "hybridComputeProvisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hybridComputeProvisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub hybrid_compute_provisioning_state: Option<hybrid_compute_settings_properties::HybridComputeProvisioningState>,
     #[doc = "Whether or not to automatically install Azure Arc (hybrid compute) agents on machines"]
-    #[serde(rename = "autoProvision")]
+    #[serde(rename = "autoProvision", with = "azure_core::xml::text_content")]
     pub auto_provision: hybrid_compute_settings_properties::AutoProvision,
     #[doc = "The name of the resource group where Arc (Hybrid Compute) connectors are connected."]
     #[serde(rename = "resourceGroupName", default, skip_serializing_if = "Option::is_none")]
@@ -4391,7 +4454,7 @@ pub struct InformationProtectionPolicyList {
 impl azure_core::Continuable for InformationProtectionPolicyList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InformationProtectionPolicyList {
@@ -4500,7 +4563,7 @@ pub struct IngestionSettingList {
 impl azure_core::Continuable for IngestionSettingList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IngestionSettingList {
@@ -4556,7 +4619,7 @@ pub struct IoTSecurityAggregatedAlertList {
 impl azure_core::Continuable for IoTSecurityAggregatedAlertList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IoTSecurityAggregatedAlertList {
@@ -4580,7 +4643,12 @@ pub struct IoTSecurityAggregatedAlertProperties {
     #[serde(rename = "vendorName", default, skip_serializing_if = "Option::is_none")]
     pub vendor_name: Option<String>,
     #[doc = "Assessed alert severity."]
-    #[serde(rename = "reportedSeverity", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "reportedSeverity",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub reported_severity: Option<io_t_security_aggregated_alert_properties::ReportedSeverity>,
     #[doc = "Recommended steps for remediation."]
     #[serde(rename = "remediationSteps", default, skip_serializing_if = "Option::is_none")]
@@ -4689,7 +4757,7 @@ pub struct IoTSecurityAggregatedRecommendationList {
 impl azure_core::Continuable for IoTSecurityAggregatedRecommendationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IoTSecurityAggregatedRecommendationList {
@@ -4719,7 +4787,12 @@ pub struct IoTSecurityAggregatedRecommendationProperties {
     #[serde(rename = "remediationSteps", default, skip_serializing_if = "Option::is_none")]
     pub remediation_steps: Option<String>,
     #[doc = "Assessed recommendation severity."]
-    #[serde(rename = "reportedSeverity", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "reportedSeverity",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub reported_severity: Option<io_t_security_aggregated_recommendation_properties::ReportedSeverity>,
     #[doc = "Number of healthy devices within the IoT Security solution."]
     #[serde(rename = "healthyDevices", default, skip_serializing_if = "Option::is_none")]
@@ -4803,7 +4876,12 @@ pub struct IoTSecurityDeviceAlert {
     #[serde(rename = "alertDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub alert_display_name: Option<String>,
     #[doc = "Assessed Alert severity."]
-    #[serde(rename = "reportedSeverity", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "reportedSeverity",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub reported_severity: Option<io_t_security_device_alert::ReportedSeverity>,
     #[doc = "Number of alerts raised for this alert type."]
     #[serde(rename = "alertsCount", default, skip_serializing_if = "Option::is_none")]
@@ -4866,7 +4944,12 @@ pub struct IoTSecurityDeviceRecommendation {
     #[serde(rename = "recommendationDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub recommendation_display_name: Option<String>,
     #[doc = "Assessed recommendation severity."]
-    #[serde(rename = "reportedSeverity", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "reportedSeverity",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub reported_severity: Option<io_t_security_device_recommendation::ReportedSeverity>,
     #[doc = "Number of devices with this recommendation."]
     #[serde(rename = "devicesCount", default, skip_serializing_if = "Option::is_none")]
@@ -5014,7 +5097,7 @@ pub struct IoTSecuritySolutionProperties {
     #[serde(rename = "displayName")]
     pub display_name: String,
     #[doc = "Status of the IoT Security solution."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<io_t_security_solution_properties::Status>,
     #[doc = "List of additional options for exporting to workspace data."]
     #[serde(
@@ -5049,7 +5132,12 @@ pub struct IoTSecuritySolutionProperties {
     #[serde(rename = "recommendationsConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub recommendations_configuration: Option<RecommendationConfigurationList>,
     #[doc = "Unmasked IP address logging status"]
-    #[serde(rename = "unmaskedIpLoggingStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "unmaskedIpLoggingStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub unmasked_ip_logging_status: Option<io_t_security_solution_properties::UnmaskedIpLoggingStatus>,
     #[doc = "List of additional workspaces"]
     #[serde(
@@ -5176,7 +5264,7 @@ pub struct IoTSecuritySolutionsList {
 impl azure_core::Continuable for IoTSecuritySolutionsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IoTSecuritySolutionsList {
@@ -5217,7 +5305,7 @@ pub struct JitNetworkAccessPoliciesList {
 impl azure_core::Continuable for JitNetworkAccessPoliciesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JitNetworkAccessPoliciesList {
@@ -5339,6 +5427,7 @@ impl JitNetworkAccessPolicyVirtualMachine {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JitNetworkAccessPortRule {
     pub number: PortNumber,
+    #[serde(with = "azure_core::xml::text_content")]
     pub protocol: jit_network_access_port_rule::Protocol,
     #[doc = "Mutually exclusive with the \"allowedSourceAddressPrefixes\" parameter. Should be an IP address or CIDR, for example \"192.168.0.3\" or \"192.168.0.0/16\"."]
     #[serde(rename = "allowedSourceAddressPrefix", default, skip_serializing_if = "Option::is_none")]
@@ -5455,9 +5544,10 @@ pub struct JitNetworkAccessRequestPort {
     #[serde(rename = "endTimeUtc", with = "azure_core::date::rfc3339")]
     pub end_time_utc: time::OffsetDateTime,
     #[doc = "The status of the port"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: jit_network_access_request_port::Status,
     #[doc = "A description of why the `status` has its value"]
-    #[serde(rename = "statusReason")]
+    #[serde(rename = "statusReason", with = "azure_core::xml::text_content")]
     pub status_reason: jit_network_access_request_port::StatusReason,
     #[doc = "The port which is mapped to this port's `number` in the Azure Firewall, if applicable"]
     #[serde(rename = "mappedPort", default, skip_serializing_if = "Option::is_none")]
@@ -5590,7 +5680,12 @@ pub struct ListCustomAlertRule {
     #[serde(flatten)]
     pub custom_alert_rule: CustomAlertRule,
     #[doc = "The value type of the items in the list."]
-    #[serde(rename = "valueType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "valueType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub value_type: Option<list_custom_alert_rule::ValueType>,
 }
 impl ListCustomAlertRule {
@@ -5835,7 +5930,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -5847,7 +5942,7 @@ impl OperationList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResult {
     #[doc = "The status of the long run operation result of governance rule"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<operation_result::Status>,
 }
 impl OperationResult {
@@ -5904,10 +5999,15 @@ pub struct PathRecommendation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
     #[doc = "The recommendation action of the machine or rule"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub action: Option<RecommendationAction>,
     #[doc = "The type of the rule to be allowed"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<RecommendationType>,
     #[doc = "Represents the publisher information of a process/rule"]
     #[serde(rename = "publisherInfo", default, skip_serializing_if = "Option::is_none")]
@@ -5929,10 +6029,20 @@ pub struct PathRecommendation {
     )]
     pub usernames: Vec<UserRecommendation>,
     #[doc = "The type of the file (for Linux files - Executable is used)"]
-    #[serde(rename = "fileType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "fileType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub file_type: Option<FileType>,
     #[doc = "The configuration status of the machines group or machine or rule"]
-    #[serde(rename = "configurationStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "configurationStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub configuration_status: Option<ConfigurationStatus>,
 }
 impl PathRecommendation {
@@ -6022,7 +6132,7 @@ impl PricingList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PricingProperties {
     #[doc = "The pricing tier value. Microsoft Defender for Cloud is provided in two pricing tiers: free and standard, with the standard tier available with a trial period. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
-    #[serde(rename = "pricingTier")]
+    #[serde(rename = "pricingTier", with = "azure_core::xml::text_content")]
     pub pricing_tier: pricing_properties::PricingTier,
     #[doc = "The sub-plan selected for a Standard pricing configuration, when more than one sub-plan is available. Each sub-plan enables a set of security features. When not specified, full plan is applied."]
     #[serde(rename = "subPlan", default, skip_serializing_if = "Option::is_none")]
@@ -6110,16 +6220,16 @@ impl ProcessNotAllowed {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtectionMode {
     #[doc = "The application control policy enforcement/protection mode of the machine group"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub exe: Option<EnforcementMode>,
     #[doc = "The application control policy enforcement/protection mode of the machine group"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub msi: Option<EnforcementMode>,
     #[doc = "The application control policy enforcement/protection mode of the machine group"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub script: Option<EnforcementMode>,
     #[doc = "The application control policy enforcement/protection mode of the machine group"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub executable: Option<EnforcementMode>,
 }
 impl ProtectionMode {
@@ -6216,11 +6326,12 @@ pub type RecommendationConfigurationList = Vec<RecommendationConfigurationProper
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecommendationConfigurationProperties {
     #[doc = "The type of IoT Security recommendation."]
-    #[serde(rename = "recommendationType")]
+    #[serde(rename = "recommendationType", with = "azure_core::xml::text_content")]
     pub recommendation_type: recommendation_configuration_properties::RecommendationType,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Recommendation status. When the recommendation status is disabled recommendations are not generated."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: recommendation_configuration_properties::Status,
 }
 impl RecommendationConfigurationProperties {
@@ -6420,7 +6531,7 @@ pub struct RegulatoryComplianceAssessmentList {
 impl azure_core::Continuable for RegulatoryComplianceAssessmentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RegulatoryComplianceAssessmentList {
@@ -6441,7 +6552,7 @@ pub struct RegulatoryComplianceAssessmentProperties {
     #[serde(rename = "assessmentDetailsLink", default, skip_serializing_if = "Option::is_none")]
     pub assessment_details_link: Option<String>,
     #[doc = "Aggregative state based on the assessment's scanned resources states"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<regulatory_compliance_assessment_properties::State>,
     #[doc = "The given assessment's related resources count with passed state."]
     #[serde(rename = "passedResources", default, skip_serializing_if = "Option::is_none")]
@@ -6531,7 +6642,7 @@ pub struct RegulatoryComplianceControlList {
 impl azure_core::Continuable for RegulatoryComplianceControlList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RegulatoryComplianceControlList {
@@ -6546,7 +6657,7 @@ pub struct RegulatoryComplianceControlProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Aggregative state based on the control's supported assessments states"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<regulatory_compliance_control_properties::State>,
     #[doc = "The number of supported regulatory compliance assessments of the given control with a passed state"]
     #[serde(rename = "passedAssessments", default, skip_serializing_if = "Option::is_none")]
@@ -6632,7 +6743,7 @@ pub struct RegulatoryComplianceStandardList {
 impl azure_core::Continuable for RegulatoryComplianceStandardList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RegulatoryComplianceStandardList {
@@ -6644,7 +6755,7 @@ impl RegulatoryComplianceStandardList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegulatoryComplianceStandardProperties {
     #[doc = "Aggregative state based on the standard's supported controls states"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<regulatory_compliance_standard_properties::State>,
     #[doc = "The number of supported regulatory compliance controls of the given standard with a passed state"]
     #[serde(rename = "passedControls", default, skip_serializing_if = "Option::is_none")]
@@ -6769,6 +6880,7 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceDetails {
     #[doc = "The platform where the assessed resource resides"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub source: resource_details::Source,
 }
 impl ResourceDetails {
@@ -6822,7 +6934,7 @@ pub mod resource_details {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceIdentifier {
     #[doc = "There can be multiple identifiers of different type per alert, this field specify the identifier type."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: resource_identifier::Type,
 }
 impl ResourceIdentifier {
@@ -6877,7 +6989,7 @@ pub struct Rule {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The rule's direction"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub direction: Option<rule::Direction>,
     #[serde(rename = "destinationPort", default, skip_serializing_if = "Option::is_none")]
     pub destination_port: Option<PortNumber>,
@@ -7163,10 +7275,15 @@ impl Scan {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScanProperties {
     #[doc = "The scan trigger type."]
-    #[serde(rename = "triggerType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "triggerType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub trigger_type: Option<ScanTriggerType>,
     #[doc = "The scan status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<ScanState>,
     #[doc = "The server name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7234,7 +7351,7 @@ pub struct ScanResultProperties {
     #[serde(rename = "ruleId", default, skip_serializing_if = "Option::is_none")]
     pub rule_id: Option<String>,
     #[doc = "The rule result status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<RuleStatus>,
     #[doc = "Indicated whether the results specified here are trimmed."]
     #[serde(rename = "isTrimmed", default, skip_serializing_if = "Option::is_none")]
@@ -7444,7 +7561,12 @@ impl SecureScoreControlDefinitionItemProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecureScoreControlDefinitionSource {
     #[doc = "The type of security control (for example, BuiltIn)"]
-    #[serde(rename = "sourceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sourceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub source_type: Option<secure_score_control_definition_source::SourceType>,
 }
 impl SecureScoreControlDefinitionSource {
@@ -7523,7 +7645,7 @@ pub struct SecureScoreControlList {
 impl azure_core::Continuable for SecureScoreControlList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecureScoreControlList {
@@ -7628,7 +7750,7 @@ pub struct SecureScoresList {
 impl azure_core::Continuable for SecureScoresList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecureScoresList {
@@ -7667,7 +7789,7 @@ pub struct SecurityAssessmentList {
 impl azure_core::Continuable for SecurityAssessmentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecurityAssessmentList {
@@ -7732,12 +7854,23 @@ pub struct SecurityAssessmentMetadataProperties {
     )]
     pub categories: Vec<String>,
     #[doc = "The severity level of the assessment"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub severity: security_assessment_metadata_properties::Severity,
     #[doc = "The user impact of the assessment"]
-    #[serde(rename = "userImpact", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "userImpact",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub user_impact: Option<security_assessment_metadata_properties::UserImpact>,
     #[doc = "The implementation effort required to remediate this assessment"]
-    #[serde(rename = "implementationEffort", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "implementationEffort",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub implementation_effort: Option<security_assessment_metadata_properties::ImplementationEffort>,
     #[serde(
         default,
@@ -7749,7 +7882,7 @@ pub struct SecurityAssessmentMetadataProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub preview: Option<bool>,
     #[doc = "BuiltIn if the assessment based on built-in Azure Policy definition, Custom if the assessment based on custom Azure Policy definition"]
-    #[serde(rename = "assessmentType")]
+    #[serde(rename = "assessmentType", with = "azure_core::xml::text_content")]
     pub assessment_type: security_assessment_metadata_properties::AssessmentType,
     #[doc = "Describes the partner that created the assessment"]
     #[serde(rename = "partnerData", default, skip_serializing_if = "Option::is_none")]
@@ -8015,7 +8148,7 @@ pub struct SecurityAssessmentMetadataResponseList {
 impl azure_core::Continuable for SecurityAssessmentMetadataResponseList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecurityAssessmentMetadataResponseList {
@@ -8144,7 +8277,12 @@ pub struct SecurityConnectorProperties {
     #[serde(rename = "hierarchyIdentifierTrialEndDate", default, with = "azure_core::date::rfc3339::option")]
     pub hierarchy_identifier_trial_end_date: Option<time::OffsetDateTime>,
     #[doc = "The multi cloud resource's cloud name."]
-    #[serde(rename = "environmentName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "environmentName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub environment_name: Option<security_connector_properties::EnvironmentName>,
     #[doc = "A collection of offerings for the security connector."]
     #[serde(
@@ -8222,7 +8360,7 @@ pub struct SecurityConnectorsList {
 impl azure_core::Continuable for SecurityConnectorsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecurityConnectorsList {
@@ -8261,7 +8399,7 @@ pub struct SecurityContactList {
 impl azure_core::Continuable for SecurityContactList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecurityContactList {
@@ -8296,10 +8434,15 @@ pub mod security_contact_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct AlertNotifications {
         #[doc = "Defines if email notifications will be sent about new security alerts"]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub state: Option<alert_notifications::State>,
         #[doc = "Defines the minimal alert severity which will be sent as email notifications"]
-        #[serde(rename = "minimalSeverity", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "minimalSeverity",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub minimal_severity: Option<alert_notifications::MinimalSeverity>,
     }
     impl AlertNotifications {
@@ -8390,7 +8533,7 @@ pub mod security_contact_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct NotificationsByRole {
         #[doc = "Defines whether to send email notifications from AMicrosoft Defender for Cloud to persons with specific RBAC roles on the subscription."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub state: Option<notifications_by_role::State>,
         #[doc = "Defines which RBAC roles will get email notifications from Microsoft Defender for Cloud. List of allowed RBAC roles: "]
         #[serde(
@@ -8516,7 +8659,7 @@ pub struct SecuritySolutionList {
 impl azure_core::Continuable for SecuritySolutionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecuritySolutionList {
@@ -8527,10 +8670,10 @@ impl SecuritySolutionList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecuritySolutionProperties {
     #[doc = "The security family of the security solution"]
-    #[serde(rename = "securityFamily")]
+    #[serde(rename = "securityFamily", with = "azure_core::xml::text_content")]
     pub security_family: security_solution_properties::SecurityFamily,
     #[doc = "The security family provisioning State"]
-    #[serde(rename = "provisioningState")]
+    #[serde(rename = "provisioningState", with = "azure_core::xml::text_content")]
     pub provisioning_state: security_solution_properties::ProvisioningState,
     #[doc = "The security solutions' template"]
     pub template: String,
@@ -8666,7 +8809,7 @@ pub struct SecuritySubAssessmentList {
 impl azure_core::Continuable for SecuritySubAssessmentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecuritySubAssessmentList {
@@ -8743,7 +8886,7 @@ pub struct SecurityTaskList {
 impl azure_core::Continuable for SecurityTaskList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecurityTaskList {
@@ -8797,7 +8940,7 @@ pub struct SensitivityLabel {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The rank of the sensitivity label."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub rank: Option<sensitivity_label::Rank>,
     #[doc = "The order of the sensitivity label."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -8841,7 +8984,12 @@ impl ServerVulnerabilityAssessment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerVulnerabilityAssessmentProperties {
     #[doc = "The provisioningState of the vulnerability assessment capability on the VM"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<server_vulnerability_assessment_properties::ProvisioningState>,
 }
 impl ServerVulnerabilityAssessmentProperties {
@@ -8946,6 +9094,7 @@ pub struct Setting {
     #[serde(flatten)]
     pub resource: Resource,
     #[doc = "the kind of the settings string"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: setting::Kind,
 }
 impl Setting {
@@ -9015,7 +9164,7 @@ pub struct SettingsList {
 impl azure_core::Continuable for SettingsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SettingsList {
@@ -9058,7 +9207,12 @@ pub struct SoftwareProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[doc = "End of support status."]
-    #[serde(rename = "endOfSupportStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "endOfSupportStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub end_of_support_status: Option<software_properties::EndOfSupportStatus>,
     #[doc = "The end of support date in case the product is upcoming end of support."]
     #[serde(rename = "endOfSupportDate", default, skip_serializing_if = "Option::is_none")]
@@ -9145,7 +9299,7 @@ pub struct SoftwaresList {
 impl azure_core::Continuable for SoftwaresList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SoftwaresList {
@@ -9191,7 +9345,7 @@ impl SqlServerVulnerabilityProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubAssessmentStatus {
     #[doc = "Programmatic code for the status of the assessment"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub code: Option<sub_assessment_status::Code>,
     #[doc = "Programmatic code for the cause of the assessment status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9200,7 +9354,7 @@ pub struct SubAssessmentStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The sub-assessment severity level"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<sub_assessment_status::Severity>,
 }
 impl SubAssessmentStatus {
@@ -9377,7 +9531,7 @@ pub struct TopologyList {
 impl azure_core::Continuable for TopologyList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TopologyList {
@@ -9577,7 +9731,12 @@ pub struct UserRecommendation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
     #[doc = "The recommendation action of the machine or rule"]
-    #[serde(rename = "recommendationAction", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "recommendationAction",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub recommendation_action: Option<RecommendationAction>,
 }
 impl UserRecommendation {
@@ -9592,13 +9751,18 @@ pub struct VaRule {
     #[serde(rename = "ruleId", default, skip_serializing_if = "Option::is_none")]
     pub rule_id: Option<String>,
     #[doc = "The rule severity."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<RuleSeverity>,
     #[doc = "The rule category."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
     #[doc = "The rule type."]
-    #[serde(rename = "ruleType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ruleType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub rule_type: Option<RuleType>,
     #[doc = "The rule title."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9645,16 +9809,31 @@ impl VendorReference {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VmRecommendation {
     #[doc = "The configuration status of the machines group or machine or rule"]
-    #[serde(rename = "configurationStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "configurationStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub configuration_status: Option<ConfigurationStatus>,
     #[doc = "The recommendation action of the machine or rule"]
-    #[serde(rename = "recommendationAction", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "recommendationAction",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub recommendation_action: Option<RecommendationAction>,
     #[doc = "The full resource id of the machine"]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<VmResourceId>,
     #[doc = "The machine supportability of Enforce feature"]
-    #[serde(rename = "enforcementSupport", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enforcementSupport",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enforcement_support: Option<EnforcementSupport>,
 }
 impl VmRecommendation {
@@ -9690,7 +9869,7 @@ pub struct WorkspaceSettingList {
 impl azure_core::Continuable for WorkspaceSettingList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceSettingList {
@@ -9716,7 +9895,7 @@ impl WorkspaceSettingProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudOffering {
     #[doc = "The type of the security offering."]
-    #[serde(rename = "offeringType")]
+    #[serde(rename = "offeringType", with = "azure_core::xml::text_content")]
     pub offering_type: cloud_offering::OfferingType,
     #[doc = "The offering description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9911,10 +10090,15 @@ pub struct CustomAssessmentAutomationProperties {
     #[serde(rename = "compressedQuery", default, skip_serializing_if = "Option::is_none")]
     pub compressed_query: Option<String>,
     #[doc = "Relevant cloud for the custom assessment automation."]
-    #[serde(rename = "supportedCloud", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "supportedCloud",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub supported_cloud: Option<custom_assessment_automation_properties::SupportedCloud>,
     #[doc = "The severity to relate to the assessments generated by this assessment automation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<custom_assessment_automation_properties::Severity>,
     #[doc = "The display name of the assessments generated by this assessment automation."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -10036,10 +10220,15 @@ pub struct CustomAssessmentAutomationRequestProperties {
     #[serde(rename = "compressedQuery", default, skip_serializing_if = "Option::is_none")]
     pub compressed_query: Option<String>,
     #[doc = "Relevant cloud for the custom assessment automation."]
-    #[serde(rename = "supportedCloud", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "supportedCloud",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub supported_cloud: Option<custom_assessment_automation_request_properties::SupportedCloud>,
     #[doc = "The severity to relate to the assessments generated by this assessment automation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<custom_assessment_automation_request_properties::Severity>,
     #[doc = "The display name of the assessments generated by this assessment automation."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -10154,7 +10343,7 @@ pub struct CustomAssessmentAutomationsListResult {
 impl azure_core::Continuable for CustomAssessmentAutomationsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomAssessmentAutomationsListResult {
@@ -10205,7 +10394,12 @@ pub mod defender_cspm_aws_offering {
             #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
             pub cloud_role_arn: Option<String>,
             #[doc = "The scanning mode for the vm scan."]
-            #[serde(rename = "scanningMode", default, skip_serializing_if = "Option::is_none")]
+            #[serde(
+                rename = "scanningMode",
+                default,
+                skip_serializing_if = "Option::is_none",
+                with = "azure_core::xml::text_content"
+            )]
             pub scanning_mode: Option<configuration::ScanningMode>,
             #[doc = "VM tags that indicates that VM should not be scanned"]
             #[serde(rename = "exclusionTags", default, skip_serializing_if = "Option::is_none")]
@@ -10683,7 +10877,12 @@ pub mod defender_for_servers_aws_offering {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct Configuration {
             #[doc = "The Vulnerability Assessment solution to be provisioned. Can be either 'TVM' or 'Qualys'"]
-            #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+            #[serde(
+                rename = "type",
+                default,
+                skip_serializing_if = "Option::is_none",
+                with = "azure_core::xml::text_content"
+            )]
             pub type_: Option<configuration::Type>,
         }
         impl Configuration {
@@ -10752,7 +10951,12 @@ pub mod defender_for_servers_aws_offering {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct SubPlan {
         #[doc = "The available sub plans"]
-        #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "type",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub type_: Option<sub_plan::Type>,
     }
     impl SubPlan {
@@ -10824,7 +11028,12 @@ pub mod defender_for_servers_aws_offering {
             #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
             pub cloud_role_arn: Option<String>,
             #[doc = "The scanning mode for the vm scan."]
-            #[serde(rename = "scanningMode", default, skip_serializing_if = "Option::is_none")]
+            #[serde(
+                rename = "scanningMode",
+                default,
+                skip_serializing_if = "Option::is_none",
+                with = "azure_core::xml::text_content"
+            )]
             pub scanning_mode: Option<configuration::ScanningMode>,
             #[doc = "VM tags that indicates that VM should not be scanned"]
             #[serde(rename = "exclusionTags", default, skip_serializing_if = "Option::is_none")]
@@ -10958,7 +11167,12 @@ pub mod defender_for_servers_gcp_offering {
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
         pub struct Configuration {
             #[doc = "The Vulnerability Assessment solution to be provisioned. Can be either 'TVM' or 'Qualys'"]
-            #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+            #[serde(
+                rename = "type",
+                default,
+                skip_serializing_if = "Option::is_none",
+                with = "azure_core::xml::text_content"
+            )]
             pub type_: Option<configuration::Type>,
         }
         impl Configuration {
@@ -11027,7 +11241,12 @@ pub mod defender_for_servers_gcp_offering {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct SubPlan {
         #[doc = "The available sub plans"]
-        #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "type",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub type_: Option<sub_plan::Type>,
     }
     impl SubPlan {
@@ -11125,7 +11344,7 @@ pub struct SecureScoreControlDefinitionList {
 impl azure_core::Continuable for SecureScoreControlDefinitionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecureScoreControlDefinitionList {
@@ -11167,7 +11386,7 @@ impl SecuritySolutionsReferenceDataList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecuritySolutionsReferenceDataProperties {
     #[doc = "The security family of the security solution"]
-    #[serde(rename = "securityFamily")]
+    #[serde(rename = "securityFamily", with = "azure_core::xml::text_content")]
     pub security_family: security_solutions_reference_data_properties::SecurityFamily,
     #[doc = "The security solutions' vendor name"]
     #[serde(rename = "alertVendorName")]
@@ -11258,7 +11477,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -11267,7 +11491,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

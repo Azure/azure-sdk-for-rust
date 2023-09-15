@@ -27,7 +27,7 @@ pub struct AndroidMamPolicyCollection {
 impl azure_core::Continuable for AndroidMamPolicyCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl AndroidMamPolicyCollection {
@@ -40,9 +40,19 @@ impl AndroidMamPolicyCollection {
 pub struct AndroidMamPolicyProperties {
     #[serde(flatten)]
     pub mam_policy_properties: MamPolicyProperties,
-    #[serde(rename = "screenCapture", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "screenCapture",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub screen_capture: Option<android_mam_policy_properties::ScreenCapture>,
-    #[serde(rename = "fileEncryption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "fileEncryption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub file_encryption: Option<android_mam_policy_properties::FileEncryption>,
 }
 impl AndroidMamPolicyProperties {
@@ -104,7 +114,7 @@ pub struct ApplicationCollection {
 impl azure_core::Continuable for ApplicationCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationCollection {
@@ -116,6 +126,7 @@ impl ApplicationCollection {
 pub struct ApplicationProperties {
     #[serde(rename = "friendlyName")]
     pub friendly_name: String,
+    #[serde(with = "azure_core::xml::text_content")]
     pub platform: application_properties::Platform,
     #[serde(rename = "appId", default, skip_serializing_if = "Option::is_none")]
     pub app_id: Option<String>,
@@ -169,7 +180,7 @@ pub struct DeviceCollection {
 impl azure_core::Continuable for DeviceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceCollection {
@@ -240,7 +251,7 @@ pub struct FlaggedEnrolledAppCollection {
 impl azure_core::Continuable for FlaggedEnrolledAppCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl FlaggedEnrolledAppCollection {
@@ -306,7 +317,7 @@ pub struct FlaggedUserCollection {
 impl azure_core::Continuable for FlaggedUserCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl FlaggedUserCollection {
@@ -359,7 +370,7 @@ pub struct GroupsCollection {
 impl azure_core::Continuable for GroupsCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl GroupsCollection {
@@ -377,7 +388,7 @@ pub struct IosmamPolicyCollection {
 impl azure_core::Continuable for IosmamPolicyCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl IosmamPolicyCollection {
@@ -408,7 +419,7 @@ pub struct LocationCollection {
 impl azure_core::Continuable for LocationCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl LocationCollection {
@@ -454,25 +465,60 @@ pub struct MamPolicyProperties {
     pub friendly_name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[serde(rename = "appSharingFromLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "appSharingFromLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub app_sharing_from_level: Option<mam_policy_properties::AppSharingFromLevel>,
-    #[serde(rename = "appSharingToLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "appSharingToLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub app_sharing_to_level: Option<mam_policy_properties::AppSharingToLevel>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub authentication: Option<mam_policy_properties::Authentication>,
-    #[serde(rename = "clipboardSharingLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "clipboardSharingLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub clipboard_sharing_level: Option<mam_policy_properties::ClipboardSharingLevel>,
-    #[serde(rename = "dataBackup", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dataBackup",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub data_backup: Option<mam_policy_properties::DataBackup>,
-    #[serde(rename = "fileSharingSaveAs", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "fileSharingSaveAs",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub file_sharing_save_as: Option<mam_policy_properties::FileSharingSaveAs>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub pin: Option<mam_policy_properties::Pin>,
     #[serde(rename = "pinNumRetry", default, skip_serializing_if = "Option::is_none")]
     pub pin_num_retry: Option<i64>,
-    #[serde(rename = "deviceCompliance", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "deviceCompliance",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub device_compliance: Option<mam_policy_properties::DeviceCompliance>,
-    #[serde(rename = "managedBrowser", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "managedBrowser",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub managed_browser: Option<mam_policy_properties::ManagedBrowser>,
     #[serde(rename = "accessRecheckOfflineTimeout", default, skip_serializing_if = "Option::is_none")]
     pub access_recheck_offline_timeout: Option<String>,
@@ -482,7 +528,12 @@ pub struct MamPolicyProperties {
     pub offline_wipe_timeout: Option<String>,
     #[serde(rename = "numOfApps", default, skip_serializing_if = "Option::is_none")]
     pub num_of_apps: Option<i64>,
-    #[serde(rename = "groupStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "groupStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub group_status: Option<mam_policy_properties::GroupStatus>,
     #[serde(rename = "lastModifiedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time: Option<time::OffsetDateTime>,
@@ -665,7 +716,7 @@ pub struct OperationResultCollection {
 impl azure_core::Continuable for OperationResultCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationResultCollection {
@@ -806,9 +857,19 @@ impl IOsmamPolicy {
 pub struct IOsmamPolicyProperties {
     #[serde(flatten)]
     pub mam_policy_properties: MamPolicyProperties,
-    #[serde(rename = "fileEncryptionLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "fileEncryptionLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub file_encryption_level: Option<i_osmam_policy_properties::FileEncryptionLevel>,
-    #[serde(rename = "touchId", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "touchId",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub touch_id: Option<i_osmam_policy_properties::TouchId>,
 }
 impl IOsmamPolicyProperties {

@@ -37,7 +37,7 @@ pub struct AzureTrafficCollectorListResult {
 impl azure_core::Continuable for AzureTrafficCollectorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AzureTrafficCollectorListResult {
@@ -60,7 +60,12 @@ pub struct AzureTrafficCollectorPropertiesFormat {
     #[serde(rename = "virtualHub", default, skip_serializing_if = "Option::is_none")]
     pub virtual_hub: Option<ResourceReference>,
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl AzureTrafficCollectorPropertiesFormat {
@@ -145,7 +150,7 @@ pub struct CollectorPolicyListResult {
 impl azure_core::Continuable for CollectorPolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CollectorPolicyListResult {
@@ -168,7 +173,12 @@ pub struct CollectorPolicyPropertiesFormat {
     )]
     pub emission_policies: Vec<EmissionPoliciesPropertiesFormat>,
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl CollectorPolicyPropertiesFormat {
@@ -180,7 +190,12 @@ impl CollectorPolicyPropertiesFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmissionPoliciesPropertiesFormat {
     #[doc = "Emission format type."]
-    #[serde(rename = "emissionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "emissionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub emission_type: Option<emission_policies_properties_format::EmissionType>,
     #[doc = "Emission policy destinations."]
     #[serde(
@@ -239,7 +254,12 @@ pub mod emission_policies_properties_format {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmissionPolicyDestination {
     #[doc = "Emission destination type."]
-    #[serde(rename = "destinationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "destinationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub destination_type: Option<emission_policy_destination::DestinationType>,
 }
 impl EmissionPolicyDestination {
@@ -289,7 +309,12 @@ pub mod emission_policy_destination {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngestionPolicyPropertiesFormat {
     #[doc = "The ingestion type."]
-    #[serde(rename = "ingestionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ingestionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ingestion_type: Option<ingestion_policy_properties_format::IngestionType>,
     #[doc = "Ingestion Sources."]
     #[serde(
@@ -348,7 +373,12 @@ pub mod ingestion_policy_properties_format {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngestionSourcesPropertiesFormat {
     #[doc = "Ingestion source type."]
-    #[serde(rename = "sourceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sourceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub source_type: Option<ingestion_sources_properties_format::SourceType>,
     #[doc = "Resource ID."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -545,7 +575,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -554,7 +589,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
 }
 impl SystemData {

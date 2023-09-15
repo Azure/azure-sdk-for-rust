@@ -34,7 +34,7 @@ pub struct AccessPolicyEntityCollection {
 impl azure_core::Continuable for AccessPolicyEntityCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccessPolicyEntityCollection {
@@ -46,7 +46,7 @@ impl AccessPolicyEntityCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicyProperties {
     #[doc = "Defines the access level granted by this policy."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub role: Option<access_policy_properties::Role>,
     #[doc = "Base class for access policies authentication methods."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -99,7 +99,7 @@ pub mod access_policy_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccountEncryption {
     #[doc = "The type of key used to encrypt the Account Key."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: account_encryption::Type,
     #[doc = "The details for accessing the encryption keys in Key Vault."]
     #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
@@ -233,7 +233,7 @@ pub struct CheckNameAvailabilityResponse {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "The reason why the given name is not available."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<check_name_availability_response::Reason>,
     #[doc = "Detailed reason why the given name is available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -302,6 +302,7 @@ pub struct EccTokenKey {
     #[serde(flatten)]
     pub token_key: TokenKey,
     #[doc = "Elliptical curve algorithm to be used: ES256, ES384 or ES512."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub alg: ecc_token_key::Alg,
     #[doc = "X coordinate."]
     pub x: String,
@@ -389,7 +390,7 @@ pub struct EdgeModuleEntityCollection {
 impl azure_core::Continuable for EdgeModuleEntityCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EdgeModuleEntityCollection {
@@ -479,6 +480,7 @@ pub struct EncoderSystemPreset {
     #[serde(flatten)]
     pub encoder_preset_base: EncoderPresetBase,
     #[doc = "Name of the built-in encoding preset."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: encoder_system_preset::Name,
 }
 impl EncoderSystemPreset {
@@ -541,7 +543,7 @@ pub struct Endpoint {
     #[serde(rename = "endpointUrl", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_url: Option<String>,
     #[doc = "The type of the endpoint."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: endpoint::Type,
 }
 impl Endpoint {
@@ -681,7 +683,12 @@ impl ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupLevelAccessControl {
     #[doc = "Whether or not public network access is allowed for specified resources under the Video Analyzer account."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<group_level_access_control::PublicNetworkAccess>,
 }
 impl GroupLevelAccessControl {
@@ -855,7 +862,7 @@ pub struct LivePipelineCollection {
 impl azure_core::Continuable for LivePipelineCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LivePipelineCollection {
@@ -894,7 +901,7 @@ pub struct LivePipelineProperties {
     #[serde(rename = "bitrateKbps")]
     pub bitrate_kbps: i32,
     #[doc = "Current state of the pipeline (read-only)."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<live_pipeline_properties::State>,
     #[doc = "List of the instance level parameter values for the user-defined topology parameters. A pipeline can only define or override parameters values for parameters which have been declared in the referenced topology. Topology parameters without a default value must be defined. Topology parameters with a default value can be optionally be overridden."]
     #[serde(
@@ -972,7 +979,7 @@ pub struct LivePipelinePropertiesUpdate {
     #[serde(rename = "bitrateKbps", default, skip_serializing_if = "Option::is_none")]
     pub bitrate_kbps: Option<i32>,
     #[doc = "Current state of the pipeline (read-only)."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<live_pipeline_properties_update::State>,
     #[doc = "List of the instance level parameter values for the user-defined topology parameters. A pipeline can only define or override parameters values for parameters which have been declared in the referenced topology. Topology parameters without a default value must be defined. Topology parameters with a default value can be optionally be overridden."]
     #[serde(
@@ -1094,13 +1101,23 @@ pub struct MetricSpecification {
     #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
     pub display_description: Option<String>,
     #[doc = "The metric unit"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub unit: Option<metric_specification::Unit>,
     #[doc = "The metric aggregation type"]
-    #[serde(rename = "aggregationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "aggregationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub aggregation_type: Option<metric_specification::AggregationType>,
     #[doc = "The metric lock aggregation type"]
-    #[serde(rename = "lockAggregationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lockAggregationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lock_aggregation_type: Option<metric_specification::LockAggregationType>,
     #[doc = "Supported aggregation types."]
     #[serde(
@@ -1322,7 +1339,12 @@ pub struct Operation {
     #[serde(rename = "isDataAction", default, skip_serializing_if = "Option::is_none")]
     pub is_data_action: Option<bool>,
     #[doc = "Indicates the action type."]
-    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -1418,7 +1440,7 @@ pub struct ParameterDeclaration {
     #[doc = "Name of the parameter."]
     pub name: String,
     #[doc = "Type of the parameter."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: parameter_declaration::Type,
     #[doc = "Description of the parameter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1544,7 +1566,7 @@ pub struct PipelineJobCollection {
 impl azure_core::Continuable for PipelineJobCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PipelineJobCollection {
@@ -1595,7 +1617,7 @@ pub struct PipelineJobProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Current state of the pipeline (read-only)."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<pipeline_job_properties::State>,
     #[doc = "The date-time by when this pipeline job will be automatically deleted from your account."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
@@ -1677,7 +1699,7 @@ pub struct PipelineJobPropertiesUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Current state of the pipeline (read-only)."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<pipeline_job_properties_update::State>,
     #[doc = "The date-time by when this pipeline job will be automatically deleted from your account."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
@@ -1765,6 +1787,7 @@ pub struct PipelineTopology {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PipelineTopologyProperties>,
     #[doc = "Topology kind."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: pipeline_topology::Kind,
     #[doc = "The SKU details."]
     pub sku: Sku,
@@ -1836,7 +1859,7 @@ pub struct PipelineTopologyCollection {
 impl azure_core::Continuable for PipelineTopologyCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PipelineTopologyCollection {
@@ -1929,7 +1952,7 @@ pub struct PipelineTopologyUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PipelineTopologyPropertiesUpdate>,
     #[doc = "Topology kind."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<pipeline_topology_update::Kind>,
     #[doc = "The SKU details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2032,7 +2055,12 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -2186,7 +2214,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2278,6 +2306,7 @@ pub struct RsaTokenKey {
     #[serde(flatten)]
     pub token_key: TokenKey,
     #[doc = "RSA algorithm to be used: RS256, RS384 or RS512."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub alg: rsa_token_key::Alg,
     #[doc = "RSA public key modulus."]
     pub n: String,
@@ -2340,7 +2369,7 @@ pub struct RtspSource {
     #[serde(flatten)]
     pub source_node_base: SourceNodeBase,
     #[doc = "Network transport utilized by the RTSP and RTP exchange: TCP or HTTP. When using TCP, the RTP packets are interleaved on the TCP RTSP connection. When using HTTP, the RTSP messages are exchanged through long lived HTTP connections, and the RTP packages are interleaved in the HTTP connections alongside the RTSP messages."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub transport: Option<rtsp_source::Transport>,
     #[doc = "Base class for endpoints."]
     pub endpoint: EndpointBase,
@@ -2460,9 +2489,10 @@ impl SinkNodeBase {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The SKU name."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: sku::Name,
     #[doc = "The SKU tier."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub tier: Option<sku::Tier>,
 }
 impl Sku {
@@ -2888,13 +2918,23 @@ pub struct VideoAnalyzerProperties {
     )]
     pub iot_hubs: Vec<IotHub>,
     #[doc = "Whether or not public network access is allowed for resources under the Video Analyzer account."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<video_analyzer_properties::PublicNetworkAccess>,
     #[doc = "Network access control for video analyzer account."]
     #[serde(rename = "networkAccessControl", default, skip_serializing_if = "Option::is_none")]
     pub network_access_control: Option<NetworkAccessControl>,
     #[doc = "Provisioning state of the Video Analyzer account."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<video_analyzer_properties::ProvisioningState>,
     #[doc = "Private Endpoint Connections created under Video Analyzer account."]
     #[serde(
@@ -3028,13 +3068,23 @@ pub struct VideoAnalyzerPropertiesUpdate {
     )]
     pub iot_hubs: Vec<IotHub>,
     #[doc = "Whether or not public network access is allowed for resources under the Video Analyzer account."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<video_analyzer_properties_update::PublicNetworkAccess>,
     #[doc = "Network access control for video analyzer account."]
     #[serde(rename = "networkAccessControl", default, skip_serializing_if = "Option::is_none")]
     pub network_access_control: Option<NetworkAccessControl>,
     #[doc = "Provisioning state of the Video Analyzer account."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<video_analyzer_properties_update::ProvisioningState>,
     #[doc = "Private Endpoint Connections created under Video Analyzer account."]
     #[serde(
@@ -3284,7 +3334,7 @@ pub struct VideoEntityCollection {
 impl azure_core::Continuable for VideoEntityCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VideoEntityCollection {
@@ -3354,7 +3404,12 @@ pub struct VideoProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Video content type. Different content types are suitable for different applications and scenarios."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<video_properties::Type>,
     #[doc = "Video flags contain information about the available video actions and its dynamic properties based on the current video state."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3439,7 +3494,7 @@ pub struct VideoScale {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub width: Option<String>,
     #[doc = "Describes the video scaling mode to be applied. Default mode is 'Pad'. If the mode is 'Pad' or 'Stretch' then both width and height must be specified. Else if the mode is 'PreserveAspectRatio' then only one of width or height need be provided."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub mode: Option<video_scale::Mode>,
 }
 impl VideoScale {
@@ -3558,7 +3613,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -3567,7 +3627,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

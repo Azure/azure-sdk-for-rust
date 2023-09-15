@@ -10,7 +10,7 @@ pub struct AcsClusterProperties {
     #[serde(rename = "clusterFqdn", default, skip_serializing_if = "Option::is_none")]
     pub cluster_fqdn: Option<String>,
     #[doc = "Type of orchestrator. It cannot be changed once the cluster is created."]
-    #[serde(rename = "orchestratorType")]
+    #[serde(rename = "orchestratorType", with = "azure_core::xml::text_content")]
     pub orchestrator_type: acs_cluster_properties::OrchestratorType,
     #[doc = "Kubernetes cluster specific properties"]
     #[serde(rename = "orchestratorProperties", default, skip_serializing_if = "Option::is_none")]
@@ -30,7 +30,12 @@ pub struct AcsClusterProperties {
     #[serde(rename = "agentCount", default, skip_serializing_if = "Option::is_none")]
     pub agent_count: Option<i64>,
     #[doc = "The Azure VM size of the agent VM nodes. This cannot be changed once the cluster is created. This list is non exhaustive; refer to https://docs.microsoft.com/en-us/azure/virtual-machines/windows/sizes for the possible VM sizes."]
-    #[serde(rename = "agentVmSize", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "agentVmSize",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub agent_vm_size: Option<acs_cluster_properties::AgentVmSize>,
 }
 impl AcsClusterProperties {
@@ -296,7 +301,7 @@ impl AppInsightsProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoScaleConfiguration {
     #[doc = "If auto-scale is enabled for all services. Each service can turn it off individually."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<auto_scale_configuration::Status>,
     #[doc = "The minimum number of replicas for each service."]
     #[serde(rename = "minReplicas", default, skip_serializing_if = "Option::is_none")]
@@ -381,7 +386,12 @@ impl AvailableOperations {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckSystemServicesUpdatesAvailableResponse {
     #[doc = "Yes if updates are available for the system services, No if not."]
-    #[serde(rename = "updatesAvailable", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "updatesAvailable",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub updates_available: Option<check_system_services_updates_available_response::UpdatesAvailable>,
 }
 impl CheckSystemServicesUpdatesAvailableResponse {
@@ -619,7 +629,12 @@ pub struct OperationalizationClusterProperties {
     #[serde(rename = "modifiedOn", default, with = "azure_core::date::rfc3339::option")]
     pub modified_on: Option<time::OffsetDateTime>,
     #[doc = "The provision state of the cluster. Valid values are Unknown, Updating, Provisioning, Succeeded, and Failed."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<operationalization_cluster_properties::ProvisioningState>,
     #[doc = "List of provisioning errors reported by the resource provider."]
     #[serde(
@@ -630,7 +645,7 @@ pub struct OperationalizationClusterProperties {
     )]
     pub provisioning_errors: Vec<ErrorResponseWrapper>,
     #[doc = "The cluster type."]
-    #[serde(rename = "clusterType")]
+    #[serde(rename = "clusterType", with = "azure_core::xml::text_content")]
     pub cluster_type: operationalization_cluster_properties::ClusterType,
     #[doc = "Properties of Storage Account."]
     #[serde(rename = "storageAccount", default, skip_serializing_if = "Option::is_none")]
@@ -782,7 +797,7 @@ pub struct PaginatedOperationalizationClustersList {
 impl azure_core::Continuable for PaginatedOperationalizationClustersList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PaginatedOperationalizationClustersList {
@@ -897,7 +912,7 @@ impl ServicePrincipalProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SslConfiguration {
     #[doc = "SSL status. Allowed values are Enabled and Disabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<ssl_configuration::Status>,
     #[doc = "The SSL cert data in PEM format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -993,7 +1008,7 @@ impl StorageAccountProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemService {
     #[doc = "The system service type"]
-    #[serde(rename = "systemServiceType")]
+    #[serde(rename = "systemServiceType", with = "azure_core::xml::text_content")]
     pub system_service_type: system_service::SystemServiceType,
     #[doc = "The public IP address of the system service"]
     #[serde(rename = "publicIpAddress", default, skip_serializing_if = "Option::is_none")]
@@ -1057,7 +1072,12 @@ pub mod system_service {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateSystemServicesResponse {
     #[doc = "Update status"]
-    #[serde(rename = "updateStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "updateStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub update_status: Option<update_system_services_response::UpdateStatus>,
     #[doc = "The date and time when the last system services update was started."]
     #[serde(rename = "updateStartedOn", default, with = "azure_core::date::rfc3339::option")]

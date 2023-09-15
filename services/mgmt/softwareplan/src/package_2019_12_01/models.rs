@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
     #[doc = "Defined error codes to be returned to the client."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub code: Option<ErrorCode>,
     #[doc = "A user readable error message. Localized based on x-ms-effective-locale header in the request"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -78,7 +78,7 @@ pub struct HybridUseBenefitListResult {
 impl azure_core::Continuable for HybridUseBenefitListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HybridUseBenefitListResult {
@@ -114,7 +114,12 @@ impl HybridUseBenefitModel {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridUseBenefitProperties {
     #[doc = "Represent the current state of the Reservation."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Created date"]
     #[serde(rename = "createdDate", default, with = "azure_core::date::rfc3339::option")]
@@ -166,7 +171,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {

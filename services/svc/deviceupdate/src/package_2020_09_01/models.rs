@@ -29,7 +29,7 @@ pub struct Deployment {
     #[serde(rename = "deploymentId")]
     pub deployment_id: String,
     #[doc = "Supported deployment types."]
-    #[serde(rename = "deploymentType")]
+    #[serde(rename = "deploymentType", with = "azure_core::xml::text_content")]
     pub deployment_type: DeploymentType,
     #[doc = "Gets or sets the device class identifier."]
     #[serde(rename = "deviceClassId", default, skip_serializing_if = "Option::is_none")]
@@ -38,7 +38,7 @@ pub struct Deployment {
     #[serde(rename = "startDateTime", with = "azure_core::date::rfc3339")]
     pub start_date_time: time::OffsetDateTime,
     #[doc = "Supported deployment group types."]
-    #[serde(rename = "deviceGroupType")]
+    #[serde(rename = "deviceGroupType", with = "azure_core::xml::text_content")]
     pub device_group_type: DeviceGroupType,
     #[doc = "Gets or sets the device group definition."]
     #[serde(rename = "deviceGroupDefinition")]
@@ -92,7 +92,7 @@ pub struct DeploymentDeviceState {
     #[serde(rename = "movedOnToNewDeployment")]
     pub moved_on_to_new_deployment: bool,
     #[doc = "Deployment state."]
-    #[serde(rename = "deviceState")]
+    #[serde(rename = "deviceState", with = "azure_core::xml::text_content")]
     pub device_state: DeviceDeploymentState,
 }
 impl DeploymentDeviceState {
@@ -112,7 +112,12 @@ pub struct DeploymentDeviceStatesFilter {
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
     #[doc = "The deployment device state."]
-    #[serde(rename = "deviceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "deviceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub device_state: Option<DeviceState>,
 }
 impl DeploymentDeviceStatesFilter {
@@ -181,7 +186,7 @@ impl Serialize for DeploymentState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentStatus {
     #[doc = "Deployment state."]
-    #[serde(rename = "deploymentState")]
+    #[serde(rename = "deploymentState", with = "azure_core::xml::text_content")]
     pub deployment_state: DeploymentState,
     #[doc = "Gets or sets the total number of devices in the deployment."]
     #[serde(rename = "totalDevices", default, skip_serializing_if = "Option::is_none")]
@@ -274,7 +279,12 @@ pub struct Device {
     #[serde(rename = "lastAttemptedUpdateId", default, skip_serializing_if = "Option::is_none")]
     pub last_attempted_update_id: Option<UpdateId>,
     #[doc = "Deployment state."]
-    #[serde(rename = "deploymentStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "deploymentStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub deployment_status: Option<DeviceDeploymentState>,
     #[doc = "Update identifier."]
     #[serde(rename = "installedUpdateId", default, skip_serializing_if = "Option::is_none")]
@@ -571,7 +581,7 @@ pub struct Group {
     #[serde(rename = "groupId")]
     pub group_id: String,
     #[doc = "Supported group types."]
-    #[serde(rename = "groupType")]
+    #[serde(rename = "groupType", with = "azure_core::xml::text_content")]
     pub group_type: GroupType,
     #[doc = "IoT Hub tags."]
     pub tags: Vec<String>,
@@ -712,6 +722,7 @@ pub struct Operation {
     #[serde(rename = "operationId")]
     pub operation_id: String,
     #[doc = "Operation status."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: OperationStatus,
     #[doc = "Update identifier."]
     #[serde(rename = "updateId", default, skip_serializing_if = "Option::is_none")]
@@ -759,7 +770,7 @@ impl Operation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationFilter {
     #[doc = "Operation status filter."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<OperationFilterStatus>,
 }
 impl OperationFilter {
@@ -864,7 +875,7 @@ pub struct PageableListOfDeploymentDeviceStates {
 impl azure_core::Continuable for PageableListOfDeploymentDeviceStates {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfDeploymentDeviceStates {
@@ -889,7 +900,7 @@ pub struct PageableListOfDeployments {
 impl azure_core::Continuable for PageableListOfDeployments {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfDeployments {
@@ -914,7 +925,7 @@ pub struct PageableListOfDeviceClasses {
 impl azure_core::Continuable for PageableListOfDeviceClasses {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfDeviceClasses {
@@ -939,7 +950,7 @@ pub struct PageableListOfDeviceTags {
 impl azure_core::Continuable for PageableListOfDeviceTags {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfDeviceTags {
@@ -964,7 +975,7 @@ pub struct PageableListOfDevices {
 impl azure_core::Continuable for PageableListOfDevices {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfDevices {
@@ -989,7 +1000,7 @@ pub struct PageableListOfGroups {
 impl azure_core::Continuable for PageableListOfGroups {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfGroups {
@@ -1014,7 +1025,7 @@ pub struct PageableListOfOperations {
 impl azure_core::Continuable for PageableListOfOperations {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfOperations {
@@ -1039,7 +1050,7 @@ pub struct PageableListOfStrings {
 impl azure_core::Continuable for PageableListOfStrings {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfStrings {
@@ -1064,7 +1075,7 @@ pub struct PageableListOfUpdatableDevices {
 impl azure_core::Continuable for PageableListOfUpdatableDevices {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfUpdatableDevices {
@@ -1089,7 +1100,7 @@ pub struct PageableListOfUpdateIds {
 impl azure_core::Continuable for PageableListOfUpdateIds {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfUpdateIds {

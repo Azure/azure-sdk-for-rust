@@ -21,7 +21,7 @@ pub struct CheckNameAvailabilityParameters {
     #[doc = "The name to check for availability"]
     pub name: String,
     #[doc = "The resource type. Must be set to Microsoft.StorageSync/storageSyncServices"]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: check_name_availability_parameters::Type,
 }
 impl CheckNameAvailabilityParameters {
@@ -45,7 +45,7 @@ pub struct CheckNameAvailabilityResult {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "Gets the reason that a Storage Sync Service name could not be used. The Reason element is only returned if NameAvailable is false."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<check_name_availability_result::Reason>,
     #[doc = "Gets an error message explaining the Reason value in more detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -267,7 +267,7 @@ pub struct OperationEntityListResult {
 impl azure_core::Continuable for OperationEntityListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationEntityListResult {
@@ -696,7 +696,7 @@ pub enum ServerEndpointCloudTieringHealthState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerEndpointCloudTieringStatus {
     #[doc = "Type of the cloud tiering health state"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub health: Option<ServerEndpointCloudTieringHealthState>,
     #[doc = "Last updated timestamp"]
     #[serde(rename = "lastUpdatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
@@ -734,7 +734,12 @@ pub struct ServerEndpointCreateParametersProperties {
     #[serde(rename = "serverLocalPath", default, skip_serializing_if = "Option::is_none")]
     pub server_local_path: Option<PhysicalPath>,
     #[doc = "Type of the Feature Status"]
-    #[serde(rename = "cloudTiering", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "cloudTiering",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cloud_tiering: Option<FeatureStatus>,
     #[doc = "Level of free space to be maintained by Cloud Tiering if it is enabled."]
     #[serde(rename = "volumeFreeSpacePercent", default, skip_serializing_if = "Option::is_none")]
@@ -749,7 +754,12 @@ pub struct ServerEndpointCreateParametersProperties {
     #[serde(rename = "serverResourceId", default, skip_serializing_if = "Option::is_none")]
     pub server_resource_id: Option<ResourceId>,
     #[doc = "Type of the Feature Status"]
-    #[serde(rename = "offlineDataTransfer", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "offlineDataTransfer",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub offline_data_transfer: Option<FeatureStatus>,
     #[doc = "Offline data transfer share name"]
     #[serde(rename = "offlineDataTransferShareName", default, skip_serializing_if = "Option::is_none")]
@@ -793,7 +803,12 @@ pub struct ServerEndpointProperties {
     #[serde(rename = "serverLocalPath", default, skip_serializing_if = "Option::is_none")]
     pub server_local_path: Option<PhysicalPath>,
     #[doc = "Type of the Feature Status"]
-    #[serde(rename = "cloudTiering", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "cloudTiering",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cloud_tiering: Option<FeatureStatus>,
     #[doc = "Level of free space to be maintained by Cloud Tiering if it is enabled."]
     #[serde(rename = "volumeFreeSpacePercent", default, skip_serializing_if = "Option::is_none")]
@@ -820,7 +835,12 @@ pub struct ServerEndpointProperties {
     #[serde(rename = "syncStatus", default, skip_serializing_if = "Option::is_none")]
     pub sync_status: Option<ServerEndpointSyncStatus>,
     #[doc = "Type of the Feature Status"]
-    #[serde(rename = "offlineDataTransfer", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "offlineDataTransfer",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub offline_data_transfer: Option<FeatureStatus>,
     #[doc = "Offline data transfer storage account resource ID"]
     #[serde(
@@ -971,16 +991,36 @@ impl ServerEndpointSyncSessionStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerEndpointSyncStatus {
     #[doc = "Type of the sync health state"]
-    #[serde(rename = "downloadHealth", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "downloadHealth",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub download_health: Option<ServerEndpointSyncHealthState>,
     #[doc = "Type of the sync health state"]
-    #[serde(rename = "uploadHealth", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "uploadHealth",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub upload_health: Option<ServerEndpointSyncHealthState>,
     #[doc = "Type of the sync health state"]
-    #[serde(rename = "combinedHealth", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "combinedHealth",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub combined_health: Option<ServerEndpointSyncHealthState>,
     #[doc = "Type of the sync activity state"]
-    #[serde(rename = "syncActivity", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "syncActivity",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub sync_activity: Option<ServerEndpointSyncActivityState>,
     #[doc = "Total count of persistent files not syncing (combined upload + download)."]
     #[serde(rename = "totalPersistentFilesNotSyncingCount", default, skip_serializing_if = "Option::is_none")]
@@ -1001,7 +1041,12 @@ pub struct ServerEndpointSyncStatus {
     #[serde(rename = "downloadActivity", default, skip_serializing_if = "Option::is_none")]
     pub download_activity: Option<ServerEndpointSyncActivityStatus>,
     #[doc = "Type of the Health state"]
-    #[serde(rename = "offlineDataTransferStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "offlineDataTransferStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub offline_data_transfer_status: Option<ServerEndpointOfflineDataTransferState>,
 }
 impl ServerEndpointSyncStatus {
@@ -1025,7 +1070,12 @@ impl ServerEndpointUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerEndpointUpdateProperties {
     #[doc = "Type of the Feature Status"]
-    #[serde(rename = "cloudTiering", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "cloudTiering",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cloud_tiering: Option<FeatureStatus>,
     #[doc = "Level of free space to be maintained by Cloud Tiering if it is enabled."]
     #[serde(rename = "volumeFreeSpacePercent", default, skip_serializing_if = "Option::is_none")]
@@ -1034,7 +1084,12 @@ pub struct ServerEndpointUpdateProperties {
     #[serde(rename = "tierFilesOlderThanDays", default, skip_serializing_if = "Option::is_none")]
     pub tier_files_older_than_days: Option<i64>,
     #[doc = "Type of the Feature Status"]
-    #[serde(rename = "offlineDataTransfer", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "offlineDataTransfer",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub offline_data_transfer: Option<FeatureStatus>,
     #[doc = "Offline data transfer share name"]
     #[serde(rename = "offlineDataTransferShareName", default, skip_serializing_if = "Option::is_none")]
@@ -1206,7 +1261,7 @@ impl StorageSyncServiceUpdateProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionState {
     #[doc = "State of Azure Subscription"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<subscription_state::State>,
     #[doc = "Is Transitioning"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1382,7 +1437,12 @@ pub struct TriggerChangeDetectionParameters {
     #[serde(rename = "directoryPath", default, skip_serializing_if = "Option::is_none")]
     pub directory_path: Option<String>,
     #[doc = "Change Detection Mode. Applies to a directory specified in directoryPath parameter."]
-    #[serde(rename = "changeDetectionMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "changeDetectionMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub change_detection_mode: Option<trigger_change_detection_parameters::ChangeDetectionMode>,
     #[doc = "Array of relative paths on the Azure File share to be included in the change detection. Can be files and directories."]
     #[serde(
@@ -1492,10 +1552,10 @@ pub struct WorkflowProperties {
     #[serde(rename = "lastStepName", default, skip_serializing_if = "Option::is_none")]
     pub last_step_name: Option<String>,
     #[doc = "Type of the Workflow Status"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<WorkflowStatus>,
     #[doc = "Type of the Operation Direction"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub operation: Option<OperationDirection>,
     #[doc = "workflow steps"]
     #[serde(default, skip_serializing_if = "Option::is_none")]

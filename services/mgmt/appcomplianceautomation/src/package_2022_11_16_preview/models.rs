@@ -10,7 +10,7 @@ pub struct Assessment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Indicates the assessment severity."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<AssessmentSeverity>,
     #[doc = "The description of the assessment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -19,7 +19,12 @@ pub struct Assessment {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub remediation: Option<String>,
     #[doc = "Indicates whether all the resource(s) are compliant."]
-    #[serde(rename = "isPass", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "isPass",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub is_pass: Option<assessment::IsPass>,
     #[doc = "The policy id mapping to this assessment."]
     #[serde(rename = "policyId", default, skip_serializing_if = "Option::is_none")]
@@ -85,7 +90,12 @@ pub struct AssessmentResource {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[doc = "Indicates the resource status."]
-    #[serde(rename = "resourceStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_status: Option<ResourceStatus>,
     #[doc = "The reason for the N/A resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -145,10 +155,20 @@ pub struct Category {
     #[serde(rename = "categoryName", default, skip_serializing_if = "Option::is_none")]
     pub category_name: Option<String>,
     #[doc = "Indicates the compliance category type."]
-    #[serde(rename = "categoryType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "categoryType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub category_type: Option<CategoryType>,
     #[doc = "Indicates the category status."]
-    #[serde(rename = "categoryStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "categoryStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub category_status: Option<CategoryStatus>,
     #[doc = "List of control families."]
     #[serde(
@@ -253,10 +273,20 @@ pub struct ComplianceReportItem {
     #[serde(rename = "controlName", default, skip_serializing_if = "Option::is_none")]
     pub control_name: Option<String>,
     #[doc = "Indicates the control type."]
-    #[serde(rename = "controlType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "controlType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub control_type: Option<ControlType>,
     #[doc = "The compliance result's status."]
-    #[serde(rename = "complianceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "complianceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub compliance_state: Option<compliance_report_item::ComplianceState>,
     #[doc = "The compliance result mapped policy Id."]
     #[serde(rename = "policyId", default, skip_serializing_if = "Option::is_none")]
@@ -360,7 +390,12 @@ pub struct Control {
     #[serde(rename = "controlFullName", default, skip_serializing_if = "Option::is_none")]
     pub control_full_name: Option<String>,
     #[doc = "Indicates the control type."]
-    #[serde(rename = "controlType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "controlType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub control_type: Option<ControlType>,
     #[doc = "The control's description"]
     #[serde(rename = "controlDescription", default, skip_serializing_if = "Option::is_none")]
@@ -369,7 +404,12 @@ pub struct Control {
     #[serde(rename = "controlDescriptionHyperLink", default, skip_serializing_if = "Option::is_none")]
     pub control_description_hyper_link: Option<String>,
     #[doc = "Indicates the control status."]
-    #[serde(rename = "controlStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "controlStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub control_status: Option<ControlStatus>,
     #[doc = "List of assessments."]
     #[serde(
@@ -391,10 +431,20 @@ pub struct ControlFamily {
     #[serde(rename = "familyName", default, skip_serializing_if = "Option::is_none")]
     pub family_name: Option<String>,
     #[doc = "Indicates the control family type."]
-    #[serde(rename = "familyType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "familyType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub family_type: Option<ControlFamilyType>,
     #[doc = "Indicates the control family status."]
-    #[serde(rename = "familyStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "familyStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub family_status: Option<ControlFamilyStatus>,
     #[doc = "List of controls."]
     #[serde(
@@ -700,10 +750,15 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -829,7 +884,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -930,7 +985,7 @@ pub struct ReportProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Report status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<report_properties::Status>,
     #[doc = "Report's tenant id."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -966,7 +1021,12 @@ pub struct ReportProperties {
     #[serde(rename = "complianceStatus", default, skip_serializing_if = "Option::is_none")]
     pub compliance_status: Option<ReportComplianceStatus>,
     #[doc = "Resource provisioning states."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ReportProperties {
@@ -1063,7 +1123,7 @@ pub struct ReportResourceList {
 impl azure_core::Continuable for ReportResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ReportResourceList {
@@ -1201,7 +1261,7 @@ pub struct SnapshotDownloadRequest {
     #[serde(rename = "reportCreatorTenantId", default, skip_serializing_if = "Option::is_none")]
     pub report_creator_tenant_id: Option<String>,
     #[doc = "Indicates the download type."]
-    #[serde(rename = "downloadType")]
+    #[serde(rename = "downloadType", with = "azure_core::xml::text_content")]
     pub download_type: snapshot_download_request::DownloadType,
     #[doc = "The offerGuid which mapping to the reports."]
     #[serde(rename = "offerGuid", default, skip_serializing_if = "Option::is_none")]
@@ -1273,7 +1333,12 @@ pub struct SnapshotProperties {
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
     #[doc = "Resource provisioning states."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Report's properties."]
     #[serde(rename = "reportProperties", default, skip_serializing_if = "Option::is_none")]
@@ -1326,7 +1391,7 @@ pub struct SnapshotResourceList {
 impl azure_core::Continuable for SnapshotResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SnapshotResourceList {
@@ -1341,7 +1406,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1350,7 +1420,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

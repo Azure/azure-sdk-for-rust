@@ -74,7 +74,7 @@ pub struct ConfluentAgreementResourceListResponse {
 impl azure_core::Continuable for ConfluentAgreementResourceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConfluentAgreementResourceListResponse {
@@ -126,7 +126,7 @@ pub struct OfferDetail {
     #[serde(rename = "termUnit", default, skip_serializing_if = "Option::is_none")]
     pub term_unit: Option<String>,
     #[doc = "SaaS Offer Status for confluent RP"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<SaaSOfferStatus>,
 }
 impl OfferDetail {
@@ -172,7 +172,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -242,7 +242,7 @@ pub struct OrganizationResourceListResult {
 impl azure_core::Continuable for OrganizationResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OrganizationResourceListResult {
@@ -257,7 +257,12 @@ pub struct OrganizationResourceProperties {
     #[serde(rename = "createdTime", default, with = "azure_core::date::rfc3339::option")]
     pub created_time: Option<time::OffsetDateTime>,
     #[doc = "Provision states for confluent RP"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Id of the Confluent organization."]
     #[serde(rename = "organizationId", default, skip_serializing_if = "Option::is_none")]

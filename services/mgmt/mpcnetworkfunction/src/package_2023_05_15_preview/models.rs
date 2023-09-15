@@ -180,7 +180,7 @@ pub struct NetworkFunctionResourceListResult {
 impl azure_core::Continuable for NetworkFunctionResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkFunctionResourceListResult {
@@ -192,15 +192,21 @@ impl NetworkFunctionResourceListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkFunctionResourceProperties {
     #[doc = "SKU Definitions"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub sku: SkuDefinitions,
     #[doc = "Type of Network Function"]
-    #[serde(rename = "networkFunctionType")]
+    #[serde(rename = "networkFunctionType", with = "azure_core::xml::text_content")]
     pub network_function_type: NetworkFunctionType,
     #[doc = "Network Function Administrative State enumerations"]
-    #[serde(rename = "networkFunctionAdministrativeState")]
+    #[serde(rename = "networkFunctionAdministrativeState", with = "azure_core::xml::text_content")]
     pub network_function_administrative_state: NetworkFunctionAdministrativeState,
     #[doc = "Network Function Operational Status enumerations"]
-    #[serde(rename = "networkFunctionOperationalStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "networkFunctionOperationalStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub network_function_operational_status: Option<NetworkFunctionOperationalStatus>,
     #[doc = "Count of infrastructure elements used by this network function (vCPUs, in units of 8)"]
     #[serde(rename = "infrastructureElementCount", default, skip_serializing_if = "Option::is_none")]
@@ -215,7 +221,12 @@ pub struct NetworkFunctionResourceProperties {
     #[serde(rename = "deploymentNotes", default, skip_serializing_if = "Option::is_none")]
     pub deployment_notes: Option<String>,
     #[doc = "Provisioning state of the resource"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl NetworkFunctionResourceProperties {
@@ -332,10 +343,15 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -461,7 +477,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -641,7 +657,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -650,7 +671,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

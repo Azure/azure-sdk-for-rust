@@ -6,7 +6,12 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureAdMetricsPropertiesFormat {
     #[doc = "The provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<azure_ad_metrics_properties_format::ProvisioningState>,
 }
 impl AzureAdMetricsPropertiesFormat {
@@ -167,7 +172,7 @@ pub struct AzureAdMetricsListResult {
 impl azure_core::Continuable for AzureAdMetricsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AzureAdMetricsListResult {

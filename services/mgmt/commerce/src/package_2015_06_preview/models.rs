@@ -144,7 +144,7 @@ impl MonetaryCredit {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfferTermInfo {
     #[doc = "Name of the offer term"]
-    #[serde(rename = "Name")]
+    #[serde(rename = "Name", with = "azure_core::xml::text_content")]
     pub name: offer_term_info::Name,
     #[doc = "Indicates the date from which the offer term is effective."]
     #[serde(rename = "EffectiveDate", default, with = "azure_core::date::rfc3339::option")]
@@ -286,7 +286,7 @@ pub struct UsageAggregationListResult {
 impl azure_core::Continuable for UsageAggregationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UsageAggregationListResult {

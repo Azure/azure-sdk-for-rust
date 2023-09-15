@@ -47,7 +47,7 @@ pub struct AddsConfiguration {
 impl azure_core::Continuable for AddsConfiguration {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AddsConfiguration {
@@ -197,7 +197,12 @@ pub struct AddsServiceMember {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<String>,
     #[doc = "The monitoring level reported by the server."]
-    #[serde(rename = "serverReportedMonitoringLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "serverReportedMonitoringLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub server_reported_monitoring_level: Option<adds_service_member::ServerReportedMonitoringLevel>,
     #[doc = "The health status of the server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -241,7 +246,7 @@ pub struct AddsServiceMembers {
 impl azure_core::Continuable for AddsServiceMembers {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AddsServiceMembers {
@@ -286,10 +291,10 @@ pub struct Alert {
     #[serde(rename = "alertId", default, skip_serializing_if = "Option::is_none")]
     pub alert_id: Option<String>,
     #[doc = "The alert level which indicates the severity of the alert."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub level: Option<alert::Level>,
     #[doc = "The alert state which can be either active or resolved with multiple resolution types."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<alert::State>,
     #[doc = "The alert short name."]
     #[serde(rename = "shortName", default, skip_serializing_if = "Option::is_none")]
@@ -528,7 +533,7 @@ pub struct Alerts {
 impl azure_core::Continuable for Alerts {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl Alerts {
@@ -595,10 +600,20 @@ pub struct AttributeDelta {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The attribute delta operation type."]
-    #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "operationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub operation_type: Option<attribute_delta::OperationType>,
     #[doc = "The value type."]
-    #[serde(rename = "valueType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "valueType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub value_type: Option<attribute_delta::ValueType>,
     #[doc = "Indicates if the attribute delta is multivalued or not."]
     #[serde(rename = "multiValued", default, skip_serializing_if = "Option::is_none")]
@@ -707,7 +722,12 @@ pub struct AttributeMapping {
     #[serde(rename = "mappingSource", default, skip_serializing_if = "Option::is_none")]
     pub mapping_source: Option<AttributeMppingSource>,
     #[doc = "The attribute mapping type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<attribute_mapping::Type>,
     #[doc = "The destination attribute."]
     #[serde(rename = "destinationAttribute", default, skip_serializing_if = "Option::is_none")]
@@ -828,7 +848,12 @@ pub struct ChangeNotReimportedDelta {
     )]
     pub attributes: Vec<AttributeDelta>,
     #[doc = "The operation type."]
-    #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "operationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub operation_type: Option<change_not_reimported_delta::OperationType>,
 }
 impl ChangeNotReimportedDelta {
@@ -1257,7 +1282,7 @@ impl DataFreshnessDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Dimension {
     #[doc = "The health status for the domain controller."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub health: Option<dimension::Health>,
     #[doc = "List of service specific configuration properties."]
     #[serde(rename = "simpleProperties", default, skip_serializing_if = "Option::is_none")]
@@ -1358,7 +1383,7 @@ pub struct Dimensions {
 impl azure_core::Continuable for Dimensions {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl Dimensions {
@@ -1674,7 +1699,7 @@ pub struct ExportStatuses {
 impl azure_core::Continuable for ExportStatuses {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExportStatuses {
@@ -1956,7 +1981,7 @@ pub struct IpAddressAggregates {
 impl azure_core::Continuable for IpAddressAggregates {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IpAddressAggregates {
@@ -1989,7 +2014,12 @@ pub struct ImportError {
     #[serde(rename = "retryCount", default, skip_serializing_if = "Option::is_none")]
     pub retry_count: Option<i64>,
     #[doc = "The operation type specific  to error reporting."]
-    #[serde(rename = "algorithmStepType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "algorithmStepType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub algorithm_step_type: Option<import_error::AlgorithmStepType>,
     #[doc = "The changes which are not re-imported."]
     #[serde(rename = "changeNotReimported", default, skip_serializing_if = "Option::is_none")]
@@ -2375,7 +2405,7 @@ pub struct MetricMetadataList {
 impl azure_core::Continuable for MetricMetadataList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MetricMetadataList {
@@ -2449,7 +2479,7 @@ pub struct Metrics {
 impl azure_core::Continuable for Metrics {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl Metrics {
@@ -2586,7 +2616,7 @@ pub struct OperationListResponse {
 impl azure_core::Continuable for OperationListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResponse {
@@ -2700,7 +2730,12 @@ pub struct PasswordManagementSettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub user: Option<String>,
     #[doc = "The supported password operations."]
-    #[serde(rename = "supportedPasswordOperations", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "supportedPasswordOperations",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub supported_password_operations: Option<password_management_settings::SupportedPasswordOperations>,
     #[doc = "The maximum number of retries."]
     #[serde(rename = "maximumRetryCount", default, skip_serializing_if = "Option::is_none")]
@@ -3138,7 +3173,12 @@ pub struct ServiceMember {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<String>,
     #[doc = "The monitoring level reported by the server."]
-    #[serde(rename = "serverReportedMonitoringLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "serverReportedMonitoringLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub server_reported_monitoring_level: Option<service_member::ServerReportedMonitoringLevel>,
     #[doc = "The health status of the server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3182,7 +3222,7 @@ pub struct ServiceMembers {
 impl azure_core::Continuable for ServiceMembers {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceMembers {
@@ -3312,7 +3352,7 @@ pub struct Services {
 impl azure_core::Continuable for Services {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl Services {
@@ -3454,7 +3494,12 @@ impl UserPreference {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValueDelta {
     #[doc = "The operation type."]
-    #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "operationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub operation_type: Option<value_delta::OperationType>,
     #[doc = "The value of the delta."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

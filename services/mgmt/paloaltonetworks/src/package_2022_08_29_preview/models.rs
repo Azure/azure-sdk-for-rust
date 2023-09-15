@@ -161,7 +161,7 @@ pub struct AzureResourceManagerManagedIdentityProperties {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[doc = "The kind of managed identity assigned to this resource."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: AzureResourceManagerManagedIdentityType,
     #[doc = "The identities assigned to this resource by the user."]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -335,7 +335,7 @@ pub struct CertificateObject {
     #[serde(rename = "certificateSignerResourceId", default, skip_serializing_if = "Option::is_none")]
     pub certificate_signer_resource_id: Option<String>,
     #[doc = "Boolean Enum"]
-    #[serde(rename = "certificateSelfSigned")]
+    #[serde(rename = "certificateSelfSigned", with = "azure_core::xml::text_content")]
     pub certificate_self_signed: BooleanEnum,
     #[doc = "comment for this object"]
     #[serde(rename = "auditComment", default, skip_serializing_if = "Option::is_none")]
@@ -347,7 +347,12 @@ pub struct CertificateObject {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "Provisioning state of the firewall resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl CertificateObject {
@@ -394,7 +399,7 @@ pub struct CertificateObjectGlobalRulestackResourceListResult {
 impl azure_core::Continuable for CertificateObjectGlobalRulestackResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CertificateObjectGlobalRulestackResourceListResult {
@@ -434,7 +439,7 @@ pub struct CertificateObjectLocalRulestackResourceListResult {
 impl azure_core::Continuable for CertificateObjectLocalRulestackResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CertificateObjectLocalRulestackResourceListResult {
@@ -534,10 +539,20 @@ impl Serialize for DnsProxy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DnsSettings {
     #[doc = "DNS Proxy"]
-    #[serde(rename = "enableDnsProxy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enableDnsProxy",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enable_dns_proxy: Option<DnsProxy>,
     #[doc = "Enabled DNS type values"]
-    #[serde(rename = "enabledDnsType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enabledDnsType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enabled_dns_type: Option<EnabledDnsType>,
     #[doc = "List of IPs associated with the Firewall"]
     #[serde(
@@ -872,7 +887,12 @@ pub struct FirewallDeploymentProperties {
     #[serde(rename = "networkProfile")]
     pub network_profile: NetworkProfile,
     #[doc = "Boolean Enum"]
-    #[serde(rename = "isPanoramaManaged", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "isPanoramaManaged",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub is_panorama_managed: Option<BooleanEnum>,
     #[doc = "Panorama Config"]
     #[serde(rename = "panoramaConfig", default, skip_serializing_if = "Option::is_none")]
@@ -892,7 +912,12 @@ pub struct FirewallDeploymentProperties {
     )]
     pub front_end_settings: Vec<FrontendSetting>,
     #[doc = "Provisioning state of the firewall resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Billing plan information."]
     #[serde(rename = "planData")]
@@ -958,7 +983,7 @@ pub struct FirewallResourceListResult {
 impl azure_core::Continuable for FirewallResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FirewallResourceListResult {
@@ -994,7 +1019,12 @@ pub struct FirewallResourceUpdateProperties {
     #[serde(rename = "networkProfile", default, skip_serializing_if = "Option::is_none")]
     pub network_profile: Option<NetworkProfile>,
     #[doc = "Boolean Enum"]
-    #[serde(rename = "isPanoramaManaged", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "isPanoramaManaged",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub is_panorama_managed: Option<BooleanEnum>,
     #[doc = "Panorama Config"]
     #[serde(rename = "panoramaConfig", default, skip_serializing_if = "Option::is_none")]
@@ -1029,10 +1059,20 @@ impl FirewallResourceUpdateProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallStatusProperty {
     #[doc = "Boolean Enum"]
-    #[serde(rename = "isPanoramaManaged", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "isPanoramaManaged",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub is_panorama_managed: Option<BooleanEnum>,
     #[doc = "Status Codes for the Firewall"]
-    #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "healthStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub health_status: Option<HealthStatus>,
     #[doc = "Detail description of current health of the Firewall"]
     #[serde(rename = "healthReason", default, skip_serializing_if = "Option::is_none")]
@@ -1041,7 +1081,12 @@ pub struct FirewallStatusProperty {
     #[serde(rename = "panoramaStatus", default, skip_serializing_if = "Option::is_none")]
     pub panorama_status: Option<PanoramaStatus>,
     #[doc = "Provisioning state of the firewall resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ReadOnlyProvisioningState>,
 }
 impl FirewallStatusProperty {
@@ -1081,7 +1126,7 @@ pub struct FirewallStatusResourceListResult {
 impl azure_core::Continuable for FirewallStatusResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FirewallStatusResourceListResult {
@@ -1121,7 +1166,7 @@ pub struct FqdnListGlobalRulestackResourceListResult {
 impl azure_core::Continuable for FqdnListGlobalRulestackResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FqdnListGlobalRulestackResourceListResult {
@@ -1161,7 +1206,7 @@ pub struct FqdnListLocalRulestackResourceListResult {
 impl azure_core::Continuable for FqdnListLocalRulestackResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FqdnListLocalRulestackResourceListResult {
@@ -1185,7 +1230,12 @@ pub struct FqdnObject {
     #[serde(rename = "auditComment", default, skip_serializing_if = "Option::is_none")]
     pub audit_comment: Option<String>,
     #[doc = "Provisioning state of the firewall resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl FqdnObject {
@@ -1205,6 +1255,7 @@ pub struct FrontendSetting {
     #[doc = "Settings name"]
     pub name: String,
     #[doc = "Protocol Enum"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub protocol: ProtocolType,
     #[doc = "Endpoint Configuration for frontend and backend"]
     #[serde(rename = "frontendConfiguration")]
@@ -1279,7 +1330,7 @@ pub struct GlobalRulestackResourceListResult {
 impl azure_core::Continuable for GlobalRulestackResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GlobalRulestackResourceListResult {
@@ -1315,7 +1366,7 @@ pub struct GlobalRulestackResourceUpdateProperties {
     #[serde(rename = "panLocation", default, skip_serializing_if = "Option::is_none")]
     pub pan_location: Option<String>,
     #[doc = "Rulestack Type"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub scope: Option<ScopeType>,
     #[doc = "subscription scope of global rulestack"]
     #[serde(
@@ -1329,7 +1380,12 @@ pub struct GlobalRulestackResourceUpdateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Type for Default Mode for rules creation"]
-    #[serde(rename = "defaultMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "defaultMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub default_mode: Option<DefaultMode>,
     #[doc = "minimum version"]
     #[serde(rename = "minAppIdVersion", default, skip_serializing_if = "Option::is_none")]
@@ -1477,7 +1533,7 @@ pub struct LocalRulesResourceListResult {
 impl azure_core::Continuable for LocalRulesResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LocalRulesResourceListResult {
@@ -1521,7 +1577,7 @@ pub struct LocalRulestackResourceListResult {
 impl azure_core::Continuable for LocalRulestackResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LocalRulestackResourceListResult {
@@ -1557,7 +1613,7 @@ pub struct LocalRulestackResourceUpdateProperties {
     #[serde(rename = "panLocation", default, skip_serializing_if = "Option::is_none")]
     pub pan_location: Option<String>,
     #[doc = "Rulestack Type"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub scope: Option<ScopeType>,
     #[doc = "subscription scope of global rulestack"]
     #[serde(
@@ -1571,7 +1627,12 @@ pub struct LocalRulestackResourceUpdateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Type for Default Mode for rules creation"]
-    #[serde(rename = "defaultMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "defaultMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub default_mode: Option<DefaultMode>,
     #[doc = "minimum version"]
     #[serde(rename = "minAppIdVersion", default, skip_serializing_if = "Option::is_none")]
@@ -1646,10 +1707,20 @@ impl Serialize for LogOption {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogSettings {
     #[doc = "Possible log types"]
-    #[serde(rename = "logType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "logType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub log_type: Option<LogType>,
     #[doc = "Log options possible"]
-    #[serde(rename = "logOption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "logOption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub log_option: Option<LogOption>,
     #[doc = "Application Insights key"]
     #[serde(rename = "applicationInsights", default, skip_serializing_if = "Option::is_none")]
@@ -1736,7 +1807,12 @@ pub struct MarketplaceDetails {
     #[serde(rename = "publisherId")]
     pub publisher_id: String,
     #[doc = "Marketplace Subscription Status"]
-    #[serde(rename = "marketplaceSubscriptionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "marketplaceSubscriptionStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub marketplace_subscription_status: Option<MarketplaceSubscriptionStatus>,
 }
 impl MarketplaceDetails {
@@ -1844,13 +1920,13 @@ pub struct NetworkProfile {
     #[serde(rename = "vwanConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub vwan_configuration: Option<VwanConfiguration>,
     #[doc = "NetworkType Enum"]
-    #[serde(rename = "networkType")]
+    #[serde(rename = "networkType", with = "azure_core::xml::text_content")]
     pub network_type: NetworkType,
     #[doc = "List of IPs associated with the Firewall"]
     #[serde(rename = "publicIps")]
     pub public_ips: Vec<IpAddress>,
     #[doc = "Egress NAT"]
-    #[serde(rename = "enableEgressNat")]
+    #[serde(rename = "enableEgressNat", with = "azure_core::xml::text_content")]
     pub enable_egress_nat: EgressNat,
     #[doc = "Egress nat IP to use"]
     #[serde(
@@ -1925,10 +2001,15 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -2054,7 +2135,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -2108,10 +2189,20 @@ impl PanoramaConfig {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PanoramaStatus {
     #[doc = "Connectivity Status for Panorama Server"]
-    #[serde(rename = "panoramaServerStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "panoramaServerStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub panorama_server_status: Option<ServerStatus>,
     #[doc = "Connectivity Status for Panorama Server"]
-    #[serde(rename = "panoramaServer2Status", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "panoramaServer2Status",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub panorama_server2_status: Option<ServerStatus>,
 }
 impl PanoramaStatus {
@@ -2123,10 +2214,15 @@ impl PanoramaStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PlanData {
     #[doc = "Usage Type"]
-    #[serde(rename = "usageType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "usageType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub usage_type: Option<UsageType>,
     #[doc = "Billing cycle"]
-    #[serde(rename = "billingCycle")]
+    #[serde(rename = "billingCycle", with = "azure_core::xml::text_content")]
     pub billing_cycle: BillingCycle,
     #[doc = "plan id as published by Liftr.PAN"]
     #[serde(rename = "planId")]
@@ -2177,7 +2273,7 @@ pub struct PostRulesResourceListResult {
 impl azure_core::Continuable for PostRulesResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PostRulesResourceListResult {
@@ -2217,7 +2313,7 @@ pub struct PreRulesResourceListResult {
 impl azure_core::Continuable for PreRulesResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PreRulesResourceListResult {
@@ -2282,7 +2378,7 @@ pub struct PrefixListGlobalRulestackResourceListResult {
 impl azure_core::Continuable for PrefixListGlobalRulestackResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrefixListGlobalRulestackResourceListResult {
@@ -2322,7 +2418,7 @@ pub struct PrefixListResourceListResult {
 impl azure_core::Continuable for PrefixListResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrefixListResourceListResult {
@@ -2346,7 +2442,12 @@ pub struct PrefixObject {
     #[serde(rename = "auditComment", default, skip_serializing_if = "Option::is_none")]
     pub audit_comment: Option<String>,
     #[doc = "Provisioning state of the firewall resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl PrefixObject {
@@ -2609,19 +2710,34 @@ pub struct RuleEntry {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Enabled or Disabled Enum"]
-    #[serde(rename = "ruleState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ruleState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub rule_state: Option<StateEnum>,
     #[doc = "Address properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<SourceAddr>,
     #[doc = "Boolean Enum"]
-    #[serde(rename = "negateSource", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "negateSource",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub negate_source: Option<BooleanEnum>,
     #[doc = "destination address"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub destination: Option<DestinationAddr>,
     #[doc = "Boolean Enum"]
-    #[serde(rename = "negateDestination", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "negateDestination",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub negate_destination: Option<BooleanEnum>,
     #[doc = "array of rule applications"]
     #[serde(
@@ -2650,12 +2766,27 @@ pub struct RuleEntry {
     #[doc = "rule comment"]
     #[serde(rename = "auditComment", default, skip_serializing_if = "Option::is_none")]
     pub audit_comment: Option<String>,
-    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub action_type: Option<ActionEnum>,
     #[doc = "Enabled or Disabled Enum"]
-    #[serde(rename = "enableLogging", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enableLogging",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enable_logging: Option<StateEnum>,
-    #[serde(rename = "decryptionRuleType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "decryptionRuleType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub decryption_rule_type: Option<DecryptionRuleTypeEnum>,
     #[doc = "tag for rule"]
     #[serde(
@@ -2665,7 +2796,12 @@ pub struct RuleEntry {
     )]
     pub tags: Vec<TagInfo>,
     #[doc = "Provisioning state of the firewall resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl RuleEntry {
@@ -2722,7 +2858,7 @@ pub struct RulestackProperties {
     #[serde(rename = "panLocation", default, skip_serializing_if = "Option::is_none")]
     pub pan_location: Option<String>,
     #[doc = "Rulestack Type"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub scope: Option<ScopeType>,
     #[doc = "subscription scope of global rulestack"]
     #[serde(
@@ -2736,13 +2872,23 @@ pub struct RulestackProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Type for Default Mode for rules creation"]
-    #[serde(rename = "defaultMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "defaultMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub default_mode: Option<DefaultMode>,
     #[doc = "minimum version"]
     #[serde(rename = "minAppIdVersion", default, skip_serializing_if = "Option::is_none")]
     pub min_app_id_version: Option<String>,
     #[doc = "Provisioning state of the firewall resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "security services"]
     #[serde(rename = "securityServices", default, skip_serializing_if = "Option::is_none")]
@@ -2986,19 +3132,39 @@ pub struct SupportInfo {
     #[serde(rename = "productSerial", default, skip_serializing_if = "Option::is_none")]
     pub product_serial: Option<String>,
     #[doc = "Boolean Enum"]
-    #[serde(rename = "accountRegistered", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "accountRegistered",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub account_registered: Option<BooleanEnum>,
     #[doc = "Support account associated with given resource"]
     #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
     pub account_id: Option<String>,
     #[doc = "Boolean Enum"]
-    #[serde(rename = "userDomainSupported", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "userDomainSupported",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub user_domain_supported: Option<BooleanEnum>,
     #[doc = "Boolean Enum"]
-    #[serde(rename = "userRegistered", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "userRegistered",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub user_registered: Option<BooleanEnum>,
     #[doc = "Boolean Enum"]
-    #[serde(rename = "freeTrial", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "freeTrial",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub free_trial: Option<BooleanEnum>,
     #[doc = "Free trial days remaining"]
     #[serde(rename = "freeTrialDaysLeft", default, skip_serializing_if = "Option::is_none")]
@@ -3244,7 +3410,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -3253,7 +3424,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

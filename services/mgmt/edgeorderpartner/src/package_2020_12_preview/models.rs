@@ -302,6 +302,7 @@ pub struct ManageLinkRequest {
     #[serde(rename = "managementResourceArmId")]
     pub management_resource_arm_id: String,
     #[doc = "Operation to be performed - Link, Unlink, Relink"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub operation: manage_link_request::Operation,
     #[doc = "Tenant ID of management resource associated with inventory"]
     #[serde(rename = "tenantId")]
@@ -354,10 +355,15 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<operation::Display>,
     #[doc = "The intended executor of the operation; as in Resource Based Access Control (RBAC) and audit logs UX. Default value is \"user,system\""]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<operation::Origin>,
     #[doc = "Enum. Indicates the action type. \"Internal\" refers to actions that are for internal only APIs."]
-    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub action_type: Option<operation::ActionType>,
 }
 impl Operation {
@@ -483,7 +489,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -498,7 +504,12 @@ pub struct OrderItemData {
     #[serde(rename = "armId", default, skip_serializing_if = "Option::is_none")]
     pub arm_id: Option<String>,
     #[doc = "Order item type - purchase or rental"]
-    #[serde(rename = "orderItemType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "orderItemType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub order_item_type: Option<order_item_data::OrderItemType>,
 }
 impl OrderItemData {
@@ -544,7 +555,7 @@ pub struct PartnerInventoryList {
 impl azure_core::Continuable for PartnerInventoryList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PartnerInventoryList {
@@ -589,10 +600,20 @@ impl SpecificationDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StageDetails {
     #[doc = "Stage status."]
-    #[serde(rename = "stageStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "stageStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub stage_status: Option<stage_details::StageStatus>,
     #[doc = "Stage name"]
-    #[serde(rename = "stageName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "stageName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub stage_name: Option<stage_details::StageName>,
     #[doc = "Display name of the resource stage."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]

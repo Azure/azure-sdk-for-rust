@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Authorization {
     #[doc = "Type of authorization."]
-    #[serde(rename = "authorizationType")]
+    #[serde(rename = "authorizationType", with = "azure_core::xml::text_content")]
     pub authorization_type: authorization::AuthorizationType,
     #[doc = "Authorization parameters corresponding to the authorization type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -124,7 +124,7 @@ impl CloudErrorBody {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CodeRepository {
     #[doc = "Type of code repository."]
-    #[serde(rename = "repositoryType")]
+    #[serde(rename = "repositoryType", with = "azure_core::xml::text_content")]
     pub repository_type: code_repository::RepositoryType,
     #[doc = "Unique immutable identifier of the code repository."]
     pub id: String,
@@ -200,7 +200,7 @@ pub struct InputDescriptor {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Data type of the value of the input parameter."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: input_descriptor::Type,
     #[doc = "List of possible values for the input parameter."]
     #[serde(
@@ -338,7 +338,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -397,7 +397,7 @@ pub struct PipelineListResult {
 impl azure_core::Continuable for PipelineListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PipelineListResult {
@@ -412,7 +412,7 @@ pub struct PipelineProperties {
     #[serde(rename = "pipelineId", default, skip_serializing_if = "Option::is_none")]
     pub pipeline_id: Option<i64>,
     #[doc = "Specifies which CI/CD provider to use. Valid options are 'azurePipeline', 'githubWorkflow'."]
-    #[serde(rename = "pipelineType")]
+    #[serde(rename = "pipelineType", with = "azure_core::xml::text_content")]
     pub pipeline_type: pipeline_properties::PipelineType,
     #[doc = "Configuration used to bootstrap a Pipeline."]
     #[serde(rename = "bootstrapConfiguration")]
@@ -525,7 +525,7 @@ pub struct PipelineTemplateDefinitionListResult {
 impl azure_core::Continuable for PipelineTemplateDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PipelineTemplateDefinitionListResult {
@@ -625,7 +625,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -634,7 +639,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

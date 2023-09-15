@@ -27,7 +27,12 @@ pub struct EnterpriseKnowledgeGraphProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
     #[doc = "The state of EnterpriseKnowledgeGraph provisioning"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<enterprise_knowledge_graph_properties::ProvisioningState>,
 }
 impl EnterpriseKnowledgeGraphProperties {
@@ -63,7 +68,7 @@ pub struct EnterpriseKnowledgeGraphResponseList {
 impl azure_core::Continuable for EnterpriseKnowledgeGraphResponseList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EnterpriseKnowledgeGraphResponseList {
@@ -161,7 +166,7 @@ pub struct OperationEntityListResult {
 impl azure_core::Continuable for OperationEntityListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationEntityListResult {
@@ -200,6 +205,7 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The name of SKU."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: SkuName,
 }
 impl Sku {

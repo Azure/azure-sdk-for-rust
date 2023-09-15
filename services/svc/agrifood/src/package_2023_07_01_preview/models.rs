@@ -228,7 +228,12 @@ pub struct Attachment {
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<String>,
     #[doc = "Associated Resource type for this attachment."]
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_type: Option<attachment::ResourceType>,
     #[doc = "Original File Name for this attachment."]
     #[serde(rename = "originalFileName", default, skip_serializing_if = "Option::is_none")]
@@ -341,7 +346,7 @@ pub struct AttachmentListResponse {
 impl azure_core::Continuable for AttachmentListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AttachmentListResponse {
@@ -357,6 +362,7 @@ impl AttachmentListResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthCredentials {
     #[doc = "CredentialTypeEnum."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: AuthCredentialsKind,
 }
 impl AuthCredentials {
@@ -414,7 +420,7 @@ pub struct BiomassModelJob {
     #[serde(rename = "modelVersion")]
     pub model_version: String,
     #[doc = "Crop name for biomass model. Available Value: Corn."]
-    #[serde(rename = "cropName")]
+    #[serde(rename = "cropName", with = "azure_core::xml::text_content")]
     pub crop_name: biomass_model_job::CropName,
     #[doc = "Planting datetime for biomass calculations. Sample format: yyyy-MM-ddTHH:mm:ssZ."]
     #[serde(rename = "plantingStartDateTime", with = "azure_core::date::rfc3339")]
@@ -426,16 +432,16 @@ pub struct BiomassModelJob {
     #[serde(rename = "weatherExtensionId")]
     pub weather_extension_id: String,
     #[doc = "Provider of satellite data. Available Value: Microsoft, SentinelHub (Sentinel Hub by Sinergise)."]
-    #[serde(rename = "satelliteProvider")]
+    #[serde(rename = "satelliteProvider", with = "azure_core::xml::text_content")]
     pub satellite_provider: biomass_model_job::SatelliteProvider,
     #[doc = "Source of satellite data. Available Value: Sentinel_2_L2A."]
-    #[serde(rename = "satelliteSource")]
+    #[serde(rename = "satelliteSource", with = "azure_core::xml::text_content")]
     pub satellite_source: biomass_model_job::SatelliteSource,
     #[doc = "ImageResolution in meters. Available values: 10, 20, 60."]
     #[serde(rename = "imageResolution")]
     pub image_resolution: f64,
     #[doc = "ImageFormat. Available value: TIF."]
-    #[serde(rename = "imageFormat")]
+    #[serde(rename = "imageFormat", with = "azure_core::xml::text_content")]
     pub image_format: biomass_model_job::ImageFormat,
     #[doc = "Unique job id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -689,7 +695,7 @@ pub struct CascadeDeleteJob {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Status of the job.\r\nPossible values: 'Waiting', 'Running', 'Succeeded', 'Failed', 'Cancelled'."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<cascade_delete_job::Status>,
     #[doc = "Duration of the job in seconds."]
     #[serde(rename = "durationInSeconds", default, skip_serializing_if = "Option::is_none")]
@@ -784,7 +790,12 @@ pub struct Crop {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub phenotype: Option<String>,
     #[doc = "Breeding Method."]
-    #[serde(rename = "breedingMethod", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "breedingMethod",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub breeding_method: Option<crop::BreedingMethod>,
     #[doc = "Measurements."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -888,7 +899,7 @@ pub struct CropListResponse {
 impl azure_core::Continuable for CropListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CropListResponse {
@@ -984,7 +995,7 @@ pub struct CropProductListResponse {
 impl azure_core::Continuable for CropProductListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CropProductListResponse {
@@ -1167,7 +1178,7 @@ pub struct DeviceDataModelListResponse {
 impl azure_core::Continuable for DeviceDataModelListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceDataModelListResponse {
@@ -1194,7 +1205,7 @@ pub struct DeviceListResponse {
 impl azure_core::Continuable for DeviceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceListResponse {
@@ -1340,7 +1351,7 @@ pub struct FarmListResponse {
 impl azure_core::Continuable for FarmListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FarmListResponse {
@@ -1450,10 +1461,10 @@ impl FarmOperationDataIngestionJob {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FarmOperationJobProviderInput {
     #[doc = "Type of shape file to be ingested from Operation Data Provider."]
-    #[serde(rename = "shapeType")]
+    #[serde(rename = "shapeType", with = "azure_core::xml::text_content")]
     pub shape_type: farm_operation_job_provider_input::ShapeType,
     #[doc = "Resolution of shape file to be ingested from Operation Data Provider."]
-    #[serde(rename = "shapeResolution")]
+    #[serde(rename = "shapeResolution", with = "azure_core::xml::text_content")]
     pub shape_resolution: farm_operation_job_provider_input::ShapeResolution,
 }
 impl FarmOperationJobProviderInput {
@@ -1663,7 +1674,7 @@ impl FieldMetaDataListResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GeoJsonObject {
     #[doc = "GeoJSON object type."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: GeoJsonObjectType,
 }
 impl GeoJsonObject {
@@ -1714,7 +1725,12 @@ impl Serialize for GeoJsonObjectType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GeoResource {
     #[doc = "Resource Type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<geo_resource::Type>,
     #[doc = "Resource Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2007,7 +2023,12 @@ pub struct ImageFile {
     #[doc = "Name of the image file."]
     pub name: String,
     #[doc = "Supported image formats for scene resource."]
-    #[serde(rename = "imageFormat", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "imageFormat",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub image_format: Option<ImageFormat>,
     #[doc = "Resolution of image file in meters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2162,7 +2183,12 @@ pub struct Insight {
     #[serde(rename = "modelId", default, skip_serializing_if = "Option::is_none")]
     pub model_id: Option<String>,
     #[doc = "Resource type associated with the record."]
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_type: Option<insight::ResourceType>,
     #[doc = "Id of the associated resource."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -2272,7 +2298,12 @@ pub struct InsightAttachment {
     #[serde(rename = "modelId", default, skip_serializing_if = "Option::is_none")]
     pub model_id: Option<String>,
     #[doc = "Associated Resource type for this attachment."]
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_type: Option<insight_attachment::ResourceType>,
     #[doc = "Associated Resource id for this attachment."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -2395,7 +2426,7 @@ pub struct InsightAttachmentListResponse {
 impl azure_core::Continuable for InsightAttachmentListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InsightAttachmentListResponse {
@@ -2422,7 +2453,7 @@ pub struct InsightListResponse {
 impl azure_core::Continuable for InsightListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InsightListResponse {
@@ -2577,7 +2608,7 @@ pub struct ManagementZoneListResponse {
 impl azure_core::Continuable for ManagementZoneListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagementZoneListResponse {
@@ -2654,7 +2685,12 @@ pub struct NutrientAnalysis {
     #[serde(rename = "parentId", default, skip_serializing_if = "Option::is_none")]
     pub parent_id: Option<String>,
     #[doc = "Parent type for this nutrient analysis.\r\ni.e. PlantTissueAnalysis."]
-    #[serde(rename = "parentType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "parentType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub parent_type: Option<nutrient_analysis::ParentType>,
     #[doc = "Unit for this nutrient analysis."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2773,7 +2809,7 @@ pub struct NutrientAnalysisListResponse {
 impl azure_core::Continuable for NutrientAnalysisListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NutrientAnalysisListResponse {
@@ -2965,7 +3001,7 @@ pub struct OAuthProviderListResponse {
 impl azure_core::Continuable for OAuthProviderListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OAuthProviderListResponse {
@@ -3026,7 +3062,7 @@ pub struct OAuthTokenListResponse {
 impl azure_core::Continuable for OAuthTokenListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OAuthTokenListResponse {
@@ -3137,7 +3173,7 @@ pub struct PartyListResponse {
 impl azure_core::Continuable for PartyListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PartyListResponse {
@@ -3743,7 +3779,7 @@ pub struct PrescriptionMapListResponse {
 impl azure_core::Continuable for PrescriptionMapListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrescriptionMapListResponse {
@@ -3899,8 +3935,10 @@ pub struct SatelliteDataIngestionJob {
     #[serde(rename = "endDateTime", with = "azure_core::date::rfc3339")]
     pub end_date_time: time::OffsetDateTime,
     #[doc = "Provider of satellite data."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub provider: DataProvider,
     #[doc = "Source of satellite data."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub source: Source,
     #[doc = "Data Model for SatelliteIngestionJobRequest."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4004,7 +4042,12 @@ pub struct Scene {
     )]
     pub image_files: Vec<ImageFile>,
     #[doc = "Supported image formats for scene resource."]
-    #[serde(rename = "imageFormat", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "imageFormat",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub image_format: Option<ImageFormat>,
     #[doc = "Cloud cover percentage of the scene."]
     #[serde(rename = "cloudCoverPercentage", default, skip_serializing_if = "Option::is_none")]
@@ -4048,7 +4091,7 @@ pub struct SceneListResponse {
 impl azure_core::Continuable for SceneListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SceneListResponse {
@@ -5076,7 +5119,7 @@ pub struct SeasonListResponse {
 impl azure_core::Continuable for SeasonListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SeasonListResponse {
@@ -5409,7 +5452,7 @@ pub struct SensorDataModelListResponse {
 impl azure_core::Continuable for SensorDataModelListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SensorDataModelListResponse {
@@ -5428,7 +5471,7 @@ pub struct SensorDataModelMeasure {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Sensor measure data type."]
-    #[serde(rename = "dataType")]
+    #[serde(rename = "dataType", with = "azure_core::xml::text_content")]
     pub data_type: sensor_data_model_measure::DataType,
     #[doc = "Measurement type of sensor data."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -5563,7 +5606,7 @@ pub struct SensorListResponse {
 impl azure_core::Continuable for SensorListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SensorListResponse {
@@ -5656,7 +5699,7 @@ pub struct SensorMappingListResponse {
 impl azure_core::Continuable for SensorMappingListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SensorMappingListResponse {
@@ -5764,7 +5807,7 @@ pub struct SensorPartnerIntegrationModelListResponse {
 impl azure_core::Continuable for SensorPartnerIntegrationModelListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SensorPartnerIntegrationModelListResponse {
@@ -5795,10 +5838,10 @@ pub struct SensorPlacementModelJob {
     #[serde(rename = "inferenceEndDateTime", with = "azure_core::date::rfc3339")]
     pub inference_end_date_time: time::OffsetDateTime,
     #[doc = "Provider of satellite data. Available Value: Microsoft, SentinelHub (Sentinel Hub by Sinergise)."]
-    #[serde(rename = "satelliteProvider")]
+    #[serde(rename = "satelliteProvider", with = "azure_core::xml::text_content")]
     pub satellite_provider: sensor_placement_model_job::SatelliteProvider,
     #[doc = "Source of satellite data. Available Value: Sentinel_2_L2A."]
-    #[serde(rename = "satelliteSource")]
+    #[serde(rename = "satelliteSource", with = "azure_core::xml::text_content")]
     pub satellite_source: sensor_placement_model_job::SatelliteSource,
     #[doc = "SensorType. The sensor placement map generated for sensor type (e.g., soil moisture, soil temperature, npk). Available Value: SoilMoisture."]
     #[serde(rename = "sensorType")]
@@ -5971,7 +6014,7 @@ pub mod sensor_placement_model_job {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SensorRenewConnectionStringModel {
     #[doc = "Specifies the type of connection string key to be renewed valid values - Primary/Secondary/Both."]
-    #[serde(rename = "connectionStringType")]
+    #[serde(rename = "connectionStringType", with = "azure_core::xml::text_content")]
     pub connection_string_type: sensor_renew_connection_string_model::ConnectionStringType,
 }
 impl SensorRenewConnectionStringModel {
@@ -6043,16 +6086,16 @@ pub struct SoilMoistureModelJob {
     #[serde(rename = "inferenceEndDateTime", with = "azure_core::date::rfc3339")]
     pub inference_end_date_time: time::OffsetDateTime,
     #[doc = "Provider of satellite data. Available Value: Microsoft, SentinelHub (Sentinel Hub by Sinergise)."]
-    #[serde(rename = "satelliteProvider")]
+    #[serde(rename = "satelliteProvider", with = "azure_core::xml::text_content")]
     pub satellite_provider: soil_moisture_model_job::SatelliteProvider,
     #[doc = "Source of satellite data. Available Value: Sentinel_2_L2A."]
-    #[serde(rename = "satelliteSource")]
+    #[serde(rename = "satelliteSource", with = "azure_core::xml::text_content")]
     pub satellite_source: soil_moisture_model_job::SatelliteSource,
     #[doc = "ImageResolution in meters. Available values: 10, 20, 60."]
     #[serde(rename = "imageResolution")]
     pub image_resolution: f64,
     #[doc = "ImageFormat. Available value: TIF."]
-    #[serde(rename = "imageFormat")]
+    #[serde(rename = "imageFormat", with = "azure_core::xml::text_content")]
     pub image_format: soil_moisture_model_job::ImageFormat,
     #[doc = "The version of the soil moisture model to be run."]
     #[serde(rename = "modelVersion")]
@@ -6833,7 +6876,7 @@ pub struct WeatherDataProviderResponse {
     #[serde(rename = "weatherMetadata")]
     pub weather_metadata: WeatherMetadata,
     #[doc = "Indicates a Succeeded, Failed, or PartiallySucceeded response."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<weather_data_provider_response::Status>,
     #[doc = "List of weather data for all the weather locations."]
     #[serde(
@@ -6902,7 +6945,7 @@ pub mod weather_data_provider_response {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WeatherLocation {
     #[doc = "Location Type eg. LatLong/IataCode/IcaoCode/Placeid/PostalKey."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: weather_location::Type,
     #[doc = "Location Value eg. \"10,-25\" for LocationType Type \"LatLong\"."]
     pub value: String,

@@ -265,7 +265,7 @@ pub struct Subscription {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The subscription state. Possible values are Enabled, Warned, PastDue, Disabled, and Deleted."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<subscription::State>,
     #[doc = "The tenant ID. For example, 00000000-0000-0000-0000-000000000000."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -326,7 +326,7 @@ pub struct SubscriptionListResult {
 impl azure_core::Continuable for SubscriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SubscriptionListResult {
@@ -390,7 +390,12 @@ pub struct SubscriptionPolicies {
     #[serde(rename = "quotaId", default, skip_serializing_if = "Option::is_none")]
     pub quota_id: Option<String>,
     #[doc = "The subscription spending limit."]
-    #[serde(rename = "spendingLimit", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "spendingLimit",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub spending_limit: Option<subscription_policies::SpendingLimit>,
 }
 impl SubscriptionPolicies {

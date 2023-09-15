@@ -72,7 +72,7 @@ impl AdlsGen2ArtifactProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Artifact {
     #[doc = "The types of asset."]
-    #[serde(rename = "storeKind")]
+    #[serde(rename = "storeKind", with = "azure_core::xml::text_content")]
     pub store_kind: StoreKind,
     #[doc = "A Store Reference for an artifact or sink."]
     #[serde(rename = "storeReference")]
@@ -174,7 +174,12 @@ pub struct InPlaceReceivedShareProperties {
     #[serde(rename = "assetLocation", default, skip_serializing_if = "Option::is_none")]
     pub asset_location: Option<String>,
     #[doc = "The types of asset."]
-    #[serde(rename = "assetStoreKind", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "assetStoreKind",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub asset_store_kind: Option<StoreKind>,
     #[doc = "Time at which the received share was created. Represented in the standard date-time format as defined by [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339)"]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -210,13 +215,18 @@ pub struct InPlaceReceivedShareProperties {
     #[serde(rename = "sharedAt", default, with = "azure_core::date::rfc3339::option")]
     pub shared_at: Option<time::OffsetDateTime>,
     #[doc = "Share status."]
-    #[serde(rename = "shareStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "shareStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub share_status: Option<ShareStatus>,
     #[doc = "Holds details on the destination of the mapped artifact"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sink: Option<Sink>,
     #[doc = "State of the resource"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<State>,
 }
 impl InPlaceReceivedShareProperties {
@@ -269,7 +279,7 @@ pub struct InPlaceSentShareProperties {
     #[serde(rename = "senderTenantName", default, skip_serializing_if = "Option::is_none")]
     pub sender_tenant_name: Option<String>,
     #[doc = "State of the resource"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<State>,
 }
 impl InPlaceSentShareProperties {
@@ -340,6 +350,7 @@ pub struct OperationResponse {
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
     #[doc = "States for long running operations."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: OperationStatus,
 }
 impl OperationResponse {
@@ -462,7 +473,7 @@ pub struct ReceivedShare {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[doc = "Defines the supported types for share."]
-    #[serde(rename = "shareKind")]
+    #[serde(rename = "shareKind", with = "azure_core::xml::text_content")]
     pub share_kind: ShareKind,
 }
 impl ReceivedShare {
@@ -485,7 +496,7 @@ pub struct ReceivedShareList {
 impl azure_core::Continuable for ReceivedShareList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ReceivedShareList {
@@ -534,7 +545,7 @@ pub struct SentShare {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[doc = "Defines the supported types for share."]
-    #[serde(rename = "shareKind")]
+    #[serde(rename = "shareKind", with = "azure_core::xml::text_content")]
     pub share_kind: ShareKind,
 }
 impl SentShare {
@@ -551,7 +562,7 @@ pub struct SentShareInvitation {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[doc = "The types of invitations."]
-    #[serde(rename = "invitationKind")]
+    #[serde(rename = "invitationKind", with = "azure_core::xml::text_content")]
     pub invitation_kind: InvitationKind,
 }
 impl SentShareInvitation {
@@ -574,7 +585,7 @@ pub struct SentShareInvitationList {
 impl azure_core::Continuable for SentShareInvitationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SentShareInvitationList {
@@ -594,7 +605,7 @@ pub struct SentShareList {
 impl azure_core::Continuable for SentShareList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SentShareList {
@@ -637,10 +648,15 @@ pub struct ServiceInvitationProperties {
     #[serde(rename = "sentAt", default, with = "azure_core::date::rfc3339::option")]
     pub sent_at: Option<time::OffsetDateTime>,
     #[doc = "Share status."]
-    #[serde(rename = "shareStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "shareStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub share_status: Option<ShareStatus>,
     #[doc = "State of the resource"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<State>,
     #[doc = "The target azure active directory id the invitation is sent to."]
     #[serde(rename = "targetActiveDirectoryId")]
@@ -711,7 +727,12 @@ pub struct ShareResource {
     #[serde(rename = "sentSharesCount", default, skip_serializing_if = "Option::is_none")]
     pub sent_shares_count: Option<i32>,
     #[doc = "The types of asset."]
-    #[serde(rename = "storeKind", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storeKind",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub store_kind: Option<StoreKind>,
     #[doc = "A Store Reference for an artifact or sink."]
     #[serde(rename = "storeReference", default, skip_serializing_if = "Option::is_none")]
@@ -734,7 +755,7 @@ pub struct ShareResourceList {
 impl azure_core::Continuable for ShareResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ShareResourceList {
@@ -783,7 +804,7 @@ impl Serialize for ShareStatus {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sink {
     #[doc = "The types of asset."]
-    #[serde(rename = "storeKind")]
+    #[serde(rename = "storeKind", with = "azure_core::xml::text_content")]
     pub store_kind: StoreKind,
     #[doc = "A Store Reference for an artifact or sink."]
     #[serde(rename = "storeReference")]
@@ -908,7 +929,12 @@ pub struct StoreReference {
     #[serde(rename = "referenceName", default, skip_serializing_if = "Option::is_none")]
     pub reference_name: Option<String>,
     #[doc = "Defines the type of resource being shared"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<ReferenceNameType>,
 }
 impl StoreReference {
@@ -943,10 +969,15 @@ pub struct TenantEmailRegistrationProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
     #[doc = "Defines the supported types for registration."]
-    #[serde(rename = "registrationStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "registrationStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub registration_status: Option<TenantEmailRegistrationStatus>,
     #[doc = "State of the resource"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<State>,
     #[doc = "The tenant id to register."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -1043,10 +1074,15 @@ pub struct UserInvitationProperties {
     #[serde(rename = "sentAt", default, with = "azure_core::date::rfc3339::option")]
     pub sent_at: Option<time::OffsetDateTime>,
     #[doc = "Share status."]
-    #[serde(rename = "shareStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "shareStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub share_status: Option<ShareStatus>,
     #[doc = "State of the resource"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<State>,
     #[doc = "The receiver email for the invitation is being sent."]
     #[serde(rename = "targetEmail")]

@@ -90,7 +90,12 @@ pub mod availability_status {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Availability status of the resource. When it is null, this availabilityStatus object represents an availability impacting event"]
-        #[serde(rename = "availabilityState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "availabilityState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub availability_state: Option<properties::AvailabilityState>,
         #[doc = "Title description of the availability status."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -126,7 +131,12 @@ pub mod availability_status {
         #[serde(rename = "occurredTime", default, with = "azure_core::date::rfc3339::option")]
         pub occurred_time: Option<time::OffsetDateTime>,
         #[doc = "Chronicity of the availability transition."]
-        #[serde(rename = "reasonChronicity", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "reasonChronicity",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub reason_chronicity: Option<properties::ReasonChronicity>,
         #[doc = "Timestamp for when the health was last checked. "]
         #[serde(rename = "reportedTime", default, with = "azure_core::date::rfc3339::option")]
@@ -268,7 +278,7 @@ pub struct AvailabilityStatusListResult {
 impl azure_core::Continuable for AvailabilityStatusListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AvailabilityStatusListResult {
@@ -363,7 +373,12 @@ pub mod impacted_resource_status {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Impacted resource status of the resource."]
-        #[serde(rename = "availabilityState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "availabilityState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub availability_state: Option<properties::AvailabilityState>,
         #[doc = "Title description of the impacted resource status."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -372,7 +387,12 @@ pub mod impacted_resource_status {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub summary: Option<String>,
         #[doc = "When the resource's availabilityState is Unavailable, it describes where the health impacting event was originated."]
-        #[serde(rename = "reasonType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "reasonType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub reason_type: Option<properties::ReasonType>,
         #[doc = "Timestamp for when last change in health status occurred."]
         #[serde(rename = "occurredTime", default, with = "azure_core::date::rfc3339::option")]
@@ -474,7 +494,7 @@ pub struct ImpactedServiceRegion {
     #[serde(rename = "impactedRegion", default, skip_serializing_if = "Option::is_none")]
     pub impacted_region: Option<String>,
     #[doc = "Current status of event in the region."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<impacted_service_region::Status>,
     #[doc = "List subscription impacted by the service health event."]
     #[serde(
@@ -544,7 +564,12 @@ pub mod impacted_service_region {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Link {
     #[doc = "Type of link."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<link::Type>,
     #[doc = "Display text of link."]
     #[serde(rename = "displayText", default, skip_serializing_if = "Option::is_none")]

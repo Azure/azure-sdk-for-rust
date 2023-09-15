@@ -98,7 +98,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -116,7 +116,7 @@ pub struct OperationResultsDescription {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The status of the operation being performed."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<operation_results_description::Status>,
     #[doc = "The time that the operation was started."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
@@ -222,7 +222,7 @@ pub struct PrivateEndpointConnectionListResult {
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionListResult {
@@ -240,7 +240,12 @@ pub struct PrivateEndpointConnectionProperties {
     #[serde(rename = "privateLinkServiceConnectionState")]
     pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
     #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
@@ -400,7 +405,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "The private endpoint connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<PrivateEndpointServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -448,7 +453,7 @@ pub struct PrivateLinkServicesForEdmUploadDescriptionListResult {
 impl azure_core::Continuable for PrivateLinkServicesForEdmUploadDescriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkServicesForEdmUploadDescriptionListResult {
@@ -490,7 +495,7 @@ pub struct PrivateLinkServicesForM365ComplianceCenterDescriptionListResult {
 impl azure_core::Continuable for PrivateLinkServicesForM365ComplianceCenterDescriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkServicesForM365ComplianceCenterDescriptionListResult {
@@ -532,7 +537,7 @@ pub struct PrivateLinkServicesForM365SecurityCenterDescriptionListResult {
 impl azure_core::Continuable for PrivateLinkServicesForM365SecurityCenterDescriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkServicesForM365SecurityCenterDescriptionListResult {
@@ -574,7 +579,7 @@ pub struct PrivateLinkServicesForMipPolicySyncDescriptionListResult {
 impl azure_core::Continuable for PrivateLinkServicesForMipPolicySyncDescriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkServicesForMipPolicySyncDescriptionListResult {
@@ -616,7 +621,7 @@ pub struct PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult 
 impl azure_core::Continuable for PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult {
@@ -658,7 +663,7 @@ pub struct PrivateLinkServicesForSccPowershellDescriptionListResult {
 impl azure_core::Continuable for PrivateLinkServicesForSccPowershellDescriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkServicesForSccPowershellDescriptionListResult {
@@ -800,7 +805,12 @@ impl ServicesPatchDescription {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServicesProperties {
     #[doc = "The provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<services_properties::ProvisioningState>,
     #[doc = "The access policies of the service instance."]
     #[serde(rename = "accessPolicies", default, skip_serializing_if = "Option::is_none")]
@@ -826,7 +836,12 @@ pub struct ServicesProperties {
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Control permission for data plane traffic coming from public networks while private endpoint is enabled."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<services_properties::PublicNetworkAccess>,
 }
 impl ServicesProperties {
@@ -929,7 +944,12 @@ pub mod services_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServicesPropertiesUpdateParameters {
     #[doc = "Control permission for data plane traffic coming from public networks while private endpoint is enabled."]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "publicNetworkAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_network_access: Option<services_properties_update_parameters::PublicNetworkAccess>,
 }
 impl ServicesPropertiesUpdateParameters {
@@ -993,6 +1013,7 @@ pub struct ServicesResource {
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
     #[doc = "The kind of the service."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: services_resource::Kind,
     #[doc = "The resource location."]
     pub location: String,
@@ -1043,7 +1064,12 @@ pub mod services_resource {
         #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
         pub tenant_id: Option<String>,
         #[doc = "Type of identity being specified, currently SystemAssigned and None are allowed."]
-        #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "type",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub type_: Option<identity::Type>,
     }
     impl Identity {
@@ -1099,7 +1125,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1108,7 +1139,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

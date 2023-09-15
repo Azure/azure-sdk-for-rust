@@ -180,7 +180,7 @@ pub struct RecordSetListResult {
 impl azure_core::Continuable for RecordSetListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RecordSetListResult {
@@ -443,7 +443,7 @@ pub struct ZoneListResult {
 impl azure_core::Continuable for ZoneListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ZoneListResult {
@@ -472,7 +472,12 @@ pub struct ZoneProperties {
     )]
     pub name_servers: Vec<String>,
     #[doc = "The type of this DNS zone (Public or Private)."]
-    #[serde(rename = "zoneType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "zoneType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub zone_type: Option<zone_properties::ZoneType>,
 }
 impl ZoneProperties {

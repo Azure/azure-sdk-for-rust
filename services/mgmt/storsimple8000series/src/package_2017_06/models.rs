@@ -112,13 +112,18 @@ impl AlertErrorDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertFilter {
     #[doc = "Specifies the status of the alerts to be filtered. Only 'Equality' operator is supported for this property."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<alert_filter::Status>,
     #[doc = "Specifies the severity of the alerts to be filtered. Only 'Equality' operator is supported for this property."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub severity: Option<alert_filter::Severity>,
     #[doc = "Specifies the source type of the alerts to be filtered. Only 'Equality' operator is supported for this property."]
-    #[serde(rename = "sourceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sourceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub source_type: Option<alert_filter::SourceType>,
     #[doc = "Specifies the source name of the alerts to be filtered. Only 'Equality' operator is supported for this property."]
     #[serde(rename = "sourceName", default, skip_serializing_if = "Option::is_none")]
@@ -166,7 +171,7 @@ pub struct AlertList {
 impl azure_core::Continuable for AlertList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertList {
@@ -178,13 +183,18 @@ impl AlertList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertNotificationProperties {
     #[doc = "Indicates whether email notification enabled or not."]
-    #[serde(rename = "emailNotification")]
+    #[serde(rename = "emailNotification", with = "azure_core::xml::text_content")]
     pub email_notification: alert_notification_properties::EmailNotification,
     #[doc = "The alert notification culture."]
     #[serde(rename = "alertNotificationCulture", default, skip_serializing_if = "Option::is_none")]
     pub alert_notification_culture: Option<String>,
     #[doc = "The value indicating whether alert notification enabled for admin or not."]
-    #[serde(rename = "notificationToServiceOwners", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "notificationToServiceOwners",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub notification_to_service_owners: Option<alert_notification_properties::NotificationToServiceOwners>,
     #[doc = "The alert notification email list."]
     #[serde(
@@ -226,6 +236,7 @@ pub struct AlertProperties {
     #[doc = "The title of the alert"]
     pub title: String,
     #[doc = "The scope of the alert"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub scope: alert_properties::Scope,
     #[doc = "The type of the alert"]
     #[serde(rename = "alertType")]
@@ -251,8 +262,10 @@ pub struct AlertProperties {
     #[serde(rename = "resolutionReason", default, skip_serializing_if = "Option::is_none")]
     pub resolution_reason: Option<String>,
     #[doc = "The severity of the alert"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub severity: alert_properties::Severity,
     #[doc = "The current status of the alert"]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: alert_properties::Status,
     #[doc = "The details of the error for which the alert was raised"]
     #[serde(rename = "errorDetails", default, skip_serializing_if = "Option::is_none")]
@@ -338,7 +351,12 @@ pub struct AlertSource {
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
     #[doc = "The source type of the alert"]
-    #[serde(rename = "alertSourceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "alertSourceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub alert_source_type: Option<alert_source::AlertSourceType>,
 }
 impl AlertSource {
@@ -364,7 +382,7 @@ pub struct AsymmetricEncryptedSecret {
     #[serde(rename = "encryptionCertThumbprint", default, skip_serializing_if = "Option::is_none")]
     pub encryption_cert_thumbprint: Option<String>,
     #[doc = "The algorithm used to encrypt \"Value\"."]
-    #[serde(rename = "encryptionAlgorithm")]
+    #[serde(rename = "encryptionAlgorithm", with = "azure_core::xml::text_content")]
     pub encryption_algorithm: asymmetric_encrypted_secret::EncryptionAlgorithm,
 }
 impl AsymmetricEncryptedSecret {
@@ -442,7 +460,7 @@ pub struct AvailableProviderOperationList {
 impl azure_core::Continuable for AvailableProviderOperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AvailableProviderOperationList {
@@ -496,7 +514,12 @@ pub struct BackupElement {
     #[serde(rename = "volumeContainerId")]
     pub volume_container_id: String,
     #[doc = "The volume type."]
-    #[serde(rename = "volumeType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "volumeType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub volume_type: Option<backup_element::VolumeType>,
 }
 impl BackupElement {
@@ -559,7 +582,7 @@ pub struct BackupList {
 impl azure_core::Continuable for BackupList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BackupList {
@@ -616,10 +639,20 @@ pub struct BackupPolicyProperties {
     #[serde(rename = "schedulesCount", default, skip_serializing_if = "Option::is_none")]
     pub schedules_count: Option<i64>,
     #[doc = "Indicates whether at least one of the schedules in the backup policy is active or not."]
-    #[serde(rename = "scheduledBackupStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "scheduledBackupStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub scheduled_backup_status: Option<backup_policy_properties::ScheduledBackupStatus>,
     #[doc = "The backup policy creation type. Indicates whether this was created through SaaS or through StorSimple Snapshot Manager."]
-    #[serde(rename = "backupPolicyCreationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupPolicyCreationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_policy_creation_type: Option<backup_policy_properties::BackupPolicyCreationType>,
     #[doc = "If the backup policy was created by StorSimple Snapshot Manager, then this field indicates the hostname of the StorSimple Snapshot Manager."]
     #[serde(rename = "ssmHostName", default, skip_serializing_if = "Option::is_none")]
@@ -664,10 +697,20 @@ pub struct BackupProperties {
     #[serde(rename = "sizeInBytes")]
     pub size_in_bytes: i64,
     #[doc = "The type of the backup."]
-    #[serde(rename = "backupType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_type: Option<backup_properties::BackupType>,
     #[doc = "The backup job creation type."]
-    #[serde(rename = "backupJobCreationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupJobCreationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_job_creation_type: Option<backup_properties::BackupJobCreationType>,
     #[doc = "The path ID of the backup policy."]
     #[serde(rename = "backupPolicyId", default, skip_serializing_if = "Option::is_none")]
@@ -748,7 +791,7 @@ pub struct BackupScheduleProperties {
     #[serde(rename = "scheduleRecurrence")]
     pub schedule_recurrence: ScheduleRecurrence,
     #[doc = "The type of backup which needs to be taken."]
-    #[serde(rename = "backupType")]
+    #[serde(rename = "backupType", with = "azure_core::xml::text_content")]
     pub backup_type: backup_schedule_properties::BackupType,
     #[doc = "The number of backups to be retained."]
     #[serde(rename = "retentionCount")]
@@ -757,7 +800,7 @@ pub struct BackupScheduleProperties {
     #[serde(rename = "startTime", with = "azure_core::date::rfc3339")]
     pub start_time: time::OffsetDateTime,
     #[doc = "The schedule status."]
-    #[serde(rename = "scheduleStatus")]
+    #[serde(rename = "scheduleStatus", with = "azure_core::xml::text_content")]
     pub schedule_status: backup_schedule_properties::ScheduleStatus,
     #[doc = "The last successful backup run which was triggered for the schedule."]
     #[serde(rename = "lastSuccessfulRun", default, with = "azure_core::date::rfc3339::option")]
@@ -882,7 +925,7 @@ pub struct BaseModel {
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "The Kind of the object. Currently only Series8000 is supported"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<base_model::Kind>,
 }
 impl BaseModel {
@@ -1180,15 +1223,16 @@ impl ControllerPowerStateChangeRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ControllerPowerStateChangeRequestProperties {
     #[doc = "The power state that the request is expecting for the controller of the device."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub action: controller_power_state_change_request_properties::Action,
     #[doc = "The active controller that the request is expecting on the device."]
-    #[serde(rename = "activeController")]
+    #[serde(rename = "activeController", with = "azure_core::xml::text_content")]
     pub active_controller: controller_power_state_change_request_properties::ActiveController,
     #[doc = "The controller 0's status that the request is expecting on the device."]
-    #[serde(rename = "controller0State")]
+    #[serde(rename = "controller0State", with = "azure_core::xml::text_content")]
     pub controller0_state: controller_power_state_change_request_properties::Controller0State,
     #[doc = "The controller 1's status that the request is expecting on the device."]
-    #[serde(rename = "controller1State")]
+    #[serde(rename = "controller1State", with = "azure_core::xml::text_content")]
     pub controller1_state: controller_power_state_change_request_properties::Controller1State,
 }
 impl ControllerPowerStateChangeRequestProperties {
@@ -1388,7 +1432,7 @@ pub struct DeviceProperties {
     #[serde(rename = "friendlySoftwareName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_software_name: Option<String>,
     #[doc = "The current configuration status of the device."]
-    #[serde(rename = "deviceConfigurationStatus")]
+    #[serde(rename = "deviceConfigurationStatus", with = "azure_core::xml::text_content")]
     pub device_configuration_status: device_properties::DeviceConfigurationStatus,
     #[doc = "The target IQN."]
     #[serde(rename = "targetIqn")]
@@ -1397,15 +1441,16 @@ pub struct DeviceProperties {
     #[serde(rename = "modelDescription")]
     pub model_description: String,
     #[doc = "The current status of the device."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: device_properties::Status,
     #[doc = "The serial number."]
     #[serde(rename = "serialNumber")]
     pub serial_number: String,
     #[doc = "The type of the device."]
-    #[serde(rename = "deviceType")]
+    #[serde(rename = "deviceType", with = "azure_core::xml::text_content")]
     pub device_type: device_properties::DeviceType,
     #[doc = "The identifier of the active controller of the device."]
-    #[serde(rename = "activeController")]
+    #[serde(rename = "activeController", with = "azure_core::xml::text_content")]
     pub active_controller: device_properties::ActiveController,
     #[doc = "The device friendly software version."]
     #[serde(rename = "friendlySoftwareVersion")]
@@ -1441,7 +1486,12 @@ pub struct DeviceProperties {
     #[serde(rename = "deviceLocation", default, skip_serializing_if = "Option::is_none")]
     pub device_location: Option<String>,
     #[doc = "The virtual machine API type."]
-    #[serde(rename = "virtualMachineApiType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "virtualMachineApiType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub virtual_machine_api_type: Option<device_properties::VirtualMachineApiType>,
     #[doc = "The additional device details regarding the end point count and volume container count."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1546,13 +1596,28 @@ pub mod device_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceRolloverDetails {
     #[doc = "The eligibility status of device for service data encryption key rollover."]
-    #[serde(rename = "authorizationEligibility", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authorizationEligibility",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authorization_eligibility: Option<device_rollover_details::AuthorizationEligibility>,
     #[doc = "The authorization status of the device for service data encryption key rollover."]
-    #[serde(rename = "authorizationStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "authorizationStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub authorization_status: Option<device_rollover_details::AuthorizationStatus>,
     #[doc = "The reason for inEligibility of device, in case it's not eligible for service data encryption key rollover."]
-    #[serde(rename = "inEligibilityReason", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "inEligibilityReason",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub in_eligibility_reason: Option<device_rollover_details::InEligibilityReason>,
 }
 impl DeviceRolloverDetails {
@@ -1617,10 +1682,10 @@ impl EncryptionSettings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncryptionSettingsProperties {
     #[doc = "The encryption status to indicates if encryption is enabled or not."]
-    #[serde(rename = "encryptionStatus")]
+    #[serde(rename = "encryptionStatus", with = "azure_core::xml::text_content")]
     pub encryption_status: encryption_settings_properties::EncryptionStatus,
     #[doc = "The key rollover status to indicates if key rollover is required or not. If secret's encryption has been upgraded, then it requires key rollover."]
-    #[serde(rename = "keyRolloverStatus")]
+    #[serde(rename = "keyRolloverStatus", with = "azure_core::xml::text_content")]
     pub key_rollover_status: encryption_settings_properties::KeyRolloverStatus,
 }
 impl EncryptionSettingsProperties {
@@ -1733,7 +1798,12 @@ pub struct FailoverTarget {
     #[serde(rename = "deviceId", default, skip_serializing_if = "Option::is_none")]
     pub device_id: Option<String>,
     #[doc = "The status of the device."]
-    #[serde(rename = "deviceStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "deviceStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub device_status: Option<failover_target::DeviceStatus>,
     #[doc = "The model number of the device."]
     #[serde(rename = "modelDescription", default, skip_serializing_if = "Option::is_none")]
@@ -1814,6 +1884,7 @@ pub struct Feature {
     #[doc = "The name of the feature."]
     pub name: String,
     #[doc = "The feature support status."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: feature::Status,
 }
 impl Feature {
@@ -1870,6 +1941,7 @@ pub struct HardwareComponent {
     #[serde(rename = "displayName")]
     pub display_name: String,
     #[doc = "The status of the hardware component."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: hardware_component::Status,
     #[doc = "The display name of the status of hardware component."]
     #[serde(rename = "statusDisplayName")]
@@ -1959,6 +2031,7 @@ pub struct Job {
     #[serde(flatten)]
     pub base_model: BaseModel,
     #[doc = "The current status of the job."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub status: job::Status,
     #[doc = "The UTC time at which the job was started."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -2079,7 +2152,7 @@ pub struct JobList {
 impl azure_core::Continuable for JobList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobList {
@@ -2091,7 +2164,7 @@ impl JobList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobProperties {
     #[doc = "The type of the job."]
-    #[serde(rename = "jobType")]
+    #[serde(rename = "jobType", with = "azure_core::xml::text_content")]
     pub job_type: job_properties::JobType,
     #[doc = "The additional details related to the data related statistics of a job. Currently applicable only for Backup, Clone and Restore jobs."]
     #[serde(rename = "dataStats", default, skip_serializing_if = "Option::is_none")]
@@ -2117,7 +2190,12 @@ pub struct JobProperties {
     #[serde(rename = "isCancellable", default, skip_serializing_if = "Option::is_none")]
     pub is_cancellable: Option<bool>,
     #[doc = "The backup type (CloudSnapshot | LocalSnapshot). Applicable only for backup jobs."]
-    #[serde(rename = "backupType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_type: Option<job_properties::BackupType>,
     #[doc = "The source device ID of the failover job."]
     #[serde(rename = "sourceDeviceId", default, skip_serializing_if = "Option::is_none")]
@@ -2172,7 +2250,7 @@ pub struct JobStage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "The stage status."]
-    #[serde(rename = "stageStatus")]
+    #[serde(rename = "stageStatus", with = "azure_core::xml::text_content")]
     pub stage_status: job_stage::StageStatus,
     #[doc = "The details of the stage."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2306,7 +2384,7 @@ impl ManagerExtendedInfoProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagerIntrinsicSettings {
     #[doc = "The type of StorSimple Manager."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: manager_intrinsic_settings::Type,
 }
 impl ManagerIntrinsicSettings {
@@ -2374,6 +2452,7 @@ impl ManagerProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagerSku {
     #[doc = "Refers to the sku name which should be \"Standard\""]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: manager_sku::Name,
 }
 impl ManagerSku {
@@ -2438,10 +2517,15 @@ pub struct MetricDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<MetricName>,
     #[doc = "The metric unit."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub unit: Option<metric_definition::Unit>,
     #[doc = "The metric aggregation type."]
-    #[serde(rename = "primaryAggregationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "primaryAggregationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub primary_aggregation_type: Option<metric_definition::PrimaryAggregationType>,
     #[doc = "The metric source ID."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -2631,7 +2715,12 @@ pub struct Metrics {
     #[serde(rename = "timeGrain", default, skip_serializing_if = "Option::is_none")]
     pub time_grain: Option<String>,
     #[doc = "The metric aggregation type."]
-    #[serde(rename = "primaryAggregation", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "primaryAggregation",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub primary_aggregation: Option<metrics::PrimaryAggregation>,
     #[doc = "The metric name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2644,7 +2733,7 @@ pub struct Metrics {
     )]
     pub dimensions: Vec<MetricDimension>,
     #[doc = "The unit of the metric data."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub unit: Option<metrics::Unit>,
     #[doc = "The type of the metric data."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -2700,21 +2789,22 @@ impl NetworkAdapterList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkAdapters {
     #[doc = "The ID of the network adapter."]
-    #[serde(rename = "interfaceId")]
+    #[serde(rename = "interfaceId", with = "azure_core::xml::text_content")]
     pub interface_id: network_adapters::InterfaceId,
     #[doc = "Value indicating status of network adapter."]
-    #[serde(rename = "netInterfaceStatus")]
+    #[serde(rename = "netInterfaceStatus", with = "azure_core::xml::text_content")]
     pub net_interface_status: network_adapters::NetInterfaceStatus,
     #[doc = "Value indicating whether this instance is default."]
     #[serde(rename = "isDefault", default, skip_serializing_if = "Option::is_none")]
     pub is_default: Option<bool>,
     #[doc = "Value indicating cloud and ISCSI status of network adapter."]
-    #[serde(rename = "iscsiAndCloudStatus")]
+    #[serde(rename = "iscsiAndCloudStatus", with = "azure_core::xml::text_content")]
     pub iscsi_and_cloud_status: network_adapters::IscsiAndCloudStatus,
     #[doc = "The speed of the network adapter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub speed: Option<i64>,
     #[doc = "The mode of network adapter, either IPv4, IPv6 or both."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub mode: network_adapters::Mode,
     #[doc = "Details related to the IPv4 address configuration."]
     #[serde(rename = "nicIpv4Settings", default, skip_serializing_if = "Option::is_none")]
@@ -2923,7 +3013,7 @@ impl PublicKey {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RemoteManagementSettings {
     #[doc = "The remote management mode."]
-    #[serde(rename = "remoteManagementMode")]
+    #[serde(rename = "remoteManagementMode", with = "azure_core::xml::text_content")]
     pub remote_management_mode: remote_management_settings::RemoteManagementMode,
     #[doc = "The remote management certificates."]
     #[serde(rename = "remoteManagementCertificate", default, skip_serializing_if = "Option::is_none")]
@@ -2952,7 +3042,7 @@ pub mod remote_management_settings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RemoteManagementSettingsPatch {
     #[doc = "The remote management mode."]
-    #[serde(rename = "remoteManagementMode")]
+    #[serde(rename = "remoteManagementMode", with = "azure_core::xml::text_content")]
     pub remote_management_mode: remote_management_settings_patch::RemoteManagementMode,
 }
 impl RemoteManagementSettingsPatch {
@@ -3004,7 +3094,7 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduleRecurrence {
     #[doc = "The recurrence type."]
-    #[serde(rename = "recurrenceType")]
+    #[serde(rename = "recurrenceType", with = "azure_core::xml::text_content")]
     pub recurrence_type: schedule_recurrence::RecurrenceType,
     #[doc = "The recurrence value."]
     #[serde(rename = "recurrenceValue")]
@@ -3176,7 +3266,7 @@ pub struct StorageAccountCredentialProperties {
     #[serde(rename = "endPoint")]
     pub end_point: String,
     #[doc = "Signifies whether SSL needs to be enabled or not."]
-    #[serde(rename = "sslStatus")]
+    #[serde(rename = "sslStatus", with = "azure_core::xml::text_content")]
     pub ssl_status: storage_account_credential_properties::SslStatus,
     #[doc = "Represent the secrets intended for encryption with asymmetric key pair."]
     #[serde(rename = "accessKey", default, skip_serializing_if = "Option::is_none")]
@@ -3213,7 +3303,7 @@ pub struct SymmetricEncryptedSecret {
     #[serde(rename = "valueCertificateThumbprint", default, skip_serializing_if = "Option::is_none")]
     pub value_certificate_thumbprint: Option<String>,
     #[doc = "The algorithm used to encrypt the \"Value\"."]
-    #[serde(rename = "encryptionAlgorithm")]
+    #[serde(rename = "encryptionAlgorithm", with = "azure_core::xml::text_content")]
     pub encryption_algorithm: symmetric_encrypted_secret::EncryptionAlgorithm,
 }
 impl SymmetricEncryptedSecret {
@@ -3247,7 +3337,12 @@ pub struct TargetEligibilityErrorMessage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resolution: Option<String>,
     #[doc = "The result code for the error, due to which the device does not qualify as a failover target device."]
-    #[serde(rename = "resultCode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resultCode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub result_code: Option<target_eligibility_error_message::ResultCode>,
 }
 impl TargetEligibilityErrorMessage {
@@ -3273,7 +3368,12 @@ pub mod target_eligibility_error_message {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TargetEligibilityResult {
     #[doc = "The eligibility status of device, as a failover target device."]
-    #[serde(rename = "eligibilityStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "eligibilityStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub eligibility_status: Option<target_eligibility_result::EligibilityStatus>,
     #[doc = "The list of error messages, if a device does not qualify as a failover target device."]
     #[serde(
@@ -3492,7 +3592,12 @@ pub struct VolumeContainerProperties {
     #[serde(rename = "encryptionKey", default, skip_serializing_if = "Option::is_none")]
     pub encryption_key: Option<AsymmetricEncryptedSecret>,
     #[doc = "The flag to denote whether encryption is enabled or not."]
-    #[serde(rename = "encryptionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "encryptionStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub encryption_status: Option<volume_container_properties::EncryptionStatus>,
     #[doc = "The number of volumes in the volume Container."]
     #[serde(rename = "volumeCount", default, skip_serializing_if = "Option::is_none")]
@@ -3501,7 +3606,12 @@ pub struct VolumeContainerProperties {
     #[serde(rename = "storageAccountCredentialId")]
     pub storage_account_credential_id: String,
     #[doc = "The owner ship status of the volume container. Only when the status is \"NotOwned\", the delete operation on the volume container is permitted."]
-    #[serde(rename = "ownerShipStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ownerShipStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub owner_ship_status: Option<volume_container_properties::OwnerShipStatus>,
     #[doc = "The bandwidth-rate set on the volume container."]
     #[serde(rename = "bandWidthRateInMbps", default, skip_serializing_if = "Option::is_none")]
@@ -3549,7 +3659,12 @@ pub struct VolumeFailoverMetadata {
     #[serde(rename = "volumeId", default, skip_serializing_if = "Option::is_none")]
     pub volume_id: Option<String>,
     #[doc = "The type of the volume."]
-    #[serde(rename = "volumeType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "volumeType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub volume_type: Option<volume_failover_metadata::VolumeType>,
     #[doc = "The size of the volume in bytes at the time the snapshot was taken."]
     #[serde(rename = "sizeInBytes", default, skip_serializing_if = "Option::is_none")]
@@ -3606,7 +3721,7 @@ pub struct VolumeProperties {
     #[serde(rename = "sizeInBytes")]
     pub size_in_bytes: i64,
     #[doc = "The type of the volume."]
-    #[serde(rename = "volumeType")]
+    #[serde(rename = "volumeType", with = "azure_core::xml::text_content")]
     pub volume_type: volume_properties::VolumeType,
     #[doc = "The ID of the volume container, in which this volume is created."]
     #[serde(rename = "volumeContainerId", default, skip_serializing_if = "Option::is_none")]
@@ -3615,16 +3730,26 @@ pub struct VolumeProperties {
     #[serde(rename = "accessControlRecordIds")]
     pub access_control_record_ids: Vec<String>,
     #[doc = "The volume status."]
-    #[serde(rename = "volumeStatus")]
+    #[serde(rename = "volumeStatus", with = "azure_core::xml::text_content")]
     pub volume_status: volume_properties::VolumeStatus,
     #[doc = "The operation status on the volume."]
-    #[serde(rename = "operationStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "operationStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub operation_status: Option<volume_properties::OperationStatus>,
     #[doc = "The backup status of the volume."]
-    #[serde(rename = "backupStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_status: Option<volume_properties::BackupStatus>,
     #[doc = "The monitoring status of the volume."]
-    #[serde(rename = "monitoringStatus")]
+    #[serde(rename = "monitoringStatus", with = "azure_core::xml::text_content")]
     pub monitoring_status: volume_properties::MonitoringStatus,
     #[doc = "The IDs of the backup policies, in which this volume is part of."]
     #[serde(
@@ -3699,6 +3824,7 @@ pub struct WebproxySettings {
     #[serde(rename = "connectionUri", default, skip_serializing_if = "Option::is_none")]
     pub connection_uri: Option<String>,
     #[doc = "The authentication type."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub authentication: webproxy_settings::Authentication,
     #[doc = "The webproxy username."]
     pub username: String,

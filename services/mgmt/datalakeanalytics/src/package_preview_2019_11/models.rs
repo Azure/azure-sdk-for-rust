@@ -87,7 +87,7 @@ pub struct CapabilityInformation {
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
     #[doc = "The subscription state."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<capability_information::State>,
     #[doc = "The maximum supported number of accounts under this subscription."]
     #[serde(rename = "maxAccountCount", default, skip_serializing_if = "Option::is_none")]
@@ -156,7 +156,7 @@ pub struct CheckNameAvailabilityParameters {
     #[doc = "The Data Lake Analytics name to check availability for."]
     pub name: String,
     #[doc = "The resource type. Note: This should not be set by the user, as the constant value is Microsoft.DataLakeAnalytics/accounts"]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: check_name_availability_parameters::Type,
 }
 impl CheckNameAvailabilityParameters {
@@ -204,7 +204,7 @@ pub struct ComputePolicyListResult {
 impl azure_core::Continuable for ComputePolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ComputePolicyListResult {
@@ -219,7 +219,12 @@ pub struct ComputePolicyProperties {
     #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,
     #[doc = "The type of AAD object the object identifier refers to."]
-    #[serde(rename = "objectType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "objectType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub object_type: Option<compute_policy_properties::ObjectType>,
     #[doc = "The maximum degree of parallelism per job this user can use to submit jobs."]
     #[serde(rename = "maxDegreeOfParallelismPerJob", default, skip_serializing_if = "Option::is_none")]
@@ -340,13 +345,28 @@ pub struct CreateDataLakeAnalyticsAccountProperties {
     )]
     pub firewall_rules: Vec<CreateFirewallRuleWithAccountParameters>,
     #[doc = "The current state of the IP address firewall for this account."]
-    #[serde(rename = "firewallState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "firewallState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub firewall_state: Option<create_data_lake_analytics_account_properties::FirewallState>,
     #[doc = "The current state of allowing or disallowing IPs originating within Azure through the firewall. If the firewall is disabled, this is not enforced."]
-    #[serde(rename = "firewallAllowAzureIps", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "firewallAllowAzureIps",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub firewall_allow_azure_ips: Option<create_data_lake_analytics_account_properties::FirewallAllowAzureIps>,
     #[doc = "The commitment tier for the next month."]
-    #[serde(rename = "newTier", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "newTier",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub new_tier: Option<create_data_lake_analytics_account_properties::NewTier>,
     #[doc = "The maximum supported jobs running under the account at the same time."]
     #[serde(rename = "maxJobCount", default, skip_serializing_if = "Option::is_none")]
@@ -465,7 +485,7 @@ pub struct CreateOrUpdateComputePolicyProperties {
     #[serde(rename = "objectId")]
     pub object_id: String,
     #[doc = "The type of AAD object the object identifier refers to."]
-    #[serde(rename = "objectType")]
+    #[serde(rename = "objectType", with = "azure_core::xml::text_content")]
     pub object_type: create_or_update_compute_policy_properties::ObjectType,
     #[doc = "The maximum degree of parallelism per job this user can use to submit jobs. This property, the min priority per job property, or both must be passed."]
     #[serde(rename = "maxDegreeOfParallelismPerJob", default, skip_serializing_if = "Option::is_none")]
@@ -603,7 +623,7 @@ pub struct DataLakeAnalyticsAccountListResult {
 impl azure_core::Continuable for DataLakeAnalyticsAccountListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataLakeAnalyticsAccountListResult {
@@ -679,16 +699,36 @@ pub struct DataLakeAnalyticsAccountProperties {
     )]
     pub firewall_rules: Vec<FirewallRule>,
     #[doc = "The current state of the IP address firewall for this account."]
-    #[serde(rename = "firewallState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "firewallState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub firewall_state: Option<data_lake_analytics_account_properties::FirewallState>,
     #[doc = "The current state of allowing or disallowing IPs originating within Azure through the firewall. If the firewall is disabled, this is not enforced."]
-    #[serde(rename = "firewallAllowAzureIps", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "firewallAllowAzureIps",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub firewall_allow_azure_ips: Option<data_lake_analytics_account_properties::FirewallAllowAzureIps>,
     #[doc = "The commitment tier for the next month."]
-    #[serde(rename = "newTier", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "newTier",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub new_tier: Option<data_lake_analytics_account_properties::NewTier>,
     #[doc = "The commitment tier in use for the current month."]
-    #[serde(rename = "currentTier", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "currentTier",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub current_tier: Option<data_lake_analytics_account_properties::CurrentTier>,
     #[doc = "The maximum supported jobs running under the account at the same time."]
     #[serde(rename = "maxJobCount", default, skip_serializing_if = "Option::is_none")]
@@ -721,7 +761,12 @@ pub struct DataLakeAnalyticsAccountProperties {
     #[serde(rename = "queryStoreRetention", default, skip_serializing_if = "Option::is_none")]
     pub query_store_retention: Option<i32>,
     #[doc = "The current state of the DebugDataAccessLevel for this account."]
-    #[serde(rename = "debugDataAccessLevel", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "debugDataAccessLevel",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub debug_data_access_level: Option<data_lake_analytics_account_properties::DebugDataAccessLevel>,
 }
 impl DataLakeAnalyticsAccountProperties {
@@ -800,10 +845,15 @@ pub struct DataLakeAnalyticsAccountPropertiesBasic {
     #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
     pub account_id: Option<String>,
     #[doc = "The provisioning status of the Data Lake Analytics account."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<data_lake_analytics_account_properties_basic::ProvisioningState>,
     #[doc = "The state of the Data Lake Analytics account."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<data_lake_analytics_account_properties_basic::State>,
     #[doc = "The account creation time."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
@@ -875,7 +925,7 @@ pub struct DataLakeStoreAccountInformationListResult {
 impl azure_core::Continuable for DataLakeStoreAccountInformationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataLakeStoreAccountInformationListResult {
@@ -992,7 +1042,7 @@ pub struct FirewallRuleListResult {
 impl azure_core::Continuable for FirewallRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FirewallRuleListResult {
@@ -1066,7 +1116,12 @@ pub struct HiveMetastoreProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
     #[doc = "The current state of the NestedResourceProvisioning for this account."]
-    #[serde(rename = "nestedResourceProvisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "nestedResourceProvisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub nested_resource_provisioning_state: Option<NestedResourceProvisioningState>,
 }
 impl HiveMetastoreProperties {
@@ -1111,7 +1166,7 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationMetaPropertyInfo>,
     #[doc = "The intended executor of the operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<operation::Origin>,
 }
 impl Operation {
@@ -1352,7 +1407,7 @@ pub struct SasTokenInformationListResult {
 impl azure_core::Continuable for SasTokenInformationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SasTokenInformationListResult {
@@ -1391,7 +1446,7 @@ pub struct StorageAccountInformationListResult {
 impl azure_core::Continuable for StorageAccountInformationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageAccountInformationListResult {
@@ -1442,7 +1497,7 @@ pub struct StorageContainerListResult {
 impl azure_core::Continuable for StorageContainerListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageContainerListResult {
@@ -1499,7 +1554,12 @@ pub struct UpdateComputePolicyProperties {
     #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,
     #[doc = "The type of AAD object the object identifier refers to."]
-    #[serde(rename = "objectType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "objectType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub object_type: Option<update_compute_policy_properties::ObjectType>,
     #[doc = "The maximum degree of parallelism per job this user can use to submit jobs. This property, the min priority per job property, or both must be passed."]
     #[serde(rename = "maxDegreeOfParallelismPerJob", default, skip_serializing_if = "Option::is_none")]
@@ -1620,13 +1680,28 @@ pub struct UpdateDataLakeAnalyticsAccountProperties {
     )]
     pub firewall_rules: Vec<UpdateFirewallRuleWithAccountParameters>,
     #[doc = "The current state of the IP address firewall for this account. Disabling the firewall does not remove existing rules, they will just be ignored until the firewall is re-enabled."]
-    #[serde(rename = "firewallState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "firewallState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub firewall_state: Option<update_data_lake_analytics_account_properties::FirewallState>,
     #[doc = "The current state of allowing or disallowing IPs originating within Azure through the firewall. If the firewall is disabled, this is not enforced."]
-    #[serde(rename = "firewallAllowAzureIps", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "firewallAllowAzureIps",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub firewall_allow_azure_ips: Option<update_data_lake_analytics_account_properties::FirewallAllowAzureIps>,
     #[doc = "The commitment tier to use for next month."]
-    #[serde(rename = "newTier", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "newTier",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub new_tier: Option<update_data_lake_analytics_account_properties::NewTier>,
     #[doc = "The maximum supported jobs running under the account at the same time."]
     #[serde(rename = "maxJobCount", default, skip_serializing_if = "Option::is_none")]
@@ -1833,7 +1908,12 @@ pub struct VirtualNetworkRuleProperties {
     #[serde(rename = "subnetId", default, skip_serializing_if = "Option::is_none")]
     pub subnet_id: Option<String>,
     #[doc = "The current state of the VirtualNetworkRule for this account."]
-    #[serde(rename = "virtualNetworkRuleState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "virtualNetworkRuleState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub virtual_network_rule_state: Option<VirtualNetworkRuleState>,
 }
 impl VirtualNetworkRuleProperties {

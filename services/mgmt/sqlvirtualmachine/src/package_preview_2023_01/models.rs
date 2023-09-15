@@ -50,16 +50,21 @@ pub struct AgReplica {
     #[serde(rename = "sqlVirtualMachineInstanceId", default, skip_serializing_if = "Option::is_none")]
     pub sql_virtual_machine_instance_id: Option<String>,
     #[doc = "Replica Role in availability group."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub role: Option<ag_replica::Role>,
     #[doc = "Replica commit mode in availability group."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub commit: Option<ag_replica::Commit>,
     #[doc = "Replica failover mode in availability group."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub failover: Option<ag_replica::Failover>,
     #[doc = "Replica readable secondary mode in availability group."]
-    #[serde(rename = "readableSecondary", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "readableSecondary",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub readable_secondary: Option<ag_replica::ReadableSecondary>,
 }
 impl AgReplica {
@@ -269,10 +274,20 @@ pub struct AutoBackupSettings {
     #[serde(rename = "backupSystemDbs", default, skip_serializing_if = "Option::is_none")]
     pub backup_system_dbs: Option<bool>,
     #[doc = "Backup schedule type."]
-    #[serde(rename = "backupScheduleType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupScheduleType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_schedule_type: Option<auto_backup_settings::BackupScheduleType>,
     #[doc = "Frequency of full backups. In both cases, full backups begin during the next scheduled time window."]
-    #[serde(rename = "fullBackupFrequency", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "fullBackupFrequency",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub full_backup_frequency: Option<auto_backup_settings::FullBackupFrequency>,
     #[doc = "Days of the week for the backups when FullBackupFrequency is set to Weekly."]
     #[serde(
@@ -381,7 +396,12 @@ pub struct AutoPatchingSettings {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enable: Option<bool>,
     #[doc = "Day of week to apply the patch on."]
-    #[serde(rename = "dayOfWeek", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dayOfWeek",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub day_of_week: Option<auto_patching_settings::DayOfWeek>,
     #[doc = "Hour of the day when patching is initiated. Local VM time."]
     #[serde(rename = "maintenanceWindowStartingHour", default, skip_serializing_if = "Option::is_none")]
@@ -390,7 +410,12 @@ pub struct AutoPatchingSettings {
     #[serde(rename = "maintenanceWindowDuration", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_window_duration: Option<i32>,
     #[doc = "Additional Patch to be enable or enabled on the SQL Virtual Machine."]
-    #[serde(rename = "additionalVmPatch", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "additionalVmPatch",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub additional_vm_patch: Option<auto_patching_settings::AdditionalVmPatch>,
 }
 impl AutoPatchingSettings {
@@ -489,7 +514,7 @@ pub struct AvailabilityGroupListenerListResult {
 impl azure_core::Continuable for AvailabilityGroupListenerListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AvailabilityGroupListenerListResult {
@@ -688,7 +713,7 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub display: Option<OperationDisplay>,
     #[doc = "The intended executor of the operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub origin: Option<operation::Origin>,
     #[doc = "Additional descriptions for the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -779,7 +804,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -838,7 +863,12 @@ pub struct ResourceIdentity {
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
     #[doc = "The identity type. Set this to 'SystemAssigned' in order to automatically create and assign an Azure Active Directory principal for the resource."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<resource_identity::Type>,
     #[doc = "The Azure Active Directory tenant id."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -997,7 +1027,12 @@ pub struct Schedule {
     #[serde(rename = "monthlyOccurrence", default, skip_serializing_if = "Option::is_none")]
     pub monthly_occurrence: Option<i32>,
     #[doc = "Day of the week to run assessment."]
-    #[serde(rename = "dayOfWeek", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dayOfWeek",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub day_of_week: Option<schedule::DayOfWeek>,
     #[doc = "Time of the day in HH:mm format. Eg. 17:30"]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
@@ -1057,7 +1092,12 @@ impl ServerConfigurationsManagementSettings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlConnectivityUpdateSettings {
     #[doc = "SQL Server connectivity option."]
-    #[serde(rename = "connectivityType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "connectivityType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub connectivity_type: Option<sql_connectivity_update_settings::ConnectivityType>,
     #[doc = "SQL Server port."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1129,7 +1169,12 @@ pub struct SqlStorageUpdateSettings {
     #[serde(rename = "startingDeviceId", default, skip_serializing_if = "Option::is_none")]
     pub starting_device_id: Option<i32>,
     #[doc = "Disk configuration to apply to SQL Server."]
-    #[serde(rename = "diskConfigurationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "diskConfigurationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub disk_configuration_type: Option<sql_storage_update_settings::DiskConfigurationType>,
 }
 impl SqlStorageUpdateSettings {
@@ -1245,7 +1290,7 @@ pub struct SqlVirtualMachineGroupListResult {
 impl azure_core::Continuable for SqlVirtualMachineGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlVirtualMachineGroupListResult {
@@ -1263,16 +1308,36 @@ pub struct SqlVirtualMachineGroupProperties {
     #[serde(rename = "sqlImageOffer", default, skip_serializing_if = "Option::is_none")]
     pub sql_image_offer: Option<String>,
     #[doc = "SQL image sku."]
-    #[serde(rename = "sqlImageSku", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sqlImageSku",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub sql_image_sku: Option<sql_virtual_machine_group_properties::SqlImageSku>,
     #[doc = "Scale type."]
-    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "scaleType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub scale_type: Option<sql_virtual_machine_group_properties::ScaleType>,
     #[doc = "Type of cluster manager: Windows Server Failover Cluster (WSFC), implied by the scale type of the group and the OS type."]
-    #[serde(rename = "clusterManagerType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "clusterManagerType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cluster_manager_type: Option<sql_virtual_machine_group_properties::ClusterManagerType>,
     #[doc = "Cluster type."]
-    #[serde(rename = "clusterConfiguration", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "clusterConfiguration",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cluster_configuration: Option<sql_virtual_machine_group_properties::ClusterConfiguration>,
     #[doc = "Active Directory account details to operate Windows Server Failover Cluster."]
     #[serde(rename = "wsfcDomainProfile", default, skip_serializing_if = "Option::is_none")]
@@ -1459,7 +1524,7 @@ pub struct SqlVirtualMachineListResult {
 impl azure_core::Continuable for SqlVirtualMachineListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlVirtualMachineListResult {
@@ -1480,16 +1545,36 @@ pub struct SqlVirtualMachineProperties {
     #[serde(rename = "sqlImageOffer", default, skip_serializing_if = "Option::is_none")]
     pub sql_image_offer: Option<String>,
     #[doc = "SQL Server license type."]
-    #[serde(rename = "sqlServerLicenseType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sqlServerLicenseType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub sql_server_license_type: Option<sql_virtual_machine_properties::SqlServerLicenseType>,
     #[doc = "SQL Server Management type. NOTE: This parameter is not used anymore. API will automatically detect the Sql Management, refrain from using it."]
-    #[serde(rename = "sqlManagement", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sqlManagement",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub sql_management: Option<sql_virtual_machine_properties::SqlManagement>,
     #[doc = "SQL IaaS Agent least privilege mode."]
-    #[serde(rename = "leastPrivilegeMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "leastPrivilegeMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub least_privilege_mode: Option<sql_virtual_machine_properties::LeastPrivilegeMode>,
     #[doc = "SQL Server edition type."]
-    #[serde(rename = "sqlImageSku", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sqlImageSku",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub sql_image_sku: Option<sql_virtual_machine_properties::SqlImageSku>,
     #[doc = "ARM resource id of the SQL virtual machine group this SQL virtual machine is or will be part of."]
     #[serde(rename = "sqlVirtualMachineGroupResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -1725,7 +1810,12 @@ pub struct SqlVmTroubleshooting {
     #[serde(rename = "endTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub end_time_utc: Option<time::OffsetDateTime>,
     #[doc = "SQL VM troubleshooting scenario."]
-    #[serde(rename = "troubleshootingScenario", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "troubleshootingScenario",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub troubleshooting_scenario: Option<sql_vm_troubleshooting::TroubleshootingScenario>,
     #[doc = "SQL VM Troubleshooting additional properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1786,7 +1876,12 @@ pub mod sql_vm_troubleshooting {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlWorkloadTypeUpdateSettings {
     #[doc = "SQL Server workload type."]
-    #[serde(rename = "sqlWorkloadType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sqlWorkloadType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub sql_workload_type: Option<sql_workload_type_update_settings::SqlWorkloadType>,
 }
 impl SqlWorkloadTypeUpdateSettings {
@@ -1855,10 +1950,20 @@ pub struct StorageConfigurationSettings {
     #[serde(rename = "sqlSystemDbOnDataDisk", default, skip_serializing_if = "Option::is_none")]
     pub sql_system_db_on_data_disk: Option<bool>,
     #[doc = "Disk configuration to apply to SQL Server."]
-    #[serde(rename = "diskConfigurationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "diskConfigurationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub disk_configuration_type: Option<storage_configuration_settings::DiskConfigurationType>,
     #[doc = "Storage workload type."]
-    #[serde(rename = "storageWorkloadType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storageWorkloadType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub storage_workload_type: Option<storage_configuration_settings::StorageWorkloadType>,
     #[doc = "Enable SQL IaaS Agent storage configuration blade in Azure Portal."]
     #[serde(rename = "enableStorageConfigBlade", default, skip_serializing_if = "Option::is_none")]
@@ -2004,7 +2109,12 @@ pub struct TroubleshootingStatus {
     #[serde(rename = "endTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub end_time_utc: Option<time::OffsetDateTime>,
     #[doc = "SQL VM troubleshooting scenario."]
-    #[serde(rename = "troubleshootingScenario", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "troubleshootingScenario",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub troubleshooting_scenario: Option<troubleshooting_status::TroubleshootingScenario>,
     #[doc = "SQL VM Troubleshooting additional properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2119,7 +2229,12 @@ pub struct WsfcDomainProfile {
     #[serde(rename = "storageAccountPrimaryKey", default, skip_serializing_if = "Option::is_none")]
     pub storage_account_primary_key: Option<String>,
     #[doc = "Cluster subnet type."]
-    #[serde(rename = "clusterSubnetType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "clusterSubnetType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cluster_subnet_type: Option<wsfc_domain_profile::ClusterSubnetType>,
 }
 impl WsfcDomainProfile {
@@ -2174,7 +2289,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2183,7 +2303,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

@@ -31,19 +31,34 @@ pub struct AssessedDisk {
     #[serde(rename = "monthlyStorageCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_storage_cost: Option<f64>,
     #[doc = "Storage type selected for this disk."]
-    #[serde(rename = "recommendedDiskType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "recommendedDiskType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub recommended_disk_type: Option<assessed_disk::RecommendedDiskType>,
     #[doc = "Recommended Azure size for the disk, given utilization data and preferences set on Assessment."]
-    #[serde(rename = "recommendedDiskSize", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "recommendedDiskSize",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub recommended_disk_size: Option<assessed_disk::RecommendedDiskSize>,
     #[doc = "Gigabytes of storage provided by the recommended Azure disk size."]
     #[serde(rename = "gigabytesForRecommendedDiskSize", default, skip_serializing_if = "Option::is_none")]
     pub gigabytes_for_recommended_disk_size: Option<i32>,
     #[doc = "Whether this disk is suitable for Azure."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub suitability: Option<assessed_disk::Suitability>,
     #[doc = "If disk is suitable, this explains the reasons and mitigation steps."]
-    #[serde(rename = "suitabilityExplanation", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "suitabilityExplanation",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub suitability_explanation: Option<assessed_disk::SuitabilityExplanation>,
 }
 impl AssessedDisk {
@@ -310,7 +325,12 @@ pub struct AssessedMachineProperties {
     #[serde(rename = "discoveredTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub discovered_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Boot type of the machine."]
-    #[serde(rename = "bootType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "bootType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub boot_type: Option<assessed_machine_properties::BootType>,
     #[doc = "Container defined in the management solution that this machine is part of in the datacenter."]
     #[serde(rename = "datacenterContainer", default, skip_serializing_if = "Option::is_none")]
@@ -352,7 +372,12 @@ pub struct AssessedMachineProperties {
     #[serde(rename = "networkAdapters", default, skip_serializing_if = "Option::is_none")]
     pub network_adapters: Option<serde_json::Value>,
     #[doc = "Recommended Azure size for this machine."]
-    #[serde(rename = "recommendedSize", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "recommendedSize",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub recommended_size: Option<assessed_machine_properties::RecommendedSize>,
     #[doc = "Number of CPU cores in the Recommended Azure VM Size."]
     #[serde(rename = "numberOfCoresForRecommendedSize", default, skip_serializing_if = "Option::is_none")]
@@ -370,10 +395,15 @@ pub struct AssessedMachineProperties {
     #[serde(rename = "percentageMemoryUtilization", default, skip_serializing_if = "Option::is_none")]
     pub percentage_memory_utilization: Option<f64>,
     #[doc = "Whether machine is suitable for migration to Azure."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub suitability: Option<assessed_machine_properties::Suitability>,
     #[doc = "If machine is not ready to be migrated, this explains the reasons and mitigation steps."]
-    #[serde(rename = "suitabilityExplanation", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "suitabilityExplanation",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub suitability_explanation: Option<assessed_machine_properties::SuitabilityExplanation>,
     #[doc = "Time when this machine was created. Date-Time represented in ISO-8601 format."]
     #[serde(rename = "createdTimestamp", default, with = "azure_core::date::rfc3339::option")]
@@ -957,10 +987,15 @@ pub struct AssessedNetworkAdapter {
     #[serde(rename = "netGigabytesTransmittedPerMonth", default, skip_serializing_if = "Option::is_none")]
     pub net_gigabytes_transmitted_per_month: Option<f64>,
     #[doc = "Whether this adapter is suitable for Azure."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub suitability: Option<assessed_network_adapter::Suitability>,
     #[doc = "If network adapter is suitable, this explains the reasons and mitigation steps."]
-    #[serde(rename = "suitabilityExplanation", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "suitabilityExplanation",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub suitability_explanation: Option<assessed_network_adapter::SuitabilityExplanation>,
 }
 impl AssessedNetworkAdapter {
@@ -1084,31 +1119,34 @@ impl Assessment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssessmentProperties {
     #[doc = "Target Azure location for which the machines should be assessed. These enums are the same as used by Compute API."]
-    #[serde(rename = "azureLocation")]
+    #[serde(rename = "azureLocation", with = "azure_core::xml::text_content")]
     pub azure_location: assessment_properties::AzureLocation,
     #[doc = "Offer code according to which cost estimation is done."]
-    #[serde(rename = "azureOfferCode")]
+    #[serde(rename = "azureOfferCode", with = "azure_core::xml::text_content")]
     pub azure_offer_code: assessment_properties::AzureOfferCode,
     #[doc = "Pricing tier for Size evaluation."]
-    #[serde(rename = "azurePricingTier")]
+    #[serde(rename = "azurePricingTier", with = "azure_core::xml::text_content")]
     pub azure_pricing_tier: assessment_properties::AzurePricingTier,
     #[doc = "Storage Redundancy type offered by Azure."]
-    #[serde(rename = "azureStorageRedundancy")]
+    #[serde(rename = "azureStorageRedundancy", with = "azure_core::xml::text_content")]
     pub azure_storage_redundancy: assessment_properties::AzureStorageRedundancy,
     #[doc = "Scaling factor used over utilization data to add a performance buffer for new machines to be created in Azure. Min Value = 1.0, Max value = 1.9, Default = 1.3."]
     #[serde(rename = "scalingFactor")]
     pub scaling_factor: f64,
     #[doc = "Percentile of performance data used to recommend Azure size."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub percentile: assessment_properties::Percentile,
     #[doc = "Time range of performance data used to recommend a size."]
-    #[serde(rename = "timeRange")]
+    #[serde(rename = "timeRange", with = "azure_core::xml::text_content")]
     pub time_range: assessment_properties::TimeRange,
     #[doc = "User configurable setting that describes the status of the assessment."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub stage: assessment_properties::Stage,
     #[doc = "Currency to report prices in."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub currency: assessment_properties::Currency,
     #[doc = "AHUB discount on windows virtual machines."]
-    #[serde(rename = "azureHybridUseBenefit")]
+    #[serde(rename = "azureHybridUseBenefit", with = "azure_core::xml::text_content")]
     pub azure_hybrid_use_benefit: assessment_properties::AzureHybridUseBenefit,
     #[doc = "Custom discount percentage to be applied on final costs. Can be in the range [0, 100]."]
     #[serde(rename = "discountPercentage")]
@@ -1132,7 +1170,7 @@ pub struct AssessmentProperties {
     #[serde(rename = "monthlyStorageCost", default, skip_serializing_if = "Option::is_none")]
     pub monthly_storage_cost: Option<f64>,
     #[doc = "Whether the assessment has been created and is valid."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<assessment_properties::Status>,
     #[doc = "Number of assessed machines part of this assessment."]
     #[serde(rename = "numberOfMachines", default, skip_serializing_if = "Option::is_none")]
@@ -1929,7 +1967,12 @@ impl Machine {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachineProperties {
     #[doc = "Boot type of the machine."]
-    #[serde(rename = "bootType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "bootType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub boot_type: Option<machine_properties::BootType>,
     #[doc = "Container defined in the management solution that this machine is part of in the datacenter."]
     #[serde(rename = "datacenterContainer", default, skip_serializing_if = "Option::is_none")]
@@ -2197,13 +2240,23 @@ pub struct ProjectProperties {
     #[serde(rename = "updatedTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub updated_timestamp: Option<time::OffsetDateTime>,
     #[doc = "Reports whether project is under discovery."]
-    #[serde(rename = "discoveryStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "discoveryStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub discovery_status: Option<project_properties::DiscoveryStatus>,
     #[doc = "ARM ID of the Service Map workspace created by user."]
     #[serde(rename = "customerWorkspaceId", default, skip_serializing_if = "Option::is_none")]
     pub customer_workspace_id: Option<String>,
     #[doc = "Provisioning state of the project."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<project_properties::ProvisioningState>,
 }
 impl ProjectProperties {

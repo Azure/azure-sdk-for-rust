@@ -83,10 +83,20 @@ pub struct AcceptOwnershipStatusResponse {
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
     #[doc = "The accept ownership state of the resource."]
-    #[serde(rename = "acceptOwnershipState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "acceptOwnershipState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub accept_ownership_state: Option<AcceptOwnershipState>,
     #[doc = "The provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "UPN of the billing owner"]
     #[serde(rename = "billingOwner", default, skip_serializing_if = "Option::is_none")]
@@ -231,7 +241,7 @@ pub struct GetTenantPolicyListResponse {
 impl azure_core::Continuable for GetTenantPolicyListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GetTenantPolicyListResponse {
@@ -371,7 +381,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -458,7 +468,7 @@ pub struct PutAliasRequestProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The workload type of the subscription. It can be either Production or DevTest."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub workload: Option<Workload>,
     #[doc = "Billing scope of the subscription.\nFor CustomerLed and FieldLed - /billingAccounts/{billingAccountName}/billingProfiles/{billingProfileName}/invoiceSections/{invoiceSectionName}\nFor PartnerLed - /billingAccounts/{billingAccountName}/customers/{customerName}\nFor Legacy EA - /billingAccounts/{billingAccountName}/enrollmentAccounts/{enrollmentAccountName}"]
     #[serde(rename = "billingScope", default, skip_serializing_if = "Option::is_none")]
@@ -541,7 +551,7 @@ pub struct Subscription {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The subscription state. Possible values are Enabled, Warned, PastDue, Disabled, and Deleted."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<subscription::State>,
     #[doc = "The tenant ID. For example, 00000000-0000-0000-0000-000000000000."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -626,19 +636,29 @@ pub struct SubscriptionAliasResponseProperties {
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
     #[doc = "The provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<subscription_alias_response_properties::ProvisioningState>,
     #[doc = "Url to accept ownership of the subscription."]
     #[serde(rename = "acceptOwnershipUrl", default, skip_serializing_if = "Option::is_none")]
     pub accept_ownership_url: Option<String>,
     #[doc = "The accept ownership state of the resource."]
-    #[serde(rename = "acceptOwnershipState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "acceptOwnershipState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub accept_ownership_state: Option<AcceptOwnershipState>,
     #[doc = "Billing scope of the subscription.\nFor CustomerLed and FieldLed - /billingAccounts/{billingAccountName}/billingProfiles/{billingProfileName}/invoiceSections/{invoiceSectionName}\nFor PartnerLed - /billingAccounts/{billingAccountName}/customers/{customerName}\nFor Legacy EA - /billingAccounts/{billingAccountName}/enrollmentAccounts/{enrollmentAccountName}"]
     #[serde(rename = "billingScope", default, skip_serializing_if = "Option::is_none")]
     pub billing_scope: Option<BillingScope>,
     #[doc = "The workload type of the subscription. It can be either Production or DevTest."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub workload: Option<Workload>,
     #[doc = "Reseller Id"]
     #[serde(rename = "resellerId", default, skip_serializing_if = "Option::is_none")]
@@ -732,7 +752,7 @@ pub struct SubscriptionListResult {
 impl azure_core::Continuable for SubscriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SubscriptionListResult {
@@ -762,7 +782,12 @@ pub struct SubscriptionPolicies {
     #[serde(rename = "quotaId", default, skip_serializing_if = "Option::is_none")]
     pub quota_id: Option<String>,
     #[doc = "The subscription spending limit."]
-    #[serde(rename = "spendingLimit", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "spendingLimit",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub spending_limit: Option<subscription_policies::SpendingLimit>,
 }
 impl SubscriptionPolicies {
@@ -918,7 +943,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -927,7 +957,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

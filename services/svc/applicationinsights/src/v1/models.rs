@@ -807,7 +807,7 @@ pub struct EventsResultData {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The type of events to query; either a standard event type (`traces`, `customEvents`, `pageViews`, `requests`, `dependencies`, `exceptions`, `availabilityResults`) or `$all` to query across all event types."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: EventType,
     #[doc = "Count of the event"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1339,7 +1339,7 @@ pub mod metrics_post_body_schema {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Parameters {
         #[doc = "ID of the metric. This is either a standard AI metric, or an application-specific custom metric."]
-        #[serde(rename = "metricId")]
+        #[serde(rename = "metricId", with = "azure_core::xml::text_content")]
         pub metric_id: MetricId,
         #[doc = "The timespan over which to retrieve metric values. This is an ISO8601 time period value. If timespan is omitted, a default time range of `PT12H` (\"last 12 hours\") is used. The actual timespan that is queried may be adjusted by the server based. In all cases, the actual time span used for the query is included in the response."]
         #[serde(default, skip_serializing_if = "Option::is_none")]

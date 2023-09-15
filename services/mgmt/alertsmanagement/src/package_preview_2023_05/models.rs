@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Action {
     #[doc = "Action that should be applied."]
-    #[serde(rename = "actionType")]
+    #[serde(rename = "actionType", with = "azure_core::xml::text_content")]
     pub action_type: action::ActionType,
 }
 impl Action {
@@ -141,7 +141,7 @@ pub struct AlertProcessingRulesList {
 impl azure_core::Continuable for AlertProcessingRulesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertProcessingRulesList {
@@ -153,10 +153,10 @@ impl AlertProcessingRulesList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Condition {
     #[doc = "Field for a given condition."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub field: Option<condition::Field>,
     #[doc = "Operator for a given condition."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub operator: Option<condition::Operator>,
     #[doc = "List of values to match for a given condition."]
     #[serde(
@@ -285,7 +285,12 @@ pub struct CorrelateAlerts {
     #[doc = "The priority of this correlation."]
     pub priority: i32,
     #[doc = "Indicates how to handle child alerts notifications."]
-    #[serde(rename = "notificationsForCorrelatedAlerts", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "notificationsForCorrelatedAlerts",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub notifications_for_correlated_alerts: Option<correlate_alerts::NotificationsForCorrelatedAlerts>,
 }
 impl CorrelateAlerts {
@@ -479,7 +484,7 @@ impl PatchProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Recurrence {
     #[doc = "Specifies when the recurrence should be applied."]
-    #[serde(rename = "recurrenceType")]
+    #[serde(rename = "recurrenceType", with = "azure_core::xml::text_content")]
     pub recurrence_type: recurrence::RecurrenceType,
     #[doc = "Start time for recurrence."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
@@ -658,7 +663,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -667,7 +677,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

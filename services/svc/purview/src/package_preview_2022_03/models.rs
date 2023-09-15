@@ -7,7 +7,7 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AtlasAttributeDef {
     #[doc = "single-valued attribute or multi-valued attribute."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub cardinality: Option<Cardinality>,
     #[doc = "An array of constraints."]
     #[serde(
@@ -71,7 +71,7 @@ impl AtlasBaseModelObject {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AtlasBaseTypeDef {
     #[doc = "The enum of type category."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub category: Option<TypeCategory>,
     #[doc = "The created time of the record."]
     #[serde(rename = "createTime", default, skip_serializing_if = "Option::is_none")]
@@ -138,7 +138,12 @@ pub struct AtlasClassification {
     #[serde(rename = "entityGuid", default, skip_serializing_if = "Option::is_none")]
     pub entity_guid: Option<String>,
     #[doc = "Status of the entity - can be active or deleted. Deleted entities are not removed from Atlas store."]
-    #[serde(rename = "entityStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "entityStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub entity_status: Option<Status>,
     #[doc = "Determines if propagations will be removed on entity deletion."]
     #[serde(rename = "removePropagationsOnEntityDelete", default, skip_serializing_if = "Option::is_none")]
@@ -299,7 +304,7 @@ pub struct AtlasEntity {
     #[serde(rename = "relationshipAttributes", default, skip_serializing_if = "Option::is_none")]
     pub relationship_attributes: Option<serde_json::Value>,
     #[doc = "Status of the entity - can be active or deleted. Deleted entities are not removed from Atlas store."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<Status>,
     #[doc = "The update time of the record."]
     #[serde(rename = "updateTime", default, skip_serializing_if = "Option::is_none")]
@@ -424,7 +429,7 @@ pub struct AtlasEntityHeader {
     )]
     pub meanings: Vec<AtlasTermAssignmentHeader>,
     #[doc = "Status of the entity - can be active or deleted. Deleted entities are not removed from Atlas store."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<Status>,
 }
 impl AtlasEntityHeader {
@@ -551,7 +556,12 @@ pub struct AtlasExtraTypeDef {
     #[serde(rename = "endDef2", default, skip_serializing_if = "Option::is_none")]
     pub end_def2: Option<AtlasRelationshipEndDef>,
     #[doc = "The Relationship category determines the style of relationship around containment and lifecycle.\nUML terminology is used for the values.\n<p>\nASSOCIATION is a relationship with no containment. <br>\nCOMPOSITION and AGGREGATION are containment relationships.\n<p>\nThe difference being in the lifecycles of the container and its children. In the COMPOSITION case,\nthe children cannot exist without the container. For AGGREGATION, the life cycles\nof the container and children are totally independent."]
-    #[serde(rename = "relationshipCategory", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "relationshipCategory",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub relationship_category: Option<RelationshipCategory>,
     #[doc = "The label of the relationship."]
     #[serde(rename = "relationshipLabel", default, skip_serializing_if = "Option::is_none")]
@@ -739,7 +749,7 @@ pub struct AtlasGlossaryTerm {
     #[serde(rename = "updatedBy", default, skip_serializing_if = "Option::is_none")]
     pub updated_by: Option<String>,
     #[doc = "Status of the AtlasGlossaryTerm"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<TermStatus>,
     #[doc = "An array of resource link for term"]
     #[serde(
@@ -904,7 +914,12 @@ pub struct AtlasLineageInfo {
     #[serde(rename = "childrenCount", default, skip_serializing_if = "Option::is_none")]
     pub children_count: Option<i32>,
     #[doc = "The enum of lineage direction."]
-    #[serde(rename = "lineageDirection", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lineageDirection",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lineage_direction: Option<LineageDirection>,
     #[doc = "An array of parentRelations relations."]
     #[serde(
@@ -986,7 +1001,12 @@ pub struct AtlasRelatedObjectId {
     #[serde(rename = "displayText", default, skip_serializing_if = "Option::is_none")]
     pub display_text: Option<String>,
     #[doc = "Status of the entity - can be active or deleted. Deleted entities are not removed from Atlas store."]
-    #[serde(rename = "entityStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "entityStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub entity_status: Option<Status>,
     #[serde(rename = "relationshipType", default, skip_serializing_if = "Option::is_none")]
     pub relationship_type: Option<String>,
@@ -997,7 +1017,12 @@ pub struct AtlasRelatedObjectId {
     #[serde(rename = "relationshipGuid", default, skip_serializing_if = "Option::is_none")]
     pub relationship_guid: Option<String>,
     #[doc = "The enum of relationship status."]
-    #[serde(rename = "relationshipStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "relationshipStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub relationship_status: Option<StatusAtlasRelationship>,
 }
 impl AtlasRelatedObjectId {
@@ -1024,7 +1049,7 @@ pub struct AtlasRelatedTermHeader {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
     #[doc = "The status of term relationship."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<AtlasTermRelationshipStatus>,
     #[doc = "The steward of the term."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1068,7 +1093,7 @@ pub struct AtlasRelationship {
     #[serde(rename = "provenanceType", default, skip_serializing_if = "Option::is_none")]
     pub provenance_type: Option<f64>,
     #[doc = "The enum of relationship status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<StatusAtlasRelationship>,
     #[doc = "The update time of the record."]
     #[serde(rename = "updateTime", default, skip_serializing_if = "Option::is_none")]
@@ -1114,7 +1139,12 @@ pub struct AtlasRelationshipDef {
     #[serde(rename = "endDef2", default, skip_serializing_if = "Option::is_none")]
     pub end_def2: Option<AtlasRelationshipEndDef>,
     #[doc = "The Relationship category determines the style of relationship around containment and lifecycle.\nUML terminology is used for the values.\n<p>\nASSOCIATION is a relationship with no containment. <br>\nCOMPOSITION and AGGREGATION are containment relationships.\n<p>\nThe difference being in the lifecycles of the container and its children. In the COMPOSITION case,\nthe children cannot exist without the container. For AGGREGATION, the life cycles\nof the container and children are totally independent."]
-    #[serde(rename = "relationshipCategory", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "relationshipCategory",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub relationship_category: Option<RelationshipCategory>,
     #[doc = "The label of the relationship."]
     #[serde(rename = "relationshipLabel", default, skip_serializing_if = "Option::is_none")]
@@ -1129,7 +1159,7 @@ impl AtlasRelationshipDef {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AtlasRelationshipEndDef {
     #[doc = "single-valued attribute or multi-valued attribute."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub cardinality: Option<Cardinality>,
     #[doc = "The description of the relationship end definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1229,7 +1259,7 @@ pub struct AtlasTermAssignmentHeader {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
     #[doc = "The status of terms assignment."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<AtlasTermAssignmentStatus>,
     #[doc = "The steward of the term."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1313,7 +1343,7 @@ pub struct AtlasTermCategorizationHeader {
     #[serde(rename = "relationGuid", default, skip_serializing_if = "Option::is_none")]
     pub relation_guid: Option<String>,
     #[doc = "The status of term relationship."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<AtlasTermRelationshipStatus>,
 }
 impl AtlasTermCategorizationHeader {
@@ -1386,7 +1416,7 @@ impl AtlasTypeDef {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AtlasTypeDefHeader {
     #[doc = "The enum of type category."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub category: Option<TypeCategory>,
     #[doc = "The GUID of the type definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1814,7 +1844,7 @@ pub struct ImportCsvOperation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "Enum of the status of import csv operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<ImportCsvOperationStatus>,
     #[doc = "The created time of the record."]
     #[serde(rename = "createTime", default, skip_serializing_if = "Option::is_none")]
@@ -1908,7 +1938,12 @@ pub struct ImportInfo {
     #[serde(rename = "childObjectName", default, skip_serializing_if = "Option::is_none")]
     pub child_object_name: Option<String>,
     #[doc = "ImportStatus"]
-    #[serde(rename = "importStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "importStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub import_status: Option<ImportStatus>,
     #[doc = "parentObjectName"]
     #[serde(rename = "parentObjectName", default, skip_serializing_if = "Option::is_none")]
@@ -2055,7 +2090,12 @@ pub struct NumberFormat {
     #[serde(rename = "percentInstance", default, skip_serializing_if = "Option::is_none")]
     pub percent_instance: Box<Option<NumberFormat>>,
     #[doc = "The enum of rounding mode."]
-    #[serde(rename = "roundingMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "roundingMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub rounding_mode: Option<RoundingMode>,
 }
 impl NumberFormat {
@@ -2080,7 +2120,12 @@ pub struct PList {
     #[serde(rename = "sortBy", default, skip_serializing_if = "Option::is_none")]
     pub sort_by: Option<String>,
     #[doc = "to specify whether the result should be sorted? If yes, whether asc or desc."]
-    #[serde(rename = "sortType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sortType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub sort_type: Option<SortType>,
     #[doc = "The start index of the page."]
     #[serde(rename = "startIndex", default, skip_serializing_if = "Option::is_none")]

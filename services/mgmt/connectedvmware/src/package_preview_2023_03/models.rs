@@ -151,7 +151,12 @@ pub struct ClusterProperties {
     )]
     pub network_ids: Vec<String>,
     #[doc = "The current deployment state of resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ResourceProvisioningState>,
 }
 impl ClusterProperties {
@@ -171,7 +176,7 @@ pub struct ClustersList {
 impl azure_core::Continuable for ClustersList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClustersList {
@@ -300,7 +305,12 @@ pub struct DatastoreProperties {
     #[serde(rename = "freeSpaceGB", default, skip_serializing_if = "Option::is_none")]
     pub free_space_gb: Option<i64>,
     #[doc = "The current deployment state of resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ResourceProvisioningState>,
 }
 impl DatastoreProperties {
@@ -320,7 +330,7 @@ pub struct DatastoresList {
 impl azure_core::Continuable for DatastoresList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DatastoresList {
@@ -592,7 +602,7 @@ pub struct GuestAgentList {
 impl azure_core::Continuable for GuestAgentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GuestAgentList {
@@ -607,7 +617,7 @@ pub struct GuestAgentProfile {
     #[serde(rename = "vmUuid", default, skip_serializing_if = "Option::is_none")]
     pub vm_uuid: Option<String>,
     #[doc = "The status of the hybrid machine agent."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<guest_agent_profile::Status>,
     #[doc = "The time of the last status change."]
     #[serde(rename = "lastStatusChange", default, with = "azure_core::date::rfc3339::option")]
@@ -705,7 +715,12 @@ pub struct GuestAgentProperties {
     #[serde(rename = "httpProxyConfig", default, skip_serializing_if = "Option::is_none")]
     pub http_proxy_config: Option<HttpProxyConfiguration>,
     #[doc = "Defines the different types of operations for guest agent."]
-    #[serde(rename = "provisioningAction", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningAction",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_action: Option<ProvisioningAction>,
     #[doc = "Gets or sets the guest agent status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -721,7 +736,12 @@ pub struct GuestAgentProperties {
     )]
     pub statuses: Vec<ResourceStatus>,
     #[doc = "The current deployment state of resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ResourceProvisioningState>,
 }
 impl GuestAgentProperties {
@@ -889,7 +909,12 @@ pub struct HostProperties {
     )]
     pub network_ids: Vec<String>,
     #[doc = "The current deployment state of resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ResourceProvisioningState>,
 }
 impl HostProperties {
@@ -909,7 +934,7 @@ pub struct HostsList {
 impl azure_core::Continuable for HostsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HostsList {
@@ -957,7 +982,7 @@ pub struct HybridIdentityMetadataList {
 impl azure_core::Continuable for HybridIdentityMetadataList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HybridIdentityMetadataList {
@@ -978,7 +1003,12 @@ pub struct HybridIdentityMetadataProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
     #[doc = "The current deployment state of resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ResourceProvisioningState>,
 }
 impl HybridIdentityMetadataProperties {
@@ -1047,7 +1077,7 @@ pub struct Identity {
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     #[doc = "The type of managed service identity."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: identity::Type,
 }
 impl Identity {
@@ -1127,7 +1157,12 @@ pub struct InfrastructureProfile {
     #[serde(rename = "smbiosUuid", default, skip_serializing_if = "Option::is_none")]
     pub smbios_uuid: Option<String>,
     #[doc = "Firmware type"]
-    #[serde(rename = "firmwareType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "firmwareType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub firmware_type: Option<FirmwareType>,
     #[doc = "Gets the name of the corresponding resource in Kubernetes."]
     #[serde(rename = "customResourceName", default, skip_serializing_if = "Option::is_none")]
@@ -1168,7 +1203,12 @@ pub struct InventoryItemDetails {
     #[serde(rename = "moName", default, skip_serializing_if = "Option::is_none")]
     pub mo_name: Option<String>,
     #[doc = "The inventory type."]
-    #[serde(rename = "inventoryType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "inventoryType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub inventory_type: Option<InventoryType>,
 }
 impl InventoryItemDetails {
@@ -1180,7 +1220,7 @@ impl InventoryItemDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InventoryItemProperties {
     #[doc = "The inventory type."]
-    #[serde(rename = "inventoryType")]
+    #[serde(rename = "inventoryType", with = "azure_core::xml::text_content")]
     pub inventory_type: InventoryType,
     #[doc = "Gets or sets the tracked resource id corresponding to the inventory resource."]
     #[serde(rename = "managedResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -1192,7 +1232,12 @@ pub struct InventoryItemProperties {
     #[serde(rename = "moName", default, skip_serializing_if = "Option::is_none")]
     pub mo_name: Option<String>,
     #[doc = "The current deployment state of resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ResourceProvisioningState>,
 }
 impl InventoryItemProperties {
@@ -1218,7 +1263,7 @@ pub struct InventoryItemsList {
 impl azure_core::Continuable for InventoryItemsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InventoryItemsList {
@@ -1366,7 +1411,7 @@ pub mod machine_extension_instance_view {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub code: Option<String>,
         #[doc = "The level code."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub level: Option<status::Level>,
         #[doc = "The short localizable label for the status."]
         #[serde(rename = "displayStatus", default, skip_serializing_if = "Option::is_none")]
@@ -1541,7 +1586,7 @@ pub struct MachineExtensionsListResult {
 impl azure_core::Continuable for MachineExtensionsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MachineExtensionsListResult {
@@ -1624,10 +1669,20 @@ pub struct NetworkInterface {
     #[serde(rename = "networkId", default, skip_serializing_if = "Option::is_none")]
     pub network_id: Option<String>,
     #[doc = "NIC type"]
-    #[serde(rename = "nicType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "nicType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub nic_type: Option<NicType>,
     #[doc = "Defines the options for power on boot."]
-    #[serde(rename = "powerOnBoot", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "powerOnBoot",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub power_on_boot: Option<PowerOnBootOption>,
     #[doc = "Gets or sets the vCenter MoRef (Managed Object Reference) ID of the virtual network\r\nthat the nic is connected to."]
     #[serde(rename = "networkMoRefId", default, skip_serializing_if = "Option::is_none")]
@@ -1657,10 +1712,20 @@ pub struct NetworkInterfaceUpdate {
     #[serde(rename = "networkId", default, skip_serializing_if = "Option::is_none")]
     pub network_id: Option<String>,
     #[doc = "NIC type"]
-    #[serde(rename = "nicType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "nicType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub nic_type: Option<NicType>,
     #[doc = "Defines the options for power on boot."]
-    #[serde(rename = "powerOnBoot", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "powerOnBoot",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub power_on_boot: Option<PowerOnBootOption>,
     #[doc = "Gets or sets the device key value."]
     #[serde(rename = "deviceKey", default, skip_serializing_if = "Option::is_none")]
@@ -1727,7 +1792,12 @@ impl NicIpAddressSettings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NicIpSettings {
     #[doc = "IP address allocation method."]
-    #[serde(rename = "allocationMethod", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "allocationMethod",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub allocation_method: Option<IpAddressAllocationMethod>,
     #[doc = "Gets or sets the dns servers."]
     #[serde(
@@ -1789,7 +1859,12 @@ pub struct OsProfile {
     #[serde(rename = "allowExtensionOperations", default, skip_serializing_if = "Option::is_none")]
     pub allow_extension_operations: Option<bool>,
     #[doc = "Defines the different types of VM guest operating systems."]
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "osType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub os_type: Option<OsType>,
     #[doc = "Gets or sets os name."]
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
@@ -1858,7 +1933,12 @@ pub struct OsProfileForVmInstance {
     #[serde(rename = "guestId", default, skip_serializing_if = "Option::is_none")]
     pub guest_id: Option<String>,
     #[doc = "Defines the different types of VM guest operating systems."]
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "osType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub os_type: Option<OsType>,
     #[doc = "Gets or sets os sku."]
     #[serde(rename = "osSku", default, skip_serializing_if = "Option::is_none")]
@@ -2256,7 +2336,12 @@ pub struct ResourcePoolProperties {
     )]
     pub statuses: Vec<ResourceStatus>,
     #[doc = "The current deployment state of resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ResourceProvisioningState>,
 }
 impl ResourcePoolProperties {
@@ -2276,7 +2361,7 @@ pub struct ResourcePoolsList {
 impl azure_core::Continuable for ResourcePoolsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourcePoolsList {
@@ -2560,7 +2645,12 @@ pub struct VCenterProperties {
     )]
     pub statuses: Vec<ResourceStatus>,
     #[doc = "The current deployment state of resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ResourceProvisioningState>,
 }
 impl VCenterProperties {
@@ -2591,7 +2681,7 @@ pub struct VCentersList {
 impl azure_core::Continuable for VCentersList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VCentersList {
@@ -2633,7 +2723,12 @@ pub struct VirtualDisk {
     #[serde(rename = "deviceKey", default, skip_serializing_if = "Option::is_none")]
     pub device_key: Option<i32>,
     #[doc = "Defines the different types of disk modes."]
-    #[serde(rename = "diskMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "diskMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub disk_mode: Option<DiskMode>,
     #[doc = "Gets or sets the controller id."]
     #[serde(rename = "controllerKey", default, skip_serializing_if = "Option::is_none")]
@@ -2645,7 +2740,12 @@ pub struct VirtualDisk {
     #[serde(rename = "deviceName", default, skip_serializing_if = "Option::is_none")]
     pub device_name: Option<String>,
     #[doc = "Defines the different types of disks."]
-    #[serde(rename = "diskType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "diskType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub disk_type: Option<DiskType>,
 }
 impl VirtualDisk {
@@ -2666,7 +2766,12 @@ pub struct VirtualDiskUpdate {
     #[serde(rename = "deviceKey", default, skip_serializing_if = "Option::is_none")]
     pub device_key: Option<i32>,
     #[doc = "Defines the different types of disk modes."]
-    #[serde(rename = "diskMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "diskMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub disk_mode: Option<DiskMode>,
     #[doc = "Gets or sets the controller id."]
     #[serde(rename = "controllerKey", default, skip_serializing_if = "Option::is_none")]
@@ -2678,7 +2783,12 @@ pub struct VirtualDiskUpdate {
     #[serde(rename = "deviceName", default, skip_serializing_if = "Option::is_none")]
     pub device_name: Option<String>,
     #[doc = "Defines the different types of disks."]
-    #[serde(rename = "diskType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "diskType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub disk_type: Option<DiskType>,
 }
 impl VirtualDiskUpdate {
@@ -2738,7 +2848,7 @@ impl VirtualMachine {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineAssessPatchesResult {
     #[doc = "The overall success or failure status of the operation. It remains \"InProgress\" until the operation completes. At that point it will become \"Unknown\", \"Failed\", \"Succeeded\", or \"CompletedWithWarnings.\""]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<virtual_machine_assess_patches_result::Status>,
     #[doc = "The activity ID of the operation that produced this result."]
     #[serde(rename = "assessmentActivityId", default, skip_serializing_if = "Option::is_none")]
@@ -2756,13 +2866,28 @@ pub struct VirtualMachineAssessPatchesResult {
     #[serde(rename = "lastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_date_time: Option<time::OffsetDateTime>,
     #[doc = "Indicates if operation was triggered by user or by platform."]
-    #[serde(rename = "startedBy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "startedBy",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub started_by: Option<virtual_machine_assess_patches_result::StartedBy>,
     #[doc = "Specifies the patch service used for the operation."]
-    #[serde(rename = "patchServiceUsed", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "patchServiceUsed",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub patch_service_used: Option<virtual_machine_assess_patches_result::PatchServiceUsed>,
     #[doc = "The operating system type of the machine."]
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "osType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub os_type: Option<virtual_machine_assess_patches_result::OsType>,
     #[doc = "The error detail."]
     #[serde(rename = "errorDetails", default, skip_serializing_if = "Option::is_none")]
@@ -2949,7 +3074,7 @@ pub struct VirtualMachineInstallPatchesParameters {
     #[serde(rename = "maximumDuration")]
     pub maximum_duration: String,
     #[doc = "Defines when it is acceptable to reboot a VM during a software update operation."]
-    #[serde(rename = "rebootSetting")]
+    #[serde(rename = "rebootSetting", with = "azure_core::xml::text_content")]
     pub reboot_setting: virtual_machine_install_patches_parameters::RebootSetting,
     #[doc = "Input for InstallPatches on a Windows VM, as directly received by the API"]
     #[serde(rename = "windowsParameters", default, skip_serializing_if = "Option::is_none")]
@@ -3014,13 +3139,18 @@ pub mod virtual_machine_install_patches_parameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineInstallPatchesResult {
     #[doc = "The overall success or failure status of the operation. It remains \"InProgress\" until the operation completes. At that point it will become \"Failed\", \"Succeeded\", \"Unknown\" or \"CompletedWithWarnings.\""]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<virtual_machine_install_patches_result::Status>,
     #[doc = "The activity ID of the operation that produced this result."]
     #[serde(rename = "installationActivityId", default, skip_serializing_if = "Option::is_none")]
     pub installation_activity_id: Option<String>,
     #[doc = "The reboot state of the VM following completion of the operation."]
-    #[serde(rename = "rebootStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rebootStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub reboot_status: Option<virtual_machine_install_patches_result::RebootStatus>,
     #[doc = "Whether the operation ran out of time before it completed all its intended actions."]
     #[serde(rename = "maintenanceWindowExceeded", default, skip_serializing_if = "Option::is_none")]
@@ -3047,13 +3177,28 @@ pub struct VirtualMachineInstallPatchesResult {
     #[serde(rename = "lastModifiedDateTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_date_time: Option<time::OffsetDateTime>,
     #[doc = "Indicates if operation was triggered by user or by platform."]
-    #[serde(rename = "startedBy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "startedBy",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub started_by: Option<virtual_machine_install_patches_result::StartedBy>,
     #[doc = "Specifies the patch service used for the operation."]
-    #[serde(rename = "patchServiceUsed", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "patchServiceUsed",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub patch_service_used: Option<virtual_machine_install_patches_result::PatchServiceUsed>,
     #[doc = "The operating system type of the machine."]
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "osType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub os_type: Option<virtual_machine_install_patches_result::OsType>,
     #[doc = "The error detail."]
     #[serde(rename = "errorDetails", default, skip_serializing_if = "Option::is_none")]
@@ -3333,7 +3478,12 @@ pub struct VirtualMachineInstanceProperties {
     )]
     pub statuses: Vec<ResourceStatus>,
     #[doc = "The current deployment state of resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ResourceProvisioningState>,
     #[doc = "Gets or sets a unique identifier for the vm resource."]
     #[serde(rename = "resourceUid", default, skip_serializing_if = "Option::is_none")]
@@ -3386,7 +3536,7 @@ pub struct VirtualMachineInstancesList {
 impl azure_core::Continuable for VirtualMachineInstancesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualMachineInstancesList {
@@ -3400,7 +3550,12 @@ pub struct VirtualMachineInventoryItem {
     #[serde(flatten)]
     pub inventory_item_properties: InventoryItemProperties,
     #[doc = "Defines the different types of VM guest operating systems."]
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "osType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub os_type: Option<OsType>,
     #[doc = "Gets or sets os name."]
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
@@ -3516,7 +3671,12 @@ pub struct VirtualMachineProperties {
     #[serde(rename = "smbiosUuid", default, skip_serializing_if = "Option::is_none")]
     pub smbios_uuid: Option<String>,
     #[doc = "Firmware type"]
-    #[serde(rename = "firmwareType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "firmwareType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub firmware_type: Option<FirmwareType>,
     #[doc = "Gets the power state of the virtual machine."]
     #[serde(rename = "powerState", default, skip_serializing_if = "Option::is_none")]
@@ -3535,7 +3695,12 @@ pub struct VirtualMachineProperties {
     )]
     pub statuses: Vec<ResourceStatus>,
     #[doc = "The current deployment state of resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ResourceProvisioningState>,
     #[doc = "Gets or sets a unique identifier for the vm resource."]
     #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
@@ -3605,7 +3770,12 @@ pub struct VirtualMachineTemplateInventoryItem {
     #[serde(rename = "numCoresPerSocket", default, skip_serializing_if = "Option::is_none")]
     pub num_cores_per_socket: Option<i32>,
     #[doc = "Defines the different types of VM guest operating systems."]
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "osType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub os_type: Option<OsType>,
     #[doc = "Gets or sets os name."]
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
@@ -3663,7 +3833,12 @@ pub struct VirtualMachineTemplateProperties {
     #[serde(rename = "numCoresPerSocket", default, skip_serializing_if = "Option::is_none")]
     pub num_cores_per_socket: Option<i32>,
     #[doc = "Defines the different types of VM guest operating systems."]
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "osType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub os_type: Option<OsType>,
     #[doc = "Gets or sets os name."]
     #[serde(rename = "osName", default, skip_serializing_if = "Option::is_none")]
@@ -3696,7 +3871,12 @@ pub struct VirtualMachineTemplateProperties {
     #[serde(rename = "toolsVersion", default, skip_serializing_if = "Option::is_none")]
     pub tools_version: Option<String>,
     #[doc = "Firmware type"]
-    #[serde(rename = "firmwareType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "firmwareType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub firmware_type: Option<FirmwareType>,
     #[doc = "The resource status information."]
     #[serde(
@@ -3706,7 +3886,12 @@ pub struct VirtualMachineTemplateProperties {
     )]
     pub statuses: Vec<ResourceStatus>,
     #[doc = "The current deployment state of resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ResourceProvisioningState>,
 }
 impl VirtualMachineTemplateProperties {
@@ -3726,7 +3911,7 @@ pub struct VirtualMachineTemplatesList {
 impl azure_core::Continuable for VirtualMachineTemplatesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualMachineTemplatesList {
@@ -3788,7 +3973,7 @@ pub struct VirtualMachinesList {
 impl azure_core::Continuable for VirtualMachinesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualMachinesList {
@@ -3880,7 +4065,12 @@ pub struct VirtualNetworkProperties {
     )]
     pub statuses: Vec<ResourceStatus>,
     #[doc = "The current deployment state of resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ResourceProvisioningState>,
 }
 impl VirtualNetworkProperties {
@@ -3900,7 +4090,7 @@ pub struct VirtualNetworksList {
 impl azure_core::Continuable for VirtualNetworksList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualNetworksList {
@@ -3912,7 +4102,12 @@ impl VirtualNetworksList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualScsiController {
     #[doc = "Defines the different types of SCSI controllers."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<ScsiControllerType>,
     #[doc = "Gets or sets the key of the controller."]
     #[serde(rename = "controllerKey", default, skip_serializing_if = "Option::is_none")]
@@ -3924,7 +4119,7 @@ pub struct VirtualScsiController {
     #[serde(rename = "scsiCtlrUnitNumber", default, skip_serializing_if = "Option::is_none")]
     pub scsi_ctlr_unit_number: Option<i32>,
     #[doc = "Defines the sharing mode for sharing the SCSI bus."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub sharing: Option<VirtualScsiSharing>,
 }
 impl VirtualScsiController {
@@ -4002,7 +4197,7 @@ pub struct VmInstanceHybridIdentityMetadataList {
 impl azure_core::Continuable for VmInstanceHybridIdentityMetadataList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VmInstanceHybridIdentityMetadataList {
@@ -4020,7 +4215,12 @@ pub struct VmInstanceHybridIdentityMetadataProperties {
     #[serde(rename = "publicKey", default, skip_serializing_if = "Option::is_none")]
     pub public_key: Option<String>,
     #[doc = "The current deployment state of resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ResourceProvisioningState>,
 }
 impl VmInstanceHybridIdentityMetadataProperties {
@@ -4121,7 +4321,7 @@ pub struct OperationsList {
 impl azure_core::Continuable for OperationsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationsList {
@@ -4136,7 +4336,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -4145,7 +4350,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

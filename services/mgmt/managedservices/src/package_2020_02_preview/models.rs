@@ -124,7 +124,7 @@ impl ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JustInTimeAccessPolicy {
     #[doc = "The multi-factor authorization provider to be used for just-in-time access requests."]
-    #[serde(rename = "multiFactorAuthProvider")]
+    #[serde(rename = "multiFactorAuthProvider", with = "azure_core::xml::text_content")]
     pub multi_factor_auth_provider: just_in_time_access_policy::MultiFactorAuthProvider,
     #[doc = "The maximum access duration in ISO 8601 format for just-in-time access requests."]
     #[serde(rename = "maximumActivationDuration", default, skip_serializing_if = "Option::is_none")]
@@ -232,7 +232,7 @@ pub struct MarketplaceRegistrationDefinitionList {
 impl azure_core::Continuable for MarketplaceRegistrationDefinitionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MarketplaceRegistrationDefinitionList {
@@ -393,7 +393,7 @@ pub struct RegistrationAssignmentList {
 impl azure_core::Continuable for RegistrationAssignmentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RegistrationAssignmentList {
@@ -408,7 +408,12 @@ pub struct RegistrationAssignmentProperties {
     #[serde(rename = "registrationDefinitionId")]
     pub registration_definition_id: String,
     #[doc = "The current provisioning state of the registration assignment."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<registration_assignment_properties::ProvisioningState>,
     #[doc = "The registration definition associated with the registration assignment."]
     #[serde(rename = "registrationDefinition", default, skip_serializing_if = "Option::is_none")]
@@ -533,7 +538,12 @@ pub mod registration_assignment_properties {
             #[serde(rename = "registrationDefinitionName", default, skip_serializing_if = "Option::is_none")]
             pub registration_definition_name: Option<String>,
             #[doc = "The current provisioning state of the registration definition."]
-            #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+            #[serde(
+                rename = "provisioningState",
+                default,
+                skip_serializing_if = "Option::is_none",
+                with = "azure_core::xml::text_content"
+            )]
             pub provisioning_state: Option<properties::ProvisioningState>,
             #[doc = "The identifier of the managed tenant."]
             #[serde(rename = "manageeTenantId", default, skip_serializing_if = "Option::is_none")]
@@ -656,7 +666,7 @@ pub struct RegistrationDefinitionList {
 impl azure_core::Continuable for RegistrationDefinitionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RegistrationDefinitionList {
@@ -687,7 +697,12 @@ pub struct RegistrationDefinitionProperties {
     #[serde(rename = "managedByTenantId")]
     pub managed_by_tenant_id: String,
     #[doc = "The current provisioning state of the registration definition."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<registration_definition_properties::ProvisioningState>,
     #[doc = "The identifier of the managed tenant."]
     #[serde(rename = "manageeTenantId", default, skip_serializing_if = "Option::is_none")]

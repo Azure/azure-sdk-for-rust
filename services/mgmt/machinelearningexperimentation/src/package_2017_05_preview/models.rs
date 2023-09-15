@@ -37,7 +37,7 @@ pub struct AccountListResult {
 impl azure_core::Continuable for AccountListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccountListResult {
@@ -76,7 +76,12 @@ pub struct AccountProperties {
     #[serde(rename = "storageAccount")]
     pub storage_account: StorageAccountProperties,
     #[doc = "The current deployment state of team account resource. The provisioningState is to indicate states for resource provisioning."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<account_properties::ProvisioningState>,
 }
 impl AccountProperties {
@@ -257,7 +262,7 @@ pub struct ProjectListResult {
 impl azure_core::Continuable for ProjectListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProjectListResult {
@@ -290,7 +295,12 @@ pub struct ProjectProperties {
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
     pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "The current deployment state of project resource. The provisioningState is to indicate states for resource provisioning."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<project_properties::ProvisioningState>,
 }
 impl ProjectProperties {
@@ -433,7 +443,7 @@ pub struct WorkspaceListResult {
 impl azure_core::Continuable for WorkspaceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceListResult {
@@ -460,7 +470,12 @@ pub struct WorkspaceProperties {
     #[serde(rename = "creationDate", default, with = "azure_core::date::rfc3339::option")]
     pub creation_date: Option<time::OffsetDateTime>,
     #[doc = "The current deployment state of team account workspace resource. The provisioningState is to indicate states for resource provisioning."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<workspace_properties::ProvisioningState>,
 }
 impl WorkspaceProperties {

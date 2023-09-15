@@ -132,7 +132,7 @@ pub struct AppRoleAssignmentListResult {
 impl azure_core::Continuable for AppRoleAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AppRoleAssignmentListResult {
@@ -183,7 +183,12 @@ pub struct Application {
     #[serde(rename = "errorUrl", default, skip_serializing_if = "Option::is_none")]
     pub error_url: Option<String>,
     #[doc = "Configures the groups claim issued in a user or OAuth 2.0 access token that the app expects."]
-    #[serde(rename = "groupMembershipClaims", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "groupMembershipClaims",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub group_membership_claims: Option<GroupMembershipClaims>,
     #[doc = "The home page of the application."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -371,7 +376,12 @@ pub struct ApplicationBase {
     #[serde(rename = "errorUrl", default, skip_serializing_if = "Option::is_none")]
     pub error_url: Option<String>,
     #[doc = "Configures the groups claim issued in a user or OAuth 2.0 access token that the app expects."]
-    #[serde(rename = "groupMembershipClaims", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "groupMembershipClaims",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub group_membership_claims: Option<GroupMembershipClaims>,
     #[doc = "The home page of the application."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -525,7 +535,7 @@ pub struct ApplicationListResult {
 impl azure_core::Continuable for ApplicationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationListResult {
@@ -621,7 +631,7 @@ pub struct DirectoryObjectListResult {
 impl azure_core::Continuable for DirectoryObjectListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DirectoryObjectListResult {
@@ -751,13 +761,13 @@ pub struct GroupCreateParameters {
     #[serde(rename = "displayName")]
     pub display_name: String,
     #[doc = "Whether the group is mail-enabled. Must be false. This is because only pure security groups can be created using the Graph API."]
-    #[serde(rename = "mailEnabled")]
+    #[serde(rename = "mailEnabled", with = "azure_core::xml::text_content")]
     pub mail_enabled: group_create_parameters::MailEnabled,
     #[doc = "Mail nickname"]
     #[serde(rename = "mailNickname")]
     pub mail_nickname: String,
     #[doc = "Whether the group is a security group. Must be true. This is because only pure security groups can be created using the Graph API."]
-    #[serde(rename = "securityEnabled")]
+    #[serde(rename = "securityEnabled", with = "azure_core::xml::text_content")]
     pub security_enabled: group_create_parameters::SecurityEnabled,
 }
 impl GroupCreateParameters {
@@ -835,7 +845,7 @@ pub struct GroupListResult {
 impl azure_core::Continuable for GroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GroupListResult {
@@ -1011,7 +1021,12 @@ pub struct OAuth2PermissionGrant {
     #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,
     #[doc = "Indicates if consent was provided by the administrator (on behalf of the organization) or by an individual."]
-    #[serde(rename = "consentType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "consentType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub consent_type: Option<o_auth2_permission_grant::ConsentType>,
     #[doc = "When consent type is Principal, this property specifies the id of the user that granted consent and applies only for that user."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -1091,7 +1106,7 @@ pub struct OAuth2PermissionGrantListResult {
 impl azure_core::Continuable for OAuth2PermissionGrantListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OAuth2PermissionGrantListResult {
@@ -1545,7 +1560,7 @@ pub struct ServicePrincipalListResult {
 impl azure_core::Continuable for ServicePrincipalListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServicePrincipalListResult {
@@ -1612,7 +1627,12 @@ pub struct User {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub surname: Option<String>,
     #[doc = "A string value that can be used to classify user types in your directory, such as 'Member' and 'Guest'."]
-    #[serde(rename = "userType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "userType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub user_type: Option<user::UserType>,
     #[doc = "Whether the account is enabled."]
     #[serde(rename = "accountEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -1711,7 +1731,12 @@ pub struct UserBase {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub surname: Option<String>,
     #[doc = "A string value that can be used to classify user types in your directory, such as 'Member' and 'Guest'."]
-    #[serde(rename = "userType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "userType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub user_type: Option<user_base::UserType>,
 }
 impl UserBase {
@@ -1853,7 +1878,7 @@ pub struct UserListResult {
 impl azure_core::Continuable for UserListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UserListResult {

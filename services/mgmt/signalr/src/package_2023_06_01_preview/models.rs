@@ -73,7 +73,7 @@ pub struct CustomCertificateList {
 impl azure_core::Continuable for CustomCertificateList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomCertificateList {
@@ -85,7 +85,12 @@ impl CustomCertificateList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomCertificateProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Base uri of the KeyVault that stores certificate."]
     #[serde(rename = "keyVaultBaseUri")]
@@ -140,7 +145,7 @@ pub struct CustomDomainList {
 impl azure_core::Continuable for CustomDomainList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomDomainList {
@@ -152,7 +157,12 @@ impl CustomDomainList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomDomainProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The custom domain name."]
     #[serde(rename = "domainName")]
@@ -390,7 +400,12 @@ impl LogSpecification {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedIdentity {
     #[doc = "Represents the identity type: systemAssigned, userAssigned, None"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<ManagedIdentityType>,
     #[doc = "Get or set the user assigned identities"]
     #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
@@ -612,7 +627,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -691,7 +706,7 @@ pub struct PrivateEndpointConnectionList {
 impl azure_core::Continuable for PrivateEndpointConnectionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionList {
@@ -703,7 +718,12 @@ impl PrivateEndpointConnectionList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Private endpoint"]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
@@ -756,7 +776,7 @@ pub struct PrivateLinkResourceList {
 impl azure_core::Continuable for PrivateLinkResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkResourceList {
@@ -804,7 +824,7 @@ impl PrivateLinkResourceProperties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "Indicates whether the connection has been Approved/Rejected/Removed by the owner of the service."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<PrivateLinkServiceConnectionStatus>,
     #[doc = "The reason for approval/rejection of the connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -925,7 +945,12 @@ impl ProxyResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegenerateKeyParameters {
     #[doc = "The type of access key."]
-    #[serde(rename = "keyType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "keyType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub key_type: Option<KeyType>,
 }
 impl RegenerateKeyParameters {
@@ -969,7 +994,7 @@ pub struct ReplicaList {
 impl azure_core::Continuable for ReplicaList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ReplicaList {
@@ -980,7 +1005,12 @@ impl ReplicaList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicaProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl ReplicaProperties {
@@ -1058,7 +1088,7 @@ pub struct ResourceSku {
     #[doc = "The name of the SKU. Required.\r\n\r\nAllowed values: Standard_S1, Free_F1, Premium_P1"]
     pub name: String,
     #[doc = "Optional tier of this particular SKU. 'Standard' or 'Free'. \r\n\r\n`Basic` is deprecated, use `Standard` instead."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub tier: Option<SignalRSkuTier>,
     #[doc = "Not used. Retained for future use."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1274,7 +1304,7 @@ pub struct SharedPrivateLinkResourceList {
 impl azure_core::Continuable for SharedPrivateLinkResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SharedPrivateLinkResourceList {
@@ -1292,13 +1322,18 @@ pub struct SharedPrivateLinkResourceProperties {
     #[serde(rename = "privateLinkResourceId")]
     pub private_link_resource_id: String,
     #[doc = "Provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The request message for requesting approval of the shared private link resource"]
     #[serde(rename = "requestMessage", default, skip_serializing_if = "Option::is_none")]
     pub request_message: Option<String>,
     #[doc = "Status of the shared private link resource"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<SharedPrivateLinkResourceStatus>,
 }
 impl SharedPrivateLinkResourceProperties {
@@ -1376,6 +1411,7 @@ impl SignalRCorsSettings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SignalRFeature {
     #[doc = "FeatureFlags is the supported features of Azure SignalR service.\r\n- ServiceMode: Flag for backend server for SignalR service. Values allowed: \"Default\": have your own backend server; \"Serverless\": your application doesn't have a backend server; \"Classic\": for backward compatibility. Support both Default and Serverless mode but not recommended; \"PredefinedOnly\": for future use.\r\n- EnableConnectivityLogs: \"true\"/\"false\", to enable/disable the connectivity log category respectively.\r\n- EnableMessagingLogs: \"true\"/\"false\", to enable/disable the connectivity log category respectively.\r\n- EnableLiveTrace: Live Trace allows you to know what's happening inside Azure SignalR service, it will give you live traces in real time, it will be helpful when you developing your own Azure SignalR based web application or self-troubleshooting some issues. Please note that live traces are counted as outbound messages that will be charged. Values allowed: \"true\"/\"false\", to enable/disable live trace feature."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub flag: FeatureFlags,
     #[doc = "Value of the feature flag. See Azure SignalR service document https://docs.microsoft.com/azure/azure-signalr/ for allowed values."]
     pub value: String,
@@ -1417,7 +1453,12 @@ impl SignalRKeys {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalRNetworkAcLs {
     #[doc = "Azure Networking ACL Action."]
-    #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "defaultAction",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub default_action: Option<AclAction>,
     #[doc = "Network ACL"]
     #[serde(rename = "publicNetwork", default, skip_serializing_if = "Option::is_none")]
@@ -1440,7 +1481,12 @@ impl SignalRNetworkAcLs {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SignalRProperties {
     #[doc = "Provisioning state of the resource."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "The publicly accessible IP of the resource."]
     #[serde(rename = "externalIP", default, skip_serializing_if = "Option::is_none")]
@@ -1573,7 +1619,7 @@ pub struct SignalRResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SignalRProperties>,
     #[doc = "The kind of the service"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<ServiceKind>,
     #[doc = "A class represent managed identities used for request and response"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1607,7 +1653,7 @@ pub struct SignalRResourceList {
 impl azure_core::Continuable for SignalRResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SignalRResourceList {
@@ -1709,7 +1755,7 @@ pub struct SignalRUsageList {
 impl azure_core::Continuable for SignalRUsageList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SignalRUsageList {
@@ -1771,7 +1817,12 @@ pub struct SkuCapacity {
     )]
     pub allowed_values: Vec<i32>,
     #[doc = "The scale type applicable to the sku."]
-    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "scaleType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub scale_type: Option<ScaleType>,
 }
 impl SkuCapacity {
@@ -1822,7 +1873,12 @@ impl TrackedResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpstreamAuthSettings {
     #[doc = "Upstream auth type enum."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<UpstreamAuthType>,
     #[doc = "Managed identity settings for upstream."]
     #[serde(rename = "managedIdentity", default, skip_serializing_if = "Option::is_none")]
@@ -1922,7 +1978,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1931,7 +1992,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

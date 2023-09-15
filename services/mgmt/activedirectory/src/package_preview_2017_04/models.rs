@@ -38,7 +38,12 @@ impl DiagnosticSettings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettingsCategory {
     #[doc = "The type of the diagnostic settings category."]
-    #[serde(rename = "categoryType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "categoryType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub category_type: Option<diagnostic_settings_category::CategoryType>,
 }
 impl DiagnosticSettingsCategory {
@@ -206,7 +211,7 @@ impl ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogSettings {
     #[doc = "Name of a Diagnostic Log category for a resource type this setting is applied to. To obtain the list of Diagnostic Log categories for a resource, first perform a GET diagnostic settings operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub category: Option<log_settings::Category>,
     #[doc = "A value indicating whether this log is enabled."]
     pub enabled: bool,

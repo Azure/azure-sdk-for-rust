@@ -48,7 +48,7 @@ impl Serialize for ActionType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureAsyncOperationResult {
     #[doc = "Status of the Azure async operation. Possible values are: 'InProgress', 'Succeeded', and 'Failed'."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<azure_async_operation_result::Status>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<Error>,
@@ -110,7 +110,12 @@ pub struct Backend {
     #[serde(rename = "privateLinkAlias", default, skip_serializing_if = "Option::is_none")]
     pub private_link_alias: Option<String>,
     #[doc = "The Approval status for the connection to the Private Link"]
-    #[serde(rename = "privateEndpointStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "privateEndpointStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub private_endpoint_status: Option<backend::PrivateEndpointStatus>,
     #[doc = "A custom message to be included in the approval request to connect to the Private Link"]
     #[serde(rename = "privateLinkApprovalMessage", default, skip_serializing_if = "Option::is_none")]
@@ -122,7 +127,12 @@ pub struct Backend {
     #[serde(rename = "httpsPort", default, skip_serializing_if = "Option::is_none")]
     pub https_port: Option<i64>,
     #[doc = "Whether to enable use of this backend. Permitted values are 'Enabled' or 'Disabled'"]
-    #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enabledState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enabled_state: Option<backend::EnabledState>,
     #[doc = "Priority to use for load balancing. Higher priorities will not be used for load balancing if any lower priority backend is healthy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -266,7 +276,12 @@ impl BackendPoolListResult {
 pub struct BackendPoolProperties {
     #[serde(flatten)]
     pub backend_pool_update_parameters: BackendPoolUpdateParameters,
-    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_state: Option<ResourceState>,
 }
 impl BackendPoolProperties {
@@ -300,7 +315,12 @@ impl BackendPoolUpdateParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendPoolsSettings {
     #[doc = "Whether to enforce certificate name check on HTTPS requests to all backend pools. No effect on non-HTTPS requests."]
-    #[serde(rename = "enforceCertificateNameCheck", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enforceCertificateNameCheck",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enforce_certificate_name_check: Option<backend_pools_settings::EnforceCertificateNameCheck>,
     #[doc = "Send and receive timeout on forwarding request to the backend. When timeout is reached, the request fails and returns."]
     #[serde(rename = "sendRecvTimeoutSeconds", default, skip_serializing_if = "Option::is_none")]
@@ -360,13 +380,23 @@ pub mod backend_pools_settings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CacheConfiguration {
     #[doc = "Treatment of URL query terms when forming the cache key."]
-    #[serde(rename = "queryParameterStripDirective", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "queryParameterStripDirective",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub query_parameter_strip_directive: Option<cache_configuration::QueryParameterStripDirective>,
     #[doc = "query parameters to include or exclude (comma separated)."]
     #[serde(rename = "queryParameters", default, skip_serializing_if = "Option::is_none")]
     pub query_parameters: Option<String>,
     #[doc = "Whether to use dynamic compression for cached content"]
-    #[serde(rename = "dynamicCompression", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dynamicCompression",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub dynamic_compression: Option<cache_configuration::DynamicCompression>,
     #[doc = "The duration for which the content needs to be cached. Allowed format is in ISO 8601 format (http://en.wikipedia.org/wiki/ISO_8601#Durations). HTTP requires the value to be no more than a year"]
     #[serde(rename = "cacheDuration", default, skip_serializing_if = "Option::is_none")]
@@ -464,7 +494,7 @@ pub struct CheckNameAvailabilityInput {
     #[doc = "The resource name to validate."]
     pub name: String,
     #[doc = "Type of Front Door resource used in CheckNameAvailability."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: ResourceType,
 }
 impl CheckNameAvailabilityInput {
@@ -476,7 +506,12 @@ impl CheckNameAvailabilityInput {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckNameAvailabilityOutput {
     #[doc = "Indicates whether the name is available."]
-    #[serde(rename = "nameAvailability", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "nameAvailability",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub name_availability: Option<check_name_availability_output::NameAvailability>,
     #[doc = "The reason why the name is not available."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -534,13 +569,13 @@ pub mod check_name_availability_output {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomHttpsConfiguration {
     #[doc = "Defines the source of the SSL certificate"]
-    #[serde(rename = "certificateSource")]
+    #[serde(rename = "certificateSource", with = "azure_core::xml::text_content")]
     pub certificate_source: custom_https_configuration::CertificateSource,
     #[doc = "Defines the TLS extension protocol that is used for secure delivery"]
-    #[serde(rename = "protocolType")]
+    #[serde(rename = "protocolType", with = "azure_core::xml::text_content")]
     pub protocol_type: custom_https_configuration::ProtocolType,
     #[doc = "The minimum TLS version required from the clients to establish an SSL handshake with Front Door."]
-    #[serde(rename = "minimumTlsVersion")]
+    #[serde(rename = "minimumTlsVersion", with = "azure_core::xml::text_content")]
     pub minimum_tls_version: custom_https_configuration::MinimumTlsVersion,
     #[doc = "Parameters required for bring-your-own-certification via Key Vault"]
     #[serde(rename = "keyVaultCertificateSourceParameters", default, skip_serializing_if = "Option::is_none")]
@@ -687,10 +722,15 @@ pub struct CustomRule {
     #[doc = "Describes priority of the rule. Rules with a lower value will be evaluated before rules with a higher value."]
     pub priority: i64,
     #[doc = "Describes if the custom rule is in enabled or disabled state. Defaults to Enabled if not specified."]
-    #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enabledState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enabled_state: Option<custom_rule::EnabledState>,
     #[doc = "Describes type of rule."]
-    #[serde(rename = "ruleType")]
+    #[serde(rename = "ruleType", with = "azure_core::xml::text_content")]
     pub rule_type: custom_rule::RuleType,
     #[doc = "Time window for resetting the rate limit count. Default is 1 minute."]
     #[serde(rename = "rateLimitDurationInMinutes", default, skip_serializing_if = "Option::is_none")]
@@ -702,6 +742,7 @@ pub struct CustomRule {
     #[serde(rename = "matchConditions")]
     pub match_conditions: Vec<MatchCondition>,
     #[doc = "Defines the action to take on rule match."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub action: ActionType,
 }
 impl CustomRule {
@@ -917,7 +958,7 @@ pub struct ExperimentList {
 impl azure_core::Continuable for ExperimentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExperimentList {
@@ -938,10 +979,20 @@ pub struct ExperimentProperties {
     #[serde(rename = "endpointB", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_b: Option<Endpoint>,
     #[doc = "The state of the Experiment"]
-    #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enabledState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enabled_state: Option<experiment_properties::EnabledState>,
     #[doc = "Defines the server side resource status"]
-    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_state: Option<NetworkExperimentResourceState>,
     #[doc = "The description of Experiment status from the server side"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1017,7 +1068,12 @@ pub struct ExperimentUpdateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "The state of the Experiment"]
-    #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enabledState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enabled_state: Option<experiment_update_properties::EnabledState>,
 }
 impl ExperimentUpdateProperties {
@@ -1074,7 +1130,12 @@ pub struct ForwardingConfiguration {
     #[serde(rename = "customForwardingPath", default, skip_serializing_if = "Option::is_none")]
     pub custom_forwarding_path: Option<String>,
     #[doc = "Protocol this rule will use when forwarding traffic to backends."]
-    #[serde(rename = "forwardingProtocol", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "forwardingProtocol",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub forwarding_protocol: Option<forwarding_configuration::ForwardingProtocol>,
     #[doc = "Caching settings for a caching-type route. To disable caching, do not provide a cacheConfiguration object."]
     #[serde(rename = "cacheConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -1154,7 +1215,12 @@ impl FrontDoor {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FrontDoorCertificateSourceParameters {
     #[doc = "Defines the type of the certificate used for secure connections to a frontendEndpoint"]
-    #[serde(rename = "certificateType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "certificateType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub certificate_type: Option<front_door_certificate_source_parameters::CertificateType>,
 }
 impl FrontDoorCertificateSourceParameters {
@@ -1217,7 +1283,7 @@ pub struct FrontDoorListResult {
 impl azure_core::Continuable for FrontDoorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FrontDoorListResult {
@@ -1230,7 +1296,12 @@ impl FrontDoorListResult {
 pub struct FrontDoorProperties {
     #[serde(flatten)]
     pub front_door_update_parameters: FrontDoorUpdateParameters,
-    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_state: Option<ResourceState>,
     #[doc = "Provisioning state of the Front Door."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -1305,7 +1376,12 @@ pub struct FrontDoorUpdateParameters {
     #[serde(rename = "backendPoolsSettings", default, skip_serializing_if = "Option::is_none")]
     pub backend_pools_settings: Option<BackendPoolsSettings>,
     #[doc = "Operational status of the Front Door load balancer. Permitted values are 'Enabled' or 'Disabled'"]
-    #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enabledState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enabled_state: Option<front_door_update_parameters::EnabledState>,
 }
 impl FrontDoorUpdateParameters {
@@ -1390,13 +1466,28 @@ impl FrontendEndpointLink {
 pub struct FrontendEndpointProperties {
     #[serde(flatten)]
     pub frontend_endpoint_update_parameters: FrontendEndpointUpdateParameters,
-    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_state: Option<ResourceState>,
     #[doc = "Provisioning status of Custom Https of the frontendEndpoint."]
-    #[serde(rename = "customHttpsProvisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "customHttpsProvisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub custom_https_provisioning_state: Option<frontend_endpoint_properties::CustomHttpsProvisioningState>,
     #[doc = "Provisioning substate shows the progress of custom HTTPS enabling/disabling process step by step."]
-    #[serde(rename = "customHttpsProvisioningSubstate", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "customHttpsProvisioningSubstate",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub custom_https_provisioning_substate: Option<frontend_endpoint_properties::CustomHttpsProvisioningSubstate>,
     #[doc = "Https settings for a domain"]
     #[serde(rename = "customHttpsConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -1535,7 +1626,12 @@ pub struct FrontendEndpointUpdateParameters {
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
     #[doc = "Whether to allow session affinity on this host. Valid options are 'Enabled' or 'Disabled'"]
-    #[serde(rename = "sessionAffinityEnabledState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sessionAffinityEnabledState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub session_affinity_enabled_state: Option<frontend_endpoint_update_parameters::SessionAffinityEnabledState>,
     #[doc = "UNUSED. This field will be ignored. The TTL to use in seconds for session affinity, if applicable."]
     #[serde(rename = "sessionAffinityTtlSeconds", default, skip_serializing_if = "Option::is_none")]
@@ -1618,7 +1714,7 @@ pub struct FrontendEndpointsListResult {
 impl azure_core::Continuable for FrontendEndpointsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FrontendEndpointsListResult {
@@ -1630,7 +1726,7 @@ impl FrontendEndpointsListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HeaderAction {
     #[doc = "Which type of manipulation to apply to the header."]
-    #[serde(rename = "headerActionType")]
+    #[serde(rename = "headerActionType", with = "azure_core::xml::text_content")]
     pub header_action_type: header_action::HeaderActionType,
     #[doc = "The name of the header this action will apply to."]
     #[serde(rename = "headerName")]
@@ -1734,7 +1830,12 @@ impl HealthProbeSettingsModel {
 pub struct HealthProbeSettingsProperties {
     #[serde(flatten)]
     pub health_probe_settings_update_parameters: HealthProbeSettingsUpdateParameters,
-    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_state: Option<ResourceState>,
 }
 impl HealthProbeSettingsProperties {
@@ -1749,16 +1850,26 @@ pub struct HealthProbeSettingsUpdateParameters {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
     #[doc = "Protocol scheme to use for this probe"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub protocol: Option<health_probe_settings_update_parameters::Protocol>,
     #[doc = "The number of seconds between health probes."]
     #[serde(rename = "intervalInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub interval_in_seconds: Option<i64>,
     #[doc = "Configures which HTTP method to use to probe the backends defined under backendPools."]
-    #[serde(rename = "healthProbeMethod", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "healthProbeMethod",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub health_probe_method: Option<health_probe_settings_update_parameters::HealthProbeMethod>,
     #[doc = "Whether to enable health probes to be made against backends defined under backendPools. Health probes can only be disabled if there is a single enabled backend in single enabled backend pool."]
-    #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enabledState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enabled_state: Option<health_probe_settings_update_parameters::EnabledState>,
 }
 impl HealthProbeSettingsUpdateParameters {
@@ -2058,7 +2169,12 @@ impl LoadBalancingSettingsModel {
 pub struct LoadBalancingSettingsProperties {
     #[serde(flatten)]
     pub load_balancing_settings_update_parameters: LoadBalancingSettingsUpdateParameters,
-    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_state: Option<ResourceState>,
 }
 impl LoadBalancingSettingsProperties {
@@ -2091,10 +2207,20 @@ pub struct ManagedRuleDefinition {
     #[serde(rename = "ruleId", default, skip_serializing_if = "Option::is_none")]
     pub rule_id: Option<String>,
     #[doc = "Describes if the managed rule is in enabled or disabled state."]
-    #[serde(rename = "defaultState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "defaultState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub default_state: Option<ManagedRuleEnabledState>,
     #[doc = "Defines the action to take on rule match."]
-    #[serde(rename = "defaultAction", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "defaultAction",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub default_action: Option<ActionType>,
     #[doc = "Describes the functionality of the managed rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2146,10 +2272,10 @@ impl Serialize for ManagedRuleEnabledState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedRuleExclusion {
     #[doc = "The variable type to be excluded."]
-    #[serde(rename = "matchVariable")]
+    #[serde(rename = "matchVariable", with = "azure_core::xml::text_content")]
     pub match_variable: managed_rule_exclusion::MatchVariable,
     #[doc = "Comparison operator to apply to the selector when specifying which elements in the collection this exclusion applies to."]
-    #[serde(rename = "selectorMatchOperator")]
+    #[serde(rename = "selectorMatchOperator", with = "azure_core::xml::text_content")]
     pub selector_match_operator: managed_rule_exclusion::SelectorMatchOperator,
     #[doc = "Selector value for which elements in the collection this exclusion applies to."]
     pub selector: String,
@@ -2313,10 +2439,15 @@ pub struct ManagedRuleOverride {
     #[serde(rename = "ruleId")]
     pub rule_id: String,
     #[doc = "Describes if the managed rule is in enabled or disabled state."]
-    #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enabledState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enabled_state: Option<ManagedRuleEnabledState>,
     #[doc = "Defines the action to take on rule match."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub action: Option<ActionType>,
     #[doc = "Describes the exclusions that are applied to this specific rule."]
     #[serde(
@@ -2402,7 +2533,7 @@ pub struct ManagedRuleSetDefinitionList {
 impl azure_core::Continuable for ManagedRuleSetDefinitionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedRuleSetDefinitionList {
@@ -2460,12 +2591,13 @@ impl ManagedRuleSetList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MatchCondition {
     #[doc = "Request variable to compare with."]
-    #[serde(rename = "matchVariable")]
+    #[serde(rename = "matchVariable", with = "azure_core::xml::text_content")]
     pub match_variable: match_condition::MatchVariable,
     #[doc = "Match against a specific key from the QueryString, PostArgs, RequestHeader or Cookies variables. Default is null."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub selector: Option<String>,
     #[doc = "Comparison type to use for matching with the variable value."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub operator: match_condition::Operator,
     #[doc = "Describes if the result of this condition should be negated."]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -2654,10 +2786,15 @@ impl Serialize for NetworkExperimentResourceState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicySettings {
     #[doc = "Describes if the policy is in enabled or disabled state. Defaults to Enabled if not specified."]
-    #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enabledState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enabled_state: Option<policy_settings::EnabledState>,
     #[doc = "Describes if it is in detection mode or prevention mode at policy level."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub mode: Option<policy_settings::Mode>,
     #[doc = "If action type is redirect, this field represents redirect URL for the client."]
     #[serde(rename = "redirectUrl", default, skip_serializing_if = "Option::is_none")]
@@ -2785,7 +2922,7 @@ pub struct PreconfiguredEndpointList {
 impl azure_core::Continuable for PreconfiguredEndpointList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PreconfiguredEndpointList {
@@ -2803,7 +2940,12 @@ pub struct PreconfiguredEndpointProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
     #[doc = "The type of endpoint"]
-    #[serde(rename = "endpointType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "endpointType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub endpoint_type: Option<preconfigured_endpoint_properties::EndpointType>,
     #[doc = "The preconfigured endpoint backend"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2898,7 +3040,7 @@ pub struct ProfileList {
 impl azure_core::Continuable for ProfileList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProfileList {
@@ -2910,10 +3052,20 @@ impl ProfileList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileProperties {
     #[doc = "Defines the server side resource status"]
-    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_state: Option<NetworkExperimentResourceState>,
     #[doc = "The state of the Experiment"]
-    #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enabledState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enabled_state: Option<profile_properties::EnabledState>,
 }
 impl ProfileProperties {
@@ -2980,7 +3132,12 @@ impl ProfileUpdateModel {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProfileUpdateProperties {
     #[doc = "The enabled state of the Profile"]
-    #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enabledState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enabled_state: Option<profile_update_properties::EnabledState>,
 }
 impl ProfileUpdateProperties {
@@ -3046,10 +3203,20 @@ pub struct RedirectConfiguration {
     #[serde(flatten)]
     pub route_configuration: RouteConfiguration,
     #[doc = "The redirect type the rule will use when redirecting traffic."]
-    #[serde(rename = "redirectType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "redirectType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub redirect_type: Option<redirect_configuration::RedirectType>,
     #[doc = "The protocol of the destination to where the traffic is redirected"]
-    #[serde(rename = "redirectProtocol", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "redirectProtocol",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub redirect_protocol: Option<redirect_configuration::RedirectProtocol>,
     #[doc = "Host to redirect. Leave empty to use the incoming host as the destination host."]
     #[serde(rename = "customHost", default, skip_serializing_if = "Option::is_none")]
@@ -3303,7 +3470,12 @@ impl RoutingRuleListResult {
 pub struct RoutingRuleProperties {
     #[serde(flatten)]
     pub routing_rule_update_parameters: RoutingRuleUpdateParameters,
-    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_state: Option<ResourceState>,
 }
 impl RoutingRuleProperties {
@@ -3339,7 +3511,12 @@ pub struct RoutingRuleUpdateParameters {
     )]
     pub patterns_to_match: Vec<String>,
     #[doc = "Whether to enable use of this rule. Permitted values are 'Enabled' or 'Disabled'"]
-    #[serde(rename = "enabledState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enabledState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enabled_state: Option<routing_rule_update_parameters::EnabledState>,
     #[doc = "Base class for all types of Route."]
     #[serde(rename = "routeConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -3474,7 +3651,7 @@ pub struct RulesEngineListResult {
 impl azure_core::Continuable for RulesEngineListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RulesEngineListResult {
@@ -3486,13 +3663,13 @@ impl RulesEngineListResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RulesEngineMatchCondition {
     #[doc = "Match Variable"]
-    #[serde(rename = "rulesEngineMatchVariable")]
+    #[serde(rename = "rulesEngineMatchVariable", with = "azure_core::xml::text_content")]
     pub rules_engine_match_variable: rules_engine_match_condition::RulesEngineMatchVariable,
     #[doc = "Name of selector in RequestHeader or RequestBody to be matched"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub selector: Option<String>,
     #[doc = "Describes operator to apply to the match condition."]
-    #[serde(rename = "rulesEngineOperator")]
+    #[serde(rename = "rulesEngineOperator", with = "azure_core::xml::text_content")]
     pub rules_engine_operator: rules_engine_match_condition::RulesEngineOperator,
     #[doc = "Describes if this is negate condition or not"]
     #[serde(rename = "negateCondition", default, skip_serializing_if = "Option::is_none")]
@@ -3647,7 +3824,12 @@ pub mod rules_engine_match_condition {
 pub struct RulesEngineProperties {
     #[serde(flatten)]
     pub rules_engine_update_parameters: RulesEngineUpdateParameters,
-    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_state: Option<ResourceState>,
 }
 impl RulesEngineProperties {
@@ -3673,7 +3855,12 @@ pub struct RulesEngineRule {
     )]
     pub match_conditions: Vec<RulesEngineMatchCondition>,
     #[doc = "If this rule is a match should the rules engine continue running the remaining rules or stop. If not present, defaults to Continue."]
-    #[serde(rename = "matchProcessingBehavior", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "matchProcessingBehavior",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub match_processing_behavior: Option<rules_engine_rule::MatchProcessingBehavior>,
 }
 impl RulesEngineRule {
@@ -3809,10 +3996,20 @@ pub struct TimeseriesProperties {
     #[serde(rename = "endDateTimeUTC", default, skip_serializing_if = "Option::is_none")]
     pub end_date_time_utc: Option<String>,
     #[doc = "The aggregation interval of the Timeseries"]
-    #[serde(rename = "aggregationInterval", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "aggregationInterval",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub aggregation_interval: Option<timeseries_properties::AggregationInterval>,
     #[doc = "The type of Timeseries"]
-    #[serde(rename = "timeseriesType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "timeseriesType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub timeseries_type: Option<timeseries_properties::TimeseriesType>,
     #[doc = "The country associated with the Timeseries. Values are country ISO codes as specified here- https://www.iso.org/iso-3166-country-codes.html"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4021,7 +4218,7 @@ pub struct WebApplicationFirewallPolicyList {
 impl azure_core::Continuable for WebApplicationFirewallPolicyList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WebApplicationFirewallPolicyList {
@@ -4060,7 +4257,12 @@ pub struct WebApplicationFirewallPolicyProperties {
     #[doc = "Provisioning state of the policy."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
-    #[serde(rename = "resourceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_state: Option<web_application_firewall_policy_properties::ResourceState>,
 }
 impl WebApplicationFirewallPolicyProperties {

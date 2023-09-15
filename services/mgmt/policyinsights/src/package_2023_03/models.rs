@@ -55,7 +55,7 @@ pub struct AttestationListResult {
 impl azure_core::Continuable for AttestationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AttestationListResult {
@@ -73,7 +73,12 @@ pub struct AttestationProperties {
     #[serde(rename = "policyDefinitionReferenceId", default, skip_serializing_if = "Option::is_none")]
     pub policy_definition_reference_id: Option<String>,
     #[doc = "The compliance state that should be set on the resource."]
-    #[serde(rename = "complianceState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "complianceState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub compliance_state: Option<attestation_properties::ComplianceState>,
     #[doc = "The time the compliance state should expire."]
     #[serde(rename = "expiresOn", default, with = "azure_core::date::rfc3339::option")]
@@ -631,7 +636,7 @@ impl ExpressionEvaluationDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FieldRestriction {
     #[doc = "The type of restriction that is imposed on the field."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub result: Option<field_restriction::Result>,
     #[doc = "The value that policy will set for the field if the user does not provide a value."]
     #[serde(rename = "defaultValue", default, skip_serializing_if = "Option::is_none")]
@@ -1088,7 +1093,7 @@ pub struct PolicyEventsQueryResults {
 impl azure_core::Continuable for PolicyEventsQueryResults {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PolicyEventsQueryResults {
@@ -1149,7 +1154,7 @@ pub struct PolicyMetadataCollection {
 impl azure_core::Continuable for PolicyMetadataCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PolicyMetadataCollection {
@@ -1365,7 +1370,7 @@ pub struct PolicyStatesQueryResults {
 impl azure_core::Continuable for PolicyStatesQueryResults {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PolicyStatesQueryResults {
@@ -1414,7 +1419,7 @@ pub struct PolicyTrackedResourcesQueryResults {
 impl azure_core::Continuable for PolicyTrackedResourcesQueryResults {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PolicyTrackedResourcesQueryResults {
@@ -1547,7 +1552,7 @@ pub struct RemediationDeploymentsListResult {
 impl azure_core::Continuable for RemediationDeploymentsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RemediationDeploymentsListResult {
@@ -1588,7 +1593,7 @@ pub struct RemediationListResult {
 impl azure_core::Continuable for RemediationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RemediationListResult {
@@ -1606,7 +1611,12 @@ pub struct RemediationProperties {
     #[serde(rename = "policyDefinitionReferenceId", default, skip_serializing_if = "Option::is_none")]
     pub policy_definition_reference_id: Option<String>,
     #[doc = "The way resources to remediate are discovered. Defaults to ExistingNonCompliant if not specified."]
-    #[serde(rename = "resourceDiscoveryMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceDiscoveryMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_discovery_mode: Option<remediation_properties::ResourceDiscoveryMode>,
     #[doc = "The status of the remediation. This refers to the entire remediation task, not individual deployments. Allowed values are Evaluating, Canceled, Cancelling, Failed, Complete, or Succeeded."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -1865,7 +1875,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -1874,7 +1889,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

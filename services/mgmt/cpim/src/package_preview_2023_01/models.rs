@@ -32,10 +32,10 @@ impl AvailableOperations {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct B2cResourceSku {
     #[doc = "The name of the SKU for the tenant."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub name: Option<b2c_resource_sku::Name>,
     #[doc = "The tier of the tenant."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub tier: Option<b2c_resource_sku::Tier>,
 }
 impl B2cResourceSku {
@@ -123,7 +123,12 @@ pub mod b2c_resource_sku {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct B2cTenantResource {
     #[doc = "The type of the B2C tenant resource."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<b2c_tenant_resource::Type>,
     #[doc = "SKU properties of the Azure AD B2C tenant. Learn more about Azure AD B2C billing at [aka.ms/b2cBilling](https://aka.ms/b2cBilling)."]
     pub sku: B2cResourceSku,
@@ -246,7 +251,12 @@ pub mod b2c_tenant_resource_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct BillingConfig {
         #[doc = "The type of billing. Will be MAU for all new customers. If 'Auths', it can be updated to 'MAU'. Cannot be changed if value is 'MAU'. Learn more about Azure AD B2C billing at [aka.ms/b2cBilling](https://aka.ms/b2cbilling)."]
-        #[serde(rename = "billingType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "billingType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub billing_type: Option<billing_config::BillingType>,
         #[doc = "The data from which the billing type took effect"]
         #[serde(rename = "effectiveStartDateUtc", default, skip_serializing_if = "Option::is_none")]
@@ -576,7 +586,7 @@ pub struct NameAvailabilityResponse {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "Describes the reason for the 'nameAvailable' value."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<NameAvailabilityReason>,
 }
 impl NameAvailabilityResponse {
@@ -633,7 +643,12 @@ pub struct SystemData {
     #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createdByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub created_by_type: Option<system_data::CreatedByType>,
     #[doc = "The timestamp of resource creation (UTC)."]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -642,7 +657,12 @@ pub struct SystemData {
     #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
     pub last_modified_by: Option<String>,
     #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastModifiedByType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_modified_by_type: Option<system_data::LastModifiedByType>,
     #[doc = "The timestamp of resource last modification (UTC)"]
     #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]

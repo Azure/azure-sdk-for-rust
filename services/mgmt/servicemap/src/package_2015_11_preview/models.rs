@@ -68,7 +68,12 @@ pub struct AgentConfiguration {
     #[serde(rename = "dependencyAgentRevision", default, skip_serializing_if = "Option::is_none")]
     pub dependency_agent_revision: Option<String>,
     #[doc = "Specifies if the machine has been rebooted since the installation of the dependency agent."]
-    #[serde(rename = "rebootStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rebootStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub reboot_status: Option<MachineRebootStatus>,
     #[doc = "Machine clock granularity in milliseconds."]
     #[serde(rename = "clockGranularity", default, skip_serializing_if = "Option::is_none")]
@@ -102,7 +107,12 @@ pub struct AzureCloudServiceConfiguration {
     #[serde(rename = "roleName", default, skip_serializing_if = "Option::is_none")]
     pub role_name: Option<String>,
     #[doc = "Used to specify type of an Azure Cloud Service role"]
-    #[serde(rename = "roleType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "roleType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub role_type: Option<azure_cloud_service_configuration::RoleType>,
 }
 impl AzureCloudServiceConfiguration {
@@ -337,7 +347,7 @@ pub struct ClientGroupMembersCollection {
 impl azure_core::Continuable for ClientGroupMembersCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClientGroupMembersCollection {
@@ -360,6 +370,7 @@ pub struct ClientGroupMembersCount {
     #[doc = "Number of members in the client group. Use this value together with the value of ```accuracy```. If accuracy is `exact` then the value represents the actual number of members in the cloud. When accuracy is `estimated`, the actual number of members is larger than the value of ```count```."]
     pub count: i32,
     #[doc = "Specifies the accuracy of a computation."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub accuracy: Accuracy,
 }
 impl ClientGroupMembersCount {
@@ -418,7 +429,7 @@ pub struct ConnectionCollection {
 impl azure_core::Continuable for ConnectionCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConnectionCollection {
@@ -445,7 +456,12 @@ pub struct ConnectionProperties {
     #[serde(rename = "serverPort", default, skip_serializing_if = "Option::is_none")]
     pub server_port: Option<PortReference>,
     #[doc = "Connection failure state:\n * ```ok``` indicates no failures\n * ```failed``` indicates only failures\n * ```mixed``` indicates both failures and successes"]
-    #[serde(rename = "failureState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "failureState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub failure_state: Option<ConnectionFailureState>,
 }
 impl ConnectionProperties {
@@ -466,6 +482,7 @@ pub struct CoreResource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
     #[doc = "Additional resource type qualifier."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: core_resource::Kind,
 }
 impl CoreResource {
@@ -529,9 +546,10 @@ impl ErrorResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HostingConfiguration {
     #[doc = "The hosting provider of the VM."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub provider: Option<hosting_configuration::Provider>,
     #[doc = "Additional hosting configuration type qualifier."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: hosting_configuration::Kind,
 }
 impl HostingConfiguration {
@@ -558,7 +576,12 @@ pub mod hosting_configuration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HypervisorConfiguration {
     #[doc = "Specifies the hypervisor type of a machine."]
-    #[serde(rename = "hypervisorType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hypervisorType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub hypervisor_type: Option<HypervisorType>,
     #[doc = "The unique identifier of the hypervisor machine as reported by the underlying virtualization system."]
     #[serde(rename = "nativeHostMachineId", default, skip_serializing_if = "Option::is_none")]
@@ -675,10 +698,20 @@ pub mod machine {
         #[serde(default, with = "azure_core::date::rfc3339::option")]
         pub timestamp: Option<time::OffsetDateTime>,
         #[doc = "Used to specify if a resources is monitored or discovered."]
-        #[serde(rename = "monitoringState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "monitoringState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub monitoring_state: Option<MonitoringState>,
         #[doc = "Specifies if the machine is physical, virtual, hypervisor, or unknown."]
-        #[serde(rename = "virtualizationState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "virtualizationState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub virtualization_state: Option<VirtualizationState>,
         #[doc = "Name to use for display purposes"]
         #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
@@ -740,7 +773,7 @@ pub struct MachineCollection {
 impl azure_core::Continuable for MachineCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MachineCollection {
@@ -788,7 +821,12 @@ pub mod machine_group {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub struct Properties {
         #[doc = "Type of the machine group"]
-        #[serde(rename = "groupType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "groupType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub group_type: Option<properties::GroupType>,
         #[doc = "User defined name for the group"]
         #[serde(rename = "displayName")]
@@ -883,7 +921,7 @@ pub struct MachineGroupCollection {
 impl azure_core::Continuable for MachineGroupCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MachineGroupCollection {
@@ -972,7 +1010,12 @@ pub mod machine_reference_with_hints {
         #[serde(rename = "displayNameHint", default, skip_serializing_if = "Option::is_none")]
         pub display_name_hint: Option<String>,
         #[doc = "Specifies the operating system family, e.g., Linux, Windows, etc."]
-        #[serde(rename = "osFamilyHint", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "osFamilyHint",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub os_family_hint: Option<OperatingSystemFamily>,
     }
     impl Properties {
@@ -994,7 +1037,12 @@ pub struct MachineResourcesConfiguration {
     #[serde(rename = "cpuSpeed", default, skip_serializing_if = "Option::is_none")]
     pub cpu_speed: Option<i32>,
     #[doc = "Specifies the accuracy of a computation."]
-    #[serde(rename = "cpuSpeedAccuracy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "cpuSpeedAccuracy",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub cpu_speed_accuracy: Option<Accuracy>,
 }
 impl MachineResourcesConfiguration {
@@ -1122,6 +1170,7 @@ pub struct MapRequest {
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
     #[doc = "The type of map to create."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: map_request::Kind,
 }
 impl MapRequest {
@@ -1241,11 +1290,13 @@ impl NetworkConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperatingSystemConfiguration {
     #[doc = "Specifies the operating system family, e.g., Linux, Windows, etc."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub family: OperatingSystemFamily,
     #[doc = "Operating system full name."]
     #[serde(rename = "fullName")]
     pub full_name: String,
     #[doc = "Specifies the bitness of a machine or process."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub bitness: Bitness,
 }
 impl OperatingSystemConfiguration {
@@ -1294,7 +1345,12 @@ pub mod port {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Used to specify if a resources is monitored or discovered."]
-        #[serde(rename = "monitoringState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "monitoringState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub monitoring_state: Option<MonitoringState>,
         #[doc = "Represents a reference to another resource."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1332,7 +1388,7 @@ pub struct PortCollection {
 impl azure_core::Continuable for PortCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PortCollection {
@@ -1404,7 +1460,12 @@ pub mod process {
         #[serde(default, with = "azure_core::date::rfc3339::option")]
         pub timestamp: Option<time::OffsetDateTime>,
         #[doc = "Used to specify if a resources is monitored or discovered."]
-        #[serde(rename = "monitoringState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "monitoringState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub monitoring_state: Option<MonitoringState>,
         #[doc = "Represents a reference to another resource."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1419,7 +1480,7 @@ pub mod process {
         #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
         pub start_time: Option<time::OffsetDateTime>,
         #[doc = "The inferred role of this process based on its name, command line, etc."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub role: Option<properties::Role>,
         #[doc = "The name of the product or suite of the process. The group is determined by its executable name, command line, etc."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1514,7 +1575,7 @@ pub struct ProcessCollection {
 impl azure_core::Continuable for ProcessCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProcessCollection {
@@ -1596,9 +1657,10 @@ impl ProcessHostedService {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProcessHostingConfiguration {
     #[doc = "The hosting provider of the VM."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub provider: Option<process_hosting_configuration::Provider>,
     #[doc = "Additional hosting configuration type qualifier."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: process_hosting_configuration::Kind,
 }
 impl ProcessHostingConfiguration {
@@ -1674,6 +1736,7 @@ pub struct Relationship {
     #[serde(flatten)]
     pub resource: Resource,
     #[doc = "Additional resource type qualifier."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: relationship::Kind,
 }
 impl Relationship {
@@ -1749,6 +1812,7 @@ pub struct ResourceReference {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Specifies the sub-class of the reference."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub kind: resource_reference::Kind,
 }
 impl ResourceReference {
@@ -1836,7 +1900,12 @@ impl Timezone {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineConfiguration {
     #[doc = "Specifies the virtualization type of a machine."]
-    #[serde(rename = "virtualMachineType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "virtualMachineType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub virtual_machine_type: Option<VirtualMachineType>,
     #[doc = "The unique identifier of the virtual machine as reported by the underlying virtualization system."]
     #[serde(rename = "nativeMachineId", default, skip_serializing_if = "Option::is_none")]

@@ -78,7 +78,7 @@ pub struct ControllerList {
 impl azure_core::Continuable for ControllerList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ControllerList {
@@ -89,7 +89,12 @@ impl ControllerList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ControllerProperties {
     #[doc = "Provisioning state of the Azure Dev Spaces Controller."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<controller_properties::ProvisioningState>,
     #[doc = "DNS suffix for public endpoints running in the Azure Dev Spaces Controller."]
     #[serde(rename = "hostSuffix", default, skip_serializing_if = "Option::is_none")]
@@ -335,7 +340,7 @@ pub struct ResourceProviderOperationList {
 impl azure_core::Continuable for ResourceProviderOperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceProviderOperationList {
@@ -347,9 +352,10 @@ impl ResourceProviderOperationList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
     #[doc = "The name of the SKU for Azure Dev Spaces Controller."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub name: sku::Name,
     #[doc = "The tier of the SKU for Azure Dev Spaces Controller."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub tier: Option<sku::Tier>,
 }
 impl Sku {

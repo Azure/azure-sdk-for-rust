@@ -11,7 +11,7 @@ pub struct ApiKeyAuthentication {
     #[doc = "The key name of the authentication key/value pair."]
     pub name: String,
     #[doc = "The location of the authentication key/value pair in the request."]
-    #[serde(rename = "in")]
+    #[serde(rename = "in", with = "azure_core::xml::text_content")]
     pub in_: api_key_authentication::In,
     #[doc = "The value of the authentication key/value pair."]
     pub value: String,
@@ -364,6 +364,7 @@ impl RestParameters {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestRequest {
     #[doc = "The HTTP method to use for the request."]
+    #[serde(with = "azure_core::xml::text_content")]
     pub method: rest_request::Method,
     #[doc = "The HTTP URI to use for the request."]
     pub uri: String,
@@ -394,7 +395,7 @@ pub mod rest_request {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestRequestAuthentication {
     #[doc = "The authentication type."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: rest_request_authentication::Type,
 }
 impl RestRequestAuthentication {
@@ -444,7 +445,12 @@ pub mod rest_response {
         )]
         pub matches: Vec<String>,
         #[doc = "Indicates whether any or all of the expressions should match with the response content."]
-        #[serde(rename = "matchQuantifier", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "matchQuantifier",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub match_quantifier: Option<regex::MatchQuantifier>,
     }
     impl Regex {
@@ -806,7 +812,7 @@ pub struct ServiceUnitProperties {
     #[serde(rename = "targetResourceGroup")]
     pub target_resource_group: String,
     #[doc = "Describes the type of ARM deployment to be performed on the resource."]
-    #[serde(rename = "deploymentMode")]
+    #[serde(rename = "deploymentMode", with = "azure_core::xml::text_content")]
     pub deployment_mode: service_unit_properties::DeploymentMode,
     #[doc = "Defines the artifacts of a service unit."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -921,7 +927,7 @@ impl StepOperationInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StepProperties {
     #[doc = "The type of step."]
-    #[serde(rename = "stepType")]
+    #[serde(rename = "stepType", with = "azure_core::xml::text_content")]
     pub step_type: step_properties::StepType,
 }
 impl StepProperties {

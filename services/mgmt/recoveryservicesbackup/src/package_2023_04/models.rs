@@ -65,7 +65,12 @@ pub struct AzureFileShareProtectableItem {
     #[serde(rename = "parentContainerFriendlyName", default, skip_serializing_if = "Option::is_none")]
     pub parent_container_friendly_name: Option<String>,
     #[doc = "File Share type XSync or XSMB."]
-    #[serde(rename = "azureFileShareType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "azureFileShareType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub azure_file_share_type: Option<azure_file_share_protectable_item::AzureFileShareType>,
 }
 impl AzureFileShareProtectableItem {
@@ -127,7 +132,12 @@ pub struct AzureFileShareProtectionPolicy {
     #[serde(flatten)]
     pub protection_policy: ProtectionPolicy,
     #[doc = "Type of workload for the backup management"]
-    #[serde(rename = "workLoadType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workLoadType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub work_load_type: Option<azure_file_share_protection_policy::WorkLoadType>,
     #[doc = "Base class for backup schedule."]
     #[serde(rename = "schedulePolicy", default, skip_serializing_if = "Option::is_none")]
@@ -285,16 +295,31 @@ pub struct AzureFileShareRestoreRequest {
     #[serde(flatten)]
     pub restore_request: RestoreRequest,
     #[doc = "Type of this recovery."]
-    #[serde(rename = "recoveryType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "recoveryType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub recovery_type: Option<azure_file_share_restore_request::RecoveryType>,
     #[doc = "Source storage account ARM Id"]
     #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub source_resource_id: Option<String>,
     #[doc = "Options to resolve copy conflicts."]
-    #[serde(rename = "copyOptions", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "copyOptions",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub copy_options: Option<azure_file_share_restore_request::CopyOptions>,
     #[doc = "Restore Type (FullShareRestore or ItemLevelRestore)"]
-    #[serde(rename = "restoreRequestType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "restoreRequestType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub restore_request_type: Option<azure_file_share_restore_request::RestoreRequestType>,
     #[doc = "List of Source Files/Folders(which need to recover) and TargetFolderPath details"]
     #[serde(
@@ -461,7 +486,12 @@ pub struct AzureFileshareProtectedItem {
     #[serde(rename = "protectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub protection_status: Option<String>,
     #[doc = "Backup state of this backup item."]
-    #[serde(rename = "protectionState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "protectionState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub protection_state: Option<azure_fileshare_protected_item::ProtectionState>,
     #[doc = "Last backup operation status. Possible values: Healthy, Unhealthy."]
     #[serde(rename = "lastBackupStatus", default, skip_serializing_if = "Option::is_none")]
@@ -849,10 +879,20 @@ pub struct AzureIaaSvmProtectedItem {
     #[serde(rename = "protectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub protection_status: Option<String>,
     #[doc = "Backup state of this backup item."]
-    #[serde(rename = "protectionState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "protectionState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub protection_state: Option<azure_iaa_svm_protected_item::ProtectionState>,
     #[doc = "Health status of protected item."]
-    #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "healthStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub health_status: Option<azure_iaa_svm_protected_item::HealthStatus>,
     #[doc = "Health details on this backup item."]
     #[serde(
@@ -1041,7 +1081,12 @@ pub struct AzureIaaSvmProtectionPolicy {
     #[doc = "TimeZone optional input as string. For example: TimeZone = \"Pacific Standard Time\"."]
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
-    #[serde(rename = "policyType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "policyType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub policy_type: Option<azure_iaa_svm_protection_policy::PolicyType>,
 }
 impl AzureIaaSvmProtectionPolicy {
@@ -1158,7 +1203,12 @@ pub struct AzureSqlProtectedItem {
     #[serde(rename = "protectedItemDataId", default, skip_serializing_if = "Option::is_none")]
     pub protected_item_data_id: Option<String>,
     #[doc = "Backup state of the backed up item."]
-    #[serde(rename = "protectionState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "protectionState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub protection_state: Option<azure_sql_protected_item::ProtectionState>,
     #[doc = "Additional information on Azure Sql specific protected item."]
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
@@ -1278,7 +1328,12 @@ pub struct AzureStorageContainer {
     #[serde(rename = "protectedItemCount", default, skip_serializing_if = "Option::is_none")]
     pub protected_item_count: Option<i64>,
     #[doc = "Whether storage account lock is to be acquired for this container or not."]
-    #[serde(rename = "acquireStorageAccountLock", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "acquireStorageAccountLock",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub acquire_storage_account_lock: Option<azure_storage_container::AcquireStorageAccountLock>,
 }
 impl AzureStorageContainer {
@@ -1502,7 +1557,12 @@ impl AzureVmResourceFeatureSupportRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureVmResourceFeatureSupportResponse {
     #[doc = "Support status of feature"]
-    #[serde(rename = "supportStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "supportStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub support_status: Option<azure_vm_resource_feature_support_response::SupportStatus>,
 }
 impl AzureVmResourceFeatureSupportResponse {
@@ -1661,10 +1721,20 @@ pub struct AzureVmWorkloadProtectedItem {
     #[serde(rename = "protectionStatus", default, skip_serializing_if = "Option::is_none")]
     pub protection_status: Option<String>,
     #[doc = "Backup state of this backup item."]
-    #[serde(rename = "protectionState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "protectionState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub protection_state: Option<azure_vm_workload_protected_item::ProtectionState>,
     #[doc = "Last backup operation status. Possible values: Healthy, Unhealthy."]
-    #[serde(rename = "lastBackupStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastBackupStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_backup_status: Option<azure_vm_workload_protected_item::LastBackupStatus>,
     #[doc = "Timestamp of the last backup operation on this backup item."]
     #[serde(rename = "lastBackupTime", default, with = "azure_core::date::rfc3339::option")]
@@ -1676,7 +1746,12 @@ pub struct AzureVmWorkloadProtectedItem {
     #[serde(rename = "protectedItemDataSourceId", default, skip_serializing_if = "Option::is_none")]
     pub protected_item_data_source_id: Option<String>,
     #[doc = "Health status of the backup item, evaluated based on last heartbeat received"]
-    #[serde(rename = "protectedItemHealthStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "protectedItemHealthStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub protected_item_health_status: Option<azure_vm_workload_protected_item::ProtectedItemHealthStatus>,
     #[doc = "Additional information on Azure Workload for SQL specific backup item."]
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
@@ -1887,7 +1962,12 @@ pub struct AzureVmWorkloadProtectionPolicy {
     #[serde(flatten)]
     pub protection_policy: ProtectionPolicy,
     #[doc = "Type of workload for the backup management"]
-    #[serde(rename = "workLoadType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workLoadType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub work_load_type: Option<azure_vm_workload_protection_policy::WorkLoadType>,
     #[doc = "Common settings field for backup management"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2251,7 +2331,12 @@ pub struct AzureWorkloadBackupRequest {
     #[serde(flatten)]
     pub backup_request: BackupRequest,
     #[doc = "Type of backup, viz. Full, Differential, Log or CopyOnlyFull"]
-    #[serde(rename = "backupType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_type: Option<azure_workload_backup_request::BackupType>,
     #[doc = "Bool for Compression setting"]
     #[serde(rename = "enableCompression", default, skip_serializing_if = "Option::is_none")]
@@ -2337,10 +2422,20 @@ pub struct AzureWorkloadContainer {
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
     pub extended_info: Option<AzureWorkloadContainerExtendedInfo>,
     #[doc = "Workload type for which registration was sent."]
-    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workloadType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub workload_type: Option<azure_workload_container::WorkloadType>,
     #[doc = "Re-Do Operation"]
-    #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "operationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub operation_type: Option<azure_workload_container::OperationType>,
 }
 impl AzureWorkloadContainer {
@@ -2660,7 +2755,12 @@ pub struct AzureWorkloadRecoveryPoint {
     #[serde(rename = "recoveryPointTimeInUTC", default, with = "azure_core::date::rfc3339::option")]
     pub recovery_point_time_in_utc: Option<time::OffsetDateTime>,
     #[doc = "Type of restore point"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<azure_workload_recovery_point::Type>,
     #[doc = "Recovery point tier information."]
     #[serde(
@@ -2745,7 +2845,12 @@ pub struct AzureWorkloadRestoreRequest {
     #[serde(flatten)]
     pub restore_request: RestoreRequest,
     #[doc = "Type of this recovery."]
-    #[serde(rename = "recoveryType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "recoveryType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub recovery_type: Option<azure_workload_restore_request::RecoveryType>,
     #[doc = "Fully qualified ARM ID of the VM on which workload that was running is being recovered."]
     #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -2757,7 +2862,12 @@ pub struct AzureWorkloadRestoreRequest {
     #[serde(rename = "targetInfo", default, skip_serializing_if = "Option::is_none")]
     pub target_info: Option<TargetRestoreInfo>,
     #[doc = "Defines whether the current recovery mode is file restore or database restore"]
-    #[serde(rename = "recoveryMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "recoveryMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub recovery_mode: Option<azure_workload_restore_request::RecoveryMode>,
     #[doc = "This is the complete ARM Id of the target VM\r\nFor e.g. /subscriptions/{subId}/resourcegroups/{rg}/provider/Microsoft.Compute/virtualmachines/{vm}"]
     #[serde(rename = "targetVirtualMachineId", default, skip_serializing_if = "Option::is_none")]
@@ -2957,7 +3067,12 @@ pub struct AzureWorkloadSqlAutoProtectionIntent {
     #[serde(flatten)]
     pub azure_workload_auto_protection_intent: AzureWorkloadAutoProtectionIntent,
     #[doc = "Workload item type of the item for which intent is to be set"]
-    #[serde(rename = "workloadItemType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workloadItemType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub workload_item_type: Option<azure_workload_sql_auto_protection_intent::WorkloadItemType>,
 }
 impl AzureWorkloadSqlAutoProtectionIntent {
@@ -3201,7 +3316,12 @@ impl BmsBackupEngineQueryObject {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BmsBackupEnginesQueryObject {
     #[doc = "Backup management type for the backup engine."]
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupManagementType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_management_type: Option<bms_backup_engines_query_object::BackupManagementType>,
     #[doc = "Friendly name of the backup engine."]
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
@@ -3276,7 +3396,12 @@ pub mod bms_backup_engines_query_object {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BmsBackupSummariesQueryObject {
     #[doc = "Backup management type for this container."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<bms_backup_summaries_query_object::Type>,
 }
 impl BmsBackupSummariesQueryObject {
@@ -3332,10 +3457,15 @@ pub mod bms_backup_summaries_query_object {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BmsContainerQueryObject {
     #[doc = "Backup management type for this container."]
-    #[serde(rename = "backupManagementType")]
+    #[serde(rename = "backupManagementType", with = "azure_core::xml::text_content")]
     pub backup_management_type: bms_container_query_object::BackupManagementType,
     #[doc = "Type of container for filter"]
-    #[serde(rename = "containerType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "containerType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub container_type: Option<bms_container_query_object::ContainerType>,
     #[doc = "Backup engine name"]
     #[serde(rename = "backupEngineName", default, skip_serializing_if = "Option::is_none")]
@@ -3495,10 +3625,20 @@ pub mod bms_container_query_object {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BmsContainersInquiryQueryObject {
     #[doc = "Backup management type for this container."]
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupManagementType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_management_type: Option<bms_containers_inquiry_query_object::BackupManagementType>,
     #[doc = "Workload type for this container."]
-    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workloadType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub workload_type: Option<bms_containers_inquiry_query_object::WorkloadType>,
 }
 impl BmsContainersInquiryQueryObject {
@@ -3639,10 +3779,20 @@ pub mod bms_containers_inquiry_query_object {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BmspoQueryObject {
     #[doc = "Backup management type."]
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupManagementType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_management_type: Option<bmspo_query_object::BackupManagementType>,
     #[doc = "Workload type"]
-    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workloadType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub workload_type: Option<bmspo_query_object::WorkloadType>,
     #[doc = "Full name of the container whose Protectable Objects should be returned."]
     #[serde(rename = "containerName", default, skip_serializing_if = "Option::is_none")]
@@ -3798,7 +3948,12 @@ pub struct BmsrpQueryObject {
     #[serde(rename = "endDate", default, with = "azure_core::date::rfc3339::option")]
     pub end_date: Option<time::OffsetDateTime>,
     #[doc = "RestorePoint type"]
-    #[serde(rename = "restorePointQueryType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "restorePointQueryType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub restore_point_query_type: Option<bmsrp_query_object::RestorePointQueryType>,
     #[doc = "In Get Recovery Point, it tells whether extended information about recovery point is asked."]
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
@@ -3873,7 +4028,12 @@ pub mod bmsrp_query_object {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BmsRefreshContainersQueryObject {
     #[doc = "Backup management type for this container."]
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupManagementType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_management_type: Option<bms_refresh_containers_query_object::BackupManagementType>,
 }
 impl BmsRefreshContainersQueryObject {
@@ -3942,16 +4102,36 @@ pub mod bms_refresh_containers_query_object {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BmsWorkloadItemQueryObject {
     #[doc = "Backup management type."]
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupManagementType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_management_type: Option<bms_workload_item_query_object::BackupManagementType>,
     #[doc = "Workload Item type"]
-    #[serde(rename = "workloadItemType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workloadItemType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub workload_item_type: Option<bms_workload_item_query_object::WorkloadItemType>,
     #[doc = "Workload type"]
-    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workloadType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub workload_type: Option<bms_workload_item_query_object::WorkloadType>,
     #[doc = "Backup status query parameter."]
-    #[serde(rename = "protectionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "protectionStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub protection_status: Option<bms_workload_item_query_object::ProtectionStatus>,
 }
 impl BmsWorkloadItemQueryObject {
@@ -4194,7 +4374,12 @@ pub struct BackupEngineBase {
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
     #[doc = "Type of backup management for the backup engine."]
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupManagementType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_management_type: Option<backup_engine_base::BackupManagementType>,
     #[doc = "Registration status of the backup engine with the Recovery Services Vault."]
     #[serde(rename = "registrationStatus", default, skip_serializing_if = "Option::is_none")]
@@ -4206,7 +4391,7 @@ pub struct BackupEngineBase {
     #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
     pub health_status: Option<String>,
     #[doc = "Type of the backup engine."]
-    #[serde(rename = "backupEngineType")]
+    #[serde(rename = "backupEngineType", with = "azure_core::xml::text_content")]
     pub backup_engine_type: backup_engine_base::BackupEngineType,
     #[doc = "Flag indicating if the backup engine be registered, once already registered."]
     #[serde(rename = "canReRegister", default, skip_serializing_if = "Option::is_none")]
@@ -4420,7 +4605,7 @@ impl BackupEngineExtendedInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupManagementUsage {
     #[doc = "Unit of the usage."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub unit: Option<backup_management_usage::Unit>,
     #[doc = "Quota period of usage."]
     #[serde(rename = "quotaPeriod", default, skip_serializing_if = "Option::is_none")]
@@ -4543,22 +4728,47 @@ impl BackupRequestResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupResourceConfig {
     #[doc = "Storage type"]
-    #[serde(rename = "storageModelType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storageModelType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub storage_model_type: Option<backup_resource_config::StorageModelType>,
     #[doc = "Storage type."]
-    #[serde(rename = "storageType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storageType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub storage_type: Option<backup_resource_config::StorageType>,
     #[doc = "Locked or Unlocked. Once a machine is registered against a resource, the storageTypeState is always Locked."]
-    #[serde(rename = "storageTypeState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storageTypeState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub storage_type_state: Option<backup_resource_config::StorageTypeState>,
     #[doc = "Opt in details of Cross Region Restore feature."]
     #[serde(rename = "crossRegionRestoreFlag", default, skip_serializing_if = "Option::is_none")]
     pub cross_region_restore_flag: Option<bool>,
     #[doc = "Vault Dedup state"]
-    #[serde(rename = "dedupState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "dedupState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub dedup_state: Option<backup_resource_config::DedupState>,
     #[doc = "Vault x-cool state"]
-    #[serde(rename = "xcoolState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "xcoolState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub xcool_state: Option<backup_resource_config::XcoolState>,
 }
 impl BackupResourceConfig {
@@ -4791,7 +5001,12 @@ impl BackupResourceConfigResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupResourceEncryptionConfig {
     #[doc = "Encryption At Rest Type"]
-    #[serde(rename = "encryptionAtRestType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "encryptionAtRestType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub encryption_at_rest_type: Option<backup_resource_encryption_config::EncryptionAtRestType>,
     #[doc = "Key Vault Key URI"]
     #[serde(rename = "keyUri", default, skip_serializing_if = "Option::is_none")]
@@ -4799,9 +5014,19 @@ pub struct BackupResourceEncryptionConfig {
     #[doc = "Key Vault Subscription Id"]
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
     pub subscription_id: Option<String>,
-    #[serde(rename = "lastUpdateStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "lastUpdateStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub last_update_status: Option<backup_resource_encryption_config::LastUpdateStatus>,
-    #[serde(rename = "infrastructureEncryptionState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "infrastructureEncryptionState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub infrastructure_encryption_state: Option<backup_resource_encryption_config::InfrastructureEncryptionState>,
 }
 impl BackupResourceEncryptionConfig {
@@ -4981,19 +5206,44 @@ impl BackupResourceEncryptionConfigResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupResourceVaultConfig {
     #[doc = "Storage type."]
-    #[serde(rename = "storageModelType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storageModelType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub storage_model_type: Option<backup_resource_vault_config::StorageModelType>,
     #[doc = "Storage type."]
-    #[serde(rename = "storageType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storageType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub storage_type: Option<backup_resource_vault_config::StorageType>,
     #[doc = "Locked or Unlocked. Once a machine is registered against a resource, the storageTypeState is always Locked."]
-    #[serde(rename = "storageTypeState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "storageTypeState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub storage_type_state: Option<backup_resource_vault_config::StorageTypeState>,
     #[doc = "Enabled or Disabled."]
-    #[serde(rename = "enhancedSecurityState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "enhancedSecurityState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub enhanced_security_state: Option<backup_resource_vault_config::EnhancedSecurityState>,
     #[doc = "Soft Delete feature state"]
-    #[serde(rename = "softDeleteFeatureState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "softDeleteFeatureState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub soft_delete_feature_state: Option<backup_resource_vault_config::SoftDeleteFeatureState>,
     #[doc = "Soft delete retention period in days"]
     #[serde(rename = "softDeleteRetentionPeriodInDays", default, skip_serializing_if = "Option::is_none")]
@@ -5244,7 +5494,12 @@ impl BackupResourceVaultConfigResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupStatusRequest {
     #[doc = "Container Type - VM, SQLPaaS, DPM, AzureFileShare..."]
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_type: Option<backup_status_request::ResourceType>,
     #[doc = "Entire ARM resource id of the resource"]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -5337,13 +5592,23 @@ pub mod backup_status_request {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupStatusResponse {
     #[doc = "Specifies whether the container is registered or not"]
-    #[serde(rename = "protectionStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "protectionStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub protection_status: Option<backup_status_response::ProtectionStatus>,
     #[doc = "Specifies the arm resource id of the vault"]
     #[serde(rename = "vaultId", default, skip_serializing_if = "Option::is_none")]
     pub vault_id: Option<String>,
     #[doc = "Specifies the fabric name - Azure or AD"]
-    #[serde(rename = "fabricName", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "fabricName",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub fabric_name: Option<backup_status_response::FabricName>,
     #[doc = "Specifies the product specific container name. E.g. iaasvmcontainer;iaasvmcontainer;csname;vmname."]
     #[serde(rename = "containerName", default, skip_serializing_if = "Option::is_none")]
@@ -5537,7 +5802,7 @@ pub struct ClientDiscoveryResponse {
 impl azure_core::Continuable for ClientDiscoveryResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClientDiscoveryResponse {
@@ -5686,7 +5951,12 @@ pub struct DpmProtectedItem {
     #[serde(rename = "backupEngineName", default, skip_serializing_if = "Option::is_none")]
     pub backup_engine_name: Option<String>,
     #[doc = "Protection state of the backup engine"]
-    #[serde(rename = "protectionState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "protectionState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub protection_state: Option<dpm_protected_item::ProtectionState>,
     #[doc = "Additional information of DPM Protected item."]
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
@@ -6290,7 +6560,12 @@ pub struct GenericProtectedItem {
     #[serde(rename = "policyState", default, skip_serializing_if = "Option::is_none")]
     pub policy_state: Option<String>,
     #[doc = "Backup state of this backup item."]
-    #[serde(rename = "protectionState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "protectionState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub protection_state: Option<generic_protected_item::ProtectionState>,
     #[doc = "Data Plane Service ID of the protected item."]
     #[serde(rename = "protectedItemId", default, skip_serializing_if = "Option::is_none")]
@@ -6683,7 +6958,12 @@ pub struct IaasVmRestoreRequest {
     #[serde(rename = "recoveryPointId", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_id: Option<String>,
     #[doc = "Type of this recovery."]
-    #[serde(rename = "recoveryType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "recoveryType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub recovery_type: Option<iaas_vm_restore_request::RecoveryType>,
     #[doc = "Fully qualified ARM ID of the VM which is being recovered."]
     #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -6961,7 +7241,12 @@ pub struct Job {
     #[serde(rename = "entityFriendlyName", default, skip_serializing_if = "Option::is_none")]
     pub entity_friendly_name: Option<String>,
     #[doc = "Backup management type to execute the current job."]
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupManagementType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_management_type: Option<job::BackupManagementType>,
     #[doc = "The operation name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7057,13 +7342,18 @@ pub mod job {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobQueryObject {
     #[doc = "Status of the job."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<job_query_object::Status>,
     #[doc = "Type of backup management for the job."]
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupManagementType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_management_type: Option<job_query_object::BackupManagementType>,
     #[doc = "Type of operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub operation: Option<job_query_object::Operation>,
     #[doc = "JobID represents the job uniquely."]
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
@@ -7299,7 +7589,12 @@ impl KekDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KpiResourceHealthDetails {
     #[doc = "Resource Health Status"]
-    #[serde(rename = "resourceHealthStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceHealthStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_health_status: Option<kpi_resource_health_details::ResourceHealthStatus>,
     #[doc = "Resource Health Status"]
     #[serde(
@@ -7536,7 +7831,12 @@ pub struct MabContainerExtendedInfo {
     #[serde(rename = "lastRefreshedAt", default, with = "azure_core::date::rfc3339::option")]
     pub last_refreshed_at: Option<time::OffsetDateTime>,
     #[doc = "Type of backup items associated with this container."]
-    #[serde(rename = "backupItemType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupItemType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_item_type: Option<mab_container_extended_info::BackupItemType>,
     #[doc = "List of backup items associated with this container."]
     #[serde(
@@ -7731,10 +8031,20 @@ pub struct MabJob {
     #[serde(rename = "mabServerName", default, skip_serializing_if = "Option::is_none")]
     pub mab_server_name: Option<String>,
     #[doc = "Server type of MAB container."]
-    #[serde(rename = "mabServerType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "mabServerType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub mab_server_type: Option<mab_job::MabServerType>,
     #[doc = "Workload type of backup item."]
-    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workloadType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub workload_type: Option<mab_job::WorkloadType>,
     #[doc = "The errors."]
     #[serde(
@@ -7978,7 +8288,12 @@ impl MabProtectionPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonthlyRetentionSchedule {
     #[doc = "Retention schedule format type for monthly retention policy."]
-    #[serde(rename = "retentionScheduleFormatType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "retentionScheduleFormatType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub retention_schedule_format_type: Option<monthly_retention_schedule::RetentionScheduleFormatType>,
     #[doc = "Daily retention format."]
     #[serde(rename = "retentionScheduleDaily", default, skip_serializing_if = "Option::is_none")]
@@ -8051,10 +8366,20 @@ pub struct MoveRpAcrossTiersRequest {
     #[serde(rename = "objectType", default, skip_serializing_if = "Option::is_none")]
     pub object_type: Option<String>,
     #[doc = "Source tier from where RP needs to be moved"]
-    #[serde(rename = "sourceTierType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sourceTierType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub source_tier_type: Option<move_rp_across_tiers_request::SourceTierType>,
     #[doc = "Target tier where RP needs to be moved"]
-    #[serde(rename = "targetTierType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "targetTierType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub target_tier_type: Option<move_rp_across_tiers_request::TargetTierType>,
 }
 impl MoveRpAcrossTiersRequest {
@@ -8208,7 +8533,7 @@ pub struct OperationStatus {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Operation status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<operation_status::Status>,
     #[doc = "Operation start time. Format: ISO-8601."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -8382,7 +8707,12 @@ impl OperationStatusValidateOperationExtendedInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationWorkerResponse {
     #[doc = "HTTP Status Code of the operation."]
-    #[serde(rename = "statusCode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "statusCode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub status_code: Option<operation_worker_response::StatusCode>,
     #[doc = "HTTP headers associated with this operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -8467,7 +8797,7 @@ impl PointInTimeRange {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PreBackupValidation {
     #[doc = "Status of protectable item, i.e. InProgress,Succeeded,Failed"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<pre_backup_validation::Status>,
     #[doc = "Error code of protectable item"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -8527,7 +8857,12 @@ pub mod pre_backup_validation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PreValidateEnableBackupRequest {
     #[doc = "ProtectedItem Type- VM, SqlDataBase, AzureFileShare etc"]
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "resourceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub resource_type: Option<pre_validate_enable_backup_request::ResourceType>,
     #[doc = "ARM Virtual Machine Id"]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
@@ -8623,7 +8958,7 @@ pub mod pre_validate_enable_backup_request {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PreValidateEnableBackupResponse {
     #[doc = "Validation Status"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<pre_validate_enable_backup_response::Status>,
     #[doc = "Response error code"]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
@@ -8698,7 +9033,7 @@ pub struct PrepareDataMoveRequest {
     #[serde(rename = "targetRegion")]
     pub target_region: String,
     #[doc = "DataMove Level"]
-    #[serde(rename = "dataMoveLevel")]
+    #[serde(rename = "dataMoveLevel", with = "azure_core::xml::text_content")]
     pub data_move_level: prepare_data_move_request::DataMoveLevel,
     #[doc = "Source Container ArmIds\r\nThis needs to be populated only if DataMoveLevel is set to container"]
     #[serde(
@@ -8802,7 +9137,12 @@ impl PrivateEndpoint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
     #[doc = "Gets or sets provisioning state of the private endpoint connection"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<private_endpoint_connection::ProvisioningState>,
     #[doc = "The Private Endpoint network resource that is linked to the Private Endpoint connection"]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
@@ -8886,7 +9226,7 @@ impl PrivateEndpointConnectionResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkServiceConnectionState {
     #[doc = "Gets or sets the status"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<private_link_service_connection_state::Status>,
     #[doc = "Gets or sets description"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -8951,10 +9291,15 @@ pub struct ProtectableContainer {
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
     #[doc = "Type of backup management for the container."]
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupManagementType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_management_type: Option<protectable_container::BackupManagementType>,
     #[doc = "Type of the container. The value of this property for\r\n1. Compute Azure VM is Microsoft.Compute/virtualMachines\r\n2. Classic Compute Azure VM is Microsoft.ClassicCompute/virtualMachines"]
-    #[serde(rename = "protectableContainerType")]
+    #[serde(rename = "protectableContainerType", with = "azure_core::xml::text_content")]
     pub protectable_container_type: protectable_container::ProtectableContainerType,
     #[doc = "Status of health of the container."]
     #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
@@ -9106,10 +9451,20 @@ pub struct ProtectedItem {
     #[serde(rename = "protectedItemType")]
     pub protected_item_type: String,
     #[doc = "Type of backup management for the backed up item."]
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupManagementType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_management_type: Option<protected_item::BackupManagementType>,
     #[doc = "Type of workload this item represents."]
-    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workloadType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub workload_type: Option<protected_item::WorkloadType>,
     #[doc = "Unique name of container"]
     #[serde(rename = "containerName", default, skip_serializing_if = "Option::is_none")]
@@ -9127,7 +9482,12 @@ pub struct ProtectedItem {
     #[serde(rename = "backupSetName", default, skip_serializing_if = "Option::is_none")]
     pub backup_set_name: Option<String>,
     #[doc = "Create mode to indicate recovery of existing soft deleted data source or creation of new data source."]
-    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "createMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub create_mode: Option<protected_item::CreateMode>,
     #[doc = "Time for deferred deletion in UTC"]
     #[serde(rename = "deferredDeleteTimeInUTC", default, with = "azure_core::date::rfc3339::option")]
@@ -9358,13 +9718,28 @@ pub mod protected_item {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtectedItemQueryObject {
     #[doc = "Health State for the backed up item."]
-    #[serde(rename = "healthState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "healthState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub health_state: Option<protected_item_query_object::HealthState>,
     #[doc = "Backup management type for the backed up item."]
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupManagementType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_management_type: Option<protected_item_query_object::BackupManagementType>,
     #[doc = "Type of workload this item represents."]
-    #[serde(rename = "itemType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "itemType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub item_type: Option<protected_item_query_object::ItemType>,
     #[doc = "Backup policy name associated with the backup item."]
     #[serde(rename = "policyName", default, skip_serializing_if = "Option::is_none")]
@@ -9605,7 +9980,12 @@ pub struct ProtectionContainer {
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
     #[doc = "Type of backup management for the container."]
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupManagementType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_management_type: Option<protection_container::BackupManagementType>,
     #[doc = "Status of registration of the container with the Recovery Services Vault."]
     #[serde(rename = "registrationStatus", default, skip_serializing_if = "Option::is_none")]
@@ -9614,7 +9994,7 @@ pub struct ProtectionContainer {
     #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
     pub health_status: Option<String>,
     #[doc = "Type of the container. The value of this property for: 1. Compute Azure VM is Microsoft.Compute/virtualMachines 2.\r\nClassic Compute Azure VM is Microsoft.ClassicCompute/virtualMachines 3. Windows machines (like MAB, DPM etc) is\r\nWindows 4. Azure SQL instance is AzureSqlContainer. 5. Storage containers is StorageContainer. 6. Azure workload\r\nBackup is VMAppContainer"]
-    #[serde(rename = "containerType")]
+    #[serde(rename = "containerType", with = "azure_core::xml::text_content")]
     pub container_type: protection_container::ContainerType,
     #[doc = "Type of the protectable object associated with this container"]
     #[serde(rename = "protectableObjectType", default, skip_serializing_if = "Option::is_none")]
@@ -9812,10 +10192,15 @@ impl ProtectionContainerResourceList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProtectionIntent {
     #[doc = "backup protectionIntent type."]
-    #[serde(rename = "protectionIntentItemType")]
+    #[serde(rename = "protectionIntentItemType", with = "azure_core::xml::text_content")]
     pub protection_intent_item_type: protection_intent::ProtectionIntentItemType,
     #[doc = "Type of backup management for the backed up item."]
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupManagementType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_management_type: Option<protection_intent::BackupManagementType>,
     #[doc = "ARM ID of the resource to be backed up."]
     #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
@@ -9827,7 +10212,12 @@ pub struct ProtectionIntent {
     #[serde(rename = "policyId", default, skip_serializing_if = "Option::is_none")]
     pub policy_id: Option<String>,
     #[doc = "Backup state of this backup item."]
-    #[serde(rename = "protectionState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "protectionState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub protection_state: Option<protection_intent::ProtectionState>,
 }
 impl ProtectionIntent {
@@ -10000,10 +10390,20 @@ pub mod protection_intent {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtectionIntentQueryObject {
     #[doc = "Backup management type for the backed up item"]
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupManagementType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_management_type: Option<protection_intent_query_object::BackupManagementType>,
     #[doc = "Type of workload this item represents"]
-    #[serde(rename = "itemType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "itemType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub item_type: Option<protection_intent_query_object::ItemType>,
     #[doc = "Parent name of the intent"]
     #[serde(rename = "parentName", default, skip_serializing_if = "Option::is_none")]
@@ -10184,13 +10584,23 @@ impl ProtectionPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtectionPolicyQueryObject {
     #[doc = "Backup management type for the backup policy."]
-    #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "backupManagementType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub backup_management_type: Option<protection_policy_query_object::BackupManagementType>,
     #[doc = "Fabric name for filter"]
     #[serde(rename = "fabricName", default, skip_serializing_if = "Option::is_none")]
     pub fabric_name: Option<String>,
     #[doc = "Workload type for the backup policy."]
-    #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workloadType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub workload_type: Option<protection_policy_query_object::WorkloadType>,
 }
 impl ProtectionPolicyQueryObject {
@@ -10445,7 +10855,12 @@ pub struct RecoveryPointRehydrationInfo {
     #[serde(rename = "rehydrationRetentionDuration", default, skip_serializing_if = "Option::is_none")]
     pub rehydration_retention_duration: Option<String>,
     #[doc = "Rehydration Priority"]
-    #[serde(rename = "rehydrationPriority", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "rehydrationPriority",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub rehydration_priority: Option<recovery_point_rehydration_info::RehydrationPriority>,
 }
 impl RecoveryPointRehydrationInfo {
@@ -10535,10 +10950,15 @@ impl RecoveryPointResourceList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoveryPointTierInformation {
     #[doc = "Recovery point tier type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<recovery_point_tier_information::Type>,
     #[doc = "Recovery point tier status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<recovery_point_tier_information::Status>,
     #[doc = "Recovery point tier status."]
     #[serde(rename = "extendedInfo", default, skip_serializing_if = "Option::is_none")]
@@ -10578,10 +10998,15 @@ pub struct RecoveryPointTierInformationV2 {
     #[serde(flatten)]
     pub recovery_point_tier_information: RecoveryPointTierInformation,
     #[doc = "Recovery point tier type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<recovery_point_tier_information_v2::Type>,
     #[doc = "Recovery point tier status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<recovery_point_tier_information_v2::Status>,
 }
 impl RecoveryPointTierInformationV2 {
@@ -10863,7 +11288,12 @@ pub struct RetentionDuration {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i32>,
     #[doc = "Retention duration type of retention policy."]
-    #[serde(rename = "durationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "durationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub duration_type: Option<retention_duration::DurationType>,
 }
 impl RetentionDuration {
@@ -10933,7 +11363,12 @@ impl RetentionPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlDataDirectory {
     #[doc = "Type of data directory mapping"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<sql_data_directory::Type>,
     #[doc = "File path"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10993,7 +11428,12 @@ pub mod sql_data_directory {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlDataDirectoryMapping {
     #[doc = "Type of data directory mapping"]
-    #[serde(rename = "mappingType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "mappingType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub mapping_type: Option<sql_data_directory_mapping::MappingType>,
     #[doc = "Restore source logical name path"]
     #[serde(rename = "sourceLogicalName", default, skip_serializing_if = "Option::is_none")]
@@ -11134,7 +11574,12 @@ pub struct SimpleSchedulePolicy {
     #[serde(flatten)]
     pub schedule_policy: SchedulePolicy,
     #[doc = "Frequency of the schedule operation of this policy."]
-    #[serde(rename = "scheduleRunFrequency", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "scheduleRunFrequency",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub schedule_run_frequency: Option<simple_schedule_policy::ScheduleRunFrequency>,
     #[doc = "List of days of week this schedule has to be run."]
     #[serde(
@@ -11220,7 +11665,12 @@ pub struct SimpleSchedulePolicyV2 {
     #[serde(flatten)]
     pub schedule_policy: SchedulePolicy,
     #[doc = "Frequency of the schedule operation of this policy."]
-    #[serde(rename = "scheduleRunFrequency", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "scheduleRunFrequency",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub schedule_run_frequency: Option<simple_schedule_policy_v2::ScheduleRunFrequency>,
     #[serde(rename = "hourlySchedule", default, skip_serializing_if = "Option::is_none")]
     pub hourly_schedule: Option<HourlySchedule>,
@@ -11288,7 +11738,12 @@ pub mod simple_schedule_policy_v2 {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubProtectionPolicy {
     #[doc = "Type of backup policy type"]
-    #[serde(rename = "policyType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "policyType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub policy_type: Option<sub_protection_policy::PolicyType>,
     #[doc = "Base class for backup schedule."]
     #[serde(rename = "schedulePolicy", default, skip_serializing_if = "Option::is_none")]
@@ -11376,7 +11831,12 @@ impl TargetAfsRestoreInfo {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TargetDiskNetworkAccessSettings {
     #[doc = "Network access settings to be used for restored disks"]
-    #[serde(rename = "targetDiskNetworkAccessOption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "targetDiskNetworkAccessOption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub target_disk_network_access_option: Option<target_disk_network_access_settings::TargetDiskNetworkAccessOption>,
     #[doc = "Gets or sets the ARM resource ID of the target disk access to be used when TargetDiskNetworkAccessOption is set to TargetDiskNetworkAccessOption.UseNew"]
     #[serde(rename = "targetDiskAccessId", default, skip_serializing_if = "Option::is_none")]
@@ -11401,7 +11861,12 @@ pub mod target_disk_network_access_settings {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TargetRestoreInfo {
     #[doc = "Can Overwrite if Target DataBase already exists"]
-    #[serde(rename = "overwriteOption", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "overwriteOption",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub overwrite_option: Option<target_restore_info::OverwriteOption>,
     #[doc = "Resource Id name of the container in which Target DataBase resides"]
     #[serde(rename = "containerId", default, skip_serializing_if = "Option::is_none")]
@@ -11464,13 +11929,23 @@ pub mod target_restore_info {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TieringPolicy {
     #[doc = "Tiering Mode to control automatic tiering of recovery points. Supported values are:\r\n1. TierRecommended: Tier all recovery points recommended to be tiered\r\n2. TierAfter: Tier all recovery points after a fixed period, as specified in duration + durationType below.\r\n3. DoNotTier: Do not tier any recovery points"]
-    #[serde(rename = "tieringMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "tieringMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub tiering_mode: Option<tiering_policy::TieringMode>,
     #[doc = "Number of days/weeks/months/years to retain backups in current tier before tiering.\r\nUsed only if TieringMode is set to TierAfter"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration: Option<i32>,
     #[doc = "Retention duration type: days/weeks/months/years\r\nUsed only if TieringMode is set to TierAfter"]
-    #[serde(rename = "durationType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "durationType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub duration_type: Option<tiering_policy::DurationType>,
 }
 impl TieringPolicy {
@@ -11593,7 +12068,7 @@ pub struct TriggerDataMoveRequest {
     #[serde(rename = "sourceRegion")]
     pub source_region: String,
     #[doc = "DataMove Level"]
-    #[serde(rename = "dataMoveLevel")]
+    #[serde(rename = "dataMoveLevel", with = "azure_core::xml::text_content")]
     pub data_move_level: trigger_data_move_request::DataMoveLevel,
     #[doc = "Correlation Id"]
     #[serde(rename = "correlationId")]
@@ -11964,7 +12439,12 @@ pub struct WorkloadItem {
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
     #[doc = "State of the back up item."]
-    #[serde(rename = "protectionState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "protectionState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub protection_state: Option<workload_item::ProtectionState>,
 }
 impl WorkloadItem {
@@ -12078,7 +12558,12 @@ pub struct WorkloadProtectableItem {
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
     #[doc = "State of the back up item."]
-    #[serde(rename = "protectionState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "protectionState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub protection_state: Option<workload_protectable_item::ProtectionState>,
 }
 impl WorkloadProtectableItem {
@@ -12180,7 +12665,12 @@ impl WorkloadProtectableItemResourceList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct YearlyRetentionSchedule {
     #[doc = "Retention schedule format for yearly retention policy."]
-    #[serde(rename = "retentionScheduleFormatType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "retentionScheduleFormatType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub retention_schedule_format_type: Option<yearly_retention_schedule::RetentionScheduleFormatType>,
     #[doc = "List of months of year of yearly retention policy."]
     #[serde(

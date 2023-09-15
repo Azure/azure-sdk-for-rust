@@ -63,7 +63,7 @@ pub struct BillingSubscriptionAliasListResult {
 impl azure_core::Continuable for BillingSubscriptionAliasListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BillingSubscriptionAliasListResult {
@@ -104,7 +104,12 @@ impl BillingSubscriptionMergeRequest {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingSubscriptionProperties {
     #[doc = "Indicates whether auto renewal is turned on or off for a subscription."]
-    #[serde(rename = "autoRenew", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "autoRenew",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub auto_renew: Option<billing_subscription_properties::AutoRenew>,
     #[doc = "The provisioning tenant of the subscription."]
     #[serde(rename = "beneficiaryTenantId", default, skip_serializing_if = "Option::is_none")]
@@ -197,7 +202,7 @@ pub struct BillingSubscriptionProperties {
     #[serde(rename = "skuId", default, skip_serializing_if = "Option::is_none")]
     pub sku_id: Option<String>,
     #[doc = "The status of the subscription. This field is not available for Enterprise Agreement billing accounts."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<billing_subscription_properties::Status>,
     #[doc = "The ID of the usage-based subscription. This field is only available for usage-based subscriptions of Microsoft Customer Agreement billing accounts."]
     #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
@@ -362,7 +367,7 @@ pub struct BillingSubscriptionsListResult {
 impl azure_core::Continuable for BillingSubscriptionsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BillingSubscriptionsListResult {
@@ -459,7 +464,7 @@ impl DetachPaymentMethodEligibilityResult {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DetachPaymentMethodErrorDetails {
     #[doc = "Error code of the detach payment method eligibility validation response."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub code: Option<DetachPaymentMethodEligibilityErrorCode>,
     #[doc = "Error message for the detach payment method eligibility validation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -474,7 +479,12 @@ impl DetachPaymentMethodErrorDetails {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnrollmentAccountSubscriptionDetails {
     #[doc = "The current enrollment account status of the subscription. This field is available only for the Enterprise Agreement billing accounts."]
-    #[serde(rename = "subscriptionEnrollmentAccountStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "subscriptionEnrollmentAccountStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub subscription_enrollment_account_status: Option<enrollment_account_subscription_details::SubscriptionEnrollmentAccountStatus>,
     #[doc = "The enrollment Account and the subscription association start date. This field is available only for the Enterprise Agreement billing accounts."]
     #[serde(rename = "enrollmentAccountStartDate", default, with = "azure_core::date::rfc3339::option")]
@@ -800,7 +810,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -865,7 +875,7 @@ pub struct PaymentMethodLinksListResult {
 impl azure_core::Continuable for PaymentMethodLinksListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PaymentMethodLinksListResult {
@@ -895,7 +905,7 @@ pub struct PaymentMethodProjectionProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The family of payment method."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub family: Option<payment_method_projection_properties::Family>,
     #[doc = "The type of payment method."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -920,7 +930,7 @@ pub struct PaymentMethodProjectionProperties {
     )]
     pub logos: Vec<PaymentMethodLogo>,
     #[doc = "Status of the payment method."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<payment_method_projection_properties::Status>,
 }
 impl PaymentMethodProjectionProperties {
@@ -1011,7 +1021,7 @@ pub mod payment_method_projection_properties {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PaymentMethodProperties {
     #[doc = "The family of payment method."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub family: Option<payment_method_properties::Family>,
     #[doc = "The type of payment method."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
@@ -1036,7 +1046,7 @@ pub struct PaymentMethodProperties {
     )]
     pub logos: Vec<PaymentMethodLogo>,
     #[doc = "Status of the payment method."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<payment_method_properties::Status>,
 }
 impl PaymentMethodProperties {
@@ -1152,7 +1162,7 @@ pub struct PaymentMethodsListResult {
 impl azure_core::Continuable for PaymentMethodsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PaymentMethodsListResult {
@@ -1221,7 +1231,7 @@ impl Resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValidateMoveBillingSubscriptionEligibilityError {
     #[doc = "Error code of the transfer validation response."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub code: Option<MoveBillingSubscriptionEligibilityErrorCode>,
     #[doc = "The error message."]
     #[serde(default, skip_serializing_if = "Option::is_none")]

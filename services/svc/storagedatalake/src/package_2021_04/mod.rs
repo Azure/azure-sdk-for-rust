@@ -1225,56 +1225,41 @@ pub mod file_system {
                             this.client.endpoint(),
                             &this.filesystem
                         ))?;
-                        let rsp = match continuation {
-                            Some(value) => {
-                                url.set_path("");
-                                url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                            None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                req.insert_header(azure_core::headers::VERSION, "2021-04-10");
-                                if let Some(prefix) = &this.prefix {
-                                    req.url_mut().query_pairs_mut().append_pair("prefix", prefix);
-                                }
-                                if let Some(delimiter) = &this.delimiter {
-                                    req.url_mut().query_pairs_mut().append_pair("delimiter", delimiter);
-                                }
-                                if let Some(marker) = &this.marker {
-                                    req.url_mut().query_pairs_mut().append_pair("marker", marker);
-                                }
-                                if let Some(max_results) = &this.max_results {
-                                    req.url_mut().query_pairs_mut().append_pair("maxResults", &max_results.to_string());
-                                }
-                                if let Some(showonly) = &this.showonly {
-                                    req.url_mut().query_pairs_mut().append_pair("showonly", showonly);
-                                }
-                                if let Some(timeout) = &this.timeout {
-                                    req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
-                                }
-                                if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
-                                    req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
-                                }
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                        };
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.insert_header(azure_core::headers::VERSION, "2021-04-10");
+                        if let Some(prefix) = &this.prefix {
+                            req.url_mut().query_pairs_mut().append_pair("prefix", prefix);
+                        }
+                        if let Some(delimiter) = &this.delimiter {
+                            req.url_mut().query_pairs_mut().append_pair("delimiter", delimiter);
+                        }
+                        if let Some(marker) = &this.marker {
+                            req.url_mut().query_pairs_mut().append_pair("marker", marker);
+                        }
+                        if let Some(max_results) = &this.max_results {
+                            req.url_mut().query_pairs_mut().append_pair("maxResults", &max_results.to_string());
+                        }
+                        if let Some(showonly) = &this.showonly {
+                            req.url_mut().query_pairs_mut().append_pair("showonly", showonly);
+                        }
+                        if let Some(timeout) = &this.timeout {
+                            req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
+                        }
+                        if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
+                            req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
+                        }
+                        let req_body = azure_core::EMPTY_BODY;
+                        if let Some(value) = continuation.as_ref() {
+                            req.url_mut().query_pairs_mut().append_pair("marker", value);
+                        }
+                        req.set_body(req_body);
+                        let rsp = this.client.send(&mut req).await?;
                         let rsp = match rsp.status() {
                             azure_core::StatusCode::Ok => Ok(Response(rsp)),
                             status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
