@@ -1,5 +1,5 @@
 use azure_core::auth::TokenCredential;
-use azure_identity::*;
+use azure_identity::AzureCliCredential;
 use std::error::Error;
 use url::Url;
 
@@ -27,6 +27,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .text()
         .await?;
 
-    println!("\n\nresp {resp:?}");
+    println!("{resp}");
     Ok(())
 }

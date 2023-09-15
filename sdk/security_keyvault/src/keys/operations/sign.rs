@@ -12,7 +12,7 @@ operation! {
 }
 
 impl SignBuilder {
-    pub fn into_future(mut self) -> Sign {
+    pub fn into_future(self) -> Sign {
         Box::pin(async move {
             // POST {vaultBaseUrl}/keys/{key-name}/{key-version}/sign?api-version=7.1
             let version = self.version.unwrap_or_default();
@@ -34,7 +34,7 @@ impl SignBuilder {
             let response = self
                 .client
                 .keyvault_client
-                .send(&mut self.context, &mut request)
+                .send(&self.context, &mut request)
                 .await?;
 
             let response = CollectedResponse::from_response(response).await?;

@@ -15,6 +15,7 @@ pub struct ListContainersBuilder {
     prefix: Option<Prefix>,
     include_metadata: bool,
     include_deleted: bool,
+    include_system: bool,
     max_results: Option<MaxResults>,
     context: Context,
 }
@@ -26,6 +27,7 @@ impl ListContainersBuilder {
             prefix: None,
             include_metadata: false,
             include_deleted: false,
+            include_system: false,
             max_results: None,
             context: Context::new(),
         }
@@ -35,6 +37,7 @@ impl ListContainersBuilder {
         prefix: Prefix => Some(prefix),
         include_metadata: bool => include_metadata,
         include_deleted: bool => include_deleted,
+        include_system: bool => include_system,
         max_results: MaxResults => Some(max_results),
         context: Context => context,
     }
@@ -54,13 +57,20 @@ impl ListContainersBuilder {
                     next_marker.append_to_url_query(&mut url);
                 }
 
-                if let Some(include) = match (this.include_metadata, this.include_deleted) {
-                    (true, true) => Some("metadata,deleted"),
-                    (true, false) => Some("metadata"),
-                    (false, true) => Some("deleted"),
-                    (false, false) => None,
-                } {
-                    url.query_pairs_mut().append_pair("include", include);
+                let mut to_include = vec![];
+
+                if this.include_metadata {
+                    to_include.push("metadata");
+                }
+                if this.include_deleted {
+                    to_include.push("deleted");
+                }
+                if this.include_system {
+                    to_include.push("system");
+                }
+                if !to_include.is_empty() {
+                    url.query_pairs_mut()
+                        .append_pair("include", &to_include.join(","));
                 }
                 this.max_results.append_to_url_query(&mut url);
 

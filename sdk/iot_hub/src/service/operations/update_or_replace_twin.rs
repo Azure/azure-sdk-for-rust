@@ -56,7 +56,7 @@ impl UpdateOrReplaceTwinBuilder {
     ///              .desired_properties(serde_json::json!({"PropertyName": "PropertyValue"}))
     ///              ;
     /// ```
-    pub fn into_future(mut self) -> UpdateOrReplaceTwin {
+    pub fn into_future(self) -> UpdateOrReplaceTwin {
         Box::pin(async move {
             let body = DesiredTwinBody {
                 tags: self.desired_tags.unwrap_or_default(),
@@ -84,7 +84,7 @@ impl UpdateOrReplaceTwinBuilder {
 
             request.set_body(body);
 
-            let response = self.client.send(&mut self.context, &mut request).await?;
+            let response = self.client.send(&self.context, &mut request).await?;
 
             UpdateOrReplaceTwinResponse::from_response(response).await
         })

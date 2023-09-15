@@ -136,6 +136,7 @@ impl<'a> Serialize for RequestSerializer<'a> {
             FIELDS[3],
             &match &self.0.body() {
                 Body::Bytes(bytes) => base64::encode(bytes as &[u8]),
+                #[cfg(not(target_arch = "wasm32"))]
                 Body::SeekableStream(_) => unimplemented!(),
             },
         )?;

@@ -11,6 +11,12 @@ impl std::fmt::Display for LeaseId {
     }
 }
 
+impl From<Uuid> for LeaseId {
+    fn from(value: Uuid) -> Self {
+        Self(value)
+    }
+}
+
 impl std::str::FromStr for LeaseId {
     type Err = <Uuid as FromStr>::Err;
 

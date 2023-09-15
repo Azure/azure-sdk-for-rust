@@ -18,7 +18,7 @@ azure_core::operation! {
 
 impl InvokeMethodBuilder {
     /// Turn the builder into a `Future`
-    pub fn into_future(mut self) -> InvokeMethod {
+    pub fn into_future(self) -> InvokeMethod {
         Box::pin(async move {
             let uri = match &self.module_id {
                 Some(module_id_value) => format!(
@@ -43,7 +43,7 @@ impl InvokeMethodBuilder {
 
             request.set_body(body);
 
-            let response = self.client.send(&mut self.context, &mut request).await?;
+            let response = self.client.send(&self.context, &mut request).await?;
 
             InvokeMethodResponse::try_from(response).await
         })

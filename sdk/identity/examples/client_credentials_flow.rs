@@ -1,16 +1,15 @@
 use azure_identity::client_credentials_flow;
+use std::{env::var, error::Error};
 use url::Url;
-
-use std::env;
-use std::error::Error;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let client_id = env::var("CLIENT_ID").expect("Missing CLIENT_ID environment variable.");
-    let client_secret =
-        env::var("CLIENT_SECRET").expect("Missing CLIENT_SECRET environment variable.");
-    let tenant_id = env::var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
-    let scope = env::var("SCOPE").expect("Missing SCOPE environment variable.");
+    let client_id = var("CLIENT_ID").expect("Missing CLIENT_ID environment variable.");
+    let client_secret = var("CLIENT_SECRET").expect("Missing CLIENT_SECRET environment variable.");
+    let tenant_id = var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
+    let scope = var("SCOPE").expect("Missing SCOPE environment variable.");
+    let subscription_id =
+        var("SUBSCRIPTION_ID").expect("Missing SUBSCRIPTION_ID environment variable.");
 
     let http_client = azure_core::new_http_client();
     // This will give you the final token to use in authorization.
@@ -22,10 +21,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         &tenant_id,
     )
     .await?;
-    println!("Non interactive authorization == {token:?}");
 
-    let subscription_id =
-        env::var("SUBSCRIPTION_ID").expect("Missing SUBSCRIPTION_ID environment variable.");
+    eprintln!("Non interactive authorization == {token:?}");
 
     // Let's enumerate the Azure SQL Databases instances
     // in the subscription. Note: this way of calling the REST API
@@ -46,6 +43,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .text()
         .await?;
 
-    println!("\n\nresp {resp:?}");
+    println!("{resp}");
     Ok(())
 }

@@ -4,9 +4,9 @@
   "headers": {
     "authorization": "<<STRIPPED>>",
     "content-length": "0",
-    "user-agent": "azsdk-rust-storage/0.6.0 (1.63.0; linux; x86_64)",
-    "x-ms-date": "Fri, 16 Sep 2022 18:46:36 GMT",
-    "x-ms-version": "2019-12-12"
+    "user-agent": "azsdk-rust-storage/0.14.0 (1.72.0; linux; x86_64)",
+    "x-ms-date": "Thu, 07 Sep 2023 18:25:51 GMT",
+    "x-ms-version": "2020-10-02"
   },
   "body": ""
 }

@@ -4,9 +4,9 @@
     "accept-ranges": "bytes",
     "content-length": "0",
     "content-type": "application/octet-stream",
-    "date": "Mon, 11 Apr 2022 16:19:48 GMT",
-    "etag": "\"0x8DA1BD71918DC66\"",
-    "last-modified": "Mon, 11 Apr 2022 16:19:47 GMT",
+    "date": "Thu, 07 Sep 2023 19:20:13 GMT",
+    "etag": "\"0x8DBAFD776A72E8E\"",
+    "last-modified": "Thu, 07 Sep 2023 19:20:14 GMT",
     "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
     "x-ms-content-crc64": "AAAAAAAAAAA=",
     "x-ms-group": "$superuser",
@@ -15,10 +15,10 @@
     "x-ms-owner": "$superuser",
     "x-ms-permissions": "rw-r-----",
     "x-ms-properties": "AddedVia=QXp1cmUgU0RLIGZvciBSdXN0",
-    "x-ms-request-id": "def5aa4e-901f-0073-76bf-4d3635000000",
+    "x-ms-request-id": "b04cf72b-c01f-0053-1fc0-e16139000000",
     "x-ms-resource-type": "file",
     "x-ms-server-encrypted": "true",
-    "x-ms-version": "2019-12-12"
+    "x-ms-version": "2020-10-02"
   },
   "body": ""
 }

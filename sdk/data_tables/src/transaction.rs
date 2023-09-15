@@ -60,6 +60,7 @@ impl TransactionOperations {
                         s.push('\n');
                     }
                 }
+                #[cfg(not(target_arch = "wasm32"))]
                 azure_core::Body::SeekableStream(_) => todo!(),
             }
         }
