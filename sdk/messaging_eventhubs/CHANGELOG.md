@@ -1,5 +1,34 @@
 # Change log
 
+## 0.14.4
+
+- Removed the internal buffer from `EventStream`
+- Deprecates `cache_event_count` and `max_wait_time` fields in `ReadEventOptions`
+
+## 0.14.3
+
+- Reworked `EventHubConnection` to have more fine-grained locks
+- Changed `EventStream` error type to `azure_core::Error`
+- Added type alias `SingleConsumerEventStream` and `MultiConsumerEventStream`
+
+## 0.14.2
+
+- Exposed `TryAddError` to public
+
+## 0.14.1
+
+- Renamed the following constructor methods and marked the old methods as deprecated
+  - `from_connection_string()` -> `new_from_connection_string()`
+  - `from_namespace_and_credential()` -> `new_from_credential()`
+  - `from_namespace_and_named_key_credential()` -> `new_from_named_key_credential()`
+  - `from_namespace_and_sas_credential()` -> `new_from_sas_credential()`
+- Removed generic parameter `C` from `EventHubConnection`
+
+## 0.14.0
+
+- Fixed problem with `azure_identity` credentials
+- Added example showcasing how to work with `azure_identity` credentials
+
 ## 0.14.0-alpha
 
 - Changed version number to follow that of `azure_core`
