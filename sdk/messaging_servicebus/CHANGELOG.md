@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.15.0 - Sep. 15, 2023
+
+- Updated `azure_core` dependency to 0.15.0
+- Fixed clippy warnings
+
 ## 0.14.0 - Sep. 7, 2023
 
 - Unified error type for most public functions to `azure_core::Error`
