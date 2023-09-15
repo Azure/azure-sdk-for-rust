@@ -467,7 +467,7 @@ impl TransportConnectionScope for AmqpConnectionScope {
 
     fn transport_type(&self) -> ServiceBusTransportType {
         // This is a simply enum, cloning should be cheaper than or equivalent to a reference
-        self.transport_type.clone()
+        self.transport_type
     }
 
     fn is_disposed(&self) -> bool {

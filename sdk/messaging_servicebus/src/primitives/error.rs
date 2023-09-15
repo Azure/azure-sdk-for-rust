@@ -54,19 +54,19 @@ impl From<ClientDisposedError> for azure_core::Error {
 pub(crate) enum Error {
     /// Argument error
     #[error("Argument error: {}", .0)]
-    ArgumentError(#[from] ArgumentError),
+    Argument(#[from] ArgumentError),
 
     /// Error with the connection string
     #[error(transparent)]
-    FormatError(#[from] FormatError),
+    Format(#[from] FormatError),
 
     /// Error with the SAS signature
     #[error(transparent)]
-    SasSignatureError(#[from] SasSignatureError),
+    SasSignature(#[from] SasSignatureError),
 
     /// Error parsing url from connection string
     #[error(transparent)]
-    UrlParseError(#[from] url::ParseError),
+    UrlParse(#[from] url::ParseError),
 
     /// Error opening the connection
     #[error(transparent)]
@@ -104,10 +104,10 @@ pub(crate) enum Error {
 impl From<Error> for azure_core::Error {
     fn from(value: Error) -> Self {
         match value {
-            Error::ArgumentError(error) => error.into(),
-            Error::FormatError(error) => error.into(),
-            Error::SasSignatureError(error) => error.into(),
-            Error::UrlParseError(error) => error.into(),
+            Error::Argument(error) => error.into(),
+            Error::Format(error) => error.into(),
+            Error::SasSignature(error) => error.into(),
+            Error::UrlParse(error) => error.into(),
             Error::Open(error) => error.into_azure_core_error(),
             Error::WebSocket(error) => error.into_azure_core_error(),
             Error::Elapsed(error) => error.into_azure_core_error(),
@@ -123,7 +123,7 @@ impl From<Error> for azure_core::Error {
 impl From<AmqpClientError> for Error {
     fn from(err: AmqpClientError) -> Self {
         match err {
-            AmqpClientError::UrlParseError(err) => Self::UrlParseError(err),
+            AmqpClientError::UrlParseError(err) => Self::UrlParse(err),
             AmqpClientError::Open(err) => Self::Open(err),
             AmqpClientError::WebSocket(err) => Self::WebSocket(err),
             AmqpClientError::Elapsed(err) => Self::Elapsed(err),

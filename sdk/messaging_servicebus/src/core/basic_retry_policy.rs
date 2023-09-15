@@ -101,7 +101,7 @@ impl ServiceBusRetryPolicy for BasicRetryPolicy {
         if self.options.max_retries == 0
             || self.options.delay.is_zero()
             || self.options.max_delay.is_zero()
-            || attempt_count > self.options.max_retries as u32
+            || attempt_count > self.options.max_retries
         {
             return None;
         }

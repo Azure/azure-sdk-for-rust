@@ -106,7 +106,7 @@ where
 
     fn transport_type(&self) -> ServiceBusTransportType {
         // `transport_type` is a simple enum, cloning should be cheap
-        self.transport_type.clone()
+        self.transport_type
     }
 
     fn is_closed(&self) -> bool {

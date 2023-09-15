@@ -335,8 +335,8 @@ impl ServiceBusReceivedMessage {
             .message_annotations
             .as_ref()?
             .get(&DEAD_LETTER_SOURCE_NAME as &dyn AnnotationKey)
-            .and_then(|value| match value {
-                Value::String(s) => Some(s.as_str()),
+            .map(|value| match value {
+                Value::String(s) => s.as_str(),
                 _ => unreachable!("Expecting a String"),
             })
     }
