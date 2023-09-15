@@ -18,6 +18,11 @@ impl MaxRetries {
     pub fn new(value: u32) -> Result<Self, u32> {
         Self::try_from(value)
     }
+
+    /// Gets the inner value.
+    pub fn value(&self) -> u32 {
+        self.0
+    }
 }
 
 impl Default for MaxRetries {
