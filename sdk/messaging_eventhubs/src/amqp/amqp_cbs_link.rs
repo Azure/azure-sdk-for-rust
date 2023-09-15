@@ -151,9 +151,10 @@ impl Sharable<AmqpCbsLinkHandle> {
     pub(crate) async fn stop_if_owned(&self) {
         match self {
             Self::Owned(link) => link.stop(),
-            Self::Shared(link) => match Arc::strong_count(link) {
-                1 => link.write().await.stop(),
-                _ => {}
+            Self::Shared(link) => {
+                if Arc::strong_count(link) == 1 {
+                    link.write().await.stop();
+                }
             },
             Self::None => unreachable!(),
         }

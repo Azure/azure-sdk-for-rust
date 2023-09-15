@@ -10,7 +10,20 @@ const DEFAULT_TRY_TIMEOUT: Duration = Duration::from_secs(60);
 
 /// The maximum number of retry attempts before considering the associated operation to have failed
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct MaxRetries(pub u32);
+pub struct MaxRetries(pub(crate) u32);
+
+impl MaxRetries {
+    /// Creates a new instance with the specified value. If the value is greater than 100, the value
+    /// is returned as an error.
+    pub fn new(value: u32) -> Result<Self, u32> {
+        Self::try_from(value)
+    }
+
+    /// Gets the inner value.
+    pub fn value(&self) -> u32 {
+        self.0
+    }
+}
 
 impl Default for MaxRetries {
     fn default() -> Self {

@@ -18,6 +18,3 @@ pub use last_enqueued_event_properties::*;
 // pub use partition_context::PartitionContext; // TODO: implement processor
 // pub use partition_event::PartitionEvent; // TODO: implement processor
 pub use read_event_options::*;
-
-pub use crate::amqp::amqp_consumer::SingleConsumerEventStream;
-pub use crate::amqp::amqp_consumer::MultiConsumerEventStream;

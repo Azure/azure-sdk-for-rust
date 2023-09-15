@@ -8,7 +8,7 @@ use std::{
 };
 
 use fe2o3_amqp::link::RecvError;
-use futures_util::{future::poll_fn, ready, Future, FutureExt, Stream};
+use futures_util::{future::poll_fn, ready, Future, FutureExt};
 use tokio_util::sync::CancellationToken;
 
 use crate::{
@@ -32,7 +32,7 @@ type ConsumerClosingBoxedFuture =
 pin_project_lite::pin_project! {
     #[project = ConsumerStateProj]
     #[project_replace = ConsumerStateProjReplace]
-    enum ConsumerState<RP> {
+    pub(crate) enum ConsumerState<RP> {
         Value {
             value: AmqpConsumer<RP>,
         },
@@ -139,7 +139,7 @@ where
         Poll::Ready(result)
     }
 
-    async fn close(mut self) -> Result<(), DisposeConsumerError> {
+    pub(crate) async fn close(mut self) -> Result<(), DisposeConsumerError> {
         poll_fn(|cx| Pin::new(&mut self).poll_close(cx)).await
     }
 
@@ -164,8 +164,8 @@ where
 }
 
 #[derive(Debug)]
-pub struct MultipleAmqpConsumers<RP> {
-    inner: Vec<ConsumerState<RP>>,
+pub(crate) struct MultipleAmqpConsumers<RP> {
+    pub(crate) inner: Vec<ConsumerState<RP>>,
     retry_policy: RP,
 }
 
@@ -273,7 +273,7 @@ where
     consumers.recv().await.transpose().map_err(Into::into)
 }
 
-async fn receive_event<RP>(
+pub(crate) async fn receive_event<RP>(
     client: &mut AmqpClient,
     consumers: &mut MultipleAmqpConsumers<RP>,
 ) -> Option<Result<ReceivedEventData, RecoverAndReceiveError>>
@@ -320,80 +320,7 @@ where
     }
 }
 
-async fn next_event<RP>(
-    mut value: EventStreamStateValue<'_, MultipleAmqpConsumers<RP>>,
-) -> (
-    Option<Result<ReceivedEventData, RecoverAndReceiveError>>,
-    EventStreamStateValue<'_, MultipleAmqpConsumers<RP>>,
-)
-where
-    RP: EventHubsRetryPolicy + Send + Unpin + 'static,
-{
-    let outcome = receive_event(
-        value.client,
-        &mut value.consumer,
-    ).await;
-    (outcome, value)
-}
-
-async fn close_consumers<RP>(
-    value: EventStreamStateValue<'_, MultipleAmqpConsumers<RP>>,
-) -> Result<(), DisposeConsumerError>
-where
-    RP: Send + 'static,
-{
-    let mut result = Ok(());
-    for consumer in value.consumer.inner {
-        result = result.and(consumer.close().await);
-    }
-    result
-}
-
-impl<'a, RP> EventStreamState<'a, MultipleAmqpConsumers<RP>>
-where
-    RP: Send + 'static,
-{
-    fn poll_close(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context,
-    ) -> Poll<Result<(), DisposeConsumerError>> {
-        if let Some(value) = self.as_mut().take_value() {
-            self.set(EventStreamState::Closing {
-                future: close_consumers(value).boxed(),
-            });
-        }
-
-        if let Some(_future) = self.as_mut().project_future() {
-            // let (_, value) = ready!(future.poll(cx));
-            // self.set(EventStreamState::Closing {
-            //     future: close_consumers(value).boxed(),
-            // });
-
-            // TODO: what to do with the value?
-            //
-            // This is a temporary hack which simply drops the future.
-            // Both Link and Session have internal states that implements Drop trait and
-            // will exchange messages with the server to close the link/session.
-            // drop(future);
-            self.set(EventStreamState::Empty);
-            return Poll::Ready(Ok(()));
-        }
-
-        let result = match self.as_mut().project_closing() {
-            Some(fut) => ready!(fut.poll(cx)),
-            None => panic!("EventStream must not be polled after it returned `Poll::Ready(None)`"),
-        };
-
-        self.set(EventStreamState::Empty);
-        Poll::Ready(result)
-    }
-
-    async fn close(mut self) -> Result<(), DisposeConsumerError> {
-        poll_fn(|cx| Pin::new(&mut self).poll_close(cx)).await
-    }
-}
-
-impl<'a, RP> EventStream<'a, MultipleAmqpConsumers<RP>>
+impl<'a, RP> EventStream<'a, RP>
 where
     RP: Send + 'static,
 {
@@ -412,58 +339,10 @@ where
             inner: consumers,
             retry_policy,
         };
+        let consumers = super::Consumer::Multiple(consumers);
         let value = EventStreamStateValue::new(client, consumers);
         let state = EventStreamState::Value { value };
 
         Self { state }
-    }
-
-    /// Closes the [`EventStream`].
-    pub async fn close(self) -> Result<(), DisposeConsumerError> {
-        log::debug!("Closing EventStream");
-        self.state.close().await
-    }
-}
-
-impl<'a, RP> Stream for EventStream<'a, MultipleAmqpConsumers<RP>>
-where
-    RP: EventHubsRetryPolicy + Send + Unpin + 'static,
-{
-    type Item = Result<ReceivedEventData, azure_core::Error>;
-
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let mut this = self.project();
-
-        if let Some(state) = this.state.as_mut().take_value() {
-            this.state.set(EventStreamState::Future {
-                future: next_event(state).boxed(),
-            });
-        }
-
-        let (item, next_state) = match this.state.as_mut().project_future() {
-            Some(fut) => ready!(fut.poll(cx)),
-            None => {
-                let result = match this.state.as_mut().project_closing() {
-                    Some(fut) => ready!(fut.poll(cx)),
-                    None => panic!("Stream must not be polled after completion"),
-                };
-
-                match result {
-                    Ok(_) => return Poll::Ready(None),
-                    Err(err) => return Poll::Ready(Some(Err(err.into()))),
-                }
-            },
-        };
-
-        if let Some(item) = item {
-            this.state
-                .set(EventStreamState::Value { value: next_state });
-            Poll::Ready(Some(item.map_err(Into::into)))
-        } else {
-            this.state.set(EventStreamState::Closing {
-                future: close_consumers(next_state).boxed(),
-            });
-            Poll::Ready(None)
-        }
     }
 }

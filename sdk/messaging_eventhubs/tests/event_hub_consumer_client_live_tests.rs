@@ -57,7 +57,7 @@ cfg_not_wasm32! {
         let consumer_group = EventHubConsumerClient::DEFAULT_CONSUMER_GROUP_NAME;
 
         let mut retry_options = EventHubsRetryOptions::default();
-        retry_options.max_retries = MaxRetries(3);
+        retry_options.max_retries = MaxRetries::try_from(3).unwrap();
         retry_options.try_timeout = std::time::Duration::from_secs(5);
         let mut options = EventHubConsumerClientOptions::default();
         options.retry_options = retry_options;
@@ -73,8 +73,7 @@ cfg_not_wasm32! {
 
         let partition_id = "0";
         let starting_position = EventPosition::earliest();
-        let mut options = ReadEventOptions::default();
-        options.cache_event_count = 3;
+        let options = ReadEventOptions::default();
 
         let mut stream = consumer
             .read_events_from_partition(partition_id, starting_position, options)
@@ -110,7 +109,7 @@ cfg_not_wasm32! {
         let consumer_group = EventHubConsumerClient::DEFAULT_CONSUMER_GROUP_NAME;
 
         let mut retry_options = EventHubsRetryOptions::default();
-        retry_options.max_retries = MaxRetries(3);
+        retry_options.max_retries = MaxRetries::try_from(3).unwrap();
         retry_options.try_timeout = std::time::Duration::from_secs(5);
         let mut options = EventHubConsumerClientOptions::default();
         options.retry_options = retry_options;
@@ -124,13 +123,11 @@ cfg_not_wasm32! {
         .await
         .unwrap();
 
-        let mut options = ReadEventOptions::default();
+        let options = ReadEventOptions::default();
         // Some large number that will never be reached but not too large that will take too much
         // memory
-        options.cache_event_count = 1000;
-        options.maximum_wait_time = Some(std::time::Duration::from_secs(5));
         let mut stream = consumer
-            .read_events(true, Default::default())
+            .read_events(true, options)
             .await
             .unwrap();
 
@@ -162,7 +159,7 @@ cfg_not_wasm32! {
         let consumer_group = EventHubConsumerClient::DEFAULT_CONSUMER_GROUP_NAME;
 
         let mut retry_options = EventHubsRetryOptions::default();
-        retry_options.max_retries = MaxRetries(3);
+        retry_options.max_retries = MaxRetries::try_from(3).unwrap();
         retry_options.try_timeout = std::time::Duration::from_secs(5);
         let mut options = EventHubConsumerClientOptions::default();
         options.retry_options = retry_options;
@@ -177,10 +174,9 @@ cfg_not_wasm32! {
             .await
             .unwrap();
 
-            let mut options = ReadEventOptions::default();
-            options.cache_event_count = 3;
+            let options = ReadEventOptions::default();
             let mut stream = consumer
-                .read_events(true, Default::default())
+                .read_events(true, options)
                 .await
                 .unwrap();
 
