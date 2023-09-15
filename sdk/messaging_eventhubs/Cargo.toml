@@ -1,6 +1,6 @@
 [package]
 name = "azeventhubs"
-version = "0.14.0-alpha"
+version = "0.15.0"
 edition = "2021"
 description = "An unofficial AMQP 1.0 rust client for Azure Event Hubs"
 readme = "README.md"
@@ -35,7 +35,7 @@ pin-project-lite = "0.2.9"
 serde = "1"
 
 # Azure dependencies
-azure_core = { path = "../core", version = "0.14" }
+azure_core = { path = "../core", version = "0.15" }
 
 # AMQP dependencies
 fe2o3-amqp = { version = "0.8.22" }
