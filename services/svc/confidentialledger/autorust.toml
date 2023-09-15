@@ -1,13 +1,7 @@
 [tags]
 # Configuration section missing
 # https://github.com/Azure/azure-rest-api-specs/pull/19379
-limit = 0
-
-[properties]
-boxed = [
-    [
-        "../../../azure-rest-api-specs/specification/confidentialledger/data-plane/Microsoft.ConfidentialLedger/preview/0.1-preview/common.json",
-        "ConfidentialLedgerErrorBody",
-        "innererror"
-    ]
+deny=[
+    "package-2022-20-04-preview-ledger", 
+    "package-2022-20-04-preview-identity"
 ]
