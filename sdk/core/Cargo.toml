@@ -1,6 +1,6 @@
 [package]
 name = "azure_core"
-version = "0.14.0"
+version = "0.15.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Core crate"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -17,13 +17,12 @@ rust-version = "1.70.0"
 async-trait = "0.1"
 base64 = "0.21"
 bytes = "1.0"
-time = { version = "0.3.10", features = ["serde-well-known", "macros", "local-offset"] }
 dyn-clone = "1.0"
 futures = "0.3"
 http-types = { version = "2.12", default-features = false }
 log = "0.4"
 rand = "0.8"
-reqwest = { version = "0.11", features = [
+reqwest = { version = "0.11.14", features = [
   "stream",
 ], default-features = false, optional = true }
 serde = { version = "1.0", features = ["derive"] }
@@ -33,9 +32,12 @@ url = "2.2"
 uuid = { version = "1.0" }
 pin-project = "1.0"
 paste = "1.0"
+time = { version = "0.3.10", features = ["serde-well-known", "macros", "local-offset"] }
+tokio = {version="1.0", optional=true}
 
-# Add dependency to getrandom to enable WASM support
+# When target is `wasm32`, include `getrandom` and enable `wasm-bindgen` feature in `time`.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
+time = { version = "0.3.10", features = ["wasm-bindgen"] }
 getrandom = { version = "0.2", features = ["js"] }
 
 [build-dependencies]
@@ -43,7 +45,7 @@ rustc_version = "0.4"
 
 [dev-dependencies]
 env_logger = "0.10"
-tokio = { version = "1", features = ["default"] }
+tokio = { version = "1.0", features = ["default"] }
 thiserror = "1.0"
 
 [features]
@@ -54,3 +56,4 @@ enable_reqwest_rustls = ["reqwest/rustls-tls"]
 test_e2e = []
 azurite_workaround = []
 xml = ["quick-xml"]
+tokio-fs = ["tokio/fs", "tokio/io-util"]

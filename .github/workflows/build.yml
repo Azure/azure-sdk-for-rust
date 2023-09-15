@@ -15,7 +15,7 @@ jobs:
     outputs:
       msrv: ${{ steps.get_msrv.outputs.msrv }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - id: get_msrv
         run: |
           MSRV=$(cargo metadata --format-version=1 --no-deps  | jq '.packages[] | select(.name == "azure_core").rust_version' -r)
@@ -26,7 +26,7 @@ jobs:
     name: Code Style
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
       # for code style, we only care about `stable`
       - run: eng/scripts/code_style.sh stable
@@ -48,9 +48,30 @@ jobs:
           - build: nightly
             experimental: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
       - run: eng/scripts/sdk_tests.sh ${{ matrix.build }}
+
+  test-wasm:
+    name: WASM Tests
+    runs-on: ubuntu-20.04
+    needs:
+      - msrv
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      matrix:
+        build:
+          - stable
+          - ${{ needs.msrv.outputs.msrv }}
+        experimental:
+          - false
+        include:
+          - build: nightly
+            experimental: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - run: eng/scripts/check_wasm.sh ${{ matrix.build }}
 
   test-services:
     name: Services Tests
@@ -69,7 +90,7 @@ jobs:
           - build: nightly
             experimental: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: services
@@ -95,7 +116,7 @@ jobs:
           - build: nightly
             experimental: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
       - run: eng/scripts/emulator_tests.sh ${{ matrix.build }}
       - name: display free disk space
@@ -119,7 +140,7 @@ jobs:
           - build: nightly
             experimental: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
       - run: eng/scripts/e2e_tests.sh ${{ matrix.build }}
       - name: display free disk space
@@ -131,16 +152,16 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: git clone
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: azure-sdk-for-rust
       - name: git clone Azure/azure-rest-api-specs
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: Azure/azure-rest-api-specs
           path: azure-rest-api-specs
       - name: git clone OAI/OpenAPI-Specification
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: OAI/OpenAPI-Specification
           path: OpenAPI-Specification

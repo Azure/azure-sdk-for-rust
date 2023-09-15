@@ -8,15 +8,10 @@ use azure_identity::{
     CertificateCredentialOptions, ClientCertificateCredential, DefaultAzureCredential,
 };
 use azure_security_keyvault::KeyvaultClient;
-use oauth2::ClientId;
-use std::env;
-use std::error::Error;
+use std::env::var;
 use url::Url;
 
-async fn get_certficate(
-    vault_name: &str,
-    certificate_name: &str,
-) -> Result<Vec<u8>, Box<dyn Error>> {
+async fn get_certficate(vault_name: &str, certificate_name: &str) -> azure_core::Result<Vec<u8>> {
     let creds = DefaultAzureCredential::default();
     let client = KeyvaultClient::new(
         format!("https://{}.vault.azure.net", vault_name).as_str(),
@@ -29,16 +24,14 @@ async fn get_certficate(
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn Error>> {
-    let client_id =
-        ClientId::new(env::var("CLIENT_ID").expect("Missing CLIENT_ID environment variable."));
-    let tenant_id = env::var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
+async fn main() -> azure_core::Result<()> {
+    let client_id = var("CLIENT_ID").expect("Missing CLIENT_ID environment variable.");
+    let tenant_id = var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
     let subscription_id =
-        env::var("SUBSCRIPTION_ID").expect("Missing SUBSCRIPTION_ID environment variable.");
+        var("SUBSCRIPTION_ID").expect("Missing SUBSCRIPTION_ID environment variable.");
 
-    let keyvault_uri =
-        env::var("KEYVAULT_URI").expect("Missing KEYVAULT_URI environment variable.");
-    let cert_name = env::var("CERT_NAME").expect("Missing CERT_NAME environment variable.");
+    let keyvault_uri = var("KEYVAULT_URI").expect("Missing KEYVAULT_URI environment variable.");
+    let cert_name = var("CERT_NAME").expect("Missing CERT_NAME environment variable.");
     let cert = get_certficate(&keyvault_uri, &cert_name).await?;
 
     let mut options = CertificateCredentialOptions::default();
@@ -47,8 +40,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // pass is empty by default when certificate is fetched from keyvault
     let creds = ClientCertificateCredential::new(
-        tenant_id.to_string(),
-        client_id.to_string(),
+        tenant_id,
+        client_id,
         base64::encode(cert),
         "".to_string(),
         options,

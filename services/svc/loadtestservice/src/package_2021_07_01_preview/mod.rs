@@ -72,8 +72,8 @@ impl Client {
         self.scopes.iter().map(String::as_str).collect()
     }
     pub(crate) async fn send(&self, request: &mut azure_core::Request) -> azure_core::Result<azure_core::Response> {
-        let mut context = azure_core::Context::default();
-        self.pipeline.send(&mut context, request).await
+        let context = azure_core::Context::default();
+        self.pipeline.send(&context, request).await
     }
     #[doc = "Create a new `ClientBuilder`."]
     #[must_use]
@@ -121,6 +121,10 @@ impl Client {
 }
 pub mod app_component {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get App components for a given appComponentName in query param."]
@@ -170,6 +174,10 @@ pub mod app_component {
     }
     pub mod get_app_component_by_name {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AppComponentsMap> {
@@ -218,7 +226,7 @@ pub mod app_component {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -242,7 +250,7 @@ pub mod app_component {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::AppComponentsMap>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::AppComponentsMap>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::AppComponentsMap>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -255,6 +263,10 @@ pub mod app_component {
     }
     pub mod create_or_update_app_components {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AppComponentsMap> {
@@ -304,7 +316,7 @@ pub mod app_component {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -329,7 +341,7 @@ pub mod app_component {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::AppComponentsMap>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::AppComponentsMap>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::AppComponentsMap>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -342,6 +354,10 @@ pub mod app_component {
     }
     pub mod delete_app_component {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -385,7 +401,7 @@ pub mod app_component {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -410,6 +426,10 @@ pub mod app_component {
     }
     pub mod get_app_component {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AppComponentsMap> {
@@ -469,7 +489,7 @@ pub mod app_component {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -499,7 +519,7 @@ pub mod app_component {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::AppComponentsMap>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::AppComponentsMap>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::AppComponentsMap>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -513,6 +533,10 @@ pub mod app_component {
 }
 pub mod file {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Validate input file. File name must be a valid URL character ^[a-z0-9_-]*$. File size can't be more than 50 MB."]
@@ -530,6 +554,10 @@ pub mod file {
     }
     pub mod file_validate {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::FileValidateResponse> {
@@ -579,7 +607,7 @@ pub mod file {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -605,7 +633,7 @@ pub mod file {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::FileValidateResponse>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::FileValidateResponse>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::FileValidateResponse>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -619,6 +647,10 @@ pub mod file {
 }
 pub mod server_metrics {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get server metrics config for a given name in query param."]
@@ -676,6 +708,10 @@ pub mod server_metrics {
     }
     pub mod get_server_metrics_by_name {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ServerMetricsModel> {
@@ -724,7 +760,7 @@ pub mod server_metrics {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -748,7 +784,7 @@ pub mod server_metrics {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::ServerMetricsModel>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ServerMetricsModel>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ServerMetricsModel>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -761,6 +797,10 @@ pub mod server_metrics {
     }
     pub mod create_or_update_server_metrics_config {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ServerMetricsModel> {
@@ -810,7 +850,7 @@ pub mod server_metrics {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -835,7 +875,7 @@ pub mod server_metrics {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::ServerMetricsModel>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ServerMetricsModel>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ServerMetricsModel>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -848,6 +888,10 @@ pub mod server_metrics {
     }
     pub mod delete_server_metrics {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -891,7 +935,7 @@ pub mod server_metrics {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -916,6 +960,10 @@ pub mod server_metrics {
     }
     pub mod get_server_metrics {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ServerMetricsModel> {
@@ -975,7 +1023,7 @@ pub mod server_metrics {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1005,7 +1053,7 @@ pub mod server_metrics {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::ServerMetricsModel>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ServerMetricsModel>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ServerMetricsModel>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1018,6 +1066,10 @@ pub mod server_metrics {
     }
     pub mod get_server_default_metrics {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::DefaultServerMetricsConfigListModel> {
@@ -1065,7 +1117,7 @@ pub mod server_metrics {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1089,7 +1141,7 @@ pub mod server_metrics {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::DefaultServerMetricsConfigListModel>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::DefaultServerMetricsConfigListModel>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DefaultServerMetricsConfigListModel>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1102,6 +1154,10 @@ pub mod server_metrics {
     }
     pub mod list_supported_resource_type {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SupportedResourceType> {
@@ -1149,7 +1205,7 @@ pub mod server_metrics {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1174,7 +1230,7 @@ pub mod server_metrics {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::SupportedResourceType>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::SupportedResourceType>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SupportedResourceType>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1188,6 +1244,10 @@ pub mod server_metrics {
 }
 pub mod test {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get load test model of given test name"]
@@ -1294,6 +1354,10 @@ pub mod test {
     }
     pub mod get_load_test {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::TestModel> {
@@ -1342,7 +1406,7 @@ pub mod test {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1366,7 +1430,7 @@ pub mod test {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::TestModel>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::TestModel>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::TestModel>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1379,6 +1443,10 @@ pub mod test {
     }
     pub mod create_or_update_test {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::TestModel> {
@@ -1428,7 +1496,7 @@ pub mod test {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1453,7 +1521,7 @@ pub mod test {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::TestModel>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::TestModel>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::TestModel>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1466,6 +1534,10 @@ pub mod test {
     }
     pub mod delete_load_test {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1509,7 +1581,7 @@ pub mod test {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1534,6 +1606,10 @@ pub mod test {
     }
     pub mod list_load_test_search {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::TestModelResourceList> {
@@ -1617,7 +1693,7 @@ pub mod test {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1665,7 +1741,7 @@ pub mod test {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::TestModelResourceList>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::TestModelResourceList>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::TestModelResourceList>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1678,6 +1754,10 @@ pub mod test {
     }
     pub mod get_test_file {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::FileUrlPath> {
@@ -1727,7 +1807,7 @@ pub mod test {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1756,7 +1836,7 @@ pub mod test {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::FileUrlPath>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::FileUrlPath>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::FileUrlPath>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1769,6 +1849,10 @@ pub mod test {
     }
     pub mod upload_test_file {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::TestModel> {
@@ -1819,7 +1903,7 @@ pub mod test {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1849,7 +1933,7 @@ pub mod test {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::TestModel>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::TestModel>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::TestModel>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1862,6 +1946,10 @@ pub mod test {
     }
     pub mod delete_test_file {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1906,7 +1994,7 @@ pub mod test {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1936,6 +2024,10 @@ pub mod test {
     }
     pub mod get_all_test_files {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::FileUrlList> {
@@ -1984,7 +2076,7 @@ pub mod test {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2008,7 +2100,7 @@ pub mod test {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::FileUrlList>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::FileUrlList>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::FileUrlList>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -2022,6 +2114,10 @@ pub mod test {
 }
 pub mod test_run {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get test run of given name."]
@@ -2125,6 +2221,10 @@ pub mod test_run {
     }
     pub mod get_test_run {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::TestRunModel> {
@@ -2173,7 +2273,7 @@ pub mod test_run {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2197,7 +2297,7 @@ pub mod test_run {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::TestRunModel>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::TestRunModel>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::TestRunModel>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -2210,6 +2310,10 @@ pub mod test_run {
     }
     pub mod create_and_update_test {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::TestRunModel> {
@@ -2265,7 +2369,7 @@ pub mod test_run {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2293,7 +2397,7 @@ pub mod test_run {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::TestRunModel>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::TestRunModel>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::TestRunModel>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -2306,6 +2410,10 @@ pub mod test_run {
     }
     pub mod delete_test_run {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2349,7 +2457,7 @@ pub mod test_run {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2374,6 +2482,10 @@ pub mod test_run {
     }
     pub mod get_test_run_file {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::FileUrlPath> {
@@ -2423,7 +2535,7 @@ pub mod test_run {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2452,7 +2564,7 @@ pub mod test_run {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::FileUrlPath>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::FileUrlPath>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::FileUrlPath>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -2465,6 +2577,10 @@ pub mod test_run {
     }
     pub mod get_app_test_runs_search {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::TestRunModelResourceList> {
@@ -2560,7 +2676,7 @@ pub mod test_run {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2614,7 +2730,7 @@ pub mod test_run {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::TestRunModelResourceList>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::TestRunModelResourceList>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::TestRunModelResourceList>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -2627,6 +2743,10 @@ pub mod test_run {
     }
     pub mod stop_test_run {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::TestRunModel> {
@@ -2675,7 +2795,7 @@ pub mod test_run {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2700,7 +2820,7 @@ pub mod test_run {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::TestRunModel>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::TestRunModel>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::TestRunModel>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -2713,6 +2833,10 @@ pub mod test_run {
     }
     pub mod get_test_run_client_metrics {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ClientMetricsResults> {
@@ -2773,7 +2897,7 @@ pub mod test_run {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2804,7 +2928,7 @@ pub mod test_run {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::ClientMetricsResults>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ClientMetricsResults>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ClientMetricsResults>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -2817,6 +2941,10 @@ pub mod test_run {
     }
     pub mod get_test_run_client_metrics_filters {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ClientMetricsFilters> {
@@ -2865,7 +2993,7 @@ pub mod test_run {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2893,7 +3021,7 @@ pub mod test_run {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::ClientMetricsFilters>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::ClientMetricsFilters>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ClientMetricsFilters>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]

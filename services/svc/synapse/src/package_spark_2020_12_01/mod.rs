@@ -72,8 +72,8 @@ impl Client {
         self.scopes.iter().map(String::as_str).collect()
     }
     pub(crate) async fn send(&self, request: &mut azure_core::Request) -> azure_core::Result<azure_core::Response> {
-        let mut context = azure_core::Context::default();
-        self.pipeline.send(&mut context, request).await
+        let context = azure_core::Context::default();
+        self.pipeline.send(&context, request).await
     }
     #[doc = "Create a new `ClientBuilder`."]
     #[must_use]
@@ -112,6 +112,10 @@ impl Client {
 }
 pub mod spark_batch {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all spark batch jobs which are running under a particular spark pool."]
@@ -195,6 +199,10 @@ pub mod spark_batch {
     }
     pub mod get_spark_batch_jobs {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SparkBatchJobCollection> {
@@ -262,7 +270,7 @@ pub mod spark_batch {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -297,7 +305,7 @@ pub mod spark_batch {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::SparkBatchJobCollection>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::SparkBatchJobCollection>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SparkBatchJobCollection>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -310,6 +318,10 @@ pub mod spark_batch {
     }
     pub mod create_spark_batch_job {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SparkBatchJob> {
@@ -366,7 +378,7 @@ pub mod spark_batch {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -396,7 +408,7 @@ pub mod spark_batch {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::SparkBatchJob>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::SparkBatchJob>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SparkBatchJob>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -409,6 +421,10 @@ pub mod spark_batch {
     }
     pub mod get_spark_batch_job {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SparkBatchJob> {
@@ -465,7 +481,7 @@ pub mod spark_batch {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -495,7 +511,7 @@ pub mod spark_batch {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::SparkBatchJob>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::SparkBatchJob>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SparkBatchJob>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -508,6 +524,10 @@ pub mod spark_batch {
     }
     pub mod cancel_spark_batch_job {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -553,7 +573,7 @@ pub mod spark_batch {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -582,6 +602,10 @@ pub mod spark_batch {
 }
 pub mod spark_session {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all spark sessions which are running under a particular spark pool."]
@@ -769,6 +793,10 @@ pub mod spark_session {
     }
     pub mod get_spark_sessions {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SparkSessionCollection> {
@@ -836,7 +864,7 @@ pub mod spark_session {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -871,7 +899,7 @@ pub mod spark_session {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::SparkSessionCollection>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::SparkSessionCollection>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SparkSessionCollection>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -884,6 +912,10 @@ pub mod spark_session {
     }
     pub mod create_spark_session {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SparkSession> {
@@ -940,7 +972,7 @@ pub mod spark_session {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -970,7 +1002,7 @@ pub mod spark_session {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::SparkSession>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::SparkSession>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SparkSession>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -983,6 +1015,10 @@ pub mod spark_session {
     }
     pub mod get_spark_session {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SparkSession> {
@@ -1039,7 +1075,7 @@ pub mod spark_session {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1069,7 +1105,7 @@ pub mod spark_session {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::SparkSession>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::SparkSession>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SparkSession>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1082,6 +1118,10 @@ pub mod spark_session {
     }
     pub mod cancel_spark_session {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1127,7 +1167,7 @@ pub mod spark_session {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1155,6 +1195,10 @@ pub mod spark_session {
     }
     pub mod reset_spark_session_timeout {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1200,7 +1244,7 @@ pub mod spark_session {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1228,6 +1272,10 @@ pub mod spark_session {
     }
     pub mod get_spark_statements {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SparkStatementCollection> {
@@ -1278,7 +1326,7 @@ pub mod spark_session {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1305,7 +1353,7 @@ pub mod spark_session {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::SparkStatementCollection>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::SparkStatementCollection>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SparkStatementCollection>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1318,6 +1366,10 @@ pub mod spark_session {
     }
     pub mod create_spark_statement {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SparkStatement> {
@@ -1369,7 +1421,7 @@ pub mod spark_session {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1397,7 +1449,7 @@ pub mod spark_session {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::SparkStatement>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::SparkStatement>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SparkStatement>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1410,6 +1462,10 @@ pub mod spark_session {
     }
     pub mod get_spark_statement {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SparkStatement> {
@@ -1461,7 +1517,7 @@ pub mod spark_session {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1489,7 +1545,7 @@ pub mod spark_session {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::SparkStatement>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::SparkStatement>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SparkStatement>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1502,6 +1558,10 @@ pub mod spark_session {
     }
     pub mod cancel_spark_statement {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SparkStatementCancellationResult> {
@@ -1553,7 +1613,7 @@ pub mod spark_session {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1582,7 +1642,7 @@ pub mod spark_session {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::SparkStatementCancellationResult>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::SparkStatementCancellationResult>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SparkStatementCancellationResult>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]

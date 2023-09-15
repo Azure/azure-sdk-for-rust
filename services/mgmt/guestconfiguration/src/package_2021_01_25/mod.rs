@@ -72,8 +72,8 @@ impl Client {
         self.scopes.iter().map(String::as_str).collect()
     }
     pub(crate) async fn send(&self, request: &mut azure_core::Request) -> azure_core::Result<azure_core::Response> {
-        let mut context = azure_core::Context::default();
-        self.pipeline.send(&mut context, request).await
+        let context = azure_core::Context::default();
+        self.pipeline.send(&context, request).await
     }
     #[doc = "Create a new `ClientBuilder`."]
     #[must_use]
@@ -127,6 +127,10 @@ impl Client {
 }
 pub mod guest_configuration_assignments {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get information about a guest configuration assignment"]
@@ -242,6 +246,10 @@ pub mod guest_configuration_assignments {
     }
     pub mod get {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GuestConfigurationAssignment> {
@@ -293,7 +301,7 @@ pub mod guest_configuration_assignments {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -317,7 +325,7 @@ pub mod guest_configuration_assignments {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::GuestConfigurationAssignment>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignment>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignment>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -330,6 +338,10 @@ pub mod guest_configuration_assignments {
     }
     pub mod create_or_update {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GuestConfigurationAssignment> {
@@ -382,7 +394,7 @@ pub mod guest_configuration_assignments {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -407,7 +419,7 @@ pub mod guest_configuration_assignments {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::GuestConfigurationAssignment>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignment>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignment>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -420,6 +432,10 @@ pub mod guest_configuration_assignments {
     }
     pub mod delete {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -466,7 +482,7 @@ pub mod guest_configuration_assignments {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -491,6 +507,10 @@ pub mod guest_configuration_assignments {
     }
     pub mod subscription_list {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GuestConfigurationAssignmentList> {
@@ -540,7 +560,7 @@ pub mod guest_configuration_assignments {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -569,6 +589,10 @@ pub mod guest_configuration_assignments {
     }
     pub mod rg_list {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GuestConfigurationAssignmentList> {
@@ -619,7 +643,7 @@ pub mod guest_configuration_assignments {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -649,6 +673,10 @@ pub mod guest_configuration_assignments {
     }
     pub mod list {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GuestConfigurationAssignmentList> {
@@ -700,7 +728,7 @@ pub mod guest_configuration_assignments {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -726,6 +754,10 @@ pub mod guest_configuration_assignments {
 }
 pub mod guest_configuration_assignment_reports {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all reports for the guest configuration assignment, latest report first."]
@@ -778,6 +810,10 @@ pub mod guest_configuration_assignment_reports {
     }
     pub mod list {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GuestConfigurationAssignmentReportList> {
@@ -829,7 +865,7 @@ pub mod guest_configuration_assignment_reports {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -853,7 +889,7 @@ pub mod guest_configuration_assignment_reports {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::GuestConfigurationAssignmentReportList>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignmentReportList>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignmentReportList>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -866,6 +902,10 @@ pub mod guest_configuration_assignment_reports {
     }
     pub mod get {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GuestConfigurationAssignmentReport> {
@@ -918,7 +958,7 @@ pub mod guest_configuration_assignment_reports {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -942,7 +982,7 @@ pub mod guest_configuration_assignment_reports {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::GuestConfigurationAssignmentReport>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignmentReport>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignmentReport>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -956,6 +996,10 @@ pub mod guest_configuration_assignment_reports {
 }
 pub mod guest_configuration_hcrp_assignments {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get information about a guest configuration assignment"]
@@ -1049,6 +1093,10 @@ pub mod guest_configuration_hcrp_assignments {
     }
     pub mod get {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GuestConfigurationAssignment> {
@@ -1100,7 +1148,7 @@ pub mod guest_configuration_hcrp_assignments {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1124,7 +1172,7 @@ pub mod guest_configuration_hcrp_assignments {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::GuestConfigurationAssignment>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignment>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignment>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1137,6 +1185,10 @@ pub mod guest_configuration_hcrp_assignments {
     }
     pub mod create_or_update {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GuestConfigurationAssignment> {
@@ -1189,7 +1241,7 @@ pub mod guest_configuration_hcrp_assignments {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1214,7 +1266,7 @@ pub mod guest_configuration_hcrp_assignments {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::GuestConfigurationAssignment>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignment>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignment>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1227,6 +1279,10 @@ pub mod guest_configuration_hcrp_assignments {
     }
     pub mod delete {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1273,7 +1329,7 @@ pub mod guest_configuration_hcrp_assignments {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1298,6 +1354,10 @@ pub mod guest_configuration_hcrp_assignments {
     }
     pub mod list {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GuestConfigurationAssignmentList> {
@@ -1349,7 +1409,7 @@ pub mod guest_configuration_hcrp_assignments {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1375,6 +1435,10 @@ pub mod guest_configuration_hcrp_assignments {
 }
 pub mod guest_configuration_hcrp_assignment_reports {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all reports for the guest configuration assignment, latest report first."]
@@ -1427,6 +1491,10 @@ pub mod guest_configuration_hcrp_assignment_reports {
     }
     pub mod list {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GuestConfigurationAssignmentReportList> {
@@ -1478,7 +1546,7 @@ pub mod guest_configuration_hcrp_assignment_reports {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1502,7 +1570,7 @@ pub mod guest_configuration_hcrp_assignment_reports {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::GuestConfigurationAssignmentReportList>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignmentReportList>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignmentReportList>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1515,6 +1583,10 @@ pub mod guest_configuration_hcrp_assignment_reports {
     }
     pub mod get {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GuestConfigurationAssignmentReport> {
@@ -1567,7 +1639,7 @@ pub mod guest_configuration_hcrp_assignment_reports {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1591,7 +1663,7 @@ pub mod guest_configuration_hcrp_assignment_reports {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::GuestConfigurationAssignmentReport>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignmentReport>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignmentReport>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1605,6 +1677,10 @@ pub mod guest_configuration_hcrp_assignment_reports {
 }
 pub mod guest_configuration_assignments_vmss {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Get information about a guest configuration assignment for VMSS"]
@@ -1673,6 +1749,10 @@ pub mod guest_configuration_assignments_vmss {
     }
     pub mod get {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GuestConfigurationAssignment> {
@@ -1724,7 +1804,7 @@ pub mod guest_configuration_assignments_vmss {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1748,7 +1828,7 @@ pub mod guest_configuration_assignments_vmss {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::GuestConfigurationAssignment>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignment>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignment>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1761,6 +1841,10 @@ pub mod guest_configuration_assignments_vmss {
     }
     pub mod delete {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GuestConfigurationAssignment> {
@@ -1812,7 +1896,7 @@ pub mod guest_configuration_assignments_vmss {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1836,7 +1920,7 @@ pub mod guest_configuration_assignments_vmss {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::GuestConfigurationAssignment>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignment>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignment>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1849,6 +1933,10 @@ pub mod guest_configuration_assignments_vmss {
     }
     pub mod list {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GuestConfigurationAssignmentList> {
@@ -1900,7 +1988,7 @@ pub mod guest_configuration_assignments_vmss {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -1926,6 +2014,10 @@ pub mod guest_configuration_assignments_vmss {
 }
 pub mod guest_configuration_assignment_reports_vmss {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "List all reports for the VMSS guest configuration assignment, latest report first."]
@@ -1978,6 +2070,10 @@ pub mod guest_configuration_assignment_reports_vmss {
     }
     pub mod list {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GuestConfigurationAssignmentReportList> {
@@ -2029,7 +2125,7 @@ pub mod guest_configuration_assignment_reports_vmss {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2053,7 +2149,7 @@ pub mod guest_configuration_assignment_reports_vmss {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::GuestConfigurationAssignmentReportList>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignmentReportList>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignmentReportList>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -2066,6 +2162,10 @@ pub mod guest_configuration_assignment_reports_vmss {
     }
     pub mod get {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GuestConfigurationAssignmentReport> {
@@ -2118,7 +2218,7 @@ pub mod guest_configuration_assignment_reports_vmss {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {
@@ -2142,7 +2242,7 @@ pub mod guest_configuration_assignment_reports_vmss {
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::GuestConfigurationAssignmentReport>;
-            type IntoFuture = futures::future::BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignmentReport>>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::GuestConfigurationAssignmentReport>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -2156,6 +2256,10 @@ pub mod guest_configuration_assignment_reports_vmss {
 }
 pub mod operations {
     use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
         #[doc = "Lists all of the available GuestConfiguration REST API operations."]
@@ -2165,6 +2269,10 @@ pub mod operations {
     }
     pub mod list {
         use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::OperationList> {
@@ -2213,7 +2321,7 @@ pub mod operations {
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
             #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> futures::future::BoxFuture<'static, azure_core::Result<Response>> {
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
                 Box::pin({
                     let this = self.clone();
                     async move {

@@ -8,7 +8,7 @@ operation! {
 }
 
 impl RestoreCertificateBuilder {
-    pub fn into_future(mut self) -> RestoreCertificate {
+    pub fn into_future(self) -> RestoreCertificate {
         Box::pin(async move {
             let mut uri = self.client.keyvault_client.vault_url.clone();
             uri.set_path("certificates/restore");
@@ -26,7 +26,7 @@ impl RestoreCertificateBuilder {
 
             self.client
                 .keyvault_client
-                .send(&mut self.context, &mut request)
+                .send(&self.context, &mut request)
                 .await?;
 
             Ok(())

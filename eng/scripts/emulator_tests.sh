@@ -5,7 +5,7 @@ cd $(dirname ${BASH_SOURCE[0]})/../../
 
 BUILD=${1:-stable}
 
-npm install azurite@3.13.1
+npm install azurite@3.26.0
 npx azurite &
 
 rustup update --no-self-update ${BUILD}

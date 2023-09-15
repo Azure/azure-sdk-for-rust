@@ -1,6 +1,6 @@
 [package]
 name = "azure_messaging_servicebus"
-version = "0.14.0"
+version = "0.15.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Service Bus crate"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -15,7 +15,7 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.14" }
+azure_core = { path = "../core", version = "0.15" }
 time = { version = "0.3.10", features = ["serde-well-known"] }
 log = "0.4"
 url = "2.2"

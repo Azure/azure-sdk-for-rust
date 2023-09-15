@@ -838,7 +838,7 @@ impl ServiceClient {
     /// send the request via the request pipeline
     pub async fn send(
         &self,
-        context: &mut Context,
+        context: &Context,
         request: &mut Request,
     ) -> azure_core::Result<Response> {
         self.pipeline.send(context, request).await
