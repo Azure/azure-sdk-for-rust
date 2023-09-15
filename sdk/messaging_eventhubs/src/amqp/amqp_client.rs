@@ -442,7 +442,7 @@ impl RecoverableTransport for AmqpClient {
             Sharable::Owned(link) => self.connection_scope.recover_management_link(link).await?,
             Sharable::Shared(lock) => {
                 let mut link = lock.write().await;
-                self.connection_scope.recover_management_link(&mut *link).await?
+                self.connection_scope.recover_management_link(&mut link).await?
             }
             Sharable::None => {},
         }
