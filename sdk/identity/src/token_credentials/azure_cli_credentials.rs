@@ -25,7 +25,7 @@ mod az_cli_date_format {
     }
 
     /// Assumes the local offset. Default to UTC if unable to get local offset.
-    fn assume_local(date: &PrimitiveDateTime) -> OffsetDateTime {
+    pub fn assume_local(date: &PrimitiveDateTime) -> OffsetDateTime {
         date.assume_offset(UtcOffset::current_local_offset().unwrap_or(UtcOffset::UTC))
     }
 
@@ -135,7 +135,6 @@ impl TokenCredential for AzureCliCredential {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core::date;
     use time::macros::datetime;
 
     #[test]
@@ -143,7 +142,7 @@ mod tests {
         let expires_on = "2022-07-30 12:12:53.919110";
         assert_eq!(
             az_cli_date_format::parse(expires_on)?,
-            date::assume_local(&datetime!(2022-07-30 12:12:53.919110))
+            az_cli_date_format::assume_local(&datetime!(2022-07-30 12:12:53.919110))
         );
         Ok(())
     }
