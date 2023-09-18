@@ -1,4 +1,5 @@
 use crate::error::{ErrorKind, ResultExt};
+pub use quick_xml::serde_helpers::text_content;
 use quick_xml::{
     de::{from_reader, from_str},
     se::to_string,

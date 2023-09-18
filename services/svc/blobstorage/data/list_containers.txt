@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<EnumerationResults ServiceEndpoint="https://bmcrustsdktest.blob.core.windows.net/">
+  <Containers>
+    <Container>
+      <Name>backup</Name>
+      <Properties>
+        <Last-Modified>Tue, 12 Sep 2023 18:18:57 GMT</Last-Modified>
+        <Etag>"0x8DBB3BCBABC4FE8"</Etag>
+        <LeaseStatus>unlocked</LeaseStatus>
+        <LeaseState>available</LeaseState>
+        <DefaultEncryptionScope>$account-encryption-key</DefaultEncryptionScope>
+        <DenyEncryptionScopeOverride>false</DenyEncryptionScopeOverride>
+        <HasImmutabilityPolicy>false</HasImmutabilityPolicy>
+        <HasLegalHold>false</HasLegalHold>
+        <ImmutableStorageWithVersioningEnabled>false</ImmutableStorageWithVersioningEnabled>
+      </Properties>
+    </Container>
+    <Container>
+      <Name>test1</Name>
+      <Properties>
+        <Last-Modified>Wed, 06 Sep 2023 20:56:23 GMT</Last-Modified>
+        <Etag>"0x8DBAF1BBAB64687"</Etag>
+        <LeaseStatus>unlocked</LeaseStatus>
+        <LeaseState>available</LeaseState>
+        <DefaultEncryptionScope>$account-encryption-key</DefaultEncryptionScope>
+        <DenyEncryptionScopeOverride>false</DenyEncryptionScopeOverride>
+        <HasImmutabilityPolicy>false</HasImmutabilityPolicy>
+        <HasLegalHold>false</HasLegalHold>
+        <ImmutableStorageWithVersioningEnabled>false</ImmutableStorageWithVersioningEnabled>
+      </Properties>
+    </Container>
+    <Container>
+      <Name>test2</Name>
+      <Properties>
+        <Last-Modified>Thu, 07 Sep 2023 16:38:36 GMT</Last-Modified>
+        <Etag>"0x8DBAFC0E2337475"</Etag>
+        <LeaseStatus>unlocked</LeaseStatus>
+        <LeaseState>available</LeaseState>
+        <DefaultEncryptionScope>$account-encryption-key</DefaultEncryptionScope>
+        <DenyEncryptionScopeOverride>false</DenyEncryptionScopeOverride>
+        <HasImmutabilityPolicy>false</HasImmutabilityPolicy>
+        <HasLegalHold>false</HasLegalHold>
+        <ImmutableStorageWithVersioningEnabled>false</ImmutableStorageWithVersioningEnabled>
+      </Properties>
+    </Container>
+    <Container>
+      <Name>test3</Name>
+      <Properties>
+        <Last-Modified>Thu, 07 Sep 2023 16:38:54 GMT</Last-Modified>
+        <Etag>"0x8DBAFC0ECD27F8F"</Etag>
+        <LeaseStatus>unlocked</LeaseStatus>
+        <LeaseState>available</LeaseState>
+        <DefaultEncryptionScope>$account-encryption-key</DefaultEncryptionScope>
+        <DenyEncryptionScopeOverride>false</DenyEncryptionScopeOverride>
+        <HasImmutabilityPolicy>false</HasImmutabilityPolicy>
+        <HasLegalHold>false</HasLegalHold>
+        <ImmutableStorageWithVersioningEnabled>false</ImmutableStorageWithVersioningEnabled>
+      </Properties>
+    </Container>
+    <Container>
+      <Name>test4</Name>
+      <Properties>
+        <Last-Modified>Thu, 07 Sep 2023 16:41:52 GMT</Last-Modified>
+        <Etag>"0x8DBAFC156F3AE0D"</Etag>
+        <LeaseStatus>unlocked</LeaseStatus>
+        <LeaseState>available</LeaseState>
+        <DefaultEncryptionScope>$account-encryption-key</DefaultEncryptionScope>
+        <DenyEncryptionScopeOverride>false</DenyEncryptionScopeOverride>
+        <HasImmutabilityPolicy>false</HasImmutabilityPolicy>
+        <HasLegalHold>false</HasLegalHold>
+        <ImmutableStorageWithVersioningEnabled>false</ImmutableStorageWithVersioningEnabled>
+      </Properties>
+    </Container>
+    <Container>
+      <Name>test5</Name>
+      <Properties>
+        <Last-Modified>Tue, 12 Sep 2023 18:07:11 GMT</Last-Modified>
+        <Etag>"0x8DBB3BB15F4B48F"</Etag>
+        <LeaseStatus>unlocked</LeaseStatus>
+        <LeaseState>available</LeaseState>
+        <DefaultEncryptionScope>$account-encryption-key</DefaultEncryptionScope>
+        <DenyEncryptionScopeOverride>false</DenyEncryptionScopeOverride>
+        <HasImmutabilityPolicy>false</HasImmutabilityPolicy>
+        <HasLegalHold>false</HasLegalHold>
+        <ImmutableStorageWithVersioningEnabled>false</ImmutableStorageWithVersioningEnabled>
+      </Properties>
+    </Container>
+  </Containers>
+  <NextMarker>/bmcrustsdktest/test1</NextMarker>
+</EnumerationResults>

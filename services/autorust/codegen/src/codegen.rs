@@ -73,6 +73,10 @@ impl<'a> CodeGen<'a> {
     pub fn should_box_property(&self, prop_nm: &PropertyName) -> bool {
         self.box_properties.contains(prop_nm)
     }
+
+    pub fn has_xml(&self) -> bool {
+        self.spec.has_xml() || self.spec.operations().map_or(false, |f| f.iter().any(|op| op.has_xml()))
+    }
 }
 
 fn id_models() -> Ident {
