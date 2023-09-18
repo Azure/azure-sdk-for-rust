@@ -142,6 +142,9 @@ mod literate_config {
                 let yaml = extract_yaml(node)?
                     .ok_or_else(|| Error::message(ErrorKind::Parse, "Expected configuration tag to contain a YAML code block."))?;
                 let mut tag: Tag = serde_yaml::from_str(&yaml).context(ErrorKind::Parse, "reading configuration block yaml")?;
+                for input_file in tag.input_files.iter_mut() {
+                    *input_file = input_file.replace('\\', "/");
+                }
                 tag.tag = tag_name;
                 tags.push(tag);
             } else if is_header_at_level(node, 2) {

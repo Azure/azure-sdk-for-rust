@@ -236,7 +236,7 @@ impl BlobItemInternal {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BlobMetadata {
-    #[serde(rename = "Encrypted", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "@Encrypted", default, skip_serializing_if = "Option::is_none")]
     pub encrypted: Option<String>,
 }
 impl BlobMetadata {
@@ -280,17 +280,42 @@ pub struct BlobPropertiesInternal {
     pub cache_control: Option<String>,
     #[serde(rename = "x-ms-blob-sequence-number", default, skip_serializing_if = "Option::is_none")]
     pub x_ms_blob_sequence_number: Option<i64>,
-    #[serde(rename = "BlobType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "BlobType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub blob_type: Option<blob_properties_internal::BlobType>,
-    #[serde(rename = "LeaseStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "LeaseStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lease_status: Option<LeaseStatus>,
-    #[serde(rename = "LeaseState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "LeaseState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lease_state: Option<LeaseState>,
-    #[serde(rename = "LeaseDuration", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "LeaseDuration",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lease_duration: Option<LeaseDuration>,
     #[serde(rename = "CopyId", default, skip_serializing_if = "Option::is_none")]
     pub copy_id: Option<String>,
-    #[serde(rename = "CopyStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "CopyStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub copy_status: Option<CopyStatus>,
     #[serde(rename = "CopySource", default, skip_serializing_if = "Option::is_none")]
     pub copy_source: Option<String>,
@@ -310,11 +335,21 @@ pub struct BlobPropertiesInternal {
     pub deleted_time: Option<time::OffsetDateTime>,
     #[serde(rename = "RemainingRetentionDays", default, skip_serializing_if = "Option::is_none")]
     pub remaining_retention_days: Option<i64>,
-    #[serde(rename = "AccessTier", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "AccessTier",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub access_tier: Option<AccessTier>,
     #[serde(rename = "AccessTierInferred", default, skip_serializing_if = "Option::is_none")]
     pub access_tier_inferred: Option<bool>,
-    #[serde(rename = "ArchiveStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ArchiveStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub archive_status: Option<ArchiveStatus>,
     #[serde(rename = "CustomerProvidedKeySha256", default, skip_serializing_if = "Option::is_none")]
     pub customer_provided_key_sha256: Option<String>,
@@ -330,13 +365,23 @@ pub struct BlobPropertiesInternal {
     #[serde(rename = "Sealed", default, skip_serializing_if = "Option::is_none")]
     pub sealed: Option<bool>,
     #[doc = "If an object is in rehydrate pending state then this header is returned with priority of rehydrate. Valid values are High and Standard."]
-    #[serde(rename = "RehydratePriority", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "RehydratePriority",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub rehydrate_priority: Option<RehydratePriority>,
     #[serde(rename = "LastAccessTime", default, with = "azure_core::date::rfc1123::option")]
     pub last_access_time: Option<time::OffsetDateTime>,
     #[serde(rename = "ImmutabilityPolicyUntilDate", default, with = "azure_core::date::rfc1123::option")]
     pub immutability_policy_until_date: Option<time::OffsetDateTime>,
-    #[serde(rename = "ImmutabilityPolicyMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ImmutabilityPolicyMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub immutability_policy_mode: Option<blob_properties_internal::ImmutabilityPolicyMode>,
     #[serde(rename = "LegalHold", default, skip_serializing_if = "Option::is_none")]
     pub legal_hold: Option<bool>,
@@ -554,13 +599,33 @@ pub struct ContainerProperties {
     pub last_modified: time::OffsetDateTime,
     #[serde(rename = "Etag")]
     pub etag: String,
-    #[serde(rename = "LeaseStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "LeaseStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lease_status: Option<LeaseStatus>,
-    #[serde(rename = "LeaseState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "LeaseState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lease_state: Option<LeaseState>,
-    #[serde(rename = "LeaseDuration", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "LeaseDuration",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lease_duration: Option<LeaseDuration>,
-    #[serde(rename = "PublicAccess", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "PublicAccess",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub public_access: Option<PublicAccessType>,
     #[serde(rename = "HasImmutabilityPolicy", default, skip_serializing_if = "Option::is_none")]
     pub has_immutability_policy: Option<bool>,
@@ -993,7 +1058,7 @@ impl FilterBlobItem {
 #[doc = "The result of a Filter Blobs API call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FilterBlobSegment {
-    #[serde(rename = "ServiceEndpoint")]
+    #[serde(rename = "@ServiceEndpoint")]
     pub service_endpoint: String,
     #[serde(rename = "Where")]
     pub where_: String,
@@ -1024,7 +1089,7 @@ pub mod filter_blob_segment {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GeoReplication {
     #[doc = "The status of the secondary location"]
-    #[serde(rename = "Status")]
+    #[serde(rename = "Status", with = "azure_core::xml::text_content")]
     pub status: geo_replication::Status,
     #[doc = "A GMT date/time value, to the second. All primary writes preceding this value are guaranteed to be available for read operations at the secondary. Primary writes after this point in time may or may not be available for reads."]
     #[serde(rename = "LastSyncTime", with = "azure_core::date::rfc1123")]
@@ -1137,9 +1202,9 @@ pub enum LeaseStatus {
 #[doc = "An enumeration of blobs"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListBlobsFlatSegmentResponse {
-    #[serde(rename = "ServiceEndpoint")]
+    #[serde(rename = "@ServiceEndpoint")]
     pub service_endpoint: String,
-    #[serde(rename = "ContainerName")]
+    #[serde(rename = "@ContainerName")]
     pub container_name: String,
     #[serde(rename = "Prefix", default, skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
@@ -1155,7 +1220,7 @@ pub struct ListBlobsFlatSegmentResponse {
 impl azure_core::Continuable for ListBlobsFlatSegmentResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_marker.clone()
+        self.next_marker.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListBlobsFlatSegmentResponse {
@@ -1174,9 +1239,9 @@ impl ListBlobsFlatSegmentResponse {
 #[doc = "An enumeration of blobs"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListBlobsHierarchySegmentResponse {
-    #[serde(rename = "ServiceEndpoint")]
+    #[serde(rename = "@ServiceEndpoint")]
     pub service_endpoint: String,
-    #[serde(rename = "ContainerName")]
+    #[serde(rename = "@ContainerName")]
     pub container_name: String,
     #[serde(rename = "Prefix", default, skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
@@ -1194,7 +1259,7 @@ pub struct ListBlobsHierarchySegmentResponse {
 impl azure_core::Continuable for ListBlobsHierarchySegmentResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_marker.clone()
+        self.next_marker.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListBlobsHierarchySegmentResponse {
@@ -1214,7 +1279,7 @@ impl ListBlobsHierarchySegmentResponse {
 #[doc = "An enumeration of containers"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListContainersSegmentResponse {
-    #[serde(rename = "ServiceEndpoint")]
+    #[serde(rename = "@ServiceEndpoint")]
     pub service_endpoint: String,
     #[serde(rename = "Prefix", default, skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
@@ -1230,7 +1295,7 @@ pub struct ListContainersSegmentResponse {
 impl azure_core::Continuable for ListContainersSegmentResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_marker.clone()
+        self.next_marker.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListContainersSegmentResponse {
@@ -1339,7 +1404,7 @@ pub struct PageList {
 impl azure_core::Continuable for PageList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_marker.clone()
+        self.next_marker.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageList {
@@ -1408,7 +1473,7 @@ impl Serialize for PublicAccessType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryFormat {
     #[doc = "The quick query format type."]
-    #[serde(rename = "Type")]
+    #[serde(rename = "Type", with = "azure_core::xml::text_content")]
     pub type_: QueryType,
     #[doc = "Groups the settings used for interpreting the blob data if the blob is delimited text formatted."]
     #[serde(rename = "DelimitedTextConfiguration", default, skip_serializing_if = "Option::is_none")]
@@ -1438,7 +1503,7 @@ impl QueryFormat {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryRequest {
     #[doc = "Required. The type of the provided query expression."]
-    #[serde(rename = "QueryType")]
+    #[serde(rename = "QueryType", with = "azure_core::xml::text_content")]
     pub query_type: query_request::QueryType,
     #[doc = "The query expression in SQL. The maximum size of the query expression is 256KiB."]
     #[serde(rename = "Expression")]

@@ -1,11 +1,4 @@
 [properties]
-boxed = [
-  [
-    "../../../azure-rest-api-specs/specification/applicationinsights/data-plane/Microsoft.Insights/preview/v1/AppInsights.json",
-    "errorInfo",
-    "innererror"
-  ]
-]
 invalid_type = [
   [
     "../../../azure-rest-api-specs/specification/applicationinsights/data-plane/Microsoft.Insights/preview/v1/AppInsights.json",

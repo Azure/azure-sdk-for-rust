@@ -1,7 +1,7 @@
 use crate::{
     autorust_toml, cargo_toml, io, lib_rs,
     readme_md::{self, ReadmeMd},
-    CrateConfig, Error, Result, RunConfig, SpecReadme, WebOperation,
+    CrateConfig, Error, Result, RunConfig, SpecReadme,
 };
 use std::{collections::HashMap, fs};
 
@@ -72,12 +72,7 @@ pub fn gen_crate(package_name: &str, spec: &SpecReadme, run_config: &RunConfig, 
         versions.sort_unstable();
         api_version_totals.insert(tag.name(), versions.len());
         api_versions.insert(tag.name(), versions.iter().map(|v| format!("`{v}`")).collect::<Vec<_>>().join(", "));
-        if !has_xml {
-            has_xml = cg.spec.has_xml()
-        }
-        if !has_xml {
-            has_xml = operations.iter().any(WebOperation::has_xml);
-        }
+        has_xml = cg.has_xml();
     }
 
     let default_tag_name = if let Some(name) = package_config.default_tag() {

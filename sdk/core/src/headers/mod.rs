@@ -345,6 +345,8 @@ pub const REQUEST_SERVER_ENCRYPTED: HeaderName =
     HeaderName::from_static("x-ms-request-server-encrypted");
 pub const REQUIRES_SYNC: HeaderName = HeaderName::from_static("x-ms-requires-sync");
 pub const RETRY_AFTER: HeaderName = HeaderName::from_static("retry-after");
+pub const RETRY_AFTER_MS: HeaderName = HeaderName::from_static("retry-after-ms");
+pub const X_MS_RETRY_AFTER_MS: HeaderName = HeaderName::from_static("x-ms-retry-after-ms");
 pub const SERVER: HeaderName = HeaderName::from_static("server");
 pub const SERVER_ENCRYPTED: HeaderName = HeaderName::from_static("x-ms-server-encrypted");
 pub const SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
@@ -366,3 +368,5 @@ pub const ENCRYPTION_KEY: HeaderName = HeaderName::from_static("x-ms-encryption-
 pub const ENCRYPTION_KEY_SHA256: HeaderName = HeaderName::from_static("x-ms-encryption-key-sha256");
 pub const BLOB_COMMITTED_BLOCK_COUNT: HeaderName =
     HeaderName::from_static("x-ms-blob-committed-block-count");
+pub const AZURE_ASYNCOPERATION: HeaderName = HeaderName::from_static("azure-asyncoperation");
+pub const OPERATION_LOCATION: HeaderName = HeaderName::from_static("operation-location");

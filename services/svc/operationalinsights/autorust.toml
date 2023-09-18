@@ -6,20 +6,3 @@ invalid_type = [
     "rows"
   ]
 ]
-boxed = [
-    [
-        "../../../azure-rest-api-specs/specification/operationalinsights/data-plane/Microsoft.OperationalInsights/stable/v1/OperationalInsights.json",
-        "errorInfo",
-        "innererror"
-    ],
-    [
-        "../../../azure-rest-api-specs/specification/operationalinsights/data-plane/Microsoft.OperationalInsights/preview/2017-10-01/swagger.json",
-        "errorInfo",
-        "innererror"
-    ],
-    [
-        "../../../azure-rest-api-specs/specification/operationalinsights/data-plane/Microsoft.OperationalInsights/preview/2021-05-19_Preview/OperationalInsights.json",
-        "errorInfo",
-        "innererror"
-    ],
-]
