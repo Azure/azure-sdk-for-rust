@@ -3,6 +3,64 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
+#[doc = "The abuse penalty."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AbusePenalty {
+    #[doc = "The action of AbusePenalty."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<abuse_penalty::Action>,
+    #[doc = "The percentage of rate limit."]
+    #[serde(rename = "rateLimitPercentage", default, skip_serializing_if = "Option::is_none")]
+    pub rate_limit_percentage: Option<f64>,
+    #[doc = "The datetime of expiration of the AbusePenalty."]
+    #[serde(default, with = "azure_core::date::rfc3339::option")]
+    pub expiration: Option<time::OffsetDateTime>,
+}
+impl AbusePenalty {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod abuse_penalty {
+    use super::*;
+    #[doc = "The action of AbusePenalty."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Action")]
+    pub enum Action {
+        Throttle,
+        Block,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Action {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Action {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Action {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Throttle => serializer.serialize_unit_variant("Action", 0u32, "Throttle"),
+                Self::Block => serializer.serialize_unit_variant("Action", 1u32, "Block"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "Cognitive Services account is an Azure resource representing the provisioned account, it's type, location and SKU."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Account {
@@ -60,6 +118,113 @@ impl AccountListResult {
         Self::default()
     }
 }
+#[doc = "Cognitive Services account Model."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AccountModel {
+    #[serde(flatten)]
+    pub deployment_model: DeploymentModel,
+    #[doc = "Properties of Cognitive Services account deployment model."]
+    #[serde(rename = "baseModel", default, skip_serializing_if = "Option::is_none")]
+    pub base_model: Option<DeploymentModel>,
+    #[doc = "If the model is default version."]
+    #[serde(rename = "isDefaultVersion", default, skip_serializing_if = "Option::is_none")]
+    pub is_default_version: Option<bool>,
+    #[doc = "The list of Model Sku."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub skus: Vec<ModelSku>,
+    #[doc = "The max capacity."]
+    #[serde(rename = "maxCapacity", default, skip_serializing_if = "Option::is_none")]
+    pub max_capacity: Option<i32>,
+    #[doc = "The capabilities."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capabilities: Option<serde_json::Value>,
+    #[doc = "The capabilities for finetune models."]
+    #[serde(rename = "finetuneCapabilities", default, skip_serializing_if = "Option::is_none")]
+    pub finetune_capabilities: Option<serde_json::Value>,
+    #[doc = "Cognitive Services account ModelDeprecationInfo."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deprecation: Option<ModelDeprecationInfo>,
+    #[doc = "Model lifecycle status."]
+    #[serde(rename = "lifecycleStatus", default, skip_serializing_if = "Option::is_none")]
+    pub lifecycle_status: Option<account_model::LifecycleStatus>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+}
+impl AccountModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod account_model {
+    use super::*;
+    #[doc = "Model lifecycle status."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "LifecycleStatus")]
+    pub enum LifecycleStatus {
+        GenerallyAvailable,
+        Preview,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for LifecycleStatus {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for LifecycleStatus {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for LifecycleStatus {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::GenerallyAvailable => serializer.serialize_unit_variant("LifecycleStatus", 0u32, "GenerallyAvailable"),
+                Self::Preview => serializer.serialize_unit_variant("LifecycleStatus", 1u32, "Preview"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "The list of cognitive services accounts operation response."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AccountModelListResult {
+    #[doc = "The link used to get the next page of Model."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "Gets the list of Cognitive Services accounts Model and their properties."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<AccountModel>,
+}
+impl azure_core::Continuable for AccountModelListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl AccountModelListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Properties of Cognitive Services account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountProperties {
@@ -113,7 +278,7 @@ pub struct AccountProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
-    #[doc = "Whether or not public endpoint access is allowed for this account. Value is optional but if passed in, must be 'Enabled' or 'Disabled'"]
+    #[doc = "Whether or not public endpoint access is allowed for this account."]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<account_properties::PublicNetworkAccess>,
     #[doc = "The api properties for special APIs."]
@@ -125,6 +290,9 @@ pub struct AccountProperties {
     #[doc = "The call rate limit Cognitive Services account."]
     #[serde(rename = "callRateLimit", default, skip_serializing_if = "Option::is_none")]
     pub call_rate_limit: Option<CallRateLimit>,
+    #[doc = "The flag to enable dynamic throttling."]
+    #[serde(rename = "dynamicThrottlingEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub dynamic_throttling_enabled: Option<bool>,
     #[serde(rename = "quotaLimit", default, skip_serializing_if = "Option::is_none")]
     pub quota_limit: Option<QuotaLimit>,
     #[serde(rename = "restrictOutboundNetworkAccess", default, skip_serializing_if = "Option::is_none")]
@@ -142,6 +310,26 @@ pub struct AccountProperties {
     pub endpoints: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub restore: Option<bool>,
+    #[doc = "The deletion date, only available for deleted account."]
+    #[serde(rename = "deletionDate", default, skip_serializing_if = "Option::is_none")]
+    pub deletion_date: Option<String>,
+    #[doc = "The scheduled purge date, only available for deleted account."]
+    #[serde(rename = "scheduledPurgeDate", default, skip_serializing_if = "Option::is_none")]
+    pub scheduled_purge_date: Option<String>,
+    #[doc = "The multiregion settings Cognitive Services account."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub locations: Option<MultiRegionSettings>,
+    #[doc = "The commitment plan associations of Cognitive Services account."]
+    #[serde(
+        rename = "commitmentPlanAssociations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub commitment_plan_associations: Vec<CommitmentPlanAssociation>,
+    #[doc = "The abuse penalty."]
+    #[serde(rename = "abusePenalty", default, skip_serializing_if = "Option::is_none")]
+    pub abuse_penalty: Option<AbusePenalty>,
 }
 impl AccountProperties {
     pub fn new() -> Self {
@@ -198,7 +386,7 @@ pub mod account_properties {
             }
         }
     }
-    #[doc = "Whether or not public endpoint access is allowed for this account. Value is optional but if passed in, must be 'Enabled' or 'Disabled'"]
+    #[doc = "Whether or not public endpoint access is allowed for this account."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "PublicNetworkAccess")]
     pub enum PublicNetworkAccess {
@@ -356,6 +544,27 @@ impl CallRateLimit {
         Self::default()
     }
 }
+#[doc = "The capacity configuration."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CapacityConfig {
+    #[doc = "The minimum capacity."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub minimum: Option<i32>,
+    #[doc = "The maximum capacity."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub maximum: Option<i32>,
+    #[doc = "The minimal incremental between allowed values for capacity."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step: Option<i32>,
+    #[doc = "The default capacity."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default: Option<i32>,
+}
+impl CapacityConfig {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Check Domain availability parameter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckDomainAvailabilityParameter {
@@ -365,10 +574,17 @@ pub struct CheckDomainAvailabilityParameter {
     #[doc = "The Type of the resource."]
     #[serde(rename = "type")]
     pub type_: String,
+    #[doc = "The kind (type) of cognitive service account."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<Kind>,
 }
 impl CheckDomainAvailabilityParameter {
     pub fn new(subdomain_name: String, type_: String) -> Self {
-        Self { subdomain_name, type_ }
+        Self {
+            subdomain_name,
+            type_,
+            kind: None,
+        }
     }
 }
 #[doc = "Check SKU availability parameter."]
@@ -387,6 +603,600 @@ impl CheckSkuAvailabilityParameter {
         Self { skus, kind, type_ }
     }
 }
+#[doc = "Cognitive Services account commitment cost."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CommitmentCost {
+    #[doc = "Commitment meter Id."]
+    #[serde(rename = "commitmentMeterId", default, skip_serializing_if = "Option::is_none")]
+    pub commitment_meter_id: Option<String>,
+    #[doc = "Overage meter Id."]
+    #[serde(rename = "overageMeterId", default, skip_serializing_if = "Option::is_none")]
+    pub overage_meter_id: Option<String>,
+}
+impl CommitmentCost {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Cognitive Services account commitment period."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CommitmentPeriod {
+    #[doc = "Commitment period commitment tier."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+    #[doc = "Commitment period commitment count."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i32>,
+    #[doc = "Cognitive Services account commitment quota."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quota: Option<CommitmentQuota>,
+    #[doc = "Commitment period start date."]
+    #[serde(rename = "startDate", default, skip_serializing_if = "Option::is_none")]
+    pub start_date: Option<String>,
+    #[doc = "Commitment period end date."]
+    #[serde(rename = "endDate", default, skip_serializing_if = "Option::is_none")]
+    pub end_date: Option<String>,
+}
+impl CommitmentPeriod {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Cognitive Services account commitment plan."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CommitmentPlan {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "Resource Etag."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    #[doc = "The kind (type) of cognitive service account."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<Kind>,
+    #[doc = "The resource model definition representing SKU"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[doc = "The geo-location where the resource lives"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "Properties of Cognitive Services account commitment plan."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CommitmentPlanProperties>,
+}
+impl CommitmentPlan {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The commitment plan association."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CommitmentPlanAccountAssociation {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "Resource Etag."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    #[doc = "The commitment plan account association properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CommitmentPlanAccountAssociationProperties>,
+}
+impl CommitmentPlanAccountAssociation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The list of cognitive services Commitment Plan Account Association operation response."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CommitmentPlanAccountAssociationListResult {
+    #[doc = "The link used to get the next page of Commitment Plan Account Association."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "Gets the list of Cognitive Services Commitment Plan Account Association and their properties."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<CommitmentPlanAccountAssociation>,
+}
+impl azure_core::Continuable for CommitmentPlanAccountAssociationListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl CommitmentPlanAccountAssociationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The commitment plan account association properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CommitmentPlanAccountAssociationProperties {
+    #[doc = "The Azure resource id of the account."]
+    #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
+    pub account_id: Option<String>,
+}
+impl CommitmentPlanAccountAssociationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The commitment plan association."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CommitmentPlanAssociation {
+    #[doc = "The Azure resource id of the commitment plan."]
+    #[serde(rename = "commitmentPlanId", default, skip_serializing_if = "Option::is_none")]
+    pub commitment_plan_id: Option<String>,
+    #[doc = "The location of of the commitment plan."]
+    #[serde(rename = "commitmentPlanLocation", default, skip_serializing_if = "Option::is_none")]
+    pub commitment_plan_location: Option<String>,
+}
+impl CommitmentPlanAssociation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The list of cognitive services accounts operation response."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CommitmentPlanListResult {
+    #[doc = "The link used to get the next page of CommitmentPlan."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "Gets the list of Cognitive Services accounts CommitmentPlan and their properties."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<CommitmentPlan>,
+}
+impl azure_core::Continuable for CommitmentPlanListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl CommitmentPlanListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of Cognitive Services account commitment plan."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CommitmentPlanProperties {
+    #[doc = "Gets the status of the resource at the time the operation was called."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<commitment_plan_properties::ProvisioningState>,
+    #[doc = "Commitment plan guid."]
+    #[serde(rename = "commitmentPlanGuid", default, skip_serializing_if = "Option::is_none")]
+    pub commitment_plan_guid: Option<String>,
+    #[doc = "Account hosting model."]
+    #[serde(rename = "hostingModel", default, skip_serializing_if = "Option::is_none")]
+    pub hosting_model: Option<HostingModel>,
+    #[doc = "Commitment plan type."]
+    #[serde(rename = "planType", default, skip_serializing_if = "Option::is_none")]
+    pub plan_type: Option<String>,
+    #[doc = "Cognitive Services account commitment period."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub current: Option<CommitmentPeriod>,
+    #[doc = "AutoRenew commitment plan."]
+    #[serde(rename = "autoRenew", default, skip_serializing_if = "Option::is_none")]
+    pub auto_renew: Option<bool>,
+    #[doc = "Cognitive Services account commitment period."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next: Option<CommitmentPeriod>,
+    #[doc = "Cognitive Services account commitment period."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last: Option<CommitmentPeriod>,
+    #[doc = "The list of ProvisioningIssue."]
+    #[serde(
+        rename = "provisioningIssues",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub provisioning_issues: Vec<String>,
+}
+impl CommitmentPlanProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod commitment_plan_properties {
+    use super::*;
+    #[doc = "Gets the status of the resource at the time the operation was called."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ProvisioningState")]
+    pub enum ProvisioningState {
+        Accepted,
+        Creating,
+        Deleting,
+        Moving,
+        Failed,
+        Succeeded,
+        Canceled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ProvisioningState {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ProvisioningState {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ProvisioningState {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Accepted => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Accepted"),
+                Self::Creating => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Creating"),
+                Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Deleting"),
+                Self::Moving => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Moving"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Failed"),
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 5u32, "Succeeded"),
+                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 6u32, "Canceled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Cognitive Services account commitment quota."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CommitmentQuota {
+    #[doc = "Commitment quota quantity."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quantity: Option<i64>,
+    #[doc = "Commitment quota unit."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<String>,
+}
+impl CommitmentQuota {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Cognitive Services account commitment tier."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CommitmentTier {
+    #[doc = "The kind (type) of cognitive service account."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<Kind>,
+    #[doc = "The name of the SKU. Ex - P3. It is typically a letter+number code"]
+    #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
+    pub sku_name: Option<String>,
+    #[doc = "Account hosting model."]
+    #[serde(rename = "hostingModel", default, skip_serializing_if = "Option::is_none")]
+    pub hosting_model: Option<HostingModel>,
+    #[doc = "Commitment plan type."]
+    #[serde(rename = "planType", default, skip_serializing_if = "Option::is_none")]
+    pub plan_type: Option<String>,
+    #[doc = "Commitment period commitment tier."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+    #[doc = "Commitment period commitment max count."]
+    #[serde(rename = "maxCount", default, skip_serializing_if = "Option::is_none")]
+    pub max_count: Option<i32>,
+    #[doc = "Cognitive Services account commitment quota."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quota: Option<CommitmentQuota>,
+    #[doc = "Cognitive Services account commitment cost."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost: Option<CommitmentCost>,
+}
+impl CommitmentTier {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The list of cognitive services accounts operation response."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CommitmentTierListResult {
+    #[doc = "The link used to get the next page of CommitmentTier."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "Gets the list of Cognitive Services accounts CommitmentTier and their properties."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<CommitmentTier>,
+}
+impl azure_core::Continuable for CommitmentTierListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl CommitmentTierListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Cognitive Services account deployment."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Deployment {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "The resource model definition representing SKU"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "Resource Etag."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    #[doc = "Properties of Cognitive Services account deployment."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DeploymentProperties>,
+}
+impl Deployment {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The list of cognitive services accounts operation response."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DeploymentListResult {
+    #[doc = "The link used to get the next page of Deployment."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "Gets the list of Cognitive Services accounts Deployment and their properties."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<Deployment>,
+}
+impl azure_core::Continuable for DeploymentListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl DeploymentListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of Cognitive Services account deployment model."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DeploymentModel {
+    #[doc = "Deployment model format."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub format: Option<String>,
+    #[doc = "Deployment model name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Optional. Deployment model version. If version is not specified, a default version will be assigned. The default version is different for different models and might change when there is new version available for a model. Default version for a model could be found from list models API."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[doc = "Optional. Deployment model source ARM resource ID."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    #[doc = "The call rate limit Cognitive Services account."]
+    #[serde(rename = "callRateLimit", default, skip_serializing_if = "Option::is_none")]
+    pub call_rate_limit: Option<CallRateLimit>,
+}
+impl DeploymentModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of Cognitive Services account deployment."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DeploymentProperties {
+    #[doc = "Gets the status of the resource at the time the operation was called."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<deployment_properties::ProvisioningState>,
+    #[doc = "Properties of Cognitive Services account deployment model."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<DeploymentModel>,
+    #[doc = "Properties of Cognitive Services account deployment model."]
+    #[serde(rename = "scaleSettings", default, skip_serializing_if = "Option::is_none")]
+    pub scale_settings: Option<DeploymentScaleSettings>,
+    #[doc = "The capabilities."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capabilities: Option<serde_json::Value>,
+    #[doc = "The name of RAI policy."]
+    #[serde(rename = "raiPolicyName", default, skip_serializing_if = "Option::is_none")]
+    pub rai_policy_name: Option<String>,
+    #[doc = "The call rate limit Cognitive Services account."]
+    #[serde(rename = "callRateLimit", default, skip_serializing_if = "Option::is_none")]
+    pub call_rate_limit: Option<CallRateLimit>,
+    #[serde(
+        rename = "rateLimits",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub rate_limits: Vec<ThrottlingRule>,
+    #[doc = "Deployment model version upgrade option."]
+    #[serde(rename = "versionUpgradeOption", default, skip_serializing_if = "Option::is_none")]
+    pub version_upgrade_option: Option<deployment_properties::VersionUpgradeOption>,
+}
+impl DeploymentProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod deployment_properties {
+    use super::*;
+    #[doc = "Gets the status of the resource at the time the operation was called."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ProvisioningState")]
+    pub enum ProvisioningState {
+        Accepted,
+        Creating,
+        Deleting,
+        Moving,
+        Failed,
+        Succeeded,
+        Disabled,
+        Canceled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ProvisioningState {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ProvisioningState {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ProvisioningState {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Accepted => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Accepted"),
+                Self::Creating => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Creating"),
+                Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Deleting"),
+                Self::Moving => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Moving"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Failed"),
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 5u32, "Succeeded"),
+                Self::Disabled => serializer.serialize_unit_variant("ProvisioningState", 6u32, "Disabled"),
+                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 7u32, "Canceled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Deployment model version upgrade option."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "VersionUpgradeOption")]
+    pub enum VersionUpgradeOption {
+        OnceNewDefaultVersionAvailable,
+        OnceCurrentVersionExpired,
+        NoAutoUpgrade,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for VersionUpgradeOption {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for VersionUpgradeOption {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for VersionUpgradeOption {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::OnceNewDefaultVersionAvailable => {
+                    serializer.serialize_unit_variant("VersionUpgradeOption", 0u32, "OnceNewDefaultVersionAvailable")
+                }
+                Self::OnceCurrentVersionExpired => {
+                    serializer.serialize_unit_variant("VersionUpgradeOption", 1u32, "OnceCurrentVersionExpired")
+                }
+                Self::NoAutoUpgrade => serializer.serialize_unit_variant("VersionUpgradeOption", 2u32, "NoAutoUpgrade"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Properties of Cognitive Services account deployment model."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DeploymentScaleSettings {
+    #[doc = "Deployment scale type."]
+    #[serde(rename = "scaleType", default, skip_serializing_if = "Option::is_none")]
+    pub scale_type: Option<deployment_scale_settings::ScaleType>,
+    #[doc = "Deployment capacity."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<i32>,
+    #[doc = "Deployment active capacity. This value might be different from `capacity` if customer recently updated `capacity`."]
+    #[serde(rename = "activeCapacity", default, skip_serializing_if = "Option::is_none")]
+    pub active_capacity: Option<i32>,
+}
+impl DeploymentScaleSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod deployment_scale_settings {
+    use super::*;
+    #[doc = "Deployment scale type."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ScaleType")]
+    pub enum ScaleType {
+        Standard,
+        Manual,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ScaleType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ScaleType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ScaleType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Standard => serializer.serialize_unit_variant("ScaleType", 0u32, "Standard"),
+                Self::Manual => serializer.serialize_unit_variant("ScaleType", 1u32, "Manual"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "Domain availability."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DomainAvailability {
@@ -402,6 +1212,9 @@ pub struct DomainAvailability {
     #[doc = "The Type of the resource."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "The kind (type) of cognitive service account."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<Kind>,
 }
 impl DomainAvailability {
     pub fn new() -> Self {
@@ -536,6 +1349,47 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Account hosting model."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "HostingModel")]
+pub enum HostingModel {
+    Web,
+    ConnectedContainer,
+    DisconnectedContainer,
+    ProvisionedWeb,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for HostingModel {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for HostingModel {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for HostingModel {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Web => serializer.serialize_unit_variant("HostingModel", 0u32, "Web"),
+            Self::ConnectedContainer => serializer.serialize_unit_variant("HostingModel", 1u32, "ConnectedContainer"),
+            Self::DisconnectedContainer => serializer.serialize_unit_variant("HostingModel", 2u32, "DisconnectedContainer"),
+            Self::ProvisionedWeb => serializer.serialize_unit_variant("HostingModel", 3u32, "ProvisionedWeb"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "Identity for the resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Identity {
@@ -614,6 +1468,153 @@ pub struct MetricName {
 impl MetricName {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Cognitive Services Model."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Model {
+    #[doc = "Cognitive Services account Model."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<AccountModel>,
+    #[doc = "The kind (type) of cognitive service account."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<Kind>,
+    #[doc = "The name of SKU."]
+    #[serde(rename = "skuName", default, skip_serializing_if = "Option::is_none")]
+    pub sku_name: Option<SkuName>,
+}
+impl Model {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Cognitive Services account ModelDeprecationInfo."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ModelDeprecationInfo {
+    #[doc = "The datetime of deprecation of the fineTune Model."]
+    #[serde(rename = "fineTune", default, skip_serializing_if = "Option::is_none")]
+    pub fine_tune: Option<String>,
+    #[doc = "The datetime of deprecation of the inference Model."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inference: Option<String>,
+}
+impl ModelDeprecationInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The list of cognitive services models."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ModelListResult {
+    #[doc = "The link used to get the next page of Model."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "Gets the list of Cognitive Services accounts Model and their properties."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<Model>,
+}
+impl azure_core::Continuable for ModelListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl ModelListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes an available Cognitive Services Model SKU."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ModelSku {
+    #[doc = "The name of the model SKU."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The usage name of the model SKU."]
+    #[serde(rename = "usageName", default, skip_serializing_if = "Option::is_none")]
+    pub usage_name: Option<String>,
+    #[doc = "The datetime of deprecation of the model SKU."]
+    #[serde(rename = "deprecationDate", default, with = "azure_core::date::rfc3339::option")]
+    pub deprecation_date: Option<time::OffsetDateTime>,
+    #[doc = "The capacity configuration."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capacity: Option<CapacityConfig>,
+    #[doc = "The list of rateLimit."]
+    #[serde(
+        rename = "rateLimits",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub rate_limits: Vec<CallRateLimit>,
+}
+impl ModelSku {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The multiregion settings Cognitive Services account."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MultiRegionSettings {
+    #[doc = "Multiregion routing methods."]
+    #[serde(rename = "routingMethod", default, skip_serializing_if = "Option::is_none")]
+    pub routing_method: Option<multi_region_settings::RoutingMethod>,
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub regions: Vec<RegionSetting>,
+}
+impl MultiRegionSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod multi_region_settings {
+    use super::*;
+    #[doc = "Multiregion routing methods."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "RoutingMethod")]
+    pub enum RoutingMethod {
+        Priority,
+        Weighted,
+        Performance,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for RoutingMethod {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for RoutingMethod {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for RoutingMethod {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Priority => serializer.serialize_unit_variant("RoutingMethod", 0u32, "Priority"),
+                Self::Weighted => serializer.serialize_unit_variant("RoutingMethod", 1u32, "Weighted"),
+                Self::Performance => serializer.serialize_unit_variant("RoutingMethod", 2u32, "Performance"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "A set of rules governing the network accessibility."]
@@ -830,6 +1831,32 @@ impl azure_core::Continuable for OperationListResult {
     }
 }
 impl OperationListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The object being used to update tags of a resource, in general used for PATCH operations."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PatchResourceTags {
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl PatchResourceTags {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The object being used to update tags and sku of a resource, in general used for PATCH operations."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PatchResourceTagsAndSku {
+    #[serde(flatten)]
+    pub patch_resource_tags: PatchResourceTags,
+    #[doc = "The resource model definition representing SKU"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
+}
+impl PatchResourceTagsAndSku {
     pub fn new() -> Self {
         Self::default()
     }
@@ -1072,6 +2099,17 @@ impl PrivateLinkServiceConnectionState {
         Self::default()
     }
 }
+#[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ProxyResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+impl ProxyResource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaLimit {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1109,6 +2147,24 @@ pub mod regenerate_key_parameters {
     pub enum KeyName {
         Key1,
         Key2,
+    }
+}
+#[doc = "The call rate limit Cognitive Services account."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RegionSetting {
+    #[doc = "Name of the region."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "A value for priority or weighted routing methods."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub value: Option<f64>,
+    #[doc = "Maps the region to the regional custom subdomain."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub customsubdomain: Option<String>,
+}
+impl RegionSetting {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1589,6 +2645,9 @@ pub mod usage {
 #[doc = "The response to a list usage request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageListResult {
+    #[doc = "The link used to get the next page of Usages."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
     #[doc = "The list of usages for Cognitive Service account."]
     #[serde(
         default,
@@ -1596,6 +2655,12 @@ pub struct UsageListResult {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<Usage>,
+}
+impl azure_core::Continuable for UsageListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
 }
 impl UsageListResult {
     pub fn new() -> Self {
