@@ -3,16 +3,112 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "Action descriptor."]
+#[doc = "Access mode types."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Action {
-    #[doc = "Specifies the action. Supported values - AlertingAction, LogToMetricAction"]
-    #[serde(rename = "odata.type")]
-    pub odata_type: String,
+#[serde(remote = "AccessMode")]
+pub enum AccessMode {
+    Open,
+    PrivateOnly,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
 }
-impl Action {
-    pub fn new(odata_type: String) -> Self {
-        Self { odata_type }
+impl FromStr for AccessMode {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for AccessMode {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for AccessMode {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Open => serializer.serialize_unit_variant("AccessMode", 0u32, "Open"),
+            Self::PrivateOnly => serializer.serialize_unit_variant("AccessMode", 1u32, "PrivateOnly"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Properties that define the scope private link mode settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AccessModeSettings {
+    #[doc = "Access mode types."]
+    #[serde(rename = "queryAccessMode")]
+    pub query_access_mode: AccessMode,
+    #[doc = "Access mode types."]
+    #[serde(rename = "ingestionAccessMode")]
+    pub ingestion_access_mode: AccessMode,
+    #[doc = "List of exclusions that override the default access mode settings for specific private endpoint connections."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub exclusions: Vec<AccessModeSettingsExclusion>,
+}
+impl AccessModeSettings {
+    pub fn new(query_access_mode: AccessMode, ingestion_access_mode: AccessMode) -> Self {
+        Self {
+            query_access_mode,
+            ingestion_access_mode,
+            exclusions: Vec::new(),
+        }
+    }
+}
+#[doc = "Properties that define the scope private link mode settings exclusion item. This setting applies to a specific private endpoint connection and overrides the default settings for that private endpoint connection."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AccessModeSettingsExclusion {
+    #[doc = "The private endpoint connection name associated to the private endpoint on which we want to apply the specific access mode settings."]
+    #[serde(rename = "privateEndpointConnectionName", default, skip_serializing_if = "Option::is_none")]
+    pub private_endpoint_connection_name: Option<String>,
+    #[doc = "Access mode types."]
+    #[serde(rename = "queryAccessMode", default, skip_serializing_if = "Option::is_none")]
+    pub query_access_mode: Option<AccessMode>,
+    #[doc = "Access mode types."]
+    #[serde(rename = "ingestionAccessMode", default, skip_serializing_if = "Option::is_none")]
+    pub ingestion_access_mode: Option<AccessMode>,
+}
+impl AccessModeSettingsExclusion {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The action detail"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ActionDetail {
+    #[doc = "The mechanism type"]
+    #[serde(rename = "MechanismType", default, skip_serializing_if = "Option::is_none")]
+    pub mechanism_type: Option<String>,
+    #[doc = "The name of the action"]
+    #[serde(rename = "Name", default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The status of the action"]
+    #[serde(rename = "Status", default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[doc = "The substatus of the action"]
+    #[serde(rename = "SubState", default, skip_serializing_if = "Option::is_none")]
+    pub sub_state: Option<String>,
+    #[doc = "The send time"]
+    #[serde(rename = "SendTime", default, skip_serializing_if = "Option::is_none")]
+    pub send_time: Option<String>,
+    #[doc = "The detail of the friendly error message"]
+    #[serde(rename = "Detail", default, skip_serializing_if = "Option::is_none")]
+    pub detail: Option<String>,
+}
+impl ActionDetail {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "An Azure action group."]
@@ -103,6 +199,14 @@ pub struct ActionGroup {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub arm_role_receivers: Vec<ArmRoleReceiver>,
+    #[doc = "The list of event hub receivers that are part of this action group."]
+    #[serde(
+        rename = "eventHubReceivers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub event_hub_receivers: Vec<EventHubReceiver>,
 }
 impl ActionGroup {
     pub fn new(group_short_name: String, enabled: bool) -> Self {
@@ -119,6 +223,7 @@ impl ActionGroup {
             logic_app_receivers: Vec::new(),
             azure_function_receivers: Vec::new(),
             arm_role_receivers: Vec::new(),
+            event_hub_receivers: Vec::new(),
         }
     }
 }
@@ -191,160 +296,58 @@ impl ActionGroupResource {
         }
     }
 }
-#[doc = "An Azure activity log alert."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActivityLogAlert {
-    #[doc = "A list of resourceIds that will be used as prefixes. The alert will only apply to activityLogs with resourceIds that fall under one of these prefixes. This list must include at least one item."]
-    pub scopes: Vec<String>,
-    #[doc = "Indicates whether this activity log alert is enabled. If an activity log alert is not enabled, then none of its actions will be activated."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-    #[doc = "An Activity Log alert condition that is met when all its member conditions are met."]
-    pub condition: ActivityLogAlertAllOfCondition,
-    #[doc = "A list of activity log alert actions."]
-    pub actions: ActivityLogAlertActionList,
-    #[doc = "A description of this activity log alert."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-}
-impl ActivityLogAlert {
-    pub fn new(scopes: Vec<String>, condition: ActivityLogAlertAllOfCondition, actions: ActivityLogAlertActionList) -> Self {
-        Self {
-            scopes,
-            enabled: None,
-            condition,
-            actions,
-            description: None,
-        }
-    }
-}
-#[doc = "A pointer to an Azure Action Group."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActivityLogAlertActionGroup {
-    #[doc = "The resourceId of the action group. This cannot be null or empty."]
-    #[serde(rename = "actionGroupId")]
-    pub action_group_id: String,
-    #[doc = "the dictionary of custom properties to include with the post operation. These data are appended to the webhook payload."]
-    #[serde(rename = "webhookProperties", default, skip_serializing_if = "Option::is_none")]
-    pub webhook_properties: Option<serde_json::Value>,
-}
-impl ActivityLogAlertActionGroup {
-    pub fn new(action_group_id: String) -> Self {
-        Self {
-            action_group_id,
-            webhook_properties: None,
-        }
-    }
-}
-#[doc = "A list of activity log alert actions."]
+#[doc = "A list of Activity Log Alert rule actions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ActivityLogAlertActionList {
-    #[doc = "The list of activity log alerts."]
+pub struct ActionList {
+    #[doc = "The list of the Action Groups."]
     #[serde(
         rename = "actionGroups",
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub action_groups: Vec<ActivityLogAlertActionGroup>,
+    pub action_groups: Vec<ActionGroup>,
 }
-impl ActivityLogAlertActionList {
+impl ActionList {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "An Activity Log alert condition that is met when all its member conditions are met."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActivityLogAlertAllOfCondition {
-    #[doc = "The list of activity log alert conditions."]
-    #[serde(rename = "allOf")]
-    pub all_of: Vec<ActivityLogAlertLeafCondition>,
-}
-impl ActivityLogAlertAllOfCondition {
-    pub fn new(all_of: Vec<ActivityLogAlertLeafCondition>) -> Self {
-        Self { all_of }
-    }
-}
-#[doc = "An Activity Log alert condition that is met by comparing an activity log field and value."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ActivityLogAlertLeafCondition {
-    #[doc = "The name of the field that this condition will examine. The possible values for this field are (case-insensitive): 'resourceId', 'category', 'caller', 'level', 'operationName', 'resourceGroup', 'resourceProvider', 'status', 'subStatus', 'resourceType', or anything beginning with 'properties.'."]
-    pub field: String,
-    #[doc = "The field value will be compared to this value (case-insensitive) to determine if the condition is met."]
-    pub equals: String,
-}
-impl ActivityLogAlertLeafCondition {
-    pub fn new(field: String, equals: String) -> Self {
-        Self { field, equals }
-    }
-}
-#[doc = "A list of activity log alerts."]
+#[doc = "Actions to invoke when the alert fires."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ActivityLogAlertList {
-    #[doc = "The list of activity log alerts."]
+pub struct Actions {
+    #[doc = "Action Group resource Ids to invoke when the alert fires."]
     #[serde(
+        rename = "actionGroups",
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<ActivityLogAlertResource>,
-    #[doc = "Provides the link to retrieve the next set of elements."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
+    pub action_groups: Vec<String>,
+    #[doc = "The properties of an alert payload."]
+    #[serde(rename = "customProperties", default, skip_serializing_if = "Option::is_none")]
+    pub custom_properties: Option<serde_json::Value>,
+    #[doc = "The properties of an action properties."]
+    #[serde(rename = "actionProperties", default, skip_serializing_if = "Option::is_none")]
+    pub action_properties: Option<serde_json::Value>,
 }
-impl azure_core::Continuable for ActivityLogAlertList {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        None
-    }
-}
-impl ActivityLogAlertList {
+impl Actions {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "An Azure activity log alert for patch operations."]
+#[doc = "An Activity Log Alert rule resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ActivityLogAlertPatch {
-    #[doc = "Indicates whether this activity log alert is enabled. If an activity log alert is not enabled, then none of its actions will be activated."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-}
-impl ActivityLogAlertPatch {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "An activity log alert object for the body of patch operations."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ActivityLogAlertPatchBody {
-    #[doc = "Resource tags"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[doc = "An Azure activity log alert for patch operations."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ActivityLogAlertPatch>,
-}
-impl ActivityLogAlertPatchBody {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "An activity log alert resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityLogAlertResource {
     #[serde(flatten)]
-    pub resource: Resource,
-    #[doc = "An Azure activity log alert."]
+    pub azure_resource: AzureResource,
+    #[doc = "An Azure Activity Log Alert rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ActivityLogAlert>,
+    pub properties: Option<AlertRuleProperties>,
 }
 impl ActivityLogAlertResource {
-    pub fn new(resource: Resource) -> Self {
-        Self {
-            resource,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "the aggregation type of the metric."]
@@ -401,6 +404,139 @@ impl AlertRule {
         }
     }
 }
+#[doc = "An Activity Log Alert rule condition that is met when all its member conditions are met."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AlertRuleAllOfCondition {
+    #[doc = "The list of Activity Log Alert rule conditions."]
+    #[serde(rename = "allOf")]
+    pub all_of: Vec<AlertRuleAnyOfOrLeafCondition>,
+}
+impl AlertRuleAllOfCondition {
+    pub fn new(all_of: Vec<AlertRuleAnyOfOrLeafCondition>) -> Self {
+        Self { all_of }
+    }
+}
+#[doc = "An Activity Log Alert rule condition that is met when all its member conditions are met.\nEach condition can be of one of the following types:\n__Important__: Each type has its unique subset of properties. Properties from different types CANNOT exist in one condition.\n   * __Leaf Condition -__ must contain 'field' and either 'equals' or 'containsAny'.\n  _Please note, 'anyOf' should __not__ be set in a Leaf Condition._\n  * __AnyOf Condition -__ must contain __only__ 'anyOf' (which is an array of Leaf Conditions).\n  _Please note, 'field', 'equals' and 'containsAny' should __not__ be set in an AnyOf Condition._\n"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AlertRuleAnyOfOrLeafCondition {
+    #[serde(flatten)]
+    pub alert_rule_leaf_condition: AlertRuleLeafCondition,
+    #[doc = "An Activity Log Alert rule condition that is met when at least one of its member leaf conditions are met."]
+    #[serde(
+        rename = "anyOf",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub any_of: Vec<AlertRuleLeafCondition>,
+}
+impl AlertRuleAnyOfOrLeafCondition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "An Activity Log Alert rule condition that is met by comparing the field and value of an Activity Log event.\nThis condition must contain 'field' and either 'equals' or 'containsAny'."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AlertRuleLeafCondition {
+    #[doc = "The name of the Activity Log event's field that this condition will examine.\nThe possible values for this field are (case-insensitive): 'resourceId', 'category', 'caller', 'level', 'operationName', 'resourceGroup', 'resourceProvider', 'status', 'subStatus', 'resourceType', or anything beginning with 'properties'."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub field: Option<String>,
+    #[doc = "The value of the event's field will be compared to this value (case-insensitive) to determine if the condition is met."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub equals: Option<String>,
+    #[doc = "The value of the event's field will be compared to the values in this array (case-insensitive) to determine if the condition is met."]
+    #[serde(
+        rename = "containsAny",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub contains_any: Vec<String>,
+}
+impl AlertRuleLeafCondition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A list of Activity Log Alert rules."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AlertRuleList {
+    #[doc = "The list of Activity Log Alert rules."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<ActivityLogAlertResource>,
+    #[doc = "Provides the link to retrieve the next set of elements."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AlertRuleList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl AlertRuleList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "An Activity Log Alert rule object for the body of patch operations."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AlertRulePatchObject {
+    #[doc = "The resource tags"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[doc = "An Activity Log Alert rule properties for patch operations."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AlertRulePatchProperties>,
+}
+impl AlertRulePatchObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "An Activity Log Alert rule properties for patch operations."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AlertRulePatchProperties {
+    #[doc = "Indicates whether this Activity Log Alert rule is enabled. If an Activity Log Alert rule is not enabled, then none of its actions will be activated."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+}
+impl AlertRulePatchProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "An Azure Activity Log Alert rule."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AlertRuleProperties {
+    #[doc = "A list of resource IDs that will be used as prefixes. The alert will only apply to Activity Log events with resource IDs that fall under one of these prefixes. This list must include at least one item."]
+    pub scopes: Vec<String>,
+    #[doc = "An Activity Log Alert rule condition that is met when all its member conditions are met."]
+    pub condition: AlertRuleAllOfCondition,
+    #[doc = "A list of Activity Log Alert rule actions."]
+    pub actions: ActionList,
+    #[doc = "Indicates whether this Activity Log Alert rule is enabled. If an Activity Log Alert rule is not enabled, then none of its actions will be activated."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[doc = "A description of this Activity Log Alert rule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+impl AlertRuleProperties {
+    pub fn new(scopes: Vec<String>, condition: AlertRuleAllOfCondition, actions: ActionList) -> Self {
+        Self {
+            scopes,
+            condition,
+            actions,
+            enabled: None,
+            description: None,
+        }
+    }
+}
 #[doc = "The alert rule resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertRuleResource {
@@ -449,81 +585,6 @@ pub struct AlertRuleResourcePatch {
 impl AlertRuleResourcePatch {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Severity Level of Alert"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(remote = "AlertSeverity")]
-pub enum AlertSeverity {
-    #[serde(rename = "0")]
-    N0,
-    #[serde(rename = "1")]
-    N1,
-    #[serde(rename = "2")]
-    N2,
-    #[serde(rename = "3")]
-    N3,
-    #[serde(rename = "4")]
-    N4,
-    #[serde(skip_deserializing)]
-    UnknownValue(String),
-}
-impl FromStr for AlertSeverity {
-    type Err = value::Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Self::deserialize(s.into_deserializer())
-    }
-}
-impl<'de> Deserialize<'de> for AlertSeverity {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-        Ok(deserialized)
-    }
-}
-impl Serialize for AlertSeverity {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Self::N0 => serializer.serialize_unit_variant("AlertSeverity", 0u32, "0"),
-            Self::N1 => serializer.serialize_unit_variant("AlertSeverity", 1u32, "1"),
-            Self::N2 => serializer.serialize_unit_variant("AlertSeverity", 2u32, "2"),
-            Self::N3 => serializer.serialize_unit_variant("AlertSeverity", 3u32, "3"),
-            Self::N4 => serializer.serialize_unit_variant("AlertSeverity", 4u32, "4"),
-            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-        }
-    }
-}
-#[doc = "Specify action need to be taken when rule type is Alert"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertingAction {
-    #[serde(flatten)]
-    pub action: Action,
-    #[doc = "Severity Level of Alert"]
-    pub severity: AlertSeverity,
-    #[doc = "Azure action group"]
-    #[serde(rename = "aznsAction", default, skip_serializing_if = "Option::is_none")]
-    pub azns_action: Option<AzNsActionGroup>,
-    #[doc = "time (in minutes) for which Alerts should be throttled or suppressed."]
-    #[serde(rename = "throttlingInMin", default, skip_serializing_if = "Option::is_none")]
-    pub throttling_in_min: Option<i32>,
-    #[doc = "The condition that results in the Log Search rule."]
-    pub trigger: TriggerCondition,
-}
-impl AlertingAction {
-    pub fn new(action: Action, severity: AlertSeverity, trigger: TriggerCondition) -> Self {
-        Self {
-            action,
-            severity,
-            azns_action: None,
-            throttling_in_min: None,
-            trigger,
-        }
     }
 }
 #[doc = "An arm role receiver."]
@@ -582,6 +643,51 @@ impl AutomationRunbookReceiver {
             name: None,
             service_uri: None,
             use_common_alert_schema: None,
+        }
+    }
+}
+#[doc = "Describes the format of Error response."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AutoscaleErrorResponse {
+    #[doc = "The error object."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<autoscale_error_response::Error>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+}
+impl azure_core::Continuable for AutoscaleErrorResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
+impl AutoscaleErrorResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod autoscale_error_response {
+    use super::*;
+    #[doc = "The error object."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Error {
+        #[doc = "One of a server-defined set of error codes."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub code: Option<String>,
+        #[doc = "A human-readable representation of the error."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub message: Option<String>,
+        #[doc = "The target of the particular error."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub target: Option<String>,
+        #[doc = "A human-readable representation of the error's details."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub details: Option<String>,
+    }
+    impl Error {
+        pub fn new() -> Self {
+            Self::default()
         }
     }
 }
@@ -660,6 +766,9 @@ pub struct AutoscaleSetting {
     #[doc = "the enabled flag. Specifies whether automatic scaling is enabled for the resource. The default value is 'false'."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    #[doc = "The parameters for enabling predictive autoscale."]
+    #[serde(rename = "predictiveAutoscalePolicy", default, skip_serializing_if = "Option::is_none")]
+    pub predictive_autoscale_policy: Option<PredictiveAutoscalePolicy>,
     #[doc = "the name of the autoscale setting."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -676,6 +785,7 @@ impl AutoscaleSetting {
             profiles,
             notifications: Vec::new(),
             enabled: None,
+            predictive_autoscale_policy: None,
             name: None,
             target_resource_uri: None,
             target_resource_location: None,
@@ -726,29 +836,6 @@ pub struct AutoscaleSettingResourcePatch {
     pub properties: Option<AutoscaleSetting>,
 }
 impl AutoscaleSettingResourcePatch {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Azure action group"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct AzNsActionGroup {
-    #[doc = "Azure Action Group reference."]
-    #[serde(
-        rename = "actionGroup",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub action_group: Vec<String>,
-    #[doc = "Custom subject override for all email ids in Azure action group"]
-    #[serde(rename = "emailSubject", default, skip_serializing_if = "Option::is_none")]
-    pub email_subject: Option<String>,
-    #[doc = "Custom payload to be sent for all webhook URI in Azure action group"]
-    #[serde(rename = "customWebhookPayload", default, skip_serializing_if = "Option::is_none")]
-    pub custom_webhook_payload: Option<String>,
-}
-impl AzNsActionGroup {
     pub fn new() -> Self {
         Self::default()
     }
@@ -812,15 +899,19 @@ impl AzureMonitorMetricsDestination {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureMonitorPrivateLinkScope {
     #[serde(flatten)]
-    pub private_link_scopes_resource: PrivateLinkScopesResource,
+    pub tracked_resource: TrackedResource,
     #[doc = "Properties that define a Azure Monitor PrivateLinkScope resource."]
     pub properties: AzureMonitorPrivateLinkScopeProperties,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
 }
 impl AzureMonitorPrivateLinkScope {
-    pub fn new(private_link_scopes_resource: PrivateLinkScopesResource, properties: AzureMonitorPrivateLinkScopeProperties) -> Self {
+    pub fn new(tracked_resource: TrackedResource, properties: AzureMonitorPrivateLinkScopeProperties) -> Self {
         Self {
-            private_link_scopes_resource,
+            tracked_resource,
             properties,
+            system_data: None,
         }
     }
 }
@@ -845,7 +936,7 @@ impl AzureMonitorPrivateLinkScopeListResult {
     }
 }
 #[doc = "Properties that define a Azure Monitor PrivateLinkScope resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureMonitorPrivateLinkScopeProperties {
     #[doc = "Current state of this PrivateLinkScope: whether or not is has been provisioned within the resource group it is defined. Users cannot change this value but are able to read from it. Values will include Provisioning ,Succeeded, Canceled and Failed."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
@@ -858,10 +949,137 @@ pub struct AzureMonitorPrivateLinkScopeProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
+    #[doc = "Properties that define the scope private link mode settings."]
+    #[serde(rename = "accessModeSettings")]
+    pub access_mode_settings: AccessModeSettings,
 }
 impl AzureMonitorPrivateLinkScopeProperties {
+    pub fn new(access_mode_settings: AccessModeSettings) -> Self {
+        Self {
+            provisioning_state: None,
+            private_endpoint_connections: Vec::new(),
+            access_mode_settings,
+        }
+    }
+}
+#[doc = "Properties of an Azure Monitor workspace"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureMonitorWorkspace {
+    #[doc = "The immutable ID of the Azure Monitor workspace. This property is read-only."]
+    #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
+    pub account_id: Option<String>,
+    #[doc = "Information about metrics for the Azure Monitor workspace"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metrics: Option<serde_json::Value>,
+    #[doc = "The provisioning state of the Azure Monitor workspace. Set to Succeeded if everything is healthy."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<azure_monitor_workspace::ProvisioningState>,
+    #[doc = "The Data Collection Rule and Endpoint used for ingestion by default."]
+    #[serde(rename = "defaultIngestionSettings", default, skip_serializing_if = "Option::is_none")]
+    pub default_ingestion_settings: Option<serde_json::Value>,
+}
+impl AzureMonitorWorkspace {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod azure_monitor_workspace {
+    use super::*;
+    #[doc = "The provisioning state of the Azure Monitor workspace. Set to Succeeded if everything is healthy."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ProvisioningState")]
+    pub enum ProvisioningState {
+        Creating,
+        Succeeded,
+        Deleting,
+        Failed,
+        Canceled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ProvisioningState {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ProvisioningState {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ProvisioningState {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Creating => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Creating"),
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Succeeded"),
+                Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Deleting"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Failed"),
+                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Canceled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "An Azure Monitor Workspace definition"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureMonitorWorkspaceResource {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    #[doc = "Resource properties"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<serde_json::Value>,
+    #[doc = "Resource entity tag (ETag)"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+}
+impl AzureMonitorWorkspaceResource {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self {
+            tracked_resource,
+            properties: None,
+            etag: None,
+        }
+    }
+}
+#[doc = "Definition of ARM tracked top level resource properties for update operation"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureMonitorWorkspaceResourceForUpdate {
+    #[doc = "Resource tags"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl AzureMonitorWorkspaceResourceForUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A pageable list of resources"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureMonitorWorkspaceResourceListResult {
+    #[doc = "A list of resources"]
+    pub value: Vec<AzureMonitorWorkspaceResource>,
+    #[doc = "The URL to use for getting the next set of results"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AzureMonitorWorkspaceResourceListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl AzureMonitorWorkspaceResourceListResult {
+    pub fn new(value: Vec<AzureMonitorWorkspaceResource>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "An azure resource object"]
@@ -906,6 +1124,222 @@ impl BaselineMetadata {
         Self { name, value }
     }
 }
+#[doc = "Definition of custom data column."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ColumnDefinition {
+    #[doc = "The name of the column."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The type of the column data."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<column_definition::Type>,
+}
+impl ColumnDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod column_definition {
+    use super::*;
+    #[doc = "The type of the column data."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
+    pub enum Type {
+        #[serde(rename = "string")]
+        String,
+        #[serde(rename = "int")]
+        Int,
+        #[serde(rename = "long")]
+        Long,
+        #[serde(rename = "real")]
+        Real,
+        #[serde(rename = "boolean")]
+        Boolean,
+        #[serde(rename = "datetime")]
+        Datetime,
+        #[serde(rename = "dynamic")]
+        Dynamic,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::String => serializer.serialize_unit_variant("Type", 0u32, "string"),
+                Self::Int => serializer.serialize_unit_variant("Type", 1u32, "int"),
+                Self::Long => serializer.serialize_unit_variant("Type", 2u32, "long"),
+                Self::Real => serializer.serialize_unit_variant("Type", 3u32, "real"),
+                Self::Boolean => serializer.serialize_unit_variant("Type", 4u32, "boolean"),
+                Self::Datetime => serializer.serialize_unit_variant("Type", 5u32, "datetime"),
+                Self::Dynamic => serializer.serialize_unit_variant("Type", 6u32, "dynamic"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "A condition of the scheduled query rule."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Condition {
+    #[doc = "Log query alert"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub query: Option<String>,
+    #[doc = "Aggregation type. Relevant and required only for rules of the kind LogAlert."]
+    #[serde(rename = "timeAggregation", default, skip_serializing_if = "Option::is_none")]
+    pub time_aggregation: Option<condition::TimeAggregation>,
+    #[doc = "The column containing the metric measure number. Relevant only for rules of the kind LogAlert."]
+    #[serde(rename = "metricMeasureColumn", default, skip_serializing_if = "Option::is_none")]
+    pub metric_measure_column: Option<String>,
+    #[doc = "The column containing the resource id. The content of the column must be a uri formatted as resource id. Relevant only for rules of the kind LogAlert."]
+    #[serde(rename = "resourceIdColumn", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id_column: Option<String>,
+    #[doc = "List of Dimensions conditions"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub dimensions: Vec<Dimension>,
+    #[doc = "The criteria operator. Relevant and required only for rules of the kind LogAlert."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub operator: Option<condition::Operator>,
+    #[doc = "the criteria threshold value that activates the alert. Relevant and required only for rules of the kind LogAlert."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub threshold: Option<f64>,
+    #[doc = "The minimum number of violations required within the selected lookback time window required to raise an alert. Relevant only for rules of the kind LogAlert."]
+    #[serde(rename = "failingPeriods", default, skip_serializing_if = "Option::is_none")]
+    pub failing_periods: Option<condition::FailingPeriods>,
+    #[doc = "The name of the metric to be sent. Relevant and required only for rules of the kind LogToMetric."]
+    #[serde(rename = "metricName", default, skip_serializing_if = "Option::is_none")]
+    pub metric_name: Option<String>,
+}
+impl Condition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod condition {
+    use super::*;
+    #[doc = "Aggregation type. Relevant and required only for rules of the kind LogAlert."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "TimeAggregation")]
+    pub enum TimeAggregation {
+        Count,
+        Average,
+        Minimum,
+        Maximum,
+        Total,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for TimeAggregation {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for TimeAggregation {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for TimeAggregation {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Count => serializer.serialize_unit_variant("TimeAggregation", 0u32, "Count"),
+                Self::Average => serializer.serialize_unit_variant("TimeAggregation", 1u32, "Average"),
+                Self::Minimum => serializer.serialize_unit_variant("TimeAggregation", 2u32, "Minimum"),
+                Self::Maximum => serializer.serialize_unit_variant("TimeAggregation", 3u32, "Maximum"),
+                Self::Total => serializer.serialize_unit_variant("TimeAggregation", 4u32, "Total"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "The criteria operator. Relevant and required only for rules of the kind LogAlert."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Operator")]
+    pub enum Operator {
+        Equals,
+        GreaterThan,
+        GreaterThanOrEqual,
+        LessThan,
+        LessThanOrEqual,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Operator {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Operator {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Operator {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Equals => serializer.serialize_unit_variant("Operator", 0u32, "Equals"),
+                Self::GreaterThan => serializer.serialize_unit_variant("Operator", 1u32, "GreaterThan"),
+                Self::GreaterThanOrEqual => serializer.serialize_unit_variant("Operator", 2u32, "GreaterThanOrEqual"),
+                Self::LessThan => serializer.serialize_unit_variant("Operator", 3u32, "LessThan"),
+                Self::LessThanOrEqual => serializer.serialize_unit_variant("Operator", 4u32, "LessThanOrEqual"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "The minimum number of violations required within the selected lookback time window required to raise an alert. Relevant only for rules of the kind LogAlert."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct FailingPeriods {
+        #[doc = "The number of aggregated lookback points. The lookback time window is calculated based on the aggregation granularity (windowSize) and the selected number of aggregated points. Default value is 1"]
+        #[serde(rename = "numberOfEvaluationPeriods", default, skip_serializing_if = "Option::is_none")]
+        pub number_of_evaluation_periods: Option<i64>,
+        #[doc = "The number of violations to trigger an alert. Should be smaller or equal to numberOfEvaluationPeriods. Default value is 1"]
+        #[serde(rename = "minFailingPeriodsToAlert", default, skip_serializing_if = "Option::is_none")]
+        pub min_failing_periods_to_alert: Option<i64>,
+    }
+    impl FailingPeriods {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+}
 #[doc = "Operators allowed in the rule condition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ConditionOperator {
@@ -913,54 +1347,6 @@ pub enum ConditionOperator {
     GreaterThanOrEqual,
     LessThan,
     LessThanOrEqual,
-}
-#[doc = "Result Condition Evaluation criteria."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(remote = "ConditionalOperator")]
-pub enum ConditionalOperator {
-    GreaterThanOrEqual,
-    LessThanOrEqual,
-    GreaterThan,
-    LessThan,
-    Equal,
-    #[serde(skip_deserializing)]
-    UnknownValue(String),
-}
-impl FromStr for ConditionalOperator {
-    type Err = value::Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Self::deserialize(s.into_deserializer())
-    }
-}
-impl<'de> Deserialize<'de> for ConditionalOperator {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-        Ok(deserialized)
-    }
-}
-impl Serialize for ConditionalOperator {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Self::GreaterThanOrEqual => serializer.serialize_unit_variant("ConditionalOperator", 0u32, "GreaterThanOrEqual"),
-            Self::LessThanOrEqual => serializer.serialize_unit_variant("ConditionalOperator", 1u32, "LessThanOrEqual"),
-            Self::GreaterThan => serializer.serialize_unit_variant("ConditionalOperator", 2u32, "GreaterThan"),
-            Self::LessThan => serializer.serialize_unit_variant("ConditionalOperator", 3u32, "LessThan"),
-            Self::Equal => serializer.serialize_unit_variant("ConditionalOperator", 4u32, "Equal"),
-            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-        }
-    }
-}
-impl Default for ConditionalOperator {
-    fn default() -> Self {
-        Self::GreaterThanOrEqual
-    }
 }
 #[doc = "Definition of the endpoint used for accessing configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -974,26 +1360,19 @@ impl ConfigurationAccessEndpointSpec {
         Self::default()
     }
 }
-#[doc = "Specifies the criteria for converting log to metric."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Criteria {
-    #[doc = "Name of the metric"]
-    #[serde(rename = "metricName")]
-    pub metric_name: String,
-    #[doc = "List of Dimensions for creating metric"]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub dimensions: Vec<Dimension>,
+#[doc = "The context info"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Context {
+    #[doc = "The source of the notification request"]
+    #[serde(rename = "notificationSource", default, skip_serializing_if = "Option::is_none")]
+    pub notification_source: Option<String>,
+    #[doc = "The context id type"]
+    #[serde(rename = "contextType", default, skip_serializing_if = "Option::is_none")]
+    pub context_type: Option<String>,
 }
-impl Criteria {
-    pub fn new(metric_name: String) -> Self {
-        Self {
-            metric_name,
-            dimensions: Vec::new(),
-        }
+impl Context {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Definition of data collection endpoint."]
@@ -1005,18 +1384,35 @@ pub struct DataCollectionEndpoint {
     #[doc = "The immutable ID of this data collection endpoint resource. This property is READ-ONLY."]
     #[serde(rename = "immutableId", default, skip_serializing_if = "Option::is_none")]
     pub immutable_id: Option<String>,
-    #[doc = "The endpoint used by agents to access their configuration."]
+    #[doc = "The endpoint used by clients to access their configuration."]
     #[serde(rename = "configurationAccess", default, skip_serializing_if = "Option::is_none")]
     pub configuration_access: Option<serde_json::Value>,
     #[doc = "The endpoint used by clients to ingest logs."]
     #[serde(rename = "logsIngestion", default, skip_serializing_if = "Option::is_none")]
     pub logs_ingestion: Option<serde_json::Value>,
+    #[doc = "The endpoint used by clients to ingest metrics."]
+    #[serde(rename = "metricsIngestion", default, skip_serializing_if = "Option::is_none")]
+    pub metrics_ingestion: Option<serde_json::Value>,
     #[doc = "Network access control rules for the endpoints."]
     #[serde(rename = "networkAcls", default, skip_serializing_if = "Option::is_none")]
     pub network_acls: Option<serde_json::Value>,
     #[doc = "The resource provisioning state. This property is READ-ONLY."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<data_collection_endpoint::ProvisioningState>,
+    #[doc = "List of Azure Monitor Private Link Scope Resources to which this data collection endpoint resource is associated. This property is READ-ONLY."]
+    #[serde(
+        rename = "privateLinkScopedResources",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub private_link_scoped_resources: Vec<PrivateLinkScopedResource>,
+    #[doc = "Failover configuration on this endpoint. This property is READ-ONLY."]
+    #[serde(rename = "failoverConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub failover_configuration: Option<serde_json::Value>,
+    #[doc = "Metadata for the resource. This property is READ-ONLY."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
 }
 impl DataCollectionEndpoint {
     pub fn new() -> Self {
@@ -1033,6 +1429,7 @@ pub mod data_collection_endpoint {
         Updating,
         Deleting,
         Succeeded,
+        Canceled,
         Failed,
         #[serde(skip_deserializing)]
         UnknownValue(String),
@@ -1063,7 +1460,8 @@ pub mod data_collection_endpoint {
                 Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Updating"),
                 Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Deleting"),
                 Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Succeeded"),
-                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Failed"),
+                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Canceled"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 5u32, "Failed"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -1083,6 +1481,9 @@ pub struct DataCollectionEndpointResource {
     #[doc = "The kind of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<data_collection_endpoint_resource::Kind>,
+    #[doc = "Managed service identity of the resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<serde_json::Value>,
     #[doc = "Fully qualified ID of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -1106,6 +1507,7 @@ impl DataCollectionEndpointResource {
             location,
             tags: None,
             kind: None,
+            identity: None,
             id: None,
             name: None,
             type_: None,
@@ -1183,6 +1585,15 @@ pub struct DataCollectionRule {
     #[doc = "The immutable ID of this data collection rule. This property is READ-ONLY."]
     #[serde(rename = "immutableId", default, skip_serializing_if = "Option::is_none")]
     pub immutable_id: Option<String>,
+    #[doc = "The resource ID of the data collection endpoint that this rule can be used with."]
+    #[serde(rename = "dataCollectionEndpointId", default, skip_serializing_if = "Option::is_none")]
+    pub data_collection_endpoint_id: Option<String>,
+    #[doc = "Metadata about the resource"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
+    #[doc = "Declaration of custom streams used in this rule."]
+    #[serde(rename = "streamDeclarations", default, skip_serializing_if = "Option::is_none")]
+    pub stream_declarations: Option<serde_json::Value>,
     #[doc = "The specification of data sources. \r\nThis property is optional and can be omitted if the rule is meant to be used via direct calls to the provisioned endpoint."]
     #[serde(rename = "dataSources", default, skip_serializing_if = "Option::is_none")]
     pub data_sources: Option<serde_json::Value>,
@@ -1216,6 +1627,7 @@ pub mod data_collection_rule {
         Updating,
         Deleting,
         Succeeded,
+        Canceled,
         Failed,
         #[serde(skip_deserializing)]
         UnknownValue(String),
@@ -1246,7 +1658,8 @@ pub mod data_collection_rule {
                 Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Updating"),
                 Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Deleting"),
                 Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Succeeded"),
-                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Failed"),
+                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Canceled"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 5u32, "Failed"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -1267,6 +1680,9 @@ pub struct DataCollectionRuleAssociation {
     #[doc = "The resource provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<data_collection_rule_association::ProvisioningState>,
+    #[doc = "Metadata about the resource"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
 }
 impl DataCollectionRuleAssociation {
     pub fn new() -> Self {
@@ -1283,6 +1699,7 @@ pub mod data_collection_rule_association {
         Updating,
         Deleting,
         Succeeded,
+        Canceled,
         Failed,
         #[serde(skip_deserializing)]
         UnknownValue(String),
@@ -1313,7 +1730,8 @@ pub mod data_collection_rule_association {
                 Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Updating"),
                 Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Deleting"),
                 Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Succeeded"),
-                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Failed"),
+                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Canceled"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 5u32, "Failed"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -1380,6 +1798,9 @@ pub struct DataCollectionRuleResource {
     #[doc = "The kind of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<data_collection_rule_resource::Kind>,
+    #[doc = "Managed service identity of the resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<serde_json::Value>,
     #[doc = "Fully qualified ID of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -1403,6 +1824,7 @@ impl DataCollectionRuleResource {
             location,
             tags: None,
             kind: None,
+            identity: None,
             id: None,
             name: None,
             type_: None,
@@ -1499,8 +1921,28 @@ pub struct DataFlow {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub destinations: Vec<String>,
+    #[doc = "The KQL query to transform stream data."]
+    #[serde(rename = "transformKql", default, skip_serializing_if = "Option::is_none")]
+    pub transform_kql: Option<String>,
+    #[doc = "The output stream of the transform. Only required if the transform changes data to a different stream."]
+    #[serde(rename = "outputStream", default, skip_serializing_if = "Option::is_none")]
+    pub output_stream: Option<String>,
+    #[doc = "The builtIn transform to transform stream data"]
+    #[serde(rename = "builtInTransform", default, skip_serializing_if = "Option::is_none")]
+    pub built_in_transform: Option<String>,
 }
 impl DataFlow {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataImportSources {
+    #[doc = "Definition of Event Hub configuration."]
+    #[serde(rename = "eventHub", default, skip_serializing_if = "Option::is_none")]
+    pub event_hub: Option<serde_json::Value>,
+}
+impl DataImportSources {
     pub fn new() -> Self {
         Self::default()
     }
@@ -1538,8 +1980,69 @@ pub struct DataSourcesSpec {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub extensions: Vec<ExtensionDataSource>,
+    #[doc = "The list of Log files source configurations."]
+    #[serde(
+        rename = "logFiles",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub log_files: Vec<LogFilesDataSource>,
+    #[doc = "The list of IIS logs source configurations."]
+    #[serde(
+        rename = "iisLogs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub iis_logs: Vec<IisLogsDataSource>,
+    #[doc = "The list of Windows Firewall logs source configurations."]
+    #[serde(
+        rename = "windowsFirewallLogs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub windows_firewall_logs: Vec<WindowsFirewallLogsDataSource>,
+    #[doc = "The list of Prometheus forwarder data source configurations."]
+    #[serde(
+        rename = "prometheusForwarder",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub prometheus_forwarder: Vec<PrometheusForwarderDataSource>,
+    #[doc = "The list of platform telemetry configurations"]
+    #[serde(
+        rename = "platformTelemetry",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub platform_telemetry: Vec<PlatformTelemetryDataSource>,
+    #[doc = "Specifications of pull based data sources"]
+    #[serde(rename = "dataImports", default, skip_serializing_if = "Option::is_none")]
+    pub data_imports: Option<serde_json::Value>,
 }
 impl DataSourcesSpec {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DefaultErrorResponse {
+    #[doc = "The error detail."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+}
+impl azure_core::Continuable for DefaultErrorResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
+impl DefaultErrorResponse {
     pub fn new() -> Self {
         Self::default()
     }
@@ -1555,9 +2058,57 @@ pub struct DestinationsSpec {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub log_analytics: Vec<LogAnalyticsDestination>,
+    #[doc = "List of monitoring account destinations."]
+    #[serde(
+        rename = "monitoringAccounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub monitoring_accounts: Vec<MonitoringAccountDestination>,
     #[doc = "Azure Monitor Metrics destination."]
     #[serde(rename = "azureMonitorMetrics", default, skip_serializing_if = "Option::is_none")]
     pub azure_monitor_metrics: Option<serde_json::Value>,
+    #[doc = "List of Event Hubs destinations."]
+    #[serde(
+        rename = "eventHubs",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub event_hubs: Vec<EventHubDestination>,
+    #[doc = "List of Event Hubs Direct destinations."]
+    #[serde(
+        rename = "eventHubsDirect",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub event_hubs_direct: Vec<EventHubDirectDestination>,
+    #[doc = "List of Storage Blob Direct destinations. To be used only for sending data directly to store from the agent."]
+    #[serde(
+        rename = "storageBlobsDirect",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub storage_blobs_direct: Vec<StorageBlobDestination>,
+    #[doc = "List of Storage Table Direct destinations."]
+    #[serde(
+        rename = "storageTablesDirect",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub storage_tables_direct: Vec<StorageTableDestination>,
+    #[doc = "List of storage accounts destinations."]
+    #[serde(
+        rename = "storageAccounts",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub storage_accounts: Vec<StorageBlobDestination>,
 }
 impl DestinationsSpec {
     pub fn new() -> Self {
@@ -1596,6 +2147,9 @@ pub struct DiagnosticSettings {
     #[doc = "The full ARM resource ID of the Log Analytics workspace to which you would like to send Diagnostic Logs. Example: /subscriptions/4b9e8510-67ab-4e9a-95a9-e2f1e570ea9c/resourceGroups/insights-integration/providers/Microsoft.OperationalInsights/workspaces/viruela2"]
     #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
+    #[doc = "The full ARM resource ID of the Marketplace resource to which you would like to send Diagnostic Logs."]
+    #[serde(rename = "marketplacePartnerId", default, skip_serializing_if = "Option::is_none")]
+    pub marketplace_partner_id: Option<String>,
     #[doc = "A string indicating whether the export to Log Analytics should use the default destination type, i.e. AzureDiagnostics, or use a destination type constructed as follows: <normalized service identity>_<normalized category name>. Possible values are: Dedicated and null (null is default.)"]
     #[serde(rename = "logAnalyticsDestinationType", default, skip_serializing_if = "Option::is_none")]
     pub log_analytics_destination_type: Option<String>,
@@ -1611,6 +2165,14 @@ pub struct DiagnosticSettingsCategory {
     #[doc = "The type of the diagnostic settings category."]
     #[serde(rename = "categoryType", default, skip_serializing_if = "Option::is_none")]
     pub category_type: Option<diagnostic_settings_category::CategoryType>,
+    #[doc = "the collection of what category groups are supported."]
+    #[serde(
+        rename = "categoryGroups",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub category_groups: Vec<String>,
 }
 impl DiagnosticSettingsCategory {
     pub fn new() -> Self {
@@ -1621,19 +2183,53 @@ pub mod diagnostic_settings_category {
     use super::*;
     #[doc = "The type of the diagnostic settings category."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "CategoryType")]
     pub enum CategoryType {
         Metrics,
         Logs,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for CategoryType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for CategoryType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for CategoryType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Metrics => serializer.serialize_unit_variant("CategoryType", 0u32, "Metrics"),
+                Self::Logs => serializer.serialize_unit_variant("CategoryType", 1u32, "Logs"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "The diagnostic settings category resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettingsCategoryResource {
     #[serde(flatten)]
-    pub proxy_only_resource: ProxyOnlyResource,
+    pub resource: Resource,
     #[doc = "The diagnostic settings Category."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiagnosticSettingsCategory>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
 }
 impl DiagnosticSettingsCategoryResource {
     pub fn new() -> Self {
@@ -1651,6 +2247,12 @@ pub struct DiagnosticSettingsCategoryResourceCollection {
     )]
     pub value: Vec<DiagnosticSettingsCategoryResource>,
 }
+impl azure_core::Continuable for DiagnosticSettingsCategoryResourceCollection {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
 impl DiagnosticSettingsCategoryResourceCollection {
     pub fn new() -> Self {
         Self::default()
@@ -1660,10 +2262,13 @@ impl DiagnosticSettingsCategoryResourceCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticSettingsResource {
     #[serde(flatten)]
-    pub proxy_only_resource: ProxyOnlyResource,
+    pub resource: Resource,
     #[doc = "The diagnostic settings."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiagnosticSettings>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
 }
 impl DiagnosticSettingsResource {
     pub fn new() -> Self {
@@ -1681,12 +2286,18 @@ pub struct DiagnosticSettingsResourceCollection {
     )]
     pub value: Vec<DiagnosticSettingsResource>,
 }
+impl azure_core::Continuable for DiagnosticSettingsResourceCollection {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
 impl DiagnosticSettingsResourceCollection {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "Specifies the criteria for converting log to metric."]
+#[doc = "Dimension splitting and filtering definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dimension {
     #[doc = "Name of the dimension"]
@@ -1708,6 +2319,7 @@ pub mod dimension {
     #[serde(remote = "Operator")]
     pub enum Operator {
         Include,
+        Exclude,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -1734,6 +2346,7 @@ pub mod dimension {
         {
             match self {
                 Self::Include => serializer.serialize_unit_variant("Operator", 0u32, "Include"),
+                Self::Exclude => serializer.serialize_unit_variant("Operator", 1u32, "Exclude"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -1963,9 +2576,9 @@ impl ErrorAdditionalInfo {
 #[doc = "Describes the format of Error response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorContract {
-    #[doc = "Describes the format of Error response."]
+    #[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorResponse>,
+    pub error: Option<ErrorResponseDetails>,
 }
 impl azure_core::Continuable for ErrorContract {
     type Continuation = String;
@@ -2032,28 +2645,17 @@ impl ErrorResponse {
         Self::default()
     }
 }
-#[doc = "The resource management error response."]
+#[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ErrorResponseCommon {
-    #[serde(flatten)]
-    pub error_response: ErrorResponse,
-    #[doc = "The error details."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub details: Vec<ErrorResponseCommon>,
-    #[doc = "The error additional info."]
-    #[serde(
-        rename = "additionalInfo",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub additional_info: Vec<ErrorAdditionalInfo>,
+pub struct ErrorResponseAdditionalInfo {
+    #[doc = "The additional info type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "The additional info."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub info: Option<serde_json::Value>,
 }
-impl ErrorResponseCommon {
+impl ErrorResponseAdditionalInfo {
     pub fn new() -> Self {
         Self::default()
     }
@@ -2072,6 +2674,39 @@ impl azure_core::Continuable for ErrorResponseCommonV2 {
     }
 }
 impl ErrorResponseCommonV2 {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ErrorResponseDetails {
+    #[doc = "The error code."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "The error message."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[doc = "The error target."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[doc = "The error details."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub details: Vec<ErrorResponseDetails>,
+    #[doc = "The error additional info."]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub additional_info: Vec<ErrorResponseAdditionalInfo>,
+}
+impl ErrorResponseDetails {
     pub fn new() -> Self {
         Self::default()
     }
@@ -2206,6 +2841,84 @@ impl EventDataCollection {
         Self { value, next_link: None }
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EventHubDataSource {
+    #[doc = "A friendly name for the data source. \r\nThis name should be unique across all data sources (regardless of type) within the data collection rule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Event Hub consumer group name"]
+    #[serde(rename = "consumerGroup", default, skip_serializing_if = "Option::is_none")]
+    pub consumer_group: Option<String>,
+    #[doc = "The stream to collect from EventHub"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stream: Option<String>,
+}
+impl EventHubDataSource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EventHubDestination {
+    #[doc = "The resource ID of the event hub."]
+    #[serde(rename = "eventHubResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub event_hub_resource_id: Option<String>,
+    #[doc = "A friendly name for the destination. \r\nThis name should be unique across all destinations (regardless of type) within the data collection rule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+impl EventHubDestination {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EventHubDirectDestination {
+    #[doc = "The resource ID of the event hub."]
+    #[serde(rename = "eventHubResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub event_hub_resource_id: Option<String>,
+    #[doc = "A friendly name for the destination. \r\nThis name should be unique across all destinations (regardless of type) within the data collection rule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+impl EventHubDirectDestination {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "An Event hub receiver."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EventHubReceiver {
+    #[doc = "The name of the Event hub receiver. Names must be unique across all receivers within an action group."]
+    pub name: String,
+    #[doc = "The Event Hub namespace"]
+    #[serde(rename = "eventHubNameSpace")]
+    pub event_hub_name_space: String,
+    #[doc = "The name of the specific Event Hub queue"]
+    #[serde(rename = "eventHubName")]
+    pub event_hub_name: String,
+    #[doc = "Indicates whether to use common alert schema."]
+    #[serde(rename = "useCommonAlertSchema", default, skip_serializing_if = "Option::is_none")]
+    pub use_common_alert_schema: Option<bool>,
+    #[doc = "The tenant Id for the subscription containing this event hub"]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "The Id for the subscription containing this event hub"]
+    #[serde(rename = "subscriptionId")]
+    pub subscription_id: String,
+}
+impl EventHubReceiver {
+    pub fn new(name: String, event_hub_name_space: String, event_hub_name: String, subscription_id: String) -> Self {
+        Self {
+            name,
+            event_hub_name_space,
+            event_hub_name,
+            use_common_alert_schema: None,
+            tenant_id: None,
+            subscription_id,
+        }
+    }
+}
 #[doc = "Definition of which data will be collected from a separate VM extension that integrates with the Azure Monitor Agent.\r\nCollected from either Windows and Linux machines, depending on which extension is defined."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExtensionDataSource {
@@ -2245,6 +2958,24 @@ impl ExtensionDataSource {
         }
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct FailoverConfigurationSpec {
+    #[doc = "Active location where data flow will occur."]
+    #[serde(rename = "activeLocation", default, skip_serializing_if = "Option::is_none")]
+    pub active_location: Option<String>,
+    #[doc = "Locations that are configured for failover."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub locations: Vec<LocationSpec>,
+}
+impl FailoverConfigurationSpec {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The Http request info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HttpRequestInfo {
@@ -2264,6 +2995,68 @@ pub struct HttpRequestInfo {
 impl HttpRequestInfo {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Identity for the resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Identity {
+    #[doc = "The principal ID of resource identity."]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "The tenant ID of resource."]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "Type of managed service identity."]
+    #[serde(rename = "type")]
+    pub type_: identity::Type,
+    #[doc = "The list of user identities associated with the resource. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
+}
+impl Identity {
+    pub fn new(type_: identity::Type) -> Self {
+        Self {
+            principal_id: None,
+            tenant_id: None,
+            type_,
+            user_assigned_identities: None,
+        }
+    }
+}
+pub mod identity {
+    use super::*;
+    #[doc = "Type of managed service identity."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+        UserAssigned,
+        None,
+    }
+}
+#[doc = "Enables IIS logs to be collected by this data collection rule."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IisLogsDataSource {
+    #[doc = "IIS streams"]
+    pub streams: Vec<String>,
+    #[doc = "Absolute paths file location"]
+    #[serde(
+        rename = "logDirectories",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub log_directories: Vec<String>,
+    #[doc = "A friendly name for the data source. \r\nThis name should be unique across all data sources (regardless of type) within the data collection rule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+impl IisLogsDataSource {
+    pub fn new(streams: Vec<String>) -> Self {
+        Self {
+            streams,
+            log_directories: Vec::new(),
+            name: None,
+        }
     }
 }
 #[doc = "An alert incident indicates the activation status of an alert rule."]
@@ -2308,6 +3101,21 @@ impl azure_core::Continuable for IncidentListResult {
     }
 }
 impl IncidentListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Settings for data ingestion"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IngestionSettings {
+    #[doc = "The Azure resource Id of the default data collection rule for this workspace."]
+    #[serde(rename = "dataCollectionRuleResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub data_collection_rule_resource_id: Option<String>,
+    #[doc = "The Azure resource Id of the default data collection endpoint for this workspace."]
+    #[serde(rename = "dataCollectionEndpointResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub data_collection_endpoint_resource_id: Option<String>,
+}
+impl IngestionSettings {
     pub fn new() -> Self {
         Self::default()
     }
@@ -2357,6 +3165,68 @@ impl LocalizableString {
         }
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct LocationSpec {
+    #[doc = "Name of location."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "The resource provisioning state in this location."]
+    #[serde(rename = "provisioningStatus", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_status: Option<location_spec::ProvisioningStatus>,
+}
+impl LocationSpec {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod location_spec {
+    use super::*;
+    #[doc = "The resource provisioning state in this location."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ProvisioningStatus")]
+    pub enum ProvisioningStatus {
+        Creating,
+        Updating,
+        Deleting,
+        Succeeded,
+        Canceled,
+        Failed,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ProvisioningStatus {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ProvisioningStatus {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ProvisioningStatus {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Creating => serializer.serialize_unit_variant("ProvisioningStatus", 0u32, "Creating"),
+                Self::Updating => serializer.serialize_unit_variant("ProvisioningStatus", 1u32, "Updating"),
+                Self::Deleting => serializer.serialize_unit_variant("ProvisioningStatus", 2u32, "Deleting"),
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningStatus", 3u32, "Succeeded"),
+                Self::Canceled => serializer.serialize_unit_variant("ProvisioningStatus", 4u32, "Canceled"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningStatus", 5u32, "Failed"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "A rule condition based on a certain number of locations failing."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocationThresholdRuleCondition {
@@ -2396,25 +3266,162 @@ impl LogAnalyticsDestination {
         Self::default()
     }
 }
-#[doc = "A log metrics trigger descriptor."]
+#[doc = "Settings for different log file formats"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LogMetricTrigger {
-    #[doc = "Result Condition Evaluation criteria."]
-    #[serde(rename = "thresholdOperator", default, skip_serializing_if = "Option::is_none")]
-    pub threshold_operator: Option<ConditionalOperator>,
-    #[doc = "The threshold of the metric trigger."]
+pub struct LogFileSettings {
+    #[doc = "Text settings"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub threshold: Option<f64>,
-    #[doc = "Metric Trigger Evaluation Type"]
-    #[serde(rename = "metricTriggerType", default, skip_serializing_if = "Option::is_none")]
-    pub metric_trigger_type: Option<MetricTriggerType>,
-    #[doc = "Evaluation of metric on a particular column"]
-    #[serde(rename = "metricColumn", default, skip_serializing_if = "Option::is_none")]
-    pub metric_column: Option<String>,
+    pub text: Option<serde_json::Value>,
 }
-impl LogMetricTrigger {
+impl LogFileSettings {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Settings for text log files"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogFileTextSettings {
+    #[doc = "One of the supported timestamp formats"]
+    #[serde(rename = "recordStartTimestampFormat")]
+    pub record_start_timestamp_format: log_file_text_settings::RecordStartTimestampFormat,
+}
+impl LogFileTextSettings {
+    pub fn new(record_start_timestamp_format: log_file_text_settings::RecordStartTimestampFormat) -> Self {
+        Self {
+            record_start_timestamp_format,
+        }
+    }
+}
+pub mod log_file_text_settings {
+    use super::*;
+    #[doc = "One of the supported timestamp formats"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "RecordStartTimestampFormat")]
+    pub enum RecordStartTimestampFormat {
+        #[serde(rename = "ISO 8601")]
+        Iso8601,
+        #[serde(rename = "YYYY-MM-DD HH:MM:SS")]
+        YyyyMmDdHhMmSs,
+        #[serde(rename = "M/D/YYYY HH:MM:SS AM/PM")]
+        MDYyyyHhMmSsAmPm,
+        #[serde(rename = "Mon DD, YYYY HH:MM:SS")]
+        MonDdYyyyHhMmSs,
+        #[serde(rename = "yyMMdd HH:mm:ss")]
+        YyMMddHhMmSs,
+        #[serde(rename = "ddMMyy HH:mm:ss")]
+        DdMMyyHhMmSs,
+        #[serde(rename = "MMM d hh:mm:ss")]
+        MmmDHhMmSs,
+        #[serde(rename = "dd/MMM/yyyy:HH:mm:ss zzz")]
+        DdMmmYyyyHhMmSsZzz,
+        #[serde(rename = "yyyy-MM-ddTHH:mm:ssK")]
+        YyyyMmDdThhMmSsK,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for RecordStartTimestampFormat {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for RecordStartTimestampFormat {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for RecordStartTimestampFormat {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Iso8601 => serializer.serialize_unit_variant("RecordStartTimestampFormat", 0u32, "ISO 8601"),
+                Self::YyyyMmDdHhMmSs => serializer.serialize_unit_variant("RecordStartTimestampFormat", 1u32, "YYYY-MM-DD HH:MM:SS"),
+                Self::MDYyyyHhMmSsAmPm => serializer.serialize_unit_variant("RecordStartTimestampFormat", 2u32, "M/D/YYYY HH:MM:SS AM/PM"),
+                Self::MonDdYyyyHhMmSs => serializer.serialize_unit_variant("RecordStartTimestampFormat", 3u32, "Mon DD, YYYY HH:MM:SS"),
+                Self::YyMMddHhMmSs => serializer.serialize_unit_variant("RecordStartTimestampFormat", 4u32, "yyMMdd HH:mm:ss"),
+                Self::DdMMyyHhMmSs => serializer.serialize_unit_variant("RecordStartTimestampFormat", 5u32, "ddMMyy HH:mm:ss"),
+                Self::MmmDHhMmSs => serializer.serialize_unit_variant("RecordStartTimestampFormat", 6u32, "MMM d hh:mm:ss"),
+                Self::DdMmmYyyyHhMmSsZzz => {
+                    serializer.serialize_unit_variant("RecordStartTimestampFormat", 7u32, "dd/MMM/yyyy:HH:mm:ss zzz")
+                }
+                Self::YyyyMmDdThhMmSsK => serializer.serialize_unit_variant("RecordStartTimestampFormat", 8u32, "yyyy-MM-ddTHH:mm:ssK"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Definition of which custom log files will be collected by this data collection rule"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LogFilesDataSource {
+    #[doc = "List of streams that this data source will be sent to.\r\nA stream indicates what schema will be used for this data source"]
+    pub streams: Vec<String>,
+    #[doc = "File Patterns where the log files are located"]
+    #[serde(rename = "filePatterns")]
+    pub file_patterns: Vec<String>,
+    #[doc = "The data format of the log files"]
+    pub format: log_files_data_source::Format,
+    #[doc = "The log files specific settings."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settings: Option<serde_json::Value>,
+    #[doc = "A friendly name for the data source. \r\nThis name should be unique across all data sources (regardless of type) within the data collection rule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+impl LogFilesDataSource {
+    pub fn new(streams: Vec<String>, file_patterns: Vec<String>, format: log_files_data_source::Format) -> Self {
+        Self {
+            streams,
+            file_patterns,
+            format,
+            settings: None,
+            name: None,
+        }
+    }
+}
+pub mod log_files_data_source {
+    use super::*;
+    #[doc = "The data format of the log files"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Format")]
+    pub enum Format {
+        #[serde(rename = "text")]
+        Text,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Format {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Format {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Format {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Text => serializer.serialize_unit_variant("Format", 0u32, "text"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "Represents a collection of log profiles."]
@@ -2490,251 +3497,15 @@ impl LogProfileResourcePatch {
         Self::default()
     }
 }
-#[doc = "Log Search Rule Definition"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogSearchRule {
-    #[doc = "The api-version used when creating this alert rule"]
-    #[serde(rename = "createdWithApiVersion", default, skip_serializing_if = "Option::is_none")]
-    pub created_with_api_version: Option<String>,
-    #[doc = "True if alert rule is legacy Log Analytic rule"]
-    #[serde(rename = "isLegacyLogAnalyticsRule", default, skip_serializing_if = "Option::is_none")]
-    pub is_legacy_log_analytics_rule: Option<bool>,
-    #[doc = "The description of the Log Search rule."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[doc = "The display name of the alert rule"]
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[doc = "The flag that indicates whether the alert should be automatically resolved or not. The default is false."]
-    #[serde(rename = "autoMitigate", default, skip_serializing_if = "Option::is_none")]
-    pub auto_mitigate: Option<bool>,
-    #[doc = "The flag which indicates whether the Log Search rule is enabled. Value should be true or false"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<log_search_rule::Enabled>,
-    #[doc = "Last time the rule was updated in IS08601 format."]
-    #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_time: Option<time::OffsetDateTime>,
-    #[doc = "Provisioning state of the scheduled query rule"]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<log_search_rule::ProvisioningState>,
-    #[doc = "Specifies the log search query."]
-    pub source: Source,
-    #[doc = "Defines how often to run the search and the time interval."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub schedule: Option<Schedule>,
-    #[doc = "Action descriptor."]
-    pub action: Action,
-}
-impl LogSearchRule {
-    pub fn new(source: Source, action: Action) -> Self {
-        Self {
-            created_with_api_version: None,
-            is_legacy_log_analytics_rule: None,
-            description: None,
-            display_name: None,
-            auto_mitigate: None,
-            enabled: None,
-            last_updated_time: None,
-            provisioning_state: None,
-            source,
-            schedule: None,
-            action,
-        }
-    }
-}
-pub mod log_search_rule {
-    use super::*;
-    #[doc = "The flag which indicates whether the Log Search rule is enabled. Value should be true or false"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Enabled")]
-    pub enum Enabled {
-        #[serde(rename = "true")]
-        True,
-        #[serde(rename = "false")]
-        False,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Enabled {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Enabled {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Enabled {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::True => serializer.serialize_unit_variant("Enabled", 0u32, "true"),
-                Self::False => serializer.serialize_unit_variant("Enabled", 1u32, "false"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "Provisioning state of the scheduled query rule"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ProvisioningState")]
-    pub enum ProvisioningState {
-        Succeeded,
-        Deploying,
-        Canceled,
-        Failed,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ProvisioningState {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ProvisioningState {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ProvisioningState {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Succeeded"),
-                Self::Deploying => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Deploying"),
-                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Canceled"),
-                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Failed"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "Log Search Rule Definition for Patching"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LogSearchRulePatch {
-    #[doc = "The flag which indicates whether the Log Search rule is enabled. Value should be true or false"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<log_search_rule_patch::Enabled>,
-}
-impl LogSearchRulePatch {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod log_search_rule_patch {
-    use super::*;
-    #[doc = "The flag which indicates whether the Log Search rule is enabled. Value should be true or false"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Enabled")]
-    pub enum Enabled {
-        #[serde(rename = "true")]
-        True,
-        #[serde(rename = "false")]
-        False,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Enabled {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Enabled {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Enabled {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::True => serializer.serialize_unit_variant("Enabled", 0u32, "true"),
-                Self::False => serializer.serialize_unit_variant("Enabled", 1u32, "false"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "The Log Search Rule resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogSearchRuleResource {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[doc = "Log Search Rule Definition"]
-    pub properties: LogSearchRule,
-}
-impl LogSearchRuleResource {
-    pub fn new(resource: Resource, properties: LogSearchRule) -> Self {
-        Self { resource, properties }
-    }
-}
-#[doc = "Represents a collection of Log Search rule resources."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LogSearchRuleResourceCollection {
-    #[doc = "The values for the Log Search Rule resources."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<LogSearchRuleResource>,
-}
-impl azure_core::Continuable for LogSearchRuleResourceCollection {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        None
-    }
-}
-impl LogSearchRuleResourceCollection {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The log search rule resource for patch operations."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LogSearchRuleResourcePatch {
-    #[doc = "Resource tags"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-    #[doc = "Log Search Rule Definition for Patching"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<LogSearchRulePatch>,
-}
-impl LogSearchRuleResourcePatch {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Part of MultiTenantDiagnosticSettings. Specifies the settings for a particular log."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogSettings {
     #[doc = "Name of a Diagnostic Log category for a resource type this setting is applied to. To obtain the list of Diagnostic Log categories for a resource, first perform a GET diagnostic settings operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<String>,
+    #[doc = "Name of a Diagnostic Log category group for a resource type this setting is applied to. To obtain the list of Diagnostic Log categories for a resource, first perform a GET diagnostic settings operation."]
+    #[serde(rename = "categoryGroup", default, skip_serializing_if = "Option::is_none")]
+    pub category_group: Option<String>,
     #[doc = "a value indicating whether this log is enabled."]
     pub enabled: bool,
     #[doc = "Specifies the retention policy for the log."]
@@ -2745,22 +3516,10 @@ impl LogSettings {
     pub fn new(enabled: bool) -> Self {
         Self {
             category: None,
+            category_group: None,
             enabled,
             retention_policy: None,
         }
-    }
-}
-#[doc = "Specify action need to be taken when rule type is converting log to metric"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LogToMetricAction {
-    #[serde(flatten)]
-    pub action: Action,
-    #[doc = "Criteria of Metric"]
-    pub criteria: Vec<Criteria>,
-}
-impl LogToMetricAction {
-    pub fn new(action: Action, criteria: Vec<Criteria>) -> Self {
-        Self { action, criteria }
     }
 }
 #[doc = "A logic app receiver."]
@@ -2800,6 +3559,76 @@ impl LogsIngestionEndpointSpec {
         Self::default()
     }
 }
+#[doc = "Managed service identity (system assigned and/or user assigned identities)"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedServiceIdentity {
+    #[doc = "The service principal ID of the system assigned identity. This property will only be provided for a system assigned identity."]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "The tenant ID of the system assigned identity. This property will only be provided for a system assigned identity."]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "Type of managed service identity (where both SystemAssigned and UserAssigned types are allowed)."]
+    #[serde(rename = "type")]
+    pub type_: ManagedServiceIdentityType,
+    #[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<UserAssignedIdentities>,
+}
+impl ManagedServiceIdentity {
+    pub fn new(type_: ManagedServiceIdentityType) -> Self {
+        Self {
+            principal_id: None,
+            tenant_id: None,
+            type_,
+            user_assigned_identities: None,
+        }
+    }
+}
+#[doc = "Type of managed service identity (where both SystemAssigned and UserAssigned types are allowed)."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ManagedServiceIdentityType")]
+pub enum ManagedServiceIdentityType {
+    None,
+    SystemAssigned,
+    UserAssigned,
+    #[serde(rename = "SystemAssigned,UserAssigned")]
+    SystemAssignedUserAssigned,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ManagedServiceIdentityType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ManagedServiceIdentityType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ManagedServiceIdentityType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::None => serializer.serialize_unit_variant("ManagedServiceIdentityType", 0u32, "None"),
+            Self::SystemAssigned => serializer.serialize_unit_variant("ManagedServiceIdentityType", 1u32, "SystemAssigned"),
+            Self::UserAssigned => serializer.serialize_unit_variant("ManagedServiceIdentityType", 2u32, "UserAssigned"),
+            Self::SystemAssignedUserAssigned => {
+                serializer.serialize_unit_variant("ManagedServiceIdentityType", 3u32, "SystemAssigned,UserAssigned")
+            }
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "How the data that is collected should be combined over time."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagementEventAggregationCondition {
@@ -2833,6 +3662,21 @@ impl ManagementEventRuleCondition {
             rule_condition,
             aggregation: None,
         }
+    }
+}
+#[doc = "Metadata about the resource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Metadata {
+    #[doc = "Azure offering managing this resource on-behalf-of customer."]
+    #[serde(rename = "provisionedBy", default, skip_serializing_if = "Option::is_none")]
+    pub provisioned_by: Option<String>,
+    #[doc = "Resource Id of azure offering managing this resource on-behalf-of customer."]
+    #[serde(rename = "provisionedByResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub provisioned_by_resource_id: Option<String>,
+}
+impl Metadata {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Represents a metric metadata value."]
@@ -2885,6 +3729,51 @@ impl Metric {
             error_message: None,
             unit,
             timeseries,
+        }
+    }
+}
+#[doc = "the aggregation type of the metric."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "MetricAggregationType")]
+pub enum MetricAggregationType {
+    None,
+    Average,
+    Count,
+    Minimum,
+    Maximum,
+    Total,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for MetricAggregationType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for MetricAggregationType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for MetricAggregationType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::None => serializer.serialize_unit_variant("MetricAggregationType", 0u32, "None"),
+            Self::Average => serializer.serialize_unit_variant("MetricAggregationType", 1u32, "Average"),
+            Self::Count => serializer.serialize_unit_variant("MetricAggregationType", 2u32, "Count"),
+            Self::Minimum => serializer.serialize_unit_variant("MetricAggregationType", 3u32, "Minimum"),
+            Self::Maximum => serializer.serialize_unit_variant("MetricAggregationType", 4u32, "Maximum"),
+            Self::Total => serializer.serialize_unit_variant("MetricAggregationType", 5u32, "Total"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }
@@ -3434,7 +4323,7 @@ pub struct MetricDefinition {
     pub metric_class: Option<MetricClass>,
     #[doc = "The unit of the metric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<Unit>,
+    pub unit: Option<MetricUnit>,
     #[doc = "the aggregation type of the metric."]
     #[serde(rename = "primaryAggregationType", default, skip_serializing_if = "Option::is_none")]
     pub primary_aggregation_type: Option<AggregationType>,
@@ -3693,22 +4582,33 @@ pub mod metric_trigger {
         LessThanOrEqual,
     }
 }
-#[doc = "Metric Trigger Evaluation Type"]
+#[doc = "The unit of the metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(remote = "MetricTriggerType")]
-pub enum MetricTriggerType {
-    Consecutive,
-    Total,
+#[serde(remote = "MetricUnit")]
+pub enum MetricUnit {
+    Count,
+    Bytes,
+    Seconds,
+    CountPerSecond,
+    BytesPerSecond,
+    Percent,
+    MilliSeconds,
+    ByteSeconds,
+    Unspecified,
+    Cores,
+    MilliCores,
+    NanoCores,
+    BitsPerSecond,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
-impl FromStr for MetricTriggerType {
+impl FromStr for MetricUnit {
     type Err = value::Error;
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
         Self::deserialize(s.into_deserializer())
     }
 }
-impl<'de> Deserialize<'de> for MetricTriggerType {
+impl<'de> Deserialize<'de> for MetricUnit {
     fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -3718,21 +4618,27 @@ impl<'de> Deserialize<'de> for MetricTriggerType {
         Ok(deserialized)
     }
 }
-impl Serialize for MetricTriggerType {
+impl Serialize for MetricUnit {
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
         match self {
-            Self::Consecutive => serializer.serialize_unit_variant("MetricTriggerType", 0u32, "Consecutive"),
-            Self::Total => serializer.serialize_unit_variant("MetricTriggerType", 1u32, "Total"),
+            Self::Count => serializer.serialize_unit_variant("MetricUnit", 0u32, "Count"),
+            Self::Bytes => serializer.serialize_unit_variant("MetricUnit", 1u32, "Bytes"),
+            Self::Seconds => serializer.serialize_unit_variant("MetricUnit", 2u32, "Seconds"),
+            Self::CountPerSecond => serializer.serialize_unit_variant("MetricUnit", 3u32, "CountPerSecond"),
+            Self::BytesPerSecond => serializer.serialize_unit_variant("MetricUnit", 4u32, "BytesPerSecond"),
+            Self::Percent => serializer.serialize_unit_variant("MetricUnit", 5u32, "Percent"),
+            Self::MilliSeconds => serializer.serialize_unit_variant("MetricUnit", 6u32, "MilliSeconds"),
+            Self::ByteSeconds => serializer.serialize_unit_variant("MetricUnit", 7u32, "ByteSeconds"),
+            Self::Unspecified => serializer.serialize_unit_variant("MetricUnit", 8u32, "Unspecified"),
+            Self::Cores => serializer.serialize_unit_variant("MetricUnit", 9u32, "Cores"),
+            Self::MilliCores => serializer.serialize_unit_variant("MetricUnit", 10u32, "MilliCores"),
+            Self::NanoCores => serializer.serialize_unit_variant("MetricUnit", 11u32, "NanoCores"),
+            Self::BitsPerSecond => serializer.serialize_unit_variant("MetricUnit", 12u32, "BitsPerSecond"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
-    }
-}
-impl Default for MetricTriggerType {
-    fn default() -> Self {
-        Self::Consecutive
     }
 }
 #[doc = "Represents a metric value."]
@@ -3767,6 +4673,51 @@ impl MetricValue {
             total: None,
             count: None,
         }
+    }
+}
+#[doc = "Information about metrics for the workspace"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Metrics {
+    #[doc = "The Prometheus query endpoint for the workspace"]
+    #[serde(rename = "prometheusQueryEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub prometheus_query_endpoint: Option<String>,
+    #[doc = "An internal identifier for the metrics container. Only to be used by the system"]
+    #[serde(rename = "internalId", default, skip_serializing_if = "Option::is_none")]
+    pub internal_id: Option<String>,
+}
+impl Metrics {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Definition of the endpoint used for ingesting metrics."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MetricsIngestionEndpointSpec {
+    #[doc = "The endpoint. This property is READ-ONLY."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub endpoint: Option<String>,
+}
+impl MetricsIngestionEndpointSpec {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Monitoring account destination."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MonitoringAccountDestination {
+    #[doc = "The resource ID of the monitoring account."]
+    #[serde(rename = "accountResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub account_resource_id: Option<String>,
+    #[doc = "The immutable ID  of the account."]
+    #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
+    pub account_id: Option<String>,
+    #[doc = "A friendly name for the destination. \r\nThis name should be unique across all destinations (regardless of type) within the data collection rule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+impl MonitoringAccountDestination {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The types of conditions for a multi resource alert."]
@@ -3957,6 +4908,7 @@ pub mod network_rule_set {
     pub enum PublicNetworkAccess {
         Enabled,
         Disabled,
+        SecuredByPerimeter,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -3984,8 +4936,122 @@ pub mod network_rule_set {
             match self {
                 Self::Enabled => serializer.serialize_unit_variant("PublicNetworkAccess", 0u32, "Enabled"),
                 Self::Disabled => serializer.serialize_unit_variant("PublicNetworkAccess", 1u32, "Disabled"),
+                Self::SecuredByPerimeter => serializer.serialize_unit_variant("PublicNetworkAccess", 2u32, "SecuredByPerimeter"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+}
+#[doc = "The request body which contain contact detail metadata"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NotificationRequestBody {
+    #[doc = "The value of the supported alert type. Supported alert type values are: servicehealth, metricstaticthreshold, metricsdynamicthreshold, logalertv2, smartalert, webtestalert, logalertv1numresult, logalertv1metricmeasurement, resourcehealth, activitylog, actualcostbudget, forecastedbudget"]
+    #[serde(rename = "alertType")]
+    pub alert_type: String,
+    #[doc = "The list of email receivers that are part of this action group."]
+    #[serde(
+        rename = "emailReceivers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub email_receivers: Vec<EmailReceiver>,
+    #[doc = "The list of SMS receivers that are part of this action group."]
+    #[serde(
+        rename = "smsReceivers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub sms_receivers: Vec<SmsReceiver>,
+    #[doc = "The list of webhook receivers that are part of this action group."]
+    #[serde(
+        rename = "webhookReceivers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub webhook_receivers: Vec<WebhookReceiver>,
+    #[doc = "The list of ITSM receivers that are part of this action group."]
+    #[serde(
+        rename = "itsmReceivers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub itsm_receivers: Vec<ItsmReceiver>,
+    #[doc = "The list of AzureAppPush receivers that are part of this action group."]
+    #[serde(
+        rename = "azureAppPushReceivers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub azure_app_push_receivers: Vec<AzureAppPushReceiver>,
+    #[doc = "The list of AutomationRunbook receivers that are part of this action group."]
+    #[serde(
+        rename = "automationRunbookReceivers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub automation_runbook_receivers: Vec<AutomationRunbookReceiver>,
+    #[doc = "The list of voice receivers that are part of this action group."]
+    #[serde(
+        rename = "voiceReceivers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub voice_receivers: Vec<VoiceReceiver>,
+    #[doc = "The list of logic app receivers that are part of this action group."]
+    #[serde(
+        rename = "logicAppReceivers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub logic_app_receivers: Vec<LogicAppReceiver>,
+    #[doc = "The list of azure function receivers that are part of this action group."]
+    #[serde(
+        rename = "azureFunctionReceivers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub azure_function_receivers: Vec<AzureFunctionReceiver>,
+    #[doc = "The list of ARM role receivers that are part of this action group. Roles are Azure RBAC roles and only built-in roles are supported."]
+    #[serde(
+        rename = "armRoleReceivers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub arm_role_receivers: Vec<ArmRoleReceiver>,
+    #[doc = "The list of event hub receivers that are part of this action group."]
+    #[serde(
+        rename = "eventHubReceivers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub event_hub_receivers: Vec<EventHubReceiver>,
+}
+impl NotificationRequestBody {
+    pub fn new(alert_type: String) -> Self {
+        Self {
+            alert_type,
+            email_receivers: Vec::new(),
+            sms_receivers: Vec::new(),
+            webhook_receivers: Vec::new(),
+            itsm_receivers: Vec::new(),
+            azure_app_push_receivers: Vec::new(),
+            automation_runbook_receivers: Vec::new(),
+            voice_receivers: Vec::new(),
+            logic_app_receivers: Vec::new(),
+            azure_function_receivers: Vec::new(),
+            arm_role_receivers: Vec::new(),
+            event_hub_receivers: Vec::new(),
         }
     }
 }
@@ -4039,6 +5105,12 @@ pub struct OperationListResult {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
+impl azure_core::Continuable for OperationListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
 impl OperationListResult {
     pub fn new() -> Self {
         Self::default()
@@ -4062,9 +5134,9 @@ pub struct OperationStatus {
     #[doc = "The status of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
-    #[doc = "The resource management error response."]
+    #[doc = "The error detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorResponseCommon>,
+    pub error: Option<ErrorDetail>,
 }
 impl OperationStatus {
     pub fn new() -> Self {
@@ -4101,12 +5173,108 @@ impl PerfCounterDataSource {
         Self::default()
     }
 }
-#[doc = "A private endpoint connection"]
+#[doc = "Definition of platform telemetry data source configuration"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PlatformTelemetryDataSource {
+    #[doc = "List of platform telemetry streams to collect"]
+    pub streams: Vec<String>,
+    #[doc = "A friendly name for the data source. \r\nThis name should be unique across all data sources (regardless of type) within the data collection rule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+impl PlatformTelemetryDataSource {
+    pub fn new(streams: Vec<String>) -> Self {
+        Self { streams, name: None }
+    }
+}
+#[doc = "The parameters for enabling predictive autoscale."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PredictiveAutoscalePolicy {
+    #[doc = "the predictive autoscale mode"]
+    #[serde(rename = "scaleMode")]
+    pub scale_mode: predictive_autoscale_policy::ScaleMode,
+    #[doc = "the amount of time to specify by which instances are launched in advance. It must be between 1 minute and 60 minutes in ISO 8601 format."]
+    #[serde(rename = "scaleLookAheadTime", default, skip_serializing_if = "Option::is_none")]
+    pub scale_look_ahead_time: Option<String>,
+}
+impl PredictiveAutoscalePolicy {
+    pub fn new(scale_mode: predictive_autoscale_policy::ScaleMode) -> Self {
+        Self {
+            scale_mode,
+            scale_look_ahead_time: None,
+        }
+    }
+}
+pub mod predictive_autoscale_policy {
+    use super::*;
+    #[doc = "the predictive autoscale mode"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum ScaleMode {
+        Disabled,
+        ForecastOnly,
+        Enabled,
+    }
+}
+#[doc = "The response to a metrics query."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PredictiveResponse {
+    #[doc = "The timespan for which the data was retrieved. Its value consists of two datetimes concatenated, separated by '/'.  This may be adjusted in the future and returned back from what was originally requested."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timespan: Option<String>,
+    #[doc = "The interval (window size) for which the metric data was returned in.  This may be adjusted in the future and returned back from what was originally requested.  This is not present if a metadata request was made."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interval: Option<String>,
+    #[doc = "The metrics being queried"]
+    #[serde(rename = "metricName", default, skip_serializing_if = "Option::is_none")]
+    pub metric_name: Option<String>,
+    #[doc = "resource of the predictive metric."]
+    #[serde(rename = "targetResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub target_resource_id: Option<String>,
+    #[doc = "the value of the collection."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub data: Vec<PredictiveValue>,
+}
+impl PredictiveResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Represents a predictive metric value in the given bucket."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PredictiveValue {
+    #[doc = "the timestamp for the metric value in ISO 8601 format."]
+    #[serde(rename = "timeStamp", with = "azure_core::date::rfc3339")]
+    pub time_stamp: time::OffsetDateTime,
+    #[doc = "Predictive value in this time bucket."]
+    pub value: f64,
+}
+impl PredictiveValue {
+    pub fn new(time_stamp: time::OffsetDateTime, value: f64) -> Self {
+        Self { time_stamp, value }
+    }
+}
+#[doc = "The Private Endpoint resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PrivateEndpoint {
+    #[doc = "The ARM identifier for Private Endpoint"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+impl PrivateEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The Private Endpoint Connection resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[doc = "Properties of a private endpoint connection."]
+    pub resource: Resource,
+    #[doc = "Properties of the PrivateEndpointConnectProperties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
 }
@@ -4115,66 +5283,129 @@ impl PrivateEndpointConnection {
         Self::default()
     }
 }
-#[doc = "A list of private endpoint connections."]
+#[doc = "List of private endpoint connection associated with the specified storage account"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionListResult {
-    #[doc = "Array of results."]
+    #[doc = "Array of private endpoint connections"]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateEndpointConnection>,
-    #[doc = "Link to retrieve next page of results."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for PrivateEndpointConnectionListResult {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone().filter(|value| !value.is_empty())
-    }
 }
 impl PrivateEndpointConnectionListResult {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "Properties of a private endpoint connection."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[doc = "Properties of the PrivateEndpointConnectProperties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrivateEndpointConnectionProperties {
-    #[doc = "Private endpoint which the connection belongs to."]
+    #[doc = "The Private Endpoint resource."]
     #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
-    pub private_endpoint: Option<PrivateEndpointProperty>,
-    #[doc = "State of the private endpoint connection."]
-    #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
-    pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionStateProperty>,
-    #[doc = "State of the private endpoint connection."]
+    pub private_endpoint: Option<PrivateEndpoint>,
+    #[doc = "A collection of information about the state of the connection between service consumer and provider."]
+    #[serde(rename = "privateLinkServiceConnectionState")]
+    pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
+    #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<String>,
+    pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
 }
 impl PrivateEndpointConnectionProperties {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(private_link_service_connection_state: PrivateLinkServiceConnectionState) -> Self {
+        Self {
+            private_endpoint: None,
+            private_link_service_connection_state,
+            provisioning_state: None,
+        }
     }
 }
-#[doc = "Private endpoint which the connection belongs to."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PrivateEndpointProperty {
-    #[doc = "Resource id of the private endpoint."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+#[doc = "The current provisioning state."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "PrivateEndpointConnectionProvisioningState")]
+pub enum PrivateEndpointConnectionProvisioningState {
+    Succeeded,
+    Creating,
+    Deleting,
+    Failed,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
 }
-impl PrivateEndpointProperty {
-    pub fn new() -> Self {
-        Self::default()
+impl FromStr for PrivateEndpointConnectionProvisioningState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for PrivateEndpointConnectionProvisioningState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for PrivateEndpointConnectionProvisioningState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Succeeded => serializer.serialize_unit_variant("PrivateEndpointConnectionProvisioningState", 0u32, "Succeeded"),
+            Self::Creating => serializer.serialize_unit_variant("PrivateEndpointConnectionProvisioningState", 1u32, "Creating"),
+            Self::Deleting => serializer.serialize_unit_variant("PrivateEndpointConnectionProvisioningState", 2u32, "Deleting"),
+            Self::Failed => serializer.serialize_unit_variant("PrivateEndpointConnectionProvisioningState", 3u32, "Failed"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "The private endpoint connection status."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "PrivateEndpointServiceConnectionStatus")]
+pub enum PrivateEndpointServiceConnectionStatus {
+    Pending,
+    Approved,
+    Rejected,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for PrivateEndpointServiceConnectionStatus {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for PrivateEndpointServiceConnectionStatus {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for PrivateEndpointServiceConnectionStatus {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Pending => serializer.serialize_unit_variant("PrivateEndpointServiceConnectionStatus", 0u32, "Pending"),
+            Self::Approved => serializer.serialize_unit_variant("PrivateEndpointServiceConnectionStatus", 1u32, "Approved"),
+            Self::Rejected => serializer.serialize_unit_variant("PrivateEndpointServiceConnectionStatus", 2u32, "Rejected"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "A private link resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
     #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
+    pub resource: Resource,
     #[doc = "Properties of a private link resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
@@ -4187,22 +5418,13 @@ impl PrivateLinkResource {
 #[doc = "A list of private link resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceListResult {
-    #[doc = "Array of results."]
+    #[doc = "Array of private link resources"]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
     pub value: Vec<PrivateLinkResource>,
-    #[doc = "Link to retrieve next page of results."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for PrivateLinkResourceListResult {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone().filter(|value| !value.is_empty())
-    }
 }
 impl PrivateLinkResourceListResult {
     pub fn new() -> Self {
@@ -4223,75 +5445,70 @@ pub struct PrivateLinkResourceProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_members: Vec<String>,
+    #[doc = "The private link resource Private link DNS zone name."]
+    #[serde(
+        rename = "requiredZoneNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub required_zone_names: Vec<String>,
 }
 impl PrivateLinkResourceProperties {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "An azure resource object"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateLinkScopesResource {
-    #[doc = "Azure resource Id"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Azure resource name"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[doc = "Azure resource type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[doc = "Resource location"]
-    pub location: String,
-    #[doc = "Resource tags"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PrivateLinkScopedResource {
+    #[doc = "The resourceId of the Azure Monitor Private Link Scope Scoped Resource through which this DCE is associated with a Azure Monitor Private Link Scope."]
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[doc = "The immutableId of the Azure Monitor Private Link Scope Resource to which the association is."]
+    #[serde(rename = "scopeId", default, skip_serializing_if = "Option::is_none")]
+    pub scope_id: Option<String>,
 }
-impl PrivateLinkScopesResource {
-    pub fn new(location: String) -> Self {
-        Self {
-            id: None,
-            name: None,
-            type_: None,
-            location,
-            tags: None,
-        }
+impl PrivateLinkScopedResource {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
-#[doc = "State of the private endpoint connection."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PrivateLinkServiceConnectionStateProperty {
-    #[doc = "The private link service connection status."]
-    pub status: String,
-    #[doc = "The private link service connection description."]
-    pub description: String,
-    #[doc = "The actions required for private link service connection."]
+#[doc = "A collection of information about the state of the connection between service consumer and provider."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PrivateLinkServiceConnectionState {
+    #[doc = "The private endpoint connection status."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<PrivateEndpointServiceConnectionStatus>,
+    #[doc = "The reason for approval/rejection of the connection."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "A message indicating if changes on the service provider require any updates on the consumer."]
     #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
     pub actions_required: Option<String>,
 }
-impl PrivateLinkServiceConnectionStateProperty {
-    pub fn new(status: String, description: String) -> Self {
-        Self {
-            status,
-            description,
-            actions_required: None,
-        }
+impl PrivateLinkServiceConnectionState {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
-#[doc = "A proxy only azure resource object"]
+#[doc = "Definition of Prometheus metrics forwarding configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ProxyOnlyResource {
-    #[doc = "Azure resource Id"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Azure resource name"]
+pub struct PrometheusForwarderDataSource {
+    #[doc = "List of streams that this data source will be sent to."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub streams: Vec<String>,
+    #[doc = "The list of label inclusion filters in the form of label \"name-value\" pairs.\r\nCurrently only one label is supported: 'microsoft_metrics_include_label'.\r\nLabel values are matched case-insensitively."]
+    #[serde(rename = "labelIncludeFilter", default, skip_serializing_if = "Option::is_none")]
+    pub label_include_filter: Option<serde_json::Value>,
+    #[doc = "A friendly name for the data source. \r\nThis name should be unique across all data sources (regardless of type) within the data collection rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[doc = "Azure resource type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
 }
-impl ProxyOnlyResource {
+impl PrometheusForwarderDataSource {
     pub fn new() -> Self {
         Self::default()
     }
@@ -4312,41 +5529,6 @@ pub struct ProxyResource {
 impl ProxyResource {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Set value to 'ResultAccount'"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(remote = "QueryType")]
-pub enum QueryType {
-    ResultCount,
-    #[serde(skip_deserializing)]
-    UnknownValue(String),
-}
-impl FromStr for QueryType {
-    type Err = value::Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Self::deserialize(s.into_deserializer())
-    }
-}
-impl<'de> Deserialize<'de> for QueryType {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-        Ok(deserialized)
-    }
-}
-impl Serialize for QueryType {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Self::ResultCount => serializer.serialize_unit_variant("QueryType", 0u32, "ResultCount"),
-            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-        }
     }
 }
 #[doc = "Indicates the status of the receiver. Receivers that are not Enabled will not receive any communications."]
@@ -4407,7 +5589,7 @@ impl RecurrentSchedule {
         }
     }
 }
-#[doc = "An azure resource object"]
+#[doc = "The autoscale setting resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Resource {
     #[doc = "Azure resource Id"]
@@ -4421,9 +5603,12 @@ pub struct Resource {
     pub type_: Option<String>,
     #[doc = "Resource location"]
     pub location: String,
-    #[doc = "Resource tags"]
+    #[doc = "Gets or sets a list of key value pairs that describe the resource. These tags can be used in viewing and grouping this resource (across resource groups). A maximum of 15 tags can be provided for a resource. Each tag must have a key no greater in length than 128 characters and a value no greater in length than 256 characters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
 }
 impl Resource {
     pub fn new(location: String) -> Self {
@@ -4433,6 +5618,7 @@ impl Resource {
             type_: None,
             location,
             tags: None,
+            system_data: None,
         }
     }
 }
@@ -4442,6 +5628,9 @@ pub struct ResourceForUpdate {
     #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "Managed Service Identity."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<serde_json::Value>,
 }
 impl ResourceForUpdate {
     pub fn new() -> Self {
@@ -4668,6 +5857,21 @@ impl RuleMetricDataSource {
         }
     }
 }
+#[doc = "TBD. Relevant only for rules of the kind LogAlert."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RuleResolveConfiguration {
+    #[doc = "The flag that indicates whether or not to auto resolve a fired alert."]
+    #[serde(rename = "autoResolved", default, skip_serializing_if = "Option::is_none")]
+    pub auto_resolved: Option<bool>,
+    #[doc = "The duration a rule must evaluate as healthy before the fired alert is automatically resolved represented in ISO 8601 duration format."]
+    #[serde(rename = "timeToResolve", default, skip_serializing_if = "Option::is_none")]
+    pub time_to_resolve: Option<String>,
+}
+impl RuleResolveConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Specifies the action to post to service when the rule condition is evaluated. The discriminator is always RuleWebhookAction in this case."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleWebhookAction {
@@ -4826,22 +6030,263 @@ pub mod scale_rule_metric_dimension {
         }
     }
 }
-#[doc = "Defines how often to run the search and the time interval."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Schedule {
-    #[doc = "frequency (in minutes) at which rule condition should be evaluated."]
-    #[serde(rename = "frequencyInMinutes")]
-    pub frequency_in_minutes: i32,
-    #[doc = "Time window for which data needs to be fetched for query (should be greater than or equal to frequencyInMinutes)."]
-    #[serde(rename = "timeWindowInMinutes")]
-    pub time_window_in_minutes: i32,
+#[doc = "The rule criteria that defines the conditions of the scheduled query rule."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ScheduledQueryRuleCriteria {
+    #[doc = "A list of conditions to evaluate against the specified scopes"]
+    #[serde(
+        rename = "allOf",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub all_of: Vec<Condition>,
 }
-impl Schedule {
-    pub fn new(frequency_in_minutes: i32, time_window_in_minutes: i32) -> Self {
-        Self {
-            frequency_in_minutes,
-            time_window_in_minutes,
+impl ScheduledQueryRuleCriteria {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "scheduled query rule Definition"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ScheduledQueryRuleProperties {
+    #[doc = "The api-version used when creating this alert rule"]
+    #[serde(rename = "createdWithApiVersion", default, skip_serializing_if = "Option::is_none")]
+    pub created_with_api_version: Option<String>,
+    #[doc = "True if alert rule is legacy Log Analytic rule"]
+    #[serde(rename = "isLegacyLogAnalyticsRule", default, skip_serializing_if = "Option::is_none")]
+    pub is_legacy_log_analytics_rule: Option<bool>,
+    #[doc = "The description of the scheduled query rule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "The display name of the alert rule"]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[doc = "Severity of the alert. Should be an integer between [0-4]. Value of 0 is severest. Relevant and required only for rules of the kind LogAlert."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<scheduled_query_rule_properties::Severity>,
+    #[doc = "The flag which indicates whether this scheduled query rule is enabled. Value should be true or false"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[doc = "The list of resource id's that this scheduled query rule is scoped to."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub scopes: Vec<String>,
+    #[doc = "How often the scheduled query rule is evaluated represented in ISO 8601 duration format. Relevant and required only for rules of the kind LogAlert."]
+    #[serde(rename = "evaluationFrequency", default, skip_serializing_if = "Option::is_none")]
+    pub evaluation_frequency: Option<String>,
+    #[doc = "The period of time (in ISO 8601 duration format) on which the Alert query will be executed (bin size). Relevant and required only for rules of the kind LogAlert."]
+    #[serde(rename = "windowSize", default, skip_serializing_if = "Option::is_none")]
+    pub window_size: Option<String>,
+    #[doc = "If specified then overrides the query time range (default is WindowSize*NumberOfEvaluationPeriods). Relevant only for rules of the kind LogAlert."]
+    #[serde(rename = "overrideQueryTimeRange", default, skip_serializing_if = "Option::is_none")]
+    pub override_query_time_range: Option<String>,
+    #[doc = "List of resource type of the target resource(s) on which the alert is created/updated. For example if the scope is a resource group and targetResourceTypes is Microsoft.Compute/virtualMachines, then a different alert will be fired for each virtual machine in the resource group which meet the alert criteria. Relevant only for rules of the kind LogAlert"]
+    #[serde(
+        rename = "targetResourceTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub target_resource_types: Vec<String>,
+    #[doc = "The rule criteria that defines the conditions of the scheduled query rule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub criteria: Option<ScheduledQueryRuleCriteria>,
+    #[doc = "Mute actions for the chosen period of time (in ISO 8601 duration format) after the alert is fired. Relevant only for rules of the kind LogAlert."]
+    #[serde(rename = "muteActionsDuration", default, skip_serializing_if = "Option::is_none")]
+    pub mute_actions_duration: Option<String>,
+    #[doc = "Actions to invoke when the alert fires."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub actions: Option<Actions>,
+    #[doc = "The flag which indicates whether this scheduled query rule has been configured to be stored in the customer's storage. The default is false."]
+    #[serde(rename = "isWorkspaceAlertsStorageConfigured", default, skip_serializing_if = "Option::is_none")]
+    pub is_workspace_alerts_storage_configured: Option<bool>,
+    #[doc = "The flag which indicates whether this scheduled query rule should be stored in the customer's storage. The default is false. Relevant only for rules of the kind LogAlert."]
+    #[serde(rename = "checkWorkspaceAlertsStorageConfigured", default, skip_serializing_if = "Option::is_none")]
+    pub check_workspace_alerts_storage_configured: Option<bool>,
+    #[doc = "The flag which indicates whether the provided query should be validated or not. The default is false. Relevant only for rules of the kind LogAlert."]
+    #[serde(rename = "skipQueryValidation", default, skip_serializing_if = "Option::is_none")]
+    pub skip_query_validation: Option<bool>,
+    #[doc = "The flag that indicates whether the alert should be automatically resolved or not. The default is true. Relevant only for rules of the kind LogAlert."]
+    #[serde(rename = "autoMitigate", default, skip_serializing_if = "Option::is_none")]
+    pub auto_mitigate: Option<bool>,
+    #[doc = "TBD. Relevant only for rules of the kind LogAlert."]
+    #[serde(rename = "ruleResolveConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub rule_resolve_configuration: Option<RuleResolveConfiguration>,
+}
+impl ScheduledQueryRuleProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod scheduled_query_rule_properties {
+    use super::*;
+    #[doc = "Severity of the alert. Should be an integer between [0-4]. Value of 0 is severest. Relevant and required only for rules of the kind LogAlert."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Severity")]
+    pub enum Severity {
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Severity {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
         }
+    }
+    impl<'de> Deserialize<'de> for Severity {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Severity {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "The scheduled query rule resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ScheduledQueryRuleResource {
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The name of the resource"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "Identity for the resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<Identity>,
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[doc = "The geo-location where the resource lives"]
+    pub location: String,
+    #[doc = "Indicates the type of scheduled query rule. The default is LogAlert."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<scheduled_query_rule_resource::Kind>,
+    #[doc = "The etag field is *not* required. If it is provided in the response body, it must also be provided as a header per the normal etag convention.  Entity tags are used for comparing two or more entities from the same requested resource. HTTP/1.1 uses entity tags in the etag (section 14.19), If-Match (section 14.24), If-None-Match (section 14.26), and If-Range (section 14.27) header fields. "]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "scheduled query rule Definition"]
+    pub properties: ScheduledQueryRuleProperties,
+}
+impl ScheduledQueryRuleResource {
+    pub fn new(location: String, properties: ScheduledQueryRuleProperties) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            identity: None,
+            tags: None,
+            location,
+            kind: None,
+            etag: None,
+            system_data: None,
+            properties,
+        }
+    }
+}
+pub mod scheduled_query_rule_resource {
+    use super::*;
+    #[doc = "Indicates the type of scheduled query rule. The default is LogAlert."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Kind")]
+    pub enum Kind {
+        LogAlert,
+        LogToMetric,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Kind {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Kind {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Kind {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::LogAlert => serializer.serialize_unit_variant("Kind", 0u32, "LogAlert"),
+                Self::LogToMetric => serializer.serialize_unit_variant("Kind", 1u32, "LogToMetric"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Represents a collection of scheduled query rule resources."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ScheduledQueryRuleResourceCollection {
+    #[doc = "The values for the scheduled query rule resources."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<ScheduledQueryRuleResource>,
+    #[doc = "Provides the link to retrieve the next set of elements."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ScheduledQueryRuleResourceCollection {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl ScheduledQueryRuleResourceCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The scheduled query rule resource for patch operations."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ScheduledQueryRuleResourcePatch {
+    #[doc = "Identity for the resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<Identity>,
+    #[doc = "Resource tags"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[doc = "scheduled query rule Definition"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ScheduledQueryRuleProperties>,
+}
+impl ScheduledQueryRuleResourcePatch {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "A private link scoped resource"]
@@ -4852,6 +6297,9 @@ pub struct ScopedResource {
     #[doc = "Properties of a private link scoped resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScopedResourceProperties>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
 }
 impl ScopedResource {
     pub fn new() -> Self {
@@ -5027,34 +6475,287 @@ impl SmsReceiver {
         }
     }
 }
-#[doc = "Specifies the log search query."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Source {
-    #[doc = "Log search query. Required for action type - AlertingAction"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StorageBlobDestination {
+    #[doc = "The container name of the Storage Blob."]
+    #[serde(rename = "containerName", default, skip_serializing_if = "Option::is_none")]
+    pub container_name: Option<String>,
+    #[doc = "The resource ID of the storage account."]
+    #[serde(rename = "storageAccountResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_resource_id: Option<String>,
+    #[doc = "A friendly name for the destination. \r\nThis name should be unique across all destinations (regardless of type) within the data collection rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub query: Option<String>,
-    #[doc = "List of  Resource referred into query"]
+    pub name: Option<String>,
+}
+impl StorageBlobDestination {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StorageTableDestination {
+    #[doc = "The name of the Storage Table."]
+    #[serde(rename = "tableName", default, skip_serializing_if = "Option::is_none")]
+    pub table_name: Option<String>,
+    #[doc = "The resource ID of the storage account."]
+    #[serde(rename = "storageAccountResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub storage_account_resource_id: Option<String>,
+    #[doc = "A friendly name for the destination. \r\nThis name should be unique across all destinations (regardless of type) within the data collection rule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+impl StorageTableDestination {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Declaration of a custom stream."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StreamDeclaration {
+    #[doc = "List of columns used by data in this stream."]
     #[serde(
-        rename = "authorizedResources",
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub authorized_resources: Vec<String>,
-    #[doc = "The resource uri over which log search query is to be run."]
-    #[serde(rename = "dataSourceId")]
-    pub data_source_id: String,
-    #[doc = "Set value to 'ResultAccount'"]
-    #[serde(rename = "queryType", default, skip_serializing_if = "Option::is_none")]
-    pub query_type: Option<QueryType>,
+    pub columns: Vec<ColumnDefinition>,
 }
-impl Source {
-    pub fn new(data_source_id: String) -> Self {
+impl StreamDeclaration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The result data of a query."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubscriptionScopeMetric {
+    #[doc = "the metric Id."]
+    pub id: String,
+    #[doc = "the resource type of the metric resource."]
+    #[serde(rename = "type")]
+    pub type_: String,
+    #[doc = "The localizable string class."]
+    pub name: LocalizableString,
+    #[doc = "Detailed description of this metric."]
+    #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
+    pub display_description: Option<String>,
+    #[doc = "'Success' or the error details on query failures for this metric."]
+    #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    #[doc = "Error message encountered querying this specific metric."]
+    #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
+    #[doc = "The unit of the metric."]
+    pub unit: MetricUnit,
+    #[doc = "the time series returned when a data query is performed."]
+    pub timeseries: Vec<TimeSeriesElement>,
+}
+impl SubscriptionScopeMetric {
+    pub fn new(id: String, type_: String, name: LocalizableString, unit: MetricUnit, timeseries: Vec<TimeSeriesElement>) -> Self {
         Self {
-            query: None,
-            authorized_resources: Vec::new(),
-            data_source_id,
-            query_type: None,
+            id,
+            type_,
+            name,
+            display_description: None,
+            error_code: None,
+            error_message: None,
+            unit,
+            timeseries,
+        }
+    }
+}
+#[doc = "Metric definition class specifies the metadata for a metric."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SubscriptionScopeMetricDefinition {
+    #[doc = "Flag to indicate whether the dimension is required."]
+    #[serde(rename = "isDimensionRequired", default, skip_serializing_if = "Option::is_none")]
+    pub is_dimension_required: Option<bool>,
+    #[doc = "the resource identifier of the resource that emitted the metric."]
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[doc = "the namespace the metric belongs to."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub namespace: Option<String>,
+    #[doc = "The localizable string class."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<LocalizableString>,
+    #[doc = "Detailed description of this metric."]
+    #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
+    pub display_description: Option<String>,
+    #[doc = "Custom category name for this metric."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    #[doc = "The class of the metric."]
+    #[serde(rename = "metricClass", default, skip_serializing_if = "Option::is_none")]
+    pub metric_class: Option<MetricClass>,
+    #[doc = "The unit of the metric."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unit: Option<MetricUnit>,
+    #[doc = "the aggregation type of the metric."]
+    #[serde(rename = "primaryAggregationType", default, skip_serializing_if = "Option::is_none")]
+    pub primary_aggregation_type: Option<MetricAggregationType>,
+    #[doc = "the collection of what aggregation types are supported."]
+    #[serde(
+        rename = "supportedAggregationTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub supported_aggregation_types: Vec<MetricAggregationType>,
+    #[doc = "the collection of what aggregation intervals are available to be queried."]
+    #[serde(
+        rename = "metricAvailabilities",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub metric_availabilities: Vec<MetricAvailability>,
+    #[doc = "the resource identifier of the metric definition."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "the name and the display name of the dimension, i.e. it is a localizable string."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub dimensions: Vec<LocalizableString>,
+}
+impl SubscriptionScopeMetricDefinition {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Represents collection of metric definitions."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubscriptionScopeMetricDefinitionCollection {
+    #[doc = "The values for the metric definitions."]
+    pub value: Vec<SubscriptionScopeMetricDefinition>,
+}
+impl azure_core::Continuable for SubscriptionScopeMetricDefinitionCollection {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
+impl SubscriptionScopeMetricDefinitionCollection {
+    pub fn new(value: Vec<SubscriptionScopeMetricDefinition>) -> Self {
+        Self { value }
+    }
+}
+#[doc = "The response to a subscription scope metrics query."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SubscriptionScopeMetricResponse {
+    #[doc = "The integer value representing the relative cost of the query."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost: Option<f64>,
+    #[doc = "The timespan for which the data was retrieved. Its value consists of two datetimes concatenated, separated by '/'.  This may be adjusted in the future and returned back from what was originally requested."]
+    pub timespan: String,
+    #[doc = "The interval (window size) for which the metric data was returned in.  This may be adjusted in the future and returned back from what was originally requested.  This is not present if a metadata request was made."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interval: Option<String>,
+    #[doc = "The namespace of the metrics being queried"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub namespace: Option<String>,
+    #[doc = "The region of the resource being queried for metrics."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resourceregion: Option<String>,
+    #[doc = "the value of the collection."]
+    pub value: Vec<SubscriptionScopeMetric>,
+}
+impl SubscriptionScopeMetricResponse {
+    pub fn new(timespan: String, value: Vec<SubscriptionScopeMetric>) -> Self {
+        Self {
+            cost: None,
+            timespan,
+            interval: None,
+            namespace: None,
+            resourceregion: None,
+            value,
+        }
+    }
+}
+#[doc = "Query parameters can also be specified in the body, specifying the same parameter in both the body and query parameters will result in an error."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SubscriptionScopeMetricsRequestBodyParameters {
+    #[doc = "The timespan of the query. It is a string with the following format 'startDateTime_ISO/endDateTime_ISO'."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timespan: Option<String>,
+    #[doc = "The interval (i.e. timegrain) of the query."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interval: Option<String>,
+    #[doc = "The names of the metrics (comma separated) to retrieve."]
+    #[serde(rename = "metricNames", default, skip_serializing_if = "Option::is_none")]
+    pub metric_names: Option<String>,
+    #[doc = "The list of aggregation types (comma separated) to retrieve."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub aggregation: Option<String>,
+    #[doc = "The **$filter** is used to reduce the set of metric data returned.<br>Example:<br>Metric contains metadata A, B and C.<br>- Return all time series of C where A = a1 and B = b1 or b2<br>**$filter=A eq ‘a1’ and B eq ‘b1’ or B eq ‘b2’ and C eq ‘*’**<br>- Invalid variant:<br>**$filter=A eq ‘a1’ and B eq ‘b1’ and C eq ‘*’ or B = ‘b2’**<br>This is invalid because the logical or operator cannot separate two different metadata names.<br>- Return all time series where A = a1, B = b1 and C = c1:<br>**$filter=A eq ‘a1’ and B eq ‘b1’ and C eq ‘c1’**<br>- Return all time series where A = a1<br>**$filter=A eq ‘a1’ and B eq ‘*’ and C eq ‘*’**."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub filter: Option<String>,
+    #[doc = "The maximum number of records to retrieve.\nValid only if $filter is specified.\nDefaults to 10."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub top: Option<i32>,
+    #[doc = "The aggregation to use for sorting results and the direction of the sort.\nOnly one order can be specified.\nExamples: sum asc."]
+    #[serde(rename = "orderBy", default, skip_serializing_if = "Option::is_none")]
+    pub order_by: Option<String>,
+    #[doc = "Dimension name(s) to rollup results by. For example if you only want to see metric values with a filter like 'City eq Seattle or City eq Tacoma' but don't want to see separate values for each city, you can specify 'RollUpBy=City' to see the results for Seattle and Tacoma rolled up into one timeseries."]
+    #[serde(rename = "rollUpBy", default, skip_serializing_if = "Option::is_none")]
+    pub roll_up_by: Option<String>,
+    #[doc = "Reduces the set of data collected. The syntax allowed depends on the operation. See the operation's description for details."]
+    #[serde(rename = "resultType", default, skip_serializing_if = "Option::is_none")]
+    pub result_type: Option<subscription_scope_metrics_request_body_parameters::ResultType>,
+    #[doc = "Metric namespace where the metrics you want reside."]
+    #[serde(rename = "metricNamespace", default, skip_serializing_if = "Option::is_none")]
+    pub metric_namespace: Option<String>,
+    #[doc = "When set to true, if the timespan passed in is not supported by this metric, the API will return the result using the closest supported timespan. When set to false, an error is returned for invalid timespan parameters. Defaults to false."]
+    #[serde(rename = "autoAdjustTimegrain", default, skip_serializing_if = "Option::is_none")]
+    pub auto_adjust_timegrain: Option<bool>,
+    #[doc = "When set to false, invalid filter parameter values will be ignored. When set to true, an error is returned for invalid filter parameters. Defaults to true."]
+    #[serde(rename = "validateDimensions", default, skip_serializing_if = "Option::is_none")]
+    pub validate_dimensions: Option<bool>,
+}
+impl SubscriptionScopeMetricsRequestBodyParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod subscription_scope_metrics_request_body_parameters {
+    use super::*;
+    #[doc = "Reduces the set of data collected. The syntax allowed depends on the operation. See the operation's description for details."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ResultType")]
+    pub enum ResultType {
+        Data,
+        Metadata,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ResultType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ResultType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ResultType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Data => serializer.serialize_unit_variant("ResultType", 0u32, "Data"),
+                Self::Metadata => serializer.serialize_unit_variant("ResultType", 1u32, "Metadata"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
@@ -5103,6 +6804,144 @@ pub struct TagsResource {
 impl TagsResource {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "A tenant  action group."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TenantActionGroup {
+    #[doc = "The short name of the action group. This will be used in SMS messages."]
+    #[serde(rename = "groupShortName")]
+    pub group_short_name: String,
+    #[doc = "Indicates whether this tenant action group is enabled. If a tenant action group is not enabled, then none of its receivers will receive communications."]
+    pub enabled: bool,
+    #[doc = "The list of email receivers that are part of this tenant action group."]
+    #[serde(
+        rename = "emailReceivers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub email_receivers: Vec<EmailReceiver>,
+    #[doc = "The list of SMS receivers that are part of this tenant action group."]
+    #[serde(
+        rename = "smsReceivers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub sms_receivers: Vec<SmsReceiver>,
+    #[doc = "The list of webhook receivers that are part of this tenant action group."]
+    #[serde(
+        rename = "webhookReceivers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub webhook_receivers: Vec<WebhookReceiver>,
+    #[doc = "The list of AzureAppPush receivers that are part of this tenant action group."]
+    #[serde(
+        rename = "azureAppPushReceivers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub azure_app_push_receivers: Vec<AzureAppPushReceiver>,
+    #[doc = "The list of voice receivers that are part of this tenant action group."]
+    #[serde(
+        rename = "voiceReceivers",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub voice_receivers: Vec<VoiceReceiver>,
+}
+impl TenantActionGroup {
+    pub fn new(group_short_name: String, enabled: bool) -> Self {
+        Self {
+            group_short_name,
+            enabled,
+            email_receivers: Vec::new(),
+            sms_receivers: Vec::new(),
+            webhook_receivers: Vec::new(),
+            azure_app_push_receivers: Vec::new(),
+            voice_receivers: Vec::new(),
+        }
+    }
+}
+#[doc = "A list of tenant action groups."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct TenantActionGroupList {
+    #[doc = "The list of tenant action groups."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<TenantActionGroupResource>,
+    #[doc = "Provides the link to retrieve the next set of elements."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TenantActionGroupList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
+impl TenantActionGroupList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A tenant action group resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TenantActionGroupResource {
+    #[serde(flatten)]
+    pub azure_resource: AzureResource,
+    #[doc = "A tenant  action group."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<TenantActionGroup>,
+}
+impl TenantActionGroupResource {
+    pub fn new(azure_resource: AzureResource) -> Self {
+        Self {
+            azure_resource,
+            properties: None,
+        }
+    }
+}
+#[doc = "The details of the test notification results."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TestNotificationDetailsResponse {
+    #[doc = "The context info"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context: Option<Context>,
+    #[doc = "The overall state"]
+    pub state: String,
+    #[doc = "The completed time"]
+    #[serde(rename = "completedTime", default, skip_serializing_if = "Option::is_none")]
+    pub completed_time: Option<String>,
+    #[doc = "The created time"]
+    #[serde(rename = "createdTime", default, skip_serializing_if = "Option::is_none")]
+    pub created_time: Option<String>,
+    #[doc = "The list of action detail"]
+    #[serde(
+        rename = "actionDetails",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub action_details: Vec<ActionDetail>,
+}
+impl TestNotificationDetailsResponse {
+    pub fn new(state: String) -> Self {
+        Self {
+            context: None,
+            state,
+            completed_time: None,
+            created_time: None,
+            action_details: Vec::new(),
+        }
     }
 }
 #[doc = "A rule condition based on a metric crossing a threshold."]
@@ -5222,30 +7061,28 @@ impl TimeWindow {
         }
     }
 }
-#[doc = "The condition that results in the Log Search rule."]
+#[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TriggerCondition {
-    #[doc = "Result Condition Evaluation criteria."]
-    #[serde(rename = "thresholdOperator")]
-    pub threshold_operator: ConditionalOperator,
-    #[doc = "Result or count threshold based on which rule should be triggered."]
-    pub threshold: f64,
-    #[doc = "A log metrics trigger descriptor."]
-    #[serde(rename = "metricTrigger", default, skip_serializing_if = "Option::is_none")]
-    pub metric_trigger: Option<LogMetricTrigger>,
+pub struct TrackedResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[doc = "The geo-location where the resource lives"]
+    pub location: String,
 }
-impl TriggerCondition {
-    pub fn new(threshold_operator: ConditionalOperator, threshold: f64) -> Self {
+impl TrackedResource {
+    pub fn new(location: String) -> Self {
         Self {
-            threshold_operator,
-            threshold,
-            metric_trigger: None,
+            resource: Resource::default(),
+            tags: None,
+            location,
         }
     }
 }
 #[doc = "The unit of the metric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(remote = "Unit")]
 pub enum Unit {
     Count,
     Bytes,
@@ -5260,46 +7097,43 @@ pub enum Unit {
     MilliCores,
     NanoCores,
     BitsPerSecond,
-    #[serde(skip_deserializing)]
-    UnknownValue(String),
 }
-impl FromStr for Unit {
-    type Err = value::Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Self::deserialize(s.into_deserializer())
+#[doc = "The set of user assigned identities associated with the resource. The userAssignedIdentities dictionary keys will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}. The dictionary values can be empty objects ({}) in requests."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UserAssignedIdentities {}
+impl UserAssignedIdentities {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
-impl<'de> Deserialize<'de> for Unit {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-        Ok(deserialized)
+#[doc = "User assigned identity properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UserAssignedIdentity {
+    #[doc = "The principal ID of the assigned identity."]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "The client ID of the assigned identity."]
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+}
+impl UserAssignedIdentity {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
-impl Serialize for Unit {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Self::Count => serializer.serialize_unit_variant("Unit", 0u32, "Count"),
-            Self::Bytes => serializer.serialize_unit_variant("Unit", 1u32, "Bytes"),
-            Self::Seconds => serializer.serialize_unit_variant("Unit", 2u32, "Seconds"),
-            Self::CountPerSecond => serializer.serialize_unit_variant("Unit", 3u32, "CountPerSecond"),
-            Self::BytesPerSecond => serializer.serialize_unit_variant("Unit", 4u32, "BytesPerSecond"),
-            Self::Percent => serializer.serialize_unit_variant("Unit", 5u32, "Percent"),
-            Self::MilliSeconds => serializer.serialize_unit_variant("Unit", 6u32, "MilliSeconds"),
-            Self::ByteSeconds => serializer.serialize_unit_variant("Unit", 7u32, "ByteSeconds"),
-            Self::Unspecified => serializer.serialize_unit_variant("Unit", 8u32, "Unspecified"),
-            Self::Cores => serializer.serialize_unit_variant("Unit", 9u32, "Cores"),
-            Self::MilliCores => serializer.serialize_unit_variant("Unit", 10u32, "MilliCores"),
-            Self::NanoCores => serializer.serialize_unit_variant("Unit", 11u32, "NanoCores"),
-            Self::BitsPerSecond => serializer.serialize_unit_variant("Unit", 12u32, "BitsPerSecond"),
-            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-        }
+#[doc = "User assigned identity properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct UserIdentityProperties {
+    #[doc = "The principal id of user assigned identity."]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "The client id of user assigned identity."]
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+}
+impl UserIdentityProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "VM Insights onboarding status for a resource."]
@@ -5556,6 +7390,20 @@ pub struct WindowsEventLogDataSource {
 impl WindowsEventLogDataSource {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Enables Firewall logs to be collected by this data collection rule."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WindowsFirewallLogsDataSource {
+    #[doc = "Firewall logs streams"]
+    pub streams: Vec<String>,
+    #[doc = "A friendly name for the data source. \r\nThis name should be unique across all data sources (regardless of type) within the data collection rule."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+impl WindowsFirewallLogsDataSource {
+    pub fn new(streams: Vec<String>) -> Self {
+        Self { streams, name: None }
     }
 }
 #[doc = "Information about a Log Analytics Workspace."]
