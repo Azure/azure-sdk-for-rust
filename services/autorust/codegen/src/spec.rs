@@ -1,8 +1,8 @@
 use crate::io;
 use crate::{Error, ErrorKind, Result};
 use autorust_openapi::{
-    AdditionalProperties, CollectionFormat, DataType, MsExamples, MsPageable, OpenAPI, Operation, Parameter, ParameterType, PathItem,
-    Reference, ReferenceOr, Response, Schema, SchemaCommon, StatusCode,
+    AdditionalProperties, CollectionFormat, DataType, MsExamples, MsLongRunningOperationOptions, MsPageable, OpenAPI, Operation, Parameter,
+    ParameterType, PathItem, Reference, ReferenceOr, Response, Schema, SchemaCommon, StatusCode,
 };
 use camino::{Utf8Path, Utf8PathBuf};
 use indexmap::{IndexMap, IndexSet};
@@ -303,6 +303,7 @@ impl Spec {
                         api_version: self.doc(&op.doc_file)?.version()?.to_owned(),
                         pageable: op.pageable,
                         long_running_operation: op.long_running_operation,
+                        long_running_operation_options: op.long_running_operation_options,
                         consumes: op.consumes,
                         produces: op.produces,
                     })
@@ -435,6 +436,7 @@ struct WebOperationUnresolved {
     pub description: Option<String>,
     pub pageable: Option<MsPageable>,
     pub long_running_operation: bool,
+    pub long_running_operation_options: Option<MsLongRunningOperationOptions>,
     pub consumes: Vec<String>,
     pub produces: Vec<String>,
 }
@@ -452,6 +454,7 @@ pub struct WebOperation {
     pub api_version: String,
     pub pageable: Option<MsPageable>,
     pub long_running_operation: bool,
+    pub long_running_operation_options: Option<MsLongRunningOperationOptions>,
     pub consumes: Vec<String>,
     pub produces: Vec<String>,
 }
@@ -470,6 +473,7 @@ impl Default for WebOperation {
             api_version: Default::default(),
             pageable: Default::default(),
             long_running_operation: Default::default(),
+            long_running_operation_options: Default::default(),
             consumes: Default::default(),
             produces: Default::default(),
         }
@@ -652,6 +656,7 @@ fn path_operations_unresolved(doc_file: impl AsRef<Utf8Path>, path: &str, item: 
                 description: op.description.clone(),
                 pageable: op.x_ms_pageable.clone(),
                 long_running_operation: op.x_ms_long_running_operation.unwrap_or(false),
+                long_running_operation_options: op.x_ms_long_running_operation_options.clone(),
                 consumes: op.consumes.clone(),
                 produces: op.produces.clone(),
             })

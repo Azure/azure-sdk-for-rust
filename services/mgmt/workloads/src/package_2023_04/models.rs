@@ -860,7 +860,7 @@ pub mod error {
     pub struct InnerError {
         #[doc = "Standard error object."]
         #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-        pub inner_error: Box<Option<Error>>,
+        pub inner_error: Option<Box<Error>>,
     }
     impl InnerError {
         pub fn new() -> Self {

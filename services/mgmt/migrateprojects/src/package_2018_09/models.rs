@@ -664,7 +664,7 @@ impl IEdmModel {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IEdmNavigationProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub partner: Box<Option<IEdmNavigationProperty>>,
+    pub partner: Option<Box<IEdmNavigationProperty>>,
     #[serde(rename = "onDelete", default, skip_serializing_if = "Option::is_none")]
     pub on_delete: Option<i_edm_navigation_property::OnDelete>,
     #[serde(rename = "containsTarget", default, skip_serializing_if = "Option::is_none")]
@@ -885,7 +885,7 @@ pub struct IEdmStructuredType {
     #[serde(rename = "isOpen", default, skip_serializing_if = "Option::is_none")]
     pub is_open: Option<bool>,
     #[serde(rename = "baseType", default, skip_serializing_if = "Option::is_none")]
-    pub base_type: Box<Option<IEdmStructuredType>>,
+    pub base_type: Option<Box<IEdmStructuredType>>,
     #[serde(
         rename = "declaredProperties",
         default,

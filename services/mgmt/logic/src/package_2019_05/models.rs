@@ -5270,7 +5270,7 @@ pub struct SwaggerSchema {
     pub title: Option<String>,
     #[doc = "The swagger schema."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub items: Box<Option<SwaggerSchema>>,
+    pub items: Option<Box<SwaggerSchema>>,
     #[doc = "The object properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,

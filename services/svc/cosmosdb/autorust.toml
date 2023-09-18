@@ -1,4 +1,5 @@
 [tags]
 deny = [
+  # `data did not match any variant of untagged enum ReferenceOr`
   "package-2019-02"
 ]

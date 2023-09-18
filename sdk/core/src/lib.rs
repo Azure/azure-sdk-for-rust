@@ -32,6 +32,7 @@ mod seekable_stream;
 
 pub mod auth;
 pub mod headers;
+pub mod lro;
 pub mod parsing;
 pub mod prelude;
 pub mod request_options;

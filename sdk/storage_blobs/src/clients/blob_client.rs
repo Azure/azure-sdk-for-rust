@@ -298,12 +298,12 @@ impl BlobClient {
 
     /// Full URL for the blob.
     pub fn url(&self) -> azure_core::Result<url::Url> {
-        let blob_name = self
-            .blob_name()
-            .strip_prefix('/')
-            .unwrap_or_else(|| self.blob_name());
-        let url = format!("{}/{}", self.container_client().url()?, blob_name);
-        Ok(url::Url::parse(&url)?)
+        let mut url = self.container_client().url()?;
+        let parts = self.blob_name().trim_matches('/').split('/');
+        url.path_segments_mut()
+            .map_err(|_| Error::message(ErrorKind::DataConversion, "Invalid url"))?
+            .extend(parts);
+        Ok(url)
     }
 
     pub(crate) fn finalize_request(
@@ -398,6 +398,18 @@ mod tests {
         assert_eq!(
             url.as_str(),
             "http://127.0.0.1:10000/devstoreaccount1/a/b/c/d?fake_token"
+        );
+
+        let url = build_url("a", "/b/c/d", &sas);
+        assert_eq!(
+            url.as_str(),
+            "http://127.0.0.1:10000/devstoreaccount1/a/b/c/d?fake_token"
+        );
+
+        let url = build_url("a", "b/c/d/hi there", &sas);
+        assert_eq!(
+            url.as_str(),
+            "http://127.0.0.1:10000/devstoreaccount1/a/b/c/d/hi%20there?fake_token"
         );
     }
 }

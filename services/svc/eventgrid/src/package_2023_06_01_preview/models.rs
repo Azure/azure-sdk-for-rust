@@ -1569,7 +1569,7 @@ pub struct AzureCoreFoundationsInnerError {
     pub code: Option<String>,
     #[doc = "An object containing more specific information about the error. As per Microsoft One API guidelines - https://github.com/Microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Option<AzureCoreFoundationsInnerError>,
+    pub innererror: Option<Box<AzureCoreFoundationsInnerError>>,
 }
 impl AzureCoreFoundationsInnerError {
     pub fn new() -> Self {

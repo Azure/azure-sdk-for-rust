@@ -25,6 +25,10 @@ impl PropertyGen {
         self.name.as_str()
     }
 
+    pub fn xml_attribute(&self) -> bool {
+        self.schema.xml_attribute()
+    }
+
     pub fn xml_name(&self) -> Option<&str> {
         self.schema.xml_name()
     }
@@ -88,7 +92,6 @@ impl SchemaGen {
     /// Default value is false.
     ///
     /// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/2.0.md#xmlObject
-    #[allow(dead_code)]
     fn xml_attribute(&self) -> bool {
         self.schema.common.xml.as_ref().and_then(|xml| xml.attribute).unwrap_or_default()
     }
@@ -428,7 +431,13 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
             file.extend(quote! { pub type #id = #value;});
         } else {
             let pageable_name = format!("{}", schema_name.to_camel_case_ident()?);
-            file.extend(create_struct(cg, schema, schema_name, pageable_response_names.get(&pageable_name))?);
+            file.extend(create_struct(
+                cg,
+                schema,
+                schema_name,
+                pageable_response_names.get(&pageable_name),
+                HashSet::new(),
+            )?);
         }
     }
     Ok(file)
@@ -622,7 +631,13 @@ fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream> {
     Ok(quote! { pub type #typ = Vec<#items_typ>; })
 }
 
-fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: Option<&MsPageable>) -> Result<TokenStream> {
+fn create_struct(
+    cg: &CodeGen,
+    schema: &SchemaGen,
+    struct_name: &str,
+    pageable: Option<&MsPageable>,
+    mut needs_boxing: HashSet<String>,
+) -> Result<TokenStream> {
     let mut code = TokenStream::new();
     let mut mod_code = TokenStream::new();
     let mut props = TokenStream::new();
@@ -633,6 +648,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
     let required = schema.required();
 
     // println!("struct: {} {:?}", struct_name_code, pageable);
+    needs_boxing.insert(struct_name.to_camel_case_ident()?.to_string());
 
     for schema in schema.all_of() {
         let schema_name = schema.name()?;
@@ -670,11 +686,23 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
         let StructFieldCode {
             mut type_name,
             code: field_code,
-        } = create_struct_field_code(cg, &ns.clone(), &property.schema, property_name, lowercase_workaround)?;
+        } = create_struct_field_code(
+            cg,
+            &ns.clone(),
+            &property.schema,
+            property_name,
+            lowercase_workaround,
+            needs_boxing.clone(),
+        )?;
         mod_code.extend(field_code.into_token_stream());
         // uncomment the next two lines to help identify entries that need boxed
         // let prop_nm_str = format!("{} , {} , {}", prop_nm.file_path, prop_nm.schema_name, property_name);
         // props.extend(quote! { #[doc = #prop_nm_str ]});
+
+        let mut boxed = false;
+        if needs_boxing.contains(&type_name.to_string().to_camel_case_ident()?.to_string()) {
+            boxed = true;
+        }
 
         if cg.should_force_obj(prop_nm) {
             type_name = type_name.force_value(true);
@@ -690,7 +718,12 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
 
         let mut serde_attrs: Vec<TokenStream> = Vec::new();
         if field_name != property_name {
-            serde_attrs.push(quote! { rename = #property_name });
+            if property.xml_attribute() {
+                let as_attribute = format!("@{}", property_name);
+                serde_attrs.push(quote! { rename = #as_attribute });
+            } else {
+                serde_attrs.push(quote! { rename = #property_name});
+            }
         }
         #[allow(clippy::collapsible_else_if)]
         if is_required {
@@ -712,8 +745,12 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
                 serde_attrs.push(quote! { default, skip_serializing_if = "Option::is_none"});
             }
         }
-        if property.schema.is_local_enum() && lowercase_workaround {
-            serde_attrs.push(quote! { deserialize_with = "case_insensitive_deserialize"});
+        if property.schema.is_local_enum() {
+            if lowercase_workaround {
+                serde_attrs.push(quote! { deserialize_with = "case_insensitive_deserialize"});
+            } else if cg.has_xml() {
+                serde_attrs.push(quote! { with = "azure_core::xml::text_content"});
+            }
         }
         let serde = if !serde_attrs.is_empty() {
             quote! { #[serde(#(#serde_attrs),*)] }
@@ -722,7 +759,9 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
         };
 
         // see if a field should be wrapped in a Box
-        let boxed = cg.should_box_property(prop_nm);
+        if cg.should_box_property(prop_nm) {
+            boxed = true;
+        }
         type_name = type_name.boxed(boxed);
 
         let doc_comment = match &property.schema.schema.common.description {
@@ -747,11 +786,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
             }
         } else {
             #[allow(clippy::collapsible_else_if)]
-            if boxed {
-                new_fn_body.extend(quote! { #field_name: Box::new(None), });
-            } else {
-                new_fn_body.extend(quote! { #field_name: None, });
-            }
+            new_fn_body.extend(quote! { #field_name: None, });
         }
     }
 
@@ -792,7 +827,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
                         impl azure_core::Continuable for #struct_name_code {
                             type Continuation = String;
                             fn continuation(&self) -> Option<Self::Continuation> {
-                                self.#field_name.clone()
+                                self.#field_name.clone().filter(|value| !value.is_empty())
                             }
                         }
                     };
@@ -926,6 +961,7 @@ fn create_struct_field_code(
     property: &SchemaGen,
     property_name: &str,
     lowercase_workaround: bool,
+    needs_boxing: HashSet<String>,
 ) -> Result<StructFieldCode> {
     match &property.ref_key {
         Some(ref_key) => {
@@ -941,7 +977,7 @@ fn create_struct_field_code(
             } else if property.is_local_struct() {
                 let id = property_name.to_camel_case_ident()?;
                 let type_name = TypeNameCode::from(vec![namespace.clone(), id]);
-                let code = create_struct(cg, property, property_name, None)?;
+                let code = create_struct(cg, property, property_name, None, needs_boxing)?;
                 Ok(StructFieldCode {
                     type_name,
                     code: Some(TypeCode::Struct(code)),
