@@ -2215,7 +2215,7 @@ pub mod pricings {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-03-01");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-01-01");
                 }
                 Ok(url)
             }
@@ -2321,7 +2321,7 @@ pub mod pricings {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-03-01");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-01-01");
                 }
                 Ok(url)
             }
@@ -2429,7 +2429,7 @@ pub mod pricings {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-03-01");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-01-01");
                 }
                 Ok(url)
             }

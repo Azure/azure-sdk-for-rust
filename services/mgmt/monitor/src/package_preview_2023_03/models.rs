@@ -962,16 +962,16 @@ impl AzureMonitorPrivateLinkScopeProperties {
         }
     }
 }
-#[doc = "Properties of an Azure Monitor workspace"]
+#[doc = "Properties of an Azure Monitor Workspace"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureMonitorWorkspace {
-    #[doc = "The immutable ID of the Azure Monitor workspace. This property is read-only."]
+    #[doc = "The immutable Id of the Azure Monitor Workspace. This property is read-only."]
     #[serde(rename = "accountId", default, skip_serializing_if = "Option::is_none")]
     pub account_id: Option<String>,
-    #[doc = "Information about metrics for the Azure Monitor workspace"]
+    #[doc = "Properties related to the metrics container in the Azure Monitor Workspace"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metrics: Option<serde_json::Value>,
-    #[doc = "The provisioning state of the Azure Monitor workspace. Set to Succeeded if everything is healthy."]
+    #[doc = "The provisioning state of the Azure Monitor Workspace. Set to Succeeded if everything is healthy."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<azure_monitor_workspace::ProvisioningState>,
     #[doc = "The Data Collection Rule and Endpoint used for ingestion by default."]
@@ -985,7 +985,7 @@ impl AzureMonitorWorkspace {
 }
 pub mod azure_monitor_workspace {
     use super::*;
-    #[doc = "The provisioning state of the Azure Monitor workspace. Set to Succeeded if everything is healthy."]
+    #[doc = "The provisioning state of the Azure Monitor Workspace. Set to Succeeded if everything is healthy."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ProvisioningState")]
     pub enum ProvisioningState {
@@ -1050,7 +1050,7 @@ impl AzureMonitorWorkspaceResource {
         }
     }
 }
-#[doc = "Definition of ARM tracked top level resource properties for update operation"]
+#[doc = "Definition of ARM tracked top level resource properties for the Update operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureMonitorWorkspaceResourceForUpdate {
     #[doc = "Resource tags"]
@@ -2925,10 +2925,10 @@ impl IncidentListResult {
 #[doc = "Settings for data ingestion"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IngestionSettings {
-    #[doc = "The Azure resource Id of the default data collection rule for this workspace."]
+    #[doc = "The Azure resource Id of the default data collection rule for this Azure Monitor Workspace."]
     #[serde(rename = "dataCollectionRuleResourceId", default, skip_serializing_if = "Option::is_none")]
     pub data_collection_rule_resource_id: Option<String>,
-    #[doc = "The Azure resource Id of the default data collection endpoint for this workspace."]
+    #[doc = "The Azure resource Id of the default data collection endpoint for this Azure Monitor Workspace."]
     #[serde(rename = "dataCollectionEndpointResourceId", default, skip_serializing_if = "Option::is_none")]
     pub data_collection_endpoint_resource_id: Option<String>,
 }
@@ -4357,10 +4357,10 @@ impl MetricValue {
         }
     }
 }
-#[doc = "Information about metrics for the workspace"]
+#[doc = "Properties related to the metrics container in the Azure Monitor Workspace"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Metrics {
-    #[doc = "The Prometheus query endpoint for the workspace"]
+    #[doc = "The Prometheus query endpoint for the Azure Monitor Workspace"]
     #[serde(rename = "prometheusQueryEndpoint", default, skip_serializing_if = "Option::is_none")]
     pub prometheus_query_endpoint: Option<String>,
     #[doc = "An internal identifier for the metrics container. Only to be used by the system"]

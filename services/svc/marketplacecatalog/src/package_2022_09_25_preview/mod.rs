@@ -121,7 +121,7 @@ pub mod search {
     use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Get a list of azure marketplace catalog offers and total count and facets"]
+        #[doc = "Get a list of azure marketplace catalog offers and total count and facets<div class='alert is-info'><p class='alert-title'><span class='docon docon-status-error-outline' aria-hidden='true'></span> Note</p><p>Search API version 2022-09-25-preview will retire on March 31, 2024. After this date, this API version will no longer be supported. To continue using our services, it is essential to migrate to the new Search API preview version 2023-01-01.<br>For detailed guidance, please refer to the updated API documentation, available at: <a href='https://learn.microsoft.com/en-us/rest/api/marketplacecatalog/2023-01-01-preview/search/get?tabs=HTTP'>2023-01-01-preview</a><br>If you have any questions or require assistance during the transition, please contact us at <a href='mailto:MKPL_Platform_API_DL@microsoft.com'>MKPL_Platform_API_DL@microsoft.com</a></div>"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `language`: Language to search, ISO 639-1 two-letter code, possible values - 'en,cs,de,es,fr,hu,it,ja,ko,nl,pl,pt-br,pt-pt,ru,sv,tr,zh-hans,zh-hant'"]
@@ -462,7 +462,7 @@ pub mod facets {
     use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Get a list of offers count per filter"]
+        #[doc = "Get a list of offers count per filter<div class='alert is-info'><p class='alert-title'><span class='docon docon-status-error-outline' aria-hidden='true'></span> Note</p><p>Facets API version 2022-09-25-preview will retire on March 31, 2024. After this date, this API version will no longer be supported. To continue using our services, it is essential to migrate to the new Search API preview version 2023-01-01.<br>For detailed guidance, please refer to the updated API documentation, available at: <a href='https://learn.microsoft.com/en-us/rest/api/marketplacecatalog/2023-01-01-preview/facets/get?tabs=HTTP'>2023-01-01-preview</a><br>If you have any questions or require assistance during the transition, please contact us at <a href='mailto:MKPL_Platform_API_DL@microsoft.com'>MKPL_Platform_API_DL@microsoft.com</a></div>"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `language`: Language to search, ISO 639-1 two-letter code, possible values - 'en,cs,de,es,fr,hu,it,ja,ko,nl,pl,pt-br,pt-pt,ru,sv,tr,zh-hans,zh-hant'"]
@@ -767,7 +767,7 @@ pub mod suggestions {
     use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Get a list of azure marketplace products suggestions"]
+        #[doc = "Get a list of azure marketplace products suggestions<div class='alert is-info'><p class='alert-title'><span class='docon docon-status-error-outline' aria-hidden='true'></span> Note</p><p>Suggestions API version 2022-09-25-preview will retire on March 31, 2024. After this date, this API version will no longer be supported. To continue using our services, it is essential to migrate to the new Search API preview version 2023-01-01.<br>For detailed guidance, please refer to the updated API documentation, available at: <a href='https://learn.microsoft.com/en-us/rest/api/marketplacecatalog/2023-01-01-preview/suggestions/get-products?tabs=HTTP'>2023-01-01-preview</a><br>If you have any questions or require assistance during the transition, please contact us at <a href='mailto:MKPL_Platform_API_DL@microsoft.com'>MKPL_Platform_API_DL@microsoft.com</a></div>"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `language`: Language to search, ISO 639-1 two-letter code, possible values - 'en,cs,de,es,fr,hu,it,ja,ko,nl,pl,pt-br,pt-pt,ru,sv,tr,zh-hans,zh-hant'"]

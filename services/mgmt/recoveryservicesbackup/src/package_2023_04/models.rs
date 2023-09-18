@@ -5363,6 +5363,12 @@ pub struct BackupStatusResponse {
     #[doc = "Container registration status"]
     #[serde(rename = "registrationStatus", default, skip_serializing_if = "Option::is_none")]
     pub registration_status: Option<String>,
+    #[doc = "Number of protected items"]
+    #[serde(rename = "protectedItemsCount", default, skip_serializing_if = "Option::is_none")]
+    pub protected_items_count: Option<i32>,
+    #[doc = "Specifies whether the storage account lock has been acquired or not"]
+    #[serde(rename = "acquireStorageAccountLock", default, skip_serializing_if = "Option::is_none")]
+    pub acquire_storage_account_lock: Option<backup_status_response::AcquireStorageAccountLock>,
 }
 impl BackupStatusResponse {
     pub fn new() -> Self {
@@ -5447,6 +5453,43 @@ pub mod backup_status_response {
             match self {
                 Self::Invalid => serializer.serialize_unit_variant("FabricName", 0u32, "Invalid"),
                 Self::Azure => serializer.serialize_unit_variant("FabricName", 1u32, "Azure"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Specifies whether the storage account lock has been acquired or not"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AcquireStorageAccountLock")]
+    pub enum AcquireStorageAccountLock {
+        Acquire,
+        NotAcquire,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AcquireStorageAccountLock {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AcquireStorageAccountLock {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AcquireStorageAccountLock {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Acquire => serializer.serialize_unit_variant("AcquireStorageAccountLock", 0u32, "Acquire"),
+                Self::NotAcquire => serializer.serialize_unit_variant("AcquireStorageAccountLock", 1u32, "NotAcquire"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

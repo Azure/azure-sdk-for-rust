@@ -5342,7 +5342,7 @@ pub mod location_based_capabilities {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-12-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-09-30-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -5383,7 +5383,7 @@ pub mod location_based_capabilities {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2021-12-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-09-30-preview");
                 }
                 Ok(url)
             }
@@ -5508,7 +5508,7 @@ pub mod check_virtual_network_subnet_usage {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2021-12-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-09-30-preview");
                 }
                 Ok(url)
             }
@@ -5645,7 +5645,7 @@ pub mod check_name_availability {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2021-12-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-09-30-preview");
                 }
                 Ok(url)
             }
@@ -5777,7 +5777,7 @@ pub mod check_name_availability_without_location {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2021-12-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-09-30-preview");
                 }
                 Ok(url)
             }
@@ -5894,7 +5894,7 @@ pub mod get_private_dns_zone_suffix {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2021-12-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-09-30-preview");
                 }
                 Ok(url)
             }
@@ -6001,7 +6001,7 @@ pub mod operations {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2021-12-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2022-09-30-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -6037,7 +6037,7 @@ pub mod operations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2021-12-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-09-30-preview");
                 }
                 Ok(url)
             }

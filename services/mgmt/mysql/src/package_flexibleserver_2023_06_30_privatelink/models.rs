@@ -64,6 +64,72 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Represents Operation Results API Response"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationStatusExtendedResult {
+    #[serde(flatten)]
+    pub operation_status_result: OperationStatusResult,
+    #[doc = "A name-value pair that represents extended info."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ExtendedData>,
+}
+impl OperationStatusExtendedResult {
+    pub fn new(operation_status_result: OperationStatusResult) -> Self {
+        Self {
+            operation_status_result,
+            properties: None,
+        }
+    }
+}
+#[doc = "The current status of an async operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationStatusResult {
+    #[doc = "Fully qualified ID for the async operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Fully qualified ID of the resource against which the original async operation was started."]
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[doc = "Name of the async operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Operation status."]
+    pub status: String,
+    #[doc = "Percent of the operation that is complete."]
+    #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
+    pub percent_complete: Option<f64>,
+    #[doc = "The start time of the operation."]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
+    #[doc = "The end time of the operation."]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
+    pub end_time: Option<time::OffsetDateTime>,
+    #[doc = "The operations list."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub operations: Vec<OperationStatusResult>,
+    #[doc = "The error detail."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+}
+impl OperationStatusResult {
+    pub fn new(status: String) -> Self {
+        Self {
+            id: None,
+            resource_id: None,
+            name: None,
+            status,
+            percent_complete: None,
+            start_time: None,
+            end_time: None,
+            operations: Vec::new(),
+            error: None,
+        }
+    }
+}
 #[doc = "The private endpoint resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
@@ -322,6 +388,14 @@ pub struct TagsObject {
     pub tags: Option<serde_json::Value>,
 }
 impl TagsObject {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A name-value pair that represents extended info."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ExtendedData {}
+impl ExtendedData {
     pub fn new() -> Self {
         Self::default()
     }

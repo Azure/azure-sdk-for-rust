@@ -7,7 +7,3 @@
 pub mod package_preview_2022_11;
 #[cfg(all(feature = "package-preview-2022-11", not(feature = "no-default-tag")))]
 pub use package_preview_2022_11::*;
-#[cfg(feature = "package-2022-03-01-preview")]
-pub mod package_2022_03_01_preview;
-#[cfg(all(feature = "package-2022-03-01-preview", not(feature = "no-default-tag")))]
-pub use package_2022_03_01_preview::*;

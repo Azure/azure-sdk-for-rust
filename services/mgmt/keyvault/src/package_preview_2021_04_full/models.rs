@@ -30,7 +30,7 @@ impl AccessPolicyEntry {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Action {
-    #[doc = "The type of action."]
+    #[doc = "The type of the action. The value should be compared case-insensitively."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<action::Type>,
 }
@@ -41,12 +41,10 @@ impl Action {
 }
 pub mod action {
     use super::*;
-    #[doc = "The type of action."]
+    #[doc = "The type of the action. The value should be compared case-insensitively."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
-        #[serde(rename = "rotate")]
         Rotate,
-        #[serde(rename = "notify")]
         Notify,
     }
 }

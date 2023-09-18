@@ -1447,6 +1447,9 @@ pub struct SolutionProperties {
     #[doc = "SaaS application Plan Id."]
     #[serde(rename = "planId")]
     pub plan_id: String,
+    #[doc = "Role Assignment Id."]
+    #[serde(rename = "roleAssignmentId", default, skip_serializing_if = "Option::is_none")]
+    pub role_assignment_id: Option<String>,
     #[doc = "SaaS application Offer Id."]
     #[serde(rename = "offerId")]
     pub offer_id: String,
@@ -1469,6 +1472,7 @@ impl SolutionProperties {
             saas_subscription_name,
             marketplace_publisher_id,
             plan_id,
+            role_assignment_id: None,
             offer_id,
             term_id,
         }
