@@ -37,7 +37,7 @@ pub struct AccessPolicyEntityCollection {
 impl azure_core::Continuable for AccessPolicyEntityCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccessPolicyEntityCollection {
@@ -345,7 +345,7 @@ pub struct EdgeModuleEntityCollection {
 impl azure_core::Continuable for EdgeModuleEntityCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EdgeModuleEntityCollection {
@@ -1286,7 +1286,7 @@ pub struct VideoEntityCollection {
 impl azure_core::Continuable for VideoEntityCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VideoEntityCollection {

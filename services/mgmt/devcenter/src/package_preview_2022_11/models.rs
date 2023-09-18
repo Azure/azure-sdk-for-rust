@@ -34,7 +34,7 @@ pub struct AllowedEnvironmentTypeListResult {
 impl azure_core::Continuable for AllowedEnvironmentTypeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AllowedEnvironmentTypeListResult {
@@ -115,7 +115,7 @@ pub struct AttachedNetworkListResult {
 impl azure_core::Continuable for AttachedNetworkListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AttachedNetworkListResult {
@@ -169,7 +169,7 @@ pub struct CatalogListResult {
 impl azure_core::Continuable for CatalogListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CatalogListResult {
@@ -423,7 +423,7 @@ pub struct DevBoxDefinitionListResult {
 impl azure_core::Continuable for DevBoxDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DevBoxDefinitionListResult {
@@ -533,7 +533,7 @@ pub struct DevCenterListResult {
 impl azure_core::Continuable for DevCenterListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DevCenterListResult {
@@ -729,7 +729,7 @@ pub struct EnvironmentTypeListResult {
 impl azure_core::Continuable for EnvironmentTypeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EnvironmentTypeListResult {
@@ -852,7 +852,7 @@ pub struct GalleryListResult {
 impl azure_core::Continuable for GalleryListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GalleryListResult {
@@ -1005,7 +1005,7 @@ pub struct HealthCheckStatusDetailsListResult {
 impl azure_core::Continuable for HealthCheckStatusDetailsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HealthCheckStatusDetailsListResult {
@@ -1104,7 +1104,7 @@ pub struct ImageListResult {
 impl azure_core::Continuable for ImageListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ImageListResult {
@@ -1252,7 +1252,7 @@ pub struct ImageVersionListResult {
 impl azure_core::Continuable for ImageVersionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ImageVersionListResult {
@@ -1337,7 +1337,7 @@ pub struct ListUsagesResult {
 impl azure_core::Continuable for ListUsagesResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListUsagesResult {
@@ -1485,7 +1485,7 @@ pub struct NetworkConnectionListResult {
 impl azure_core::Continuable for NetworkConnectionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkConnectionListResult {
@@ -1702,7 +1702,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1810,7 +1810,7 @@ pub struct PoolListResult {
 impl azure_core::Continuable for PoolListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PoolListResult {
@@ -1926,7 +1926,7 @@ pub struct ProjectEnvironmentTypeListResult {
 impl azure_core::Continuable for ProjectEnvironmentTypeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProjectEnvironmentTypeListResult {
@@ -2019,7 +2019,7 @@ pub struct ProjectListResult {
 impl azure_core::Continuable for ProjectListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProjectListResult {
@@ -2231,7 +2231,7 @@ pub struct ScheduleListResult {
 impl azure_core::Continuable for ScheduleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScheduleListResult {
@@ -2410,7 +2410,7 @@ pub struct SkuListResult {
 impl azure_core::Continuable for SkuListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SkuListResult {

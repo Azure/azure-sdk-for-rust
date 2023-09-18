@@ -74,7 +74,7 @@ pub struct AvailableProviderOperations {
 impl azure_core::Continuable for AvailableProviderOperations {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AvailableProviderOperations {
@@ -203,7 +203,7 @@ pub struct DataServiceList {
 impl azure_core::Continuable for DataServiceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataServiceList {
@@ -297,7 +297,7 @@ pub struct DataStoreList {
 impl azure_core::Continuable for DataStoreList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataStoreList {
@@ -382,7 +382,7 @@ pub struct DataStoreTypeList {
 impl azure_core::Continuable for DataStoreTypeList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataStoreTypeList {
@@ -597,7 +597,7 @@ pub struct JobDefinitionList {
 impl azure_core::Continuable for JobDefinitionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobDefinitionList {
@@ -814,7 +814,7 @@ pub struct JobList {
 impl azure_core::Continuable for JobList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobList {
@@ -973,7 +973,7 @@ pub struct PublicKeyList {
 impl azure_core::Continuable for PublicKeyList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PublicKeyList {

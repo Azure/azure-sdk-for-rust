@@ -58,7 +58,7 @@ pub struct MetadataEntityListResult {
 impl azure_core::Continuable for MetadataEntityListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MetadataEntityListResult {
@@ -371,7 +371,7 @@ pub struct AvailabilityStatusListResult {
 impl azure_core::Continuable for AvailabilityStatusListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AvailabilityStatusListResult {
@@ -446,7 +446,7 @@ pub struct EmergingIssueListResult {
 impl azure_core::Continuable for EmergingIssueListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EmergingIssueListResult {
@@ -888,7 +888,7 @@ pub struct EventImpactedResourceListResult {
 impl azure_core::Continuable for EventImpactedResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EventImpactedResourceListResult {
@@ -908,7 +908,7 @@ pub struct Events {
 impl azure_core::Continuable for Events {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl Events {

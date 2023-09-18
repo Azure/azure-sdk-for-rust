@@ -47,7 +47,7 @@ pub struct ApiKeyListResult {
 impl azure_core::Continuable for ApiKeyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApiKeyListResult {
@@ -155,7 +155,7 @@ pub struct ConfigurationStoreListResult {
 impl azure_core::Continuable for ConfigurationStoreListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConfigurationStoreListResult {
@@ -418,7 +418,7 @@ pub struct DeletedConfigurationStoreListResult {
 impl azure_core::Continuable for DeletedConfigurationStoreListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeletedConfigurationStoreListResult {
@@ -559,7 +559,7 @@ pub struct KeyValueListResult {
 impl azure_core::Continuable for KeyValueListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl KeyValueListResult {
@@ -768,7 +768,7 @@ pub struct OperationDefinitionListResult {
 impl azure_core::Continuable for OperationDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationDefinitionListResult {
@@ -838,7 +838,7 @@ pub struct PrivateEndpointConnectionListResult {
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionListResult {
@@ -975,7 +975,7 @@ pub struct PrivateLinkResourceListResult {
 impl azure_core::Continuable for PrivateLinkResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkResourceListResult {

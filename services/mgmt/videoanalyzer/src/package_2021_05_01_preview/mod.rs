@@ -142,6 +142,7 @@ pub mod operations {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::OperationCollection> {
@@ -172,15 +173,19 @@ pub mod operations {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
@@ -193,7 +198,7 @@ pub mod operations {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Media/operations", this.client.endpoint(),))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -201,14 +206,20 @@ pub mod operations {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Media/operations", self.client.endpoint(),))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -373,6 +384,7 @@ pub mod video_analyzers {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::VideoAnalyzerCollection> {
@@ -403,15 +415,19 @@ pub mod video_analyzers {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -426,12 +442,7 @@ pub mod video_analyzers {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -439,14 +450,25 @@ pub mod video_analyzers {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -468,6 +490,7 @@ pub mod video_analyzers {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::VideoAnalyzer> {
@@ -498,15 +521,19 @@ pub mod video_analyzers {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -522,13 +549,7 @@ pub mod video_analyzers {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -536,14 +557,26 @@ pub mod video_analyzers {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -565,6 +598,7 @@ pub mod video_analyzers {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::VideoAnalyzer> {
@@ -595,15 +629,19 @@ pub mod video_analyzers {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -620,13 +658,7 @@ pub mod video_analyzers {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -634,15 +666,27 @@ pub mod video_analyzers {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -664,6 +708,7 @@ pub mod video_analyzers {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::VideoAnalyzer> {
@@ -694,15 +739,19 @@ pub mod video_analyzers {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -719,13 +768,7 @@ pub mod video_analyzers {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -733,15 +776,27 @@ pub mod video_analyzers {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -763,6 +818,7 @@ pub mod video_analyzers {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -788,15 +844,19 @@ pub mod video_analyzers {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -812,13 +872,7 @@ pub mod video_analyzers {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -826,14 +880,26 @@ pub mod video_analyzers {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -843,6 +909,7 @@ pub mod video_analyzers {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -868,15 +935,19 @@ pub mod video_analyzers {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -893,13 +964,7 @@ pub mod video_analyzers {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/syncStorageKeys",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -907,15 +972,27 @@ pub mod video_analyzers {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/syncStorageKeys",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -925,6 +1002,7 @@ pub mod video_analyzers {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::VideoAnalyzerCollection> {
@@ -955,15 +1033,19 @@ pub mod video_analyzers {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -977,11 +1059,7 @@ pub mod video_analyzers {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/providers/Microsoft.Media/videoAnalyzers",
-                            this.client.endpoint(),
-                            &this.subscription_id
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -989,14 +1067,24 @@ pub mod video_analyzers {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/providers/Microsoft.Media/videoAnalyzers",
+                    self.client.endpoint(),
+                    &self.subscription_id
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -1048,6 +1136,7 @@ pub mod locations {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::CheckNameAvailabilityResponse> {
@@ -1078,15 +1167,19 @@ pub mod locations {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1102,12 +1195,7 @@ pub mod locations {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/providers/Microsoft.Media/locations/{}/checkNameAvailability",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.location_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1115,15 +1203,26 @@ pub mod locations {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/providers/Microsoft.Media/locations/{}/checkNameAvailability",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.location_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -1276,6 +1375,7 @@ pub mod edge_modules {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::EdgeModuleEntityCollection> {
@@ -1306,15 +1406,19 @@ pub mod edge_modules {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1344,13 +1448,7 @@ pub mod edge_modules {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/edgeModules",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -1381,9 +1479,6 @@ pub mod edge_modules {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -1410,6 +1505,21 @@ pub mod edge_modules {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/edgeModules",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -1418,6 +1528,7 @@ pub mod edge_modules {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::EdgeModuleEntity> {
@@ -1448,15 +1559,19 @@ pub mod edge_modules {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1473,14 +1588,7 @@ pub mod edge_modules {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/edgeModules/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name,
-                            &this.edge_module_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1488,14 +1596,27 @@ pub mod edge_modules {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/edgeModules/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name,
+                    &self.edge_module_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -1517,6 +1638,7 @@ pub mod edge_modules {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::EdgeModuleEntity> {
@@ -1547,15 +1669,19 @@ pub mod edge_modules {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1573,14 +1699,7 @@ pub mod edge_modules {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/edgeModules/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name,
-                            &this.edge_module_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1588,15 +1707,28 @@ pub mod edge_modules {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/edgeModules/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name,
+                    &self.edge_module_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -1618,6 +1750,7 @@ pub mod edge_modules {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1643,15 +1776,19 @@ pub mod edge_modules {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1668,14 +1805,7 @@ pub mod edge_modules {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/edgeModules/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name,
-                            &this.edge_module_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1683,14 +1813,27 @@ pub mod edge_modules {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/edgeModules/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name,
+                    &self.edge_module_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -1700,6 +1843,7 @@ pub mod edge_modules {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::EdgeModuleProvisioningToken> {
@@ -1730,15 +1874,19 @@ pub mod edge_modules {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -1756,7 +1904,7 @@ pub mod edge_modules {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/edgeModules/{}/listProvisioningToken" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . account_name , & this . edge_module_name)) ? ;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1764,15 +1912,21 @@ pub mod edge_modules {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/edgeModules/{}/listProvisioningToken" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . account_name , & self . edge_module_name)) ? ;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -1946,6 +2100,7 @@ pub mod videos {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::VideoEntityCollection> {
@@ -1976,15 +2131,19 @@ pub mod videos {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2002,13 +2161,7 @@ pub mod videos {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/videos",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -2039,9 +2192,6 @@ pub mod videos {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                                 if let Some(top) = &this.top {
                                     req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
                                 }
@@ -2062,6 +2212,21 @@ pub mod videos {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/videos",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -2070,6 +2235,7 @@ pub mod videos {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::VideoEntity> {
@@ -2100,15 +2266,19 @@ pub mod videos {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2125,14 +2295,7 @@ pub mod videos {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/videos/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name,
-                            &this.video_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2140,14 +2303,27 @@ pub mod videos {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/videos/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name,
+                    &self.video_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -2169,6 +2345,7 @@ pub mod videos {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::VideoEntity> {
@@ -2199,15 +2376,19 @@ pub mod videos {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2225,14 +2406,7 @@ pub mod videos {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/videos/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name,
-                            &this.video_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2240,15 +2414,28 @@ pub mod videos {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/videos/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name,
+                    &self.video_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -2270,6 +2457,7 @@ pub mod videos {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::VideoEntity> {
@@ -2300,15 +2488,19 @@ pub mod videos {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2326,14 +2518,7 @@ pub mod videos {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/videos/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name,
-                            &this.video_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2341,15 +2526,28 @@ pub mod videos {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/videos/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name,
+                    &self.video_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -2371,6 +2569,7 @@ pub mod videos {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2396,15 +2595,19 @@ pub mod videos {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2421,14 +2624,7 @@ pub mod videos {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/videos/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name,
-                            &this.video_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2436,14 +2632,27 @@ pub mod videos {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/videos/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name,
+                    &self.video_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -2453,6 +2662,7 @@ pub mod videos {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::VideoStreamingToken> {
@@ -2483,15 +2693,19 @@ pub mod videos {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2508,7 +2722,7 @@ pub mod videos {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/videos/{}/listStreamingToken" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . account_name , & this . video_name)) ? ;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2516,15 +2730,28 @@ pub mod videos {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/videos/{}/listStreamingToken",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name,
+                    &self.video_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -2675,6 +2902,7 @@ pub mod access_policies {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AccessPolicyEntityCollection> {
@@ -2705,15 +2933,19 @@ pub mod access_policies {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2731,13 +2963,7 @@ pub mod access_policies {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/accessPolicies",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -2768,9 +2994,6 @@ pub mod access_policies {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                                 if let Some(top) = &this.top {
                                     req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
                                 }
@@ -2791,6 +3014,21 @@ pub mod access_policies {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/accessPolicies",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -2799,6 +3037,7 @@ pub mod access_policies {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AccessPolicyEntity> {
@@ -2829,15 +3068,19 @@ pub mod access_policies {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2854,14 +3097,7 @@ pub mod access_policies {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/accessPolicies/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name,
-                            &this.access_policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2869,14 +3105,27 @@ pub mod access_policies {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/accessPolicies/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name,
+                    &self.access_policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -2898,6 +3147,7 @@ pub mod access_policies {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AccessPolicyEntity> {
@@ -2928,15 +3178,19 @@ pub mod access_policies {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -2954,14 +3208,7 @@ pub mod access_policies {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/accessPolicies/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name,
-                            &this.access_policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2969,15 +3216,28 @@ pub mod access_policies {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/accessPolicies/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name,
+                    &self.access_policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -2999,6 +3259,7 @@ pub mod access_policies {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AccessPolicyEntity> {
@@ -3029,15 +3290,19 @@ pub mod access_policies {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -3055,14 +3320,7 @@ pub mod access_policies {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/accessPolicies/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name,
-                            &this.access_policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3070,15 +3328,28 @@ pub mod access_policies {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/accessPolicies/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name,
+                    &self.access_policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -3100,6 +3371,7 @@ pub mod access_policies {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -3125,15 +3397,19 @@ pub mod access_policies {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -3150,14 +3426,7 @@ pub mod access_policies {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/accessPolicies/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.account_name,
-                            &this.access_policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3165,14 +3434,27 @@ pub mod access_policies {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Media/videoAnalyzers/{}/accessPolicies/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.account_name,
+                    &self.access_policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2021-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }

@@ -115,7 +115,7 @@ pub struct AccountsListResponse {
 impl azure_core::Continuable for AccountsListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccountsListResponse {
@@ -187,7 +187,7 @@ pub struct AppServicesListResponse {
 impl azure_core::Continuable for AppServicesListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AppServicesListResponse {
@@ -747,7 +747,7 @@ pub struct MonitoredResourceListResponse {
 impl azure_core::Continuable for MonitoredResourceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MonitoredResourceListResponse {
@@ -863,7 +863,7 @@ pub struct NewRelicMonitorResourceListResult {
 impl azure_core::Continuable for NewRelicMonitorResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NewRelicMonitorResourceListResult {
@@ -1076,7 +1076,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1187,7 +1187,7 @@ pub struct OrganizationsListResponse {
 impl azure_core::Continuable for OrganizationsListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OrganizationsListResponse {
@@ -1228,7 +1228,7 @@ pub struct PlanDataListResponse {
 impl azure_core::Continuable for PlanDataListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PlanDataListResponse {
@@ -1717,7 +1717,7 @@ pub struct TagRuleListResult {
 impl azure_core::Continuable for TagRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TagRuleListResult {
@@ -1890,7 +1890,7 @@ pub struct VmHostsListResponse {
 impl azure_core::Continuable for VmHostsListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VmHostsListResponse {

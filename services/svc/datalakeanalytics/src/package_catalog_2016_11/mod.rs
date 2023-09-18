@@ -978,6 +978,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1003,15 +1004,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::AclCreateOrUpdateParameters,
@@ -1025,7 +1030,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!("{}/catalog/usql/acl?op=GRANTACE", this.client.endpoint(),))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1033,15 +1038,21 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!("{}/catalog/usql/acl?op=GRANTACE", self.client.endpoint(),))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
     }
@@ -1051,6 +1062,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1076,15 +1088,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -1099,11 +1115,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/acl?op=GRANTACE",
-                            this.client.endpoint(),
-                            &this.database_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1111,15 +1123,25 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/acl?op=GRANTACE",
+                    self.client.endpoint(),
+                    &self.database_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
     }
@@ -1129,6 +1151,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1154,15 +1177,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) parameters: models::AclDeleteParameters,
@@ -1176,7 +1203,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!("{}/catalog/usql/acl?op=REVOKEACE", this.client.endpoint(),))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1184,15 +1211,21 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!("{}/catalog/usql/acl?op=REVOKEACE", self.client.endpoint(),))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
     }
@@ -1202,6 +1235,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1227,15 +1261,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -1250,11 +1288,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/acl?op=REVOKEACE",
-                            this.client.endpoint(),
-                            &this.database_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1262,15 +1296,25 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/acl?op=REVOKEACE",
+                    self.client.endpoint(),
+                    &self.database_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
     }
@@ -1280,6 +1324,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlSecret> {
@@ -1310,15 +1355,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -1333,12 +1382,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/secrets/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.secret_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1346,14 +1390,25 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/secrets/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.secret_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -1375,6 +1430,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1400,15 +1456,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -1424,12 +1484,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/secrets/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.secret_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1437,15 +1492,26 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/secrets/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.secret_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
     }
@@ -1455,6 +1521,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1480,15 +1547,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -1504,12 +1575,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/secrets/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.secret_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1517,15 +1583,26 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/secrets/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.secret_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
     }
@@ -1535,6 +1612,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1560,15 +1638,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -1583,12 +1665,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/secrets/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.secret_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1596,14 +1673,25 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/secrets/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.secret_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
     }
@@ -1613,6 +1701,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1638,15 +1727,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -1660,11 +1753,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/secrets",
-                            this.client.endpoint(),
-                            &this.database_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1672,14 +1761,24 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/secrets",
+                    self.client.endpoint(),
+                    &self.database_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
     }
@@ -1689,6 +1788,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlCredential> {
@@ -1719,15 +1819,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -1742,12 +1846,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/credentials/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.credential_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1755,14 +1854,25 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/credentials/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.credential_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -1784,6 +1894,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1809,15 +1920,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -1844,12 +1959,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/credentials/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.credential_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1857,9 +1967,6 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         let req_body = if let Some(parameters) = &this.parameters {
                             req.insert_header("content-type", "application/json");
                             azure_core::to_json(parameters)?
@@ -1874,6 +1981,20 @@ pub mod catalog {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/credentials/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.credential_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod create_credential {
@@ -1882,6 +2003,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1907,15 +2029,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -1931,12 +2057,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/credentials/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.credential_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1944,15 +2065,26 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/credentials/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.credential_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
     }
@@ -1962,6 +2094,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1987,15 +2120,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -2011,12 +2148,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/credentials/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.credential_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2024,15 +2156,26 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/credentials/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.credential_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
     }
@@ -2042,6 +2185,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlCredentialList> {
@@ -2072,15 +2216,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -2126,11 +2274,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/credentials",
-                            this.client.endpoint(),
-                            &this.database_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -2161,9 +2305,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -2199,6 +2340,19 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/credentials",
+                    self.client.endpoint(),
+                    &self.database_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get_external_data_source {
@@ -2207,6 +2361,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlExternalDataSource> {
@@ -2237,15 +2392,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -2260,12 +2419,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/externaldatasources/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.external_data_source_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2273,14 +2427,25 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/externaldatasources/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.external_data_source_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -2302,6 +2467,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlExternalDataSourceList> {
@@ -2332,15 +2498,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -2386,11 +2556,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/externaldatasources",
-                            this.client.endpoint(),
-                            &this.database_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -2421,9 +2587,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -2459,6 +2622,19 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/externaldatasources",
+                    self.client.endpoint(),
+                    &self.database_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get_procedure {
@@ -2467,6 +2643,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlProcedure> {
@@ -2497,15 +2674,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -2521,13 +2702,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/procedures/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name,
-                            &this.procedure_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2535,14 +2710,26 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/procedures/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name,
+                    &self.procedure_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -2564,6 +2751,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlProcedureList> {
@@ -2594,15 +2782,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -2649,12 +2841,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/procedures",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -2685,9 +2872,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -2723,6 +2907,20 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/procedures",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get_table {
@@ -2731,6 +2929,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTable> {
@@ -2761,15 +2960,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -2785,13 +2988,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/tables/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name,
-                            &this.table_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2799,14 +2996,26 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/tables/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name,
+                    &self.table_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -2828,6 +3037,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTableFragmentList> {
@@ -2858,15 +3068,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -2914,13 +3128,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/tablefragments",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name,
-                            &this.table_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -2951,9 +3159,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -2989,6 +3194,21 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/tablefragments",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name,
+                    &self.table_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod list_tables {
@@ -2997,6 +3217,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTableList> {
@@ -3027,15 +3248,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -3088,12 +3313,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/tables",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -3124,9 +3344,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -3165,6 +3382,20 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/tables",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod list_table_statistics_by_database_and_schema {
@@ -3173,6 +3404,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTableStatisticsList> {
@@ -3203,15 +3435,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -3258,12 +3494,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/statistics",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -3294,9 +3525,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -3332,6 +3560,20 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/statistics",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get_table_type {
@@ -3340,6 +3582,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTableType> {
@@ -3370,15 +3613,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -3394,13 +3641,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/tabletypes/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name,
-                            &this.table_type_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3408,14 +3649,26 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/tabletypes/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name,
+                    &self.table_type_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -3437,6 +3690,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTableTypeList> {
@@ -3467,15 +3721,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -3522,12 +3780,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/tabletypes",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -3558,9 +3811,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -3596,6 +3846,20 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/tabletypes",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get_package {
@@ -3604,6 +3868,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlPackage> {
@@ -3634,15 +3899,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -3658,13 +3927,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/packages/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name,
-                            &this.package_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3672,14 +3935,26 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/packages/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name,
+                    &self.package_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -3701,6 +3976,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlPackageList> {
@@ -3731,15 +4007,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -3786,12 +4066,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/packages",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -3822,9 +4097,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -3860,6 +4132,20 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/packages",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get_view {
@@ -3868,6 +4154,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlView> {
@@ -3898,15 +4185,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -3922,13 +4213,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/views/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name,
-                            &this.view_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3936,14 +4221,26 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/views/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name,
+                    &self.view_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -3965,6 +4262,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlViewList> {
@@ -3995,15 +4293,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -4050,12 +4352,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/views",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -4086,9 +4383,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -4124,6 +4418,20 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/views",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get_table_statistic {
@@ -4132,6 +4440,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTableStatistics> {
@@ -4162,15 +4471,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -4187,14 +4500,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/statistics/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name,
-                            &this.table_name,
-                            &this.statistics_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -4202,14 +4508,27 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/statistics/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name,
+                    &self.table_name,
+                    &self.statistics_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -4231,6 +4550,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTableStatisticsList> {
@@ -4261,15 +4581,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -4317,13 +4641,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/statistics",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name,
-                            &this.table_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -4354,9 +4672,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -4392,6 +4707,21 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/statistics",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name,
+                    &self.table_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod preview_table_partition {
@@ -4400,6 +4730,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTablePreview> {
@@ -4430,15 +4761,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -4467,14 +4802,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions/{}/previewrows",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name,
-                            &this.table_name,
-                            &this.partition_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -4482,9 +4810,6 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         if let Some(max_rows) = &this.max_rows {
                             req.url_mut().query_pairs_mut().append_pair("maxRows", &max_rows.to_string());
                         }
@@ -4496,6 +4821,22 @@ pub mod catalog {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions/{}/previewrows",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name,
+                    &self.table_name,
+                    &self.partition_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -4517,6 +4858,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTablePartition> {
@@ -4547,15 +4889,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -4572,14 +4918,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name,
-                            &this.table_name,
-                            &this.partition_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -4587,14 +4926,27 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name,
+                    &self.table_name,
+                    &self.partition_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -4616,6 +4968,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTablePreview> {
@@ -4646,15 +4999,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -4682,13 +5039,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/previewrows",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name,
-                            &this.table_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -4696,9 +5047,6 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         if let Some(max_rows) = &this.max_rows {
                             req.url_mut().query_pairs_mut().append_pair("maxRows", &max_rows.to_string());
                         }
@@ -4710,6 +5058,21 @@ pub mod catalog {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/previewrows",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name,
+                    &self.table_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -4731,6 +5094,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTablePartitionList> {
@@ -4761,15 +5125,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -4817,13 +5185,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name,
-                            &this.table_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -4854,9 +5216,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -4892,6 +5251,21 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/tables/{}/partitions",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name,
+                    &self.table_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod list_types {
@@ -4900,6 +5274,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTypeList> {
@@ -4930,15 +5305,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -4985,12 +5364,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/types",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -5021,9 +5395,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -5059,6 +5430,20 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/types",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get_table_valued_function {
@@ -5067,6 +5452,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTableValuedFunction> {
@@ -5097,15 +5483,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -5121,13 +5511,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/tablevaluedfunctions/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name,
-                            &this.table_valued_function_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -5135,14 +5519,26 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/tablevaluedfunctions/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name,
+                    &self.table_valued_function_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -5164,6 +5560,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTableValuedFunctionList> {
@@ -5194,15 +5591,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -5249,12 +5650,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}/tablevaluedfunctions",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -5285,9 +5681,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -5323,6 +5716,20 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}/tablevaluedfunctions",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get_assembly {
@@ -5331,6 +5738,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlAssembly> {
@@ -5361,15 +5769,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -5384,12 +5796,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/assemblies/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.assembly_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -5397,14 +5804,25 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/assemblies/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.assembly_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -5426,6 +5844,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlAssemblyList> {
@@ -5456,15 +5875,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -5510,11 +5933,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/assemblies",
-                            this.client.endpoint(),
-                            &this.database_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -5545,9 +5964,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -5583,6 +5999,19 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/assemblies",
+                    self.client.endpoint(),
+                    &self.database_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get_schema {
@@ -5591,6 +6020,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlSchema> {
@@ -5621,15 +6051,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -5644,12 +6078,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas/{}",
-                            this.client.endpoint(),
-                            &this.database_name,
-                            &this.schema_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -5657,14 +6086,25 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas/{}",
+                    self.client.endpoint(),
+                    &self.database_name,
+                    &self.schema_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -5686,6 +6126,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlSchemaList> {
@@ -5716,15 +6157,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -5770,11 +6215,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/schemas",
-                            this.client.endpoint(),
-                            &this.database_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -5805,9 +6246,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -5843,6 +6281,19 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/schemas",
+                    self.client.endpoint(),
+                    &self.database_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod list_table_statistics_by_database {
@@ -5851,6 +6302,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTableStatisticsList> {
@@ -5881,15 +6333,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -5935,11 +6391,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/statistics",
-                            this.client.endpoint(),
-                            &this.database_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -5970,9 +6422,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -6008,6 +6457,19 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/statistics",
+                    self.client.endpoint(),
+                    &self.database_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod list_tables_by_database {
@@ -6016,6 +6478,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTableList> {
@@ -6046,15 +6509,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -6106,11 +6573,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/tables",
-                            this.client.endpoint(),
-                            &this.database_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -6141,9 +6604,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -6182,6 +6642,19 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/tables",
+                    self.client.endpoint(),
+                    &self.database_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod list_table_valued_functions_by_database {
@@ -6190,6 +6663,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlTableValuedFunctionList> {
@@ -6220,15 +6694,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -6274,11 +6752,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/tablevaluedfunctions",
-                            this.client.endpoint(),
-                            &this.database_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -6309,9 +6783,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -6347,6 +6818,19 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/tablevaluedfunctions",
+                    self.client.endpoint(),
+                    &self.database_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod list_views_by_database {
@@ -6355,6 +6839,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlViewList> {
@@ -6385,15 +6870,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -6439,11 +6928,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/views",
-                            this.client.endpoint(),
-                            &this.database_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -6474,9 +6959,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -6512,6 +6994,19 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/views",
+                    self.client.endpoint(),
+                    &self.database_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod list_acls_by_database {
@@ -6520,6 +7015,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AclList> {
@@ -6550,15 +7046,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -6604,11 +7104,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}/acl",
-                            this.client.endpoint(),
-                            &this.database_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -6639,9 +7135,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -6677,6 +7170,19 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}/acl",
+                    self.client.endpoint(),
+                    &self.database_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod list_acls {
@@ -6685,6 +7191,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AclList> {
@@ -6715,15 +7222,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
@@ -6768,7 +7279,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!("{}/catalog/usql/acl", this.client.endpoint(),))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -6799,9 +7310,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -6837,6 +7345,15 @@ pub mod catalog {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!("{}/catalog/usql/acl", self.client.endpoint(),))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get_database {
@@ -6845,6 +7362,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlDatabase> {
@@ -6875,15 +7393,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) database_name: String,
@@ -6897,11 +7419,7 @@ pub mod catalog {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/catalog/usql/databases/{}",
-                            this.client.endpoint(),
-                            &this.database_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -6909,14 +7427,24 @@ pub mod catalog {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/catalog/usql/databases/{}",
+                    self.client.endpoint(),
+                    &self.database_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -6938,6 +7466,7 @@ pub mod catalog {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::USqlDatabaseList> {
@@ -6968,15 +7497,19 @@ pub mod catalog {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) filter: Option<String>,
@@ -7021,7 +7554,7 @@ pub mod catalog {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!("{}/catalog/usql/databases", this.client.endpoint(),))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -7052,9 +7585,6 @@ pub mod catalog {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -7089,6 +7619,15 @@ pub mod catalog {
                     }
                 };
                 azure_core::Pageable::new(make_request)
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!("{}/catalog/usql/databases", self.client.endpoint(),))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2016-11-01");
+                }
+                Ok(url)
             }
         }
     }

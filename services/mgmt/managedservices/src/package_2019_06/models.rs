@@ -191,7 +191,7 @@ pub struct RegistrationAssignmentList {
 impl azure_core::Continuable for RegistrationAssignmentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RegistrationAssignmentList {
@@ -446,7 +446,7 @@ pub struct RegistrationDefinitionList {
 impl azure_core::Continuable for RegistrationDefinitionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RegistrationDefinitionList {

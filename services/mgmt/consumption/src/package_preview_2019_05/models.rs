@@ -292,7 +292,7 @@ pub struct BudgetsListResult {
 impl azure_core::Continuable for BudgetsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BudgetsListResult {
@@ -786,7 +786,7 @@ pub struct MarketplacesListResult {
 impl azure_core::Continuable for MarketplacesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MarketplacesListResult {
@@ -990,7 +990,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1152,7 +1152,7 @@ pub struct ReservationDetailsListResult {
 impl azure_core::Continuable for ReservationDetailsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ReservationDetailsListResult {
@@ -1229,7 +1229,7 @@ pub struct ReservationRecommendationsListResult {
 impl azure_core::Continuable for ReservationRecommendationsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ReservationRecommendationsListResult {
@@ -1254,7 +1254,7 @@ pub struct ReservationSummariesListResult {
 impl azure_core::Continuable for ReservationSummariesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ReservationSummariesListResult {
@@ -1570,7 +1570,7 @@ pub struct UsageDetailsListResult {
 impl azure_core::Continuable for UsageDetailsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UsageDetailsListResult {

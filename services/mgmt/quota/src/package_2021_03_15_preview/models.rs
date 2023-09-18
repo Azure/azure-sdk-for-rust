@@ -236,7 +236,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -275,7 +275,7 @@ pub struct QuotaLimits {
 impl azure_core::Continuable for QuotaLimits {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl QuotaLimits {
@@ -370,7 +370,7 @@ pub struct QuotaRequestDetailsList {
 impl azure_core::Continuable for QuotaRequestDetailsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl QuotaRequestDetailsList {
@@ -645,7 +645,7 @@ pub struct UsagesLimits {
 impl azure_core::Continuable for UsagesLimits {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UsagesLimits {

@@ -108,7 +108,7 @@ pub struct ApiOperationListResult {
 impl azure_core::Continuable for ApiOperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApiOperationListResult {
@@ -875,7 +875,7 @@ pub struct CachesListResult {
 impl azure_core::Continuable for CachesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CachesListResult {
@@ -1450,7 +1450,7 @@ pub struct ResourceSkusResult {
 impl azure_core::Continuable for ResourceSkusResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceSkusResult {
@@ -1514,7 +1514,7 @@ pub struct ResourceUsagesListResult {
 impl azure_core::Continuable for ResourceUsagesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceUsagesListResult {
@@ -1840,7 +1840,7 @@ pub struct StorageTargetsResult {
 impl azure_core::Continuable for StorageTargetsResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageTargetsResult {
@@ -1919,7 +1919,7 @@ pub struct UsageModelsResult {
 impl azure_core::Continuable for UsageModelsResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UsageModelsResult {

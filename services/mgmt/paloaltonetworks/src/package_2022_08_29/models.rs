@@ -394,7 +394,7 @@ pub struct CertificateObjectGlobalRulestackResourceListResult {
 impl azure_core::Continuable for CertificateObjectGlobalRulestackResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CertificateObjectGlobalRulestackResourceListResult {
@@ -434,7 +434,7 @@ pub struct CertificateObjectLocalRulestackResourceListResult {
 impl azure_core::Continuable for CertificateObjectLocalRulestackResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CertificateObjectLocalRulestackResourceListResult {
@@ -958,7 +958,7 @@ pub struct FirewallResourceListResult {
 impl azure_core::Continuable for FirewallResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FirewallResourceListResult {
@@ -1081,7 +1081,7 @@ pub struct FirewallStatusResourceListResult {
 impl azure_core::Continuable for FirewallStatusResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FirewallStatusResourceListResult {
@@ -1121,7 +1121,7 @@ pub struct FqdnListGlobalRulestackResourceListResult {
 impl azure_core::Continuable for FqdnListGlobalRulestackResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FqdnListGlobalRulestackResourceListResult {
@@ -1161,7 +1161,7 @@ pub struct FqdnListLocalRulestackResourceListResult {
 impl azure_core::Continuable for FqdnListLocalRulestackResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FqdnListLocalRulestackResourceListResult {
@@ -1279,7 +1279,7 @@ pub struct GlobalRulestackResourceListResult {
 impl azure_core::Continuable for GlobalRulestackResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GlobalRulestackResourceListResult {
@@ -1477,7 +1477,7 @@ pub struct LocalRulesResourceListResult {
 impl azure_core::Continuable for LocalRulesResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LocalRulesResourceListResult {
@@ -1521,7 +1521,7 @@ pub struct LocalRulestackResourceListResult {
 impl azure_core::Continuable for LocalRulestackResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LocalRulestackResourceListResult {
@@ -2054,7 +2054,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -2177,7 +2177,7 @@ pub struct PostRulesResourceListResult {
 impl azure_core::Continuable for PostRulesResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PostRulesResourceListResult {
@@ -2217,7 +2217,7 @@ pub struct PreRulesResourceListResult {
 impl azure_core::Continuable for PreRulesResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PreRulesResourceListResult {
@@ -2282,7 +2282,7 @@ pub struct PrefixListGlobalRulestackResourceListResult {
 impl azure_core::Continuable for PrefixListGlobalRulestackResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrefixListGlobalRulestackResourceListResult {
@@ -2322,7 +2322,7 @@ pub struct PrefixListResourceListResult {
 impl azure_core::Continuable for PrefixListResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrefixListResourceListResult {

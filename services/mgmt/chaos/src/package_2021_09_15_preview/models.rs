@@ -211,7 +211,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -374,7 +374,7 @@ pub struct CapabilityListResult {
 impl azure_core::Continuable for CapabilityListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CapabilityListResult {
@@ -443,7 +443,7 @@ pub struct CapabilityTypeListResult {
 impl azure_core::Continuable for CapabilityTypeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CapabilityTypeListResult {
@@ -594,7 +594,7 @@ pub struct ExperimentExecutionDetailsListResult {
 impl azure_core::Continuable for ExperimentExecutionDetailsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExperimentExecutionDetailsListResult {
@@ -671,7 +671,7 @@ pub struct ExperimentListResult {
 impl azure_core::Continuable for ExperimentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExperimentListResult {
@@ -752,7 +752,7 @@ pub struct ExperimentStatusListResult {
 impl azure_core::Continuable for ExperimentStatusListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExperimentStatusListResult {
@@ -1027,7 +1027,7 @@ pub struct TargetListResult {
 impl azure_core::Continuable for TargetListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TargetListResult {
@@ -1106,7 +1106,7 @@ pub struct TargetTypeListResult {
 impl azure_core::Continuable for TargetTypeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TargetTypeListResult {

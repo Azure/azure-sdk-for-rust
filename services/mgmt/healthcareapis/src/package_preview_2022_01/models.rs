@@ -76,7 +76,7 @@ pub struct DicomServiceCollection {
 impl azure_core::Continuable for DicomServiceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DicomServiceCollection {
@@ -353,7 +353,7 @@ pub struct FhirServiceCollection {
 impl azure_core::Continuable for FhirServiceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FhirServiceCollection {
@@ -523,7 +523,7 @@ pub struct IotConnectorCollection {
 impl azure_core::Continuable for IotConnectorCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IotConnectorCollection {
@@ -629,7 +629,7 @@ pub struct IotFhirDestinationCollection {
 impl azure_core::Continuable for IotFhirDestinationCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IotFhirDestinationCollection {
@@ -732,7 +732,7 @@ pub struct ListOperations {
 impl azure_core::Continuable for ListOperations {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListOperations {
@@ -1801,7 +1801,7 @@ pub struct ServicesDescriptionListResult {
 impl azure_core::Continuable for ServicesDescriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServicesDescriptionListResult {
@@ -2194,7 +2194,7 @@ pub struct WorkspaceList {
 impl azure_core::Continuable for WorkspaceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceList {

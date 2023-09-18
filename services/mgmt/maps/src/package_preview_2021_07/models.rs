@@ -36,7 +36,7 @@ pub struct CreatorList {
 impl azure_core::Continuable for CreatorList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CreatorList {
@@ -375,7 +375,7 @@ pub struct MapsAccounts {
 impl azure_core::Continuable for MapsAccounts {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MapsAccounts {
@@ -454,7 +454,7 @@ pub struct MapsOperations {
 impl azure_core::Continuable for MapsOperations {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MapsOperations {

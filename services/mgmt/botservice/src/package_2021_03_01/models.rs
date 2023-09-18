@@ -344,7 +344,7 @@ pub struct BotResponseList {
 impl azure_core::Continuable for BotResponseList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BotResponseList {
@@ -395,7 +395,7 @@ pub struct ChannelResponseList {
 impl azure_core::Continuable for ChannelResponseList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ChannelResponseList {
@@ -574,7 +574,7 @@ pub struct ConnectionSettingResponseList {
 impl azure_core::Continuable for ConnectionSettingResponseList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConnectionSettingResponseList {
@@ -1150,7 +1150,7 @@ pub struct OperationEntityListResult {
 impl azure_core::Continuable for OperationEntityListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationEntityListResult {

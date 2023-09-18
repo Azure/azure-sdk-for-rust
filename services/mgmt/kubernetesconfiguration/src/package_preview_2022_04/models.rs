@@ -444,7 +444,7 @@ pub struct ExtensionsList {
 impl azure_core::Continuable for ExtensionsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExtensionsList {
@@ -641,7 +641,7 @@ pub struct FluxConfigurationsList {
 impl azure_core::Continuable for FluxConfigurationsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FluxConfigurationsList {
@@ -809,7 +809,7 @@ pub struct KubernetesConfigurationPrivateLinkScopeListResult {
 impl azure_core::Continuable for KubernetesConfigurationPrivateLinkScopeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl KubernetesConfigurationPrivateLinkScopeListResult {
@@ -1063,7 +1063,7 @@ pub struct OperationStatusList {
 impl azure_core::Continuable for OperationStatusList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationStatusList {
@@ -1625,7 +1625,7 @@ pub struct ResourceProviderOperationList {
 impl azure_core::Continuable for ResourceProviderOperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceProviderOperationList {
@@ -1847,7 +1847,7 @@ pub struct SourceControlConfigurationList {
 impl azure_core::Continuable for SourceControlConfigurationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SourceControlConfigurationList {

@@ -111,7 +111,7 @@ pub struct LabelResourceList {
 impl azure_core::Continuable for LabelResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LabelResourceList {
@@ -278,7 +278,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -458,7 +458,7 @@ pub struct WorkspaceResourceList {
 impl azure_core::Continuable for WorkspaceResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceResourceList {

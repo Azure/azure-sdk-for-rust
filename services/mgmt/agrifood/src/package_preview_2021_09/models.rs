@@ -275,7 +275,7 @@ pub struct ExtensionListResponse {
 impl azure_core::Continuable for ExtensionListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExtensionListResponse {
@@ -362,7 +362,7 @@ pub struct FarmBeatsExtensionListResponse {
 impl azure_core::Continuable for FarmBeatsExtensionListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FarmBeatsExtensionListResponse {
@@ -431,7 +431,7 @@ pub struct FarmBeatsListResponse {
 impl azure_core::Continuable for FarmBeatsListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FarmBeatsListResponse {
@@ -546,7 +546,7 @@ pub struct FarmBeatsSolutionListResponse {
 impl azure_core::Continuable for FarmBeatsSolutionListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FarmBeatsSolutionListResponse {
@@ -920,7 +920,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1378,7 +1378,7 @@ pub struct SolutionListResponse {
 impl azure_core::Continuable for SolutionListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SolutionListResponse {

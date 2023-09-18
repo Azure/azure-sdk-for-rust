@@ -265,6 +265,7 @@ pub mod get_locations {
     use futures::future::BoxFuture;
     #[cfg(target_arch = "wasm32")]
     use futures::future::LocalBoxFuture as BoxFuture;
+    #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
         pub async fn into_body(self) -> azure_core::Result<models::LocationCollection> {
@@ -295,15 +296,19 @@ pub mod get_locations {
     #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
     #[doc = r" parameters can be chained."]
     #[doc = r""]
-    #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-    #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-    #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-    #[doc = r" operation and returns a `Result` with the parsed response."]
+    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+    #[doc = r" executes the request and returns a `Result` with the parsed"]
+    #[doc = r" response."]
     #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-    #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-    #[doc = r" [`Response`] value."]
+    #[doc = r" In order to execute the request without polling the service"]
+    #[doc = r" until the operation completes, use `.send().await` instead."]
+    #[doc = r""]
+    #[doc = r" If you need lower-level access to the raw response details"]
+    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+    #[doc = r" can finalize the request using the"]
+    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+    #[doc = r" that resolves to a lower-level [`Response`] value."]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
     }
@@ -312,7 +317,7 @@ pub mod get_locations {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
                 async move {
-                    let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Intune/locations", this.client.endpoint(),))?;
+                    let mut url = this.url()?;
                     let rsp = match continuation {
                         Some(value) => {
                             url.set_path("");
@@ -343,9 +348,6 @@ pub mod get_locations {
                                 azure_core::headers::AUTHORIZATION,
                                 format!("Bearer {}", token_response.token.secret()),
                             );
-                            req.url_mut()
-                                .query_pairs_mut()
-                                .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                             let req_body = azure_core::EMPTY_BODY;
                             req.set_body(req_body);
                             this.client.send(&mut req).await?
@@ -363,6 +365,15 @@ pub mod get_locations {
             };
             azure_core::Pageable::new(make_request)
         }
+        fn url(&self) -> azure_core::Result<azure_core::Url> {
+            let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Intune/locations", self.client.endpoint(),))?;
+            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+            if !has_api_version_already {
+                url.query_pairs_mut()
+                    .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+            }
+            Ok(url)
+        }
     }
 }
 pub mod get_location_by_host_name {
@@ -371,6 +382,7 @@ pub mod get_location_by_host_name {
     use futures::future::BoxFuture;
     #[cfg(target_arch = "wasm32")]
     use futures::future::LocalBoxFuture as BoxFuture;
+    #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
         pub async fn into_body(self) -> azure_core::Result<models::Location> {
@@ -401,15 +413,19 @@ pub mod get_location_by_host_name {
     #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
     #[doc = r" parameters can be chained."]
     #[doc = r""]
-    #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-    #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-    #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-    #[doc = r" operation and returns a `Result` with the parsed response."]
+    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+    #[doc = r" executes the request and returns a `Result` with the parsed"]
+    #[doc = r" response."]
     #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-    #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-    #[doc = r" [`Response`] value."]
+    #[doc = r" In order to execute the request without polling the service"]
+    #[doc = r" until the operation completes, use `.send().await` instead."]
+    #[doc = r""]
+    #[doc = r" If you need lower-level access to the raw response details"]
+    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+    #[doc = r" can finalize the request using the"]
+    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+    #[doc = r" that resolves to a lower-level [`Response`] value."]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
     }
@@ -422,8 +438,7 @@ pub mod get_location_by_host_name {
             Box::pin({
                 let this = self.clone();
                 async move {
-                    let url =
-                        azure_core::Url::parse(&format!("{}/providers/Microsoft.Intune/locations/hostName", this.client.endpoint(),))?;
+                    let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -431,14 +446,20 @@ pub mod get_location_by_host_name {
                         azure_core::headers::AUTHORIZATION,
                         format!("Bearer {}", token_response.token.secret()),
                     );
-                    req.url_mut()
-                        .query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                     let req_body = azure_core::EMPTY_BODY;
                     req.set_body(req_body);
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        fn url(&self) -> azure_core::Result<azure_core::Url> {
+            let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Intune/locations/hostName", self.client.endpoint(),))?;
+            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+            if !has_api_version_already {
+                url.query_pairs_mut()
+                    .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+            }
+            Ok(url)
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
@@ -460,6 +481,7 @@ pub mod get_apps {
     use futures::future::BoxFuture;
     #[cfg(target_arch = "wasm32")]
     use futures::future::LocalBoxFuture as BoxFuture;
+    #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
         pub async fn into_body(self) -> azure_core::Result<models::ApplicationCollection> {
@@ -490,15 +512,19 @@ pub mod get_apps {
     #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
     #[doc = r" parameters can be chained."]
     #[doc = r""]
-    #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-    #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-    #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-    #[doc = r" operation and returns a `Result` with the parsed response."]
+    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+    #[doc = r" executes the request and returns a `Result` with the parsed"]
+    #[doc = r" response."]
     #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-    #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-    #[doc = r" [`Response`] value."]
+    #[doc = r" In order to execute the request without polling the service"]
+    #[doc = r" until the operation completes, use `.send().await` instead."]
+    #[doc = r""]
+    #[doc = r" If you need lower-level access to the raw response details"]
+    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+    #[doc = r" can finalize the request using the"]
+    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+    #[doc = r" that resolves to a lower-level [`Response`] value."]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
@@ -525,11 +551,7 @@ pub mod get_apps {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
                 async move {
-                    let mut url = azure_core::Url::parse(&format!(
-                        "{}/providers/Microsoft.Intune/locations/{}/apps",
-                        this.client.endpoint(),
-                        &this.host_name
-                    ))?;
+                    let mut url = this.url()?;
                     let rsp = match continuation {
                         Some(value) => {
                             url.set_path("");
@@ -560,9 +582,6 @@ pub mod get_apps {
                                 azure_core::headers::AUTHORIZATION,
                                 format!("Bearer {}", token_response.token.secret()),
                             );
-                            req.url_mut()
-                                .query_pairs_mut()
-                                .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                             if let Some(filter) = &this.filter {
                                 req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                             }
@@ -589,6 +608,19 @@ pub mod get_apps {
             };
             azure_core::Pageable::new(make_request)
         }
+        fn url(&self) -> azure_core::Result<azure_core::Url> {
+            let mut url = azure_core::Url::parse(&format!(
+                "{}/providers/Microsoft.Intune/locations/{}/apps",
+                self.client.endpoint(),
+                &self.host_name
+            ))?;
+            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+            if !has_api_version_already {
+                url.query_pairs_mut()
+                    .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+            }
+            Ok(url)
+        }
     }
 }
 pub mod get_mam_user_devices {
@@ -597,6 +629,7 @@ pub mod get_mam_user_devices {
     use futures::future::BoxFuture;
     #[cfg(target_arch = "wasm32")]
     use futures::future::LocalBoxFuture as BoxFuture;
+    #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
         pub async fn into_body(self) -> azure_core::Result<models::DeviceCollection> {
@@ -627,15 +660,19 @@ pub mod get_mam_user_devices {
     #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
     #[doc = r" parameters can be chained."]
     #[doc = r""]
-    #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-    #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-    #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-    #[doc = r" operation and returns a `Result` with the parsed response."]
+    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+    #[doc = r" executes the request and returns a `Result` with the parsed"]
+    #[doc = r" response."]
     #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-    #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-    #[doc = r" [`Response`] value."]
+    #[doc = r" In order to execute the request without polling the service"]
+    #[doc = r" until the operation completes, use `.send().await` instead."]
+    #[doc = r""]
+    #[doc = r" If you need lower-level access to the raw response details"]
+    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+    #[doc = r" can finalize the request using the"]
+    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+    #[doc = r" that resolves to a lower-level [`Response`] value."]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
@@ -663,12 +700,7 @@ pub mod get_mam_user_devices {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
                 async move {
-                    let mut url = azure_core::Url::parse(&format!(
-                        "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices",
-                        this.client.endpoint(),
-                        &this.host_name,
-                        &this.user_name
-                    ))?;
+                    let mut url = this.url()?;
                     let rsp = match continuation {
                         Some(value) => {
                             url.set_path("");
@@ -699,9 +731,6 @@ pub mod get_mam_user_devices {
                                 azure_core::headers::AUTHORIZATION,
                                 format!("Bearer {}", token_response.token.secret()),
                             );
-                            req.url_mut()
-                                .query_pairs_mut()
-                                .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                             if let Some(filter) = &this.filter {
                                 req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                             }
@@ -728,6 +757,20 @@ pub mod get_mam_user_devices {
             };
             azure_core::Pageable::new(make_request)
         }
+        fn url(&self) -> azure_core::Result<azure_core::Url> {
+            let mut url = azure_core::Url::parse(&format!(
+                "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices",
+                self.client.endpoint(),
+                &self.host_name,
+                &self.user_name
+            ))?;
+            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+            if !has_api_version_already {
+                url.query_pairs_mut()
+                    .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+            }
+            Ok(url)
+        }
     }
 }
 pub mod get_mam_user_device_by_device_name {
@@ -736,6 +779,7 @@ pub mod get_mam_user_device_by_device_name {
     use futures::future::BoxFuture;
     #[cfg(target_arch = "wasm32")]
     use futures::future::LocalBoxFuture as BoxFuture;
+    #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
         pub async fn into_body(self) -> azure_core::Result<models::Device> {
@@ -766,15 +810,19 @@ pub mod get_mam_user_device_by_device_name {
     #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
     #[doc = r" parameters can be chained."]
     #[doc = r""]
-    #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-    #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-    #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-    #[doc = r" operation and returns a `Result` with the parsed response."]
+    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+    #[doc = r" executes the request and returns a `Result` with the parsed"]
+    #[doc = r" response."]
     #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-    #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-    #[doc = r" [`Response`] value."]
+    #[doc = r" In order to execute the request without polling the service"]
+    #[doc = r" until the operation completes, use `.send().await` instead."]
+    #[doc = r""]
+    #[doc = r" If you need lower-level access to the raw response details"]
+    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+    #[doc = r" can finalize the request using the"]
+    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+    #[doc = r" that resolves to a lower-level [`Response`] value."]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
@@ -796,13 +844,7 @@ pub mod get_mam_user_device_by_device_name {
             Box::pin({
                 let this = self.clone();
                 async move {
-                    let url = azure_core::Url::parse(&format!(
-                        "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}",
-                        this.client.endpoint(),
-                        &this.host_name,
-                        &this.user_name,
-                        &this.device_name
-                    ))?;
+                    let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -810,9 +852,6 @@ pub mod get_mam_user_device_by_device_name {
                         azure_core::headers::AUTHORIZATION,
                         format!("Bearer {}", token_response.token.secret()),
                     );
-                    req.url_mut()
-                        .query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                     if let Some(select) = &this.select {
                         req.url_mut().query_pairs_mut().append_pair("$select", select);
                     }
@@ -821,6 +860,21 @@ pub mod get_mam_user_device_by_device_name {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        fn url(&self) -> azure_core::Result<azure_core::Url> {
+            let mut url = azure_core::Url::parse(&format!(
+                "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}",
+                self.client.endpoint(),
+                &self.host_name,
+                &self.user_name,
+                &self.device_name
+            ))?;
+            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+            if !has_api_version_already {
+                url.query_pairs_mut()
+                    .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+            }
+            Ok(url)
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
@@ -842,6 +896,7 @@ pub mod wipe_mam_user_device {
     use futures::future::BoxFuture;
     #[cfg(target_arch = "wasm32")]
     use futures::future::LocalBoxFuture as BoxFuture;
+    #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
         pub async fn into_body(self) -> azure_core::Result<models::WipeDeviceOperationResult> {
@@ -872,15 +927,19 @@ pub mod wipe_mam_user_device {
     #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
     #[doc = r" parameters can be chained."]
     #[doc = r""]
-    #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-    #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-    #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-    #[doc = r" operation and returns a `Result` with the parsed response."]
+    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+    #[doc = r" executes the request and returns a `Result` with the parsed"]
+    #[doc = r" response."]
     #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-    #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-    #[doc = r" [`Response`] value."]
+    #[doc = r" In order to execute the request without polling the service"]
+    #[doc = r" until the operation completes, use `.send().await` instead."]
+    #[doc = r""]
+    #[doc = r" If you need lower-level access to the raw response details"]
+    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+    #[doc = r" can finalize the request using the"]
+    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+    #[doc = r" that resolves to a lower-level [`Response`] value."]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
@@ -896,13 +955,7 @@ pub mod wipe_mam_user_device {
             Box::pin({
                 let this = self.clone();
                 async move {
-                    let url = azure_core::Url::parse(&format!(
-                        "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}/wipe",
-                        this.client.endpoint(),
-                        &this.host_name,
-                        &this.user_name,
-                        &this.device_name
-                    ))?;
+                    let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -910,15 +963,27 @@ pub mod wipe_mam_user_device {
                         azure_core::headers::AUTHORIZATION,
                         format!("Bearer {}", token_response.token.secret()),
                     );
-                    req.url_mut()
-                        .query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                     let req_body = azure_core::EMPTY_BODY;
                     req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                     req.set_body(req_body);
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        fn url(&self) -> azure_core::Result<azure_core::Url> {
+            let mut url = azure_core::Url::parse(&format!(
+                "{}/providers/Microsoft.Intune/locations/{}/users/{}/devices/{}/wipe",
+                self.client.endpoint(),
+                &self.host_name,
+                &self.user_name,
+                &self.device_name
+            ))?;
+            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+            if !has_api_version_already {
+                url.query_pairs_mut()
+                    .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+            }
+            Ok(url)
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
@@ -940,6 +1005,7 @@ pub mod get_operation_results {
     use futures::future::BoxFuture;
     #[cfg(target_arch = "wasm32")]
     use futures::future::LocalBoxFuture as BoxFuture;
+    #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
         pub async fn into_body(self) -> azure_core::Result<models::OperationResultCollection> {
@@ -970,15 +1036,19 @@ pub mod get_operation_results {
     #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
     #[doc = r" parameters can be chained."]
     #[doc = r""]
-    #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-    #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-    #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-    #[doc = r" operation and returns a `Result` with the parsed response."]
+    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+    #[doc = r" executes the request and returns a `Result` with the parsed"]
+    #[doc = r" response."]
     #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-    #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-    #[doc = r" [`Response`] value."]
+    #[doc = r" In order to execute the request without polling the service"]
+    #[doc = r" until the operation completes, use `.send().await` instead."]
+    #[doc = r""]
+    #[doc = r" If you need lower-level access to the raw response details"]
+    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+    #[doc = r" can finalize the request using the"]
+    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+    #[doc = r" that resolves to a lower-level [`Response`] value."]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
@@ -1005,11 +1075,7 @@ pub mod get_operation_results {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
                 async move {
-                    let mut url = azure_core::Url::parse(&format!(
-                        "{}/providers/Microsoft.Intune/locations/{}/operationResults",
-                        this.client.endpoint(),
-                        &this.host_name
-                    ))?;
+                    let mut url = this.url()?;
                     let rsp = match continuation {
                         Some(value) => {
                             url.set_path("");
@@ -1040,9 +1106,6 @@ pub mod get_operation_results {
                                 azure_core::headers::AUTHORIZATION,
                                 format!("Bearer {}", token_response.token.secret()),
                             );
-                            req.url_mut()
-                                .query_pairs_mut()
-                                .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                             if let Some(filter) = &this.filter {
                                 req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                             }
@@ -1069,6 +1132,19 @@ pub mod get_operation_results {
             };
             azure_core::Pageable::new(make_request)
         }
+        fn url(&self) -> azure_core::Result<azure_core::Url> {
+            let mut url = azure_core::Url::parse(&format!(
+                "{}/providers/Microsoft.Intune/locations/{}/operationResults",
+                self.client.endpoint(),
+                &self.host_name
+            ))?;
+            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+            if !has_api_version_already {
+                url.query_pairs_mut()
+                    .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+            }
+            Ok(url)
+        }
     }
 }
 pub mod get_mam_statuses {
@@ -1077,6 +1153,7 @@ pub mod get_mam_statuses {
     use futures::future::BoxFuture;
     #[cfg(target_arch = "wasm32")]
     use futures::future::LocalBoxFuture as BoxFuture;
+    #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
         pub async fn into_body(self) -> azure_core::Result<models::StatusesDefault> {
@@ -1107,15 +1184,19 @@ pub mod get_mam_statuses {
     #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
     #[doc = r" parameters can be chained."]
     #[doc = r""]
-    #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-    #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-    #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-    #[doc = r" operation and returns a `Result` with the parsed response."]
+    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+    #[doc = r" executes the request and returns a `Result` with the parsed"]
+    #[doc = r" response."]
     #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-    #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-    #[doc = r" [`Response`] value."]
+    #[doc = r" In order to execute the request without polling the service"]
+    #[doc = r" until the operation completes, use `.send().await` instead."]
+    #[doc = r""]
+    #[doc = r" If you need lower-level access to the raw response details"]
+    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+    #[doc = r" can finalize the request using the"]
+    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+    #[doc = r" that resolves to a lower-level [`Response`] value."]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
@@ -1125,11 +1206,7 @@ pub mod get_mam_statuses {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
                 async move {
-                    let mut url = azure_core::Url::parse(&format!(
-                        "{}/providers/Microsoft.Intune/locations/{}/statuses/default",
-                        this.client.endpoint(),
-                        &this.host_name
-                    ))?;
+                    let mut url = this.url()?;
                     let rsp = match continuation {
                         Some(value) => {
                             url.set_path("");
@@ -1160,9 +1237,6 @@ pub mod get_mam_statuses {
                                 azure_core::headers::AUTHORIZATION,
                                 format!("Bearer {}", token_response.token.secret()),
                             );
-                            req.url_mut()
-                                .query_pairs_mut()
-                                .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                             let req_body = azure_core::EMPTY_BODY;
                             req.set_body(req_body);
                             this.client.send(&mut req).await?
@@ -1180,6 +1254,19 @@ pub mod get_mam_statuses {
             };
             azure_core::Pageable::new(make_request)
         }
+        fn url(&self) -> azure_core::Result<azure_core::Url> {
+            let mut url = azure_core::Url::parse(&format!(
+                "{}/providers/Microsoft.Intune/locations/{}/statuses/default",
+                self.client.endpoint(),
+                &self.host_name
+            ))?;
+            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+            if !has_api_version_already {
+                url.query_pairs_mut()
+                    .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+            }
+            Ok(url)
+        }
     }
 }
 pub mod get_mam_flagged_users {
@@ -1188,6 +1275,7 @@ pub mod get_mam_flagged_users {
     use futures::future::BoxFuture;
     #[cfg(target_arch = "wasm32")]
     use futures::future::LocalBoxFuture as BoxFuture;
+    #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
         pub async fn into_body(self) -> azure_core::Result<models::FlaggedUserCollection> {
@@ -1218,15 +1306,19 @@ pub mod get_mam_flagged_users {
     #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
     #[doc = r" parameters can be chained."]
     #[doc = r""]
-    #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-    #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-    #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-    #[doc = r" operation and returns a `Result` with the parsed response."]
+    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+    #[doc = r" executes the request and returns a `Result` with the parsed"]
+    #[doc = r" response."]
     #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-    #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-    #[doc = r" [`Response`] value."]
+    #[doc = r" In order to execute the request without polling the service"]
+    #[doc = r" until the operation completes, use `.send().await` instead."]
+    #[doc = r""]
+    #[doc = r" If you need lower-level access to the raw response details"]
+    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+    #[doc = r" can finalize the request using the"]
+    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+    #[doc = r" that resolves to a lower-level [`Response`] value."]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
@@ -1253,11 +1345,7 @@ pub mod get_mam_flagged_users {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
                 async move {
-                    let mut url = azure_core::Url::parse(&format!(
-                        "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers",
-                        this.client.endpoint(),
-                        &this.host_name
-                    ))?;
+                    let mut url = this.url()?;
                     let rsp = match continuation {
                         Some(value) => {
                             url.set_path("");
@@ -1288,9 +1376,6 @@ pub mod get_mam_flagged_users {
                                 azure_core::headers::AUTHORIZATION,
                                 format!("Bearer {}", token_response.token.secret()),
                             );
-                            req.url_mut()
-                                .query_pairs_mut()
-                                .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                             if let Some(filter) = &this.filter {
                                 req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                             }
@@ -1317,6 +1402,19 @@ pub mod get_mam_flagged_users {
             };
             azure_core::Pageable::new(make_request)
         }
+        fn url(&self) -> azure_core::Result<azure_core::Url> {
+            let mut url = azure_core::Url::parse(&format!(
+                "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers",
+                self.client.endpoint(),
+                &self.host_name
+            ))?;
+            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+            if !has_api_version_already {
+                url.query_pairs_mut()
+                    .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+            }
+            Ok(url)
+        }
     }
 }
 pub mod get_mam_flagged_user_by_name {
@@ -1325,6 +1423,7 @@ pub mod get_mam_flagged_user_by_name {
     use futures::future::BoxFuture;
     #[cfg(target_arch = "wasm32")]
     use futures::future::LocalBoxFuture as BoxFuture;
+    #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
         pub async fn into_body(self) -> azure_core::Result<models::FlaggedUser> {
@@ -1355,15 +1454,19 @@ pub mod get_mam_flagged_user_by_name {
     #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
     #[doc = r" parameters can be chained."]
     #[doc = r""]
-    #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-    #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-    #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-    #[doc = r" operation and returns a `Result` with the parsed response."]
+    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+    #[doc = r" executes the request and returns a `Result` with the parsed"]
+    #[doc = r" response."]
     #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-    #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-    #[doc = r" [`Response`] value."]
+    #[doc = r" In order to execute the request without polling the service"]
+    #[doc = r" until the operation completes, use `.send().await` instead."]
+    #[doc = r""]
+    #[doc = r" If you need lower-level access to the raw response details"]
+    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+    #[doc = r" can finalize the request using the"]
+    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+    #[doc = r" that resolves to a lower-level [`Response`] value."]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
@@ -1384,12 +1487,7 @@ pub mod get_mam_flagged_user_by_name {
             Box::pin({
                 let this = self.clone();
                 async move {
-                    let url = azure_core::Url::parse(&format!(
-                        "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}",
-                        this.client.endpoint(),
-                        &this.host_name,
-                        &this.user_name
-                    ))?;
+                    let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1397,9 +1495,6 @@ pub mod get_mam_flagged_user_by_name {
                         azure_core::headers::AUTHORIZATION,
                         format!("Bearer {}", token_response.token.secret()),
                     );
-                    req.url_mut()
-                        .query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                     if let Some(select) = &this.select {
                         req.url_mut().query_pairs_mut().append_pair("$select", select);
                     }
@@ -1408,6 +1503,20 @@ pub mod get_mam_flagged_user_by_name {
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        fn url(&self) -> azure_core::Result<azure_core::Url> {
+            let mut url = azure_core::Url::parse(&format!(
+                "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}",
+                self.client.endpoint(),
+                &self.host_name,
+                &self.user_name
+            ))?;
+            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+            if !has_api_version_already {
+                url.query_pairs_mut()
+                    .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+            }
+            Ok(url)
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
@@ -1429,6 +1538,7 @@ pub mod get_mam_user_flagged_enrolled_apps {
     use futures::future::BoxFuture;
     #[cfg(target_arch = "wasm32")]
     use futures::future::LocalBoxFuture as BoxFuture;
+    #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
         pub async fn into_body(self) -> azure_core::Result<models::FlaggedEnrolledAppCollection> {
@@ -1459,15 +1569,19 @@ pub mod get_mam_user_flagged_enrolled_apps {
     #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
     #[doc = r" parameters can be chained."]
     #[doc = r""]
-    #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-    #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-    #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-    #[doc = r" operation and returns a `Result` with the parsed response."]
+    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+    #[doc = r" executes the request and returns a `Result` with the parsed"]
+    #[doc = r" response."]
     #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-    #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-    #[doc = r" [`Response`] value."]
+    #[doc = r" In order to execute the request without polling the service"]
+    #[doc = r" until the operation completes, use `.send().await` instead."]
+    #[doc = r""]
+    #[doc = r" If you need lower-level access to the raw response details"]
+    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+    #[doc = r" can finalize the request using the"]
+    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+    #[doc = r" that resolves to a lower-level [`Response`] value."]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) host_name: String,
@@ -1495,12 +1609,7 @@ pub mod get_mam_user_flagged_enrolled_apps {
             let make_request = move |continuation: Option<String>| {
                 let this = self.clone();
                 async move {
-                    let mut url = azure_core::Url::parse(&format!(
-                        "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}/flaggedEnrolledApps",
-                        this.client.endpoint(),
-                        &this.host_name,
-                        &this.user_name
-                    ))?;
+                    let mut url = this.url()?;
                     let rsp = match continuation {
                         Some(value) => {
                             url.set_path("");
@@ -1531,9 +1640,6 @@ pub mod get_mam_user_flagged_enrolled_apps {
                                 azure_core::headers::AUTHORIZATION,
                                 format!("Bearer {}", token_response.token.secret()),
                             );
-                            req.url_mut()
-                                .query_pairs_mut()
-                                .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                             if let Some(filter) = &this.filter {
                                 req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                             }
@@ -1559,6 +1665,20 @@ pub mod get_mam_user_flagged_enrolled_apps {
                 }
             };
             azure_core::Pageable::new(make_request)
+        }
+        fn url(&self) -> azure_core::Result<azure_core::Url> {
+            let mut url = azure_core::Url::parse(&format!(
+                "{}/providers/Microsoft.Intune/locations/{}/flaggedUsers/{}/flaggedEnrolledApps",
+                self.client.endpoint(),
+                &self.host_name,
+                &self.user_name
+            ))?;
+            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+            if !has_api_version_already {
+                url.query_pairs_mut()
+                    .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+            }
+            Ok(url)
         }
     }
 }
@@ -1774,6 +1894,7 @@ pub mod ios {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::IosmamPolicyCollection> {
@@ -1804,15 +1925,19 @@ pub mod ios {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -1839,11 +1964,7 @@ pub mod ios {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies",
-                            this.client.endpoint(),
-                            &this.host_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -1874,9 +1995,6 @@ pub mod ios {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -1903,6 +2021,19 @@ pub mod ios {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies",
+                    self.client.endpoint(),
+                    &self.host_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get_mam_policy_by_name {
@@ -1911,6 +2042,7 @@ pub mod ios {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::IOsmamPolicy> {
@@ -1941,15 +2073,19 @@ pub mod ios {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -1970,12 +2106,7 @@ pub mod ios {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1983,9 +2114,6 @@ pub mod ios {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                         if let Some(select) = &this.select {
                             req.url_mut().query_pairs_mut().append_pair("$select", select);
                         }
@@ -1994,6 +2122,20 @@ pub mod ios {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -2015,6 +2157,7 @@ pub mod ios {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::IOsmamPolicy> {
@@ -2045,15 +2188,19 @@ pub mod ios {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -2069,12 +2216,7 @@ pub mod ios {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2082,15 +2224,26 @@ pub mod ios {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -2112,6 +2265,7 @@ pub mod ios {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::IOsmamPolicy> {
@@ -2142,15 +2296,19 @@ pub mod ios {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -2166,12 +2324,7 @@ pub mod ios {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2179,15 +2332,26 @@ pub mod ios {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -2209,6 +2373,7 @@ pub mod ios {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2234,15 +2399,19 @@ pub mod ios {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -2257,12 +2426,7 @@ pub mod ios {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2270,14 +2434,25 @@ pub mod ios {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -2287,6 +2462,7 @@ pub mod ios {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ApplicationCollection> {
@@ -2317,15 +2493,19 @@ pub mod ios {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -2353,12 +2533,7 @@ pub mod ios {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -2389,9 +2564,6 @@ pub mod ios {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -2418,6 +2590,20 @@ pub mod ios {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod add_app_for_mam_policy {
@@ -2426,6 +2612,7 @@ pub mod ios {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2451,15 +2638,19 @@ pub mod ios {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -2476,13 +2667,7 @@ pub mod ios {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps/{}",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name,
-                            &this.app_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2490,15 +2675,27 @@ pub mod ios {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name,
+                    &self.app_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -2508,6 +2705,7 @@ pub mod ios {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2533,15 +2731,19 @@ pub mod ios {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -2557,13 +2759,7 @@ pub mod ios {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps/{}",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name,
-                            &this.app_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2571,14 +2767,26 @@ pub mod ios {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/apps/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name,
+                    &self.app_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -2588,6 +2796,7 @@ pub mod ios {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GroupsCollection> {
@@ -2618,15 +2827,19 @@ pub mod ios {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -2637,12 +2850,7 @@ pub mod ios {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -2673,9 +2881,6 @@ pub mod ios {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -2693,6 +2898,20 @@ pub mod ios {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod add_group_for_mam_policy {
@@ -2701,6 +2920,7 @@ pub mod ios {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2726,15 +2946,19 @@ pub mod ios {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -2751,13 +2975,7 @@ pub mod ios {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups/{}",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name,
-                            &this.group_id
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2765,15 +2983,27 @@ pub mod ios {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name,
+                    &self.group_id
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -2783,6 +3013,7 @@ pub mod ios {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2808,15 +3039,19 @@ pub mod ios {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -2832,13 +3067,7 @@ pub mod ios {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups/{}",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name,
-                            &this.group_id
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2846,14 +3075,26 @@ pub mod ios {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/iosPolicies/{}/groups/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name,
+                    &self.group_id
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -3070,6 +3311,7 @@ pub mod android {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AndroidMamPolicyCollection> {
@@ -3100,15 +3342,19 @@ pub mod android {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -3135,11 +3381,7 @@ pub mod android {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies",
-                            this.client.endpoint(),
-                            &this.host_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -3170,9 +3412,6 @@ pub mod android {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -3199,6 +3438,19 @@ pub mod android {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies",
+                    self.client.endpoint(),
+                    &self.host_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get_mam_policy_by_name {
@@ -3207,6 +3459,7 @@ pub mod android {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AndroidMamPolicy> {
@@ -3237,15 +3490,19 @@ pub mod android {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -3266,12 +3523,7 @@ pub mod android {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3279,9 +3531,6 @@ pub mod android {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                         if let Some(select) = &this.select {
                             req.url_mut().query_pairs_mut().append_pair("$select", select);
                         }
@@ -3290,6 +3539,20 @@ pub mod android {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -3311,6 +3574,7 @@ pub mod android {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AndroidMamPolicy> {
@@ -3341,15 +3605,19 @@ pub mod android {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -3365,12 +3633,7 @@ pub mod android {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3378,15 +3641,26 @@ pub mod android {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -3408,6 +3682,7 @@ pub mod android {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AndroidMamPolicy> {
@@ -3438,15 +3713,19 @@ pub mod android {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -3462,12 +3741,7 @@ pub mod android {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3475,15 +3749,26 @@ pub mod android {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -3505,6 +3790,7 @@ pub mod android {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -3530,15 +3816,19 @@ pub mod android {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -3553,12 +3843,7 @@ pub mod android {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3566,14 +3851,25 @@ pub mod android {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -3583,6 +3879,7 @@ pub mod android {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ApplicationCollection> {
@@ -3613,15 +3910,19 @@ pub mod android {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -3649,12 +3950,7 @@ pub mod android {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/AndroidPolicies/{}/apps",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -3685,9 +3981,6 @@ pub mod android {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                                 if let Some(filter) = &this.filter {
                                     req.url_mut().query_pairs_mut().append_pair("$filter", filter);
                                 }
@@ -3714,6 +4007,20 @@ pub mod android {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/AndroidPolicies/{}/apps",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod add_app_for_mam_policy {
@@ -3722,6 +4029,7 @@ pub mod android {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -3747,15 +4055,19 @@ pub mod android {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -3772,13 +4084,7 @@ pub mod android {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/apps/{}",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name,
-                            &this.app_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3786,15 +4092,27 @@ pub mod android {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/apps/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name,
+                    &self.app_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -3804,6 +4122,7 @@ pub mod android {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -3829,15 +4148,19 @@ pub mod android {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -3853,13 +4176,7 @@ pub mod android {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/apps/{}",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name,
-                            &this.app_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3867,14 +4184,26 @@ pub mod android {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/apps/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name,
+                    &self.app_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -3884,6 +4213,7 @@ pub mod android {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::GroupsCollection> {
@@ -3914,15 +4244,19 @@ pub mod android {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -3933,12 +4267,7 @@ pub mod android {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -3969,9 +4298,6 @@ pub mod android {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -3989,6 +4315,20 @@ pub mod android {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod add_group_for_mam_policy {
@@ -3997,6 +4337,7 @@ pub mod android {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -4022,15 +4363,19 @@ pub mod android {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -4047,13 +4392,7 @@ pub mod android {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups/{}",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name,
-                            &this.group_id
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -4061,15 +4400,27 @@ pub mod android {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name,
+                    &self.group_id
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -4079,6 +4430,7 @@ pub mod android {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -4104,15 +4456,19 @@ pub mod android {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) host_name: String,
@@ -4128,13 +4484,7 @@ pub mod android {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups/{}",
-                            this.client.endpoint(),
-                            &this.host_name,
-                            &this.policy_name,
-                            &this.group_id
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -4142,14 +4492,26 @@ pub mod android {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/providers/Microsoft.Intune/locations/{}/androidPolicies/{}/groups/{}",
+                    self.client.endpoint(),
+                    &self.host_name,
+                    &self.policy_name,
+                    &self.group_id
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2015-01-14-preview");
+                }
+                Ok(url)
             }
         }
     }

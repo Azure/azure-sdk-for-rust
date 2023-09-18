@@ -247,7 +247,7 @@ pub struct MachinePoolList {
 impl azure_core::Continuable for MachinePoolList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MachinePoolList {
@@ -385,7 +385,7 @@ pub struct OpenShiftClusterList {
 impl azure_core::Continuable for OpenShiftClusterList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OpenShiftClusterList {
@@ -491,7 +491,7 @@ pub struct OpenShiftVersionList {
 impl azure_core::Continuable for OpenShiftVersionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OpenShiftVersionList {
@@ -546,7 +546,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -667,7 +667,7 @@ pub struct SecretList {
 impl azure_core::Continuable for SecretList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecretList {
@@ -751,7 +751,7 @@ pub struct SyncIdentityProviderList {
 impl azure_core::Continuable for SyncIdentityProviderList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SyncIdentityProviderList {
@@ -819,7 +819,7 @@ pub struct SyncSetList {
 impl azure_core::Continuable for SyncSetList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SyncSetList {

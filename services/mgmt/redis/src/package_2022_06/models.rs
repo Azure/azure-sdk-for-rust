@@ -215,7 +215,7 @@ pub struct NotificationListResponse {
 impl azure_core::Continuable for NotificationListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NotificationListResponse {
@@ -279,7 +279,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -891,7 +891,7 @@ pub struct RedisFirewallRuleListResult {
 impl azure_core::Continuable for RedisFirewallRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RedisFirewallRuleListResult {
@@ -1067,7 +1067,7 @@ pub struct RedisLinkedServerWithPropertiesList {
 impl azure_core::Continuable for RedisLinkedServerWithPropertiesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RedisLinkedServerWithPropertiesList {
@@ -1092,7 +1092,7 @@ pub struct RedisListResult {
 impl azure_core::Continuable for RedisListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RedisListResult {
@@ -1137,7 +1137,7 @@ pub struct RedisPatchScheduleListResult {
 impl azure_core::Continuable for RedisPatchScheduleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RedisPatchScheduleListResult {

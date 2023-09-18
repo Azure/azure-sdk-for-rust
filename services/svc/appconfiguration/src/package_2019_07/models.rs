@@ -60,7 +60,7 @@ pub struct KeyListResult {
 impl azure_core::Continuable for KeyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl KeyListResult {
@@ -109,7 +109,7 @@ pub struct KeyValueListResult {
 impl azure_core::Continuable for KeyValueListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl KeyValueListResult {
@@ -144,7 +144,7 @@ pub struct LabelListResult {
 impl azure_core::Continuable for LabelListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LabelListResult {

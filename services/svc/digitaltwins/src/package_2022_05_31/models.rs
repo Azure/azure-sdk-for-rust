@@ -111,7 +111,7 @@ pub struct EventRouteCollection {
 impl azure_core::Continuable for EventRouteCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EventRouteCollection {
@@ -151,7 +151,7 @@ pub struct IncomingRelationshipCollection {
 impl azure_core::Continuable for IncomingRelationshipCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IncomingRelationshipCollection {
@@ -187,7 +187,7 @@ pub struct PagedDigitalTwinsModelDataCollection {
 impl azure_core::Continuable for PagedDigitalTwinsModelDataCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PagedDigitalTwinsModelDataCollection {
@@ -239,7 +239,7 @@ pub struct RelationshipCollection {
 impl azure_core::Continuable for RelationshipCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RelationshipCollection {

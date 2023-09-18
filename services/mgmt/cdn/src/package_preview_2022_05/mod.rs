@@ -242,6 +242,7 @@ pub mod check_endpoint_name_availability {
     use futures::future::BoxFuture;
     #[cfg(target_arch = "wasm32")]
     use futures::future::LocalBoxFuture as BoxFuture;
+    #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
         pub async fn into_body(self) -> azure_core::Result<models::CheckEndpointNameAvailabilityOutput> {
@@ -272,15 +273,19 @@ pub mod check_endpoint_name_availability {
     #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
     #[doc = r" parameters can be chained."]
     #[doc = r""]
-    #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-    #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-    #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-    #[doc = r" operation and returns a `Result` with the parsed response."]
+    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+    #[doc = r" executes the request and returns a `Result` with the parsed"]
+    #[doc = r" response."]
     #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-    #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-    #[doc = r" [`Response`] value."]
+    #[doc = r" In order to execute the request without polling the service"]
+    #[doc = r" until the operation completes, use `.send().await` instead."]
+    #[doc = r""]
+    #[doc = r" If you need lower-level access to the raw response details"]
+    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+    #[doc = r" can finalize the request using the"]
+    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+    #[doc = r" that resolves to a lower-level [`Response`] value."]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) check_endpoint_name_availability_input: models::CheckEndpointNameAvailabilityInput,
@@ -296,12 +301,7 @@ pub mod check_endpoint_name_availability {
             Box::pin({
                 let this = self.clone();
                 async move {
-                    let url = azure_core::Url::parse(&format!(
-                        "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/checkEndpointNameAvailability",
-                        this.client.endpoint(),
-                        &this.subscription_id,
-                        &this.resource_group_name
-                    ))?;
+                    let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -309,15 +309,26 @@ pub mod check_endpoint_name_availability {
                         azure_core::headers::AUTHORIZATION,
                         format!("Bearer {}", token_response.token.secret()),
                     );
-                    req.url_mut()
-                        .query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.check_endpoint_name_availability_input)?;
                     req.set_body(req_body);
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        fn url(&self) -> azure_core::Result<azure_core::Url> {
+            let mut url = azure_core::Url::parse(&format!(
+                "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/checkEndpointNameAvailability",
+                self.client.endpoint(),
+                &self.subscription_id,
+                &self.resource_group_name
+            ))?;
+            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+            if !has_api_version_already {
+                url.query_pairs_mut()
+                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+            }
+            Ok(url)
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
@@ -339,6 +350,7 @@ pub mod check_name_availability {
     use futures::future::BoxFuture;
     #[cfg(target_arch = "wasm32")]
     use futures::future::LocalBoxFuture as BoxFuture;
+    #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
         pub async fn into_body(self) -> azure_core::Result<models::CheckNameAvailabilityOutput> {
@@ -369,15 +381,19 @@ pub mod check_name_availability {
     #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
     #[doc = r" parameters can be chained."]
     #[doc = r""]
-    #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-    #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-    #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-    #[doc = r" operation and returns a `Result` with the parsed response."]
+    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+    #[doc = r" executes the request and returns a `Result` with the parsed"]
+    #[doc = r" response."]
     #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-    #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-    #[doc = r" [`Response`] value."]
+    #[doc = r" In order to execute the request without polling the service"]
+    #[doc = r" until the operation completes, use `.send().await` instead."]
+    #[doc = r""]
+    #[doc = r" If you need lower-level access to the raw response details"]
+    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+    #[doc = r" can finalize the request using the"]
+    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+    #[doc = r" that resolves to a lower-level [`Response`] value."]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) check_name_availability_input: models::CheckNameAvailabilityInput,
@@ -391,8 +407,7 @@ pub mod check_name_availability {
             Box::pin({
                 let this = self.clone();
                 async move {
-                    let url =
-                        azure_core::Url::parse(&format!("{}/providers/Microsoft.Cdn/checkNameAvailability", this.client.endpoint(),))?;
+                    let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -400,15 +415,21 @@ pub mod check_name_availability {
                         azure_core::headers::AUTHORIZATION,
                         format!("Bearer {}", token_response.token.secret()),
                     );
-                    req.url_mut()
-                        .query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.check_name_availability_input)?;
                     req.set_body(req_body);
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        fn url(&self) -> azure_core::Result<azure_core::Url> {
+            let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Cdn/checkNameAvailability", self.client.endpoint(),))?;
+            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+            if !has_api_version_already {
+                url.query_pairs_mut()
+                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+            }
+            Ok(url)
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
@@ -430,6 +451,7 @@ pub mod check_name_availability_with_subscription {
     use futures::future::BoxFuture;
     #[cfg(target_arch = "wasm32")]
     use futures::future::LocalBoxFuture as BoxFuture;
+    #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
         pub async fn into_body(self) -> azure_core::Result<models::CheckNameAvailabilityOutput> {
@@ -460,15 +482,19 @@ pub mod check_name_availability_with_subscription {
     #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
     #[doc = r" parameters can be chained."]
     #[doc = r""]
-    #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-    #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-    #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-    #[doc = r" operation and returns a `Result` with the parsed response."]
+    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+    #[doc = r" executes the request and returns a `Result` with the parsed"]
+    #[doc = r" response."]
     #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-    #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-    #[doc = r" [`Response`] value."]
+    #[doc = r" In order to execute the request without polling the service"]
+    #[doc = r" until the operation completes, use `.send().await` instead."]
+    #[doc = r""]
+    #[doc = r" If you need lower-level access to the raw response details"]
+    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+    #[doc = r" can finalize the request using the"]
+    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+    #[doc = r" that resolves to a lower-level [`Response`] value."]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) check_name_availability_input: models::CheckNameAvailabilityInput,
@@ -483,11 +509,7 @@ pub mod check_name_availability_with_subscription {
             Box::pin({
                 let this = self.clone();
                 async move {
-                    let url = azure_core::Url::parse(&format!(
-                        "{}/subscriptions/{}/providers/Microsoft.Cdn/checkNameAvailability",
-                        this.client.endpoint(),
-                        &this.subscription_id
-                    ))?;
+                    let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -495,15 +517,25 @@ pub mod check_name_availability_with_subscription {
                         azure_core::headers::AUTHORIZATION,
                         format!("Bearer {}", token_response.token.secret()),
                     );
-                    req.url_mut()
-                        .query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.check_name_availability_input)?;
                     req.set_body(req_body);
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        fn url(&self) -> azure_core::Result<azure_core::Url> {
+            let mut url = azure_core::Url::parse(&format!(
+                "{}/subscriptions/{}/providers/Microsoft.Cdn/checkNameAvailability",
+                self.client.endpoint(),
+                &self.subscription_id
+            ))?;
+            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+            if !has_api_version_already {
+                url.query_pairs_mut()
+                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+            }
+            Ok(url)
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
@@ -525,6 +557,7 @@ pub mod validate_probe {
     use futures::future::BoxFuture;
     #[cfg(target_arch = "wasm32")]
     use futures::future::LocalBoxFuture as BoxFuture;
+    #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
         pub async fn into_body(self) -> azure_core::Result<models::ValidateProbeOutput> {
@@ -555,15 +588,19 @@ pub mod validate_probe {
     #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
     #[doc = r" parameters can be chained."]
     #[doc = r""]
-    #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-    #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-    #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-    #[doc = r" operation and returns a `Result` with the parsed response."]
+    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+    #[doc = r" executes the request and returns a `Result` with the parsed"]
+    #[doc = r" response."]
     #[doc = r""]
-    #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-    #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-    #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-    #[doc = r" [`Response`] value."]
+    #[doc = r" In order to execute the request without polling the service"]
+    #[doc = r" until the operation completes, use `.send().await` instead."]
+    #[doc = r""]
+    #[doc = r" If you need lower-level access to the raw response details"]
+    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+    #[doc = r" can finalize the request using the"]
+    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+    #[doc = r" that resolves to a lower-level [`Response`] value."]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) validate_probe_input: models::ValidateProbeInput,
@@ -578,11 +615,7 @@ pub mod validate_probe {
             Box::pin({
                 let this = self.clone();
                 async move {
-                    let url = azure_core::Url::parse(&format!(
-                        "{}/subscriptions/{}/providers/Microsoft.Cdn/validateProbe",
-                        this.client.endpoint(),
-                        &this.subscription_id
-                    ))?;
+                    let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                     let credential = this.client.token_credential();
                     let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -590,15 +623,25 @@ pub mod validate_probe {
                         azure_core::headers::AUTHORIZATION,
                         format!("Bearer {}", token_response.token.secret()),
                     );
-                    req.url_mut()
-                        .query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.validate_probe_input)?;
                     req.set_body(req_body);
                     Ok(Response(this.client.send(&mut req).await?))
                 }
             })
+        }
+        fn url(&self) -> azure_core::Result<azure_core::Url> {
+            let mut url = azure_core::Url::parse(&format!(
+                "{}/subscriptions/{}/providers/Microsoft.Cdn/validateProbe",
+                self.client.endpoint(),
+                &self.subscription_id
+            ))?;
+            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+            if !has_api_version_already {
+                url.query_pairs_mut()
+                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+            }
+            Ok(url)
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
@@ -670,6 +713,7 @@ pub mod afd_profiles {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::UsagesListResult> {
@@ -700,15 +744,19 @@ pub mod afd_profiles {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -720,13 +768,7 @@ pub mod afd_profiles {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/usages",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -757,9 +799,6 @@ pub mod afd_profiles {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                                 req.set_body(req_body);
@@ -778,6 +817,21 @@ pub mod afd_profiles {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/usages",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod check_host_name_availability {
@@ -786,6 +840,7 @@ pub mod afd_profiles {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::CheckNameAvailabilityOutput> {
@@ -816,15 +871,19 @@ pub mod afd_profiles {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -841,13 +900,7 @@ pub mod afd_profiles {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/checkHostNameAvailability",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -855,15 +908,27 @@ pub mod afd_profiles {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.check_host_name_availability_input)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/checkHostNameAvailability",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -1030,6 +1095,7 @@ pub mod afd_custom_domains {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AfdDomainListResult> {
@@ -1060,15 +1126,19 @@ pub mod afd_custom_domains {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -1080,13 +1150,7 @@ pub mod afd_custom_domains {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/customDomains",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -1117,9 +1181,6 @@ pub mod afd_custom_domains {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -1137,6 +1198,21 @@ pub mod afd_custom_domains {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/customDomains",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -1145,6 +1221,7 @@ pub mod afd_custom_domains {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AfdDomain> {
@@ -1175,15 +1252,19 @@ pub mod afd_custom_domains {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -1200,14 +1281,7 @@ pub mod afd_custom_domains {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/customDomains/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.custom_domain_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1215,14 +1289,27 @@ pub mod afd_custom_domains {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/customDomains/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.custom_domain_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -1244,6 +1331,7 @@ pub mod afd_custom_domains {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AfdDomain> {
@@ -1274,14 +1362,17 @@ pub mod afd_custom_domains {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -1292,7 +1383,6 @@ pub mod afd_custom_domains {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -1301,14 +1391,7 @@ pub mod afd_custom_domains {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/customDomains/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.custom_domain_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1316,9 +1399,6 @@ pub mod afd_custom_domains {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.custom_domain)?;
                         req.set_body(req_body);
@@ -1326,17 +1406,96 @@ pub mod afd_custom_domains {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/customDomains/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.custom_domain_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::AfdDomain>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::AfdDomain>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let credential = self.client.token_credential();
+                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                            req.insert_header(
+                                azure_core::headers::AUTHORIZATION,
+                                format!("Bearer {}", token_response.token.secret()),
+                            );
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let credential = self.client.token_credential();
+                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                    req.insert_header(
+                                        azure_core::headers::AUTHORIZATION,
+                                        format!("Bearer {}", token_response.token.secret()),
+                                    );
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -1346,6 +1505,7 @@ pub mod afd_custom_domains {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AfdDomain> {
@@ -1376,14 +1536,17 @@ pub mod afd_custom_domains {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -1394,7 +1557,6 @@ pub mod afd_custom_domains {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -1403,14 +1565,7 @@ pub mod afd_custom_domains {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/customDomains/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.custom_domain_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1418,9 +1573,6 @@ pub mod afd_custom_domains {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.custom_domain_update_properties)?;
                         req.set_body(req_body);
@@ -1428,17 +1580,96 @@ pub mod afd_custom_domains {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/customDomains/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.custom_domain_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::AfdDomain>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::AfdDomain>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let credential = self.client.token_credential();
+                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                            req.insert_header(
+                                azure_core::headers::AUTHORIZATION,
+                                format!("Bearer {}", token_response.token.secret()),
+                            );
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let credential = self.client.token_credential();
+                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                    req.insert_header(
+                                        azure_core::headers::AUTHORIZATION,
+                                        format!("Bearer {}", token_response.token.secret()),
+                                    );
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -1448,6 +1679,7 @@ pub mod afd_custom_domains {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1473,14 +1705,17 @@ pub mod afd_custom_domains {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -1490,7 +1725,6 @@ pub mod afd_custom_domains {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -1499,14 +1733,7 @@ pub mod afd_custom_domains {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/customDomains/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.custom_domain_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1514,14 +1741,27 @@ pub mod afd_custom_domains {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/customDomains/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.custom_domain_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -1531,6 +1771,7 @@ pub mod afd_custom_domains {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1556,14 +1797,17 @@ pub mod afd_custom_domains {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -1573,7 +1817,6 @@ pub mod afd_custom_domains {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -1582,7 +1825,7 @@ pub mod afd_custom_domains {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/customDomains/{}/refreshValidationToken" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . profile_name , & this . custom_domain_name)) ? ;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1590,15 +1833,28 @@ pub mod afd_custom_domains {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/customDomains/{}/refreshValidationToken",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.custom_domain_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -1803,6 +2059,7 @@ pub mod afd_endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AfdEndpointListResult> {
@@ -1833,15 +2090,19 @@ pub mod afd_endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -1853,13 +2114,7 @@ pub mod afd_endpoints {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -1890,9 +2145,6 @@ pub mod afd_endpoints {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -1910,6 +2162,21 @@ pub mod afd_endpoints {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -1918,6 +2185,7 @@ pub mod afd_endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AfdEndpoint> {
@@ -1948,15 +2216,19 @@ pub mod afd_endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -1973,14 +2245,7 @@ pub mod afd_endpoints {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -1988,14 +2253,27 @@ pub mod afd_endpoints {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -2017,6 +2295,7 @@ pub mod afd_endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AfdEndpoint> {
@@ -2047,14 +2326,17 @@ pub mod afd_endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -2065,7 +2347,6 @@ pub mod afd_endpoints {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -2074,14 +2355,7 @@ pub mod afd_endpoints {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2089,9 +2363,6 @@ pub mod afd_endpoints {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.endpoint)?;
                         req.set_body(req_body);
@@ -2099,17 +2370,96 @@ pub mod afd_endpoints {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::AfdEndpoint>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::AfdEndpoint>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let credential = self.client.token_credential();
+                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                            req.insert_header(
+                                azure_core::headers::AUTHORIZATION,
+                                format!("Bearer {}", token_response.token.secret()),
+                            );
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let credential = self.client.token_credential();
+                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                    req.insert_header(
+                                        azure_core::headers::AUTHORIZATION,
+                                        format!("Bearer {}", token_response.token.secret()),
+                                    );
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -2119,6 +2469,7 @@ pub mod afd_endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AfdEndpoint> {
@@ -2149,14 +2500,17 @@ pub mod afd_endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -2167,7 +2521,6 @@ pub mod afd_endpoints {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -2176,14 +2529,7 @@ pub mod afd_endpoints {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2191,9 +2537,6 @@ pub mod afd_endpoints {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.endpoint_update_properties)?;
                         req.set_body(req_body);
@@ -2201,17 +2544,96 @@ pub mod afd_endpoints {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::AfdEndpoint>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::AfdEndpoint>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let credential = self.client.token_credential();
+                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                            req.insert_header(
+                                azure_core::headers::AUTHORIZATION,
+                                format!("Bearer {}", token_response.token.secret()),
+                            );
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let credential = self.client.token_credential();
+                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                    req.insert_header(
+                                        azure_core::headers::AUTHORIZATION,
+                                        format!("Bearer {}", token_response.token.secret()),
+                                    );
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -2221,6 +2643,7 @@ pub mod afd_endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2246,14 +2669,17 @@ pub mod afd_endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -2263,7 +2689,6 @@ pub mod afd_endpoints {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -2272,14 +2697,7 @@ pub mod afd_endpoints {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2287,14 +2705,27 @@ pub mod afd_endpoints {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -2304,6 +2735,7 @@ pub mod afd_endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2329,14 +2761,17 @@ pub mod afd_endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -2347,7 +2782,6 @@ pub mod afd_endpoints {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -2356,14 +2790,7 @@ pub mod afd_endpoints {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}/purge",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2371,15 +2798,28 @@ pub mod afd_endpoints {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.contents)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}/purge",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -2389,6 +2829,7 @@ pub mod afd_endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::UsagesListResult> {
@@ -2419,15 +2860,19 @@ pub mod afd_endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -2440,14 +2885,7 @@ pub mod afd_endpoints {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}/usages",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -2478,9 +2916,6 @@ pub mod afd_endpoints {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                                 req.set_body(req_body);
@@ -2499,6 +2934,22 @@ pub mod afd_endpoints {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}/usages",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod validate_custom_domain {
@@ -2507,6 +2958,7 @@ pub mod afd_endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ValidateCustomDomainOutput> {
@@ -2537,15 +2989,19 @@ pub mod afd_endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -2563,7 +3019,7 @@ pub mod afd_endpoints {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}/validateCustomDomain" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . profile_name , & this . endpoint_name)) ? ;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2571,15 +3027,28 @@ pub mod afd_endpoints {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.custom_domain_properties)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}/validateCustomDomain",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -2746,6 +3215,7 @@ pub mod afd_origin_groups {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AfdOriginGroupListResult> {
@@ -2776,15 +3246,19 @@ pub mod afd_origin_groups {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -2796,13 +3270,7 @@ pub mod afd_origin_groups {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -2833,9 +3301,6 @@ pub mod afd_origin_groups {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -2853,6 +3318,21 @@ pub mod afd_origin_groups {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -2861,6 +3341,7 @@ pub mod afd_origin_groups {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AfdOriginGroup> {
@@ -2891,15 +3372,19 @@ pub mod afd_origin_groups {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -2916,14 +3401,7 @@ pub mod afd_origin_groups {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.origin_group_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -2931,14 +3409,27 @@ pub mod afd_origin_groups {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.origin_group_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -2960,6 +3451,7 @@ pub mod afd_origin_groups {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AfdOriginGroup> {
@@ -2990,14 +3482,17 @@ pub mod afd_origin_groups {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -3008,7 +3503,6 @@ pub mod afd_origin_groups {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -3017,14 +3511,7 @@ pub mod afd_origin_groups {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.origin_group_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3032,9 +3519,6 @@ pub mod afd_origin_groups {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.origin_group)?;
                         req.set_body(req_body);
@@ -3042,17 +3526,96 @@ pub mod afd_origin_groups {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.origin_group_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::AfdOriginGroup>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::AfdOriginGroup>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let credential = self.client.token_credential();
+                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                            req.insert_header(
+                                azure_core::headers::AUTHORIZATION,
+                                format!("Bearer {}", token_response.token.secret()),
+                            );
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let credential = self.client.token_credential();
+                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                    req.insert_header(
+                                        azure_core::headers::AUTHORIZATION,
+                                        format!("Bearer {}", token_response.token.secret()),
+                                    );
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -3062,6 +3625,7 @@ pub mod afd_origin_groups {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AfdOriginGroup> {
@@ -3092,14 +3656,17 @@ pub mod afd_origin_groups {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -3110,7 +3677,6 @@ pub mod afd_origin_groups {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -3119,14 +3685,7 @@ pub mod afd_origin_groups {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.origin_group_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3134,9 +3693,6 @@ pub mod afd_origin_groups {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.origin_group_update_properties)?;
                         req.set_body(req_body);
@@ -3144,17 +3700,96 @@ pub mod afd_origin_groups {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.origin_group_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::AfdOriginGroup>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::AfdOriginGroup>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let credential = self.client.token_credential();
+                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                            req.insert_header(
+                                azure_core::headers::AUTHORIZATION,
+                                format!("Bearer {}", token_response.token.secret()),
+                            );
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let credential = self.client.token_credential();
+                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                    req.insert_header(
+                                        azure_core::headers::AUTHORIZATION,
+                                        format!("Bearer {}", token_response.token.secret()),
+                                    );
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -3164,6 +3799,7 @@ pub mod afd_origin_groups {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -3189,14 +3825,17 @@ pub mod afd_origin_groups {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -3206,7 +3845,6 @@ pub mod afd_origin_groups {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -3215,14 +3853,7 @@ pub mod afd_origin_groups {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.origin_group_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3230,14 +3861,27 @@ pub mod afd_origin_groups {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.origin_group_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -3247,6 +3891,7 @@ pub mod afd_origin_groups {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::UsagesListResult> {
@@ -3277,15 +3922,19 @@ pub mod afd_origin_groups {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -3298,14 +3947,7 @@ pub mod afd_origin_groups {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}/usages",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.origin_group_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -3336,9 +3978,6 @@ pub mod afd_origin_groups {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                                 req.set_body(req_body);
@@ -3356,6 +3995,22 @@ pub mod afd_origin_groups {
                     }
                 };
                 azure_core::Pageable::new(make_request)
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}/usages",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.origin_group_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -3503,6 +4158,7 @@ pub mod afd_origins {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AfdOriginListResult> {
@@ -3533,15 +4189,19 @@ pub mod afd_origins {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -3554,14 +4214,7 @@ pub mod afd_origins {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}/origins",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.origin_group_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -3592,9 +4245,6 @@ pub mod afd_origins {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -3612,6 +4262,22 @@ pub mod afd_origins {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}/origins",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.origin_group_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -3620,6 +4286,7 @@ pub mod afd_origins {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AfdOrigin> {
@@ -3650,15 +4317,19 @@ pub mod afd_origins {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -3676,15 +4347,7 @@ pub mod afd_origins {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}/origins/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.origin_group_name,
-                            &this.origin_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3692,14 +4355,28 @@ pub mod afd_origins {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}/origins/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.origin_group_name,
+                    &self.origin_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -3721,6 +4398,7 @@ pub mod afd_origins {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AfdOrigin> {
@@ -3751,14 +4429,17 @@ pub mod afd_origins {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -3770,7 +4451,6 @@ pub mod afd_origins {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -3779,15 +4459,7 @@ pub mod afd_origins {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}/origins/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.origin_group_name,
-                            &this.origin_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3795,9 +4467,6 @@ pub mod afd_origins {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.origin)?;
                         req.set_body(req_body);
@@ -3805,17 +4474,97 @@ pub mod afd_origins {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}/origins/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.origin_group_name,
+                    &self.origin_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::AfdOrigin>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::AfdOrigin>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let credential = self.client.token_credential();
+                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                            req.insert_header(
+                                azure_core::headers::AUTHORIZATION,
+                                format!("Bearer {}", token_response.token.secret()),
+                            );
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let credential = self.client.token_credential();
+                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                    req.insert_header(
+                                        azure_core::headers::AUTHORIZATION,
+                                        format!("Bearer {}", token_response.token.secret()),
+                                    );
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -3825,6 +4574,7 @@ pub mod afd_origins {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::AfdOrigin> {
@@ -3855,14 +4605,17 @@ pub mod afd_origins {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -3874,7 +4627,6 @@ pub mod afd_origins {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -3883,15 +4635,7 @@ pub mod afd_origins {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}/origins/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.origin_group_name,
-                            &this.origin_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3899,9 +4643,6 @@ pub mod afd_origins {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.origin_update_properties)?;
                         req.set_body(req_body);
@@ -3909,17 +4650,97 @@ pub mod afd_origins {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}/origins/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.origin_group_name,
+                    &self.origin_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::AfdOrigin>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::AfdOrigin>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let credential = self.client.token_credential();
+                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                            req.insert_header(
+                                azure_core::headers::AUTHORIZATION,
+                                format!("Bearer {}", token_response.token.secret()),
+                            );
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let credential = self.client.token_credential();
+                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                    req.insert_header(
+                                        azure_core::headers::AUTHORIZATION,
+                                        format!("Bearer {}", token_response.token.secret()),
+                                    );
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -3929,6 +4750,7 @@ pub mod afd_origins {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -3954,14 +4776,17 @@ pub mod afd_origins {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -3972,7 +4797,6 @@ pub mod afd_origins {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -3981,15 +4805,7 @@ pub mod afd_origins {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}/origins/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.origin_group_name,
-                            &this.origin_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -3997,14 +4813,28 @@ pub mod afd_origins {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/originGroups/{}/origins/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.origin_group_name,
+                    &self.origin_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -4152,6 +4982,7 @@ pub mod routes {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::RouteListResult> {
@@ -4182,15 +5013,19 @@ pub mod routes {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -4203,14 +5038,7 @@ pub mod routes {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}/routes",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -4241,9 +5069,6 @@ pub mod routes {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -4261,6 +5086,22 @@ pub mod routes {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}/routes",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -4269,6 +5110,7 @@ pub mod routes {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Route> {
@@ -4299,15 +5141,19 @@ pub mod routes {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -4325,15 +5171,7 @@ pub mod routes {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}/routes/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name,
-                            &this.route_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -4341,14 +5179,28 @@ pub mod routes {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}/routes/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name,
+                    &self.route_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -4370,6 +5222,7 @@ pub mod routes {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Route> {
@@ -4400,14 +5253,17 @@ pub mod routes {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -4419,7 +5275,6 @@ pub mod routes {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -4428,15 +5283,7 @@ pub mod routes {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}/routes/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name,
-                            &this.route_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -4444,9 +5291,6 @@ pub mod routes {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.route)?;
                         req.set_body(req_body);
@@ -4454,17 +5298,97 @@ pub mod routes {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}/routes/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name,
+                    &self.route_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::Route>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::Route>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let credential = self.client.token_credential();
+                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                            req.insert_header(
+                                azure_core::headers::AUTHORIZATION,
+                                format!("Bearer {}", token_response.token.secret()),
+                            );
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let credential = self.client.token_credential();
+                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                    req.insert_header(
+                                        azure_core::headers::AUTHORIZATION,
+                                        format!("Bearer {}", token_response.token.secret()),
+                                    );
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -4474,6 +5398,7 @@ pub mod routes {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Route> {
@@ -4504,14 +5429,17 @@ pub mod routes {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -4523,7 +5451,6 @@ pub mod routes {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -4532,15 +5459,7 @@ pub mod routes {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}/routes/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name,
-                            &this.route_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -4548,9 +5467,6 @@ pub mod routes {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.route_update_properties)?;
                         req.set_body(req_body);
@@ -4558,17 +5474,97 @@ pub mod routes {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}/routes/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name,
+                    &self.route_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::Route>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::Route>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let credential = self.client.token_credential();
+                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                            req.insert_header(
+                                azure_core::headers::AUTHORIZATION,
+                                format!("Bearer {}", token_response.token.secret()),
+                            );
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let credential = self.client.token_credential();
+                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                    req.insert_header(
+                                        azure_core::headers::AUTHORIZATION,
+                                        format!("Bearer {}", token_response.token.secret()),
+                                    );
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -4578,6 +5574,7 @@ pub mod routes {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -4603,14 +5600,17 @@ pub mod routes {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -4621,7 +5621,6 @@ pub mod routes {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -4630,15 +5629,7 @@ pub mod routes {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}/routes/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name,
-                            &this.route_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -4646,14 +5637,28 @@ pub mod routes {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/afdEndpoints/{}/routes/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name,
+                    &self.route_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -4780,6 +5785,7 @@ pub mod rule_sets {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::RuleSetListResult> {
@@ -4810,15 +5816,19 @@ pub mod rule_sets {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -4830,13 +5840,7 @@ pub mod rule_sets {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -4867,9 +5871,6 @@ pub mod rule_sets {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -4887,6 +5888,21 @@ pub mod rule_sets {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -4895,6 +5911,7 @@ pub mod rule_sets {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::RuleSet> {
@@ -4925,15 +5942,19 @@ pub mod rule_sets {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -4950,14 +5971,7 @@ pub mod rule_sets {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.rule_set_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -4965,14 +5979,27 @@ pub mod rule_sets {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.rule_set_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -4994,6 +6021,7 @@ pub mod rule_sets {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::RuleSet> {
@@ -5024,15 +6052,19 @@ pub mod rule_sets {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -5049,14 +6081,7 @@ pub mod rule_sets {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.rule_set_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -5064,14 +6089,27 @@ pub mod rule_sets {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.rule_set_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -5093,6 +6131,7 @@ pub mod rule_sets {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -5118,14 +6157,17 @@ pub mod rule_sets {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -5135,7 +6177,6 @@ pub mod rule_sets {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -5144,14 +6185,7 @@ pub mod rule_sets {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.rule_set_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -5159,14 +6193,27 @@ pub mod rule_sets {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.rule_set_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -5176,6 +6223,7 @@ pub mod rule_sets {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::UsagesListResult> {
@@ -5206,15 +6254,19 @@ pub mod rule_sets {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -5227,14 +6279,7 @@ pub mod rule_sets {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}/usages",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.rule_set_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -5265,9 +6310,6 @@ pub mod rule_sets {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                                 req.set_body(req_body);
@@ -5285,6 +6327,22 @@ pub mod rule_sets {
                     }
                 };
                 azure_core::Pageable::new(make_request)
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}/usages",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.rule_set_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -5432,6 +6490,7 @@ pub mod rules {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::RuleListResult> {
@@ -5462,15 +6521,19 @@ pub mod rules {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -5483,14 +6546,7 @@ pub mod rules {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}/rules",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.rule_set_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -5521,9 +6577,6 @@ pub mod rules {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -5541,6 +6594,22 @@ pub mod rules {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}/rules",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.rule_set_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -5549,6 +6618,7 @@ pub mod rules {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Rule> {
@@ -5579,15 +6649,19 @@ pub mod rules {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -5605,15 +6679,7 @@ pub mod rules {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}/rules/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.rule_set_name,
-                            &this.rule_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -5621,14 +6687,28 @@ pub mod rules {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}/rules/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.rule_set_name,
+                    &self.rule_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -5650,6 +6730,7 @@ pub mod rules {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Rule> {
@@ -5680,14 +6761,17 @@ pub mod rules {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -5699,7 +6783,6 @@ pub mod rules {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -5708,15 +6791,7 @@ pub mod rules {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}/rules/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.rule_set_name,
-                            &this.rule_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -5724,9 +6799,6 @@ pub mod rules {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.rule)?;
                         req.set_body(req_body);
@@ -5734,17 +6806,97 @@ pub mod rules {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}/rules/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.rule_set_name,
+                    &self.rule_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::Rule>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::Rule>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let credential = self.client.token_credential();
+                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                            req.insert_header(
+                                azure_core::headers::AUTHORIZATION,
+                                format!("Bearer {}", token_response.token.secret()),
+                            );
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let credential = self.client.token_credential();
+                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                    req.insert_header(
+                                        azure_core::headers::AUTHORIZATION,
+                                        format!("Bearer {}", token_response.token.secret()),
+                                    );
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -5754,6 +6906,7 @@ pub mod rules {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Rule> {
@@ -5784,14 +6937,17 @@ pub mod rules {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -5803,7 +6959,6 @@ pub mod rules {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -5812,15 +6967,7 @@ pub mod rules {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}/rules/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.rule_set_name,
-                            &this.rule_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -5828,9 +6975,6 @@ pub mod rules {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.rule_update_properties)?;
                         req.set_body(req_body);
@@ -5838,17 +6982,97 @@ pub mod rules {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}/rules/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.rule_set_name,
+                    &self.rule_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::Rule>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::Rule>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let credential = self.client.token_credential();
+                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                            req.insert_header(
+                                azure_core::headers::AUTHORIZATION,
+                                format!("Bearer {}", token_response.token.secret()),
+                            );
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let credential = self.client.token_credential();
+                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                    req.insert_header(
+                                        azure_core::headers::AUTHORIZATION,
+                                        format!("Bearer {}", token_response.token.secret()),
+                                    );
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -5858,6 +7082,7 @@ pub mod rules {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -5883,14 +7108,17 @@ pub mod rules {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -5901,7 +7129,6 @@ pub mod rules {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -5910,15 +7137,7 @@ pub mod rules {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}/rules/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.rule_set_name,
-                            &this.rule_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -5926,14 +7145,28 @@ pub mod rules {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/ruleSets/{}/rules/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.rule_set_name,
+                    &self.rule_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -6066,6 +7299,7 @@ pub mod security_policies {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SecurityPolicyListResult> {
@@ -6096,15 +7330,19 @@ pub mod security_policies {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -6116,13 +7354,7 @@ pub mod security_policies {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/securityPolicies",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -6153,9 +7385,6 @@ pub mod security_policies {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -6173,6 +7402,21 @@ pub mod security_policies {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/securityPolicies",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -6181,6 +7425,7 @@ pub mod security_policies {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SecurityPolicy> {
@@ -6211,15 +7456,19 @@ pub mod security_policies {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -6236,14 +7485,7 @@ pub mod security_policies {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/securityPolicies/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.security_policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -6251,14 +7493,27 @@ pub mod security_policies {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/securityPolicies/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.security_policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -6280,6 +7535,7 @@ pub mod security_policies {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SecurityPolicy> {
@@ -6310,14 +7566,17 @@ pub mod security_policies {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -6328,7 +7587,6 @@ pub mod security_policies {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -6337,14 +7595,7 @@ pub mod security_policies {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/securityPolicies/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.security_policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -6352,9 +7603,6 @@ pub mod security_policies {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.security_policy)?;
                         req.set_body(req_body);
@@ -6362,17 +7610,96 @@ pub mod security_policies {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/securityPolicies/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.security_policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::SecurityPolicy>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::SecurityPolicy>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let credential = self.client.token_credential();
+                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                            req.insert_header(
+                                azure_core::headers::AUTHORIZATION,
+                                format!("Bearer {}", token_response.token.secret()),
+                            );
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let credential = self.client.token_credential();
+                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                    req.insert_header(
+                                        azure_core::headers::AUTHORIZATION,
+                                        format!("Bearer {}", token_response.token.secret()),
+                                    );
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -6382,6 +7709,7 @@ pub mod security_policies {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SecurityPolicy> {
@@ -6412,14 +7740,17 @@ pub mod security_policies {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -6430,7 +7761,6 @@ pub mod security_policies {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -6439,14 +7769,7 @@ pub mod security_policies {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/securityPolicies/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.security_policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -6454,9 +7777,6 @@ pub mod security_policies {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.security_policy_update_properties)?;
                         req.set_body(req_body);
@@ -6464,17 +7784,96 @@ pub mod security_policies {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/securityPolicies/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.security_policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::SecurityPolicy>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::SecurityPolicy>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let credential = self.client.token_credential();
+                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                            req.insert_header(
+                                azure_core::headers::AUTHORIZATION,
+                                format!("Bearer {}", token_response.token.secret()),
+                            );
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let credential = self.client.token_credential();
+                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                    req.insert_header(
+                                        azure_core::headers::AUTHORIZATION,
+                                        format!("Bearer {}", token_response.token.secret()),
+                                    );
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -6484,6 +7883,7 @@ pub mod security_policies {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -6509,14 +7909,17 @@ pub mod security_policies {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -6526,7 +7929,6 @@ pub mod security_policies {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -6535,14 +7937,7 @@ pub mod security_policies {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/securityPolicies/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.security_policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -6550,14 +7945,27 @@ pub mod security_policies {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/securityPolicies/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.security_policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -6665,6 +8073,7 @@ pub mod secrets {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SecretListResult> {
@@ -6695,15 +8104,19 @@ pub mod secrets {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -6715,13 +8128,7 @@ pub mod secrets {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/secrets",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -6752,9 +8159,6 @@ pub mod secrets {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -6772,6 +8176,21 @@ pub mod secrets {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/secrets",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -6780,6 +8199,7 @@ pub mod secrets {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Secret> {
@@ -6810,15 +8230,19 @@ pub mod secrets {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -6835,14 +8259,7 @@ pub mod secrets {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/secrets/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.secret_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -6850,14 +8267,27 @@ pub mod secrets {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/secrets/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.secret_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -6879,6 +8309,7 @@ pub mod secrets {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Secret> {
@@ -6909,14 +8340,17 @@ pub mod secrets {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -6927,7 +8361,6 @@ pub mod secrets {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -6936,14 +8369,7 @@ pub mod secrets {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/secrets/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.secret_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -6951,9 +8377,6 @@ pub mod secrets {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.secret)?;
                         req.set_body(req_body);
@@ -6961,17 +8384,96 @@ pub mod secrets {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/secrets/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.secret_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::Secret>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::Secret>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let credential = self.client.token_credential();
+                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                            req.insert_header(
+                                azure_core::headers::AUTHORIZATION,
+                                format!("Bearer {}", token_response.token.secret()),
+                            );
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let credential = self.client.token_credential();
+                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                    req.insert_header(
+                                        azure_core::headers::AUTHORIZATION,
+                                        format!("Bearer {}", token_response.token.secret()),
+                                    );
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -6981,6 +8483,7 @@ pub mod secrets {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -7006,14 +8509,17 @@ pub mod secrets {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -7023,7 +8529,6 @@ pub mod secrets {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -7032,14 +8537,7 @@ pub mod secrets {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/secrets/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.secret_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -7047,14 +8545,27 @@ pub mod secrets {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/secrets/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.secret_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -7090,6 +8601,7 @@ pub mod validate {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ValidateSecretOutput> {
@@ -7120,15 +8632,19 @@ pub mod validate {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) validate_secret_input: models::ValidateSecretInput,
@@ -7143,11 +8659,7 @@ pub mod validate {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/providers/Microsoft.Cdn/validateSecret",
-                            this.client.endpoint(),
-                            &this.subscription_id
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -7155,15 +8667,25 @@ pub mod validate {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.validate_secret_input)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/providers/Microsoft.Cdn/validateSecret",
+                    self.client.endpoint(),
+                    &self.subscription_id
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -7358,6 +8880,7 @@ pub mod log_analytics {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::MetricsResponse> {
@@ -7388,15 +8911,19 @@ pub mod log_analytics {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -7433,13 +8960,7 @@ pub mod log_analytics {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/getLogAnalyticsMetrics",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -7447,9 +8968,6 @@ pub mod log_analytics {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let metrics = &this.metrics;
                         for value in &this.metrics {
                             req.url_mut().query_pairs_mut().append_pair("metrics", &value.to_string());
@@ -7490,6 +9008,21 @@ pub mod log_analytics {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/getLogAnalyticsMetrics",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::MetricsResponse>;
@@ -7510,6 +9043,7 @@ pub mod log_analytics {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::RankingsResponse> {
@@ -7540,15 +9074,19 @@ pub mod log_analytics {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -7574,13 +9112,7 @@ pub mod log_analytics {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/getLogAnalyticsRankings",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -7588,9 +9120,6 @@ pub mod log_analytics {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let rankings = &this.rankings;
                         for value in &this.rankings {
                             req.url_mut().query_pairs_mut().append_pair("rankings", &value.to_string());
@@ -7619,6 +9148,21 @@ pub mod log_analytics {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/getLogAnalyticsRankings",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::RankingsResponse>;
@@ -7639,6 +9183,7 @@ pub mod log_analytics {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ContinentsResponse> {
@@ -7669,15 +9214,19 @@ pub mod log_analytics {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -7693,13 +9242,7 @@ pub mod log_analytics {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/getLogAnalyticsLocations",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -7707,14 +9250,26 @@ pub mod log_analytics {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/getLogAnalyticsLocations",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -7736,6 +9291,7 @@ pub mod log_analytics {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ResourcesResponse> {
@@ -7766,15 +9322,19 @@ pub mod log_analytics {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -7790,13 +9350,7 @@ pub mod log_analytics {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/getLogAnalyticsResources",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -7804,14 +9358,26 @@ pub mod log_analytics {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/getLogAnalyticsResources",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -7833,6 +9399,7 @@ pub mod log_analytics {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::WafMetricsResponse> {
@@ -7863,15 +9430,19 @@ pub mod log_analytics {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -7906,13 +9477,7 @@ pub mod log_analytics {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/getWafLogAnalyticsMetrics",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -7920,9 +9485,6 @@ pub mod log_analytics {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let metrics = &this.metrics;
                         for value in &this.metrics {
                             req.url_mut().query_pairs_mut().append_pair("metrics", &value.to_string());
@@ -7955,6 +9517,21 @@ pub mod log_analytics {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/getWafLogAnalyticsMetrics",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::WafMetricsResponse>;
@@ -7975,6 +9552,7 @@ pub mod log_analytics {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::WafRankingsResponse> {
@@ -8005,15 +9583,19 @@ pub mod log_analytics {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -8044,13 +9626,7 @@ pub mod log_analytics {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/getWafLogAnalyticsRankings",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -8058,9 +9634,6 @@ pub mod log_analytics {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let metrics = &this.metrics;
                         for value in &this.metrics {
                             req.url_mut().query_pairs_mut().append_pair("metrics", &value.to_string());
@@ -8092,6 +9665,21 @@ pub mod log_analytics {
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/getWafLogAnalyticsRankings",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -8345,6 +9933,7 @@ pub mod profiles {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ProfileListResult> {
@@ -8375,15 +9964,19 @@ pub mod profiles {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -8393,11 +9986,7 @@ pub mod profiles {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/providers/Microsoft.Cdn/profiles",
-                            this.client.endpoint(),
-                            &this.subscription_id
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -8428,9 +10017,6 @@ pub mod profiles {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -8448,6 +10034,19 @@ pub mod profiles {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/providers/Microsoft.Cdn/profiles",
+                    self.client.endpoint(),
+                    &self.subscription_id
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod list_by_resource_group {
@@ -8456,6 +10055,7 @@ pub mod profiles {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ProfileListResult> {
@@ -8486,15 +10086,19 @@ pub mod profiles {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -8505,12 +10109,7 @@ pub mod profiles {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -8541,9 +10140,6 @@ pub mod profiles {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -8561,6 +10157,20 @@ pub mod profiles {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -8569,6 +10179,7 @@ pub mod profiles {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Profile> {
@@ -8599,15 +10210,19 @@ pub mod profiles {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -8623,13 +10238,7 @@ pub mod profiles {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -8637,14 +10246,26 @@ pub mod profiles {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -8666,6 +10287,7 @@ pub mod profiles {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Profile> {
@@ -8696,14 +10318,17 @@ pub mod profiles {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -8713,7 +10338,6 @@ pub mod profiles {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -8722,13 +10346,7 @@ pub mod profiles {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -8736,9 +10354,6 @@ pub mod profiles {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.profile)?;
                         req.set_body(req_body);
@@ -8746,17 +10361,60 @@ pub mod profiles {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::Profile>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::Profile>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{body_content::get_provisioning_state, get_retry_after, LroStatus},
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    loop {
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let retry_after = get_retry_after(response.as_raw_response().headers());
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
+                            _ => {
+                                sleep(retry_after).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -8766,6 +10424,7 @@ pub mod profiles {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Profile> {
@@ -8796,14 +10455,17 @@ pub mod profiles {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -8813,7 +10475,6 @@ pub mod profiles {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -8822,13 +10483,7 @@ pub mod profiles {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -8836,9 +10491,6 @@ pub mod profiles {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.profile_update_parameters)?;
                         req.set_body(req_body);
@@ -8846,17 +10498,60 @@ pub mod profiles {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::Profile>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::Profile>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{body_content::get_provisioning_state, get_retry_after, LroStatus},
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    loop {
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let retry_after = get_retry_after(response.as_raw_response().headers());
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
+                            _ => {
+                                sleep(retry_after).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -8866,6 +10561,7 @@ pub mod profiles {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -8891,14 +10587,17 @@ pub mod profiles {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -8907,7 +10606,6 @@ pub mod profiles {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -8916,13 +10614,7 @@ pub mod profiles {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -8930,14 +10622,26 @@ pub mod profiles {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -8947,6 +10651,7 @@ pub mod profiles {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::CanMigrateResult> {
@@ -8977,15 +10682,19 @@ pub mod profiles {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -9001,12 +10710,7 @@ pub mod profiles {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/canMigrate",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -9014,15 +10718,26 @@ pub mod profiles {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.can_migrate_parameters)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/canMigrate",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -9044,6 +10759,7 @@ pub mod profiles {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::MigrateResult> {
@@ -9083,14 +10799,17 @@ pub mod profiles {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -9099,7 +10818,6 @@ pub mod profiles {
             pub(crate) migration_parameters: models::MigrationParameters,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -9108,12 +10826,7 @@ pub mod profiles {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/migrate",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -9121,9 +10834,6 @@ pub mod profiles {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.migration_parameters)?;
                         req.set_body(req_body);
@@ -9131,17 +10841,94 @@ pub mod profiles {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/migrate",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::MigrateResult>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::MigrateResult>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{
+                            get_retry_after,
+                            location::{get_location, get_provisioning_state, FinalState},
+                            LroStatus,
+                        },
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    let this = self.clone();
+                    let response = this.send().await?;
+                    let headers = response.as_raw_response().headers();
+                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
+                    if let Some(url) = location {
+                        loop {
+                            let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                            let credential = self.client.token_credential();
+                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                            req.insert_header(
+                                azure_core::headers::AUTHORIZATION,
+                                format!("Bearer {}", token_response.token.secret()),
+                            );
+                            let response = self.client.send(&mut req).await?;
+                            let headers = response.headers();
+                            let retry_after = get_retry_after(headers);
+                            let bytes = response.into_body().collect().await?;
+                            let provisioning_state = get_provisioning_state(&bytes).ok_or_else(|| {
+                                Error::message(
+                                    ErrorKind::Other,
+                                    "Long running operation failed (missing provisioning state)".to_string(),
+                                )
+                            })?;
+                            log::trace!("current provisioning_state: {provisioning_state:?}");
+                            match provisioning_state {
+                                LroStatus::Succeeded => {
+                                    let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                    let credential = self.client.token_credential();
+                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
+                                    req.insert_header(
+                                        azure_core::headers::AUTHORIZATION,
+                                        format!("Bearer {}", token_response.token.secret()),
+                                    );
+                                    let response = self.client.send(&mut req).await?;
+                                    return Response(response).into_body().await;
+                                }
+                                LroStatus::Failed => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string()))
+                                }
+                                LroStatus::Canceled => {
+                                    return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                                }
+                                _ => {
+                                    sleep(retry_after).await;
+                                }
+                            }
+                        }
+                    } else {
+                        response.into_body().await
+                    }
+                })
             }
         }
     }
@@ -9151,6 +10938,7 @@ pub mod profiles {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -9185,14 +10973,17 @@ pub mod profiles {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -9201,7 +10992,6 @@ pub mod profiles {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -9210,13 +11000,7 @@ pub mod profiles {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/migrationCommit",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -9224,15 +11008,27 @@ pub mod profiles {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/migrationCommit",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -9242,6 +11038,7 @@ pub mod profiles {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SsoUri> {
@@ -9272,15 +11069,19 @@ pub mod profiles {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -9296,13 +11097,7 @@ pub mod profiles {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/generateSsoUri",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -9310,15 +11105,27 @@ pub mod profiles {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/generateSsoUri",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -9340,6 +11147,7 @@ pub mod profiles {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::SupportedOptimizationTypesListResult> {
@@ -9370,15 +11178,19 @@ pub mod profiles {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -9394,13 +11206,7 @@ pub mod profiles {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/getSupportedOptimizationTypes",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -9408,15 +11214,27 @@ pub mod profiles {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/getSupportedOptimizationTypes",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -9438,6 +11256,7 @@ pub mod profiles {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ResourceUsageListResult> {
@@ -9468,15 +11287,19 @@ pub mod profiles {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -9488,13 +11311,7 @@ pub mod profiles {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/checkResourceUsage",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -9525,9 +11342,6 @@ pub mod profiles {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                                 req.set_body(req_body);
@@ -9545,6 +11359,21 @@ pub mod profiles {
                     }
                 };
                 azure_core::Pageable::new(make_request)
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/checkResourceUsage",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -9818,6 +11647,7 @@ pub mod endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::EndpointListResult> {
@@ -9848,15 +11678,19 @@ pub mod endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -9868,13 +11702,7 @@ pub mod endpoints {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -9905,9 +11733,6 @@ pub mod endpoints {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -9925,6 +11750,21 @@ pub mod endpoints {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -9933,6 +11773,7 @@ pub mod endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Endpoint> {
@@ -9963,15 +11804,19 @@ pub mod endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -9988,14 +11833,7 @@ pub mod endpoints {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -10003,14 +11841,27 @@ pub mod endpoints {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -10032,6 +11883,7 @@ pub mod endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Endpoint> {
@@ -10062,14 +11914,17 @@ pub mod endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -10080,7 +11935,6 @@ pub mod endpoints {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -10089,14 +11943,7 @@ pub mod endpoints {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -10104,9 +11951,6 @@ pub mod endpoints {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.endpoint)?;
                         req.set_body(req_body);
@@ -10114,17 +11958,61 @@ pub mod endpoints {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::Endpoint>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::Endpoint>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{body_content::get_provisioning_state, get_retry_after, LroStatus},
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    loop {
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let retry_after = get_retry_after(response.as_raw_response().headers());
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
+                            _ => {
+                                sleep(retry_after).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -10134,6 +12022,7 @@ pub mod endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Endpoint> {
@@ -10164,14 +12053,17 @@ pub mod endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -10182,7 +12074,6 @@ pub mod endpoints {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -10191,14 +12082,7 @@ pub mod endpoints {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -10206,9 +12090,6 @@ pub mod endpoints {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.endpoint_update_properties)?;
                         req.set_body(req_body);
@@ -10216,17 +12097,61 @@ pub mod endpoints {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::Endpoint>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::Endpoint>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{body_content::get_provisioning_state, get_retry_after, LroStatus},
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    loop {
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let retry_after = get_retry_after(response.as_raw_response().headers());
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
+                            _ => {
+                                sleep(retry_after).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -10236,6 +12161,7 @@ pub mod endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -10261,14 +12187,17 @@ pub mod endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -10278,7 +12207,6 @@ pub mod endpoints {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -10287,14 +12215,7 @@ pub mod endpoints {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -10302,14 +12223,27 @@ pub mod endpoints {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -10319,6 +12253,7 @@ pub mod endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Endpoint> {
@@ -10349,14 +12284,17 @@ pub mod endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -10366,7 +12304,6 @@ pub mod endpoints {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -10375,14 +12312,7 @@ pub mod endpoints {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/start",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -10390,9 +12320,6 @@ pub mod endpoints {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -10400,17 +12327,61 @@ pub mod endpoints {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/start",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::Endpoint>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::Endpoint>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{body_content::get_provisioning_state, get_retry_after, LroStatus},
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    loop {
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let retry_after = get_retry_after(response.as_raw_response().headers());
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
+                            _ => {
+                                sleep(retry_after).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -10420,6 +12391,7 @@ pub mod endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Endpoint> {
@@ -10450,14 +12422,17 @@ pub mod endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -10467,7 +12442,6 @@ pub mod endpoints {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -10476,14 +12450,7 @@ pub mod endpoints {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/stop",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -10491,9 +12458,6 @@ pub mod endpoints {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -10501,17 +12465,61 @@ pub mod endpoints {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/stop",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::Endpoint>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::Endpoint>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{body_content::get_provisioning_state, get_retry_after, LroStatus},
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    loop {
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let retry_after = get_retry_after(response.as_raw_response().headers());
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
+                            _ => {
+                                sleep(retry_after).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -10521,6 +12529,7 @@ pub mod endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -10546,14 +12555,17 @@ pub mod endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -10564,7 +12576,6 @@ pub mod endpoints {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -10573,14 +12584,7 @@ pub mod endpoints {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/purge",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -10588,15 +12592,28 @@ pub mod endpoints {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.content_file_paths)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/purge",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -10606,6 +12623,7 @@ pub mod endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -10631,14 +12649,17 @@ pub mod endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -10649,7 +12670,6 @@ pub mod endpoints {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -10658,14 +12678,7 @@ pub mod endpoints {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/load",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -10673,15 +12686,28 @@ pub mod endpoints {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.content_file_paths)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/load",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -10691,6 +12717,7 @@ pub mod endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ValidateCustomDomainOutput> {
@@ -10721,15 +12748,19 @@ pub mod endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -10747,14 +12778,7 @@ pub mod endpoints {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/validateCustomDomain",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -10762,15 +12786,28 @@ pub mod endpoints {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.custom_domain_properties)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/validateCustomDomain",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -10792,6 +12829,7 @@ pub mod endpoints {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ResourceUsageListResult> {
@@ -10822,15 +12860,19 @@ pub mod endpoints {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -10843,14 +12885,7 @@ pub mod endpoints {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/checkResourceUsage",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -10881,9 +12916,6 @@ pub mod endpoints {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                                 req.set_body(req_body);
@@ -10901,6 +12933,22 @@ pub mod endpoints {
                     }
                 };
                 azure_core::Pageable::new(make_request)
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/checkResourceUsage",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -11048,6 +13096,7 @@ pub mod origins {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::OriginListResult> {
@@ -11078,15 +13127,19 @@ pub mod origins {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -11099,14 +13152,7 @@ pub mod origins {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -11137,9 +13183,6 @@ pub mod origins {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -11157,6 +13200,22 @@ pub mod origins {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -11165,6 +13224,7 @@ pub mod origins {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Origin> {
@@ -11195,15 +13255,19 @@ pub mod origins {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -11221,15 +13285,7 @@ pub mod origins {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name,
-                            &this.origin_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -11237,14 +13293,28 @@ pub mod origins {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name,
+                    &self.origin_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -11266,6 +13336,7 @@ pub mod origins {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Origin> {
@@ -11296,14 +13367,17 @@ pub mod origins {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -11315,7 +13389,6 @@ pub mod origins {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -11324,15 +13397,7 @@ pub mod origins {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name,
-                            &this.origin_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -11340,9 +13405,6 @@ pub mod origins {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.origin)?;
                         req.set_body(req_body);
@@ -11350,17 +13412,62 @@ pub mod origins {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name,
+                    &self.origin_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::Origin>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::Origin>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{body_content::get_provisioning_state, get_retry_after, LroStatus},
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    loop {
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let retry_after = get_retry_after(response.as_raw_response().headers());
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
+                            _ => {
+                                sleep(retry_after).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -11370,6 +13477,7 @@ pub mod origins {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::Origin> {
@@ -11400,14 +13508,17 @@ pub mod origins {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -11419,7 +13530,6 @@ pub mod origins {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -11428,15 +13538,7 @@ pub mod origins {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name,
-                            &this.origin_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -11444,9 +13546,6 @@ pub mod origins {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.origin_update_properties)?;
                         req.set_body(req_body);
@@ -11454,17 +13553,62 @@ pub mod origins {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name,
+                    &self.origin_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::Origin>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::Origin>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{body_content::get_provisioning_state, get_retry_after, LroStatus},
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    loop {
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let retry_after = get_retry_after(response.as_raw_response().headers());
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
+                            _ => {
+                                sleep(retry_after).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -11474,6 +13618,7 @@ pub mod origins {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -11499,14 +13644,17 @@ pub mod origins {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -11517,7 +13665,6 @@ pub mod origins {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -11526,15 +13673,7 @@ pub mod origins {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name,
-                            &this.origin_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -11542,14 +13681,28 @@ pub mod origins {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/origins/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name,
+                    &self.origin_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -11697,6 +13850,7 @@ pub mod origin_groups {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::OriginGroupListResult> {
@@ -11727,15 +13881,19 @@ pub mod origin_groups {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -11748,14 +13906,7 @@ pub mod origin_groups {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/originGroups",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -11786,9 +13937,6 @@ pub mod origin_groups {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -11806,6 +13954,22 @@ pub mod origin_groups {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/originGroups",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -11814,6 +13978,7 @@ pub mod origin_groups {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::OriginGroup> {
@@ -11844,15 +14009,19 @@ pub mod origin_groups {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -11870,15 +14039,7 @@ pub mod origin_groups {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/originGroups/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name,
-                            &this.origin_group_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -11886,14 +14047,28 @@ pub mod origin_groups {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/originGroups/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name,
+                    &self.origin_group_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -11915,6 +14090,7 @@ pub mod origin_groups {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::OriginGroup> {
@@ -11945,14 +14121,17 @@ pub mod origin_groups {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -11964,7 +14143,6 @@ pub mod origin_groups {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -11973,15 +14151,7 @@ pub mod origin_groups {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/originGroups/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name,
-                            &this.origin_group_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -11989,9 +14159,6 @@ pub mod origin_groups {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.origin_group)?;
                         req.set_body(req_body);
@@ -11999,17 +14166,62 @@ pub mod origin_groups {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/originGroups/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name,
+                    &self.origin_group_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::OriginGroup>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::OriginGroup>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{body_content::get_provisioning_state, get_retry_after, LroStatus},
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    loop {
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let retry_after = get_retry_after(response.as_raw_response().headers());
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
+                            _ => {
+                                sleep(retry_after).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -12019,6 +14231,7 @@ pub mod origin_groups {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::OriginGroup> {
@@ -12049,14 +14262,17 @@ pub mod origin_groups {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -12068,7 +14284,6 @@ pub mod origin_groups {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -12077,15 +14292,7 @@ pub mod origin_groups {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/originGroups/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name,
-                            &this.origin_group_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -12093,9 +14300,6 @@ pub mod origin_groups {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.origin_group_update_properties)?;
                         req.set_body(req_body);
@@ -12103,17 +14307,62 @@ pub mod origin_groups {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/originGroups/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name,
+                    &self.origin_group_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::OriginGroup>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::OriginGroup>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{body_content::get_provisioning_state, get_retry_after, LroStatus},
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    loop {
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let retry_after = get_retry_after(response.as_raw_response().headers());
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
+                            _ => {
+                                sleep(retry_after).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -12123,6 +14372,7 @@ pub mod origin_groups {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -12148,14 +14398,17 @@ pub mod origin_groups {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -12166,7 +14419,6 @@ pub mod origin_groups {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -12175,15 +14427,7 @@ pub mod origin_groups {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/originGroups/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name,
-                            &this.origin_group_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -12191,14 +14435,28 @@ pub mod origin_groups {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/originGroups/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name,
+                    &self.origin_group_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -12369,6 +14627,7 @@ pub mod custom_domains {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::CustomDomainListResult> {
@@ -12399,15 +14658,19 @@ pub mod custom_domains {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -12420,14 +14683,7 @@ pub mod custom_domains {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -12458,9 +14714,6 @@ pub mod custom_domains {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -12478,6 +14731,22 @@ pub mod custom_domains {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -12486,6 +14755,7 @@ pub mod custom_domains {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::CustomDomain> {
@@ -12516,15 +14786,19 @@ pub mod custom_domains {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -12542,15 +14816,7 @@ pub mod custom_domains {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name,
-                            &this.custom_domain_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -12558,14 +14824,28 @@ pub mod custom_domains {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name,
+                    &self.custom_domain_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -12587,6 +14867,7 @@ pub mod custom_domains {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::CustomDomain> {
@@ -12617,14 +14898,17 @@ pub mod custom_domains {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -12636,7 +14920,6 @@ pub mod custom_domains {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -12645,15 +14928,7 @@ pub mod custom_domains {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name,
-                            &this.custom_domain_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -12661,9 +14936,6 @@ pub mod custom_domains {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.custom_domain_properties)?;
                         req.set_body(req_body);
@@ -12671,17 +14943,62 @@ pub mod custom_domains {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name,
+                    &self.custom_domain_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::CustomDomain>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::CustomDomain>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{body_content::get_provisioning_state, get_retry_after, LroStatus},
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    loop {
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let retry_after = get_retry_after(response.as_raw_response().headers());
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
+                            _ => {
+                                sleep(retry_after).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -12691,6 +15008,7 @@ pub mod custom_domains {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -12716,14 +15034,17 @@ pub mod custom_domains {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -12734,7 +15055,6 @@ pub mod custom_domains {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -12743,15 +15063,7 @@ pub mod custom_domains {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.profile_name,
-                            &this.endpoint_name,
-                            &this.custom_domain_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -12759,14 +15071,28 @@ pub mod custom_domains {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.profile_name,
+                    &self.endpoint_name,
+                    &self.custom_domain_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -12776,6 +15102,7 @@ pub mod custom_domains {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::CustomDomain> {
@@ -12806,14 +15133,17 @@ pub mod custom_domains {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -12824,7 +15154,6 @@ pub mod custom_domains {
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -12833,7 +15162,7 @@ pub mod custom_domains {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}/disableCustomHttps" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . profile_name , & this . endpoint_name , & this . custom_domain_name)) ? ;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -12841,9 +15170,6 @@ pub mod custom_domains {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -12851,17 +15177,54 @@ pub mod custom_domains {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}/disableCustomHttps" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . profile_name , & self . endpoint_name , & self . custom_domain_name)) ? ;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::CustomDomain>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::CustomDomain>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{body_content::get_provisioning_state, get_retry_after, LroStatus},
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    loop {
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let retry_after = get_retry_after(response.as_raw_response().headers());
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
+                            _ => {
+                                sleep(retry_after).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -12871,6 +15234,7 @@ pub mod custom_domains {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::CustomDomain> {
@@ -12901,14 +15265,17 @@ pub mod custom_domains {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -12928,7 +15295,6 @@ pub mod custom_domains {
                 self.custom_domain_https_parameters = Some(custom_domain_https_parameters.into());
                 self
             }
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -12937,7 +15303,7 @@ pub mod custom_domains {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}/enableCustomHttps" , this . client . endpoint () , & this . subscription_id , & this . resource_group_name , & this . profile_name , & this . endpoint_name , & this . custom_domain_name)) ? ;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -12945,9 +15311,6 @@ pub mod custom_domains {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = if let Some(custom_domain_https_parameters) = &this.custom_domain_https_parameters {
                             req.insert_header("content-type", "application/json");
                             azure_core::to_json(custom_domain_https_parameters)?
@@ -12959,17 +15322,54 @@ pub mod custom_domains {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/profiles/{}/endpoints/{}/customDomains/{}/enableCustomHttps" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . profile_name , & self . endpoint_name , & self . custom_domain_name)) ? ;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::CustomDomain>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::CustomDomain>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{body_content::get_provisioning_state, get_retry_after, LroStatus},
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    loop {
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let retry_after = get_retry_after(response.as_raw_response().headers());
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
+                            _ => {
+                                sleep(retry_after).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -12999,6 +15399,7 @@ pub mod resource_usage {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ResourceUsageListResult> {
@@ -13029,15 +15430,19 @@ pub mod resource_usage {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -13047,11 +15452,7 @@ pub mod resource_usage {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/providers/Microsoft.Cdn/checkResourceUsage",
-                            this.client.endpoint(),
-                            &this.subscription_id
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -13082,9 +15483,6 @@ pub mod resource_usage {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                                 req.set_body(req_body);
@@ -13102,6 +15500,19 @@ pub mod resource_usage {
                     }
                 };
                 azure_core::Pageable::new(make_request)
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/providers/Microsoft.Cdn/checkResourceUsage",
+                    self.client.endpoint(),
+                    &self.subscription_id
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -13125,6 +15536,7 @@ pub mod operations {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::OperationsListResult> {
@@ -13155,15 +15567,19 @@ pub mod operations {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
@@ -13172,7 +15588,7 @@ pub mod operations {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Cdn/operations", this.client.endpoint(),))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -13203,9 +15619,6 @@ pub mod operations {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -13222,6 +15635,15 @@ pub mod operations {
                     }
                 };
                 azure_core::Pageable::new(make_request)
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Cdn/operations", self.client.endpoint(),))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -13245,6 +15667,7 @@ pub mod edge_nodes {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::EdgenodeResult> {
@@ -13275,15 +15698,19 @@ pub mod edge_nodes {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
         }
@@ -13292,7 +15719,7 @@ pub mod edge_nodes {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Cdn/edgenodes", this.client.endpoint(),))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -13323,9 +15750,6 @@ pub mod edge_nodes {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -13342,6 +15766,15 @@ pub mod edge_nodes {
                     }
                 };
                 azure_core::Pageable::new(make_request)
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!("{}/providers/Microsoft.Cdn/edgenodes", self.client.endpoint(),))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -13455,6 +15888,7 @@ pub mod policies {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::CdnWebApplicationFirewallPolicyList> {
@@ -13485,15 +15919,19 @@ pub mod policies {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -13504,12 +15942,7 @@ pub mod policies {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/cdnWebApplicationFirewallPolicies",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -13540,9 +15973,6 @@ pub mod policies {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -13560,6 +15990,20 @@ pub mod policies {
                 };
                 azure_core::Pageable::new(make_request)
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/cdnWebApplicationFirewallPolicies",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
     }
     pub mod get {
@@ -13568,6 +16012,7 @@ pub mod policies {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::CdnWebApplicationFirewallPolicy> {
@@ -13598,15 +16043,19 @@ pub mod policies {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -13622,13 +16071,7 @@ pub mod policies {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/cdnWebApplicationFirewallPolicies/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -13636,14 +16079,26 @@ pub mod policies {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/cdnWebApplicationFirewallPolicies/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
@@ -13665,6 +16120,7 @@ pub mod policies {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::CdnWebApplicationFirewallPolicy> {
@@ -13695,14 +16151,17 @@ pub mod policies {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -13712,7 +16171,6 @@ pub mod policies {
             pub(crate) cdn_web_application_firewall_policy: models::CdnWebApplicationFirewallPolicy,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -13721,13 +16179,7 @@ pub mod policies {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/cdnWebApplicationFirewallPolicies/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -13735,9 +16187,6 @@ pub mod policies {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.cdn_web_application_firewall_policy)?;
                         req.set_body(req_body);
@@ -13745,17 +16194,60 @@ pub mod policies {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/cdnWebApplicationFirewallPolicies/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::CdnWebApplicationFirewallPolicy>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::CdnWebApplicationFirewallPolicy>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{body_content::get_provisioning_state, get_retry_after, LroStatus},
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    loop {
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let retry_after = get_retry_after(response.as_raw_response().headers());
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
+                            _ => {
+                                sleep(retry_after).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -13765,6 +16257,7 @@ pub mod policies {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::CdnWebApplicationFirewallPolicy> {
@@ -13795,14 +16288,17 @@ pub mod policies {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
+        #[doc = r" (LRO)."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the `RequestBuilder` into a future"]
+        #[doc = r" executes the request and polls the service until the"]
+        #[doc = r" operation completes."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use"]
+        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
         #[doc = r" [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
@@ -13812,7 +16308,6 @@ pub mod policies {
             pub(crate) cdn_web_application_firewall_policy_patch_parameters: models::CdnWebApplicationFirewallPolicyPatchParameters,
         }
         impl RequestBuilder {
-            #[doc = "only the first response will be fetched as long running operations are not supported yet"]
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -13821,13 +16316,7 @@ pub mod policies {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/cdnWebApplicationFirewallPolicies/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -13835,9 +16324,6 @@ pub mod policies {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.cdn_web_application_firewall_policy_patch_parameters)?;
                         req.set_body(req_body);
@@ -13845,17 +16331,60 @@ pub mod policies {
                     }
                 })
             }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/cdnWebApplicationFirewallPolicies/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
+            }
         }
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::CdnWebApplicationFirewallPolicy>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::CdnWebApplicationFirewallPolicy>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
+            #[doc = ""]
+            #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
             #[doc = ""]
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
+                Box::pin(async move {
+                    use azure_core::{
+                        error::{Error, ErrorKind},
+                        lro::{body_content::get_provisioning_state, get_retry_after, LroStatus},
+                        sleep::sleep,
+                    };
+                    use std::time::Duration;
+                    loop {
+                        let this = self.clone();
+                        let response = this.send().await?;
+                        let retry_after = get_retry_after(response.as_raw_response().headers());
+                        let status = response.as_raw_response().status();
+                        let body = response.into_body().await?;
+                        let provisioning_state = get_provisioning_state(status, &body)?;
+                        log::trace!("current provisioning_state: {provisioning_state:?}");
+                        match provisioning_state {
+                            LroStatus::Succeeded => return Ok(body),
+                            LroStatus::Failed => return Err(Error::message(ErrorKind::Other, "Long running operation failed".to_string())),
+                            LroStatus::Canceled => {
+                                return Err(Error::message(ErrorKind::Other, "Long running operation canceled".to_string()))
+                            }
+                            _ => {
+                                sleep(retry_after).await;
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -13865,6 +16394,7 @@ pub mod policies {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -13890,15 +16420,19 @@ pub mod policies {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) resource_group_name: String,
@@ -13914,13 +16448,7 @@ pub mod policies {
                 Box::pin({
                     let this = self.clone();
                     async move {
-                        let url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/cdnWebApplicationFirewallPolicies/{}",
-                            this.client.endpoint(),
-                            &this.subscription_id,
-                            &this.resource_group_name,
-                            &this.policy_name
-                        ))?;
+                        let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
@@ -13928,14 +16456,26 @@ pub mod policies {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        req.url_mut()
-                            .query_pairs_mut()
-                            .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.Cdn/cdnWebApplicationFirewallPolicies/{}",
+                    self.client.endpoint(),
+                    &self.subscription_id,
+                    &self.resource_group_name,
+                    &self.policy_name
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }
@@ -13965,6 +16505,7 @@ pub mod managed_rule_sets {
         use futures::future::BoxFuture;
         #[cfg(target_arch = "wasm32")]
         use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
             pub async fn into_body(self) -> azure_core::Result<models::ManagedRuleSetDefinitionList> {
@@ -13995,15 +16536,19 @@ pub mod managed_rule_sets {
         #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
         #[doc = r" parameters can be chained."]
         #[doc = r""]
-        #[doc = r" The building of a request is typically finalized by invoking `.await` on"]
-        #[doc = r" `RequestBuilder`. This implicitly invokes the [`IntoFuture::into_future()`](#method.into_future)"]
-        #[doc = r" method, which converts `RequestBuilder` into a future that executes the request"]
-        #[doc = r" operation and returns a `Result` with the parsed response."]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
         #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details (e.g. to inspect"]
-        #[doc = r" response headers or raw body data) then you can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future that resolves to a lower-level"]
-        #[doc = r" [`Response`] value."]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
@@ -14013,11 +16558,7 @@ pub mod managed_rule_sets {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
-                        let mut url = azure_core::Url::parse(&format!(
-                            "{}/subscriptions/{}/providers/Microsoft.Cdn/cdnWebApplicationFirewallManagedRuleSets",
-                            this.client.endpoint(),
-                            &this.subscription_id
-                        ))?;
+                        let mut url = this.url()?;
                         let rsp = match continuation {
                             Some(value) => {
                                 url.set_path("");
@@ -14048,9 +16589,6 @@ pub mod managed_rule_sets {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                req.url_mut()
-                                    .query_pairs_mut()
-                                    .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -14067,6 +16605,19 @@ pub mod managed_rule_sets {
                     }
                 };
                 azure_core::Pageable::new(make_request)
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core::Url::parse(&format!(
+                    "{}/subscriptions/{}/providers/Microsoft.Cdn/cdnWebApplicationFirewallManagedRuleSets",
+                    self.client.endpoint(),
+                    &self.subscription_id
+                ))?;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2022-05-01-preview");
+                }
+                Ok(url)
             }
         }
     }

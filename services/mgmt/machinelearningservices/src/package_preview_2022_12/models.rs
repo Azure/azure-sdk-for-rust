@@ -404,7 +404,7 @@ pub struct AmlComputeNodesInformation {
 impl azure_core::Continuable for AmlComputeNodesInformation {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AmlComputeNodesInformation {
@@ -1337,7 +1337,7 @@ pub struct BatchDeploymentTrackedResourceArmPaginatedResult {
 impl azure_core::Continuable for BatchDeploymentTrackedResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BatchDeploymentTrackedResourceArmPaginatedResult {
@@ -1422,7 +1422,7 @@ pub struct BatchEndpointTrackedResourceArmPaginatedResult {
 impl azure_core::Continuable for BatchEndpointTrackedResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BatchEndpointTrackedResourceArmPaginatedResult {
@@ -2006,7 +2006,7 @@ pub struct CodeContainerResourceArmPaginatedResult {
 impl azure_core::Continuable for CodeContainerResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CodeContainerResourceArmPaginatedResult {
@@ -2064,7 +2064,7 @@ pub struct CodeVersionResourceArmPaginatedResult {
 impl azure_core::Continuable for CodeVersionResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CodeVersionResourceArmPaginatedResult {
@@ -2204,7 +2204,7 @@ pub struct ComponentContainerResourceArmPaginatedResult {
 impl azure_core::Continuable for ComponentContainerResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ComponentContainerResourceArmPaginatedResult {
@@ -2262,7 +2262,7 @@ pub struct ComponentVersionResourceArmPaginatedResult {
 impl azure_core::Continuable for ComponentVersionResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ComponentVersionResourceArmPaginatedResult {
@@ -4069,7 +4069,7 @@ pub struct DataContainerResourceArmPaginatedResult {
 impl azure_core::Continuable for DataContainerResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataContainerResourceArmPaginatedResult {
@@ -4245,7 +4245,7 @@ pub struct DataVersionBaseResourceArmPaginatedResult {
 impl azure_core::Continuable for DataVersionBaseResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataVersionBaseResourceArmPaginatedResult {
@@ -4408,7 +4408,7 @@ pub struct DatastoreResourceArmPaginatedResult {
 impl azure_core::Continuable for DatastoreResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DatastoreResourceArmPaginatedResult {
@@ -5368,7 +5368,7 @@ pub struct EnvironmentContainerResourceArmPaginatedResult {
 impl azure_core::Continuable for EnvironmentContainerResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EnvironmentContainerResourceArmPaginatedResult {
@@ -5538,7 +5538,7 @@ pub struct EnvironmentVersionResourceArmPaginatedResult {
 impl azure_core::Continuable for EnvironmentVersionResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EnvironmentVersionResourceArmPaginatedResult {
@@ -7460,7 +7460,7 @@ pub struct JobBaseResourceArmPaginatedResult {
 impl azure_core::Continuable for JobBaseResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobBaseResourceArmPaginatedResult {
@@ -8262,7 +8262,7 @@ pub struct LabelingJobResourceArmPaginatedResult {
 impl azure_core::Continuable for LabelingJobResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LabelingJobResourceArmPaginatedResult {
@@ -8343,7 +8343,7 @@ pub struct ListAmlUserFeatureResult {
 impl azure_core::Continuable for ListAmlUserFeatureResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListAmlUserFeatureResult {
@@ -8390,7 +8390,7 @@ pub struct ListUsagesResult {
 impl azure_core::Continuable for ListUsagesResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListUsagesResult {
@@ -8471,7 +8471,7 @@ pub struct ListWorkspaceQuotas {
 impl azure_core::Continuable for ListWorkspaceQuotas {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListWorkspaceQuotas {
@@ -8953,7 +8953,7 @@ pub struct ModelContainerResourceArmPaginatedResult {
 impl azure_core::Continuable for ModelContainerResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ModelContainerResourceArmPaginatedResult {
@@ -9063,7 +9063,7 @@ pub struct ModelVersionResourceArmPaginatedResult {
 impl azure_core::Continuable for ModelVersionResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ModelVersionResourceArmPaginatedResult {
@@ -9671,7 +9671,7 @@ pub struct OnlineDeploymentTrackedResourceArmPaginatedResult {
 impl azure_core::Continuable for OnlineDeploymentTrackedResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OnlineDeploymentTrackedResourceArmPaginatedResult {
@@ -9756,7 +9756,7 @@ pub struct OnlineEndpointTrackedResourceArmPaginatedResult {
 impl azure_core::Continuable for OnlineEndpointTrackedResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OnlineEndpointTrackedResourceArmPaginatedResult {
@@ -9962,7 +9962,7 @@ pub struct PaginatedComputeResourcesList {
 impl azure_core::Continuable for PaginatedComputeResourcesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PaginatedComputeResourcesList {
@@ -10939,7 +10939,7 @@ pub struct RegistryTrackedResourceArmPaginatedResult {
 impl azure_core::Continuable for RegistryTrackedResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RegistryTrackedResourceArmPaginatedResult {
@@ -11670,7 +11670,7 @@ pub struct ScheduleResourceArmPaginatedResult {
 impl azure_core::Continuable for ScheduleResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScheduleResourceArmPaginatedResult {
@@ -12138,7 +12138,7 @@ pub struct SkuResourceArmPaginatedResult {
 impl azure_core::Continuable for SkuResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SkuResourceArmPaginatedResult {
@@ -14604,7 +14604,7 @@ pub struct WorkspaceConnectionPropertiesV2BasicResourceArmPaginatedResult {
 impl azure_core::Continuable for WorkspaceConnectionPropertiesV2BasicResourceArmPaginatedResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceConnectionPropertiesV2BasicResourceArmPaginatedResult {
@@ -14665,7 +14665,7 @@ pub struct WorkspaceListResult {
 impl azure_core::Continuable for WorkspaceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceListResult {

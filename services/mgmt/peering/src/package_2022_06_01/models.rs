@@ -189,7 +189,7 @@ pub struct CdnPeeringPrefixListResult {
 impl azure_core::Continuable for CdnPeeringPrefixListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CdnPeeringPrefixListResult {
@@ -267,7 +267,7 @@ pub struct ConnectionMonitorTestListResult {
 impl azure_core::Continuable for ConnectionMonitorTestListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConnectionMonitorTestListResult {
@@ -963,7 +963,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1014,7 +1014,7 @@ pub struct PeerAsnListResult {
 impl azure_core::Continuable for PeerAsnListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PeerAsnListResult {
@@ -1197,7 +1197,7 @@ pub struct PeeringListResult {
 impl azure_core::Continuable for PeeringListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PeeringListResult {
@@ -1279,7 +1279,7 @@ pub struct PeeringLocationListResult {
 impl azure_core::Continuable for PeeringLocationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PeeringLocationListResult {
@@ -1561,7 +1561,7 @@ pub struct PeeringReceivedRouteListResult {
 impl azure_core::Continuable for PeeringReceivedRouteListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PeeringReceivedRouteListResult {
@@ -1600,7 +1600,7 @@ pub struct PeeringRegisteredAsnListResult {
 impl azure_core::Continuable for PeeringRegisteredAsnListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PeeringRegisteredAsnListResult {
@@ -1701,7 +1701,7 @@ pub struct PeeringRegisteredPrefixListResult {
 impl azure_core::Continuable for PeeringRegisteredPrefixListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PeeringRegisteredPrefixListResult {
@@ -1880,7 +1880,7 @@ pub struct PeeringServiceCountryListResult {
 impl azure_core::Continuable for PeeringServiceCountryListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PeeringServiceCountryListResult {
@@ -1905,7 +1905,7 @@ pub struct PeeringServiceListResult {
 impl azure_core::Continuable for PeeringServiceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PeeringServiceListResult {
@@ -1944,7 +1944,7 @@ pub struct PeeringServiceLocationListResult {
 impl azure_core::Continuable for PeeringServiceLocationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PeeringServiceLocationListResult {
@@ -2025,7 +2025,7 @@ pub struct PeeringServicePrefixListResult {
 impl azure_core::Continuable for PeeringServicePrefixListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PeeringServicePrefixListResult {
@@ -2299,7 +2299,7 @@ pub struct PeeringServiceProviderListResult {
 impl azure_core::Continuable for PeeringServiceProviderListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PeeringServiceProviderListResult {

@@ -38,7 +38,7 @@ pub struct AgentList {
 impl azure_core::Continuable for AgentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AgentList {
@@ -408,7 +408,7 @@ pub struct EndpointList {
 impl azure_core::Continuable for EndpointList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EndpointList {
@@ -518,7 +518,7 @@ pub struct JobDefinitionList {
 impl azure_core::Continuable for JobDefinitionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobDefinitionList {
@@ -837,7 +837,7 @@ pub struct JobRunList {
 impl azure_core::Continuable for JobRunList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobRunList {
@@ -1295,7 +1295,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1336,7 +1336,7 @@ pub struct ProjectList {
 impl azure_core::Continuable for ProjectList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProjectList {
@@ -1487,7 +1487,7 @@ pub struct StorageMoverList {
 impl azure_core::Continuable for StorageMoverList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageMoverList {

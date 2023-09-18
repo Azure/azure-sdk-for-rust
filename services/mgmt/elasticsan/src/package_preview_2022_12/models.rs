@@ -37,7 +37,7 @@ pub struct ElasticSanList {
 impl azure_core::Continuable for ElasticSanList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ElasticSanList {
@@ -1135,7 +1135,7 @@ pub struct VolumeGroupList {
 impl azure_core::Continuable for VolumeGroupList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VolumeGroupList {
@@ -1219,7 +1219,7 @@ pub struct VolumeList {
 impl azure_core::Continuable for VolumeList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VolumeList {

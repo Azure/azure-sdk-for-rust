@@ -485,7 +485,7 @@ pub struct ReceivedShareList {
 impl azure_core::Continuable for ReceivedShareList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ReceivedShareList {
@@ -574,7 +574,7 @@ pub struct SentShareInvitationList {
 impl azure_core::Continuable for SentShareInvitationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SentShareInvitationList {
@@ -594,7 +594,7 @@ pub struct SentShareList {
 impl azure_core::Continuable for SentShareList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SentShareList {
@@ -734,7 +734,7 @@ pub struct ShareResourceList {
 impl azure_core::Continuable for ShareResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ShareResourceList {

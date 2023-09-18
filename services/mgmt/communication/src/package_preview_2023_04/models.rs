@@ -227,7 +227,7 @@ pub struct CommunicationServiceResourceList {
 impl azure_core::Continuable for CommunicationServiceResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CommunicationServiceResourceList {
@@ -504,7 +504,7 @@ pub struct DomainResourceList {
 impl azure_core::Continuable for DomainResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DomainResourceList {
@@ -619,7 +619,7 @@ pub struct EmailServiceResourceList {
 impl azure_core::Continuable for EmailServiceResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EmailServiceResourceList {
@@ -959,7 +959,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1130,7 +1130,7 @@ pub struct SenderUsernameResourceCollection {
 impl azure_core::Continuable for SenderUsernameResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SenderUsernameResourceCollection {

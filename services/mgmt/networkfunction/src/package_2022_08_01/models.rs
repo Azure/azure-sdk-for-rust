@@ -37,7 +37,7 @@ pub struct AzureTrafficCollectorListResult {
 impl azure_core::Continuable for AzureTrafficCollectorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AzureTrafficCollectorListResult {
@@ -145,7 +145,7 @@ pub struct CollectorPolicyListResult {
 impl azure_core::Continuable for CollectorPolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CollectorPolicyListResult {

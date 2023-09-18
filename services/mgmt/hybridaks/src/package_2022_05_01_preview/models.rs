@@ -930,7 +930,7 @@ pub struct ResourceProviderOperationList {
 impl azure_core::Continuable for ResourceProviderOperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceProviderOperationList {
@@ -1345,7 +1345,7 @@ pub struct HybridIdentityMetadataList {
 impl azure_core::Continuable for HybridIdentityMetadataList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HybridIdentityMetadataList {
@@ -1750,7 +1750,7 @@ pub struct ProvisionedClustersResponseListResult {
 impl azure_core::Continuable for ProvisionedClustersResponseListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProvisionedClustersResponseListResult {
@@ -1825,7 +1825,7 @@ pub struct StorageSpacesListResult {
 impl azure_core::Continuable for StorageSpacesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageSpacesListResult {
@@ -2166,7 +2166,7 @@ pub struct VirtualNetworksListResult {
 impl azure_core::Continuable for VirtualNetworksListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualNetworksListResult {

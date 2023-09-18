@@ -77,7 +77,7 @@ pub struct ConfluentAgreementResourceListResponse {
 impl azure_core::Continuable for ConfluentAgreementResourceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConfluentAgreementResourceListResponse {
@@ -181,7 +181,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -261,7 +261,7 @@ pub struct OrganizationResourceListResult {
 impl azure_core::Continuable for OrganizationResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OrganizationResourceListResult {

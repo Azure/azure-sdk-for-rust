@@ -76,7 +76,7 @@ pub struct AddressResourceList {
 impl azure_core::Continuable for AddressResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AddressResourceList {
@@ -427,7 +427,7 @@ pub struct Configurations {
 impl azure_core::Continuable for Configurations {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl Configurations {
@@ -1411,7 +1411,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1726,7 +1726,7 @@ pub struct OrderItemResourceList {
 impl azure_core::Continuable for OrderItemResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OrderItemResourceList {
@@ -1837,7 +1837,7 @@ pub struct OrderResourceList {
 impl azure_core::Continuable for OrderResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OrderResourceList {
@@ -1992,7 +1992,7 @@ pub struct ProductFamilies {
 impl azure_core::Continuable for ProductFamilies {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProductFamilies {
@@ -2017,7 +2017,7 @@ pub struct ProductFamiliesMetadata {
 impl azure_core::Continuable for ProductFamiliesMetadata {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProductFamiliesMetadata {

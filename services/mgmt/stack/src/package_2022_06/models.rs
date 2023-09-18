@@ -241,7 +241,7 @@ pub struct CustomerSubscriptionList {
 impl azure_core::Continuable for CustomerSubscriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomerSubscriptionList {
@@ -572,7 +572,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -641,7 +641,7 @@ pub struct ProductList {
 impl azure_core::Continuable for ProductList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProductList {
@@ -812,7 +812,7 @@ pub struct RegistrationList {
 impl azure_core::Continuable for RegistrationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RegistrationList {

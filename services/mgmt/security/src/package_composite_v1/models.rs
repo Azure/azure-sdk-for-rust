@@ -167,7 +167,7 @@ pub struct AdaptiveNetworkHardeningsList {
 impl azure_core::Continuable for AdaptiveNetworkHardeningsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AdaptiveNetworkHardeningsList {
@@ -322,7 +322,7 @@ pub struct AlertList {
 impl azure_core::Continuable for AlertList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertList {
@@ -531,7 +531,7 @@ pub struct AlertsSuppressionRulesList {
 impl azure_core::Continuable for AlertsSuppressionRulesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertsSuppressionRulesList {
@@ -555,7 +555,7 @@ pub struct AllowedConnectionsList {
 impl azure_core::Continuable for AllowedConnectionsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AllowedConnectionsList {
@@ -794,7 +794,7 @@ pub struct AscLocationList {
 impl azure_core::Continuable for AscLocationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AscLocationList {
@@ -979,7 +979,7 @@ pub struct AutoProvisioningSettingList {
 impl azure_core::Continuable for AutoProvisioningSettingList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AutoProvisioningSettingList {
@@ -1182,7 +1182,7 @@ pub struct AutomationList {
 impl azure_core::Continuable for AutomationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AutomationList {
@@ -1881,7 +1881,7 @@ pub struct ComplianceList {
 impl azure_core::Continuable for ComplianceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ComplianceList {
@@ -2048,7 +2048,7 @@ pub struct ConnectorSettingList {
 impl azure_core::Continuable for ConnectorSettingList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConnectorSettingList {
@@ -2223,7 +2223,7 @@ pub struct CustomEntityStoreAssignmentsListResult {
 impl azure_core::Continuable for CustomEntityStoreAssignmentsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomEntityStoreAssignmentsListResult {
@@ -2304,7 +2304,7 @@ pub struct DeviceSecurityGroupList {
 impl azure_core::Continuable for DeviceSecurityGroupList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceSecurityGroupList {
@@ -2398,7 +2398,7 @@ pub struct DiscoveredSecuritySolutionList {
 impl azure_core::Continuable for DiscoveredSecuritySolutionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DiscoveredSecuritySolutionList {
@@ -2681,7 +2681,7 @@ pub struct ExternalSecuritySolutionList {
 impl azure_core::Continuable for ExternalSecuritySolutionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExternalSecuritySolutionList {
@@ -3170,7 +3170,7 @@ pub struct InformationProtectionPolicyList {
 impl azure_core::Continuable for InformationProtectionPolicyList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InformationProtectionPolicyList {
@@ -3279,7 +3279,7 @@ pub struct IngestionSettingList {
 impl azure_core::Continuable for IngestionSettingList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IngestionSettingList {
@@ -3322,7 +3322,7 @@ pub struct JitNetworkAccessPoliciesList {
 impl azure_core::Continuable for JitNetworkAccessPoliciesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JitNetworkAccessPoliciesList {
@@ -3911,7 +3911,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -4041,7 +4041,7 @@ pub struct PricingList {
 impl azure_core::Continuable for PricingList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PricingList {
@@ -4262,7 +4262,7 @@ pub struct RegulatoryComplianceAssessmentList {
 impl azure_core::Continuable for RegulatoryComplianceAssessmentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RegulatoryComplianceAssessmentList {
@@ -4373,7 +4373,7 @@ pub struct RegulatoryComplianceControlList {
 impl azure_core::Continuable for RegulatoryComplianceControlList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RegulatoryComplianceControlList {
@@ -4474,7 +4474,7 @@ pub struct RegulatoryComplianceStandardList {
 impl azure_core::Continuable for RegulatoryComplianceStandardList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RegulatoryComplianceStandardList {
@@ -5296,7 +5296,7 @@ pub struct SecureScoreControlList {
 impl azure_core::Continuable for SecureScoreControlList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecureScoreControlList {
@@ -5401,7 +5401,7 @@ pub struct SecureScoresList {
 impl azure_core::Continuable for SecureScoresList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecureScoresList {
@@ -5514,7 +5514,7 @@ pub struct SecurityConnectorsList {
 impl azure_core::Continuable for SecurityConnectorsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecurityConnectorsList {
@@ -5553,7 +5553,7 @@ pub struct SecurityContactList {
 impl azure_core::Continuable for SecurityContactList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecurityContactList {
@@ -5809,7 +5809,7 @@ pub struct SecuritySubAssessmentList {
 impl azure_core::Continuable for SecuritySubAssessmentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecuritySubAssessmentList {
@@ -5886,7 +5886,7 @@ pub struct SecurityTaskList {
 impl azure_core::Continuable for SecurityTaskList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecurityTaskList {
@@ -6103,7 +6103,7 @@ pub struct SettingsList {
 impl azure_core::Continuable for SettingsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SettingsList {
@@ -6233,7 +6233,7 @@ pub struct SoftwaresList {
 impl azure_core::Continuable for SoftwaresList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SoftwaresList {
@@ -6453,7 +6453,7 @@ pub struct TopologyList {
 impl azure_core::Continuable for TopologyList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TopologyList {
@@ -6721,7 +6721,7 @@ pub struct WorkspaceSettingList {
 impl azure_core::Continuable for WorkspaceSettingList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceSettingList {
@@ -7185,7 +7185,7 @@ pub struct CustomAssessmentAutomationsListResult {
 impl azure_core::Continuable for CustomAssessmentAutomationsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomAssessmentAutomationsListResult {
@@ -8156,7 +8156,7 @@ pub struct SecureScoreControlDefinitionList {
 impl azure_core::Continuable for SecureScoreControlDefinitionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecureScoreControlDefinitionList {

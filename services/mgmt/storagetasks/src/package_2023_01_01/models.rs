@@ -305,7 +305,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -410,7 +410,7 @@ pub struct StorageTaskAssignmentsListResult {
 impl azure_core::Continuable for StorageTaskAssignmentsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageTaskAssignmentsListResult {
@@ -878,7 +878,7 @@ pub struct StorageTaskReportSummary {
 impl azure_core::Continuable for StorageTaskReportSummary {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageTaskReportSummary {
@@ -921,7 +921,7 @@ pub struct StorageTasksListResult {
 impl azure_core::Continuable for StorageTasksListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageTasksListResult {

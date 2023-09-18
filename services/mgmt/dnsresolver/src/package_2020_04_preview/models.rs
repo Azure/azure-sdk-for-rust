@@ -88,7 +88,7 @@ pub struct DnsForwardingRulesetListResult {
 impl azure_core::Continuable for DnsForwardingRulesetListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DnsForwardingRulesetListResult {
@@ -173,7 +173,7 @@ pub struct DnsResolverListResult {
 impl azure_core::Continuable for DnsResolverListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DnsResolverListResult {
@@ -296,7 +296,7 @@ pub struct ForwardingRuleListResult {
 impl azure_core::Continuable for ForwardingRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ForwardingRuleListResult {
@@ -496,7 +496,7 @@ pub struct InboundEndpointListResult {
 impl azure_core::Continuable for InboundEndpointListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InboundEndpointListResult {
@@ -644,7 +644,7 @@ pub struct OutboundEndpointListResult {
 impl azure_core::Continuable for OutboundEndpointListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OutboundEndpointListResult {
@@ -786,7 +786,7 @@ pub struct SubResourceListResult {
 impl azure_core::Continuable for SubResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SubResourceListResult {
@@ -861,7 +861,7 @@ pub struct VirtualNetworkDnsForwardingRulesetListResult {
 impl azure_core::Continuable for VirtualNetworkDnsForwardingRulesetListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualNetworkDnsForwardingRulesetListResult {
@@ -906,7 +906,7 @@ pub struct VirtualNetworkLinkListResult {
 impl azure_core::Continuable for VirtualNetworkLinkListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualNetworkLinkListResult {

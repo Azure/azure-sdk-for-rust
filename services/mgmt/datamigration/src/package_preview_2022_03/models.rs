@@ -1859,7 +1859,7 @@ pub struct DataMigrationServiceList {
 impl azure_core::Continuable for DataMigrationServiceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataMigrationServiceList {
@@ -2264,7 +2264,7 @@ pub struct DatabaseMigrationListResult {
 impl azure_core::Continuable for DatabaseMigrationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DatabaseMigrationListResult {
@@ -2864,7 +2864,7 @@ pub struct FileList {
 impl azure_core::Continuable for FileList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FileList {
@@ -7939,7 +7939,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -8234,7 +8234,7 @@ pub struct ProjectList {
 impl azure_core::Continuable for ProjectList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProjectList {
@@ -8812,7 +8812,7 @@ pub struct QuotaList {
 impl azure_core::Continuable for QuotaList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl QuotaList {
@@ -9206,7 +9206,7 @@ pub struct ResourceSkusResult {
 impl azure_core::Continuable for ResourceSkusResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceSkusResult {
@@ -9636,7 +9636,7 @@ pub struct ServiceSkuList {
 impl azure_core::Continuable for ServiceSkuList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceSkuList {
@@ -9943,7 +9943,7 @@ pub struct SqlMigrationListResult {
 impl azure_core::Continuable for SqlMigrationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlMigrationListResult {
@@ -10535,7 +10535,7 @@ pub struct TaskList {
 impl azure_core::Continuable for TaskList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TaskList {

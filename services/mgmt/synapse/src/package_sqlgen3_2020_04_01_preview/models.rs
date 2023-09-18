@@ -395,7 +395,7 @@ pub struct SqlDatabaseListResult {
 impl azure_core::Continuable for SqlDatabaseListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlDatabaseListResult {
@@ -582,7 +582,7 @@ pub struct SqlPoolListResult {
 impl azure_core::Continuable for SqlPoolListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlPoolListResult {

@@ -129,7 +129,7 @@ pub struct ApplicationResourceDescriptionList {
 impl azure_core::Continuable for ApplicationResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationResourceDescriptionList {
@@ -955,7 +955,7 @@ pub struct NetworkResourceDescriptionList {
 impl azure_core::Continuable for NetworkResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkResourceDescriptionList {
@@ -996,7 +996,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1132,7 +1132,7 @@ pub struct ServiceList {
 impl azure_core::Continuable for ServiceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceList {
@@ -1174,7 +1174,7 @@ pub struct ServiceReplicaList {
 impl azure_core::Continuable for ServiceReplicaList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceReplicaList {
@@ -1519,7 +1519,7 @@ pub struct VolumeResourceDescriptionList {
 impl azure_core::Continuable for VolumeResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VolumeResourceDescriptionList {

@@ -262,7 +262,7 @@ pub struct BinaryHardeningList {
 impl azure_core::Continuable for BinaryHardeningList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BinaryHardeningList {
@@ -388,7 +388,7 @@ pub struct ComponentList {
 impl azure_core::Continuable for ComponentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ComponentList {
@@ -666,7 +666,7 @@ pub struct CryptoCertificateList {
 impl azure_core::Continuable for CryptoCertificateList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CryptoCertificateList {
@@ -803,7 +803,7 @@ pub struct CryptoKeyList {
 impl azure_core::Continuable for CryptoKeyList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CryptoKeyList {
@@ -934,7 +934,7 @@ pub struct CveList {
 impl azure_core::Continuable for CveList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CveList {
@@ -1066,7 +1066,7 @@ pub struct FirmwareList {
 impl azure_core::Continuable for FirmwareList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FirmwareList {
@@ -1403,7 +1403,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1476,7 +1476,7 @@ pub struct PasswordHashList {
 impl azure_core::Continuable for PasswordHashList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PasswordHashList {
@@ -1593,7 +1593,7 @@ pub struct WorkspaceList {
 impl azure_core::Continuable for WorkspaceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceList {

@@ -216,7 +216,7 @@ pub struct DataConnectorListResponse {
 impl azure_core::Continuable for DataConnectorListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataConnectorListResponse {
@@ -288,7 +288,7 @@ pub struct DataManagerForAgricultureExtensionListResponse {
 impl azure_core::Continuable for DataManagerForAgricultureExtensionListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataManagerForAgricultureExtensionListResponse {
@@ -359,7 +359,7 @@ pub struct DataManagerForAgricultureListResponse {
 impl azure_core::Continuable for DataManagerForAgricultureListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataManagerForAgricultureListResponse {
@@ -480,7 +480,7 @@ pub struct DataManagerForAgricultureSolutionListResponse {
 impl azure_core::Continuable for DataManagerForAgricultureSolutionListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataManagerForAgricultureSolutionListResponse {
@@ -748,7 +748,7 @@ pub struct ExtensionListResponse {
 impl azure_core::Continuable for ExtensionListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExtensionListResponse {
@@ -1010,7 +1010,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1417,7 +1417,7 @@ pub struct SolutionListResponse {
 impl azure_core::Continuable for SolutionListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SolutionListResponse {

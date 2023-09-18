@@ -106,7 +106,7 @@ pub struct ApplicationResourceDescriptionList {
 impl azure_core::Continuable for ApplicationResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationResourceDescriptionList {
@@ -1091,7 +1091,7 @@ pub struct GatewayResourceDescriptionList {
 impl azure_core::Continuable for GatewayResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GatewayResourceDescriptionList {
@@ -1588,7 +1588,7 @@ pub struct NetworkResourceDescriptionList {
 impl azure_core::Continuable for NetworkResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkResourceDescriptionList {
@@ -1691,7 +1691,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1938,7 +1938,7 @@ pub struct SecretResourceDescriptionList {
 impl azure_core::Continuable for SecretResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecretResourceDescriptionList {
@@ -2048,7 +2048,7 @@ pub struct SecretValueResourceDescriptionList {
 impl azure_core::Continuable for SecretValueResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecretValueResourceDescriptionList {
@@ -2138,7 +2138,7 @@ pub struct ServiceReplicaDescriptionList {
 impl azure_core::Continuable for ServiceReplicaDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceReplicaDescriptionList {
@@ -2210,7 +2210,7 @@ pub struct ServiceResourceDescriptionList {
 impl azure_core::Continuable for ServiceResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceResourceDescriptionList {
@@ -2451,7 +2451,7 @@ pub struct VolumeResourceDescriptionList {
 impl azure_core::Continuable for VolumeResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VolumeResourceDescriptionList {

@@ -58,7 +58,7 @@ pub struct ClusterJobListResult {
 impl azure_core::Continuable for ClusterJobListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClusterJobListResult {
@@ -83,7 +83,7 @@ pub struct ClusterListResult {
 impl azure_core::Continuable for ClusterListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClusterListResult {
@@ -360,7 +360,7 @@ pub struct PrivateEndpointListResult {
 impl azure_core::Continuable for PrivateEndpointListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointListResult {

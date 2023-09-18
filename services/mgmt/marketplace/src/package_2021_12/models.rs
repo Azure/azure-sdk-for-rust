@@ -544,7 +544,7 @@ pub struct OfferListResponse {
 impl azure_core::Continuable for OfferListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OfferListResponse {
@@ -766,7 +766,7 @@ pub struct PrivateStoreList {
 impl azure_core::Continuable for PrivateStoreList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateStoreList {

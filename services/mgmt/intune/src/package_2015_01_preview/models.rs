@@ -27,7 +27,7 @@ pub struct AndroidMamPolicyCollection {
 impl azure_core::Continuable for AndroidMamPolicyCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl AndroidMamPolicyCollection {
@@ -104,7 +104,7 @@ pub struct ApplicationCollection {
 impl azure_core::Continuable for ApplicationCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationCollection {
@@ -169,7 +169,7 @@ pub struct DeviceCollection {
 impl azure_core::Continuable for DeviceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceCollection {
@@ -240,7 +240,7 @@ pub struct FlaggedEnrolledAppCollection {
 impl azure_core::Continuable for FlaggedEnrolledAppCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl FlaggedEnrolledAppCollection {
@@ -306,7 +306,7 @@ pub struct FlaggedUserCollection {
 impl azure_core::Continuable for FlaggedUserCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl FlaggedUserCollection {
@@ -359,7 +359,7 @@ pub struct GroupsCollection {
 impl azure_core::Continuable for GroupsCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl GroupsCollection {
@@ -377,7 +377,7 @@ pub struct IosmamPolicyCollection {
 impl azure_core::Continuable for IosmamPolicyCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl IosmamPolicyCollection {
@@ -408,7 +408,7 @@ pub struct LocationCollection {
 impl azure_core::Continuable for LocationCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl LocationCollection {
@@ -665,7 +665,7 @@ pub struct OperationResultCollection {
 impl azure_core::Continuable for OperationResultCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationResultCollection {
@@ -734,7 +734,7 @@ pub struct StatusesDefault {
 impl azure_core::Continuable for StatusesDefault {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.nextlink.clone()
+        self.nextlink.clone().filter(|value| !value.is_empty())
     }
 }
 impl StatusesDefault {

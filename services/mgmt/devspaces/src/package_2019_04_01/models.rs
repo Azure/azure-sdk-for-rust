@@ -78,7 +78,7 @@ pub struct ControllerList {
 impl azure_core::Continuable for ControllerList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ControllerList {
@@ -335,7 +335,7 @@ pub struct ResourceProviderOperationList {
 impl azure_core::Continuable for ResourceProviderOperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceProviderOperationList {

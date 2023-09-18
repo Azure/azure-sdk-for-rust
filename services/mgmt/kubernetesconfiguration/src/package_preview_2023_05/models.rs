@@ -263,7 +263,7 @@ pub struct ExtensionTypeVersionsList {
 impl azure_core::Continuable for ExtensionTypeVersionsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExtensionTypeVersionsList {
@@ -288,7 +288,7 @@ pub struct ExtensionTypesList {
 impl azure_core::Continuable for ExtensionTypesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExtensionTypesList {
@@ -313,7 +313,7 @@ pub struct OperationStatusList {
 impl azure_core::Continuable for OperationStatusList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationStatusList {
@@ -486,7 +486,7 @@ pub struct ResourceProviderOperationList {
 impl azure_core::Continuable for ResourceProviderOperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceProviderOperationList {

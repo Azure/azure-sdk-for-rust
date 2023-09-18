@@ -170,7 +170,7 @@ pub struct ProfessionalServiceAppOperationsResponseWithContinuation {
 impl azure_core::Continuable for ProfessionalServiceAppOperationsResponseWithContinuation {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProfessionalServiceAppOperationsResponseWithContinuation {
@@ -511,7 +511,7 @@ pub struct ProfessionalServiceResourceResponseWithContinuation {
 impl azure_core::Continuable for ProfessionalServiceResourceResponseWithContinuation {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProfessionalServiceResourceResponseWithContinuation {

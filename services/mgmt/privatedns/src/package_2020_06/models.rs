@@ -131,7 +131,7 @@ pub struct PrivateZoneListResult {
 impl azure_core::Continuable for PrivateZoneListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateZoneListResult {
@@ -294,7 +294,7 @@ pub struct RecordSetListResult {
 impl azure_core::Continuable for RecordSetListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RecordSetListResult {
@@ -525,7 +525,7 @@ pub struct VirtualNetworkLinkListResult {
 impl azure_core::Continuable for VirtualNetworkLinkListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualNetworkLinkListResult {

@@ -73,7 +73,7 @@ pub struct CustomCertificateList {
 impl azure_core::Continuable for CustomCertificateList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomCertificateList {
@@ -140,7 +140,7 @@ pub struct CustomDomainList {
 impl azure_core::Continuable for CustomDomainList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomDomainList {
@@ -612,7 +612,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -691,7 +691,7 @@ pub struct PrivateEndpointConnectionList {
 impl azure_core::Continuable for PrivateEndpointConnectionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionList {
@@ -756,7 +756,7 @@ pub struct PrivateLinkResourceList {
 impl azure_core::Continuable for PrivateLinkResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkResourceList {
@@ -969,7 +969,7 @@ pub struct ReplicaList {
 impl azure_core::Continuable for ReplicaList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ReplicaList {
@@ -1274,7 +1274,7 @@ pub struct SharedPrivateLinkResourceList {
 impl azure_core::Continuable for SharedPrivateLinkResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SharedPrivateLinkResourceList {
@@ -1607,7 +1607,7 @@ pub struct SignalRResourceList {
 impl azure_core::Continuable for SignalRResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SignalRResourceList {
@@ -1709,7 +1709,7 @@ pub struct SignalRUsageList {
 impl azure_core::Continuable for SignalRUsageList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SignalRUsageList {

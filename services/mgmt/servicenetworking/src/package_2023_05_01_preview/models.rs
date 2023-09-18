@@ -32,7 +32,7 @@ pub struct AssociationListResult {
 impl azure_core::Continuable for AssociationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AssociationListResult {
@@ -242,7 +242,7 @@ pub struct FrontendListResult {
 impl azure_core::Continuable for FrontendListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FrontendListResult {
@@ -418,7 +418,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -553,7 +553,7 @@ pub struct TrafficControllerListResult {
 impl azure_core::Continuable for TrafficControllerListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TrafficControllerListResult {

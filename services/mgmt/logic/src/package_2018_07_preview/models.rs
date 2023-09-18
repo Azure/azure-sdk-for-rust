@@ -1853,7 +1853,7 @@ pub struct IntegrationAccountAgreementListResult {
 impl azure_core::Continuable for IntegrationAccountAgreementListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IntegrationAccountAgreementListResult {
@@ -1945,7 +1945,7 @@ pub struct IntegrationAccountCertificateListResult {
 impl azure_core::Continuable for IntegrationAccountCertificateListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IntegrationAccountCertificateListResult {
@@ -1994,7 +1994,7 @@ pub struct IntegrationAccountListResult {
 impl azure_core::Continuable for IntegrationAccountListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IntegrationAccountListResult {
@@ -2046,7 +2046,7 @@ pub struct IntegrationAccountMapListResult {
 impl azure_core::Continuable for IntegrationAccountMapListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IntegrationAccountMapListResult {
@@ -2154,7 +2154,7 @@ pub struct IntegrationAccountPartnerListResult {
 impl azure_core::Continuable for IntegrationAccountPartnerListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IntegrationAccountPartnerListResult {
@@ -2241,7 +2241,7 @@ pub struct IntegrationAccountSchemaListResult {
 impl azure_core::Continuable for IntegrationAccountSchemaListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IntegrationAccountSchemaListResult {
@@ -2343,7 +2343,7 @@ pub struct IntegrationAccountSessionListResult {
 impl azure_core::Continuable for IntegrationAccountSessionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IntegrationAccountSessionListResult {
@@ -2747,7 +2747,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -3101,7 +3101,7 @@ pub struct RequestHistoryListResult {
 impl azure_core::Continuable for RequestHistoryListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RequestHistoryListResult {
@@ -3719,7 +3719,7 @@ pub struct WorkflowListResult {
 impl azure_core::Continuable for WorkflowListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkflowListResult {
@@ -3930,7 +3930,7 @@ pub struct WorkflowRunActionListResult {
 impl azure_core::Continuable for WorkflowRunActionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkflowRunActionListResult {
@@ -4066,7 +4066,7 @@ pub struct WorkflowRunListResult {
 impl azure_core::Continuable for WorkflowRunListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkflowRunListResult {
@@ -4376,7 +4376,7 @@ pub struct WorkflowTriggerHistoryListResult {
 impl azure_core::Continuable for WorkflowTriggerHistoryListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkflowTriggerHistoryListResult {
@@ -4465,7 +4465,7 @@ pub struct WorkflowTriggerListResult {
 impl azure_core::Continuable for WorkflowTriggerListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkflowTriggerListResult {
@@ -4631,7 +4631,7 @@ pub struct WorkflowVersionListResult {
 impl azure_core::Continuable for WorkflowVersionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkflowVersionListResult {

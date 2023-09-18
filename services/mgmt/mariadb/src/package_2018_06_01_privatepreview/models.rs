@@ -42,7 +42,7 @@ pub struct AdvisorsResultList {
 impl azure_core::Continuable for AdvisorsResultList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AdvisorsResultList {
@@ -611,7 +611,7 @@ pub struct PrivateEndpointConnectionListResult {
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionListResult {
@@ -677,7 +677,7 @@ pub struct PrivateLinkResourceListResult {
 impl azure_core::Continuable for PrivateLinkResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkResourceListResult {
@@ -839,7 +839,7 @@ pub struct QueryTextsResultList {
 impl azure_core::Continuable for QueryTextsResultList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl QueryTextsResultList {
@@ -911,7 +911,7 @@ pub struct RecommendationActionsResultList {
 impl azure_core::Continuable for RecommendationActionsResultList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RecommendationActionsResultList {
@@ -1737,7 +1737,7 @@ pub struct TopQueryStatisticsResultList {
 impl azure_core::Continuable for TopQueryStatisticsResultList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TopQueryStatisticsResultList {
@@ -1796,7 +1796,7 @@ pub struct VirtualNetworkRuleListResult {
 impl azure_core::Continuable for VirtualNetworkRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualNetworkRuleListResult {
@@ -1976,7 +1976,7 @@ pub struct WaitStatisticsResultList {
 impl azure_core::Continuable for WaitStatisticsResultList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WaitStatisticsResultList {

@@ -88,7 +88,7 @@ pub struct HealthMonitorList {
 impl azure_core::Continuable for HealthMonitorList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HealthMonitorList {
@@ -165,7 +165,7 @@ pub struct HealthMonitorStateChangeList {
 impl azure_core::Continuable for HealthMonitorStateChangeList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HealthMonitorStateChangeList {
@@ -306,7 +306,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {

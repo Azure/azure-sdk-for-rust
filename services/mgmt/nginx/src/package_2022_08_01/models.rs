@@ -117,7 +117,7 @@ pub struct NginxCertificateListResponse {
 impl azure_core::Continuable for NginxCertificateListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NginxCertificateListResponse {
@@ -193,7 +193,7 @@ pub struct NginxConfigurationListResponse {
 impl azure_core::Continuable for NginxConfigurationListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NginxConfigurationListResponse {
@@ -279,7 +279,7 @@ pub struct NginxDeploymentListResponse {
 impl azure_core::Continuable for NginxDeploymentListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NginxDeploymentListResponse {
@@ -505,7 +505,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {

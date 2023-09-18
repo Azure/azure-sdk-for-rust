@@ -318,7 +318,7 @@ pub struct DataPolicyManifestListResult {
 impl azure_core::Continuable for DataPolicyManifestListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataPolicyManifestListResult {
@@ -642,7 +642,7 @@ pub struct PolicyAssignmentListResult {
 impl azure_core::Continuable for PolicyAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PolicyAssignmentListResult {
@@ -825,7 +825,7 @@ pub struct PolicyDefinitionListResult {
 impl azure_core::Continuable for PolicyDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PolicyDefinitionListResult {
@@ -984,7 +984,7 @@ pub struct PolicyExemptionListResult {
 impl azure_core::Continuable for PolicyExemptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PolicyExemptionListResult {
@@ -1116,7 +1116,7 @@ pub struct PolicySetDefinitionListResult {
 impl azure_core::Continuable for PolicySetDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PolicySetDefinitionListResult {
@@ -1325,7 +1325,7 @@ pub struct VariableListResult {
 impl azure_core::Continuable for VariableListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VariableListResult {
@@ -1379,7 +1379,7 @@ pub struct VariableValueListResult {
 impl azure_core::Continuable for VariableValueListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VariableValueListResult {

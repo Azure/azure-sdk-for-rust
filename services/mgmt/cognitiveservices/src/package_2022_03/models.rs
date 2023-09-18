@@ -52,7 +52,7 @@ pub struct AccountListResult {
 impl azure_core::Continuable for AccountListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccountListResult {
@@ -103,7 +103,7 @@ pub struct AccountModelListResult {
 impl azure_core::Continuable for AccountModelListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccountModelListResult {
@@ -530,7 +530,7 @@ pub struct CommitmentPlanListResult {
 impl azure_core::Continuable for CommitmentPlanListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CommitmentPlanListResult {
@@ -630,7 +630,7 @@ pub struct CommitmentTierListResult {
 impl azure_core::Continuable for CommitmentTierListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CommitmentTierListResult {
@@ -675,7 +675,7 @@ pub struct DeploymentListResult {
 impl azure_core::Continuable for DeploymentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeploymentListResult {
@@ -1321,7 +1321,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1694,7 +1694,7 @@ pub struct ResourceSkuListResult {
 impl azure_core::Continuable for ResourceSkuListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceSkuListResult {

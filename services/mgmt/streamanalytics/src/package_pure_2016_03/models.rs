@@ -892,7 +892,7 @@ pub struct FunctionListResult {
 impl azure_core::Continuable for FunctionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FunctionListResult {
@@ -970,7 +970,7 @@ pub struct InputListResult {
 impl azure_core::Continuable for InputListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InputListResult {
@@ -1249,7 +1249,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1337,7 +1337,7 @@ pub struct OutputListResult {
 impl azure_core::Continuable for OutputListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OutputListResult {
@@ -1805,7 +1805,7 @@ pub struct StreamingJobListResult {
 impl azure_core::Continuable for StreamingJobListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StreamingJobListResult {

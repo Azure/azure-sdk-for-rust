@@ -177,7 +177,7 @@ pub struct ConfidentialLedgerList {
 impl azure_core::Continuable for ConfidentialLedgerList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConfidentialLedgerList {
@@ -460,7 +460,7 @@ pub struct ManagedCcfList {
 impl azure_core::Continuable for ManagedCcfList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedCcfList {
@@ -653,7 +653,7 @@ pub struct ResourceProviderOperationList {
 impl azure_core::Continuable for ResourceProviderOperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceProviderOperationList {

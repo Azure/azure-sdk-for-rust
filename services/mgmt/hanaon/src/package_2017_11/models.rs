@@ -252,7 +252,7 @@ pub struct HanaInstancesListResult {
 impl azure_core::Continuable for HanaInstancesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HanaInstancesListResult {

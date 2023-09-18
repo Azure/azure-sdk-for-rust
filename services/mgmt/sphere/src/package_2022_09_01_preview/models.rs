@@ -106,7 +106,7 @@ pub struct CatalogListResult {
 impl azure_core::Continuable for CatalogListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CatalogListResult {
@@ -176,7 +176,7 @@ pub struct CertificateListResult {
 impl azure_core::Continuable for CertificateListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CertificateListResult {
@@ -315,7 +315,7 @@ pub struct DeploymentListResult {
 impl azure_core::Continuable for DeploymentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeploymentListResult {
@@ -389,7 +389,7 @@ pub struct DeviceGroupListResult {
 impl azure_core::Continuable for DeviceGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceGroupListResult {
@@ -525,7 +525,7 @@ pub struct DeviceListResult {
 impl azure_core::Continuable for DeviceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceListResult {
@@ -702,7 +702,7 @@ pub struct ImageListResult {
 impl azure_core::Continuable for ImageListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ImageListResult {
@@ -1029,7 +1029,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1049,7 +1049,7 @@ pub struct PagedDeviceInsight {
 impl azure_core::Continuable for PagedDeviceInsight {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PagedDeviceInsight {
@@ -1083,7 +1083,7 @@ pub struct ProductListResult {
 impl azure_core::Continuable for ProductListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProductListResult {

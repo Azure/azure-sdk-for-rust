@@ -159,7 +159,7 @@ pub struct AuthConfigCollection {
 impl azure_core::Continuable for AuthConfigCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AuthConfigCollection {
@@ -199,7 +199,7 @@ pub struct AvailableOperations {
 impl azure_core::Continuable for AvailableOperations {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AvailableOperations {
@@ -348,7 +348,7 @@ pub struct AvailableWorkloadProfilesCollection {
 impl azure_core::Continuable for AvailableWorkloadProfilesCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AvailableWorkloadProfilesCollection {
@@ -826,7 +826,7 @@ pub struct CertificateCollection {
 impl azure_core::Continuable for CertificateCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CertificateCollection {
@@ -1140,7 +1140,7 @@ pub struct ConnectedEnvironmentCollection {
 impl azure_core::Continuable for ConnectedEnvironmentCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConnectedEnvironmentCollection {
@@ -1374,7 +1374,7 @@ pub struct ContainerAppCollection {
 impl azure_core::Continuable for ContainerAppCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ContainerAppCollection {
@@ -2042,7 +2042,7 @@ pub struct DaprComponentsCollection {
 impl azure_core::Continuable for DaprComponentsCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DaprComponentsCollection {
@@ -2317,7 +2317,7 @@ pub struct DiagnosticsCollection {
 impl azure_core::Continuable for DiagnosticsCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DiagnosticsCollection {
@@ -3373,7 +3373,7 @@ pub struct ManagedEnvironmentsCollection {
 impl azure_core::Continuable for ManagedEnvironmentsCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedEnvironmentsCollection {
@@ -3915,7 +3915,7 @@ pub struct RevisionCollection {
 impl azure_core::Continuable for RevisionCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RevisionCollection {
@@ -4104,7 +4104,7 @@ pub struct SourceControlCollection {
 impl azure_core::Continuable for SourceControlCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SourceControlCollection {
@@ -4547,7 +4547,7 @@ pub struct WorkloadProfileStatesCollection {
 impl azure_core::Continuable for WorkloadProfileStatesCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkloadProfileStatesCollection {

@@ -437,7 +437,7 @@ pub struct AvailabilityGroupListenerListResult {
 impl azure_core::Continuable for AvailabilityGroupListenerListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AvailabilityGroupListenerListResult {
@@ -661,7 +661,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1116,7 +1116,7 @@ pub struct SqlVirtualMachineGroupListResult {
 impl azure_core::Continuable for SqlVirtualMachineGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlVirtualMachineGroupListResult {
@@ -1330,7 +1330,7 @@ pub struct SqlVirtualMachineListResult {
 impl azure_core::Continuable for SqlVirtualMachineListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlVirtualMachineListResult {

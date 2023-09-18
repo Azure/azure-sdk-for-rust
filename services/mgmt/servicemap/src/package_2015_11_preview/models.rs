@@ -337,7 +337,7 @@ pub struct ClientGroupMembersCollection {
 impl azure_core::Continuable for ClientGroupMembersCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClientGroupMembersCollection {
@@ -418,7 +418,7 @@ pub struct ConnectionCollection {
 impl azure_core::Continuable for ConnectionCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConnectionCollection {
@@ -740,7 +740,7 @@ pub struct MachineCollection {
 impl azure_core::Continuable for MachineCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MachineCollection {
@@ -883,7 +883,7 @@ pub struct MachineGroupCollection {
 impl azure_core::Continuable for MachineGroupCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MachineGroupCollection {
@@ -1332,7 +1332,7 @@ pub struct PortCollection {
 impl azure_core::Continuable for PortCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PortCollection {
@@ -1514,7 +1514,7 @@ pub struct ProcessCollection {
 impl azure_core::Continuable for ProcessCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProcessCollection {

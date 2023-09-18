@@ -63,7 +63,7 @@ pub struct BillingSubscriptionAliasListResult {
 impl azure_core::Continuable for BillingSubscriptionAliasListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BillingSubscriptionAliasListResult {
@@ -362,7 +362,7 @@ pub struct BillingSubscriptionsListResult {
 impl azure_core::Continuable for BillingSubscriptionsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BillingSubscriptionsListResult {
@@ -800,7 +800,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -865,7 +865,7 @@ pub struct PaymentMethodLinksListResult {
 impl azure_core::Continuable for PaymentMethodLinksListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PaymentMethodLinksListResult {
@@ -1152,7 +1152,7 @@ pub struct PaymentMethodsListResult {
 impl azure_core::Continuable for PaymentMethodsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PaymentMethodsListResult {

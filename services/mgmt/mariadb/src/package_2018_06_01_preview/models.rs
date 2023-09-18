@@ -1077,7 +1077,7 @@ pub struct ServerSecurityAlertPolicyListResult {
 impl azure_core::Continuable for ServerSecurityAlertPolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerSecurityAlertPolicyListResult {
@@ -1398,7 +1398,7 @@ pub struct VirtualNetworkRuleListResult {
 impl azure_core::Continuable for VirtualNetworkRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualNetworkRuleListResult {

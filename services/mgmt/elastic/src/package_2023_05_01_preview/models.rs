@@ -201,7 +201,7 @@ pub struct ElasticMonitorResourceListResponse {
 impl azure_core::Continuable for ElasticMonitorResourceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ElasticMonitorResourceListResponse {
@@ -405,7 +405,7 @@ pub struct ElasticVersionsListResponse {
 impl azure_core::Continuable for ElasticVersionsListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ElasticVersionsListResponse {
@@ -714,7 +714,7 @@ pub struct MonitoredResourceListResponse {
 impl azure_core::Continuable for MonitoredResourceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MonitoredResourceListResponse {
@@ -800,7 +800,7 @@ pub struct MonitoringTagRulesListResponse {
 impl azure_core::Continuable for MonitoringTagRulesListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MonitoringTagRulesListResponse {
@@ -861,7 +861,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1191,7 +1191,7 @@ pub struct VmHostListResponse {
 impl azure_core::Continuable for VmHostListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VmHostListResponse {

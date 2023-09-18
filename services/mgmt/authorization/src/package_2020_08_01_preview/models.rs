@@ -41,7 +41,7 @@ pub struct ClassicAdministratorListResult {
 impl azure_core::Continuable for ClassicAdministratorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClassicAdministratorListResult {
@@ -120,7 +120,7 @@ pub struct DenyAssignmentListResult {
 impl azure_core::Continuable for DenyAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DenyAssignmentListResult {
@@ -337,7 +337,7 @@ pub struct PermissionGetResult {
 impl azure_core::Continuable for PermissionGetResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PermissionGetResult {
@@ -446,7 +446,7 @@ pub struct ProviderOperationsMetadataListResult {
 impl azure_core::Continuable for ProviderOperationsMetadataListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderOperationsMetadataListResult {
@@ -537,7 +537,7 @@ pub struct RoleAssignmentListResult {
 impl azure_core::Continuable for RoleAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentListResult {
@@ -726,7 +726,7 @@ pub struct RoleDefinitionListResult {
 impl azure_core::Continuable for RoleDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleDefinitionListResult {

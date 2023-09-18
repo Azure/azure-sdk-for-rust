@@ -1432,7 +1432,7 @@ pub struct MonitorListResult {
 impl azure_core::Continuable for MonitorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MonitorListResult {
@@ -1902,7 +1902,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -2236,7 +2236,7 @@ pub struct ProviderInstanceListResult {
 impl azure_core::Continuable for ProviderInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderInstanceListResult {
@@ -2433,7 +2433,7 @@ pub struct SapApplicationServerInstanceList {
 impl azure_core::Continuable for SapApplicationServerInstanceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SapApplicationServerInstanceList {
@@ -2571,7 +2571,7 @@ pub struct SapCentralInstanceList {
 impl azure_core::Continuable for SapCentralInstanceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SapCentralInstanceList {
@@ -2698,7 +2698,7 @@ pub struct SapDatabaseInstanceList {
 impl azure_core::Continuable for SapDatabaseInstanceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SapDatabaseInstanceList {
@@ -3162,7 +3162,7 @@ pub struct SapVirtualInstanceList {
 impl azure_core::Continuable for SapVirtualInstanceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SapVirtualInstanceList {

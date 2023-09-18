@@ -141,7 +141,7 @@ pub struct DimensionValueList {
 impl azure_core::Continuable for DimensionValueList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DimensionValueList {
@@ -338,7 +338,7 @@ pub struct FileInfoList {
 impl azure_core::Continuable for FileInfoList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FileInfoList {
@@ -661,7 +661,7 @@ pub struct Metrics {
 impl azure_core::Continuable for Metrics {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl Metrics {
@@ -1560,7 +1560,7 @@ pub struct TestRunsList {
 impl azure_core::Continuable for TestRunsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestRunsList {
@@ -1607,7 +1607,7 @@ pub struct TestsList {
 impl azure_core::Continuable for TestsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestsList {

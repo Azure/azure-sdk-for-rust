@@ -34,7 +34,7 @@ pub struct AccessPolicyEntityCollection {
 impl azure_core::Continuable for AccessPolicyEntityCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccessPolicyEntityCollection {
@@ -389,7 +389,7 @@ pub struct EdgeModuleEntityCollection {
 impl azure_core::Continuable for EdgeModuleEntityCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EdgeModuleEntityCollection {
@@ -855,7 +855,7 @@ pub struct LivePipelineCollection {
 impl azure_core::Continuable for LivePipelineCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LivePipelineCollection {
@@ -1544,7 +1544,7 @@ pub struct PipelineJobCollection {
 impl azure_core::Continuable for PipelineJobCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PipelineJobCollection {
@@ -1836,7 +1836,7 @@ pub struct PipelineTopologyCollection {
 impl azure_core::Continuable for PipelineTopologyCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PipelineTopologyCollection {
@@ -3284,7 +3284,7 @@ pub struct VideoEntityCollection {
 impl azure_core::Continuable for VideoEntityCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VideoEntityCollection {

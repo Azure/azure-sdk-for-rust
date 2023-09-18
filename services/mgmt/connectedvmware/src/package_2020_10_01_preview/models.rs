@@ -123,7 +123,7 @@ pub struct ClustersList {
 impl azure_core::Continuable for ClustersList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClustersList {
@@ -266,7 +266,7 @@ pub struct DatastoresList {
 impl azure_core::Continuable for DatastoresList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DatastoresList {
@@ -523,7 +523,7 @@ pub struct GuestAgentList {
 impl azure_core::Continuable for GuestAgentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GuestAgentList {
@@ -791,7 +791,7 @@ pub struct HostsList {
 impl azure_core::Continuable for HostsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HostsList {
@@ -843,7 +843,7 @@ pub struct HybridIdentityMetadataList {
 impl azure_core::Continuable for HybridIdentityMetadataList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HybridIdentityMetadataList {
@@ -1066,7 +1066,7 @@ pub struct InventoryItemsList {
 impl azure_core::Continuable for InventoryItemsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InventoryItemsList {
@@ -1338,7 +1338,7 @@ pub struct MachineExtensionsListResult {
 impl azure_core::Continuable for MachineExtensionsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MachineExtensionsListResult {
@@ -1910,7 +1910,7 @@ pub struct ResourcePoolsList {
 impl azure_core::Continuable for ResourcePoolsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourcePoolsList {
@@ -2200,7 +2200,7 @@ pub struct VCentersList {
 impl azure_core::Continuable for VCentersList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VCentersList {
@@ -2660,7 +2660,7 @@ pub struct VirtualMachineTemplatesList {
 impl azure_core::Continuable for VirtualMachineTemplatesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualMachineTemplatesList {
@@ -2716,7 +2716,7 @@ pub struct VirtualMachinesList {
 impl azure_core::Continuable for VirtualMachinesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualMachinesList {
@@ -2828,7 +2828,7 @@ pub struct VirtualNetworksList {
 impl azure_core::Continuable for VirtualNetworksList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualNetworksList {
@@ -2956,7 +2956,7 @@ pub struct OperationsList {
 impl azure_core::Continuable for OperationsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationsList {

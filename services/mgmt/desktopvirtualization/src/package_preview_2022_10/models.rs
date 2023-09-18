@@ -192,7 +192,7 @@ pub struct ApplicationGroupList {
 impl azure_core::Continuable for ApplicationGroupList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationGroupList {
@@ -327,7 +327,7 @@ pub struct ApplicationList {
 impl azure_core::Continuable for ApplicationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationList {
@@ -683,7 +683,7 @@ pub struct DesktopList {
 impl azure_core::Continuable for DesktopList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DesktopList {
@@ -776,7 +776,7 @@ pub struct ExpandMsixImageList {
 impl azure_core::Continuable for ExpandMsixImageList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExpandMsixImageList {
@@ -879,7 +879,7 @@ pub struct HostPoolList {
 impl azure_core::Continuable for HostPoolList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HostPoolList {
@@ -1620,7 +1620,7 @@ pub struct MsixPackageList {
 impl azure_core::Continuable for MsixPackageList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MsixPackageList {
@@ -1900,7 +1900,7 @@ pub struct PrivateEndpointConnectionListResultWithSystemData {
 impl azure_core::Continuable for PrivateEndpointConnectionListResultWithSystemData {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionListResultWithSystemData {
@@ -2055,7 +2055,7 @@ pub struct PrivateLinkResourceListResult {
 impl azure_core::Continuable for PrivateLinkResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkResourceListResult {
@@ -2345,7 +2345,7 @@ pub struct ResourceProviderOperationList {
 impl azure_core::Continuable for ResourceProviderOperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceProviderOperationList {
@@ -2405,7 +2405,7 @@ pub struct ScalingPlanList {
 impl azure_core::Continuable for ScalingPlanList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScalingPlanList {
@@ -2501,7 +2501,7 @@ pub struct ScalingPlanPooledScheduleList {
 impl azure_core::Continuable for ScalingPlanPooledScheduleList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScalingPlanPooledScheduleList {
@@ -3329,7 +3329,7 @@ pub struct SessionHostList {
 impl azure_core::Continuable for SessionHostList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SessionHostList {
@@ -3609,7 +3609,7 @@ pub struct StartMenuItemList {
 impl azure_core::Continuable for StartMenuItemList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StartMenuItemList {
@@ -3688,7 +3688,7 @@ pub struct UserSessionList {
 impl azure_core::Continuable for UserSessionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UserSessionList {
@@ -3842,7 +3842,7 @@ pub struct WorkspaceList {
 impl azure_core::Continuable for WorkspaceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceList {

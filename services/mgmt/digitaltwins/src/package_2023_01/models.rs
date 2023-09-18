@@ -368,7 +368,7 @@ pub struct DigitalTwinsDescriptionListResult {
 impl azure_core::Continuable for DigitalTwinsDescriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DigitalTwinsDescriptionListResult {
@@ -409,7 +409,7 @@ pub struct DigitalTwinsEndpointResourceListResult {
 impl azure_core::Continuable for DigitalTwinsEndpointResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DigitalTwinsEndpointResourceListResult {
@@ -1197,7 +1197,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1434,7 +1434,7 @@ pub struct TimeSeriesDatabaseConnectionListResult {
 impl azure_core::Continuable for TimeSeriesDatabaseConnectionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TimeSeriesDatabaseConnectionListResult {

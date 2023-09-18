@@ -242,7 +242,7 @@ pub struct NamespaceListResult {
 impl azure_core::Continuable for NamespaceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NamespaceListResult {
@@ -365,7 +365,7 @@ pub struct NotificationHubListResult {
 impl azure_core::Continuable for NotificationHubListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NotificationHubListResult {
@@ -522,7 +522,7 @@ pub struct SharedAccessAuthorizationRuleListResult {
 impl azure_core::Continuable for SharedAccessAuthorizationRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SharedAccessAuthorizationRuleListResult {

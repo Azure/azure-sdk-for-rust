@@ -454,7 +454,7 @@ pub struct BatchAccountListResult {
 impl azure_core::Continuable for BatchAccountListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BatchAccountListResult {
@@ -1137,7 +1137,7 @@ pub struct DetectorListResult {
 impl azure_core::Continuable for DetectorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DetectorListResult {
@@ -1492,7 +1492,7 @@ pub struct ListApplicationPackagesResult {
 impl azure_core::Continuable for ListApplicationPackagesResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListApplicationPackagesResult {
@@ -1517,7 +1517,7 @@ pub struct ListApplicationsResult {
 impl azure_core::Continuable for ListApplicationsResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListApplicationsResult {
@@ -1542,7 +1542,7 @@ pub struct ListCertificatesResult {
 impl azure_core::Continuable for ListCertificatesResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListCertificatesResult {
@@ -1567,7 +1567,7 @@ pub struct ListPoolsResult {
 impl azure_core::Continuable for ListPoolsResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListPoolsResult {
@@ -1592,7 +1592,7 @@ pub struct ListPrivateEndpointConnectionsResult {
 impl azure_core::Continuable for ListPrivateEndpointConnectionsResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListPrivateEndpointConnectionsResult {
@@ -1617,7 +1617,7 @@ pub struct ListPrivateLinkResourcesResult {
 impl azure_core::Continuable for ListPrivateLinkResourcesResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListPrivateLinkResourcesResult {
@@ -1841,7 +1841,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1885,7 +1885,7 @@ pub struct OutboundEnvironmentEndpointCollection {
 impl azure_core::Continuable for OutboundEnvironmentEndpointCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OutboundEnvironmentEndpointCollection {
@@ -2438,7 +2438,7 @@ pub struct SupportedSkusResult {
 impl azure_core::Continuable for SupportedSkusResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SupportedSkusResult {

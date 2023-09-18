@@ -124,7 +124,7 @@ pub struct DeviceListResult {
 impl azure_core::Continuable for DeviceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceListResult {
@@ -404,7 +404,7 @@ pub struct NetworkFunctionListResult {
 impl azure_core::Continuable for NetworkFunctionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkFunctionListResult {
@@ -667,7 +667,7 @@ pub struct NetworkFunctionRoleInstanceListResult {
 impl azure_core::Continuable for NetworkFunctionRoleInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkFunctionRoleInstanceListResult {
@@ -695,7 +695,7 @@ pub struct NetworkFunctionSkuDetails {
 impl azure_core::Continuable for NetworkFunctionSkuDetails {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkFunctionSkuDetails {
@@ -720,7 +720,7 @@ pub struct NetworkFunctionSkuListResult {
 impl azure_core::Continuable for NetworkFunctionSkuListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkFunctionSkuListResult {
@@ -867,7 +867,7 @@ pub struct NetworkFunctionVendorListResult {
 impl azure_core::Continuable for NetworkFunctionVendorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkFunctionVendorListResult {
@@ -1112,7 +1112,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -1239,7 +1239,7 @@ pub struct PreviewSubscriptionsList {
 impl azure_core::Continuable for PreviewSubscriptionsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PreviewSubscriptionsList {
@@ -1625,7 +1625,7 @@ pub struct VendorListResult {
 impl azure_core::Continuable for VendorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VendorListResult {
@@ -1664,7 +1664,7 @@ pub struct VendorNetworkFunctionListResult {
 impl azure_core::Continuable for VendorNetworkFunctionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VendorNetworkFunctionListResult {
@@ -1798,7 +1798,7 @@ pub struct VendorSkuListResult {
 impl azure_core::Continuable for VendorSkuListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VendorSkuListResult {

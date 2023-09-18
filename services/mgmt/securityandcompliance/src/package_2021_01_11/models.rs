@@ -98,7 +98,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -222,7 +222,7 @@ pub struct PrivateEndpointConnectionListResult {
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionListResult {
@@ -448,7 +448,7 @@ pub struct PrivateLinkServicesForEdmUploadDescriptionListResult {
 impl azure_core::Continuable for PrivateLinkServicesForEdmUploadDescriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkServicesForEdmUploadDescriptionListResult {
@@ -490,7 +490,7 @@ pub struct PrivateLinkServicesForM365ComplianceCenterDescriptionListResult {
 impl azure_core::Continuable for PrivateLinkServicesForM365ComplianceCenterDescriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkServicesForM365ComplianceCenterDescriptionListResult {
@@ -532,7 +532,7 @@ pub struct PrivateLinkServicesForM365SecurityCenterDescriptionListResult {
 impl azure_core::Continuable for PrivateLinkServicesForM365SecurityCenterDescriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkServicesForM365SecurityCenterDescriptionListResult {
@@ -574,7 +574,7 @@ pub struct PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult 
 impl azure_core::Continuable for PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkServicesForO365ManagementActivityApiDescriptionListResult {
@@ -616,7 +616,7 @@ pub struct PrivateLinkServicesForSccPowershellDescriptionListResult {
 impl azure_core::Continuable for PrivateLinkServicesForSccPowershellDescriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkServicesForSccPowershellDescriptionListResult {

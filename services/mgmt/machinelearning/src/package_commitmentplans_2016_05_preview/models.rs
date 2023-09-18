@@ -90,7 +90,7 @@ pub struct CommitmentAssociationListResult {
 impl azure_core::Continuable for CommitmentAssociationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CommitmentAssociationListResult {
@@ -158,7 +158,7 @@ pub struct CommitmentPlanListResult {
 impl azure_core::Continuable for CommitmentPlanListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CommitmentPlanListResult {
@@ -358,7 +358,7 @@ pub struct PlanUsageHistoryListResult {
 impl azure_core::Continuable for PlanUsageHistoryListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PlanUsageHistoryListResult {

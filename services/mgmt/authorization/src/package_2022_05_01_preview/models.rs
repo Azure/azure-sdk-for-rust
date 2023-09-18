@@ -104,7 +104,7 @@ pub struct AccessReviewContactedReviewerListResult {
 impl azure_core::Continuable for AccessReviewContactedReviewerListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccessReviewContactedReviewerListResult {
@@ -310,7 +310,7 @@ pub struct AccessReviewDecisionListResult {
 impl azure_core::Continuable for AccessReviewDecisionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccessReviewDecisionListResult {
@@ -687,7 +687,7 @@ pub struct AccessReviewHistoryDefinitionInstanceListResult {
 impl azure_core::Continuable for AccessReviewHistoryDefinitionInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccessReviewHistoryDefinitionInstanceListResult {
@@ -712,7 +712,7 @@ pub struct AccessReviewHistoryDefinitionListResult {
 impl azure_core::Continuable for AccessReviewHistoryDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccessReviewHistoryDefinitionListResult {
@@ -966,7 +966,7 @@ pub struct AccessReviewInstanceListResult {
 impl azure_core::Continuable for AccessReviewInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccessReviewInstanceListResult {
@@ -1341,7 +1341,7 @@ pub struct AccessReviewScheduleDefinitionListResult {
 impl azure_core::Continuable for AccessReviewScheduleDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccessReviewScheduleDefinitionListResult {
@@ -1771,7 +1771,7 @@ pub struct AlertConfigurationListResult {
 impl azure_core::Continuable for AlertConfigurationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertConfigurationListResult {
@@ -1847,7 +1847,7 @@ pub struct AlertDefinitionListResult {
 impl azure_core::Continuable for AlertDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertDefinitionListResult {
@@ -1971,7 +1971,7 @@ pub struct AlertIncidentListResult {
 impl azure_core::Continuable for AlertIncidentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertIncidentListResult {
@@ -2008,7 +2008,7 @@ pub struct AlertListResult {
 impl azure_core::Continuable for AlertListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertListResult {
@@ -2295,7 +2295,7 @@ pub struct ClassicAdministratorListResult {
 impl azure_core::Continuable for ClassicAdministratorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClassicAdministratorListResult {
@@ -2407,7 +2407,7 @@ pub struct DenyAssignmentListResult {
 impl azure_core::Continuable for DenyAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DenyAssignmentListResult {
@@ -2598,7 +2598,7 @@ pub struct EligibleChildResourcesListResult {
 impl azure_core::Continuable for EligibleChildResourcesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EligibleChildResourcesListResult {
@@ -2841,7 +2841,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -2912,7 +2912,7 @@ pub struct PermissionGetResult {
 impl azure_core::Continuable for PermissionGetResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PermissionGetResult {
@@ -3127,7 +3127,7 @@ pub struct ProviderOperationsMetadataListResult {
 impl azure_core::Continuable for ProviderOperationsMetadataListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderOperationsMetadataListResult {
@@ -3279,7 +3279,7 @@ pub struct RoleAssignmentListResult {
 impl azure_core::Continuable for RoleAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentListResult {
@@ -3494,7 +3494,7 @@ pub struct RoleAssignmentScheduleInstanceListResult {
 impl azure_core::Continuable for RoleAssignmentScheduleInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentScheduleInstanceListResult {
@@ -3781,7 +3781,7 @@ pub struct RoleAssignmentScheduleListResult {
 impl azure_core::Continuable for RoleAssignmentScheduleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentScheduleListResult {
@@ -4103,7 +4103,7 @@ pub struct RoleAssignmentScheduleRequestListResult {
 impl azure_core::Continuable for RoleAssignmentScheduleRequestListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentScheduleRequestListResult {
@@ -4521,7 +4521,7 @@ pub struct RoleDefinitionListResult {
 impl azure_core::Continuable for RoleDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleDefinitionListResult {
@@ -4672,7 +4672,7 @@ pub struct RoleEligibilityScheduleInstanceListResult {
 impl azure_core::Continuable for RoleEligibilityScheduleInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleEligibilityScheduleInstanceListResult {
@@ -4906,7 +4906,7 @@ pub struct RoleEligibilityScheduleListResult {
 impl azure_core::Continuable for RoleEligibilityScheduleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleEligibilityScheduleListResult {
@@ -5185,7 +5185,7 @@ pub struct RoleEligibilityScheduleRequestListResult {
 impl azure_core::Continuable for RoleEligibilityScheduleRequestListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleEligibilityScheduleRequestListResult {
@@ -5622,7 +5622,7 @@ pub struct RoleManagementPolicyAssignmentListResult {
 impl azure_core::Continuable for RoleManagementPolicyAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleManagementPolicyAssignmentListResult {
@@ -5731,7 +5731,7 @@ pub struct RoleManagementPolicyListResult {
 impl azure_core::Continuable for RoleManagementPolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleManagementPolicyListResult {

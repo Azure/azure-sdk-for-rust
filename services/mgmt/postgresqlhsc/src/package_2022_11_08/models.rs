@@ -37,7 +37,7 @@ pub struct ClusterConfigurationListResult {
 impl azure_core::Continuable for ClusterConfigurationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClusterConfigurationListResult {
@@ -77,7 +77,7 @@ pub struct ClusterListResult {
 impl azure_core::Continuable for ClusterListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClusterListResult {
@@ -1144,7 +1144,7 @@ pub struct ServerConfigurationListResult {
 impl azure_core::Continuable for ServerConfigurationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerConfigurationListResult {

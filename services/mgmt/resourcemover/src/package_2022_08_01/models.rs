@@ -529,7 +529,7 @@ pub struct MoveCollectionResultList {
 impl azure_core::Continuable for MoveCollectionResultList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MoveCollectionResultList {
@@ -601,7 +601,7 @@ pub struct MoveResourceCollection {
 impl azure_core::Continuable for MoveResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MoveResourceCollection {
@@ -1630,7 +1630,7 @@ pub struct UnresolvedDependencyCollection {
 impl azure_core::Continuable for UnresolvedDependencyCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UnresolvedDependencyCollection {

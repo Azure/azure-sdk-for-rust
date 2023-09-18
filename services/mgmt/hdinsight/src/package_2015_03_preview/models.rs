@@ -126,7 +126,7 @@ pub struct ApplicationListResult {
 impl azure_core::Continuable for ApplicationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationListResult {
@@ -966,7 +966,7 @@ pub struct ClusterListResult {
 impl azure_core::Continuable for ClusterListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClusterListResult {
@@ -1695,7 +1695,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1983,7 +1983,7 @@ pub struct ScriptActionExecutionHistoryList {
 impl azure_core::Continuable for ScriptActionExecutionHistoryList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScriptActionExecutionHistoryList {
@@ -2051,7 +2051,7 @@ pub struct ScriptActionsList {
 impl azure_core::Continuable for ScriptActionsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScriptActionsList {

@@ -228,7 +228,7 @@ pub struct AccountFilterCollection {
 impl azure_core::Continuable for AccountFilterCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccountFilterCollection {
@@ -368,7 +368,7 @@ pub struct AssetCollection {
 impl azure_core::Continuable for AssetCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AssetCollection {
@@ -449,7 +449,7 @@ pub struct AssetFilterCollection {
 impl azure_core::Continuable for AssetFilterCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AssetFilterCollection {
@@ -995,8 +995,6 @@ pub mod built_in_standard_encoder_preset {
         AdaptiveStreaming,
         #[serde(rename = "AACGoodQualityAudio")]
         AacGoodQualityAudio,
-        #[serde(rename = "DDGoodQualityAudio")]
-        DdGoodQualityAudio,
         ContentAwareEncodingExperimental,
         ContentAwareEncoding,
         CopyAllBitrateNonInterleaved,
@@ -1039,20 +1037,19 @@ pub mod built_in_standard_encoder_preset {
                 Self::H264SingleBitrate1080p => serializer.serialize_unit_variant("PresetName", 2u32, "H264SingleBitrate1080p"),
                 Self::AdaptiveStreaming => serializer.serialize_unit_variant("PresetName", 3u32, "AdaptiveStreaming"),
                 Self::AacGoodQualityAudio => serializer.serialize_unit_variant("PresetName", 4u32, "AACGoodQualityAudio"),
-                Self::DdGoodQualityAudio => serializer.serialize_unit_variant("PresetName", 5u32, "DDGoodQualityAudio"),
                 Self::ContentAwareEncodingExperimental => {
-                    serializer.serialize_unit_variant("PresetName", 6u32, "ContentAwareEncodingExperimental")
+                    serializer.serialize_unit_variant("PresetName", 5u32, "ContentAwareEncodingExperimental")
                 }
-                Self::ContentAwareEncoding => serializer.serialize_unit_variant("PresetName", 7u32, "ContentAwareEncoding"),
-                Self::CopyAllBitrateNonInterleaved => serializer.serialize_unit_variant("PresetName", 8u32, "CopyAllBitrateNonInterleaved"),
-                Self::H264MultipleBitrate1080p => serializer.serialize_unit_variant("PresetName", 9u32, "H264MultipleBitrate1080p"),
-                Self::H264MultipleBitrate720p => serializer.serialize_unit_variant("PresetName", 10u32, "H264MultipleBitrate720p"),
-                Self::H264MultipleBitrateSd => serializer.serialize_unit_variant("PresetName", 11u32, "H264MultipleBitrateSD"),
-                Self::H265ContentAwareEncoding => serializer.serialize_unit_variant("PresetName", 12u32, "H265ContentAwareEncoding"),
-                Self::H265AdaptiveStreaming => serializer.serialize_unit_variant("PresetName", 13u32, "H265AdaptiveStreaming"),
-                Self::H265SingleBitrate720p => serializer.serialize_unit_variant("PresetName", 14u32, "H265SingleBitrate720p"),
-                Self::H265SingleBitrate1080p => serializer.serialize_unit_variant("PresetName", 15u32, "H265SingleBitrate1080p"),
-                Self::H265SingleBitrate4K => serializer.serialize_unit_variant("PresetName", 16u32, "H265SingleBitrate4K"),
+                Self::ContentAwareEncoding => serializer.serialize_unit_variant("PresetName", 6u32, "ContentAwareEncoding"),
+                Self::CopyAllBitrateNonInterleaved => serializer.serialize_unit_variant("PresetName", 7u32, "CopyAllBitrateNonInterleaved"),
+                Self::H264MultipleBitrate1080p => serializer.serialize_unit_variant("PresetName", 8u32, "H264MultipleBitrate1080p"),
+                Self::H264MultipleBitrate720p => serializer.serialize_unit_variant("PresetName", 9u32, "H264MultipleBitrate720p"),
+                Self::H264MultipleBitrateSd => serializer.serialize_unit_variant("PresetName", 10u32, "H264MultipleBitrateSD"),
+                Self::H265ContentAwareEncoding => serializer.serialize_unit_variant("PresetName", 11u32, "H265ContentAwareEncoding"),
+                Self::H265AdaptiveStreaming => serializer.serialize_unit_variant("PresetName", 12u32, "H265AdaptiveStreaming"),
+                Self::H265SingleBitrate720p => serializer.serialize_unit_variant("PresetName", 13u32, "H265SingleBitrate720p"),
+                Self::H265SingleBitrate1080p => serializer.serialize_unit_variant("PresetName", 14u32, "H265SingleBitrate1080p"),
+                Self::H265SingleBitrate4K => serializer.serialize_unit_variant("PresetName", 15u32, "H265SingleBitrate4K"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -1250,7 +1247,7 @@ pub struct ContentKeyPolicyCollection {
 impl azure_core::Continuable for ContentKeyPolicyCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ContentKeyPolicyCollection {
@@ -2093,17 +2090,6 @@ impl CrossSiteAccessPolicies {
         Self::default()
     }
 }
-#[doc = "Describes Dolby Digital Audio Codec (AC3) audio encoding settings. The current implementation for Dolby Digital Audio support are: Audio channel numbers at 1((mono), 2(stereo), 6(5.1side); Audio sampling frequency rates at: 32K/44.1K/48K Hz; Audio bitrate values as AC3 specification supports: 32000, 40000, 48000, 56000, 64000, 80000, 96000, 112000, 128000, 160000, 192000, 224000, 256000, 320000, 384000, 448000, 512000, 576000, 640000 bps."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DdAudio {
-    #[serde(flatten)]
-    pub audio: Audio,
-}
-impl DdAudio {
-    pub fn new(audio: Audio) -> Self {
-        Self { audio }
-    }
-}
 #[doc = "The DASH setting for a track."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DashSettings {
@@ -2559,27 +2545,6 @@ pub mod face_detector_preset {
         }
     }
 }
-#[doc = "Describes the properties of a Fade effect applied to the input media."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Fade {
-    #[doc = "The Duration of the fade effect in the video. The value can be in ISO 8601 format (For example, PT05S to fade In/Out a color during 5 seconds), or a frame count (For example, 10 to fade 10 frames from the start time), or a relative value to stream duration (For example, 10% to fade 10% of stream duration)"]
-    pub duration: String,
-    #[doc = "The Color for the fade In/Out. it can be on the CSS Level1 colors https://developer.mozilla.org/en-US/docs/Web/CSS/color_value/color_keywords or an RGB/hex value: e.g: rgb(255,0,0), 0xFF0000 or #FF0000"]
-    #[serde(rename = "fadeColor")]
-    pub fade_color: String,
-    #[doc = "The position in the input video from where to start fade. The value can be in ISO 8601 format (For example, PT05S to start at 5 seconds), or a frame count (For example, 10 to start at the 10th frame), or a relative value to stream duration (For example, 10% to start at 10% of stream duration). Default is 0"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub start: Option<String>,
-}
-impl Fade {
-    pub fn new(duration: String, fade_color: String) -> Self {
-        Self {
-            duration,
-            fade_color,
-            start: None,
-        }
-    }
-}
 #[doc = "The class to specify one track property condition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FilterTrackPropertyCondition {
@@ -2713,12 +2678,6 @@ pub struct Filters {
     #[doc = "Describes the properties of a rectangular window applied to the input media before processing it."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub crop: Option<Rectangle>,
-    #[doc = "Describes the properties of a Fade effect applied to the input media."]
-    #[serde(rename = "fadeIn", default, skip_serializing_if = "Option::is_none")]
-    pub fade_in: Option<Fade>,
-    #[doc = "Describes the properties of a Fade effect applied to the input media."]
-    #[serde(rename = "fadeOut", default, skip_serializing_if = "Option::is_none")]
-    pub fade_out: Option<Fade>,
     #[doc = "The properties of overlays to be applied to the input video. These could be audio, image or video overlays."]
     #[serde(
         default,
@@ -2797,7 +2756,7 @@ pub struct Format {
     #[doc = "The discriminator for derived types."]
     #[serde(rename = "@odata.type")]
     pub odata_type: String,
-    #[doc = "The file naming pattern used for the creation of output files. The following macros are supported in the file name: {Basename} - An expansion macro that will use the name of the input video file. If the base name(the file suffix is not included) of the input video file is less than 32 characters long, the base name of input video files will be used. If the length of base name of the input video file exceeds 32 characters, the base name is truncated to the first 32 characters in total length. {Extension} - The appropriate extension for this format. {Label} - The label assigned to the codec/layer. {Index} - A unique index for thumbnails. Only applicable to thumbnails. {AudioStream} - string \"Audio\" plus audio stream number(start from 1). {Bitrate} - The audio/video bitrate in kbps. Not applicable to thumbnails. {Codec} - The type of the audio/video codec. {Resolution} - The video resolution. Any unsubstituted macros will be collapsed and removed from the filename."]
+    #[doc = "The pattern of the file names for the generated output files. The following macros are supported in the file name: {Basename} - An expansion macro that will use the name of the input video file. If the base name(the file suffix is not included) of the input video file is less than 32 characters long, the base name of input video files will be used. If the length of base name of the input video file exceeds 32 characters, the base name is truncated to the first 32 characters in total length. {Extension} - The appropriate extension for this format. {Label} - The label assigned to the codec/layer. {Index} - A unique index for thumbnails. Only applicable to thumbnails. {Bitrate} - The audio/video bitrate. Not applicable to thumbnails. {Codec} - The type of the audio/video codec. {Resolution} - The video resolution. Any unsubstituted macros will be collapsed and removed from the filename."]
     #[serde(rename = "filenamePattern")]
     pub filename_pattern: String,
 }
@@ -3425,7 +3384,7 @@ pub struct JobCollection {
 impl azure_core::Continuable for JobCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobCollection {
@@ -3476,7 +3435,6 @@ pub mod job_error {
         ConfigurationUnsupported,
         ContentMalformed,
         ContentUnsupported,
-        IdentityUnsupported,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -3511,7 +3469,6 @@ pub mod job_error {
                 Self::ConfigurationUnsupported => serializer.serialize_unit_variant("Code", 6u32, "ConfigurationUnsupported"),
                 Self::ContentMalformed => serializer.serialize_unit_variant("Code", 7u32, "ContentMalformed"),
                 Self::ContentUnsupported => serializer.serialize_unit_variant("Code", 8u32, "ContentUnsupported"),
-                Self::IdentityUnsupported => serializer.serialize_unit_variant("Code", 9u32, "IdentityUnsupported"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -3525,7 +3482,6 @@ pub mod job_error {
         Upload,
         Configuration,
         Content,
-        Account,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -3556,7 +3512,6 @@ pub mod job_error {
                 Self::Upload => serializer.serialize_unit_variant("Category", 2u32, "Upload"),
                 Self::Configuration => serializer.serialize_unit_variant("Category", 3u32, "Configuration"),
                 Self::Content => serializer.serialize_unit_variant("Category", 4u32, "Content"),
-                Self::Account => serializer.serialize_unit_variant("Category", 5u32, "Account"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -4360,122 +4315,6 @@ impl LiveEventEndpoint {
         Self::default()
     }
 }
-#[doc = "Get live event status result."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LiveEventGetStatusResult {
-    #[doc = "The result of the get live event status."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<LiveEventStatus>,
-}
-impl azure_core::Continuable for LiveEventGetStatusResult {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        None
-    }
-}
-impl LiveEventGetStatusResult {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Get live event stream events result."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LiveEventGetStreamEventsResult {
-    #[doc = "The result of the get live event stream events."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<LiveEventStreamEvent>,
-}
-impl azure_core::Continuable for LiveEventGetStreamEventsResult {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        None
-    }
-}
-impl LiveEventGetStreamEventsResult {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Get live event track ingest heart beats result."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LiveEventGetTrackIngestHeartbeatsResult {
-    #[doc = "The result of the get live event track events."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<LiveEventTrackEvent>,
-}
-impl azure_core::Continuable for LiveEventGetTrackIngestHeartbeatsResult {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        None
-    }
-}
-impl LiveEventGetTrackIngestHeartbeatsResult {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The live event ingest interruption data."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LiveEventIngestInterruption {
-    #[doc = "UTC time of interruption start, encoder disconnected."]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub begin: Option<time::OffsetDateTime>,
-    #[doc = "UTC time of interruption end, encoder re-connected."]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub end: Option<time::OffsetDateTime>,
-    #[doc = "Duration of interruption in ISO 8601 time. For example, use PT1H30M to indicate 1 hour and 30 minutes."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub duration: Option<String>,
-    #[doc = "Interruption reason."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub reason: Option<String>,
-}
-impl LiveEventIngestInterruption {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The live event ingestion telemetry data."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LiveEventIngestion {
-    #[doc = "Ingestion stream name."]
-    #[serde(rename = "streamName", default, skip_serializing_if = "Option::is_none")]
-    pub stream_name: Option<String>,
-    #[doc = "Ingestion begin time in UTC."]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub begin: Option<time::OffsetDateTime>,
-    #[doc = "Ingestion end time in UTC. Empty if it's not stopped yet."]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub end: Option<time::OffsetDateTime>,
-    #[doc = "Reason why ingestion stops. Empty if it's not stopped yet. E.g) Service Stopped. No Ingestion."]
-    #[serde(rename = "endReason", default, skip_serializing_if = "Option::is_none")]
-    pub end_reason: Option<String>,
-    #[doc = "IngestInterruption entry list."]
-    #[serde(
-        rename = "ingestInterruptions",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub ingest_interruptions: Vec<LiveEventIngestInterruption>,
-}
-impl LiveEventIngestion {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "The live event input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LiveEventInput {
@@ -4498,14 +4337,6 @@ pub struct LiveEventInput {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub endpoints: Vec<LiveEventEndpoint>,
-    #[doc = "The metadata endpoints for the live event."]
-    #[serde(
-        rename = "timedMetadataEndpoints",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub timed_metadata_endpoints: Vec<LiveEventTimedMetadataEndpoint>,
 }
 impl LiveEventInput {
     pub fn new(streaming_protocol: live_event_input::StreamingProtocol) -> Self {
@@ -4515,7 +4346,6 @@ impl LiveEventInput {
             key_frame_interval_duration: None,
             access_token: None,
             endpoints: Vec::new(),
-            timed_metadata_endpoints: Vec::new(),
         }
     }
 }
@@ -4611,7 +4441,7 @@ pub struct LiveEventListResult {
 impl azure_core::Continuable for LiveEventListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LiveEventListResult {
@@ -4791,657 +4621,6 @@ pub mod live_event_properties {
         }
     }
 }
-#[doc = "The live event status."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LiveEventStatus {
-    #[doc = "Current state of the live event. See https://go.microsoft.com/fwlink/?linkid=2139012 for more information."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<live_event_status::State>,
-    #[doc = "Health status of last 20 seconds."]
-    #[serde(rename = "healthStatus", default, skip_serializing_if = "Option::is_none")]
-    pub health_status: Option<live_event_status::HealthStatus>,
-    #[doc = "List of strings justifying the health status."]
-    #[serde(
-        rename = "healthDescriptions",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub health_descriptions: Vec<String>,
-    #[doc = "Last updated UTC time of this status."]
-    #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_updated_time: Option<time::OffsetDateTime>,
-    #[doc = "The live event ingestion telemetry data."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub ingestion: Option<LiveEventIngestion>,
-    #[doc = "Track entry list."]
-    #[serde(
-        rename = "trackStatus",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub track_status: Vec<LiveEventTrackStatus>,
-}
-impl LiveEventStatus {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod live_event_status {
-    use super::*;
-    #[doc = "Current state of the live event. See https://go.microsoft.com/fwlink/?linkid=2139012 for more information."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "State")]
-    pub enum State {
-        Stopped,
-        Running,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for State {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for State {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for State {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Stopped => serializer.serialize_unit_variant("State", 0u32, "Stopped"),
-                Self::Running => serializer.serialize_unit_variant("State", 1u32, "Running"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "Health status of last 20 seconds."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "HealthStatus")]
-    pub enum HealthStatus {
-        Excellent,
-        Good,
-        Poor,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for HealthStatus {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for HealthStatus {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for HealthStatus {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Excellent => serializer.serialize_unit_variant("HealthStatus", 0u32, "Excellent"),
-                Self::Good => serializer.serialize_unit_variant("HealthStatus", 1u32, "Good"),
-                Self::Poor => serializer.serialize_unit_variant("HealthStatus", 2u32, "Poor"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "The live event stream event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LiveEventStreamEvent {
-    #[doc = "The type of the stream event. Format: StreamEvent/{eventType}"]
-    #[serde(rename = "eventType", default, skip_serializing_if = "Option::is_none")]
-    pub event_type: Option<live_event_stream_event::EventType>,
-    #[doc = "The time event raised."]
-    #[serde(rename = "eventTime", default, with = "azure_core::date::rfc3339::option")]
-    pub event_time: Option<time::OffsetDateTime>,
-    #[doc = "Event level."]
-    #[serde(rename = "eventLevel", default, skip_serializing_if = "Option::is_none")]
-    pub event_level: Option<live_event_stream_event::EventLevel>,
-    #[doc = "The live event stream event data."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub data: Option<LiveEventStreamEventData>,
-}
-impl LiveEventStreamEvent {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod live_event_stream_event {
-    use super::*;
-    #[doc = "The type of the stream event. Format: StreamEvent/{eventType}"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "EventType")]
-    pub enum EventType {
-        #[serde(rename = "StreamEvent/BeginIngest")]
-        StreamEventBeginIngest,
-        #[serde(rename = "StreamEvent/EndIngest")]
-        StreamEventEndIngest,
-        #[serde(rename = "StreamEvent/FirstChunkReceived")]
-        StreamEventFirstChunkReceived,
-        #[serde(rename = "StreamEvent/ChunkDropped")]
-        StreamEventChunkDropped,
-        #[serde(rename = "StreamEvent/UnalignedKeyFrames")]
-        StreamEventUnalignedKeyFrames,
-        #[serde(rename = "StreamEvent/UnalignedPresentation")]
-        StreamEventUnalignedPresentation,
-        #[serde(rename = "StreamEvent/Discontinuity")]
-        StreamEventDiscontinuity,
-        #[serde(rename = "StreamEvent/InvalidConnection")]
-        StreamEventInvalidConnection,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for EventType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for EventType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for EventType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::StreamEventBeginIngest => serializer.serialize_unit_variant("EventType", 0u32, "StreamEvent/BeginIngest"),
-                Self::StreamEventEndIngest => serializer.serialize_unit_variant("EventType", 1u32, "StreamEvent/EndIngest"),
-                Self::StreamEventFirstChunkReceived => {
-                    serializer.serialize_unit_variant("EventType", 2u32, "StreamEvent/FirstChunkReceived")
-                }
-                Self::StreamEventChunkDropped => serializer.serialize_unit_variant("EventType", 3u32, "StreamEvent/ChunkDropped"),
-                Self::StreamEventUnalignedKeyFrames => {
-                    serializer.serialize_unit_variant("EventType", 4u32, "StreamEvent/UnalignedKeyFrames")
-                }
-                Self::StreamEventUnalignedPresentation => {
-                    serializer.serialize_unit_variant("EventType", 5u32, "StreamEvent/UnalignedPresentation")
-                }
-                Self::StreamEventDiscontinuity => serializer.serialize_unit_variant("EventType", 6u32, "StreamEvent/Discontinuity"),
-                Self::StreamEventInvalidConnection => serializer.serialize_unit_variant("EventType", 7u32, "StreamEvent/InvalidConnection"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "Event level."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "EventLevel")]
-    pub enum EventLevel {
-        Critical,
-        Error,
-        Warning,
-        Information,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for EventLevel {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for EventLevel {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for EventLevel {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Critical => serializer.serialize_unit_variant("EventLevel", 0u32, "Critical"),
-                Self::Error => serializer.serialize_unit_variant("EventLevel", 1u32, "Error"),
-                Self::Warning => serializer.serialize_unit_variant("EventLevel", 2u32, "Warning"),
-                Self::Information => serializer.serialize_unit_variant("EventLevel", 3u32, "Information"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "The live event stream event data."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LiveEventStreamEventData {
-    #[doc = "Name of the track. "]
-    #[serde(rename = "trackName", default, skip_serializing_if = "Option::is_none")]
-    pub track_name: Option<String>,
-    #[doc = "Stream ID in the format \"trackName_bitrate\""]
-    #[serde(rename = "streamId", default, skip_serializing_if = "Option::is_none")]
-    pub stream_id: Option<String>,
-    #[doc = "Track index."]
-    #[serde(rename = "trackId", default, skip_serializing_if = "Option::is_none")]
-    pub track_id: Option<i32>,
-    #[doc = "Type of the track."]
-    #[serde(rename = "mediaType", default, skip_serializing_if = "Option::is_none")]
-    pub media_type: Option<live_event_stream_event_data::MediaType>,
-    #[doc = "Bitrate of the track."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub bitrate: Option<i64>,
-    #[doc = "Fragment timestamp in timescale."]
-    #[serde(rename = "mediaTimestamp", default, skip_serializing_if = "Option::is_none")]
-    pub media_timestamp: Option<String>,
-    #[doc = "Timescale in which timestamps are expressed."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timescale: Option<String>,
-    #[doc = "Previous fragment timestamp in timescale."]
-    #[serde(rename = "previousFragmentTimestamp", default, skip_serializing_if = "Option::is_none")]
-    pub previous_fragment_timestamp: Option<String>,
-    #[doc = "Previous fragment duration in timescale."]
-    #[serde(rename = "previousFragmentDuration", default, skip_serializing_if = "Option::is_none")]
-    pub previous_fragment_duration: Option<String>,
-    #[doc = "Current fragment timestamp in timescale."]
-    #[serde(rename = "currentFragmentTimestamp", default, skip_serializing_if = "Option::is_none")]
-    pub current_fragment_timestamp: Option<String>,
-    #[doc = "Timestamp of first fragment used to make a comparison, in timescale."]
-    #[serde(rename = "fragmentOneTimestamp", default, skip_serializing_if = "Option::is_none")]
-    pub fragment_one_timestamp: Option<String>,
-    #[doc = "Duration of first fragment used to make a comparison, in timescale."]
-    #[serde(rename = "fragmentOneDuration", default, skip_serializing_if = "Option::is_none")]
-    pub fragment_one_duration: Option<String>,
-    #[doc = "Timestamp of second fragment used to make a comparison, in timescale."]
-    #[serde(rename = "fragmentTwoTimestamp", default, skip_serializing_if = "Option::is_none")]
-    pub fragment_two_timestamp: Option<String>,
-    #[doc = "Duration of second fragment used to make a comparison, in timescale."]
-    #[serde(rename = "fragmentTwoDuration", default, skip_serializing_if = "Option::is_none")]
-    pub fragment_two_duration: Option<String>,
-    #[doc = "Reason the fragment was dropped."]
-    #[serde(rename = "fragmentDropReason", default, skip_serializing_if = "Option::is_none")]
-    pub fragment_drop_reason: Option<String>,
-    #[doc = "Length of the discontinuity gap in timescale."]
-    #[serde(rename = "discontinuityGap", default, skip_serializing_if = "Option::is_none")]
-    pub discontinuity_gap: Option<i64>,
-    #[doc = "Identifier of the stream or connection. Encoder or customer is responsible to add this ID in the ingest URL."]
-    #[serde(rename = "streamName", default, skip_serializing_if = "Option::is_none")]
-    pub stream_name: Option<String>,
-    #[doc = "Result code."]
-    #[serde(rename = "resultCode", default, skip_serializing_if = "Option::is_none")]
-    pub result_code: Option<String>,
-    #[doc = "Result message."]
-    #[serde(rename = "resultMessage", default, skip_serializing_if = "Option::is_none")]
-    pub result_message: Option<String>,
-    #[doc = "Fragment duration."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub duration: Option<String>,
-    #[doc = "Width x Height for video, null otherwise."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resolution: Option<String>,
-    #[doc = "The smaller timestamp of the two fragments compared."]
-    #[serde(rename = "minTime", default, skip_serializing_if = "Option::is_none")]
-    pub min_time: Option<String>,
-    #[doc = "The media type of the smaller timestamp of two fragments compared."]
-    #[serde(rename = "minTimeMediaType", default, skip_serializing_if = "Option::is_none")]
-    pub min_time_media_type: Option<live_event_stream_event_data::MinTimeMediaType>,
-    #[doc = "The larger timestamp of the two fragments compared."]
-    #[serde(rename = "maxTime", default, skip_serializing_if = "Option::is_none")]
-    pub max_time: Option<String>,
-    #[doc = "The media type of the larger timestamp of two fragments compared."]
-    #[serde(rename = "maxTimeMediaType", default, skip_serializing_if = "Option::is_none")]
-    pub max_time_media_type: Option<live_event_stream_event_data::MaxTimeMediaType>,
-    #[doc = "Timescale of the fragment with the smaller timestamp."]
-    #[serde(rename = "timescaleOfMinTime", default, skip_serializing_if = "Option::is_none")]
-    pub timescale_of_min_time: Option<String>,
-    #[doc = "Timescale of the fragment with the larger timestamp."]
-    #[serde(rename = "timescaleOfMaxTime", default, skip_serializing_if = "Option::is_none")]
-    pub timescale_of_max_time: Option<String>,
-    #[doc = "Truncated IP of the encoder."]
-    #[serde(rename = "remoteIp", default, skip_serializing_if = "Option::is_none")]
-    pub remote_ip: Option<String>,
-    #[doc = "Port of the encoder."]
-    #[serde(rename = "remotePort", default, skip_serializing_if = "Option::is_none")]
-    pub remote_port: Option<String>,
-}
-impl LiveEventStreamEventData {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod live_event_stream_event_data {
-    use super::*;
-    #[doc = "Type of the track."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "MediaType")]
-    pub enum MediaType {
-        #[serde(rename = "audio")]
-        Audio,
-        #[serde(rename = "video")]
-        Video,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for MediaType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for MediaType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for MediaType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Audio => serializer.serialize_unit_variant("MediaType", 0u32, "audio"),
-                Self::Video => serializer.serialize_unit_variant("MediaType", 1u32, "video"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "The media type of the smaller timestamp of two fragments compared."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "MinTimeMediaType")]
-    pub enum MinTimeMediaType {
-        Audio,
-        Video,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for MinTimeMediaType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for MinTimeMediaType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for MinTimeMediaType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Audio => serializer.serialize_unit_variant("MinTimeMediaType", 0u32, "Audio"),
-                Self::Video => serializer.serialize_unit_variant("MinTimeMediaType", 1u32, "Video"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "The media type of the larger timestamp of two fragments compared."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "MaxTimeMediaType")]
-    pub enum MaxTimeMediaType {
-        Audio,
-        Video,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for MaxTimeMediaType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for MaxTimeMediaType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for MaxTimeMediaType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Audio => serializer.serialize_unit_variant("MaxTimeMediaType", 0u32, "Audio"),
-                Self::Video => serializer.serialize_unit_variant("MaxTimeMediaType", 1u32, "Video"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "The live event metadata insertion endpoint."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LiveEventTimedMetadataEndpoint {
-    #[doc = "The metadata endpoint URL."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub url: Option<String>,
-}
-impl LiveEventTimedMetadataEndpoint {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The live event track event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LiveEventTrackEvent {
-    #[doc = "The type of the track event."]
-    #[serde(rename = "eventType", default, skip_serializing_if = "Option::is_none")]
-    pub event_type: Option<live_event_track_event::EventType>,
-    #[doc = "The time event raised."]
-    #[serde(rename = "eventTime", default, with = "azure_core::date::rfc3339::option")]
-    pub event_time: Option<time::OffsetDateTime>,
-    #[doc = "The live event track ingest heart beat event data."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub data: Option<LiveEventTrackEventData>,
-}
-impl LiveEventTrackEvent {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod live_event_track_event {
-    use super::*;
-    #[doc = "The type of the track event."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "EventType")]
-    pub enum EventType {
-        #[serde(rename = "TrackEvent/IngestHeartbeat")]
-        TrackEventIngestHeartbeat,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for EventType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for EventType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for EventType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::TrackEventIngestHeartbeat => serializer.serialize_unit_variant("EventType", 0u32, "TrackEvent/IngestHeartbeat"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "The live event track ingest heart beat event data."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LiveEventTrackEventData {
-    #[doc = "Name of the track."]
-    #[serde(rename = "trackName", default, skip_serializing_if = "Option::is_none")]
-    pub track_name: Option<String>,
-    #[doc = "Type of the track."]
-    #[serde(rename = "trackType", default, skip_serializing_if = "Option::is_none")]
-    pub track_type: Option<live_event_track_event_data::TrackType>,
-    #[doc = "Bitrate of the track."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub bitrate: Option<i64>,
-    #[doc = "Calculated bitrate based on data chunks coming from encoder."]
-    #[serde(rename = "incomingBitrate", default, skip_serializing_if = "Option::is_none")]
-    pub incoming_bitrate: Option<i64>,
-    #[doc = "Latest timestamp received for a track in last 20 seconds."]
-    #[serde(rename = "lastTimestamp", default, skip_serializing_if = "Option::is_none")]
-    pub last_timestamp: Option<String>,
-    #[doc = "Timescale in which timestamps are expressed."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timescale: Option<String>,
-    #[doc = "Number of data chunks that had overlapped timestamps in last 20 seconds."]
-    #[serde(rename = "overlapCount", default, skip_serializing_if = "Option::is_none")]
-    pub overlap_count: Option<i64>,
-    #[doc = "Number of discontinuities detected in the last 20 seconds."]
-    #[serde(rename = "discontinuityCount", default, skip_serializing_if = "Option::is_none")]
-    pub discontinuity_count: Option<i64>,
-    #[doc = "Number of data chunks with timestamps in the past that were received in last 20 seconds."]
-    #[serde(rename = "nonincreasingCount", default, skip_serializing_if = "Option::is_none")]
-    pub nonincreasing_count: Option<i64>,
-    #[doc = "If expected and actual bitrates differ by more than allowed limit in last 20 seconds."]
-    #[serde(rename = "unexpectedBitrate", default, skip_serializing_if = "Option::is_none")]
-    pub unexpected_bitrate: Option<bool>,
-    #[doc = "State of the live event."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
-    #[doc = "Indicates whether ingest is healthy."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub healthy: Option<bool>,
-    #[doc = "The last timestamp in UTC that a fragment arrived at the ingest endpoint."]
-    #[serde(rename = "lastFragmentArrivalTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_fragment_arrival_time: Option<time::OffsetDateTime>,
-    #[doc = "Indicates the speed of delay, in seconds-per-minute, of the incoming audio or video data during the last minute. The value is greater than zero if data is arriving to the live event slower than expected in the last minute; zero if data arrived with no delay; and \"n/a\" if no audio or video data was received. For example, if you have a contribution encoder sending in live content, and it is slowing down due to processing issues, or network latency, it may be only able to deliver a total of 58 seconds of audio or video in a one-minute period. This would be reported as two seconds-per-minute of drift. If the encoder is able to catch up and send all 60 seconds or more of data every minute, you will see this value reported as 0. If there was a disconnection or discontinuity from the encoder, this value may still display as 0, as it does not account for breaks in the data - only data that is delayed in timestamps."]
-    #[serde(rename = "ingestDriftValue", default, skip_serializing_if = "Option::is_none")]
-    pub ingest_drift_value: Option<String>,
-    #[doc = "This value is \"On\" for audio track heartbeats if live transcription is turned on, otherwise you will see an empty string. This state is only applicable to track type of \"audio\" for Live transcription. All other tracks will have an empty value."]
-    #[serde(rename = "transcriptionState", default, skip_serializing_if = "Option::is_none")]
-    pub transcription_state: Option<String>,
-    #[doc = "The language code (in BCP-47 format) of the transcription language. For example, \"de-de\" indicates German (Germany). The value is empty for the video track heartbeats, or when live transcription is turned off."]
-    #[serde(rename = "transcriptionLanguage", default, skip_serializing_if = "Option::is_none")]
-    pub transcription_language: Option<String>,
-}
-impl LiveEventTrackEventData {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod live_event_track_event_data {
-    use super::*;
-    #[doc = "Type of the track."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "TrackType")]
-    pub enum TrackType {
-        #[serde(rename = "audio")]
-        Audio,
-        #[serde(rename = "video")]
-        Video,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for TrackType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for TrackType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for TrackType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Audio => serializer.serialize_unit_variant("TrackType", 0u32, "audio"),
-                Self::Video => serializer.serialize_unit_variant("TrackType", 1u32, "video"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "The live event track status."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LiveEventTrackStatus {
-    #[doc = "Track Id."]
-    #[serde(rename = "trackId", default, skip_serializing_if = "Option::is_none")]
-    pub track_id: Option<String>,
-    #[doc = "Expected bitrate for this track."]
-    #[serde(rename = "expectedBitrate", default, skip_serializing_if = "Option::is_none")]
-    pub expected_bitrate: Option<i64>,
-    #[doc = "Average incoming bitrate for last 20 seconds when live event is running."]
-    #[serde(rename = "incomingBitrate", default, skip_serializing_if = "Option::is_none")]
-    pub incoming_bitrate: Option<i64>,
-    #[doc = "Current ingest drift value in seconds for last 1 minute."]
-    #[serde(rename = "ingestDrift", default, skip_serializing_if = "Option::is_none")]
-    pub ingest_drift: Option<String>,
-    #[doc = "Total number of timed metadata request received."]
-    #[serde(rename = "requestReceived", default, skip_serializing_if = "Option::is_none")]
-    pub request_received: Option<i64>,
-    #[doc = "Total number of successful timed metadata request received."]
-    #[serde(rename = "requestSucceeded", default, skip_serializing_if = "Option::is_none")]
-    pub request_succeeded: Option<i64>,
-}
-impl LiveEventTrackStatus {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Describes the transcription tracks in the output of a live event, generated using speech-to-text transcription. This property is reserved for future use, any value set on this property will be ignored."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveEventTranscription {
@@ -5502,7 +4681,7 @@ pub struct LiveOutputListResult {
 impl azure_core::Continuable for LiveOutputListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LiveOutputListResult {
@@ -5687,7 +4866,7 @@ pub struct MediaServiceCollection {
 impl azure_core::Continuable for MediaServiceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MediaServiceCollection {
@@ -5786,9 +4965,6 @@ pub struct MediaServiceProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
-    #[doc = "The minimum TLS version allowed for this account's requests. This is an optional property. If unspecified, a secure default value will be used."]
-    #[serde(rename = "minimumTlsVersion", default, skip_serializing_if = "Option::is_none")]
-    pub minimum_tls_version: Option<media_service_properties::MinimumTlsVersion>,
 }
 impl MediaServiceProperties {
     pub fn new() -> Self {
@@ -5907,52 +5083,6 @@ pub mod media_service_properties {
                 Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Succeeded"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
-        }
-    }
-    #[doc = "The minimum TLS version allowed for this account's requests. This is an optional property. If unspecified, a secure default value will be used."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "MinimumTlsVersion")]
-    pub enum MinimumTlsVersion {
-        Tls10,
-        Tls11,
-        Tls12,
-        Tls13,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for MinimumTlsVersion {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for MinimumTlsVersion {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for MinimumTlsVersion {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Tls10 => serializer.serialize_unit_variant("MinimumTlsVersion", 0u32, "Tls10"),
-                Self::Tls11 => serializer.serialize_unit_variant("MinimumTlsVersion", 1u32, "Tls11"),
-                Self::Tls12 => serializer.serialize_unit_variant("MinimumTlsVersion", 2u32, "Tls12"),
-                Self::Tls13 => serializer.serialize_unit_variant("MinimumTlsVersion", 3u32, "Tls13"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    impl Default for MinimumTlsVersion {
-        fn default() -> Self {
-            Self::Tls12
         }
     }
 }
@@ -7142,9 +6272,6 @@ impl ServiceSpecification {
 pub struct StandardEncoderPreset {
     #[serde(flatten)]
     pub preset: Preset,
-    #[doc = "Dictionary containing key value pairs for parameters not exposed in the preset itself"]
-    #[serde(rename = "experimentalOptions", default, skip_serializing_if = "Option::is_none")]
-    pub experimental_options: Option<serde_json::Value>,
     #[doc = "Describes all the filtering operations, such as de-interlacing, rotation etc. that are to be applied to the input media before encoding."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filters: Option<Filters>,
@@ -7157,7 +6284,6 @@ impl StandardEncoderPreset {
     pub fn new(preset: Preset, codecs: Vec<Codec>, formats: Vec<Format>) -> Self {
         Self {
             preset,
-            experimental_options: None,
             filters: None,
             codecs,
             formats,
@@ -7309,7 +6435,7 @@ pub struct StreamingEndpointListResult {
 impl azure_core::Continuable for StreamingEndpointListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StreamingEndpointListResult {
@@ -7505,7 +6631,7 @@ pub struct StreamingLocatorCollection {
 impl azure_core::Continuable for StreamingLocatorCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StreamingLocatorCollection {
@@ -7796,7 +6922,7 @@ pub struct StreamingPolicyCollection {
 impl azure_core::Continuable for StreamingPolicyCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StreamingPolicyCollection {
@@ -8196,7 +7322,7 @@ pub struct TransformCollection {
 impl azure_core::Continuable for TransformCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TransformCollection {

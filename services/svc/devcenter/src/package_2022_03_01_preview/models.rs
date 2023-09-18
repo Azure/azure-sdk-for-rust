@@ -102,7 +102,7 @@ pub struct ArtifactListResult {
 impl azure_core::Continuable for ArtifactListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ArtifactListResult {
@@ -177,7 +177,7 @@ pub struct CatalogItemListResult {
 impl azure_core::Continuable for CatalogItemListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CatalogItemListResult {
@@ -290,7 +290,7 @@ pub struct CatalogItemVersionListResult {
 impl azure_core::Continuable for CatalogItemVersionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CatalogItemVersionListResult {
@@ -428,7 +428,7 @@ pub struct DevBoxListResult {
 impl azure_core::Continuable for DevBoxListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DevBoxListResult {
@@ -518,7 +518,7 @@ pub struct EnvironmentListResult {
 impl azure_core::Continuable for EnvironmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EnvironmentListResult {
@@ -556,7 +556,7 @@ pub struct EnvironmentTypeListResult {
 impl azure_core::Continuable for EnvironmentTypeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EnvironmentTypeListResult {
@@ -811,7 +811,7 @@ pub struct PoolListResult {
 impl azure_core::Continuable for PoolListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PoolListResult {
@@ -889,7 +889,7 @@ pub struct ProjectListResult {
 impl azure_core::Continuable for ProjectListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProjectListResult {
@@ -963,7 +963,7 @@ pub struct ScheduleListResult {
 impl azure_core::Continuable for ScheduleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScheduleListResult {

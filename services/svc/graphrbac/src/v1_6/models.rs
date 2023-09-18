@@ -132,7 +132,7 @@ pub struct AppRoleAssignmentListResult {
 impl azure_core::Continuable for AppRoleAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AppRoleAssignmentListResult {
@@ -525,7 +525,7 @@ pub struct ApplicationListResult {
 impl azure_core::Continuable for ApplicationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationListResult {
@@ -621,7 +621,7 @@ pub struct DirectoryObjectListResult {
 impl azure_core::Continuable for DirectoryObjectListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DirectoryObjectListResult {
@@ -835,7 +835,7 @@ pub struct GroupListResult {
 impl azure_core::Continuable for GroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GroupListResult {
@@ -1091,7 +1091,7 @@ pub struct OAuth2PermissionGrantListResult {
 impl azure_core::Continuable for OAuth2PermissionGrantListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OAuth2PermissionGrantListResult {
@@ -1545,7 +1545,7 @@ pub struct ServicePrincipalListResult {
 impl azure_core::Continuable for ServicePrincipalListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServicePrincipalListResult {
@@ -1853,7 +1853,7 @@ pub struct UserListResult {
 impl azure_core::Continuable for UserListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UserListResult {

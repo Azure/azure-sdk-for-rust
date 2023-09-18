@@ -70,7 +70,7 @@ pub struct DedicatedHsmListResult {
 impl azure_core::Continuable for DedicatedHsmListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DedicatedHsmListResult {
@@ -438,7 +438,7 @@ pub struct OutboundEnvironmentEndpointCollection {
 impl azure_core::Continuable for OutboundEnvironmentEndpointCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OutboundEnvironmentEndpointCollection {

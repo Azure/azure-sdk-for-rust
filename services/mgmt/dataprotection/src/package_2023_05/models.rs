@@ -1470,7 +1470,7 @@ pub struct ClientDiscoveryResponse {
 impl azure_core::Continuable for ClientDiscoveryResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClientDiscoveryResponse {
@@ -2009,7 +2009,7 @@ pub struct DppBaseResourceList {
 impl azure_core::Continuable for DppBaseResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DppBaseResourceList {

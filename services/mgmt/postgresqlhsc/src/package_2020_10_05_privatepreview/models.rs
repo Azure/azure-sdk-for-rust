@@ -492,7 +492,7 @@ pub struct ServerConfigurationListResult {
 impl azure_core::Continuable for ServerConfigurationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerConfigurationListResult {
@@ -632,7 +632,7 @@ pub struct ServerGroupConfigurationListResult {
 impl azure_core::Continuable for ServerGroupConfigurationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerGroupConfigurationListResult {
@@ -745,7 +745,7 @@ pub struct ServerGroupListResult {
 impl azure_core::Continuable for ServerGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerGroupListResult {

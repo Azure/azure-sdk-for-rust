@@ -333,7 +333,7 @@ pub struct HyperVClusterCollection {
 impl azure_core::Continuable for HyperVClusterCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HyperVClusterCollection {
@@ -451,7 +451,7 @@ pub struct HyperVHostCollection {
 impl azure_core::Continuable for HyperVHostCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HyperVHostCollection {
@@ -528,7 +528,7 @@ pub struct HyperVJobCollection {
 impl azure_core::Continuable for HyperVJobCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HyperVJobCollection {
@@ -574,7 +574,7 @@ pub struct HyperVMachineCollection {
 impl azure_core::Continuable for HyperVMachineCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HyperVMachineCollection {
@@ -789,7 +789,7 @@ pub struct HyperVRunAsAccountCollection {
 impl azure_core::Continuable for HyperVRunAsAccountCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HyperVRunAsAccountCollection {
@@ -1193,7 +1193,7 @@ pub struct OperationResultList {
 impl azure_core::Continuable for OperationResultList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationResultList {
@@ -1481,7 +1481,7 @@ pub struct SiteHealthSummaryCollection {
 impl azure_core::Continuable for SiteHealthSummaryCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SiteHealthSummaryCollection {
@@ -1606,7 +1606,7 @@ pub struct VCenterCollection {
 impl azure_core::Continuable for VCenterCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VCenterCollection {
@@ -1785,7 +1785,7 @@ pub struct VMwareJobCollection {
 impl azure_core::Continuable for VMwareJobCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VMwareJobCollection {
@@ -1831,7 +1831,7 @@ pub struct VMwareMachineCollection {
 impl azure_core::Continuable for VMwareMachineCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VMwareMachineCollection {
@@ -2039,7 +2039,7 @@ pub struct VMwareRunAsAccountCollection {
 impl azure_core::Continuable for VMwareRunAsAccountCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VMwareRunAsAccountCollection {

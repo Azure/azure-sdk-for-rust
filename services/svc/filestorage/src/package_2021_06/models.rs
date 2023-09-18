@@ -442,13 +442,13 @@ pub enum LeaseStatus {
 #[doc = "An enumeration of directories and files."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListFilesAndDirectoriesSegmentResponse {
-    #[serde(rename = "ServiceEndpoint")]
+    #[serde(rename = "@ServiceEndpoint")]
     pub service_endpoint: String,
-    #[serde(rename = "ShareName")]
+    #[serde(rename = "@ShareName")]
     pub share_name: String,
-    #[serde(rename = "ShareSnapshot", default, skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "@ShareSnapshot", default, skip_serializing_if = "Option::is_none")]
     pub share_snapshot: Option<String>,
-    #[serde(rename = "DirectoryPath")]
+    #[serde(rename = "@DirectoryPath")]
     pub directory_path: String,
     #[serde(rename = "Prefix")]
     pub prefix: String,
@@ -517,7 +517,7 @@ pub mod list_handles_response {
 #[doc = "An enumeration of shares."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListSharesResponse {
-    #[serde(rename = "ServiceEndpoint")]
+    #[serde(rename = "@ServiceEndpoint")]
     pub service_endpoint: String,
     #[serde(rename = "Prefix", default, skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
@@ -702,17 +702,37 @@ pub struct SharePropertiesInternal {
     #[serde(rename = "AccessTierTransitionState", default, skip_serializing_if = "Option::is_none")]
     pub access_tier_transition_state: Option<String>,
     #[doc = "The current lease status of the share."]
-    #[serde(rename = "LeaseStatus", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "LeaseStatus",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lease_status: Option<LeaseStatus>,
     #[doc = "Lease state of the share."]
-    #[serde(rename = "LeaseState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "LeaseState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lease_state: Option<LeaseState>,
     #[doc = "When a share is leased, specifies whether the lease is of infinite or fixed duration."]
-    #[serde(rename = "LeaseDuration", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "LeaseDuration",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub lease_duration: Option<LeaseDuration>,
     #[serde(rename = "EnabledProtocols", default, skip_serializing_if = "Option::is_none")]
     pub enabled_protocols: Option<ShareEnabledProtocols>,
-    #[serde(rename = "RootSquash", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "RootSquash",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub root_squash: Option<ShareRootSquash>,
 }
 impl SharePropertiesInternal {

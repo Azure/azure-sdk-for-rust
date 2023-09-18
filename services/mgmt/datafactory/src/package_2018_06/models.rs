@@ -4797,7 +4797,7 @@ pub struct ChangeDataCaptureListResponse {
 impl azure_core::Continuable for ChangeDataCaptureListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ChangeDataCaptureListResponse {
@@ -6031,7 +6031,7 @@ pub struct CredentialListResponse {
 impl azure_core::Continuable for CredentialListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CredentialListResponse {
@@ -6598,7 +6598,7 @@ pub struct DataFlowListResponse {
 impl azure_core::Continuable for DataFlowListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataFlowListResponse {
@@ -7113,7 +7113,7 @@ pub struct DatasetListResponse {
 impl azure_core::Continuable for DatasetListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DatasetListResponse {
@@ -9117,7 +9117,7 @@ pub struct FactoryListResponse {
 impl azure_core::Continuable for FactoryListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FactoryListResponse {
@@ -10050,7 +10050,7 @@ pub struct GlobalParameterListResponse {
 impl azure_core::Continuable for GlobalParameterListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GlobalParameterListResponse {
@@ -12800,7 +12800,7 @@ pub struct IntegrationRuntimeListResponse {
 impl azure_core::Continuable for IntegrationRuntimeListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IntegrationRuntimeListResponse {
@@ -13879,7 +13879,7 @@ pub struct LinkedServiceListResponse {
 impl azure_core::Continuable for LinkedServiceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LinkedServiceListResponse {
@@ -14484,7 +14484,7 @@ pub struct ManagedVirtualNetworkListResponse {
 impl azure_core::Continuable for ManagedVirtualNetworkListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedVirtualNetworkListResponse {
@@ -16576,7 +16576,7 @@ pub struct OperationListResponse {
 impl azure_core::Continuable for OperationListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResponse {
@@ -17838,7 +17838,7 @@ pub struct PipelineListResponse {
 impl azure_core::Continuable for PipelineListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PipelineListResponse {
@@ -18423,7 +18423,7 @@ pub struct PrivateEndpointConnectionListResponse {
 impl azure_core::Continuable for PrivateEndpointConnectionListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionListResponse {
@@ -18573,7 +18573,7 @@ pub struct QueryDataFlowDebugSessionsResponse {
 impl azure_core::Continuable for QueryDataFlowDebugSessionsResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl QueryDataFlowDebugSessionsResponse {
@@ -25559,7 +25559,7 @@ pub struct TriggerListResponse {
 impl azure_core::Continuable for TriggerListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TriggerListResponse {
@@ -27207,7 +27207,7 @@ pub struct ManagedPrivateEndpointListResponse {
 impl azure_core::Continuable for ManagedPrivateEndpointListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedPrivateEndpointListResponse {

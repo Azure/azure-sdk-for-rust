@@ -228,7 +228,7 @@ pub struct AccountFilterCollection {
 impl azure_core::Continuable for AccountFilterCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccountFilterCollection {
@@ -368,7 +368,7 @@ pub struct AssetCollection {
 impl azure_core::Continuable for AssetCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AssetCollection {
@@ -449,7 +449,7 @@ pub struct AssetFilterCollection {
 impl azure_core::Continuable for AssetFilterCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AssetFilterCollection {
@@ -1253,7 +1253,7 @@ pub struct ContentKeyPolicyCollection {
 impl azure_core::Continuable for ContentKeyPolicyCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ContentKeyPolicyCollection {
@@ -3428,7 +3428,7 @@ pub struct JobCollection {
 impl azure_core::Continuable for JobCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobCollection {
@@ -4614,7 +4614,7 @@ pub struct LiveEventListResult {
 impl azure_core::Continuable for LiveEventListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LiveEventListResult {
@@ -5505,7 +5505,7 @@ pub struct LiveOutputListResult {
 impl azure_core::Continuable for LiveOutputListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LiveOutputListResult {
@@ -5690,7 +5690,7 @@ pub struct MediaServiceCollection {
 impl azure_core::Continuable for MediaServiceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MediaServiceCollection {
@@ -7312,7 +7312,7 @@ pub struct StreamingEndpointListResult {
 impl azure_core::Continuable for StreamingEndpointListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StreamingEndpointListResult {
@@ -7508,7 +7508,7 @@ pub struct StreamingLocatorCollection {
 impl azure_core::Continuable for StreamingLocatorCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StreamingLocatorCollection {
@@ -7799,7 +7799,7 @@ pub struct StreamingPolicyCollection {
 impl azure_core::Continuable for StreamingPolicyCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StreamingPolicyCollection {
@@ -8199,7 +8199,7 @@ pub struct TransformCollection {
 impl azure_core::Continuable for TransformCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TransformCollection {

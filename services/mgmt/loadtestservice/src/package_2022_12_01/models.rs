@@ -265,7 +265,7 @@ pub struct LoadTestResourcePageList {
 impl azure_core::Continuable for LoadTestResourcePageList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LoadTestResourcePageList {
@@ -521,7 +521,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -565,7 +565,7 @@ pub struct OutboundEnvironmentEndpointCollection {
 impl azure_core::Continuable for OutboundEnvironmentEndpointCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OutboundEnvironmentEndpointCollection {
@@ -657,7 +657,7 @@ pub struct QuotaResourceList {
 impl azure_core::Continuable for QuotaResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl QuotaResourceList {

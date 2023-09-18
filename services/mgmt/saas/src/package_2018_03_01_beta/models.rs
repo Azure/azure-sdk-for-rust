@@ -182,7 +182,7 @@ pub struct SaasAppOperationsResponseWithContinuation {
 impl azure_core::Continuable for SaasAppOperationsResponseWithContinuation {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SaasAppOperationsResponseWithContinuation {
@@ -286,7 +286,7 @@ pub struct SaasAppResponseWithContinuation {
 impl azure_core::Continuable for SaasAppResponseWithContinuation {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SaasAppResponseWithContinuation {
@@ -535,7 +535,7 @@ pub struct SaasResourceResponseWithContinuation {
 impl azure_core::Continuable for SaasResourceResponseWithContinuation {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SaasResourceResponseWithContinuation {

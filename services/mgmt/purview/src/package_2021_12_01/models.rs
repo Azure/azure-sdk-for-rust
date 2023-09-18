@@ -68,7 +68,7 @@ pub struct AccountList {
 impl azure_core::Continuable for AccountList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccountList {
@@ -863,7 +863,7 @@ pub struct KafkaConfigurationList {
 impl azure_core::Continuable for KafkaConfigurationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl KafkaConfigurationList {
@@ -1101,7 +1101,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -1261,7 +1261,7 @@ pub struct PrivateEndpointConnectionList {
 impl azure_core::Continuable for PrivateEndpointConnectionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionList {
@@ -1320,7 +1320,7 @@ pub struct PrivateLinkResourceList {
 impl azure_core::Continuable for PrivateLinkResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkResourceList {

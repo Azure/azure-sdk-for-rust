@@ -175,7 +175,7 @@ pub struct JobCollectionListResult {
 impl azure_core::Continuable for JobCollectionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobCollectionListResult {
@@ -371,7 +371,7 @@ pub struct JobHistoryListResult {
 impl azure_core::Continuable for JobHistoryListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobHistoryListResult {
@@ -395,7 +395,7 @@ pub struct JobListResult {
 impl azure_core::Continuable for JobListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobListResult {

@@ -298,7 +298,7 @@ impl Serialize for ErrorCode {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GeoReplication {
     #[doc = "The status of the secondary location"]
-    #[serde(rename = "Status")]
+    #[serde(rename = "Status", with = "azure_core::xml::text_content")]
     pub status: geo_replication::Status,
     #[doc = "A GMT date/time value, to the second. All primary writes preceding this value are guaranteed to be available for read operations at the secondary. Primary writes after this point in time may or may not be available for reads."]
     #[serde(rename = "LastSyncTime", with = "azure_core::date::rfc1123")]
@@ -357,7 +357,7 @@ pub mod geo_replication {
 #[doc = "The object returned when calling List Queues on a Queue Service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListQueuesSegmentResponse {
-    #[serde(rename = "ServiceEndpoint")]
+    #[serde(rename = "@ServiceEndpoint")]
     pub service_endpoint: String,
     #[serde(rename = "Prefix")]
     pub prefix: String,

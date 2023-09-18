@@ -407,7 +407,7 @@ pub struct AvailabilitySetListResult {
 impl azure_core::Continuable for AvailabilitySetListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AvailabilitySetListResult {
@@ -713,7 +713,7 @@ pub struct CapacityReservationGroupListResult {
 impl azure_core::Continuable for CapacityReservationGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CapacityReservationGroupListResult {
@@ -807,7 +807,7 @@ pub struct CapacityReservationListResult {
 impl azure_core::Continuable for CapacityReservationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CapacityReservationListResult {
@@ -1062,7 +1062,7 @@ pub struct CloudServiceListResult {
 impl azure_core::Continuable for CloudServiceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CloudServiceListResult {
@@ -1192,7 +1192,7 @@ pub struct CloudServiceRoleListResult {
 impl azure_core::Continuable for CloudServiceRoleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CloudServiceRoleListResult {
@@ -1460,7 +1460,7 @@ pub struct CommunityGalleryImageList {
 impl azure_core::Continuable for CommunityGalleryImageList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CommunityGalleryImageList {
@@ -1611,7 +1611,7 @@ pub struct CommunityGalleryImageVersionList {
 impl azure_core::Continuable for CommunityGalleryImageVersionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CommunityGalleryImageVersionList {
@@ -2169,7 +2169,7 @@ pub struct DedicatedHostGroupListResult {
 impl azure_core::Continuable for DedicatedHostGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DedicatedHostGroupListResult {
@@ -2303,7 +2303,7 @@ pub struct DedicatedHostListResult {
 impl azure_core::Continuable for DedicatedHostListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DedicatedHostListResult {
@@ -2684,7 +2684,7 @@ pub struct DiskAccessList {
 impl azure_core::Continuable for DiskAccessList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DiskAccessList {
@@ -2797,7 +2797,7 @@ pub struct DiskEncryptionSetList {
 impl azure_core::Continuable for DiskEncryptionSetList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DiskEncryptionSetList {
@@ -2969,7 +2969,7 @@ pub struct DiskList {
 impl azure_core::Continuable for DiskList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DiskList {
@@ -3203,7 +3203,7 @@ pub struct DiskRestorePointList {
 impl azure_core::Continuable for DiskRestorePointList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DiskRestorePointList {
@@ -4018,7 +4018,7 @@ pub struct GalleryApplicationList {
 impl azure_core::Continuable for GalleryApplicationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GalleryApplicationList {
@@ -4121,7 +4121,7 @@ pub struct GalleryApplicationVersionList {
 impl azure_core::Continuable for GalleryApplicationVersionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GalleryApplicationVersionList {
@@ -4578,7 +4578,7 @@ pub struct GalleryImageList {
 impl azure_core::Continuable for GalleryImageList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GalleryImageList {
@@ -4758,7 +4758,7 @@ pub struct GalleryImageVersionList {
 impl azure_core::Continuable for GalleryImageVersionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GalleryImageVersionList {
@@ -4878,7 +4878,7 @@ pub struct GalleryList {
 impl azure_core::Continuable for GalleryList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GalleryList {
@@ -5869,7 +5869,7 @@ pub struct ImageListResult {
 impl azure_core::Continuable for ImageListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ImageListResult {
@@ -6503,7 +6503,7 @@ pub struct ListUsagesResult {
 impl azure_core::Continuable for ListUsagesResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListUsagesResult {
@@ -7085,7 +7085,7 @@ pub struct OsFamilyListResult {
 impl azure_core::Continuable for OsFamilyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OsFamilyListResult {
@@ -7220,7 +7220,7 @@ pub struct OsVersionListResult {
 impl azure_core::Continuable for OsVersionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OsVersionListResult {
@@ -7869,7 +7869,7 @@ pub struct PrivateEndpointConnectionListResult {
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionListResult {
@@ -8111,7 +8111,7 @@ pub struct ProximityPlacementGroupListResult {
 impl azure_core::Continuable for ProximityPlacementGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProximityPlacementGroupListResult {
@@ -9003,7 +9003,7 @@ pub struct ResourceSkusResult {
 impl azure_core::Continuable for ResourceSkusResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceSkusResult {
@@ -9023,7 +9023,7 @@ pub struct ResourceUriList {
 impl azure_core::Continuable for ResourceUriList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceUriList {
@@ -9103,7 +9103,7 @@ pub struct RestorePointCollectionListResult {
 impl azure_core::Continuable for RestorePointCollectionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RestorePointCollectionListResult {
@@ -9501,7 +9501,7 @@ pub struct RoleInstanceListResult {
 impl azure_core::Continuable for RoleInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleInstanceListResult {
@@ -9816,7 +9816,7 @@ pub struct RunCommandListResult {
 impl azure_core::Continuable for RunCommandListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RunCommandListResult {
@@ -10099,7 +10099,7 @@ pub struct SharedGalleryImageList {
 impl azure_core::Continuable for SharedGalleryImageList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SharedGalleryImageList {
@@ -10250,7 +10250,7 @@ pub struct SharedGalleryImageVersionList {
 impl azure_core::Continuable for SharedGalleryImageVersionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SharedGalleryImageVersionList {
@@ -10311,7 +10311,7 @@ pub struct SharedGalleryList {
 impl azure_core::Continuable for SharedGalleryList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SharedGalleryList {
@@ -10639,7 +10639,7 @@ pub struct SnapshotList {
 impl azure_core::Continuable for SnapshotList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SnapshotList {
@@ -11068,7 +11068,7 @@ pub struct SshPublicKeysGroupListResult {
 impl azure_core::Continuable for SshPublicKeysGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SshPublicKeysGroupListResult {
@@ -11421,7 +11421,7 @@ pub struct UpdateDomainListResult {
 impl azure_core::Continuable for UpdateDomainListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UpdateDomainListResult {
@@ -12764,7 +12764,7 @@ pub struct VirtualMachineListResult {
 impl azure_core::Continuable for VirtualMachineListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualMachineListResult {
@@ -13491,7 +13491,7 @@ pub struct VirtualMachineRunCommandsListResult {
 impl azure_core::Continuable for VirtualMachineRunCommandsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualMachineRunCommandsListResult {
@@ -13621,7 +13621,7 @@ pub struct VirtualMachineScaleSetExtensionListResult {
 impl azure_core::Continuable for VirtualMachineScaleSetExtensionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualMachineScaleSetExtensionListResult {
@@ -13948,7 +13948,7 @@ pub struct VirtualMachineScaleSetListOsUpgradeHistory {
 impl azure_core::Continuable for VirtualMachineScaleSetListOsUpgradeHistory {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualMachineScaleSetListOsUpgradeHistory {
@@ -13968,7 +13968,7 @@ pub struct VirtualMachineScaleSetListResult {
 impl azure_core::Continuable for VirtualMachineScaleSetListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualMachineScaleSetListResult {
@@ -13988,7 +13988,7 @@ pub struct VirtualMachineScaleSetListSkusResult {
 impl azure_core::Continuable for VirtualMachineScaleSetListSkusResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualMachineScaleSetListSkusResult {
@@ -14008,7 +14008,7 @@ pub struct VirtualMachineScaleSetListWithLinkResult {
 impl azure_core::Continuable for VirtualMachineScaleSetListWithLinkResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualMachineScaleSetListWithLinkResult {
@@ -15428,7 +15428,7 @@ pub struct VirtualMachineScaleSetVmListResult {
 impl azure_core::Continuable for VirtualMachineScaleSetVmListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualMachineScaleSetVmListResult {

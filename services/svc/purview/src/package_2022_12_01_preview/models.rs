@@ -56,7 +56,7 @@ pub struct SelfServicePoliciesList {
 impl azure_core::Continuable for SelfServicePoliciesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SelfServicePoliciesList {

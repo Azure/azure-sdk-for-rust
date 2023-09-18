@@ -71,7 +71,7 @@ pub struct ApiPortalCustomDomainResourceCollection {
 impl azure_core::Continuable for ApiPortalCustomDomainResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApiPortalCustomDomainResourceCollection {
@@ -224,7 +224,7 @@ pub struct ApiPortalResourceCollection {
 impl azure_core::Continuable for ApiPortalResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApiPortalResourceCollection {
@@ -284,7 +284,7 @@ pub struct AppResourceCollection {
 impl azure_core::Continuable for AppResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AppResourceCollection {
@@ -418,7 +418,7 @@ pub struct AvailableOperations {
 impl azure_core::Continuable for AvailableOperations {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AvailableOperations {
@@ -489,7 +489,7 @@ pub struct BindingResourceCollection {
 impl azure_core::Continuable for BindingResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BindingResourceCollection {
@@ -561,7 +561,7 @@ pub struct BuildCollection {
 impl azure_core::Continuable for BuildCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BuildCollection {
@@ -691,7 +691,7 @@ pub struct BuildResultCollection {
 impl azure_core::Continuable for BuildResultCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BuildResultCollection {
@@ -860,7 +860,7 @@ pub struct BuildServiceAgentPoolResourceCollection {
 impl azure_core::Continuable for BuildServiceAgentPoolResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BuildServiceAgentPoolResourceCollection {
@@ -903,7 +903,7 @@ pub struct BuildServiceCollection {
 impl azure_core::Continuable for BuildServiceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BuildServiceCollection {
@@ -1149,7 +1149,7 @@ pub struct BuilderResourceCollection {
 impl azure_core::Continuable for BuilderResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BuilderResourceCollection {
@@ -1313,7 +1313,7 @@ pub struct BuildpackBindingResourceCollection {
 impl azure_core::Continuable for BuildpackBindingResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BuildpackBindingResourceCollection {
@@ -1480,7 +1480,7 @@ pub struct CertificateResourceCollection {
 impl azure_core::Continuable for CertificateResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CertificateResourceCollection {
@@ -2055,7 +2055,7 @@ pub struct ConfigurationServiceResourceCollection {
 impl azure_core::Continuable for ConfigurationServiceResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConfigurationServiceResourceCollection {
@@ -2284,7 +2284,7 @@ pub struct CustomDomainResourceCollection {
 impl azure_core::Continuable for CustomDomainResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomDomainResourceCollection {
@@ -2483,7 +2483,7 @@ pub struct DeploymentResourceCollection {
 impl azure_core::Continuable for DeploymentResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeploymentResourceCollection {
@@ -2852,7 +2852,7 @@ pub struct GatewayCustomDomainResourceCollection {
 impl azure_core::Continuable for GatewayCustomDomainResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GatewayCustomDomainResourceCollection {
@@ -3035,7 +3035,7 @@ pub struct GatewayResourceCollection {
 impl azure_core::Continuable for GatewayResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GatewayResourceCollection {
@@ -3219,7 +3219,7 @@ pub struct GatewayRouteConfigResourceCollection {
 impl azure_core::Continuable for GatewayRouteConfigResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GatewayRouteConfigResourceCollection {
@@ -4436,7 +4436,7 @@ pub struct ResourceSkuCollection {
 impl azure_core::Continuable for ResourceSkuCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceSkuCollection {
@@ -4748,7 +4748,7 @@ pub struct ServiceRegistryResourceCollection {
 impl azure_core::Continuable for ServiceRegistryResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceRegistryResourceCollection {
@@ -4808,7 +4808,7 @@ pub struct ServiceResourceList {
 impl azure_core::Continuable for ServiceResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceResourceList {
@@ -5101,7 +5101,7 @@ pub struct StorageResourceCollection {
 impl azure_core::Continuable for StorageResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageResourceCollection {

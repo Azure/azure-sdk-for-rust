@@ -53,7 +53,7 @@ pub struct AvailableContactsListResult {
 impl azure_core::Continuable for AvailableContactsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AvailableContactsListResult {
@@ -102,7 +102,7 @@ pub struct AvailableGroundStationListResult {
 impl azure_core::Continuable for AvailableGroundStationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AvailableGroundStationListResult {
@@ -328,7 +328,7 @@ pub struct ContactListResult {
 impl azure_core::Continuable for ContactListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ContactListResult {
@@ -568,7 +568,7 @@ pub struct ContactProfileListResult {
 impl azure_core::Continuable for ContactProfileListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ContactProfileListResult {
@@ -1339,7 +1339,7 @@ pub struct SpacecraftListResult {
 impl azure_core::Continuable for SpacecraftListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SpacecraftListResult {

@@ -81,7 +81,7 @@ pub struct ArtifactList {
 impl azure_core::Continuable for ArtifactList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ArtifactList {
@@ -209,7 +209,7 @@ pub struct AssignmentList {
 impl azure_core::Continuable for AssignmentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AssignmentList {
@@ -318,7 +318,7 @@ pub struct AssignmentOperationList {
 impl azure_core::Continuable for AssignmentOperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AssignmentOperationList {
@@ -548,7 +548,7 @@ pub struct BlueprintList {
 impl azure_core::Continuable for BlueprintList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BlueprintList {
@@ -945,7 +945,7 @@ pub struct PublishedBlueprintList {
 impl azure_core::Continuable for PublishedBlueprintList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PublishedBlueprintList {
