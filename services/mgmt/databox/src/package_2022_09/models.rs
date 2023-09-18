@@ -3805,7 +3805,7 @@ pub mod transfer_configuration {
     pub struct TransferFilterDetails {
         #[doc = "Details of the filtering the transfer of data."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub include: Box<Option<TransferFilterDetails>>,
+        pub include: Option<Box<TransferFilterDetails>>,
     }
     impl TransferFilterDetails {
         pub fn new() -> Self {
@@ -3817,7 +3817,7 @@ pub mod transfer_configuration {
     pub struct TransferAllDetails {
         #[doc = "Details to transfer all data."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub include: Box<Option<TransferAllDetails>>,
+        pub include: Option<Box<TransferAllDetails>>,
     }
     impl TransferAllDetails {
         pub fn new() -> Self {
