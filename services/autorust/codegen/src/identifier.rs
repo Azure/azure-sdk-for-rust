@@ -65,6 +65,10 @@ pub fn parse_ident(text: &str) -> Result<Ident> {
     syn::parse_str::<Ident>(&id(text)).with_context(ErrorKind::Parse, || format!("parse ident {text}"))
 }
 
+pub fn raw_str_to_ident(text: &str) -> Result<Ident> {
+    syn::parse_str::<Ident>(text).with_context(ErrorKind::Parse, || format!("parse ident {text}"))
+}
+
 fn remove_spaces(text: &str) -> String {
     text.replace(' ', "")
 }
@@ -179,6 +183,8 @@ fn is_keyword(word: &str) -> bool {
             | "where"
             | "while"
             | "yield"
+            // names used by autorust that we shouldn't stomp on
+            | "models"
     )
 }
 

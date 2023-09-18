@@ -1,4 +1,8 @@
-use crate::{identifier::parse_ident, spec::TypeName, CrateConfig, PropertyName, Spec};
+use crate::{
+    identifier::{parse_ident, raw_str_to_ident},
+    spec::TypeName,
+    CrateConfig, PropertyName, Spec,
+};
 use crate::{Error, Result};
 use camino::Utf8Path;
 use camino::Utf8PathBuf;
@@ -80,7 +84,7 @@ impl<'a> CodeGen<'a> {
 }
 
 fn id_models() -> Ident {
-    parse_ident("models").unwrap()
+    raw_str_to_ident("models").unwrap()
 }
 
 // any word character or `-` between curly braces
