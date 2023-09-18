@@ -1032,8 +1032,7 @@ impl ToTokens for RequestBuilderSendCode {
                             let make_request = move |continuation: Option<String>| {
                                 let this = self.clone();
                                 async move {
-                                    let mut url = azure_core::Url::parse(&format!(#fpath, this.client.endpoint(), #url_str_args))?;
-
+                                    let mut url = this.url()?;
                                     #new_request_code
                                     #request_builder
                                     if let Some(value) = continuation.as_ref() {
@@ -1058,7 +1057,7 @@ impl ToTokens for RequestBuilderSendCode {
                             let make_request = move |continuation: Option<String>| {
                                 let this = self.clone();
                                 async move {
-                                    let mut url = azure_core::Url::parse(&format!(#fpath, this.client.endpoint(), #url_str_args))?;
+                                    let mut url = this.url()?;
 
                                     let rsp = match continuation {
                                         Some(value) => {
