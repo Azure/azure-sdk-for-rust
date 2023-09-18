@@ -151,18 +151,11 @@ impl ContainerClient {
 
     /// Full URL for the container.
     pub fn url(&self) -> azure_core::Result<url::Url> {
-        let container_name = self
-            .container_name()
-            .strip_prefix('/')
-            .unwrap_or_else(|| self.container_name());
-        let sep = if self.service_client.url()?.path().ends_with('/') {
-            ""
-        } else {
-            "/"
-        };
-
-        let url = format!("{}{}{}", self.service_client.url()?, sep, container_name);
-        Ok(url::Url::parse(&url)?)
+        let mut url = self.service_client.url()?;
+        url.path_segments_mut()
+            .map_err(|_| Error::message(ErrorKind::DataConversion, "Invalid url"))?
+            .push(self.container_name());
+        Ok(url)
     }
 
     pub(crate) fn credentials(&self) -> &StorageCredentials {
