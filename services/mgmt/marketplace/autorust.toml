@@ -1,7 +1,6 @@
 [tags]
 deny = [
-    "package-2020-01-01",
-    "package-2020-12-01",
-    "package-composite-v1", # mixing versions
-    "package-composite-v2", # mixing versions
-  ]
+    # mixing versions
+    "package-composite-v1",
+    "package-composite-v2",
+]

@@ -4,8 +4,11 @@
 
 # package-2021-09 has two different AzureResource
 # https://github.com/Azure/azure-rest-api-specs/issues/17289
-# package-2022-04 also
-# package-2022-02 also
-# package-2021-07 also
-
-allow = ["package-2021-04", "package-2020-03", "package-2019-11"]
+deny = [
+    "package-composite-v1",
+    "package-2023-04",
+    "package-2023-01",
+    "package-2022-10",
+    "package-2022-06",
+    "package-2021-09",
+]

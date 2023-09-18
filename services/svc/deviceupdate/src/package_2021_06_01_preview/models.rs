@@ -841,7 +841,7 @@ pub struct InnerError {
     pub error_detail: Option<String>,
     #[doc = "An object containing more specific information than the current object about the error."]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-    pub inner_error: Box<Option<InnerError>>,
+    pub inner_error: Option<Box<InnerError>>,
 }
 impl InnerError {
     pub fn new(code: String) -> Self {
@@ -849,7 +849,7 @@ impl InnerError {
             code,
             message: None,
             error_detail: None,
-            inner_error: Box::new(None),
+            inner_error: None,
         }
     }
 }

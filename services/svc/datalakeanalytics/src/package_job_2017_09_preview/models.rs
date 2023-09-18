@@ -543,7 +543,7 @@ pub struct JobInnerError {
     pub internal_diagnostics: Option<String>,
     #[doc = "The Data Lake Analytics job error details."]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-    pub inner_error: Box<Option<JobInnerError>>,
+    pub inner_error: Option<Box<JobInnerError>>,
 }
 impl JobInnerError {
     pub fn new() -> Self {

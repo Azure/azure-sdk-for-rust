@@ -69,7 +69,7 @@ pub struct InnerError {
     pub code: Option<String>,
     #[doc = "An object containing specific information about an error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Option<InnerError>,
+    pub innererror: Option<Box<InnerError>>,
 }
 impl InnerError {
     pub fn new() -> Self {

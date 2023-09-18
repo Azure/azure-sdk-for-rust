@@ -1842,13 +1842,13 @@ pub struct DateFormat {
     pub calendar: Option<f64>,
     #[doc = "The date format."]
     #[serde(rename = "dateInstance", default, skip_serializing_if = "Option::is_none")]
-    pub date_instance: Box<Option<DateFormat>>,
+    pub date_instance: Option<Box<DateFormat>>,
     #[doc = "The date format."]
     #[serde(rename = "dateTimeInstance", default, skip_serializing_if = "Option::is_none")]
-    pub date_time_instance: Box<Option<DateFormat>>,
+    pub date_time_instance: Option<Box<DateFormat>>,
     #[doc = "The date format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub instance: Box<Option<DateFormat>>,
+    pub instance: Option<Box<DateFormat>>,
     #[doc = "Determines the leniency of the date format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lenient: Option<bool>,
@@ -1857,7 +1857,7 @@ pub struct DateFormat {
     pub number_format: Option<NumberFormat>,
     #[doc = "The date format."]
     #[serde(rename = "timeInstance", default, skip_serializing_if = "Option::is_none")]
-    pub time_instance: Box<Option<DateFormat>>,
+    pub time_instance: Option<Box<DateFormat>>,
     #[doc = "The timezone information."]
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<TimeZone>,
@@ -2145,16 +2145,16 @@ pub struct NumberFormat {
     pub currency: Option<String>,
     #[doc = "The number format."]
     #[serde(rename = "currencyInstance", default, skip_serializing_if = "Option::is_none")]
-    pub currency_instance: Box<Option<NumberFormat>>,
+    pub currency_instance: Option<Box<NumberFormat>>,
     #[doc = "Determines if grouping is used."]
     #[serde(rename = "groupingUsed", default, skip_serializing_if = "Option::is_none")]
     pub grouping_used: Option<bool>,
     #[doc = "The number format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub instance: Box<Option<NumberFormat>>,
+    pub instance: Option<Box<NumberFormat>>,
     #[doc = "The number format."]
     #[serde(rename = "integerInstance", default, skip_serializing_if = "Option::is_none")]
-    pub integer_instance: Box<Option<NumberFormat>>,
+    pub integer_instance: Option<Box<NumberFormat>>,
     #[doc = "The maximum of fraction digits."]
     #[serde(rename = "maximumFractionDigits", default, skip_serializing_if = "Option::is_none")]
     pub maximum_fraction_digits: Option<i32>,
@@ -2169,13 +2169,13 @@ pub struct NumberFormat {
     pub minimum_integer_digits: Option<i32>,
     #[doc = "The number format."]
     #[serde(rename = "numberInstance", default, skip_serializing_if = "Option::is_none")]
-    pub number_instance: Box<Option<NumberFormat>>,
+    pub number_instance: Option<Box<NumberFormat>>,
     #[doc = "Determines if only integer is parsed."]
     #[serde(rename = "parseIntegerOnly", default, skip_serializing_if = "Option::is_none")]
     pub parse_integer_only: Option<bool>,
     #[doc = "The number format."]
     #[serde(rename = "percentInstance", default, skip_serializing_if = "Option::is_none")]
-    pub percent_instance: Box<Option<NumberFormat>>,
+    pub percent_instance: Option<Box<NumberFormat>>,
     #[doc = "The enum of rounding mode."]
     #[serde(rename = "roundingMode", default, skip_serializing_if = "Option::is_none")]
     pub rounding_mode: Option<RoundingMode>,
@@ -3061,7 +3061,7 @@ pub struct TimeZone {
     pub available_ids: Vec<String>,
     #[doc = "The timezone information."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub default: Box<Option<TimeZone>>,
+    pub default: Option<Box<TimeZone>>,
     #[doc = "The display name of the timezone."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,

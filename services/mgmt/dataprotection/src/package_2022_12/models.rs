@@ -2321,7 +2321,7 @@ pub struct InnerError {
     pub code: Option<String>,
     #[doc = "Inner Error"]
     #[serde(rename = "embeddedInnerError", default, skip_serializing_if = "Option::is_none")]
-    pub embedded_inner_error: Option<InnerError>,
+    pub embedded_inner_error: Option<Box<InnerError>>,
 }
 impl InnerError {
     pub fn new() -> Self {

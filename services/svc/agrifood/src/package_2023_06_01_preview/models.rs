@@ -2187,7 +2187,7 @@ pub struct InnerError {
     pub code: Option<String>,
     #[doc = "Inner error containing list of errors.See https://github.com/Microsoft/api-guidelines/blob/vNext/Guidelines.md#innererror--object for InnerError reference document."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Box<Option<InnerError>>,
+    pub innererror: Option<Box<InnerError>>,
 }
 impl InnerError {
     pub fn new() -> Self {

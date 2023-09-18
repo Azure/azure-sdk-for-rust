@@ -237,7 +237,7 @@ pub struct Error {
     pub target: Option<String>,
     #[doc = "The error object containing details of why the request failed."]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-    pub inner_error: Box<Option<Error>>,
+    pub inner_error: Option<Box<Error>>,
 }
 impl Error {
     pub fn new(code: String, message: String) -> Self {
@@ -246,7 +246,7 @@ impl Error {
             message,
             details: Vec::new(),
             target: None,
-            inner_error: Box::new(None),
+            inner_error: None,
         }
     }
 }

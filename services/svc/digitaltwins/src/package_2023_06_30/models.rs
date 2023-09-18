@@ -70,7 +70,7 @@ pub struct Error {
     pub details: Vec<Error>,
     #[doc = "A more specific error description than was provided by the containing error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Box<Option<InnerError>>,
+    pub innererror: Option<InnerError>,
 }
 impl Error {
     pub fn new() -> Self {
@@ -268,7 +268,7 @@ pub struct InnerError {
     pub code: Option<String>,
     #[doc = "A more specific error description than was provided by the containing error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Box<Option<InnerError>>,
+    pub innererror: Option<Box<InnerError>>,
 }
 impl InnerError {
     pub fn new() -> Self {
