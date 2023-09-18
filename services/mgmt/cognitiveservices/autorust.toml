@@ -1,5 +1,0 @@
-[tags]
-deny = [
-    # duplicate clients
-    "package-2023-05"
-  ]
