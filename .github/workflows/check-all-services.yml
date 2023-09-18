@@ -2491,6 +2491,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_peering
 
+  azure_mgmt_playwrighttesting:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_playwrighttesting
+
   azure_mgmt_policyinsights:
     if: always()
     runs-on: ubuntu-latest
@@ -2779,6 +2795,22 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_recoveryservicesbackup
 
+  azure_mgmt_recoveryservicesdatareplication:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_recoveryservicesdatareplication
+
   azure_mgmt_recoveryservicessiterecovery:
     if: always()
     runs-on: ubuntu-latest
@@ -3002,6 +3034,22 @@ jobs:
       run: |
         cd services
         cargo check --all-features -p azure_mgmt_scheduler
+
+  azure_mgmt_scom:
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+    - uses: Swatinem/rust-cache@v2
+    - name: check all features
+      run: |
+        cd services
+        cargo check --all-features -p azure_mgmt_scom
 
   azure_mgmt_scvmm:
     if: always()

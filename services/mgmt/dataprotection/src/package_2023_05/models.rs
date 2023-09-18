@@ -1328,11 +1328,49 @@ impl BasePolicyRule {
 pub struct BaseResourceProperties {
     #[doc = "Type of the specific object - used for deserializing"]
     #[serde(rename = "objectType")]
-    pub object_type: String,
+    pub object_type: base_resource_properties::ObjectType,
 }
 impl BaseResourceProperties {
-    pub fn new(object_type: String) -> Self {
+    pub fn new(object_type: base_resource_properties::ObjectType) -> Self {
         Self { object_type }
+    }
+}
+pub mod base_resource_properties {
+    use super::*;
+    #[doc = "Type of the specific object - used for deserializing"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ObjectType")]
+    pub enum ObjectType {
+        DefaultResourceProperties,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ObjectType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ObjectType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ObjectType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::DefaultResourceProperties => serializer.serialize_unit_variant("ObjectType", 0u32, "DefaultResourceProperties"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "Parameters to be used during configuration of backup of blobs"]
@@ -1882,6 +1920,17 @@ pub struct Day {
 impl Day {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Default source properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DefaultResourceProperties {
+    #[serde(flatten)]
+    pub base_resource_properties: BaseResourceProperties,
+}
+impl DefaultResourceProperties {
+    pub fn new(base_resource_properties: BaseResourceProperties) -> Self {
+        Self { base_resource_properties }
     }
 }
 #[doc = "Delete Option"]

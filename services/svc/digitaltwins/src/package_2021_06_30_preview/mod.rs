@@ -141,7 +141,7 @@ pub mod digital_twin_models {
                 client: self.0.clone(),
                 traceparent: None,
                 tracestate: None,
-                models: Vec::new(),
+                models_: Vec::new(),
             }
         }
         #[doc = "Retrieves model metadata and optionally the model definition.\nStatus codes:\n* 200 OK\n* 400 Bad Request\n  * InvalidArgument - The model id is invalid.\n  * MissingArgument - The model id was not provided.\n* 404 Not Found\n  * ModelNotFound - The model was not found."]
@@ -403,7 +403,7 @@ pub mod digital_twin_models {
             pub(crate) client: super::super::Client,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
-            pub(crate) models: Vec<serde_json::Value>,
+            pub(crate) models_: Vec<serde_json::Value>,
         }
         impl RequestBuilder {
             #[doc = "Identifies the request in a distributed tracing system."]
@@ -417,8 +417,8 @@ pub mod digital_twin_models {
                 self
             }
             #[doc = "An array of models to add."]
-            pub fn models(mut self, models: Vec<serde_json::Value>) -> Self {
-                self.models = models;
+            pub fn models_(mut self, models_: Vec<serde_json::Value>) -> Self {
+                self.models_ = models_;
                 self
             }
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -444,7 +444,7 @@ pub mod digital_twin_models {
                             req.insert_header("tracestate", tracestate);
                         }
                         req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.models)?;
+                        let req_body = azure_core::to_json(&this.models_)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }

@@ -107,11 +107,12 @@ pub struct AciServiceResponse {
     pub environment: Option<ModelEnvironmentDefinition>,
     #[doc = "The list of models."]
     #[serde(
+        rename = "models",
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub models: Vec<Model>,
+    pub models_: Vec<Model>,
 }
 impl AciServiceResponse {
     pub fn new(service_response_base: ServiceResponseBase) -> Self {
@@ -134,7 +135,7 @@ impl AciServiceResponse {
             swagger_uri: None,
             model_config_map: None,
             environment: None,
-            models: Vec::new(),
+            models_: Vec::new(),
         }
     }
 }
@@ -284,11 +285,12 @@ pub struct AksServiceResponse {
     pub image_id: Option<String>,
     #[doc = "The list of models."]
     #[serde(
+        rename = "models",
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub models: Vec<Model>,
+    pub models_: Vec<Model>,
     #[doc = "The resource requirements for the container (cpu and memory)."]
     #[serde(rename = "containerResourceRequirements", default, skip_serializing_if = "Option::is_none")]
     pub container_resource_requirements: Option<ContainerResourceRequirements>,
@@ -348,7 +350,7 @@ impl AksServiceResponse {
             aks_variant_response,
             image_details: None,
             image_id: None,
-            models: Vec::new(),
+            models_: Vec::new(),
             container_resource_requirements: None,
             max_concurrent_requests_per_container: None,
             max_queue_wait_ms: None,

@@ -1702,6 +1702,11 @@ pub mod network_configuration {
         #[serde(rename = "job")]
         Job,
     }
+    impl Default for DynamicVnetAssignmentScope {
+        fn default() -> Self {
+            Self::None
+        }
+    }
 }
 #[doc = "Network profile for Batch account, which contains network rule settings for each endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -2383,7 +2388,7 @@ pub struct StartTask {
     #[doc = "Specify either the userName or autoUser property, but not both."]
     #[serde(rename = "userIdentity", default, skip_serializing_if = "Option::is_none")]
     pub user_identity: Option<UserIdentity>,
-    #[doc = "The Batch service retries a task if its exit code is nonzero. Note that this value specifically controls the number of retries. The Batch service will try the task once, and may then retry up to this limit. For example, if the maximum retry count is 3, Batch tries the task up to 4 times (one initial try and 3 retries). If the maximum retry count is 0, the Batch service does not retry the task. If the maximum retry count is -1, the Batch service retries the task without limit."]
+    #[doc = "The Batch service retries a task if its exit code is nonzero. Note that this value specifically controls the number of retries. The Batch service will try the task once, and may then retry up to this limit. For example, if the maximum retry count is 3, Batch tries the task up to 4 times (one initial try and 3 retries). If the maximum retry count is 0, the Batch service does not retry the task. If the maximum retry count is -1, the Batch service retries the task without limit. Default is 0."]
     #[serde(rename = "maxTaskRetryCount", default, skip_serializing_if = "Option::is_none")]
     pub max_task_retry_count: Option<i32>,
     #[doc = "If true and the start task fails on a compute node, the Batch service retries the start task up to its maximum retry count (maxTaskRetryCount). If the task has still not completed successfully after all retries, then the Batch service marks the compute node unusable, and will not schedule tasks to it. This condition can be detected via the node state and scheduling error detail. If false, the Batch service will not wait for the start task to complete. In this case, other tasks can start executing on the compute node while the start task is still running; and even if the start task fails, new tasks will continue to be scheduled on the node. The default is true."]
@@ -2493,6 +2498,11 @@ pub mod task_scheduling_policy {
     pub enum NodeFillType {
         Spread,
         Pack,
+    }
+    impl Default for NodeFillType {
+        fn default() -> Self {
+            Self::Spread
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

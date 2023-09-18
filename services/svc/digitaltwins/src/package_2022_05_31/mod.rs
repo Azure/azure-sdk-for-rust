@@ -138,11 +138,11 @@ pub mod digital_twin_models {
         #[doc = "Uploads one or more models. When any error occurs, no models are uploaded.\nStatus codes:\n* 201 Created\n* 400 Bad Request\n  * DTDLParserError - The models provided are not valid DTDL.\n  * InvalidArgument - The model id is invalid.\n  * LimitExceeded - The maximum number of model ids allowed in 'dependenciesFor' has been reached.\n  * ModelVersionNotSupported - The version of DTDL used is not supported.\n* 409 Conflict\n  * ModelAlreadyExists - The model provided already exists."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `models`: An array of models to add."]
-        pub fn add(&self, models: Vec<serde_json::Value>) -> add::RequestBuilder {
+        #[doc = "* `models_`: An array of models to add."]
+        pub fn add(&self, models_: Vec<serde_json::Value>) -> add::RequestBuilder {
             add::RequestBuilder {
                 client: self.0.clone(),
-                models,
+                models_,
                 traceparent: None,
                 tracestate: None,
             }
@@ -404,7 +404,7 @@ pub mod digital_twin_models {
         #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) models: Vec<serde_json::Value>,
+            pub(crate) models_: Vec<serde_json::Value>,
             pub(crate) traceparent: Option<String>,
             pub(crate) tracestate: Option<String>,
         }
@@ -442,7 +442,7 @@ pub mod digital_twin_models {
                             req.insert_header("tracestate", tracestate);
                         }
                         req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.models)?;
+                        let req_body = azure_core::to_json(&this.models_)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }

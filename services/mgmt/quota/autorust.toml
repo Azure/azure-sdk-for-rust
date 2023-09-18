@@ -1,0 +1,5 @@
+[tags]
+deny = [
+   # `Error: Error { context: Message { kind: Parse, message: "parameter not found RefKey { file_path: \"../../../azure-rest-api-specs/specification/quota/resource-manager/Microsoft.Quota/preview/2023-06-01-preview/groupquota.json\", name: \"Environment\" }" } }`
+   "package-2023-06-01-preview",
+]

@@ -576,6 +576,9 @@ pub struct AcsEmailEngagementTrackingReportReceivedEventData {
     #[doc = "The Sender Email Address"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sender: Option<String>,
+    #[doc = "The Recipient Email Address"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recipient: Option<String>,
     #[doc = "The Id of the email that has been sent"]
     #[serde(rename = "messageId", default, skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
@@ -1320,6 +1323,46 @@ pub struct AppConfigurationKeyValueModifiedEventData {
     pub sync_token: Option<String>,
 }
 impl AppConfigurationKeyValueModifiedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AppConfiguration.SnapshotCreated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AppConfigurationSnapshotCreatedEventData {
+    #[serde(flatten)]
+    pub app_configuration_snapshot_event_data: AppConfigurationSnapshotEventData,
+}
+impl AppConfigurationSnapshotCreatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of common properties of snapshot events"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AppConfigurationSnapshotEventData {
+    #[doc = "The name of the snapshot."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The etag representing the new state of the snapshot."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    #[doc = "The sync token representing the server state after the event."]
+    #[serde(rename = "syncToken", default, skip_serializing_if = "Option::is_none")]
+    pub sync_token: Option<String>,
+}
+impl AppConfigurationSnapshotEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.AppConfiguration.SnapshotModified event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AppConfigurationSnapshotModifiedEventData {
+    #[serde(flatten)]
+    pub app_configuration_snapshot_event_data: AppConfigurationSnapshotEventData,
+}
+impl AppConfigurationSnapshotModifiedEventData {
     pub fn new() -> Self {
         Self::default()
     }
@@ -2407,6 +2450,201 @@ impl EventGridEvent {
             event_time,
             metadata_version: None,
             data_version,
+        }
+    }
+}
+#[doc = "Event data for Microsoft.EventGrid.MQTTClientCreatedOrUpdated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EventGridMqttClientCreatedOrUpdatedEventData {
+    #[serde(flatten)]
+    pub event_grid_mqtt_client_event_data: EventGridMqttClientEventData,
+    #[doc = "Configured state of the client. The value could be Enabled or Disabled"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<event_grid_mqtt_client_created_or_updated_event_data::State>,
+    #[doc = "Time the client resource is created based on the provider's UTC time."]
+    #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
+    pub created_on: Option<time::OffsetDateTime>,
+    #[doc = "Time the client resource is last updated based on the provider's UTC time. If the client resource was never updated, this value is identical to the value of the 'createdOn' property."]
+    #[serde(rename = "updatedOn", default, with = "azure_core::date::rfc3339::option")]
+    pub updated_on: Option<time::OffsetDateTime>,
+    #[doc = "The key-value attributes that are assigned to the client resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attributes: Option<serde_json::Value>,
+}
+impl EventGridMqttClientCreatedOrUpdatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod event_grid_mqtt_client_created_or_updated_event_data {
+    use super::*;
+    #[doc = "Configured state of the client. The value could be Enabled or Disabled"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "State")]
+    pub enum State {
+        Enabled,
+        Disabled,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for State {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for State {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for State {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Enabled => serializer.serialize_unit_variant("State", 0u32, "Enabled"),
+                Self::Disabled => serializer.serialize_unit_variant("State", 1u32, "Disabled"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Event data for Microsoft.EventGrid.MQTTClientDeleted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EventGridMqttClientDeletedEventData {
+    #[serde(flatten)]
+    pub event_grid_mqtt_client_event_data: EventGridMqttClientEventData,
+}
+impl EventGridMqttClientDeletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for MQTT Client state changes."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EventGridMqttClientEventData {
+    #[doc = "Unique identifier for the MQTT client that the client presents to the service for authentication. This case-sensitive string can be up to 128 characters long, and supports UTF-8 characters."]
+    #[serde(rename = "clientAuthenticationName", default, skip_serializing_if = "Option::is_none")]
+    pub client_authentication_name: Option<String>,
+    #[doc = "Name of the client resource in the Event Grid namespace."]
+    #[serde(rename = "clientName", default, skip_serializing_if = "Option::is_none")]
+    pub client_name: Option<String>,
+    #[doc = "Name of the Event Grid namespace where the MQTT client was created or updated."]
+    #[serde(rename = "namespaceName", default, skip_serializing_if = "Option::is_none")]
+    pub namespace_name: Option<String>,
+}
+impl EventGridMqttClientEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Event data for Microsoft.EventGrid.MQTTClientSessionConnected event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EventGridMqttClientSessionConnectedEventData {
+    #[serde(flatten)]
+    pub event_grid_mqtt_client_event_data: EventGridMqttClientEventData,
+    #[doc = "Unique identifier for the MQTT client's session. This case-sensitive string can be up to 128 characters long, and supports UTF-8 characters."]
+    #[serde(rename = "clientSessionName", default, skip_serializing_if = "Option::is_none")]
+    pub client_session_name: Option<String>,
+    #[doc = "A number that helps indicate order of MQTT client session connected or disconnected events. Latest event will have a sequence number that is higher than the previous event."]
+    #[serde(rename = "sequenceNumber", default, skip_serializing_if = "Option::is_none")]
+    pub sequence_number: Option<f64>,
+}
+impl EventGridMqttClientSessionConnectedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Event data for Microsoft.EventGrid.MQTTClientSessionDisconnected event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EventGridMqttClientSessionDisconnectedEventData {
+    #[serde(flatten)]
+    pub event_grid_mqtt_client_event_data: EventGridMqttClientEventData,
+    #[doc = "Unique identifier for the MQTT client's session. This case-sensitive string can be up to 128 characters long, and supports UTF-8 characters."]
+    #[serde(rename = "clientSessionName", default, skip_serializing_if = "Option::is_none")]
+    pub client_session_name: Option<String>,
+    #[doc = "A number that helps indicate order of MQTT client session connected or disconnected events. Latest event will have a sequence number that is higher than the previous event."]
+    #[serde(rename = "sequenceNumber", default, skip_serializing_if = "Option::is_none")]
+    pub sequence_number: Option<i64>,
+    #[doc = "Reason for the disconnection of the MQTT client's session. The value could be one of the values in the disconnection reasons table."]
+    #[serde(rename = "disconnectionReason", default, skip_serializing_if = "Option::is_none")]
+    pub disconnection_reason: Option<event_grid_mqtt_client_session_disconnected_event_data::DisconnectionReason>,
+}
+impl EventGridMqttClientSessionDisconnectedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod event_grid_mqtt_client_session_disconnected_event_data {
+    use super::*;
+    #[doc = "Reason for the disconnection of the MQTT client's session. The value could be one of the values in the disconnection reasons table."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "DisconnectionReason")]
+    pub enum DisconnectionReason {
+        ClientAuthenticationError,
+        ClientAuthorizationError,
+        ClientError,
+        ClientInitiatedDisconnect,
+        ConnectionLost,
+        IpForbidden,
+        QuotaExceeded,
+        ServerError,
+        ServerInitiatedDisconnect,
+        SessionOverflow,
+        SessionTakenOver,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for DisconnectionReason {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for DisconnectionReason {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for DisconnectionReason {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::ClientAuthenticationError => {
+                    serializer.serialize_unit_variant("DisconnectionReason", 0u32, "ClientAuthenticationError")
+                }
+                Self::ClientAuthorizationError => {
+                    serializer.serialize_unit_variant("DisconnectionReason", 1u32, "ClientAuthorizationError")
+                }
+                Self::ClientError => serializer.serialize_unit_variant("DisconnectionReason", 2u32, "ClientError"),
+                Self::ClientInitiatedDisconnect => {
+                    serializer.serialize_unit_variant("DisconnectionReason", 3u32, "ClientInitiatedDisconnect")
+                }
+                Self::ConnectionLost => serializer.serialize_unit_variant("DisconnectionReason", 4u32, "ConnectionLost"),
+                Self::IpForbidden => serializer.serialize_unit_variant("DisconnectionReason", 5u32, "IpForbidden"),
+                Self::QuotaExceeded => serializer.serialize_unit_variant("DisconnectionReason", 6u32, "QuotaExceeded"),
+                Self::ServerError => serializer.serialize_unit_variant("DisconnectionReason", 7u32, "ServerError"),
+                Self::ServerInitiatedDisconnect => {
+                    serializer.serialize_unit_variant("DisconnectionReason", 8u32, "ServerInitiatedDisconnect")
+                }
+                Self::SessionOverflow => serializer.serialize_unit_variant("DisconnectionReason", 9u32, "SessionOverflow"),
+                Self::SessionTakenOver => serializer.serialize_unit_variant("DisconnectionReason", 10u32, "SessionTakenOver"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }

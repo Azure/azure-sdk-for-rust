@@ -14330,7 +14330,7 @@ pub mod azure_monitor_workspaces {
     use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Lists all workspaces in the specified resource group"]
+        #[doc = "Lists all Azure Monitor Workspaces in the specified resource group"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
@@ -14346,7 +14346,7 @@ pub mod azure_monitor_workspaces {
                 resource_group_name: resource_group_name.into(),
             }
         }
-        #[doc = "Lists all workspaces in the specified subscription"]
+        #[doc = "Lists all Azure Monitor Workspaces in the specified subscription"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
@@ -14356,12 +14356,12 @@ pub mod azure_monitor_workspaces {
                 subscription_id: subscription_id.into(),
             }
         }
-        #[doc = "Returns the specific Azure Monitor workspace"]
+        #[doc = "Returns the specified Azure Monitor Workspace"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `azure_monitor_workspace_name`: The name of the Azure Monitor workspace.  The name is case insensitive"]
+        #[doc = "* `azure_monitor_workspace_name`: The name of the Azure Monitor Workspace. The name is case insensitive"]
         pub fn get(
             &self,
             subscription_id: impl Into<String>,
@@ -14375,13 +14375,13 @@ pub mod azure_monitor_workspaces {
                 azure_monitor_workspace_name: azure_monitor_workspace_name.into(),
             }
         }
-        #[doc = "Create or update a workspace"]
+        #[doc = "Creates or updates an Azure Monitor Workspace"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `azure_monitor_workspace_name`: The name of the Azure Monitor workspace.  The name is case insensitive"]
-        #[doc = "* `azure_monitor_workspace_properties`: Properties that need to be specified to create a new workspace"]
+        #[doc = "* `azure_monitor_workspace_name`: The name of the Azure Monitor Workspace. The name is case insensitive"]
+        #[doc = "* `azure_monitor_workspace_properties`: Properties that need to be specified to create a new Azure Monitor Workspace"]
         pub fn create(
             &self,
             subscription_id: impl Into<String>,
@@ -14397,12 +14397,12 @@ pub mod azure_monitor_workspaces {
                 azure_monitor_workspace_properties: azure_monitor_workspace_properties.into(),
             }
         }
-        #[doc = "Updates part of a workspace"]
+        #[doc = "Updates part of an Azure Monitor Workspace"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `azure_monitor_workspace_name`: The name of the Azure Monitor workspace.  The name is case insensitive"]
+        #[doc = "* `azure_monitor_workspace_name`: The name of the Azure Monitor Workspace. The name is case insensitive"]
         pub fn update(
             &self,
             subscription_id: impl Into<String>,
@@ -14417,12 +14417,12 @@ pub mod azure_monitor_workspaces {
                 azure_monitor_workspace_properties: None,
             }
         }
-        #[doc = "Delete a workspace"]
+        #[doc = "Deletes an Azure Monitor Workspace"]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `subscription_id`: The ID of the target subscription."]
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `azure_monitor_workspace_name`: The name of the Azure Monitor workspace.  The name is case insensitive"]
+        #[doc = "* `azure_monitor_workspace_name`: The name of the Azure Monitor Workspace. The name is case insensitive"]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,

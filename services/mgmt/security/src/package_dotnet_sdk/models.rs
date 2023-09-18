@@ -3410,6 +3410,71 @@ impl ExecuteGovernanceRuleParams {
         Self::default()
     }
 }
+#[doc = "A plan's extension properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Extension {
+    #[doc = "The extension name. Supported values are: <br><br>**AgentlessDiscoveryForKubernetes** - API-based discovery of information about Kubernetes cluster architecture, workload objects, and setup. Required for Kubernetes inventory, identity and network exposure detection, attack path analysis and risk hunting as part of the cloud security explorer.\r\nAvailable for CloudPosture plan.<br><br>**OnUploadMalwareScanning** - Limits the GB to be scanned per month for each storage account within the subscription. Once this limit reached on a given storage account, Blobs won't be scanned during current calendar month.\r\nAvailable for StorageAccounts plan.<br><br>**SensitiveDataDiscovery** - Sensitive data discovery identifies Blob storage container with sensitive data such as credentials, credit cards, and more, to help prioritize and investigate security events.\r\nAvailable for StorageAccounts and CloudPosture plans.<br><br>**ContainerRegistriesVulnerabilityAssessments** - Provides vulnerability management for images stored in your container registries.\r\nAvailable for CloudPosture and Containers plans."]
+    pub name: String,
+    #[doc = "Indicates whether the extension is enabled."]
+    #[serde(rename = "isEnabled")]
+    pub is_enabled: extension::IsEnabled,
+    #[doc = "Property values associated with the extension."]
+    #[serde(rename = "additionalExtensionProperties", default, skip_serializing_if = "Option::is_none")]
+    pub additional_extension_properties: Option<serde_json::Value>,
+    #[doc = "A status describing the success/failure of the extension's enablement/disablement operation."]
+    #[serde(rename = "operationStatus", default, skip_serializing_if = "Option::is_none")]
+    pub operation_status: Option<OperationStatus>,
+}
+impl Extension {
+    pub fn new(name: String, is_enabled: extension::IsEnabled) -> Self {
+        Self {
+            name,
+            is_enabled,
+            additional_extension_properties: None,
+            operation_status: None,
+        }
+    }
+}
+pub mod extension {
+    use super::*;
+    #[doc = "Indicates whether the extension is enabled."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "IsEnabled")]
+    pub enum IsEnabled {
+        True,
+        False,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for IsEnabled {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for IsEnabled {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for IsEnabled {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::True => serializer.serialize_unit_variant("IsEnabled", 0u32, "True"),
+                Self::False => serializer.serialize_unit_variant("IsEnabled", 1u32, "False"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "Represents a security solution external to Microsoft Defender for Cloud which sends information to an OMS workspace and whose data is displayed by Microsoft Defender for Cloud."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExternalSecuritySolution {
@@ -5897,6 +5962,61 @@ pub mod operation_result {
         }
     }
 }
+#[doc = "A status describing the success/failure of the extension's enablement/disablement operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct OperationStatus {
+    #[doc = "The operation status code."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<operation_status::Code>,
+    #[doc = "Additional information regarding the success/failure of the operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+impl OperationStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod operation_status {
+    use super::*;
+    #[doc = "The operation status code."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Code")]
+    pub enum Code {
+        Succeeded,
+        Failed,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Code {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Code {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Code {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Succeeded => serializer.serialize_unit_variant("Code", 0u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("Code", 1u32, "Failed"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "Represents a path that is recommended to be allowed and its properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PathRecommendation {
@@ -5993,7 +6113,7 @@ impl Serialize for PermissionProperty {
     }
 }
 pub type PortNumber = i64;
-#[doc = "Microsoft Defender for Cloud is provided in two pricing tiers: free and standard, with the standard tier available with a trial period. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
+#[doc = "Microsoft Defender for Cloud is provided in two pricing tiers: free and standard. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Pricing {
     #[serde(flatten)]
@@ -6021,7 +6141,7 @@ impl PricingList {
 #[doc = "Pricing properties for the relevant scope"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PricingProperties {
-    #[doc = "The pricing tier value. Microsoft Defender for Cloud is provided in two pricing tiers: free and standard, with the standard tier available with a trial period. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
+    #[doc = "The pricing tier value. Microsoft Defender for Cloud is provided in two pricing tiers: free and standard. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
     #[serde(rename = "pricingTier")]
     pub pricing_tier: pricing_properties::PricingTier,
     #[doc = "The sub-plan selected for a Standard pricing configuration, when more than one sub-plan is available. Each sub-plan enables a set of security features. When not specified, full plan is applied."]
@@ -6030,6 +6150,9 @@ pub struct PricingProperties {
     #[doc = "The duration left for the subscriptions free trial period - in ISO 8601 format (e.g. P3Y6M4DT12H30M5S)."]
     #[serde(rename = "freeTrialRemainingTime", default, skip_serializing_if = "Option::is_none")]
     pub free_trial_remaining_time: Option<String>,
+    #[doc = "Optional. If `pricingTier` is `Standard` then this property holds the date of the last time the `pricingTier` was set to `Standard`, when available (e.g 2023-03-01T12:42:42.1921106Z)."]
+    #[serde(rename = "enablementTime", default, with = "azure_core::date::rfc3339::option")]
+    pub enablement_time: Option<time::OffsetDateTime>,
     #[doc = "Optional. True if the plan is deprecated. If there are replacing plans they will appear in `replacedBy` property"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deprecated: Option<bool>,
@@ -6041,6 +6164,13 @@ pub struct PricingProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub replaced_by: Vec<String>,
+    #[doc = "Optional. List of extensions offered under a plan."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub extensions: Vec<Extension>,
 }
 impl PricingProperties {
     pub fn new(pricing_tier: pricing_properties::PricingTier) -> Self {
@@ -6048,14 +6178,16 @@ impl PricingProperties {
             pricing_tier,
             sub_plan: None,
             free_trial_remaining_time: None,
+            enablement_time: None,
             deprecated: None,
             replaced_by: Vec::new(),
+            extensions: Vec::new(),
         }
     }
 }
 pub mod pricing_properties {
     use super::*;
-    #[doc = "The pricing tier value. Microsoft Defender for Cloud is provided in two pricing tiers: free and standard, with the standard tier available with a trial period. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
+    #[doc = "The pricing tier value. Microsoft Defender for Cloud is provided in two pricing tiers: free and standard. The standard tier offers advanced security capabilities, while the free tier offers basic security features."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "PricingTier")]
     pub enum PricingTier {

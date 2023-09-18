@@ -17820,6 +17820,12 @@ pub struct PipelineExternalComputeScaleProperties {
     #[doc = "Time to live (in minutes) setting of integration runtime which will execute pipeline and external activity."]
     #[serde(rename = "timeToLive", default, skip_serializing_if = "Option::is_none")]
     pub time_to_live: Option<i32>,
+    #[doc = "Number of the pipeline nodes, which should be greater than 0 and less than 11."]
+    #[serde(rename = "numberOfPipelineNodes", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_pipeline_nodes: Option<i32>,
+    #[doc = "Number of the the external nodes, which should be greater than 0 and less than 11."]
+    #[serde(rename = "numberOfExternalNodes", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_external_nodes: Option<i32>,
 }
 impl PipelineExternalComputeScaleProperties {
     pub fn new() -> Self {
@@ -22008,6 +22014,13 @@ pub struct SelfHostedIntegrationRuntimeStatusTypeProperties {
     #[doc = "The estimated time when the self-hosted integration runtime will be updated."]
     #[serde(rename = "autoUpdateETA", default, with = "azure_core::date::rfc3339::option")]
     pub auto_update_eta: Option<time::OffsetDateTime>,
+    #[doc = "An alternative option to ensure interactive authoring function when your self-hosted integration runtime is unable to establish a connection with Azure Relay."]
+    #[serde(
+        rename = "selfContainedInteractiveAuthoringEnabled",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub self_contained_interactive_authoring_enabled: Option<bool>,
 }
 impl SelfHostedIntegrationRuntimeStatusTypeProperties {
     pub fn new() -> Self {
@@ -22062,6 +22075,13 @@ pub struct SelfHostedIntegrationRuntimeTypeProperties {
     #[doc = "The base definition of a linked integration runtime."]
     #[serde(rename = "linkedInfo", default, skip_serializing_if = "Option::is_none")]
     pub linked_info: Option<LinkedIntegrationRuntimeType>,
+    #[doc = "An alternative option to ensure interactive authoring function when your self-hosted integration runtime is unable to establish a connection with Azure Relay."]
+    #[serde(
+        rename = "selfContainedInteractiveAuthoringEnabled",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub self_contained_interactive_authoring_enabled: Option<bool>,
 }
 impl SelfHostedIntegrationRuntimeTypeProperties {
     pub fn new() -> Self {
