@@ -31,9 +31,7 @@ impl SetMetadataBuilder {
                 }
             }
 
-            let mut request = self
-                .client
-                .finalize_request(url, Method::Put, headers, None)?;
+            let mut request = BlobClient::finalize_request(url, Method::Put, headers, None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
             response.headers().try_into()

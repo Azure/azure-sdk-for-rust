@@ -29,8 +29,7 @@ impl SetACLBuilder {
             headers.add(self.if_modified_since);
 
             let mut request =
-                self.client
-                    .finalize_request(url, Method::Put, headers, xml.map(Body::from))?;
+                ContainerClient::finalize_request(url, Method::Put, headers, xml.map(Body::from))?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

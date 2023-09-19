@@ -13,12 +13,11 @@ impl GetAccountInformationBuilder {
         Box::pin(async move {
             let mut url = self.client.url()?;
 
-            for (k, v) in [("restype", "account"), ("comp", "properties")].iter() {
-                url.query_pairs_mut().append_pair(k, v);
-            }
+            url.query_pairs_mut()
+                .extend_pairs([("restype", "account"), ("comp", "properties")]);
+
             let mut request =
-                self.client
-                    .finalize_request(url, Method::Get, Headers::new(), None)?;
+                BlobServiceClient::finalize_request(url, Method::Get, Headers::new(), None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

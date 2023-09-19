@@ -20,9 +20,7 @@ impl GetACLBuilder {
             let mut headers = Headers::new();
             headers.add(self.lease_id);
 
-            let mut request = self
-                .client
-                .finalize_request(url, Method::Get, headers, None)?;
+            let mut request = ContainerClient::finalize_request(url, Method::Get, headers, None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
             GetACLResponse::from_response(response).await
