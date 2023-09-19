@@ -519,12 +519,7 @@ fn create_enum(
     for enum_value in &enum_values {
         let value = &enum_value.value;
         let nm = value.to_camel_case_ident()?;
-        let doc_comment = match &enum_value.description {
-            Some(description) => {
-                quote! { #[doc = #description] }
-            }
-            None => quote! {},
-        };
+        let doc_comment = DocCommentCode::new(&enum_value.description);
         let lower = value.to_lowercase();
         let rename = if &nm.to_string() == value {
             quote! {}
@@ -642,12 +637,7 @@ fn create_enum(
         quote! {}
     };
 
-    let doc_comment = match &property.schema.common.description {
-        Some(description) => {
-            quote! { #[doc = #description] }
-        }
-        None => quote! {},
-    };
+    let doc_comment = DocCommentCode::new(&property.schema.common.description);
 
     let code = quote! {
         #doc_comment
@@ -690,7 +680,7 @@ fn create_vec_alias(schema: &SchemaGen) -> Result<VecAliasCode> {
 }
 
 pub struct StructCode {
-    doc_comment: TokenStream,
+    doc_comment: DocCommentCode,
     struct_name_code: Ident,
     default_code: TokenStream,
     props: TokenStream,
@@ -891,10 +881,7 @@ fn create_struct(
         }
         type_name = type_name.boxed(boxed);
 
-        let doc_comment = match &property.schema.schema.common.description {
-            Some(description) => quote! { #[doc = #description] },
-            None => quote! {},
-        };
+        let doc_comment = DocCommentCode::new(&property.schema.schema.common.description);
 
         props.extend(quote! {
             #doc_comment
@@ -923,10 +910,7 @@ fn create_struct(
         quote! {}
     };
 
-    let doc_comment = match &schema.schema.common.description {
-        Some(description) => quote! { #[doc = #description] },
-        None => quote! {},
-    };
+    let doc_comment = DocCommentCode::new(&schema.schema.common.description);
 
     let mut continuable = quote! {};
     if let Some(pageable) = pageable {
@@ -1002,6 +986,28 @@ fn create_struct(
         mod_code,
         ns,
     })
+}
+
+pub struct DocCommentCode {
+    description: Option<String>,
+}
+
+impl DocCommentCode {
+    pub fn new(description: &Option<String>) -> Self {
+        Self {
+            description: description.clone(),
+        }
+    }
+}
+
+impl ToTokens for DocCommentCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        if let Some(description) = &self.description {
+            tokens.extend(quote! {
+                #[doc = #description]
+            });
+        }
+    }
 }
 
 pub struct StructFieldCode {
