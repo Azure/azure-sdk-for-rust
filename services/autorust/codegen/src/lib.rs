@@ -20,6 +20,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 use config_parser::Configuration;
 pub use error::{Error, ErrorKind, Result, ResultExt};
 use proc_macro2::TokenStream;
+use quote::ToTokens;
 use std::io::Write;
 use std::{
     collections::HashSet,
@@ -110,7 +111,7 @@ pub fn run<'a>(crate_config: &'a CrateConfig, package_config: &'a PackageConfig)
     if crate_config.should_run(&Runs::Models) {
         let models = codegen_models::create_models(&cg)?;
         let models_path = io::join(&crate_config.output_folder, "models.rs")?;
-        write_file(models_path, &models, crate_config.print_writing_file())?;
+        write_file(models_path, &models.to_token_stream(), crate_config.print_writing_file())?;
     }
 
     // create api client from operations
