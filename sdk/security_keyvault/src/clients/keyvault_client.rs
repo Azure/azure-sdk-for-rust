@@ -76,9 +76,14 @@ impl KeyvaultClient {
 
         // per discussion in #1301, we _always_ override the api-version with
         // the client's version
-        let query = url .query_pairs() .filter(|(name, _)| name != API_VERSION_PARAM);
+        let query = url
+            .query_pairs()
+            .filter(|(name, _)| name != API_VERSION_PARAM);
         let mut url = url.clone();
-        url.query_pairs_mut().clear().extend_pairs(query).append_pair(API_VERSION_PARAM, API_VERSION);
+        url.query_pairs_mut()
+            .clear()
+            .extend_pairs(query)
+            .append_pair(API_VERSION_PARAM, API_VERSION);
 
         let mut request = Request::new(url, method);
         for (k, v) in headers {
