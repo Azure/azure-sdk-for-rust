@@ -363,7 +363,7 @@ pub fn all_schemas_resolved(spec: &Spec) -> Result<Vec<(RefKey, SchemaGen)>> {
 pub enum ModelCode {
     Struct(TokenStream),
     Enum(StructFieldCode),
-    VecAlias(TokenStream),
+    VecAlias(VecAliasCode),
     TypeAlias(TypeAliasCode),
 }
 
@@ -667,11 +667,26 @@ fn create_enum(
     })
 }
 
-fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream> {
+pub struct VecAliasCode {
+    pub id: Ident,
+    pub value: TypeNameCode,
+}
+
+impl ToTokens for VecAliasCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let id = &self.id;
+        let value = &self.value;
+        tokens.extend(quote! {
+            pub type #id = Vec<#value>;
+        });
+    }
+}
+
+fn create_vec_alias(schema: &SchemaGen) -> Result<VecAliasCode> {
     let items = schema.array_items()?;
-    let typ = schema.name()?.to_camel_case_ident()?;
-    let items_typ = TypeNameCode::new(&get_type_name_for_schema_ref(items)?)?;
-    Ok(quote! { pub type #typ = Vec<#items_typ>; })
+    let id = schema.name()?.to_camel_case_ident()?;
+    let value = TypeNameCode::new(&get_type_name_for_schema_ref(items)?)?;
+    Ok(VecAliasCode { id, value })
 }
 
 fn create_struct(
