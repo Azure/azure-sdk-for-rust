@@ -25,7 +25,7 @@ mod az_cli_date_format {
     }
 
     /// Assumes the local offset. Default to UTC if unable to get local offset.
-    pub fn assume_local(date: &PrimitiveDateTime) -> OffsetDateTime {
+    pub(crate) fn assume_local(date: &PrimitiveDateTime) -> OffsetDateTime {
         date.assume_offset(UtcOffset::current_local_offset().unwrap_or(UtcOffset::UTC))
     }
 
