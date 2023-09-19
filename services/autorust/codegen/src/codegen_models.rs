@@ -360,24 +360,52 @@ pub fn all_schemas_resolved(spec: &Spec) -> Result<Vec<(RefKey, SchemaGen)>> {
     Ok(schemas)
 }
 
-pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
-    let mut file = TokenStream::new();
+pub enum ModelCode {
+    Struct(TokenStream),
+    Enum(StructFieldCode),
+    VecAlias(TokenStream),
+    TypeAlias(TypeAliasCode),
+}
 
-    let has_case_workaround = cg.should_workaround_case();
+impl ToTokens for ModelCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            ModelCode::Struct(struct_code) => struct_code.to_tokens(tokens),
+            ModelCode::Enum(enum_code) => enum_code.to_tokens(tokens),
+            ModelCode::VecAlias(vec_alias_code) => vec_alias_code.to_tokens(tokens),
+            ModelCode::TypeAlias(type_alias_code) => type_alias_code.to_tokens(tokens),
+        }
+    }
+}
 
-    file.extend(quote! {
-        #![allow(non_camel_case_types)]
-        #![allow(unused_imports)]
-        use std::str::FromStr;
-        use serde::{Serialize, Deserialize, Serializer};
-        use serde::de::{value, Deserializer, IntoDeserializer};
-    });
-    if has_case_workaround {
-        file.extend(quote! {
-        use azure_core::util::case_insensitive_deserialize;
+pub struct ModelsCode {
+    pub has_case_workaround: bool,
+    pub models: Vec<ModelCode>,
+}
+
+impl ToTokens for ModelsCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let has_case_workaround = self.has_case_workaround;
+        let models = &self.models;
+        tokens.extend(quote! {
+            #![allow(non_camel_case_types)]
+            #![allow(unused_imports)]
+            use std::str::FromStr;
+            use serde::{Serialize, Deserialize, Serializer};
+            use serde::de::{value, Deserializer, IntoDeserializer};
+        });
+        if has_case_workaround {
+            tokens.extend(quote! {
+                use azure_core::util::case_insensitive_deserialize;
+            });
+        }
+        tokens.extend(quote! {
+            #(#models)*
         });
     }
+}
 
+pub fn create_models(cg: &CodeGen) -> Result<ModelsCode> {
     let mut pageable_response_names: HashMap<String, MsPageable> = HashMap::new();
     for operation in cg.spec.operations()? {
         if let Some(pageable) = operation.pageable.as_ref() {
@@ -407,46 +435,61 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
 
     // println!("response_names: {:?}", pageable_response_names);
 
+    let mut models = Vec::new();
     let mut schema_names = IndexMap::new();
     for (ref_key, schema) in &all_schemas_resolved(&cg.spec)? {
         let doc_file = &ref_key.file_path;
         let schema_name = &ref_key.name;
-
         // println!("schema_name: {}", schema_name);
-
-        // create_response_type()
-
         if let Some(_first_doc_file) = schema_names.insert(schema_name, doc_file) {
             // eprintln!(
             //     "WARN schema {} already created from {:?}, duplicate from {:?}",
             //     schema_name, _first_doc_file, doc_file
             // );
         } else if schema.is_array() {
-            file.extend(create_vec_alias(schema)?);
+            models.push(ModelCode::VecAlias(create_vec_alias(schema)?));
         } else if schema.is_local_enum() {
             let enum_code = create_enum(None, schema, schema_name, false)?;
-            file.extend(enum_code.into_token_stream());
+            models.push(ModelCode::Enum(enum_code));
         } else if schema.is_basic_type() {
-            let (id, value) = create_basic_type_alias(schema_name, schema)?;
-            file.extend(quote! { pub type #id = #value;});
+            let alias = create_basic_type_alias(schema_name, schema)?;
+            models.push(ModelCode::TypeAlias(alias));
         } else {
             let pageable_name = format!("{}", schema_name.to_camel_case_ident()?);
-            file.extend(create_struct(
+            models.push(ModelCode::Struct(create_struct(
                 cg,
                 schema,
                 schema_name,
                 pageable_response_names.get(&pageable_name),
                 HashSet::new(),
-            )?);
+            )?));
         }
     }
-    Ok(file)
+    Ok(ModelsCode {
+        has_case_workaround: cg.should_workaround_case(),
+        models,
+    })
 }
 
-fn create_basic_type_alias(property_name: &str, property: &SchemaGen) -> Result<(Ident, TypeNameCode)> {
+pub struct TypeAliasCode {
+    pub id: Ident,
+    pub value: TypeNameCode,
+}
+
+impl ToTokens for TypeAliasCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let id = &self.id;
+        let value = &self.value;
+        tokens.extend(quote! {
+            pub type #id = #value;
+        });
+    }
+}
+
+fn create_basic_type_alias(property_name: &str, property: &SchemaGen) -> Result<TypeAliasCode> {
     let id = property_name.to_camel_case_ident()?;
     let value = TypeNameCode::new(&property.type_name()?)?;
-    Ok((id, value))
+    Ok(TypeAliasCode { id, value })
 }
 
 // For create_models. Recursively adds schema refs.
@@ -906,7 +949,7 @@ fn create_struct(
     Ok(code)
 }
 
-struct StructFieldCode {
+pub struct StructFieldCode {
     type_name: TypeNameCode,
     code: Option<TypeCode>,
 }
