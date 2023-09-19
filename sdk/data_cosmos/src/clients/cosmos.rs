@@ -231,12 +231,12 @@ impl CloudLocation {
 
     fn auth_token(&self) -> AuthorizationToken {
         match self {
-            CloudLocation::Public { auth_token, .. } => auth_token.clone(),
-            CloudLocation::China { auth_token, .. } => auth_token.clone(),
+            CloudLocation::Public { auth_token, .. }
+            | CloudLocation::China { auth_token, .. }
+            | CloudLocation::Custom { auth_token, .. } => auth_token.clone(),
             CloudLocation::Emulator { .. } => {
                 AuthorizationToken::primary_from_base64(EMULATOR_ACCOUNT_KEY).unwrap()
             }
-            CloudLocation::Custom { auth_token, .. } => auth_token.clone(),
         }
     }
 }
