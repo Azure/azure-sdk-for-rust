@@ -15,9 +15,10 @@ impl Header for ReturnEntity {
     }
 
     fn value(&self) -> HeaderValue {
-        match self.0 {
-            true => "return-content",
-            false => "return-no-content",
+        if self.0 {
+            "return-content"
+        } else {
+            "return-no-content"
         }
         .into()
     }

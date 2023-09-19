@@ -34,9 +34,8 @@ impl ListTablesBuilder {
                 let mut headers = Headers::new();
                 headers.insert(ACCEPT, "application/json;odata=fullmetadata");
 
-                let mut request = this
-                    .client
-                    .finalize_request(url, Method::Get, headers, None)?;
+                let mut request =
+                    TableServiceClient::finalize_request(url, Method::Get, headers, None)?;
 
                 let response = this.client.send(&mut ctx, &mut request).await?;
 

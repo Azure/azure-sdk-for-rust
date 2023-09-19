@@ -88,7 +88,7 @@ async fn main() -> azure_core::Result<()> {
         [StatusCode::Ok, StatusCode::NoContent, StatusCode::Created].contains(&r.status_code)
     }));
 
-    let entity_client = partition_key_client.entity_client(&entity2.surname)?;
+    let entity_client = partition_key_client.entity_client(&entity2.surname);
 
     // Get an entity from the table
     let response = entity_client.get().await?;
@@ -96,7 +96,7 @@ async fn main() -> azure_core::Result<()> {
 
     let entity_client = table_client
         .partition_key_client(&entity.city)
-        .entity_client(&entity.surname)?;
+        .entity_client(&entity.surname);
 
     // update the name passing the Etag received from the previous call.
     entity.name = "Ryan".to_owned();

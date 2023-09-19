@@ -23,7 +23,7 @@ impl PartitionKeyClient {
         &self.partition_key
     }
 
-    pub fn entity_client<RK: Into<String>>(&self, row_key: RK) -> azure_core::Result<EntityClient> {
+    pub fn entity_client<RK: Into<String>>(&self, row_key: RK) -> EntityClient {
         EntityClient::new(self.clone(), row_key)
     }
 
@@ -32,14 +32,12 @@ impl PartitionKeyClient {
     }
 
     pub(crate) fn finalize_request(
-        &self,
         url: Url,
         method: Method,
         headers: Headers,
         request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
-        self.table_client
-            .finalize_request(url, method, headers, request_body)
+        TableClient::finalize_request(url, method, headers, request_body)
     }
 
     pub(crate) async fn send(
