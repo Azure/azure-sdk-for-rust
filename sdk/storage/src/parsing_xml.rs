@@ -60,11 +60,10 @@ pub fn traverse<'a>(
         if vec.is_empty() {
             if (x + 1) >= path.len() && ignore_empty_leaf {
                 return Ok(vec);
-            } else {
-                return Err(Error::with_message(ErrorKind::Other, || {
-                    format!("path not found: {}", *item)
-                }));
             }
+            return Err(Error::with_message(ErrorKind::Other, || {
+                format!("path not found: {}", *item)
+            }));
         }
 
         if vec.len() > 1 && (x + 1) < path.len() {

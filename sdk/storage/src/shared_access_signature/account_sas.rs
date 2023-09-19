@@ -82,6 +82,7 @@ impl fmt::Display for AccountSasResourceType {
 }
 
 /// Indicate which operations a `key_client` may perform on the resource ([Azure documentation](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#specifying-permissions)).
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Copy, Clone, Default)]
 pub struct AccountSasPermissions {
     pub read: bool,
@@ -181,12 +182,12 @@ impl AccountSharedAccessSignature {
                     self.permissions,
                     self.resource,
                     self.resource_type,
-                    self.start.map_or("".to_string(), format_date),
+                    self.start.map_or(String::new(), format_date),
                     format_date(self.expiry),
                     self.ip.clone().unwrap_or_default(),
                     self.protocol
                         .as_ref()
-                        .map_or("".to_string(), |v| v.to_string()),
+                        .map_or(String::new(), ToString::to_string),
                     self.version,
                 );
 

@@ -41,10 +41,10 @@ impl Policy for AuthorizationPolicy {
                     let auth = generate_authorization(
                         request.headers(),
                         request.url(),
-                        request.method(),
+                        *request.method(),
                         account,
                         key,
-                        ctx.get()
+                        *ctx.get()
                             .expect("ServiceType must be in the Context at this point"),
                     )?;
                     request.insert_header(AUTHORIZATION, auth);
@@ -87,10 +87,10 @@ impl Policy for AuthorizationPolicy {
 fn generate_authorization(
     h: &Headers,
     u: &Url,
-    method: &Method,
+    method: Method,
     account: &str,
     key: &str,
-    service_type: &ServiceType,
+    service_type: ServiceType,
 ) -> azure_core::Result<String> {
     let str_to_sign = string_to_sign(h, u, method, account, service_type);
     let auth = crate::hmac::sign(&str_to_sign, key).context(
@@ -108,46 +108,43 @@ fn add_if_exists<'a>(h: &'a Headers, key: &HeaderName) -> &'a str {
 fn string_to_sign(
     h: &Headers,
     u: &Url,
-    method: &Method,
+    method: Method,
     account: &str,
-    service_type: &ServiceType,
+    service_type: ServiceType,
 ) -> String {
-    match service_type {
-        ServiceType::Table => {
-            format!(
-                "{}\n{}\n{}\n{}\n{}",
-                method.as_ref(),
-                add_if_exists(h, &CONTENT_MD5),
-                add_if_exists(h, &CONTENT_TYPE),
-                add_if_exists(h, &MS_DATE),
-                canonicalized_resource_table(account, u)
-            )
-        }
-        _ => {
-            // content length must only be specified if != 0
-            // this is valid from 2015-02-21
-            let content_length = h
-                .get_optional_str(&CONTENT_LENGTH)
-                .filter(|&v| v != "0")
-                .unwrap_or_default();
-            format!(
-                "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}{}",
-                method.as_ref(),
-                add_if_exists(h, &CONTENT_ENCODING),
-                add_if_exists(h, &CONTENT_LANGUAGE),
-                content_length,
-                add_if_exists(h, &CONTENT_MD5),
-                add_if_exists(h, &CONTENT_TYPE),
-                add_if_exists(h, &DATE),
-                add_if_exists(h, &IF_MODIFIED_SINCE),
-                add_if_exists(h, &IF_MATCH),
-                add_if_exists(h, &IF_NONE_MATCH),
-                add_if_exists(h, &IF_UNMODIFIED_SINCE),
-                add_if_exists(h, &RANGE),
-                canonicalize_header(h),
-                canonicalized_resource(account, u)
-            )
-        }
+    if matches!(service_type, ServiceType::Table) {
+        format!(
+            "{}\n{}\n{}\n{}\n{}",
+            method.as_ref(),
+            add_if_exists(h, &CONTENT_MD5),
+            add_if_exists(h, &CONTENT_TYPE),
+            add_if_exists(h, &MS_DATE),
+            canonicalized_resource_table(account, u)
+        )
+    } else {
+        // content length must only be specified if != 0
+        // this is valid from 2015-02-21
+        let content_length = h
+            .get_optional_str(&CONTENT_LENGTH)
+            .filter(|&v| v != "0")
+            .unwrap_or_default();
+        format!(
+            "{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}{}",
+            method.as_ref(),
+            add_if_exists(h, &CONTENT_ENCODING),
+            add_if_exists(h, &CONTENT_LANGUAGE),
+            content_length,
+            add_if_exists(h, &CONTENT_MD5),
+            add_if_exists(h, &CONTENT_TYPE),
+            add_if_exists(h, &DATE),
+            add_if_exists(h, &IF_MODIFIED_SINCE),
+            add_if_exists(h, &IF_MATCH),
+            add_if_exists(h, &IF_NONE_MATCH),
+            add_if_exists(h, &IF_UNMODIFIED_SINCE),
+            add_if_exists(h, &RANGE),
+            canonicalize_header(h),
+            canonicalized_resource(account, u)
+        )
     }
 }
 

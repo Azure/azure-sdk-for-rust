@@ -54,10 +54,10 @@ impl CloudLocation {
 
     pub fn credentials(&self) -> &StorageCredentials {
         match self {
-            CloudLocation::Public { credentials, .. } => credentials,
-            CloudLocation::China { credentials, .. } => credentials,
+            CloudLocation::Public { credentials, .. }
+            | CloudLocation::China { credentials, .. }
+            | CloudLocation::Custom { credentials, .. } => credentials,
             CloudLocation::Emulator { .. } => &EMULATOR_CREDENTIALS,
-            CloudLocation::Custom { credentials, .. } => credentials,
         }
     }
 }

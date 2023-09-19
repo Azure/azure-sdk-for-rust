@@ -27,6 +27,7 @@ impl fmt::Display for BlobSignedResource {
     }
 }
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Default)]
 pub struct BlobSasPermissions {
     pub read: bool,             // r - Container | Directory | Blob
@@ -136,23 +137,23 @@ impl BlobSharedAccessSignature {
     fn sign(&self) -> String {
         let content = vec![
             self.permissions.to_string(),
-            self.start.map_or("".to_string(), format_date),
+            self.start.map_or(String::new(), format_date),
             format_date(self.expiry),
             self.canonicalized_resource.clone(),
             self.identifier
                 .as_ref()
-                .unwrap_or(&"".to_string())
+                .unwrap_or(&String::new())
                 .to_string(),
-            self.ip.as_ref().unwrap_or(&"".to_string()).to_string(),
+            self.ip.as_ref().unwrap_or(&String::new()).to_string(),
             self.protocol.map(|x| x.to_string()).unwrap_or_default(),
             SERVICE_SAS_VERSION.to_string(),
             self.resource.to_string(),
-            "".to_string(), // snapshot time
-            "".to_string(), // rscd
-            "".to_string(), // rscc
-            "".to_string(), // rsce
-            "".to_string(), // rscl
-            "".to_string(), // rsct
+            String::new(), // snapshot time
+            String::new(), // rscd
+            String::new(), // rscc
+            String::new(), // rsce
+            String::new(), // rscl
+            String::new(), // rsct
         ];
 
         hmac::sign(&content.join("\n"), &self.key).expect("HMAC signing failed")
