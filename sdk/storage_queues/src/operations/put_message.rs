@@ -30,7 +30,7 @@ impl PutMessageBuilder {
                 self.body
             );
 
-            let mut request = self.client.finalize_request(
+            let mut request = QueueClient::finalize_request(
                 url,
                 Method::Post,
                 Headers::new(),

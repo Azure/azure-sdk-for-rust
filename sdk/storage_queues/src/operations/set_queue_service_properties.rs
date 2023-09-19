@@ -19,7 +19,7 @@ impl SetQueueServicePropertiesBuilder {
 
             let xml_body = to_xml(&self.properties)?;
 
-            let mut request = self.client.finalize_request(
+            let mut request = QueueServiceClient::finalize_request(
                 url,
                 Method::Put,
                 Headers::new(),

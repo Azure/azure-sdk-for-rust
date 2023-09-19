@@ -16,8 +16,7 @@ impl GetQueueACLBuilder {
             url.query_pairs_mut().append_pair("comp", "acl");
 
             let mut request =
-                self.client
-                    .finalize_request(url, Method::Get, Headers::new(), None)?;
+                QueueClient::finalize_request(url, Method::Get, Headers::new(), None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 
@@ -41,7 +40,7 @@ impl GetQueueACLResponse {
             StoredAccessPolicyList::from_xml(&body)?
                 .stored_access
                 .into_iter()
-                .map(|sap| sap.try_into())
+                .map(TryInto::try_into)
                 .collect();
 
         Ok(GetQueueACLResponse {
