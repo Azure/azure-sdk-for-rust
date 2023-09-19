@@ -43,12 +43,11 @@ fn finalize_request(
     request.insert_header(headers::AUTHORIZATION, sas);
 
     // get req body to return
-    match body {
-        Some(msg) => request.set_body(msg),
-        None => {
-            request.insert_header(headers::CONTENT_LENGTH, "0"); // added to avoid truncation errors
-            request.set_body(azure_core::EMPTY_BODY);
-        }
+    if let Some(body) = body {
+        request.set_body(body);
+    } else {
+        request.insert_header(headers::CONTENT_LENGTH, "0"); // added to avoid truncation errors
+        request.set_body(azure_core::EMPTY_BODY);
     }
 
     Ok(request)
