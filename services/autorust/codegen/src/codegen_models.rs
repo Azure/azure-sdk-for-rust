@@ -393,13 +393,15 @@ impl ToTokens for ModelsCode {
             use std::str::FromStr;
             use serde::{Serialize, Deserialize, Serializer};
             use serde::de::{value, Deserializer, IntoDeserializer};
-            #(#models)*
         });
         if has_case_workaround {
             tokens.extend(quote! {
                 use azure_core::util::case_insensitive_deserialize;
             });
         }
+        tokens.extend(quote! {
+            #(#models)*
+        });
     }
 }
 
