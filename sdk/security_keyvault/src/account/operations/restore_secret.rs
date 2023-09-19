@@ -17,12 +17,12 @@ impl RestoreSecretBuilder {
             request_body.insert("value".to_owned(), self.backup_blob.into());
 
             let headers = Headers::new();
-            let mut request = self.client.keyvault_client.finalize_request(
+            let mut request = KeyvaultClient::finalize_request(
                 uri,
                 Method::Post,
                 headers,
                 Some(serde_json::Value::Object(request_body).to_string().into()),
-            )?;
+            );
 
             self.client
                 .keyvault_client

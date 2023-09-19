@@ -231,7 +231,7 @@ pub enum SignatureAlgorithm {
 
 impl Default for SignatureAlgorithm {
     fn default() -> Self {
-        SignatureAlgorithm::Custom("".to_string())
+        SignatureAlgorithm::Custom(String::new())
     }
 }
 
