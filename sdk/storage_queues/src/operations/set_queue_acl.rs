@@ -20,15 +20,11 @@ impl SetQueueACLBuilder {
             // in a StoredAccessPolicyList to get its XML
             // representation.
             let xml_body = {
-                let stored_access = self
-                    .policies
-                    .into_iter()
-                    .map(|policy| policy.into())
-                    .collect();
+                let stored_access = self.policies.into_iter().map(Into::into).collect();
                 StoredAccessPolicyList::new(stored_access).to_xml()
             };
 
-            let mut request = self.client.finalize_request(
+            let mut request = QueueClient::finalize_request(
                 url,
                 Method::Put,
                 Headers::new(),

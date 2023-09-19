@@ -15,8 +15,7 @@ impl ClearMessagesBuilder {
             let url = self.client.messages_url()?;
 
             let mut request =
-                self.client
-                    .finalize_request(url, Method::Delete, Headers::new(), None)?;
+                QueueClient::finalize_request(url, Method::Delete, Headers::new(), None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

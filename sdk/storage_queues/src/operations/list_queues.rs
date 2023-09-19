@@ -37,8 +37,7 @@ impl ListQueuesBuilder {
                 }
 
                 let mut request =
-                    this.client
-                        .finalize_request(url, Method::Get, Headers::new(), None)?;
+                    QueueServiceClient::finalize_request(url, Method::Get, Headers::new(), None)?;
 
                 let response = this.client.send(&mut this.context, &mut request).await?;
 
@@ -87,7 +86,7 @@ impl ListQueuesResponse {
             marker: response.marker,
             max_results: response.max_results,
             queues: response.queues.queues,
-            next_marker: response.next_marker.map(|nm| nm.into()),
+            next_marker: response.next_marker.map(Into::into),
         })
     }
 }

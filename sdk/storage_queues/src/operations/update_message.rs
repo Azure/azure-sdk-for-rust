@@ -32,7 +32,7 @@ impl UpdateMessageBuilder {
                 self.body
             );
 
-            let mut request = self.client.finalize_request(
+            let mut request = PopReceiptClient::finalize_request(
                 url,
                 Method::Put,
                 Headers::new(),
