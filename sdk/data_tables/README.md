@@ -44,7 +44,7 @@ async fn main() -> azure_core::Result<()> {
     let _: InsertEntityResponse<MyEntity> = table_client.insert(&entity)?.await?;
 
     // Get a client that refers to the above entity
-    let entity_client = table_client.partition_key_client(&entity.city).entity_client(&entity.surname)?;
+    let entity_client = table_client.partition_key_client(&entity.city).entity_client(&entity.surname);
 
     // Get an entity from the table
     let response = entity_client.get().await?;
