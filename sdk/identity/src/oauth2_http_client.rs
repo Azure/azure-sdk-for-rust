@@ -87,15 +87,14 @@ fn to_headers(map: &oauth2::http::header::HeaderMap) -> azure_core::headers::Hea
         .iter()
         .filter_map(|(k, v)| {
             let key = k.as_str();
-            match std::str::from_utf8(v.as_bytes()) {
-                Ok(value) => Some((
+            if let Ok(value) = v.to_str() {
+                Some((
                     azure_core::headers::HeaderName::from(key.to_owned()),
                     azure_core::headers::HeaderValue::from(value.to_owned()),
-                )),
-                Err(_) => {
-                    log::warn!("header value for `{key}` is not utf8");
-                    None
-                }
+                ))
+            } else {
+                log::warn!("header value for `{key}` is not utf8");
+                None
             }
         })
         .collect::<HashMap<_, _>>();

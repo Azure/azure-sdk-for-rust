@@ -28,13 +28,10 @@ pub fn naive_redirect_server(
         let mut request_line = String::new();
         reader.read_line(&mut request_line).unwrap();
 
-        let redirect_url = match request_line.split_whitespace().nth(1) {
-            Some(redirect_url) => redirect_url,
-            None => {
-                return Err(Error::with_message(ErrorKind::Credential, || {
-                    format!("unexpected redirect url: {request_line}")
-                }))
-            }
+        let Some(redirect_url) = request_line.split_whitespace().nth(1) else {
+            return Err(Error::with_message(ErrorKind::Credential, || {
+                format!("unexpected redirect url: {request_line}")
+            }));
         };
         let url = Url::parse(&("http://localhost".to_string() + redirect_url)).unwrap();
 

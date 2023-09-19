@@ -1,9 +1,9 @@
 use azure_core::auth::AccessToken;
-use serde::{de, Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer};
 use time::OffsetDateTime;
 
 #[derive(Debug, Clone, Deserialize)]
-struct _LoginResponse {
+struct RawLogResponse {
     token_type: String,
     expires_in: u64,
     ext_expires_in: u64,
@@ -29,8 +29,8 @@ impl<'de> Deserialize<'de> for LoginResponse {
     where
         D: Deserializer<'de>,
     {
-        let resp = _LoginResponse::deserialize(deserializer)?;
-        LoginResponse::from_base_response(resp).map_err(de::Error::custom)
+        let resp = RawLogResponse::deserialize(deserializer)?;
+        Ok(LoginResponse::from_base_response(resp))
     }
 }
 
@@ -39,7 +39,7 @@ impl LoginResponse {
         &self.access_token
     }
 
-    fn from_base_response(r: _LoginResponse) -> Result<LoginResponse, std::num::ParseIntError> {
+    fn from_base_response(r: RawLogResponse) -> LoginResponse {
         let expires_on: Option<OffsetDateTime> = r.expires_on.map(|d| {
             OffsetDateTime::from_unix_timestamp(d.parse::<i64>().unwrap_or(0))
                 .unwrap_or(OffsetDateTime::UNIX_EPOCH)
@@ -49,7 +49,7 @@ impl LoginResponse {
                 .unwrap_or(OffsetDateTime::UNIX_EPOCH)
         });
 
-        Ok(LoginResponse {
+        LoginResponse {
             token_type: r.token_type,
             expires_in: r.expires_in,
             ext_expires_in: r.ext_expires_in,
@@ -57,6 +57,6 @@ impl LoginResponse {
             not_before,
             resource: r.resource,
             access_token: AccessToken::new(r.access_token),
-        })
+        }
     }
 }
