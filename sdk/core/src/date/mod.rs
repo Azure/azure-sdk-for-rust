@@ -113,11 +113,6 @@ pub fn to_last_state_change(date: &OffsetDateTime) -> String {
     date.format(LAST_STATE_CHANGE_FORMAT).unwrap()
 }
 
-/// Assumes the local offset. Default to UTC if unable to get local offset.
-pub fn assume_local(date: &PrimitiveDateTime) -> OffsetDateTime {
-    date.assume_offset(UtcOffset::current_local_offset().unwrap_or(UtcOffset::UTC))
-}
-
 // Create a duration from the number of minutes.
 pub fn duration_from_minutes(minutes: u64) -> Duration {
     Duration::from_secs(minutes * 60)
