@@ -361,7 +361,7 @@ pub fn all_schemas_resolved(spec: &Spec) -> Result<Vec<(RefKey, SchemaGen)>> {
 }
 
 pub enum ModelCode {
-    Struct(TokenStream),
+    Struct(StructCode),
     Enum(StructFieldCode),
     VecAlias(VecAliasCode),
     TypeAlias(TypeAliasCode),
@@ -689,14 +689,83 @@ fn create_vec_alias(schema: &SchemaGen) -> Result<VecAliasCode> {
     Ok(VecAliasCode { id, value })
 }
 
+pub struct StructCode {
+    doc_comment: TokenStream,
+    struct_name_code: Ident,
+    default_code: TokenStream,
+    props: TokenStream,
+    continuable: TokenStream,
+    implement_default: bool,
+    new_fn_params: Vec<TokenStream>,
+    new_fn_body: TokenStream,
+    mod_code: TokenStream,
+    ns: Ident,
+}
+
+impl ToTokens for StructCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let StructCode {
+            doc_comment,
+            struct_name_code,
+            default_code,
+            props,
+            continuable,
+            implement_default,
+            new_fn_params,
+            new_fn_body,
+            mod_code,
+            ns,
+        } = self;
+
+        let struct_code = quote! {
+            #doc_comment
+            #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+            #default_code
+            pub struct #struct_name_code {
+                #props
+            }
+            #continuable
+        };
+        tokens.extend(struct_code);
+
+        tokens.extend(if *implement_default {
+            quote! {
+                impl #struct_name_code {
+                    pub fn new() -> Self {
+                        Self::default()
+                    }
+                }
+            }
+        } else {
+            quote! {
+                impl #struct_name_code {
+                    pub fn new(#(#new_fn_params),*) -> Self {
+                        Self {
+                            #new_fn_body
+                        }
+                    }
+                }
+            }
+        });
+
+        if !mod_code.is_empty() {
+            tokens.extend(quote! {
+                pub mod #ns {
+                    use super::*;
+                    #mod_code
+                }
+            });
+        }
+    }
+}
+
 fn create_struct(
     cg: &CodeGen,
     schema: &SchemaGen,
     struct_name: &str,
     pageable: Option<&MsPageable>,
     mut needs_boxing: HashSet<String>,
-) -> Result<TokenStream> {
-    let mut code = TokenStream::new();
+) -> Result<StructCode> {
     let mut mod_code = TokenStream::new();
     let mut props = TokenStream::new();
     let mut new_fn_params: Vec<TokenStream> = Vec::new();
@@ -921,47 +990,18 @@ fn create_struct(
         }
     }
 
-    let struct_code = quote! {
-        #doc_comment
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        #default_code
-        pub struct #struct_name_code {
-            #props
-        }
-        #continuable
-    };
-    code.extend(struct_code);
-
-    code.extend(if schema.implement_default() {
-        quote! {
-            impl #struct_name_code {
-                pub fn new() -> Self {
-                    Self::default()
-                }
-            }
-        }
-    } else {
-        quote! {
-            impl #struct_name_code {
-                pub fn new(#(#new_fn_params),*) -> Self {
-                    Self {
-                        #new_fn_body
-                    }
-                }
-            }
-        }
-    });
-
-    if !mod_code.is_empty() {
-        code.extend(quote! {
-            pub mod #ns {
-                use super::*;
-                #mod_code
-            }
-        });
-    }
-
-    Ok(code)
+    Ok(StructCode {
+        doc_comment,
+        struct_name_code,
+        default_code,
+        props,
+        continuable,
+        implement_default: schema.implement_default(),
+        new_fn_params,
+        new_fn_body,
+        mod_code,
+        ns,
+    })
 }
 
 pub struct StructFieldCode {
@@ -978,7 +1018,7 @@ impl ToTokens for StructFieldCode {
 }
 
 enum TypeCode {
-    Struct(TokenStream),
+    Struct(StructCode),
     Enum(TokenStream),
     XmlWrapped(XmlWrappedCode),
 }
@@ -986,8 +1026,8 @@ enum TypeCode {
 impl ToTokens for TypeCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
-            TypeCode::Struct(code) => tokens.extend(code.clone()),
-            TypeCode::Enum(code) => tokens.extend(code.clone()),
+            TypeCode::Struct(code) => code.to_tokens(tokens),
+            TypeCode::Enum(code) => code.to_tokens(tokens),
             TypeCode::XmlWrapped(code) => code.to_tokens(tokens),
         }
     }
