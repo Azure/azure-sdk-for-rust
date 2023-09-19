@@ -200,9 +200,10 @@ const fn ensure_no_uppercase(s: &str) {
     let mut i = 0;
     while i < bytes.len() {
         let byte = bytes[i];
-        if byte >= 65u8 && byte <= 90u8 {
-            panic!("header names must not contain any uppercase letters");
-        }
+        assert!(
+            !(byte >= 65u8 && byte <= 90u8),
+            "header names must not contain uppercase letters"
+        );
         i += 1;
     }
 }

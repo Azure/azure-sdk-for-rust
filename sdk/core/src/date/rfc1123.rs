@@ -1,8 +1,6 @@
-use serde::{self, Deserialize, Deserializer, Serializer};
+use crate::date::{parse_rfc1123, to_rfc1123};
+use serde::{self, de, Deserialize, Deserializer, Serializer};
 use time::OffsetDateTime;
-
-use crate::date::*;
-use serde::de;
 
 pub fn deserialize<'de, D>(deserializer: D) -> Result<OffsetDateTime, D::Error>
 where
@@ -20,7 +18,7 @@ where
 }
 
 pub mod option {
-    use crate::date::*;
+    use crate::date::{parse_rfc1123, to_rfc1123};
     use serde::{Deserialize, Deserializer, Serializer};
     use time::OffsetDateTime;
 
