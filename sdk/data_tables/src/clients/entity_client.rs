@@ -168,8 +168,7 @@ mod integration_tests {
 
         let entity_client = table
             .partition_key_client(&entity.city)
-            .entity_client(&entity.surname)
-            .expect("an entity client");
+            .entity_client(&entity.surname);
 
         entity_client
             .update(&entity, IfMatchCondition::Any)
@@ -220,8 +219,7 @@ mod integration_tests {
 
         let entity_client = table
             .partition_key_client(&entity.city)
-            .entity_client(&entity.surname)
-            .expect("an entity client");
+            .entity_client(&entity.surname);
 
         entity_client
             .merge(&entity2, IfMatchCondition::Any)
@@ -266,8 +264,7 @@ mod integration_tests {
 
         let entity_client = table
             .partition_key_client(&entity.city)
-            .entity_client(&entity.surname)
-            .expect("an entity client");
+            .entity_client(&entity.surname);
         entity_client
             .insert_or_replace(&entity)
             .expect("entity could not be serialized")
@@ -306,8 +303,7 @@ mod integration_tests {
 
         let entity_client = table
             .partition_key_client(&entity.city)
-            .entity_client(&entity.surname)
-            .expect("an entity client");
+            .entity_client(&entity.surname);
         entity_client
             .insert_or_merge(&entity)
             .expect("entity could not be serialized")
