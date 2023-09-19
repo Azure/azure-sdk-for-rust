@@ -24,46 +24,51 @@ azure_core::operation! {
 impl CreateOrUpdateConfigurationBuilder {
     /// Sets the device content for the configuration
     /// The content cannot be updated once it has been created.
+    #[must_use]
     pub fn device_content(mut self, device_content: serde_json::Value) -> Self {
-        let content = self.content.get_or_insert(Default::default());
+        let content = self.content.get_or_insert(ConfigurationContent::default());
         content.device_content = Some(device_content);
         self
     }
 
     /// Sets the module content for the configuration.
     /// The content cannot be updated once it has been created.
+    #[must_use]
     pub fn module_content(mut self, module_content: serde_json::Value) -> Self {
-        let content = self.content.get_or_insert(Default::default());
+        let content = self.content.get_or_insert(ConfigurationContent::default());
         content.module_content = Some(module_content);
         self
     }
 
     /// Sets the module content for the configuration
     /// The content cannot be updated once it has been created.
+    #[must_use]
     pub fn modules_content(mut self, modules_content: serde_json::Value) -> Self {
-        let content = self.content.get_or_insert(Default::default());
+        let content = self.content.get_or_insert(ConfigurationContent::default());
         content.modules_content = Some(modules_content);
         self
     }
 
     /// Add a metric to the configuration
+    #[must_use]
     pub fn metric<S, T>(mut self, key: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<String>,
     {
-        let metrics = self.metrics.get_or_insert(Default::default());
+        let metrics = self.metrics.get_or_insert(HashMap::default());
         metrics.insert(key.into(), value.into());
         self
     }
 
     /// Add a label to the configuration.
+    #[must_use]
     pub fn label<S, T>(mut self, key: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<String>,
     {
-        let labels = self.labels.get_or_insert(Default::default());
+        let labels = self.labels.get_or_insert(HashMap::default());
         labels.insert(key.into(), value.into());
         self
     }
