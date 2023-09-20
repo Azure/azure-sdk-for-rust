@@ -362,7 +362,7 @@ pub fn all_schemas_resolved(spec: &Spec) -> Result<Vec<(RefKey, SchemaGen)>> {
 
 pub enum ModelCode {
     Struct(StructCode),
-    Enum(StructFieldCode),
+    Enum(NamedTypeCode),
     VecAlias(VecAliasCode),
     TypeAlias(TypeAliasCode),
 }
@@ -506,12 +506,7 @@ fn add_schema_refs(resolved: &mut IndexMap<RefKey, SchemaGen>, spec: &Spec, doc_
     Ok(())
 }
 
-fn create_enum(
-    namespace: Option<&Ident>,
-    property: &SchemaGen,
-    property_name: &str,
-    lowercase_workaround: bool,
-) -> Result<StructFieldCode> {
+fn create_enum(namespace: Option<&Ident>, property: &SchemaGen, property_name: &str, lowercase_workaround: bool) -> Result<NamedTypeCode> {
     let enum_values = property.enum_values();
     let id = &property_name.to_camel_case_ident()?;
 
@@ -651,7 +646,7 @@ fn create_enum(
     };
     let type_name = TypeNameCode::from(vec![namespace, Some(id)]);
 
-    Ok(StructFieldCode {
+    Ok(NamedTypeCode {
         type_name,
         code: Some(TypeCode::Enum(code)),
     })
@@ -802,7 +797,7 @@ fn create_struct(
 
         let lowercase_workaround = cg.should_workaround_case();
 
-        let StructFieldCode {
+        let NamedTypeCode {
             mut type_name,
             code: field_code,
         } = create_struct_field_code(
@@ -1117,12 +1112,12 @@ impl ToTokens for DocCommentCode {
     }
 }
 
-pub struct StructFieldCode {
+pub struct NamedTypeCode {
     type_name: TypeNameCode,
     code: Option<TypeCode>,
 }
 
-impl ToTokens for StructFieldCode {
+impl ToTokens for NamedTypeCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         if let Some(code) = &self.code {
             code.to_tokens(tokens)
@@ -1173,11 +1168,11 @@ fn create_struct_field_code(
     property_name: &str,
     lowercase_workaround: bool,
     needs_boxing: HashSet<String>,
-) -> Result<StructFieldCode> {
+) -> Result<NamedTypeCode> {
     match &property.ref_key {
         Some(ref_key) => {
             let tp = ref_key.name.to_camel_case_ident()?;
-            Ok(StructFieldCode {
+            Ok(NamedTypeCode {
                 type_name: tp.into(),
                 code: None,
             })
@@ -1189,7 +1184,7 @@ fn create_struct_field_code(
                 let id = property_name.to_camel_case_ident()?;
                 let type_name = TypeNameCode::from(vec![namespace.clone(), id]);
                 let code = create_struct(cg, property, property_name, None, needs_boxing)?;
-                Ok(StructFieldCode {
+                Ok(NamedTypeCode {
                     type_name,
                     code: Some(TypeCode::Struct(code)),
                 })
@@ -1204,12 +1199,12 @@ fn create_struct_field_code(
                     struct_name: struct_name.clone(),
                     type_name: TypeNameCode::new(&property.type_name()?)?,
                 };
-                Ok(StructFieldCode {
+                Ok(NamedTypeCode {
                     type_name: TypeNameCode::from(vec![namespace.clone(), struct_name]),
                     code: Some(TypeCode::XmlWrapped(code)),
                 })
             } else {
-                Ok(StructFieldCode {
+                Ok(NamedTypeCode {
                     type_name: TypeNameCode::new(&property.type_name()?)?,
                     code: None,
                 })
