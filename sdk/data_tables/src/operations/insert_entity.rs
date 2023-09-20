@@ -50,8 +50,7 @@ where
             headers.add(ContentType::APPLICATION_JSON);
 
             let mut request =
-                self.table_client
-                    .finalize_request(url, Method::Post, headers, Some(self.body))?;
+                TableClient::finalize_request(url, Method::Post, headers, Some(self.body))?;
 
             let response = self
                 .table_client

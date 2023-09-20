@@ -112,7 +112,6 @@ impl TableServiceClient {
     }
 
     pub(crate) fn finalize_request(
-        &self,
         url: Url,
         method: Method,
         headers: Headers,
