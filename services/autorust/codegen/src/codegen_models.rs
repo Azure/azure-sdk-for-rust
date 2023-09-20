@@ -361,9 +361,9 @@ pub fn all_schemas_resolved(spec: &Spec) -> Result<Vec<(RefKey, SchemaGen)>> {
 }
 
 pub enum ModelCode {
-    Struct(TokenStream),
+    Struct(StructCode),
     Enum(StructFieldCode),
-    VecAlias(TokenStream),
+    VecAlias(VecAliasCode),
     TypeAlias(TypeAliasCode),
 }
 
@@ -519,12 +519,7 @@ fn create_enum(
     for enum_value in &enum_values {
         let value = &enum_value.value;
         let nm = value.to_camel_case_ident()?;
-        let doc_comment = match &enum_value.description {
-            Some(description) => {
-                quote! { #[doc = #description] }
-            }
-            None => quote! {},
-        };
+        let doc_comment = DocCommentCode::from(&enum_value.description);
         let lower = value.to_lowercase();
         let rename = if &nm.to_string() == value {
             quote! {}
@@ -642,12 +637,7 @@ fn create_enum(
         quote! {}
     };
 
-    let doc_comment = match &property.schema.common.description {
-        Some(description) => {
-            quote! { #[doc = #description] }
-        }
-        None => quote! {},
-    };
+    let doc_comment = DocCommentCode::from(&property.schema.common.description);
 
     let code = quote! {
         #doc_comment
@@ -667,11 +657,96 @@ fn create_enum(
     })
 }
 
-fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream> {
+pub struct VecAliasCode {
+    pub id: Ident,
+    pub value: TypeNameCode,
+}
+
+impl ToTokens for VecAliasCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let id = &self.id;
+        let value = &self.value;
+        tokens.extend(quote! {
+            pub type #id = Vec<#value>;
+        });
+    }
+}
+
+fn create_vec_alias(schema: &SchemaGen) -> Result<VecAliasCode> {
     let items = schema.array_items()?;
-    let typ = schema.name()?.to_camel_case_ident()?;
-    let items_typ = TypeNameCode::new(&get_type_name_for_schema_ref(items)?)?;
-    Ok(quote! { pub type #typ = Vec<#items_typ>; })
+    let id = schema.name()?.to_camel_case_ident()?;
+    let value = TypeNameCode::new(&get_type_name_for_schema_ref(items)?)?;
+    Ok(VecAliasCode { id, value })
+}
+
+pub struct StructCode {
+    doc_comment: DocCommentCode,
+    struct_name_code: Ident,
+    default_code: TokenStream,
+    props: Vec<StructPropCode>,
+    continuable: TokenStream,
+    implement_default: bool,
+    new_fn_params: Vec<TokenStream>,
+    new_fn_body: TokenStream,
+    mod_code: TokenStream,
+    ns: Ident,
+}
+
+impl ToTokens for StructCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let StructCode {
+            doc_comment,
+            struct_name_code,
+            default_code,
+            props,
+            continuable,
+            implement_default,
+            new_fn_params,
+            new_fn_body,
+            mod_code,
+            ns,
+        } = self;
+
+        let struct_code = quote! {
+            #doc_comment
+            #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+            #default_code
+            pub struct #struct_name_code {
+                #(#props)*
+            }
+            #continuable
+        };
+        tokens.extend(struct_code);
+
+        tokens.extend(if *implement_default {
+            quote! {
+                impl #struct_name_code {
+                    pub fn new() -> Self {
+                        Self::default()
+                    }
+                }
+            }
+        } else {
+            quote! {
+                impl #struct_name_code {
+                    pub fn new(#(#new_fn_params),*) -> Self {
+                        Self {
+                            #new_fn_body
+                        }
+                    }
+                }
+            }
+        });
+
+        if !mod_code.is_empty() {
+            tokens.extend(quote! {
+                pub mod #ns {
+                    use super::*;
+                    #mod_code
+                }
+            });
+        }
+    }
 }
 
 fn create_struct(
@@ -680,10 +755,9 @@ fn create_struct(
     struct_name: &str,
     pageable: Option<&MsPageable>,
     mut needs_boxing: HashSet<String>,
-) -> Result<TokenStream> {
-    let mut code = TokenStream::new();
+) -> Result<StructCode> {
     let mut mod_code = TokenStream::new();
-    let mut props = TokenStream::new();
+    let mut props = Vec::new();
     let mut new_fn_params: Vec<TokenStream> = Vec::new();
     let mut new_fn_body = TokenStream::new();
     let ns = struct_name.to_snake_case_ident()?;
@@ -697,9 +771,11 @@ fn create_struct(
         let schema_name = schema.name()?;
         let type_name = schema_name.to_camel_case_ident()?;
         let field_name = schema_name.to_snake_case_ident()?;
-        props.extend(quote! {
-            #[serde(flatten)]
-            pub #field_name: #type_name,
+        props.push(StructPropCode {
+            doc_comments: Vec::new(),
+            serde: SerdeCode::flatten(),
+            field_name: field_name.clone(),
+            field_type: type_name.clone().into(),
         });
         if schema.implement_default() {
             new_fn_body.extend(quote! { #field_name: #type_name::default(), });
@@ -738,9 +814,10 @@ fn create_struct(
             needs_boxing.clone(),
         )?;
         mod_code.extend(field_code.into_token_stream());
+        let mut doc_comments = Vec::new();
         // uncomment the next two lines to help identify entries that need boxed
         // let prop_nm_str = format!("{} , {} , {}", prop_nm.file_path, prop_nm.schema_name, property_name);
-        // props.extend(quote! { #[doc = #prop_nm_str ]});
+        // doc_comments.push(DocCommentCode::from(&Some(prop_nm_str)));
 
         let mut boxed = false;
         if needs_boxing.contains(&type_name.to_string().to_camel_case_ident()?.to_string()) {
@@ -795,11 +872,7 @@ fn create_struct(
                 serde_attrs.push(quote! { with = "azure_core::xml::text_content"});
             }
         }
-        let serde = if !serde_attrs.is_empty() {
-            quote! { #[serde(#(#serde_attrs),*)] }
-        } else {
-            quote! {}
-        };
+        let serde = SerdeCode::new(serde_attrs);
 
         // see if a field should be wrapped in a Box
         if cg.should_box_property(prop_nm) {
@@ -807,15 +880,13 @@ fn create_struct(
         }
         type_name = type_name.boxed(boxed);
 
-        let doc_comment = match &property.schema.schema.common.description {
-            Some(description) => quote! { #[doc = #description] },
-            None => quote! {},
-        };
+        doc_comments.push(DocCommentCode::from(&property.schema.schema.common.description));
 
-        props.extend(quote! {
-            #doc_comment
-            #serde
-            pub #field_name: #type_name,
+        props.push(StructPropCode {
+            doc_comments,
+            serde,
+            field_name: field_name.clone(),
+            field_type: type_name.clone(),
         });
 
         if is_required {
@@ -839,10 +910,7 @@ fn create_struct(
         quote! {}
     };
 
-    let doc_comment = match &schema.schema.common.description {
-        Some(description) => quote! { #[doc = #description] },
-        None => quote! {},
-    };
+    let doc_comment = DocCommentCode::from(&schema.schema.common.description);
 
     let mut continuable = quote! {};
     if let Some(pageable) = pageable {
@@ -906,47 +974,108 @@ fn create_struct(
         }
     }
 
-    let struct_code = quote! {
-        #doc_comment
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        #default_code
-        pub struct #struct_name_code {
-            #props
-        }
-        #continuable
-    };
-    code.extend(struct_code);
+    Ok(StructCode {
+        doc_comment,
+        struct_name_code,
+        default_code,
+        props,
+        continuable,
+        implement_default: schema.implement_default(),
+        new_fn_params,
+        new_fn_body,
+        mod_code,
+        ns,
+    })
+}
 
-    code.extend(if schema.implement_default() {
-        quote! {
-            impl #struct_name_code {
-                pub fn new() -> Self {
-                    Self::default()
-                }
-            }
-        }
-    } else {
-        quote! {
-            impl #struct_name_code {
-                pub fn new(#(#new_fn_params),*) -> Self {
-                    Self {
-                        #new_fn_body
-                    }
-                }
-            }
-        }
-    });
+pub struct StructPropCode {
+    pub doc_comments: Vec<DocCommentCode>,
+    pub serde: SerdeCode,
+    pub field_name: Ident,
+    pub field_type: TypeNameCode,
+}
 
-    if !mod_code.is_empty() {
-        code.extend(quote! {
-            pub mod #ns {
-                use super::*;
-                #mod_code
-            }
+impl StructPropCode {
+    pub fn new(field_name: Ident, field_type: TypeNameCode) -> Self {
+        Self {
+            doc_comments: Vec::new(),
+            serde: SerdeCode::default(),
+            field_name,
+            field_type,
+        }
+    }
+}
+
+impl ToTokens for StructPropCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let doc_comments = &self.doc_comments;
+        let serde = &self.serde;
+        let field_name = &self.field_name;
+        let field_type = &self.field_type;
+        tokens.extend(quote! {
+            #(#doc_comments)*
+            #serde
+            pub #field_name: #field_type,
         });
     }
+}
 
-    Ok(code)
+#[derive(Default)]
+pub struct SerdeCode {
+    pub attributes: Vec<TokenStream>,
+}
+
+impl SerdeCode {
+    pub fn new(attributes: Vec<TokenStream>) -> Self {
+        Self { attributes }
+    }
+    pub fn flatten() -> Self {
+        Self {
+            attributes: vec![quote! { flatten }],
+        }
+    }
+}
+
+impl ToTokens for SerdeCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let attributes = &self.attributes;
+        if !attributes.is_empty() {
+            tokens.extend(quote! {
+                #[serde(#(#attributes),*)]
+            });
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct DocCommentCode {
+    description: Option<String>,
+}
+
+impl From<&str> for DocCommentCode {
+    fn from(description: &str) -> Self {
+        Self {
+            description: Some(description.to_string()),
+        }
+    }
+}
+
+impl From<&Option<String>> for DocCommentCode {
+    fn from(description: &Option<String>) -> Self {
+        Self {
+            description: description.clone(),
+        }
+    }
+}
+
+impl ToTokens for DocCommentCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        if let Some(description) = &self.description {
+            tokens.extend(quote! {
+                #[doc = #description]
+            });
+        }
+    }
 }
 
 pub struct StructFieldCode {
@@ -963,7 +1092,7 @@ impl ToTokens for StructFieldCode {
 }
 
 enum TypeCode {
-    Struct(TokenStream),
+    Struct(StructCode),
     Enum(TokenStream),
     XmlWrapped(XmlWrappedCode),
 }
@@ -971,8 +1100,8 @@ enum TypeCode {
 impl ToTokens for TypeCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
-            TypeCode::Struct(code) => tokens.extend(code.clone()),
-            TypeCode::Enum(code) => tokens.extend(code.clone()),
+            TypeCode::Struct(code) => code.to_tokens(tokens),
+            TypeCode::Enum(code) => code.to_tokens(tokens),
             TypeCode::XmlWrapped(code) => code.to_tokens(tokens),
         }
     }
