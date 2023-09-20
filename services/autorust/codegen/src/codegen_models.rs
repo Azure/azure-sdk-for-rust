@@ -684,7 +684,7 @@ pub struct StructCode {
     struct_name_code: Ident,
     default_code: TokenStream,
     props: Vec<StructPropCode>,
-    continuable: TokenStream,
+    continuable: Option<ContinuableCode>,
     implement_default: bool,
     new_fn_params: Vec<TokenStream>,
     new_fn_body: TokenStream,
@@ -912,67 +912,7 @@ fn create_struct(
 
     let doc_comment = DocCommentCode::from(&schema.schema.common.description);
 
-    let mut continuable = quote! {};
-    if let Some(pageable) = pageable {
-        if let Some(name) = &pageable.next_link_name {
-            let field_name = name.to_snake_case_ident()?;
-            // when there are multiple responses, we only add the Continuable
-            // for the cases that have the field we care about.
-            // println!("checking {} {} {}", struct_name_code, field_name, field_names.contains(&format!("{}", field_name)));
-            if let Some(is_required) = field_names.get(&format!("{field_name}")) {
-                if *is_required {
-                    continuable = quote! {
-                        impl azure_core::Continuable for #struct_name_code {
-                            type Continuation = String;
-                            fn continuation(&self) -> Option<Self::Continuation> {
-                                if self.#field_name.is_empty() {
-                                    None
-                                } else {
-                                    Some(self.#field_name.clone())
-                                }
-                            }
-                        }
-                    };
-                } else {
-                    continuable = quote! {
-                        impl azure_core::Continuable for #struct_name_code {
-                            type Continuation = String;
-                            fn continuation(&self) -> Option<Self::Continuation> {
-                                self.#field_name.clone().filter(|value| !value.is_empty())
-                            }
-                        }
-                    };
-                }
-            } else {
-                // In a number of cases, such as USqlAssemblyList used in
-                // datalake-analytics, the next link name is provided, but the
-                // field doesn't exist in the response schema.  Handle that by
-                // adding a Continuable that always returns None.
-                continuable = quote! {
-                    impl azure_core::Continuable for #struct_name_code {
-                        type Continuation = String;
-                        fn continuation(&self) -> Option<Self::Continuation> {
-                            None
-                        }
-                    }
-                };
-            }
-        } else {
-            // In a number of cases, such as DimensionsListResult used in
-            // costmanagement, the next link name is null, and it's not provided
-            // via a header or sometimes used in other responses.
-            //
-            // Handle that by // adding a Continuable that always returns None.
-            continuable = quote! {
-                impl azure_core::Continuable for #struct_name_code {
-                    type Continuation = String;
-                    fn continuation(&self) -> Option<Self::Continuation> {
-                        None
-                    }
-                }
-            };
-        }
-    }
+    let continuable = ContinuableCode::from_pageable(struct_name_code.clone(), pageable, field_names)?;
 
     Ok(StructCode {
         doc_comment,
@@ -986,6 +926,105 @@ fn create_struct(
         mod_code,
         ns,
     })
+}
+
+pub struct ContinuableCode {
+    pub struct_name: Ident,
+    pub field_name: Option<Ident>,
+    pub is_required: Option<bool>,
+}
+
+impl ContinuableCode {
+    pub fn new(struct_name: Ident, field_name: Option<Ident>, is_required: Option<bool>) -> Self {
+        Self {
+            struct_name,
+            field_name,
+            is_required,
+        }
+    }
+
+    pub fn from_pageable(struct_name: Ident, pageable: Option<&MsPageable>, field_names: HashMap<String, bool>) -> Result<Option<Self>> {
+        if let Some(pageable) = pageable {
+            let field_name = if let Some(name) = &pageable.next_link_name {
+                let field_name = name.to_snake_case_ident()?;
+                Some(field_name)
+            } else {
+                None
+            };
+            let is_required = field_name.as_ref().and_then(|field_name| field_names.get(&format!("{field_name}")));
+            Ok(Some(Self::new(struct_name, field_name, is_required.cloned())))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+impl ToTokens for ContinuableCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let Self {
+            struct_name,
+            field_name,
+            is_required,
+        } = self;
+
+        if let Some(field_name) = field_name {
+            // when there are multiple responses, we only add the Continuable
+            // for the cases that have the field we care about.
+            // println!("checking {} {} {}", struct_name_code, field_name, is_required);
+            if let Some(is_required) = is_required {
+                if *is_required {
+                    tokens.extend(quote! {
+                        impl azure_core::Continuable for #struct_name {
+                            type Continuation = String;
+                            fn continuation(&self) -> Option<Self::Continuation> {
+                                if self.#field_name.is_empty() {
+                                    None
+                                } else {
+                                    Some(self.#field_name.clone())
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    tokens.extend(quote! {
+                        impl azure_core::Continuable for #struct_name {
+                            type Continuation = String;
+                            fn continuation(&self) -> Option<Self::Continuation> {
+                                self.#field_name.clone().filter(|value| !value.is_empty())
+                            }
+                        }
+                    });
+                }
+            } else {
+                // In a number of cases, such as USqlAssemblyList used in
+                // datalake-analytics, the next link name is provided, but the
+                // field doesn't exist in the response schema.  Handle that by
+                // adding a Continuable that always returns None.
+                tokens.extend(quote! {
+                    impl azure_core::Continuable for #struct_name {
+                        type Continuation = String;
+                        fn continuation(&self) -> Option<Self::Continuation> {
+                            None
+                        }
+                    }
+                });
+            }
+        } else {
+            // In a number of cases, such as DimensionsListResult used in
+            // costmanagement, the next link name is null, and it's not provided
+            // via a header or sometimes used in other responses.
+            //
+            // Handle that by // adding a Continuable that always returns None.
+            tokens.extend(quote! {
+                impl azure_core::Continuable for #struct_name {
+                    type Continuation = String;
+                    fn continuation(&self) -> Option<Self::Continuation> {
+                        None
+                    }
+                }
+            });
+        }
+    }
 }
 
 pub struct StructPropCode {
