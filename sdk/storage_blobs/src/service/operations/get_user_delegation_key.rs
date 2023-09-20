@@ -59,10 +59,7 @@ impl GetUserDelegationKeyRequest {
     pub fn as_string(&self) -> azure_core::Result<String> {
         Ok(format!(
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>{}",
-            to_xml(&GetUserDelegationKeyRequest {
-                start: self.start,
-                expiry: self.expiry,
-            })?
+            to_xml(self)?
         ))
     }
 }
