@@ -62,7 +62,7 @@ impl<'de> Deserialize<'de> for MockResponse {
         use serde::de::Error;
         let r = SerializedMockResponse::deserialize(deserializer)?;
         let mut headers = Headers::new();
-        for (n, v) in r.headers.iter() {
+        for (n, v) in &r.headers {
             let name = HeaderName::from(n.to_owned());
             let value = HeaderValue::from(v.to_owned());
             headers.insert(name, value);

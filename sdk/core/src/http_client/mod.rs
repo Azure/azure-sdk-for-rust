@@ -6,7 +6,7 @@ mod reqwest;
 #[cfg(not(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")))]
 use self::noop::NoopClient;
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
-use self::reqwest::*;
+use self::reqwest::new_reqwest_client;
 use crate::error::ErrorKind;
 use async_trait::async_trait;
 use bytes::Bytes;

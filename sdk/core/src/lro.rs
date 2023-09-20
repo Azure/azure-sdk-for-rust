@@ -64,7 +64,7 @@ pub mod location {
         Url,
     };
 
-    #[derive(Debug)]
+    #[derive(Debug, Clone, Copy)]
     pub enum FinalState {
         AzureAsyncOperation,
         Location,

@@ -128,7 +128,6 @@ impl QueueServiceClient {
     }
 
     pub(crate) fn finalize_request(
-        &self,
         url: url::Url,
         method: azure_core::Method,
         headers: azure_core::headers::Headers,

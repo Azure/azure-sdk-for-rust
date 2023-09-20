@@ -111,7 +111,7 @@ pub(crate) fn get_error_code_from_body(body: &[u8]) -> Option<String> {
     let nested = || json.get("error")?.get("code")?.as_str();
     let top_level = || json.get("code")?.as_str();
     let code = nested().or_else(top_level);
-    code.map(|c| c.to_owned())
+    code.map(ToOwned::to_owned)
 }
 
 /// Gets the error message if it's present in the body
@@ -122,5 +122,5 @@ pub(crate) fn get_error_message_from_body(body: &[u8]) -> Option<String> {
     let nested = || json.get("error")?.get("message")?.as_str();
     let top_level = || json.get("message")?.as_str();
     let code = nested().or_else(top_level);
-    code.map(|c| c.to_owned())
+    code.map(ToOwned::to_owned)
 }

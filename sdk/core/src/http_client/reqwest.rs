@@ -17,7 +17,7 @@ impl HttpClient for ::reqwest::Client {
     async fn execute_request(&self, request: &crate::Request) -> crate::Result<crate::Response> {
         let url = request.url().clone();
         let method = request.method();
-        let mut req = self.request(try_from_method(method)?, url.clone());
+        let mut req = self.request(try_from_method(*method)?, url.clone());
         for (name, value) in request.headers().iter() {
             req = req.header(name.as_str(), value.as_str());
         }
@@ -65,22 +65,21 @@ fn to_headers(map: &::reqwest::header::HeaderMap) -> crate::headers::Headers {
         .iter()
         .filter_map(|(k, v)| {
             let key = k.as_str();
-            match std::str::from_utf8(v.as_bytes()) {
-                Ok(value) => Some((
+            if let Ok(value) = v.to_str() {
+                Some((
                     crate::headers::HeaderName::from(key.to_owned()),
                     crate::headers::HeaderValue::from(value.to_owned()),
-                )),
-                Err(_) => {
-                    log::warn!("header value for `{key}` is not utf8");
-                    None
-                }
+                ))
+            } else {
+                log::warn!("header value for `{key}` is not utf8");
+                None
             }
         })
         .collect::<HashMap<_, _>>();
     crate::headers::Headers::from(map)
 }
 
-fn try_from_method(method: &crate::Method) -> crate::Result<::reqwest::Method> {
+fn try_from_method(method: crate::Method) -> crate::Result<::reqwest::Method> {
     match method {
         crate::Method::Connect => Ok(::reqwest::Method::CONNECT),
         crate::Method::Delete => Ok(::reqwest::Method::DELETE),

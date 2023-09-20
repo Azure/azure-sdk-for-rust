@@ -16,16 +16,17 @@ impl ListSecretsBuilder {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
-                let mut uri = this.client.keyvault_client.vault_url.clone();
-                uri.set_path("secrets");
-
-                if let Some(continuation) = continuation {
-                    uri = Url::parse(&continuation)?;
-                }
+                let url = if let Some(url) = continuation {
+                    Url::parse(&url)?
+                } else {
+                    let mut url = this.client.keyvault_client.vault_url.clone();
+                    url.set_path("secrets");
+                    url
+                };
 
                 let headers = Headers::new();
                 let mut request = this.client.keyvault_client.finalize_request(
-                    uri,
+                    url,
                     Method::Get,
                     headers,
                     None,

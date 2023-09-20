@@ -50,11 +50,7 @@ impl MockTransaction {
         path.push("test");
         path.push("transactions");
         let name = self.name();
-        if name.is_empty() {
-            panic!(
-                "The transaction name when running a request through the mock transport policy cannot be empty!"
-            );
-        }
+        assert!(!name.is_empty(), "The transaction name when running a request through the mock transport policy cannot be empty!");
         path.push(name);
 
         if !path.exists() {

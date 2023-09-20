@@ -3,6 +3,7 @@ use azure_storage::StoredAccessPolicy;
 use std::convert::TryFrom;
 use time::OffsetDateTime;
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone)]
 pub struct QueueStoredAccessPolicy {
     pub id: String,
@@ -31,6 +32,7 @@ impl QueueStoredAccessPolicy {
         }
     }
 
+    #[must_use]
     pub fn enable_read(self) -> Self {
         Self {
             is_read_enabled: true,
@@ -38,6 +40,7 @@ impl QueueStoredAccessPolicy {
         }
     }
 
+    #[must_use]
     pub fn enable_add(self) -> Self {
         Self {
             is_add_enabled: true,
@@ -45,6 +48,7 @@ impl QueueStoredAccessPolicy {
         }
     }
 
+    #[must_use]
     pub fn enable_update(self) -> Self {
         Self {
             is_update_enabled: true,
@@ -52,6 +56,7 @@ impl QueueStoredAccessPolicy {
         }
     }
 
+    #[must_use]
     pub fn enable_process(self) -> Self {
         Self {
             is_process_enabled: true,
@@ -59,6 +64,7 @@ impl QueueStoredAccessPolicy {
         }
     }
 
+    #[must_use]
     pub fn enable_all(self) -> Self {
         Self {
             is_add_enabled: true,
