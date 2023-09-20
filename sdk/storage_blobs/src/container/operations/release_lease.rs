@@ -22,9 +22,8 @@ impl ReleaseLeaseBuilder {
             headers.add(self.client.lease_id());
             headers.add(self.if_modified_since);
 
-            let mut request = self
-                .client
-                .finalize_request(url, Method::Put, headers, None)?;
+            let mut request =
+                ContainerLeaseClient::finalize_request(url, Method::Put, headers, None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

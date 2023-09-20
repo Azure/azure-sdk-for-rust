@@ -27,8 +27,7 @@ impl SetBlobTierBuilder {
             headers.add(self.if_tags);
 
             let mut request =
-                self.client
-                    .finalize_request(url, azure_core::Method::Put, headers, None)?;
+                BlobClient::finalize_request(url, azure_core::Method::Put, headers, None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
             response.headers().try_into()

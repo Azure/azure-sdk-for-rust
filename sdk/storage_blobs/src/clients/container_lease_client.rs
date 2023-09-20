@@ -36,14 +36,12 @@ impl ContainerLeaseClient {
     }
 
     pub(crate) fn finalize_request(
-        &self,
         url: Url,
         method: Method,
         headers: Headers,
         request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
-        self.container_client
-            .finalize_request(url, method, headers, request_body)
+        ContainerClient::finalize_request(url, method, headers, request_body)
     }
 
     pub(crate) async fn send(

@@ -301,20 +301,18 @@ impl BlobClient {
         let mut url = self.container_client().url()?;
         let parts = self.blob_name().trim_matches('/').split('/');
         url.path_segments_mut()
-            .map_err(|_| Error::message(ErrorKind::DataConversion, "Invalid url"))?
+            .map_err(|()| Error::message(ErrorKind::DataConversion, "Invalid url"))?
             .extend(parts);
         Ok(url)
     }
 
     pub(crate) fn finalize_request(
-        &self,
         url: Url,
         method: Method,
         headers: Headers,
         request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
-        self.container_client
-            .finalize_request(url, method, headers, request_body)
+        ContainerClient::finalize_request(url, method, headers, request_body)
     }
 
     pub(crate) async fn send(

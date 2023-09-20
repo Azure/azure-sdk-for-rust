@@ -50,8 +50,7 @@ impl GetBlobBuilder {
                 headers.add(this.if_tags.clone());
 
                 let mut request =
-                    this.client
-                        .finalize_request(url, azure_core::Method::Get, headers, None)?;
+                    BlobClient::finalize_request(url, azure_core::Method::Get, headers, None)?;
 
                 let response = this.client.send(&mut ctx, &mut request).await?;
 

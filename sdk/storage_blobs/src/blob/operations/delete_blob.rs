@@ -28,8 +28,7 @@ impl DeleteBlobBuilder {
             headers.add(self.if_tags);
 
             let mut request =
-                self.client
-                    .finalize_request(url, azure_core::Method::Delete, headers, None)?;
+                BlobClient::finalize_request(url, azure_core::Method::Delete, headers, None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
             DeleteBlobResponse::from_headers(response.headers())

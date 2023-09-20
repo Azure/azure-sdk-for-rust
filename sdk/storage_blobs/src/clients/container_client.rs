@@ -153,7 +153,7 @@ impl ContainerClient {
     pub fn url(&self) -> azure_core::Result<url::Url> {
         let mut url = self.service_client.url()?;
         url.path_segments_mut()
-            .map_err(|_| Error::message(ErrorKind::DataConversion, "Invalid url"))?
+            .map_err(|()| Error::message(ErrorKind::DataConversion, "Invalid url"))?
             .push(self.container_name());
         Ok(url)
     }
@@ -171,14 +171,12 @@ impl ContainerClient {
     }
 
     pub(crate) fn finalize_request(
-        &self,
         url: Url,
         method: Method,
         headers: Headers,
         request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
-        self.service_client
-            .finalize_request(url, method, headers, request_body)
+        BlobServiceClient::finalize_request(url, method, headers, request_body)
     }
 }
 
