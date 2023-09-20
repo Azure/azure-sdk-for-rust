@@ -43,7 +43,7 @@ async fn main() -> azure_core::Result<()> {
         tenant_id,
         client_id,
         base64::encode(cert),
-        "".to_string(),
+        String::new(),
         options,
     );
 

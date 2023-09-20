@@ -53,9 +53,8 @@ pub async fn exchange(
     if !rsp_status.is_success() {
         if let Ok(token_error) = serde_json::from_slice::<RefreshTokenError>(&rsp_body) {
             return Err(Error::new(ErrorKind::Credential, token_error));
-        } else {
-            return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
         }
+        return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
     }
 
     serde_json::from_slice::<RefreshTokenResponse>(&rsp_body).map_kind(ErrorKind::Credential)
@@ -107,7 +106,7 @@ mod deserialize {
         D: Deserializer<'de>,
     {
         let string: String = serde::Deserialize::deserialize(scope)?;
-        Ok(string.split(' ').map(|s| s.to_owned()).collect())
+        Ok(string.split(' ').map(ToOwned::to_owned).collect())
     }
 }
 
