@@ -14,15 +14,16 @@ impl GetConfigurationBuilder {
     /// Execute the request to get the configuration of a given identifier.
     pub fn into_future(self) -> GetConfiguration {
         Box::pin(async move {
-            let uri = match self.configuration_id {
-                Some(val) => format!(
+            let uri = if let Some(val) = self.configuration_id {
+                format!(
                     "https://{}.azure-devices.net/configurations/{}?api-version={}",
                     self.client.iot_hub_name, val, API_VERSION
-                ),
-                None => format!(
+                )
+            } else {
+                format!(
                     "https://{}.azure-devices.net/configurations?api-version={}",
                     self.client.iot_hub_name, API_VERSION
-                ),
+                )
             };
 
             let mut request = self.client.finalize_request(&uri, Method::Get)?;

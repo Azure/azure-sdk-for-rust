@@ -35,11 +35,12 @@ impl UpdateOrReplaceTwinBuilder {
     ///                  .tag("AnotherTag", "WithAnotherValue")
     ///                  .tag("LastTag", "LastValue");
     /// ```
+    #[must_use]
     pub fn tag<T>(mut self, tag_name: T, tag_value: T) -> Self
     where
         T: Into<String>,
     {
-        let tags = self.desired_tags.get_or_insert(Default::default());
+        let tags = self.desired_tags.get_or_insert(HashMap::default());
         tags.insert(tag_name.into(), tag_value.into());
         self
     }
@@ -65,15 +66,16 @@ impl UpdateOrReplaceTwinBuilder {
                 },
             };
 
-            let uri = match self.module_id {
-                Some(val) => format!(
+            let uri = if let Some(val) = self.module_id {
+                format!(
                     "https://{}.azure-devices.net/twins/{}/modules/{}?api-version={}",
                     self.client.iot_hub_name, self.device_id, val, API_VERSION
-                ),
-                None => format!(
+                )
+            } else {
+                format!(
                     "https://{}.azure-devices.net/twins/{}?api-version={}",
                     self.client.iot_hub_name, self.device_id, API_VERSION
-                ),
+                )
             };
 
             let mut request = self.client.finalize_request(&uri, self.method)?;

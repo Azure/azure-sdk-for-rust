@@ -44,14 +44,12 @@ impl BlobLeaseClient {
     }
 
     pub(crate) fn finalize_request(
-        &self,
         url: Url,
         method: Method,
         headers: Headers,
         request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
-        self.blob_client
-            .finalize_request(url, method, headers, request_body)
+        BlobClient::finalize_request(url, method, headers, request_body)
     }
 
     pub(crate) async fn send(

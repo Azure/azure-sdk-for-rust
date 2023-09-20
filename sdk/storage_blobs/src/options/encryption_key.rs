@@ -45,13 +45,10 @@ impl AsHeaders for CPKInfo {
             .to_owned();
         let headers = vec![
             (headers::ENCRYPTION_ALGORITHM, algorithm.into()),
-            (
-                headers::ENCRYPTION_KEY,
-                self.encryption_key.to_owned().into(),
-            ),
+            (headers::ENCRYPTION_KEY, self.encryption_key.clone().into()),
             (
                 headers::ENCRYPTION_KEY_SHA256,
-                self.encryption_key_sha256.to_owned().into(),
+                self.encryption_key_sha256.clone().into(),
             ),
         ];
         headers.into_iter()

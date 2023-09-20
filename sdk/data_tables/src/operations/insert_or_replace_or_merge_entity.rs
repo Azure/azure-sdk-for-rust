@@ -17,7 +17,7 @@ impl InsertOrReplaceOrMergeEntityBuilder {
             let mut headers = Headers::new();
             headers.add(ContentType::APPLICATION_JSON);
 
-            let mut request = self.client.finalize_request(
+            let mut request = EntityClient::finalize_request(
                 url,
                 match self.operation {
                     InsertOperation::InsertOrMerge => Method::Merge,

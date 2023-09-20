@@ -29,7 +29,7 @@ impl AppendBlockBuilder {
             headers.add(self.if_match);
             headers.add(self.lease_id);
 
-            let mut request = self.client.finalize_request(
+            let mut request = BlobClient::finalize_request(
                 url,
                 azure_core::Method::Put,
                 headers,

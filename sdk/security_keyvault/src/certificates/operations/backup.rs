@@ -14,10 +14,7 @@ impl CertificateBackupBuilder {
             uri.set_path(&format!("certificates/{}/backup", self.name));
 
             let headers = Headers::new();
-            let mut request =
-                self.client
-                    .keyvault_client
-                    .finalize_request(uri, Method::Post, headers, None)?;
+            let mut request = KeyvaultClient::finalize_request(uri, Method::Post, headers, None);
 
             let response = self
                 .client

@@ -17,9 +17,7 @@ impl DeleteEntityBuilder {
             let mut headers = Headers::new();
             headers.add(self.if_match.unwrap_or(IfMatchCondition::Any));
 
-            let mut request = self
-                .client
-                .finalize_request(url, Method::Delete, headers, None)?;
+            let mut request = EntityClient::finalize_request(url, Method::Delete, headers, None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

@@ -37,7 +37,7 @@ impl WorkloadIdentityCredential {
         }
     }
 
-    /// set TokenCredentialOptions
+    /// set `TokenCredentialOptions`
     pub fn set_options(&mut self, options: TokenCredentialOptions) {
         self.options = options;
     }

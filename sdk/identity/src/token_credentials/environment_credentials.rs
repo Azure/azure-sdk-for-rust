@@ -14,7 +14,7 @@ const AZURE_FEDERATED_TOKEN_FILE: &str = "AZURE_FEDERATED_TOKEN_FILE";
 const AZURE_FEDERATED_TOKEN: &str = "AZURE_FEDERATED_TOKEN";
 const AZURE_AUTHORITY_HOST: &str = "AZURE_AUTHORITY_HOST";
 
-/// Enables authentication with Workflows Identity if either AZURE_FEDERATED_TOKEN or AZURE_FEDERATED_TOKEN_FILE is set,
+/// Enables authentication with Workflows Identity if either `AZURE_FEDERATED_TOKEN` or `AZURE_FEDERATED_TOKEN_FILE` is set,
 /// otherwise enables authentication to Azure Active Directory using client secret, or a username and password.
 ///
 ///
@@ -26,7 +26,7 @@ const AZURE_AUTHORITY_HOST: &str = "AZURE_AUTHORITY_HOST";
 /// | `AZURE_CLIENT_ID`                   | The client(application) ID of an App Registration in the tenant. |
 /// | `AZURE_CLIENT_SECRET`               | A client secret that was generated for the App Registration. |
 /// | `AZURE_FEDERATED_TOKEN_FILE`        | Path to an federated token file. Variable is present in pods with aks workload identities. |
-/// | `AZURE_AUTHORITY_HOST`              | Url for the identity provider to exchange to federated token for an access_token. Variable is present in pods with aks workload identities. |
+/// | `AZURE_AUTHORITY_HOST`              | Url for the identity provider to exchange to federated token for an `access_token`. Variable is present in pods with aks workload identities. |
 ///
 /// This credential ultimately uses a or `WorkloadIdentityCredential` a`ClientSecretCredential` to perform the authentication using
 /// these details.

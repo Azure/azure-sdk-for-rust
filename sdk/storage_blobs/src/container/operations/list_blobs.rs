@@ -75,8 +75,7 @@ impl ListBlobsBuilder {
                 }
 
                 let mut request =
-                    this.client
-                        .finalize_request(url, Method::Get, Headers::new(), None)?;
+                    ContainerClient::finalize_request(url, Method::Get, Headers::new(), None)?;
 
                 let response = this.client.send(&mut ctx, &mut request).await?;
 
@@ -120,14 +119,14 @@ impl Blobs {
     pub fn blobs(&self) -> impl Iterator<Item = &Blob> {
         self.items.iter().filter_map(|item| match item {
             BlobItem::Blob(blob) => Some(blob),
-            _ => None,
+            BlobItem::BlobPrefix(_) => None,
         })
     }
 
     pub fn prefixes(&self) -> impl Iterator<Item = &BlobPrefix> {
         self.items.iter().filter_map(|item| match item {
             BlobItem::BlobPrefix(prefix) => Some(prefix),
-            _ => None,
+            BlobItem::Blob(_) => None,
         })
     }
 }
