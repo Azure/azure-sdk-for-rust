@@ -454,7 +454,7 @@ impl ToTokens for SetRequestParamsCode {
                         })
                     };
                     if let Some(query_body) = query_body {
-                        if !param.optional() || is_vec {
+                        if !param.is_optional() || is_vec {
                             tokens.extend(quote! {
                                 let #param_name_var = &this.#param_name_var;
                                 #query_body
@@ -471,7 +471,7 @@ impl ToTokens for SetRequestParamsCode {
                 ParamKind::Header => {
                     // always use lowercase header names
                     let header_name = param_name.to_lowercase();
-                    if !param.optional() || is_vec {
+                    if !param.is_optional() || is_vec {
                         if param.is_string() {
                             tokens.extend(quote! {
                                 req.insert_header(#header_name, &this.#param_name_var);
@@ -505,7 +505,7 @@ impl ToTokens for SetRequestParamsCode {
                         quote! {}
                     };
 
-                    if !param.optional() || is_vec {
+                    if !param.is_optional() || is_vec {
                         tokens.extend(quote! {
                             #set_content_type
                             let req_body = azure_core::to_json(&this.#param_name_var)?;
@@ -1368,8 +1368,8 @@ impl FunctionParam {
     fn is_vec(&self) -> bool {
         self.type_name.is_vec()
     }
-    fn optional(&self) -> bool {
-        self.type_name.optional
+    fn is_optional(&self) -> bool {
+        self.type_name.is_optional()
     }
     fn is_string(&self) -> bool {
         self.type_name.is_string()
@@ -1422,10 +1422,10 @@ impl FunctionParams {
         self.params.iter().collect()
     }
     fn required_params(&self) -> Vec<&FunctionParam> {
-        self.params.iter().filter(|p| !p.type_name.optional).collect()
+        self.params.iter().filter(|p| !p.type_name.is_optional()).collect()
     }
     fn optional_params(&self) -> Vec<&FunctionParam> {
-        self.params.iter().filter(|p| p.type_name.optional).collect()
+        self.params.iter().filter(|p| p.type_name.is_optional()).collect()
     }
     #[allow(dead_code)]
     fn params_of_kind(&self, kind: &ParamKind) -> Vec<&FunctionParam> {

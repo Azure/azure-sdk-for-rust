@@ -115,7 +115,7 @@ pub fn parse_query_params(uri: &str) -> Result<HashSet<String>> {
 pub struct TypeNameCode {
     type_path: TypePath,
     force_value: bool,
-    pub optional: bool,
+    optional: bool,
     vec_count: i32,
     impl_into: bool,
     allow_impl_into: bool,
@@ -245,6 +245,10 @@ impl TypeNameCode {
             }
         }
         tp
+    }
+
+    pub fn is_optional(&self) -> bool {
+        self.optional
     }
 }
 
