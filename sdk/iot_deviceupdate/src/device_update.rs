@@ -202,8 +202,7 @@ impl DeviceUpdateClient {
                     }))
                 }
                 OperationStatus::Succeeded => return Ok(update_operation),
-                OperationStatus::NotStarted => continue,
-                OperationStatus::Running => continue,
+                OperationStatus::NotStarted | OperationStatus::Running => continue,
                 OperationStatus::Undefined => {
                     return Err(Error::with_message(ErrorKind::Other, || {
                         format!(
