@@ -47,12 +47,8 @@ impl UpdateCertificatePropertiesBuilder {
             let body = serde_json::to_string(&request)?;
 
             let headers = Headers::new();
-            let mut request = self.client.keyvault_client.finalize_request(
-                uri,
-                Method::Patch,
-                headers,
-                Some(body.into()),
-            )?;
+            let mut request =
+                KeyvaultClient::finalize_request(uri, Method::Patch, headers, Some(body.into()));
 
             self.client
                 .keyvault_client

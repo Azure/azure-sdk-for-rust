@@ -25,12 +25,7 @@ impl ListSecretsBuilder {
                 };
 
                 let headers = Headers::new();
-                let mut request = this.client.keyvault_client.finalize_request(
-                    url,
-                    Method::Get,
-                    headers,
-                    None,
-                )?;
+                let mut request = KeyvaultClient::finalize_request(url, Method::Get, headers, None);
 
                 let response = this.client.keyvault_client.send(&ctx, &mut request).await?;
 

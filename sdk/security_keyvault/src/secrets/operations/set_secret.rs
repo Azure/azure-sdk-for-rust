@@ -22,10 +22,7 @@ impl SetSecretBuilder {
             let body = Some(Value::Object(request_body).to_string().into());
 
             let headers = Headers::new();
-            let mut request =
-                self.client
-                    .keyvault_client
-                    .finalize_request(uri, Method::Put, headers, body)?;
+            let mut request = KeyvaultClient::finalize_request(uri, Method::Put, headers, body);
 
             self.client
                 .keyvault_client

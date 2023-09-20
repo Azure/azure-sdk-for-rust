@@ -65,12 +65,11 @@ impl KeyvaultClient {
     }
 
     pub(crate) fn finalize_request(
-        &self,
         url: Url,
         method: Method,
         headers: Headers,
         request_body: Option<Body>,
-    ) -> azure_core::Result<Request> {
+    ) -> Request {
         let dt = OffsetDateTime::now_utc();
         let time = date::to_rfc1123(&dt);
 
@@ -103,7 +102,7 @@ impl KeyvaultClient {
             request.set_body(azure_core::EMPTY_BODY);
         };
 
-        Ok(request)
+        request
     }
 
     pub(crate) async fn send(
