@@ -196,7 +196,7 @@ impl<'a> ConnectionString<'a> {
                 account_name: Some(account),
                 account_key: Some(key),
                 ..
-            } =>  Ok(StorageCredentials::Key(account.to_string(), key.to_string())),
+            } =>  Ok(StorageCredentials::Key((*account).to_string(), (*key).to_string())),
            _ => {
                 Err(Error::message(ErrorKind::Credential,
                     "Could not create a `StorageCredentail` from the provided connection string. Please validate that you have specified a means of authentication (key, SAS, etc.)."
