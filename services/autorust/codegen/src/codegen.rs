@@ -123,6 +123,7 @@ pub struct TypeNameCode {
     qualify_models: bool,
     allow_qualify_models: bool,
     type_name: Option<TypeName>,
+    union: bool,
 }
 
 impl TypeNameCode {
@@ -180,6 +181,10 @@ impl TypeNameCode {
         self.optional = optional;
         self
     }
+    pub fn union(mut self, union: bool) -> Self {
+        self.union = union;
+        self
+    }
     pub fn incr_vec_count(mut self) -> Self {
         self.vec_count += 1;
         self
@@ -210,6 +215,12 @@ impl TypeNameCode {
 
     fn to_type(&self) -> Type {
         let mut tp = self.type_path.clone();
+        if self.union {
+            if let Some(last) = tp.path.segments.last_mut() {
+                last.ident = Ident::new(&format!("{}Union", last.ident), last.ident.span());
+            }
+        }
+
         if self.allow_qualify_models && self.qualify_models {
             tp.path.segments.insert(0, id_models().into());
         }
@@ -249,6 +260,9 @@ impl TypeNameCode {
 
     pub fn is_optional(&self) -> bool {
         self.optional
+    }
+    pub fn is_union(&self) -> bool {
+        self.union
     }
 }
 
@@ -295,6 +309,7 @@ impl From<TypePath> for TypeNameCode {
             qualify_models: false,
             allow_qualify_models: false,
             type_name: None,
+            union: false,
         }
     }
 }
@@ -410,6 +425,7 @@ fn tp_date_time() -> TypePath {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use anyhow::ensure;
 
     #[test]
     fn test_parse_query_params() -> Result<()> {
@@ -505,6 +521,13 @@ mod tests {
         tp.set_as_bytes();
         assert!(tp.is_bytes());
         assert_eq!("bytes :: Bytes", tp.to_string());
+        Ok(())
+    }
+
+    #[test]
+    fn test_with_union() -> anyhow::Result<()> {
+        let tp = TypeNameCode::try_from("farm::Animal")?.union(true);
+        ensure!("farm :: AnimalUnion" == tp.to_string());
         Ok(())
     }
 }
