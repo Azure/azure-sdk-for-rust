@@ -179,6 +179,14 @@ impl BlobServiceClient {
         ContainerClient::new(self.clone(), container_name.into())
     }
 
+    pub fn get_user_deligation_key(
+        &self,
+        start: OffsetDateTime,
+        expiry: OffsetDateTime,
+    ) -> GetUserDelegationKeyBuilder {
+        GetUserDelegationKeyBuilder::new(self.clone(), start, expiry)
+    }
+
     pub fn shared_access_signature(
         &self,
         resource_type: AccountSasResourceType,
