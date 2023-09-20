@@ -12,7 +12,10 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use serde_json::Value;
 use spec::{get_schema_schema_references, openapi, RefKey};
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    convert::TryFrom,
+};
 
 #[derive(Clone)]
 pub struct PropertyGen {
@@ -139,7 +142,7 @@ impl SchemaGen {
         )
     }
 
-    fn type_name(&self) -> Result<TypeName> {
+    pub fn type_name(&self) -> Result<TypeName> {
         get_type_name_for_schema(&self.schema.common)
     }
 
@@ -193,6 +196,14 @@ impl SchemaGen {
             }
         }
         true
+    }
+
+    fn discriminator(&self) -> Option<&str> {
+        self.schema.discriminator.as_ref().map(|d| d.as_str())
+    }
+
+    fn discriminator_value(&self) -> Option<&str> {
+        self.schema.x_ms_discriminator_value.as_ref().map(|d| d.as_str())
     }
 }
 
@@ -437,7 +448,8 @@ pub fn create_models(cg: &CodeGen) -> Result<ModelsCode> {
 
     let mut models = Vec::new();
     let mut schema_names = IndexMap::new();
-    for (ref_key, schema) in &all_schemas_resolved(&cg.spec)? {
+    let all_schemas = &all_schemas_resolved(&cg.spec)?;
+    for (ref_key, schema) in all_schemas {
         let doc_file = &ref_key.file_path;
         let schema_name = &ref_key.name;
         // println!("schema_name: {}", schema_name);
@@ -463,6 +475,21 @@ pub fn create_models(cg: &CodeGen) -> Result<ModelsCode> {
                 pageable_response_names.get(&pageable_name),
                 HashSet::new(),
             )?));
+            if let Some(_discriminator) = schema.discriminator() {
+                let type_name = TypeNameCode::try_from(schema_name.as_str())?.union(true);
+                println!("pub enum {}", type_name.to_string());
+                for (child_ref_key, child_schema) in all_schemas {
+                    if child_schema
+                        .all_of()
+                        .iter()
+                        .any(|all_of_schema| all_of_schema.ref_key.as_ref() == Some(ref_key))
+                    {
+                        if let Some(descriminator_value) = child_schema.discriminator_value() {
+                            println!("  child: {}({})", descriminator_value, child_ref_key.name,);
+                        }
+                    }
+                }
+            }
         }
     }
     Ok(ModelsCode {
