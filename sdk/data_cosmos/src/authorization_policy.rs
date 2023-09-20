@@ -132,7 +132,7 @@ fn generate_resource_link(request: &Request) -> String {
         .map(|ending| &ending[1..]) // this is safe since every ENDING_STRING starts with a slash
         .any(|item| uri == item)
     {
-        "".to_string()
+        String::new()
     } else {
         uri.to_string()
     }

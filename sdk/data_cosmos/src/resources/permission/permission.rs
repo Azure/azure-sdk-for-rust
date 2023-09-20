@@ -81,8 +81,7 @@ impl PermissionMode {
     /// The full addressable path of the resource associated with the permission
     pub fn resource(&self) -> &str {
         match self {
-            Self::All(s) => s.as_ref(),
-            Self::Read(s) => s.as_ref(),
+            Self::All(s) | Self::Read(s) => s.as_ref(),
         }
     }
 }

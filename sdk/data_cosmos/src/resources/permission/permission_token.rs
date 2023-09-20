@@ -17,7 +17,7 @@ pub struct PermissionToken {
 
 impl PartialEq for PermissionToken {
     fn eq(&self, other: &Self) -> bool {
-        use AuthorizationToken::*;
+        use AuthorizationToken::{Primary, Resource};
         match (&self.token, &other.token) {
             (Primary(a), Primary(b)) => a == b,
             (Resource(a), Resource(b)) => a == b,
