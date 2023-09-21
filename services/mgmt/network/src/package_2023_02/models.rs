@@ -209,6 +209,12 @@ pub mod active_base_security_admin_rule {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ActiveBaseSecurityAdminRuleUnion {
+    Default(ActiveDefaultSecurityAdminRule),
+    Custom(ActiveSecurityAdminRule),
+}
 #[doc = "Effective Virtual Networks Parameter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActiveConfigurationParameter {
@@ -307,7 +313,7 @@ pub struct ActiveSecurityAdminRulesListResult {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<ActiveBaseSecurityAdminRule>,
+    pub value: Vec<ActiveBaseSecurityAdminRuleUnion>,
     #[doc = "When present, the value can be passed to a subsequent query call (together with the same query and scopes used in the current request) to retrieve the next page of data."]
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,
@@ -557,7 +563,7 @@ pub struct AdminRuleListResult {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<BaseAdminRule>,
+    pub value: Vec<BaseAdminRuleUnion>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -5822,6 +5828,12 @@ pub mod base_admin_rule {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum BaseAdminRuleUnion {
+    Custom(AdminRule),
+    Default(DefaultAdminRule),
+}
 #[doc = "The session detail for a target."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BastionActiveSession {
@@ -9821,6 +9833,12 @@ pub mod effective_base_security_admin_rule {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EffectiveBaseSecurityAdminRuleUnion {
+    Default(EffectiveDefaultSecurityAdminRule),
+    Custom(EffectiveSecurityAdminRule),
+}
 #[doc = "The network manager effective connectivity configuration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EffectiveConnectivityConfiguration {
@@ -12636,7 +12654,7 @@ pub struct FirewallPolicyFilterRuleCollection {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub rules: Vec<FirewallPolicyRule>,
+    pub rules: Vec<FirewallPolicyRuleUnion>,
 }
 impl FirewallPolicyFilterRuleCollection {
     pub fn new(firewall_policy_rule_collection: FirewallPolicyRuleCollection) -> Self {
@@ -13007,7 +13025,7 @@ pub struct FirewallPolicyNatRuleCollection {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub rules: Vec<FirewallPolicyRule>,
+    pub rules: Vec<FirewallPolicyRuleUnion>,
 }
 impl FirewallPolicyNatRuleCollection {
     pub fn new(firewall_policy_rule_collection: FirewallPolicyRuleCollection) -> Self {
@@ -13198,6 +13216,13 @@ pub mod firewall_policy_rule {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ruleType")]
+pub enum FirewallPolicyRuleUnion {
+    ApplicationRule(ApplicationRule),
+    NatRule(NatRule),
+    NetworkRule(NetworkRule),
+}
 #[doc = "Properties of the application rule protocol."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyRuleApplicationProtocol {
@@ -13316,6 +13341,12 @@ pub mod firewall_policy_rule_collection {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ruleCollectionType")]
+pub enum FirewallPolicyRuleCollectionUnion {
+    FirewallPolicyFilterRuleCollection(FirewallPolicyFilterRuleCollection),
+    FirewallPolicyNatRuleCollection(FirewallPolicyNatRuleCollection),
+}
 #[doc = "Rule Collection Group resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallPolicyRuleCollectionGroup {
@@ -13377,7 +13408,7 @@ pub struct FirewallPolicyRuleCollectionGroupProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub rule_collections: Vec<FirewallPolicyRuleCollection>,
+    pub rule_collections: Vec<FirewallPolicyRuleCollectionUnion>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -18646,7 +18677,7 @@ pub struct NetworkManagerEffectiveSecurityAdminRulesListResult {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<EffectiveBaseSecurityAdminRule>,
+    pub value: Vec<EffectiveBaseSecurityAdminRuleUnion>,
     #[doc = "When present, the value can be passed to a subsequent query call (together with the same query and scopes used in the current request) to retrieve the next page of data."]
     #[serde(rename = "skipToken", default, skip_serializing_if = "Option::is_none")]
     pub skip_token: Option<String>,

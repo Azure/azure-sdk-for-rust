@@ -271,6 +271,9 @@ impl Action {
         Self { type_, name }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ActionUnion {}
 #[doc = "Model that represents the an action and its status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionStatus {
@@ -308,10 +311,10 @@ pub struct Branch {
     #[doc = "String of the branch name."]
     pub name: String,
     #[doc = "List of actions."]
-    pub actions: Vec<Action>,
+    pub actions: Vec<ActionUnion>,
 }
 impl Branch {
-    pub fn new(name: String, actions: Vec<Action>) -> Self {
+    pub fn new(name: String, actions: Vec<ActionUnion>) -> Self {
         Self { name, actions }
     }
 }

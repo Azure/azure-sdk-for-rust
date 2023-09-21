@@ -1990,7 +1990,7 @@ pub struct Function {
     pub sub_resource: SubResource,
     #[doc = "The properties that are associated with a function."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<FunctionProperties>,
+    pub properties: Option<FunctionPropertiesUnion>,
 }
 impl Function {
     pub fn new() -> Self {
@@ -2009,6 +2009,18 @@ impl FunctionBinding {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum FunctionBindingUnion {
+    #[serde(rename = "Microsoft.MachineLearningServices")]
+    MicrosoftMachineLearningServices(AzureMachineLearningServiceFunctionBinding),
+    #[serde(rename = "Microsoft.MachineLearning/WebService")]
+    MicrosoftMachineLearningWebService(AzureMachineLearningStudioFunctionBinding),
+    #[serde(rename = "Microsoft.StreamAnalytics/CLRUdf")]
+    MicrosoftStreamAnalyticsClrUdf(CSharpFunctionBinding),
+    #[serde(rename = "Microsoft.StreamAnalytics/JavascriptUdf")]
+    MicrosoftStreamAnalyticsJavascriptUdf(JavaScriptFunctionBinding),
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FunctionConfiguration {
     #[serde(
@@ -2022,7 +2034,7 @@ pub struct FunctionConfiguration {
     pub output: Option<FunctionOutput>,
     #[doc = "The physical binding of the function. For example, in the Azure Machine Learning web service’s case, this describes the endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub binding: Option<FunctionBinding>,
+    pub binding: Option<FunctionBindingUnion>,
 }
 impl FunctionConfiguration {
     pub fn new() -> Self {
@@ -2102,6 +2114,12 @@ impl FunctionProperties {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum FunctionPropertiesUnion {
+    Aggregate(AggregateFunctionProperties),
+    Scalar(ScalarFunctionProperties),
+}
 #[doc = "Parameters used to specify the type of function to retrieve the default definition for."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FunctionRetrieveDefaultDefinitionParameters {
@@ -2113,6 +2131,18 @@ impl FunctionRetrieveDefaultDefinitionParameters {
     pub fn new(binding_type: String) -> Self {
         Self { binding_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "bindingType")]
+pub enum FunctionRetrieveDefaultDefinitionParametersUnion {
+    #[serde(rename = "Microsoft.MachineLearningServices")]
+    MicrosoftMachineLearningServices(AzureMachineLearningServiceFunctionRetrieveDefaultDefinitionParameters),
+    #[serde(rename = "Microsoft.MachineLearning/WebService")]
+    MicrosoftMachineLearningWebService(AzureMachineLearningStudioFunctionRetrieveDefaultDefinitionParameters),
+    #[serde(rename = "Microsoft.StreamAnalytics/CLRUdf")]
+    MicrosoftStreamAnalyticsClrUdf(CSharpFunctionRetrieveDefaultDefinitionParameters),
+    #[serde(rename = "Microsoft.StreamAnalytics/JavascriptUdf")]
+    MicrosoftStreamAnalyticsJavascriptUdf(JavaScriptFunctionRetrieveDefaultDefinitionParameters),
 }
 #[doc = "Describes a Gateway Message Bus output data source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2344,7 +2374,7 @@ pub struct Input {
     pub sub_resource: SubResource,
     #[doc = "The properties that are associated with an input."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<InputProperties>,
+    pub properties: Option<InputPropertiesUnion>,
 }
 impl Input {
     pub fn new() -> Self {
@@ -2384,7 +2414,7 @@ pub struct InputProperties {
     pub type_: String,
     #[doc = "Describes how data from an input is serialized or how data is serialized when written to an output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub serialization: Option<Serialization>,
+    pub serialization: Option<SerializationUnion>,
     #[doc = "Describes conditions applicable to the Input, Output, or the job overall, that warrant customer attention."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub diagnostics: Option<Diagnostics>,
@@ -2413,6 +2443,12 @@ impl InputProperties {
             watermark_settings: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum InputPropertiesUnion {
+    Reference(ReferenceInputProperties),
+    Stream(StreamInputProperties),
 }
 #[doc = "The input watermark mode."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2827,6 +2863,40 @@ impl OutputDataSource {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum OutputDataSourceUnion {
+    #[serde(rename = "Microsoft.Kusto/clusters/databases")]
+    MicrosoftKustoClustersDatabases(AzureDataExplorerOutputDataSource),
+    #[serde(rename = "Microsoft.DataLake/Accounts")]
+    MicrosoftDataLakeAccounts(AzureDataLakeStoreOutputDataSource),
+    #[serde(rename = "Microsoft.AzureFunction")]
+    MicrosoftAzureFunction(AzureFunctionOutputDataSource),
+    #[serde(rename = "Microsoft.Sql/Server/Database")]
+    MicrosoftSqlServerDatabase(AzureSqlDatabaseOutputDataSource),
+    #[serde(rename = "Microsoft.Sql/Server/DataWarehouse")]
+    MicrosoftSqlServerDataWarehouse(AzureSynapseOutputDataSource),
+    #[serde(rename = "Microsoft.Storage/Table")]
+    MicrosoftStorageTable(AzureTableOutputDataSource),
+    #[serde(rename = "Microsoft.Storage/Blob")]
+    MicrosoftStorageBlob(BlobOutputDataSource),
+    #[serde(rename = "Microsoft.Storage/DocumentDB")]
+    MicrosoftStorageDocumentDb(DocumentDbOutputDataSource),
+    #[serde(rename = "Microsoft.ServiceBus/EventHub")]
+    MicrosoftServiceBusEventHub(EventHubOutputDataSource),
+    #[serde(rename = "Microsoft.EventHub/EventHub")]
+    MicrosoftEventHubEventHub(EventHubV2OutputDataSource),
+    GatewayMessageBus(GatewayMessageBusOutputDataSource),
+    #[serde(rename = "Microsoft.DBForPostgreSQL/servers/databases")]
+    MicrosoftDbForPostgreSqlServersDatabases(PostgreSqlOutputDataSource),
+    #[serde(rename = "PowerBI")]
+    PowerBi(PowerBiOutputDataSource),
+    Raw(RawOutputDatasource),
+    #[serde(rename = "Microsoft.ServiceBus/Queue")]
+    MicrosoftServiceBusQueue(ServiceBusQueueOutputDataSource),
+    #[serde(rename = "Microsoft.ServiceBus/Topic")]
+    MicrosoftServiceBusTopic(ServiceBusTopicOutputDataSource),
+}
 #[doc = "Indicates the policy to apply to events that arrive at the output and cannot be written to the external storage due to being malformed (missing column values, column values of wrong type or size)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "OutputErrorPolicy")]
@@ -2894,7 +2964,7 @@ impl OutputListResult {
 pub struct OutputProperties {
     #[doc = "Describes the data source that output will be written to."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub datasource: Option<OutputDataSource>,
+    pub datasource: Option<OutputDataSourceUnion>,
     #[doc = "The time frame for filtering Stream Analytics job outputs."]
     #[serde(rename = "timeWindow", default, skip_serializing_if = "Option::is_none")]
     pub time_window: Option<String>,
@@ -2903,7 +2973,7 @@ pub struct OutputProperties {
     pub size_window: Option<i32>,
     #[doc = "Describes how data from an input is serialized or how data is serialized when written to an output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub serialization: Option<Serialization>,
+    pub serialization: Option<SerializationUnion>,
     #[doc = "Describes conditions applicable to the Input, Output, or the job overall, that warrant customer attention."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub diagnostics: Option<Diagnostics>,
@@ -3547,6 +3617,16 @@ impl ReferenceInputDataSource {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ReferenceInputDataSourceUnion {
+    #[serde(rename = "Microsoft.Sql/Server/Database")]
+    MicrosoftSqlServerDatabase(AzureSqlReferenceInputDataSource),
+    #[serde(rename = "Microsoft.Storage/Blob")]
+    MicrosoftStorageBlob(BlobReferenceInputDataSource),
+    File(FileReferenceInputDataSource),
+    Raw(RawReferenceInputDataSource),
+}
 #[doc = "The properties that are associated with an input containing reference data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReferenceInputProperties {
@@ -3554,7 +3634,7 @@ pub struct ReferenceInputProperties {
     pub input_properties: InputProperties,
     #[doc = "Describes an input data source that contains reference data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub datasource: Option<ReferenceInputDataSource>,
+    pub datasource: Option<ReferenceInputDataSourceUnion>,
 }
 impl ReferenceInputProperties {
     pub fn new(input_properties: InputProperties) -> Self {
@@ -3781,6 +3861,16 @@ impl Serialization {
     pub fn new(type_: EventSerializationType) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum SerializationUnion {
+    Avro(AvroSerialization),
+    Csv(CsvSerialization),
+    CustomClr(CustomClrSerialization),
+    Delta(DeltaSerialization),
+    Json(JsonSerialization),
+    Parquet(ParquetSerialization),
 }
 #[doc = "The common properties that are associated with Service Bus data sources (Queues, Topics, Event Hubs, etc.)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -4059,6 +4149,22 @@ impl StreamInputDataSource {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum StreamInputDataSourceUnion {
+    #[serde(rename = "Microsoft.Storage/Blob")]
+    MicrosoftStorageBlob(BlobStreamInputDataSource),
+    #[serde(rename = "Microsoft.EventGrid/EventSubscriptions")]
+    MicrosoftEventGridEventSubscriptions(EventGridStreamInputDataSource),
+    #[serde(rename = "Microsoft.ServiceBus/EventHub")]
+    MicrosoftServiceBusEventHub(EventHubStreamInputDataSource),
+    #[serde(rename = "Microsoft.EventHub/EventHub")]
+    MicrosoftEventHubEventHub(EventHubV2StreamInputDataSource),
+    GatewayMessageBus(GatewayMessageBusStreamInputDataSource),
+    #[serde(rename = "Microsoft.Devices/IotHubs")]
+    MicrosoftDevicesIotHubs(IoTHubStreamInputDataSource),
+    Raw(RawStreamInputDataSource),
+}
 #[doc = "The properties that are associated with an input containing stream data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StreamInputProperties {
@@ -4066,7 +4172,7 @@ pub struct StreamInputProperties {
     pub input_properties: InputProperties,
     #[doc = "Describes an input data source that contains stream data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub datasource: Option<StreamInputDataSource>,
+    pub datasource: Option<StreamInputDataSourceUnion>,
 }
 impl StreamInputProperties {
     pub fn new(input_properties: InputProperties) -> Self {

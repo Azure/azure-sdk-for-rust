@@ -257,13 +257,13 @@ pub struct Endpoint {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[doc = "The resource specific properties for the Storage Mover resource."]
-    pub properties: EndpointBaseProperties,
+    pub properties: EndpointBasePropertiesUnion,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 impl Endpoint {
-    pub fn new(properties: EndpointBaseProperties) -> Self {
+    pub fn new(properties: EndpointBasePropertiesUnion) -> Self {
         Self {
             proxy_resource: ProxyResource::default(),
             properties,
@@ -367,6 +367,12 @@ pub mod endpoint_base_properties {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "endpointType")]
+pub enum EndpointBasePropertiesUnion {
+    AzureStorageBlobContainer(AzureStorageBlobContainerEndpointProperties),
+    NfsMount(NfsMountEndpointProperties),
 }
 #[doc = "The Endpoint resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

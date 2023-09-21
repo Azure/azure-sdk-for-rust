@@ -672,7 +672,7 @@ impl Client {
     #[doc = "* `provision_application_type_description_base_required_body_param`: The base type of provision application type description which supports either image store-based provision or external store-based provision."]
     pub fn provision_application_type(
         &self,
-        provision_application_type_description_base_required_body_param: impl Into<models::ProvisionApplicationTypeDescriptionBase>,
+        provision_application_type_description_base_required_body_param: impl Into<models::ProvisionApplicationTypeDescriptionBaseUnion>,
     ) -> provision_application_type::RequestBuilder {
         provision_application_type::RequestBuilder {
             client: self.clone(),
@@ -1183,7 +1183,7 @@ impl Client {
     pub fn create_service(
         &self,
         application_id: impl Into<String>,
-        service_description: impl Into<models::ServiceDescription>,
+        service_description: impl Into<models::ServiceDescriptionUnion>,
     ) -> create_service::RequestBuilder {
         create_service::RequestBuilder {
             client: self.clone(),
@@ -1232,7 +1232,7 @@ impl Client {
     pub fn update_service(
         &self,
         service_id: impl Into<String>,
-        service_update_description: impl Into<models::ServiceUpdateDescription>,
+        service_update_description: impl Into<models::ServiceUpdateDescriptionUnion>,
     ) -> update_service::RequestBuilder {
         update_service::RequestBuilder {
             client: self.clone(),
@@ -8104,7 +8104,7 @@ pub mod provision_application_type {
     #[doc = r" that resolves to a lower-level [`Response`] value."]
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
-        pub(crate) provision_application_type_description_base_required_body_param: models::ProvisionApplicationTypeDescriptionBase,
+        pub(crate) provision_application_type_description_base_required_body_param: models::ProvisionApplicationTypeDescriptionBaseUnion,
         pub(crate) timeout: Option<i64>,
     }
     impl RequestBuilder {
@@ -11404,9 +11404,9 @@ pub mod get_service_info {
     #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
-        pub async fn into_body(self) -> azure_core::Result<models::ServiceInfo> {
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceInfoUnion> {
             let bytes = self.0.into_body().collect().await?;
-            let body: models::ServiceInfo = serde_json::from_slice(&bytes)?;
+            let body: models::ServiceInfoUnion = serde_json::from_slice(&bytes)?;
             Ok(body)
         }
         pub fn into_raw_response(self) -> azure_core::Response {
@@ -11497,8 +11497,8 @@ pub mod get_service_info {
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
-        type Output = azure_core::Result<models::ServiceInfo>;
-        type IntoFuture = BoxFuture<'static, azure_core::Result<models::ServiceInfo>>;
+        type Output = azure_core::Result<models::ServiceInfoUnion>;
+        type IntoFuture = BoxFuture<'static, azure_core::Result<models::ServiceInfoUnion>>;
         #[doc = "Returns a future that sends the request and returns the parsed response body."]
         #[doc = ""]
         #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -11669,7 +11669,7 @@ pub mod create_service {
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) application_id: String,
-        pub(crate) service_description: models::ServiceDescription,
+        pub(crate) service_description: models::ServiceDescriptionUnion,
         pub(crate) timeout: Option<i64>,
     }
     impl RequestBuilder {
@@ -11966,7 +11966,7 @@ pub mod update_service {
     pub struct RequestBuilder {
         pub(crate) client: super::Client,
         pub(crate) service_id: String,
-        pub(crate) service_update_description: models::ServiceUpdateDescription,
+        pub(crate) service_update_description: models::ServiceUpdateDescriptionUnion,
         pub(crate) timeout: Option<i64>,
     }
     impl RequestBuilder {
@@ -12020,9 +12020,9 @@ pub mod get_service_description {
     #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
-        pub async fn into_body(self) -> azure_core::Result<models::ServiceDescription> {
+        pub async fn into_body(self) -> azure_core::Result<models::ServiceDescriptionUnion> {
             let bytes = self.0.into_body().collect().await?;
-            let body: models::ServiceDescription = serde_json::from_slice(&bytes)?;
+            let body: models::ServiceDescriptionUnion = serde_json::from_slice(&bytes)?;
             Ok(body)
         }
         pub fn into_raw_response(self) -> azure_core::Response {
@@ -12111,8 +12111,8 @@ pub mod get_service_description {
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
-        type Output = azure_core::Result<models::ServiceDescription>;
-        type IntoFuture = BoxFuture<'static, azure_core::Result<models::ServiceDescription>>;
+        type Output = azure_core::Result<models::ServiceDescriptionUnion>;
+        type IntoFuture = BoxFuture<'static, azure_core::Result<models::ServiceDescriptionUnion>>;
         #[doc = "Returns a future that sends the request and returns the parsed response body."]
         #[doc = ""]
         #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -13058,9 +13058,9 @@ pub mod get_partition_info {
     #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
-        pub async fn into_body(self) -> azure_core::Result<models::ServicePartitionInfo> {
+        pub async fn into_body(self) -> azure_core::Result<models::ServicePartitionInfoUnion> {
             let bytes = self.0.into_body().collect().await?;
-            let body: models::ServicePartitionInfo = serde_json::from_slice(&bytes)?;
+            let body: models::ServicePartitionInfoUnion = serde_json::from_slice(&bytes)?;
             Ok(body)
         }
         pub fn into_raw_response(self) -> azure_core::Response {
@@ -13145,8 +13145,8 @@ pub mod get_partition_info {
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
-        type Output = azure_core::Result<models::ServicePartitionInfo>;
-        type IntoFuture = BoxFuture<'static, azure_core::Result<models::ServicePartitionInfo>>;
+        type Output = azure_core::Result<models::ServicePartitionInfoUnion>;
+        type IntoFuture = BoxFuture<'static, azure_core::Result<models::ServicePartitionInfoUnion>>;
         #[doc = "Returns a future that sends the request and returns the parsed response body."]
         #[doc = ""]
         #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -15698,9 +15698,9 @@ pub mod get_replica_info {
     #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
-        pub async fn into_body(self) -> azure_core::Result<models::ReplicaInfo> {
+        pub async fn into_body(self) -> azure_core::Result<models::ReplicaInfoUnion> {
             let bytes = self.0.into_body().collect().await?;
-            let body: models::ReplicaInfo = serde_json::from_slice(&bytes)?;
+            let body: models::ReplicaInfoUnion = serde_json::from_slice(&bytes)?;
             Ok(body)
         }
         pub fn into_raw_response(self) -> azure_core::Response {
@@ -15791,8 +15791,8 @@ pub mod get_replica_info {
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
-        type Output = azure_core::Result<models::ReplicaInfo>;
-        type IntoFuture = BoxFuture<'static, azure_core::Result<models::ReplicaInfo>>;
+        type Output = azure_core::Result<models::ReplicaInfoUnion>;
+        type IntoFuture = BoxFuture<'static, azure_core::Result<models::ReplicaInfoUnion>>;
         #[doc = "Returns a future that sends the request and returns the parsed response body."]
         #[doc = ""]
         #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -15812,9 +15812,9 @@ pub mod get_replica_health {
     #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
-        pub async fn into_body(self) -> azure_core::Result<models::ReplicaHealth> {
+        pub async fn into_body(self) -> azure_core::Result<models::ReplicaHealthUnion> {
             let bytes = self.0.into_body().collect().await?;
-            let body: models::ReplicaHealth = serde_json::from_slice(&bytes)?;
+            let body: models::ReplicaHealthUnion = serde_json::from_slice(&bytes)?;
             Ok(body)
         }
         pub fn into_raw_response(self) -> azure_core::Response {
@@ -15916,8 +15916,8 @@ pub mod get_replica_health {
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
-        type Output = azure_core::Result<models::ReplicaHealth>;
-        type IntoFuture = BoxFuture<'static, azure_core::Result<models::ReplicaHealth>>;
+        type Output = azure_core::Result<models::ReplicaHealthUnion>;
+        type IntoFuture = BoxFuture<'static, azure_core::Result<models::ReplicaHealthUnion>>;
         #[doc = "Returns a future that sends the request and returns the parsed response body."]
         #[doc = ""]
         #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -15937,9 +15937,9 @@ pub mod get_replica_health_using_policy {
     #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
-        pub async fn into_body(self) -> azure_core::Result<models::ReplicaHealth> {
+        pub async fn into_body(self) -> azure_core::Result<models::ReplicaHealthUnion> {
             let bytes = self.0.into_body().collect().await?;
-            let body: models::ReplicaHealth = serde_json::from_slice(&bytes)?;
+            let body: models::ReplicaHealthUnion = serde_json::from_slice(&bytes)?;
             Ok(body)
         }
         pub fn into_raw_response(self) -> azure_core::Response {
@@ -16052,8 +16052,8 @@ pub mod get_replica_health_using_policy {
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
-        type Output = azure_core::Result<models::ReplicaHealth>;
-        type IntoFuture = BoxFuture<'static, azure_core::Result<models::ReplicaHealth>>;
+        type Output = azure_core::Result<models::ReplicaHealthUnion>;
+        type IntoFuture = BoxFuture<'static, azure_core::Result<models::ReplicaHealthUnion>>;
         #[doc = "Returns a future that sends the request and returns the parsed response body."]
         #[doc = ""]
         #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -16318,9 +16318,9 @@ pub mod get_deployed_service_replica_detail_info {
     #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
-        pub async fn into_body(self) -> azure_core::Result<models::DeployedServiceReplicaDetailInfo> {
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServiceReplicaDetailInfoUnion> {
             let bytes = self.0.into_body().collect().await?;
-            let body: models::DeployedServiceReplicaDetailInfo = serde_json::from_slice(&bytes)?;
+            let body: models::DeployedServiceReplicaDetailInfoUnion = serde_json::from_slice(&bytes)?;
             Ok(body)
         }
         pub fn into_raw_response(self) -> azure_core::Response {
@@ -16413,8 +16413,8 @@ pub mod get_deployed_service_replica_detail_info {
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
-        type Output = azure_core::Result<models::DeployedServiceReplicaDetailInfo>;
-        type IntoFuture = BoxFuture<'static, azure_core::Result<models::DeployedServiceReplicaDetailInfo>>;
+        type Output = azure_core::Result<models::DeployedServiceReplicaDetailInfoUnion>;
+        type IntoFuture = BoxFuture<'static, azure_core::Result<models::DeployedServiceReplicaDetailInfoUnion>>;
         #[doc = "Returns a future that sends the request and returns the parsed response body."]
         #[doc = ""]
         #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -16434,9 +16434,9 @@ pub mod get_deployed_service_replica_detail_info_by_partition_id {
     #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
-        pub async fn into_body(self) -> azure_core::Result<models::DeployedServiceReplicaDetailInfo> {
+        pub async fn into_body(self) -> azure_core::Result<models::DeployedServiceReplicaDetailInfoUnion> {
             let bytes = self.0.into_body().collect().await?;
-            let body: models::DeployedServiceReplicaDetailInfo = serde_json::from_slice(&bytes)?;
+            let body: models::DeployedServiceReplicaDetailInfoUnion = serde_json::from_slice(&bytes)?;
             Ok(body)
         }
         pub fn into_raw_response(self) -> azure_core::Response {
@@ -16527,8 +16527,8 @@ pub mod get_deployed_service_replica_detail_info_by_partition_id {
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
-        type Output = azure_core::Result<models::DeployedServiceReplicaDetailInfo>;
-        type IntoFuture = BoxFuture<'static, azure_core::Result<models::DeployedServiceReplicaDetailInfo>>;
+        type Output = azure_core::Result<models::DeployedServiceReplicaDetailInfoUnion>;
+        type IntoFuture = BoxFuture<'static, azure_core::Result<models::DeployedServiceReplicaDetailInfoUnion>>;
         #[doc = "Returns a future that sends the request and returns the parsed response body."]
         #[doc = ""]
         #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]

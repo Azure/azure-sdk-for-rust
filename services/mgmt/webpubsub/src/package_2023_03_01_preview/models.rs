@@ -313,12 +313,12 @@ impl EventHubEndpoint {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventListener {
     #[doc = "A base class for event filter which determines whether an event should be sent to an event listener."]
-    pub filter: EventListenerFilter,
+    pub filter: EventListenerFilterUnion,
     #[doc = "An endpoint specifying where Web PubSub should send events to."]
-    pub endpoint: EventListenerEndpoint,
+    pub endpoint: EventListenerEndpointUnion,
 }
 impl EventListener {
-    pub fn new(filter: EventListenerFilter, endpoint: EventListenerEndpoint) -> Self {
+    pub fn new(filter: EventListenerFilterUnion, endpoint: EventListenerEndpointUnion) -> Self {
         Self { filter, endpoint }
     }
 }
@@ -370,6 +370,11 @@ pub mod event_listener_endpoint {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum EventListenerEndpointUnion {
+    EventHub(EventHubEndpoint),
+}
 #[doc = "A base class for event filter which determines whether an event should be sent to an event listener."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventListenerFilter {
@@ -417,6 +422,11 @@ pub mod event_listener_filter {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum EventListenerFilterUnion {
+    EventName(EventNameFilter),
 }
 #[doc = "Filter events by their name."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

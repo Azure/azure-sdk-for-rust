@@ -77,6 +77,9 @@ impl Attestation {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AttestationUnion {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudPropertyJobData {
     #[serde(flatten)]
@@ -121,7 +124,7 @@ pub struct ContinuousDataExport {
     #[doc = "Display name of the continuous data export."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    pub endpoint: Endpoint,
+    pub endpoint: EndpointUnion,
     #[doc = "Indicates whether the continuous data export is starting, running, etc."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -131,7 +134,7 @@ pub struct ContinuousDataExport {
     pub sources: Vec<String>,
 }
 impl ContinuousDataExport {
-    pub fn new(endpoint: Endpoint, enabled: bool, sources: Vec<String>) -> Self {
+    pub fn new(endpoint: EndpointUnion, enabled: bool, sources: Vec<String>) -> Self {
         Self {
             id: None,
             etag: None,
@@ -427,6 +430,9 @@ impl Endpoint {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum EndpointUnion {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubsEndpoint {
     #[serde(flatten)]
@@ -455,13 +461,13 @@ pub struct Job {
     #[serde(rename = "cancellationThreshold", default, skip_serializing_if = "Option::is_none")]
     pub cancellation_threshold: Option<JobCancellationThreshold>,
     #[doc = "The capabilities being updated by the job and the values with which they are being updated."]
-    pub data: Vec<JobData>,
+    pub data: Vec<JobDataUnion>,
     #[doc = "Indicates whether the job is starting, running, etc."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
 impl Job {
-    pub fn new(group: String, data: Vec<JobData>) -> Self {
+    pub fn new(group: String, data: Vec<JobDataUnion>) -> Self {
         Self {
             id: None,
             display_name: None,
@@ -567,6 +573,9 @@ impl JobData {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum JobDataUnion {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDeviceStatus {
     #[doc = "ID of the device whose job status is being provided."]
@@ -781,10 +790,13 @@ impl User {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum UserUnion {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserCollection {
     #[doc = "The collection of users."]
-    pub value: Vec<User>,
+    pub value: Vec<UserUnion>,
     #[doc = "URL to get the next page of users."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -796,7 +808,7 @@ impl azure_core::Continuable for UserCollection {
     }
 }
 impl UserCollection {
-    pub fn new(value: Vec<User>) -> Self {
+    pub fn new(value: Vec<UserUnion>) -> Self {
         Self { value, next_link: None }
     }
 }

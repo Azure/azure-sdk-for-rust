@@ -57,6 +57,12 @@ impl DistributeVersioner {
         Self { scheme }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "scheme")]
+pub enum DistributeVersionerUnion {
+    Latest(DistributeVersionerLatest),
+    Source(DistributeVersionerSource),
+}
 #[doc = "Generates version number that will be latest based on existing version numbers."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DistributeVersionerLatest {
@@ -120,6 +126,15 @@ impl ImageTemplateCustomizer {
         Self { type_, name: None }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ImageTemplateCustomizerUnion {
+    File(ImageTemplateFileCustomizer),
+    PowerShell(ImageTemplatePowerShellCustomizer),
+    WindowsRestart(ImageTemplateRestartCustomizer),
+    Shell(ImageTemplateShellCustomizer),
+    WindowsUpdate(ImageTemplateWindowsUpdateCustomizer),
+}
 #[doc = "Generic distribution object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateDistributor {
@@ -141,6 +156,14 @@ impl ImageTemplateDistributor {
             artifact_tags: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ImageTemplateDistributorUnion {
+    ManagedImage(ImageTemplateManagedImageDistributor),
+    SharedImage(ImageTemplateSharedImageDistributor),
+    #[serde(rename = "VHD")]
+    Vhd(ImageTemplateVhdDistributor),
 }
 #[doc = "Uploads files to VMs (Linux, Windows). Corresponds to Packer file provisioner"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -230,6 +253,13 @@ impl ImageTemplateInVmValidator {
     pub fn new(type_: String) -> Self {
         Self { type_, name: None }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ImageTemplateInVmValidatorUnion {
+    File(ImageTemplateFileValidator),
+    PowerShell(ImageTemplatePowerShellValidator),
+    Shell(ImageTemplateShellValidator),
 }
 #[doc = "Describes the latest status of running an image template"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -473,14 +503,14 @@ impl ImageTemplatePowerShellValidator {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateProperties {
     #[doc = "Describes a virtual machine image source for building, customizing and distributing"]
-    pub source: ImageTemplateSource,
+    pub source: ImageTemplateSourceUnion,
     #[doc = "Specifies the properties used to describe the customization steps of the image, like Image source etc"]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub customize: Vec<ImageTemplateCustomizer>,
+    pub customize: Vec<ImageTemplateCustomizerUnion>,
     #[doc = "Specifies optimization to be performed on image."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub optimize: Option<image_template_properties::Optimize>,
@@ -488,7 +518,7 @@ pub struct ImageTemplateProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub validate: Option<image_template_properties::Validate>,
     #[doc = "The distribution targets where the image output needs to go to."]
-    pub distribute: Vec<ImageTemplateDistributor>,
+    pub distribute: Vec<ImageTemplateDistributorUnion>,
     #[doc = "Provisioning state of the resource"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -512,7 +542,7 @@ pub struct ImageTemplateProperties {
     pub exact_staging_resource_group: Option<String>,
 }
 impl ImageTemplateProperties {
-    pub fn new(source: ImageTemplateSource, distribute: Vec<ImageTemplateDistributor>) -> Self {
+    pub fn new(source: ImageTemplateSourceUnion, distribute: Vec<ImageTemplateDistributorUnion>) -> Self {
         Self {
             source,
             customize: Vec::new(),
@@ -583,7 +613,7 @@ pub mod image_template_properties {
             deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
-        pub in_vm_validations: Vec<ImageTemplateInVmValidator>,
+        pub in_vm_validations: Vec<ImageTemplateInVmValidatorUnion>,
     }
     impl Validate {
         pub fn new() -> Self {
@@ -648,7 +678,7 @@ pub struct ImageTemplateSharedImageDistributor {
     pub target_regions: Vec<TargetRegion>,
     #[doc = "Describes how to generate new x.y.z version number for distribution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub versioning: Option<DistributeVersioner>,
+    pub versioning: Option<DistributeVersionerUnion>,
 }
 impl ImageTemplateSharedImageDistributor {
     pub fn new(image_template_distributor: ImageTemplateDistributor, gallery_image_id: String) -> Self {
@@ -753,6 +783,13 @@ impl ImageTemplateSource {
     pub fn new(type_: String) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ImageTemplateSourceUnion {
+    ManagedImage(ImageTemplateManagedImageSource),
+    PlatformImage(ImageTemplatePlatformImageSource),
+    SharedImageVersion(ImageTemplateSharedImageVersionSource),
 }
 #[doc = "Parameters for updating an image template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1216,7 +1253,7 @@ pub struct Trigger {
     pub proxy_resource: ProxyResource,
     #[doc = "Describes the properties of a trigger"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<TriggerProperties>,
+    pub properties: Option<TriggerPropertiesUnion>,
 }
 impl Trigger {
     pub fn new() -> Self {
@@ -1263,6 +1300,11 @@ impl TriggerProperties {
             provisioning_state: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum TriggerPropertiesUnion {
+    SourceImage(SourceImageTriggerProperties),
 }
 #[doc = "Describes the status of a trigger"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

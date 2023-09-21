@@ -89,6 +89,16 @@ impl Attestation {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AttestationUnion {
+    #[serde(rename = "symmetricKey")]
+    SymmetricKey(SymmetricKeyAttestation),
+    #[serde(rename = "tpm")]
+    Tpm(TpmAttestation),
+    #[serde(rename = "x509")]
+    X509(X509Attestation),
+}
 #[doc = "The paged results of entities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Collection {
@@ -670,11 +680,21 @@ impl User {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum UserUnion {
+    #[serde(rename = "adGroup")]
+    AdGroup(AdGroupUser),
+    #[serde(rename = "email")]
+    Email(EmailUser),
+    #[serde(rename = "servicePrincipal")]
+    ServicePrincipal(ServicePrincipalUser),
+}
 #[doc = "The paged results of users."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserCollection {
     #[doc = "The collection of users."]
-    pub value: Vec<User>,
+    pub value: Vec<UserUnion>,
     #[doc = "URL to get the next page of users."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -686,7 +706,7 @@ impl azure_core::Continuable for UserCollection {
     }
 }
 impl UserCollection {
-    pub fn new(value: Vec<User>) -> Self {
+    pub fn new(value: Vec<UserUnion>) -> Self {
         Self { value, next_link: None }
     }
 }

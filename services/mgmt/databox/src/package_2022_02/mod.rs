@@ -1778,7 +1778,7 @@ pub mod service {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             location: impl Into<String>,
-            validation_request: impl Into<models::ValidationRequest>,
+            validation_request: impl Into<models::ValidationRequestUnion>,
         ) -> validate_inputs_by_resource_group::RequestBuilder {
             validate_inputs_by_resource_group::RequestBuilder {
                 client: self.0.clone(),
@@ -1798,7 +1798,7 @@ pub mod service {
             &self,
             subscription_id: impl Into<String>,
             location: impl Into<String>,
-            validation_request: impl Into<models::ValidationRequest>,
+            validation_request: impl Into<models::ValidationRequestUnion>,
         ) -> validate_inputs::RequestBuilder {
             validate_inputs::RequestBuilder {
                 client: self.0.clone(),
@@ -2140,7 +2140,7 @@ pub mod service {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) location: String,
-            pub(crate) validation_request: models::ValidationRequest,
+            pub(crate) validation_request: models::ValidationRequestUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -2249,7 +2249,7 @@ pub mod service {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) location: String,
-            pub(crate) validation_request: models::ValidationRequest,
+            pub(crate) validation_request: models::ValidationRequestUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]

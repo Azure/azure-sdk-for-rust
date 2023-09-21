@@ -38,7 +38,7 @@ pub struct AnalysisResultSingletonResource {
     pub system_data: Option<SystemData>,
     #[doc = "The properties of Analysis Result resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AnalysisResultSingletonResourceProperties>,
+    pub properties: Option<AnalysisResultSingletonResourcePropertiesUnion>,
 }
 impl AnalysisResultSingletonResource {
     pub fn new() -> Self {
@@ -114,6 +114,19 @@ pub mod analysis_result_singleton_resource_properties {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "analysisResultType")]
+pub enum AnalysisResultSingletonResourcePropertiesUnion {
+    #[serde(rename = "CPURegression")]
+    CpuRegression(CpuRegressionResultSingletonResourceProperties),
+    #[serde(rename = "CPUUtilization")]
+    CpuUtilization(CpuUtilizationResultSingletonResourceProperties),
+    MemoryRegression(MemoryRegressionResultSingletonResourceProperties),
+    MemoryUtilization(MemoryUtilizationResultSingletonResourceProperties),
+    Reliability(ReliabilityResultSingletonResourceProperties),
+    ScriptExecution(ScriptExecutionResultSingletonResourceProperties),
+    TestAnalysis(TestAnalysisResultSingletonResourceProperties),
 }
 #[doc = "A list of available OSs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

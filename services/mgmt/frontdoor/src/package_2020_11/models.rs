@@ -3338,6 +3338,14 @@ impl RouteConfiguration {
         Self { odata_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@odata.type")]
+pub enum RouteConfigurationUnion {
+    #[serde(rename = "#Microsoft.Azure.FrontDoor.Models.FrontdoorForwardingConfiguration")]
+    MicrosoftAzureFrontDoorModelsFrontdoorForwardingConfiguration(ForwardingConfiguration),
+    #[serde(rename = "#Microsoft.Azure.FrontDoor.Models.FrontdoorRedirectConfiguration")]
+    MicrosoftAzureFrontDoorModelsFrontdoorRedirectConfiguration(RedirectConfiguration),
+}
 #[doc = "A routing rule represents a specification for traffic to treat and where to send it, along with health probe information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoutingRule {
@@ -3434,7 +3442,7 @@ pub struct RoutingRuleUpdateParameters {
     pub enabled_state: Option<routing_rule_update_parameters::EnabledState>,
     #[doc = "Base class for all types of Route."]
     #[serde(rename = "routeConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub route_configuration: Option<RouteConfiguration>,
+    pub route_configuration: Option<RouteConfigurationUnion>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "rulesEngine", default, skip_serializing_if = "Option::is_none")]
     pub rules_engine: Option<SubResource>,
@@ -3541,7 +3549,7 @@ pub struct RulesEngineAction {
     pub response_header_actions: Vec<HeaderAction>,
     #[doc = "Base class for all types of Route."]
     #[serde(rename = "routeConfigurationOverride", default, skip_serializing_if = "Option::is_none")]
-    pub route_configuration_override: Option<RouteConfiguration>,
+    pub route_configuration_override: Option<RouteConfigurationUnion>,
 }
 impl RulesEngineAction {
     pub fn new() -> Self {

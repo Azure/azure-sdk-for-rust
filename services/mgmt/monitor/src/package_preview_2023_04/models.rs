@@ -375,23 +375,23 @@ pub struct AlertRule {
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
     #[doc = "The condition that results in the alert rule being activated."]
-    pub condition: RuleCondition,
+    pub condition: RuleConditionUnion,
     #[doc = "The action that is performed when the alert rule becomes active, and when an alert condition is resolved."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub action: Option<RuleAction>,
+    pub action: Option<RuleActionUnion>,
     #[doc = "the array of actions that are performed when the alert rule becomes active, and when an alert condition is resolved."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub actions: Vec<RuleAction>,
+    pub actions: Vec<RuleActionUnion>,
     #[doc = "Last time the rule was updated in ISO8601 format."]
     #[serde(rename = "lastUpdatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_updated_time: Option<time::OffsetDateTime>,
 }
 impl AlertRule {
-    pub fn new(name: String, is_enabled: bool, condition: RuleCondition) -> Self {
+    pub fn new(name: String, is_enabled: bool, condition: RuleConditionUnion) -> Self {
         Self {
             name,
             description: None,
@@ -3855,6 +3855,16 @@ pub mod metric_alert_criteria {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "odata.type")]
+pub enum MetricAlertCriteriaUnion {
+    #[serde(rename = "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria")]
+    MicrosoftAzureMonitorMultipleResourceMultipleMetricCriteria(MetricAlertMultipleResourceMultipleMetricCriteria),
+    #[serde(rename = "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria")]
+    MicrosoftAzureMonitorSingleResourceMultipleMetricCriteria(MetricAlertSingleResourceMultipleMetricCriteria),
+    #[serde(rename = "Microsoft.Azure.Monitor.WebtestLocationAvailabilityCriteria")]
+    MicrosoftAzureMonitorWebtestLocationAvailabilityCriteria(WebtestLocationAvailabilityCriteria),
+}
 #[doc = "Specifies the metric alert criteria for multiple resource that has multiple metric criteria."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertMultipleResourceMultipleMetricCriteria {
@@ -3867,7 +3877,7 @@ pub struct MetricAlertMultipleResourceMultipleMetricCriteria {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub all_of: Vec<MultiMetricCriteria>,
+    pub all_of: Vec<MultiMetricCriteriaUnion>,
 }
 impl MetricAlertMultipleResourceMultipleMetricCriteria {
     pub fn new(metric_alert_criteria: MetricAlertCriteria) -> Self {
@@ -3902,7 +3912,7 @@ pub struct MetricAlertProperties {
     #[serde(rename = "targetResourceRegion", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_region: Option<String>,
     #[doc = "The rule criteria that defines the conditions of the alert rule."]
-    pub criteria: MetricAlertCriteria,
+    pub criteria: MetricAlertCriteriaUnion,
     #[doc = "the flag that indicates whether the alert should be auto resolved or not. The default is true."]
     #[serde(rename = "autoMitigate", default, skip_serializing_if = "Option::is_none")]
     pub auto_mitigate: Option<bool>,
@@ -3927,7 +3937,7 @@ impl MetricAlertProperties {
         scopes: Vec<String>,
         evaluation_frequency: String,
         window_size: String,
-        criteria: MetricAlertCriteria,
+        criteria: MetricAlertCriteriaUnion,
     ) -> Self {
         Self {
             description: None,
@@ -3979,7 +3989,7 @@ pub struct MetricAlertPropertiesPatch {
     pub target_resource_region: Option<String>,
     #[doc = "The rule criteria that defines the conditions of the alert rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub criteria: Option<MetricAlertCriteria>,
+    pub criteria: Option<MetricAlertCriteriaUnion>,
     #[doc = "the flag that indicates whether the alert should be auto resolved or not. The default is true."]
     #[serde(rename = "autoMitigate", default, skip_serializing_if = "Option::is_none")]
     pub auto_mitigate: Option<bool>,
@@ -4849,6 +4859,12 @@ pub mod multi_metric_criteria {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "criterionType")]
+pub enum MultiMetricCriteriaUnion {
+    DynamicThresholdCriterion(DynamicMetricCriteria),
+    StaticThresholdCriterion(MetricCriteria),
+}
 #[doc = "Kind of namespace"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "NamespaceClassification")]
@@ -5705,6 +5721,14 @@ impl RuleAction {
         Self { odata_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "odata.type")]
+pub enum RuleActionUnion {
+    #[serde(rename = "Microsoft.Azure.Management.Insights.Models.RuleEmailAction")]
+    MicrosoftAzureManagementInsightsModelsRuleEmailAction(RuleEmailAction),
+    #[serde(rename = "Microsoft.Azure.Management.Insights.Models.RuleWebhookAction")]
+    MicrosoftAzureManagementInsightsModelsRuleWebhookAction(RuleWebhookAction),
+}
 #[doc = "The condition that results in the alert rule being activated."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleCondition {
@@ -5713,7 +5737,7 @@ pub struct RuleCondition {
     pub odata_type: String,
     #[doc = "The resource from which the rule collects its data."]
     #[serde(rename = "dataSource", default, skip_serializing_if = "Option::is_none")]
-    pub data_source: Option<RuleDataSource>,
+    pub data_source: Option<RuleDataSourceUnion>,
 }
 impl RuleCondition {
     pub fn new(odata_type: String) -> Self {
@@ -5722,6 +5746,16 @@ impl RuleCondition {
             data_source: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "odata.type")]
+pub enum RuleConditionUnion {
+    #[serde(rename = "Microsoft.Azure.Management.Insights.Models.LocationThresholdRuleCondition")]
+    MicrosoftAzureManagementInsightsModelsLocationThresholdRuleCondition(LocationThresholdRuleCondition),
+    #[serde(rename = "Microsoft.Azure.Management.Insights.Models.ManagementEventRuleCondition")]
+    MicrosoftAzureManagementInsightsModelsManagementEventRuleCondition(ManagementEventRuleCondition),
+    #[serde(rename = "Microsoft.Azure.Management.Insights.Models.ThresholdRuleCondition")]
+    MicrosoftAzureManagementInsightsModelsThresholdRuleCondition(ThresholdRuleCondition),
 }
 #[doc = "The resource from which the rule collects its data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -5752,6 +5786,14 @@ impl RuleDataSource {
             metric_namespace: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "odata.type")]
+pub enum RuleDataSourceUnion {
+    #[serde(rename = "Microsoft.Azure.Management.Insights.Models.RuleManagementEventDataSource")]
+    MicrosoftAzureManagementInsightsModelsRuleManagementEventDataSource(RuleManagementEventDataSource),
+    #[serde(rename = "Microsoft.Azure.Management.Insights.Models.RuleMetricDataSource")]
+    MicrosoftAzureManagementInsightsModelsRuleMetricDataSource(RuleMetricDataSource),
 }
 #[doc = "Specifies the action to send email when the rule condition is evaluated. The discriminator is always RuleEmailAction in this case."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

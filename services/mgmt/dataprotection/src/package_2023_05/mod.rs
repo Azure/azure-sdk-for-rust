@@ -1851,7 +1851,7 @@ pub mod data_protection {
             &self,
             subscription_id: impl Into<String>,
             location: impl Into<String>,
-            parameters: impl Into<models::FeatureValidationRequestBase>,
+            parameters: impl Into<models::FeatureValidationRequestBaseUnion>,
         ) -> check_feature_support::RequestBuilder {
             check_feature_support::RequestBuilder {
                 client: self.0.clone(),
@@ -1870,9 +1870,9 @@ pub mod data_protection {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::FeatureValidationResponseBase> {
+            pub async fn into_body(self) -> azure_core::Result<models::FeatureValidationResponseBaseUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::FeatureValidationResponseBase = serde_json::from_slice(&bytes)?;
+                let body: models::FeatureValidationResponseBaseUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1915,7 +1915,7 @@ pub mod data_protection {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) location: String,
-            pub(crate) parameters: models::FeatureValidationRequestBase,
+            pub(crate) parameters: models::FeatureValidationRequestBaseUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -1957,8 +1957,8 @@ pub mod data_protection {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::FeatureValidationResponseBase>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::FeatureValidationResponseBase>>;
+            type Output = azure_core::Result<models::FeatureValidationResponseBaseUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::FeatureValidationResponseBaseUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -2846,7 +2846,7 @@ pub mod backup_instances {
             resource_group_name: impl Into<String>,
             vault_name: impl Into<String>,
             backup_instance_name: impl Into<String>,
-            parameters: impl Into<models::AzureBackupRestoreRequest>,
+            parameters: impl Into<models::AzureBackupRestoreRequestUnion>,
         ) -> trigger_restore::RequestBuilder {
             trigger_restore::RequestBuilder {
                 client: self.0.clone(),
@@ -4172,7 +4172,7 @@ pub mod backup_instances {
             pub(crate) resource_group_name: String,
             pub(crate) vault_name: String,
             pub(crate) backup_instance_name: String,
-            pub(crate) parameters: models::AzureBackupRestoreRequest,
+            pub(crate) parameters: models::AzureBackupRestoreRequestUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]

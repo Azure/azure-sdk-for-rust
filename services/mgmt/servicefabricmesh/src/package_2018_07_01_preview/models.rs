@@ -432,7 +432,7 @@ pub struct DiagnosticsDescription {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub sinks: Vec<DiagnosticsSinkProperties>,
+    pub sinks: Vec<DiagnosticsSinkPropertiesUnion>,
     #[doc = "Status of whether or not sinks are enabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
@@ -529,6 +529,11 @@ impl DiagnosticsSinkProperties {
             description: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum DiagnosticsSinkPropertiesUnion {
+    AzureInternalMonitoringPipeline(AzureInternalMonitoringPipelineSinkDescription),
 }
 #[doc = "Dimension of a resource metric. For e.g. instance specific HTTP requests for a web app, \nwhere instance name is dimension of the metric HTTP request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

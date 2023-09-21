@@ -366,13 +366,13 @@ pub struct Pipeline {
     #[serde(flatten)]
     pub resource: Resource,
     #[doc = "Custom properties of a Pipeline."]
-    pub properties: PipelineProperties,
+    pub properties: PipelinePropertiesUnion,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 impl Pipeline {
-    pub fn new(properties: PipelineProperties) -> Self {
+    pub fn new(properties: PipelinePropertiesUnion) -> Self {
         Self {
             resource: Resource::default(),
             properties,
@@ -468,6 +468,14 @@ pub mod pipeline_properties {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "pipelineType")]
+pub enum PipelinePropertiesUnion {
+    #[serde(rename = "azurePipeline")]
+    AzurePipeline(AzurePipelineProperties),
+    #[serde(rename = "githubWorkflow")]
+    GithubWorkflow(GithubWorkflowProperties),
 }
 #[doc = "Template used to bootstrap the pipeline."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

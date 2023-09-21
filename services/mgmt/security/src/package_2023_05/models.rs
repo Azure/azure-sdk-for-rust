@@ -173,6 +173,11 @@ impl ServerVulnerabilityAssessmentsSetting {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ServerVulnerabilityAssessmentsSettingUnion {
+    AzureServersSetting(AzureServersSetting),
+}
 #[doc = "The kind of the server vulnerability assessments setting"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ServerVulnerabilityAssessmentsSettingKind")]
@@ -219,7 +224,7 @@ pub struct ServerVulnerabilityAssessmentsSettingsList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<ServerVulnerabilityAssessmentsSetting>,
+    pub value: Vec<ServerVulnerabilityAssessmentsSettingUnion>,
     #[doc = "The URI to fetch the next page"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,

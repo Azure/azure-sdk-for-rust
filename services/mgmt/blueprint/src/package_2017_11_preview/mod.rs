@@ -666,7 +666,7 @@ pub mod artifacts {
             management_group_name: impl Into<String>,
             blueprint_name: impl Into<String>,
             artifact_name: impl Into<String>,
-            artifact: impl Into<models::Artifact>,
+            artifact: impl Into<models::ArtifactUnion>,
         ) -> create_or_update::RequestBuilder {
             create_or_update::RequestBuilder {
                 client: self.0.clone(),
@@ -717,9 +717,9 @@ pub mod artifacts {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Artifact> {
+            pub async fn into_body(self) -> azure_core::Result<models::ArtifactUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Artifact = serde_json::from_slice(&bytes)?;
+                let body: models::ArtifactUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -804,8 +804,8 @@ pub mod artifacts {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Artifact>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Artifact>>;
+            type Output = azure_core::Result<models::ArtifactUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ArtifactUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -825,9 +825,9 @@ pub mod artifacts {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Artifact> {
+            pub async fn into_body(self) -> azure_core::Result<models::ArtifactUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Artifact = serde_json::from_slice(&bytes)?;
+                let body: models::ArtifactUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -871,7 +871,7 @@ pub mod artifacts {
             pub(crate) management_group_name: String,
             pub(crate) blueprint_name: String,
             pub(crate) artifact_name: String,
-            pub(crate) artifact: models::Artifact,
+            pub(crate) artifact: models::ArtifactUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -914,8 +914,8 @@ pub mod artifacts {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Artifact>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Artifact>>;
+            type Output = azure_core::Result<models::ArtifactUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ArtifactUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -935,9 +935,9 @@ pub mod artifacts {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Artifact> {
+            pub async fn into_body(self) -> azure_core::Result<models::ArtifactUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Artifact = serde_json::from_slice(&bytes)?;
+                let body: models::ArtifactUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1022,8 +1022,8 @@ pub mod artifacts {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Artifact>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Artifact>>;
+            type Output = azure_core::Result<models::ArtifactUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ArtifactUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1745,9 +1745,9 @@ pub mod published_artifacts {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Artifact> {
+            pub async fn into_body(self) -> azure_core::Result<models::ArtifactUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Artifact = serde_json::from_slice(&bytes)?;
+                let body: models::ArtifactUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1827,8 +1827,8 @@ pub mod published_artifacts {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Artifact>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Artifact>>;
+            type Output = azure_core::Result<models::ArtifactUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ArtifactUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]

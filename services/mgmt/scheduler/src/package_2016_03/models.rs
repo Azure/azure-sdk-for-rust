@@ -77,10 +77,17 @@ pub mod http_authentication {
         Basic,
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum HttpAuthenticationUnion {
+    Basic(BasicAuthentication),
+    ClientCertificate(ClientCertAuthentication),
+    ActiveDirectoryOAuth(OAuthAuthentication),
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HttpRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authentication: Option<HttpAuthentication>,
+    pub authentication: Option<HttpAuthenticationUnion>,
     #[doc = "Gets or sets the URI of the request."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,

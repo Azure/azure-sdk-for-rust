@@ -319,10 +319,10 @@ pub struct DigitalTwinsEndpointResource {
     #[serde(flatten)]
     pub external_resource: ExternalResource,
     #[doc = "Properties related to Digital Twins Endpoint"]
-    pub properties: DigitalTwinsEndpointResourceProperties,
+    pub properties: DigitalTwinsEndpointResourcePropertiesUnion,
 }
 impl DigitalTwinsEndpointResource {
-    pub fn new(properties: DigitalTwinsEndpointResourceProperties) -> Self {
+    pub fn new(properties: DigitalTwinsEndpointResourcePropertiesUnion) -> Self {
         Self {
             external_resource: ExternalResource::default(),
             properties,
@@ -523,6 +523,13 @@ pub mod digital_twins_endpoint_resource_properties {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "endpointType")]
+pub enum DigitalTwinsEndpointResourcePropertiesUnion {
+    EventGrid(EventGrid),
+    EventHub(EventHub),
+    ServiceBus(ServiceBus),
 }
 #[doc = "The managed identity for the DigitalTwinsInstance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1280,7 +1287,7 @@ pub struct TimeSeriesDatabaseConnection {
     pub external_resource: ExternalResource,
     #[doc = "Properties of a time series database connection resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<TimeSeriesDatabaseConnectionProperties>,
+    pub properties: Option<TimeSeriesDatabaseConnectionPropertiesUnion>,
 }
 impl TimeSeriesDatabaseConnection {
     pub fn new() -> Self {
@@ -1424,4 +1431,9 @@ pub mod time_series_database_connection_properties {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "connectionType")]
+pub enum TimeSeriesDatabaseConnectionPropertiesUnion {
+    AzureDataExplorer(AzureDataExplorerConnectionProperties),
 }

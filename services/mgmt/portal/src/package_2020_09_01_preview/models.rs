@@ -144,6 +144,12 @@ impl DashboardPartMetadata {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum DashboardPartMetadataUnion {
+    #[serde(rename = "Extension/HubsExtension/PartType/MarkdownPart")]
+    ExtensionHubsExtensionPartTypeMarkdownPart(MarkdownPartMetadata),
+}
 #[doc = "A dashboard part."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DashboardParts {
@@ -151,7 +157,7 @@ pub struct DashboardParts {
     pub position: dashboard_parts::Position,
     #[doc = "A dashboard part metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<DashboardPartMetadata>,
+    pub metadata: Option<DashboardPartMetadataUnion>,
 }
 impl DashboardParts {
     pub fn new(position: dashboard_parts::Position) -> Self {

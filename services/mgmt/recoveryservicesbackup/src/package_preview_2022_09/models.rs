@@ -131,10 +131,10 @@ pub struct AzureFileShareProtectionPolicy {
     pub work_load_type: Option<azure_file_share_protection_policy::WorkLoadType>,
     #[doc = "Base class for backup schedule."]
     #[serde(rename = "schedulePolicy", default, skip_serializing_if = "Option::is_none")]
-    pub schedule_policy: Option<SchedulePolicy>,
+    pub schedule_policy: Option<SchedulePolicyUnion>,
     #[doc = "Base class for retention policy."]
     #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub retention_policy: Option<RetentionPolicy>,
+    pub retention_policy: Option<RetentionPolicyUnion>,
     #[doc = "TimeZone optional input as string. For example: TimeZone = \"Pacific Standard Time\"."]
     #[serde(rename = "timeZone", default, skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
@@ -1020,10 +1020,10 @@ pub struct AzureIaaSvmProtectionPolicy {
     pub instant_rp_details: Option<InstantRpAdditionalDetails>,
     #[doc = "Base class for backup schedule."]
     #[serde(rename = "schedulePolicy", default, skip_serializing_if = "Option::is_none")]
-    pub schedule_policy: Option<SchedulePolicy>,
+    pub schedule_policy: Option<SchedulePolicyUnion>,
     #[doc = "Base class for retention policy."]
     #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub retention_policy: Option<RetentionPolicy>,
+    pub retention_policy: Option<RetentionPolicyUnion>,
     #[doc = "Tiering policy to automatically move RPs to another tier\r\nKey is Target Tier, defined in RecoveryPointTierType enum.\r\nTiering policy specifies the criteria to move RP to the target tier."]
     #[serde(rename = "tieringPolicy", default, skip_serializing_if = "Option::is_none")]
     pub tiering_policy: Option<serde_json::Value>,
@@ -1240,7 +1240,7 @@ pub struct AzureSqlProtectionPolicy {
     pub protection_policy: ProtectionPolicy,
     #[doc = "Base class for retention policy."]
     #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub retention_policy: Option<RetentionPolicy>,
+    pub retention_policy: Option<RetentionPolicyUnion>,
 }
 impl AzureSqlProtectionPolicy {
     pub fn new(protection_policy: ProtectionPolicy) -> Self {
@@ -4304,6 +4304,12 @@ pub mod backup_engine_base {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "backupEngineType")]
+pub enum BackupEngineBaseUnion {
+    AzureBackupServerEngine(AzureBackupServerEngine),
+    DpmBackupEngine(DpmBackupEngine),
+}
 #[doc = "The base backup engine class. All workload specific backup engines derive from this class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupEngineBaseResource {
@@ -4311,7 +4317,7 @@ pub struct BackupEngineBaseResource {
     pub resource: Resource,
     #[doc = "The base backup engine class. All workload specific backup engines derive from this class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<BackupEngineBase>,
+    pub properties: Option<BackupEngineBaseUnion>,
 }
 impl BackupEngineBaseResource {
     pub fn new() -> Self {
@@ -4484,6 +4490,14 @@ impl BackupRequest {
         Self { object_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "objectType")]
+pub enum BackupRequestUnion {
+    AzureFileShareBackupRequest(AzureFileShareBackupRequest),
+    AzureWorkloadBackupRequest(AzureWorkloadBackupRequest),
+    #[serde(rename = "IaasVMBackupRequest")]
+    IaasVmBackupRequest(IaasVmBackupRequest),
+}
 #[doc = "Base class for backup request. Workload-specific backup requests are derived from this class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupRequestResource {
@@ -4491,7 +4505,7 @@ pub struct BackupRequestResource {
     pub resource: Resource,
     #[doc = "Base class for backup request. Workload-specific backup requests are derived from this class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<BackupRequest>,
+    pub properties: Option<BackupRequestUnion>,
 }
 impl BackupRequestResource {
     pub fn new() -> Self {
@@ -6172,6 +6186,13 @@ impl FeatureSupportRequest {
         Self { feature_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "featureType")]
+pub enum FeatureSupportRequestUnion {
+    AzureBackupGoals(AzureBackupGoalFeatureSupportRequest),
+    #[serde(rename = "AzureVMResourceBackup")]
+    AzureVmResourceBackup(AzureVmResourceFeatureSupportRequest),
+}
 #[doc = "Base class for generic container of backup items"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GenericContainer {
@@ -6397,6 +6418,14 @@ impl IlrRequest {
         Self { object_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "objectType")]
+pub enum IlrRequestUnion {
+    #[serde(rename = "AzureFileShareProvisionILRRequest")]
+    AzureFileShareProvisionIlrRequest(AzureFileShareProvisionIlrRequest),
+    #[serde(rename = "IaasVMILRRegistrationRequest")]
+    IaasVmilrRegistrationRequest(IaasVmilrRegistrationRequest),
+}
 #[doc = "Parameters to Provision ILR API."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IlrRequestResource {
@@ -6404,7 +6433,7 @@ pub struct IlrRequestResource {
     pub resource: Resource,
     #[doc = "Parameters to Provision ILR API."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<IlrRequest>,
+    pub properties: Option<IlrRequestUnion>,
 }
 impl IlrRequestResource {
     pub fn new() -> Self {
@@ -6953,6 +6982,19 @@ pub mod job {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "jobType")]
+pub enum JobUnion {
+    #[serde(rename = "AzureIaaSVMJob")]
+    AzureIaaSvmJob(AzureIaaSvmJob),
+    #[serde(rename = "AzureIaaSVMJobV2")]
+    AzureIaaSvmJobV2(AzureIaaSvmJobV2),
+    AzureStorageJob(AzureStorageJob),
+    AzureWorkloadJob(AzureWorkloadJob),
+    DpmJob(DpmJob),
+    MabJob(MabJob),
+    VaultJob(VaultJob),
+}
 #[doc = "Filters to list the jobs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobQueryObject {
@@ -7146,7 +7188,7 @@ pub struct JobResource {
     pub resource: Resource,
     #[doc = "Defines workload agnostic properties for a job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<Job>,
+    pub properties: Option<JobUnion>,
 }
 impl JobResource {
     pub fn new() -> Self {
@@ -7860,10 +7902,10 @@ pub struct MabProtectionPolicy {
     pub protection_policy: ProtectionPolicy,
     #[doc = "Base class for backup schedule."]
     #[serde(rename = "schedulePolicy", default, skip_serializing_if = "Option::is_none")]
-    pub schedule_policy: Option<SchedulePolicy>,
+    pub schedule_policy: Option<SchedulePolicyUnion>,
     #[doc = "Base class for retention policy."]
     #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub retention_policy: Option<RetentionPolicy>,
+    pub retention_policy: Option<RetentionPolicyUnion>,
 }
 impl MabProtectionPolicy {
     pub fn new(protection_policy: ProtectionPolicy) -> Self {
@@ -8084,6 +8126,12 @@ impl OperationResultInfoBase {
         Self { object_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "objectType")]
+pub enum OperationResultInfoBaseUnion {
+    ExportJobsOperationResultInfo(ExportJobsOperationResultInfo),
+    OperationResultInfo(OperationResultInfo),
+}
 #[doc = "Base class for operation result info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResultInfoBaseResource {
@@ -8091,7 +8139,7 @@ pub struct OperationResultInfoBaseResource {
     pub operation_worker_response: OperationWorkerResponse,
     #[doc = "Base class for operation result info."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub operation: Option<OperationResultInfoBase>,
+    pub operation: Option<OperationResultInfoBaseUnion>,
 }
 impl OperationResultInfoBaseResource {
     pub fn new() -> Self {
@@ -8121,7 +8169,7 @@ pub struct OperationStatus {
     pub error: Option<OperationStatusError>,
     #[doc = "Base class for additional information of operation status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<OperationStatusExtendedInfo>,
+    pub properties: Option<OperationStatusExtendedInfoUnion>,
 }
 impl OperationStatus {
     pub fn new() -> Self {
@@ -8200,6 +8248,15 @@ impl OperationStatusExtendedInfo {
     pub fn new(object_type: String) -> Self {
         Self { object_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "objectType")]
+pub enum OperationStatusExtendedInfoUnion {
+    OperationStatusJobExtendedInfo(OperationStatusJobExtendedInfo),
+    OperationStatusJobsExtendedInfo(OperationStatusJobsExtendedInfo),
+    #[serde(rename = "OperationStatusProvisionILRExtendedInfo")]
+    OperationStatusProvisionIlrExtendedInfo(OperationStatusProvisionIlrExtendedInfo),
+    OperationStatusValidateOperationExtendedInfo(OperationStatusValidateOperationExtendedInfo),
 }
 #[doc = "Operation status job extended info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -8953,6 +9010,13 @@ pub mod protectable_container {
         AzureWorkloadContainer,
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "protectableContainerType")]
+pub enum ProtectableContainerUnion {
+    StorageContainer(AzureStorageProtectableContainer),
+    #[serde(rename = "VMAppContainer")]
+    VmAppContainer(AzureVmAppContainerProtectableContainer),
+}
 #[doc = "Protectable Container Class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtectableContainerResource {
@@ -8960,7 +9024,7 @@ pub struct ProtectableContainerResource {
     pub resource: Resource,
     #[doc = "Protectable Container Class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ProtectableContainer>,
+    pub properties: Option<ProtectableContainerUnion>,
 }
 impl ProtectableContainerResource {
     pub fn new() -> Self {
@@ -9246,6 +9310,20 @@ pub mod protected_item {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "protectedItemType")]
+pub enum ProtectedItemUnion {
+    AzureFileShareProtectedItem(AzureFileshareProtectedItem),
+    #[serde(rename = "AzureIaaSVMProtectedItem")]
+    AzureIaaSvmProtectedItem(AzureIaaSvmProtectedItem),
+    #[serde(rename = "Microsoft.Sql/servers/databases")]
+    MicrosoftSqlServersDatabases(AzureSqlProtectedItem),
+    AzureVmWorkloadProtectedItem(AzureVmWorkloadProtectedItem),
+    #[serde(rename = "DPMProtectedItem")]
+    DpmProtectedItem(DpmProtectedItem),
+    GenericProtectedItem(GenericProtectedItem),
+    MabFileFolderProtectedItem(MabFileFolderProtectedItem),
+}
 #[doc = "Filters to list backup items."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtectedItemQueryObject {
@@ -9459,7 +9537,7 @@ pub struct ProtectedItemResource {
     pub resource: Resource,
     #[doc = "Base class for backup items."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ProtectedItem>,
+    pub properties: Option<ProtectedItemUnion>,
 }
 impl ProtectedItemResource {
     pub fn new() -> Self {
@@ -9662,6 +9740,19 @@ pub mod protection_container {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "containerType")]
+pub enum ProtectionContainerUnion {
+    AzureSqlContainer(AzureSqlContainer),
+    StorageContainer(AzureStorageContainer),
+    AzureWorkloadContainer(AzureWorkloadContainer),
+    #[serde(rename = "DPMContainer")]
+    DpmContainer(DpmContainer),
+    GenericContainer(GenericContainer),
+    #[serde(rename = "IaasVMContainer")]
+    IaasVmContainer(IaaSvmContainer),
+    Windows(MabContainer),
+}
 #[doc = "Base class for container with backup items. Containers with specific workloads are derived from this class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtectionContainerResource {
@@ -9669,7 +9760,7 @@ pub struct ProtectionContainerResource {
     pub resource: Resource,
     #[doc = "Base class for container with backup items. Containers with specific workloads are derived from this class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ProtectionContainer>,
+    pub properties: Option<ProtectionContainerUnion>,
 }
 impl ProtectionContainerResource {
     pub fn new() -> Self {
@@ -9888,6 +9979,13 @@ pub mod protection_intent {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "protectionIntentItemType")]
+pub enum ProtectionIntentUnion {
+    RecoveryServiceVaultItem(AzureRecoveryServiceVaultProtectionIntent),
+    AzureResourceItem(AzureResourceProtectionIntent),
+    AzureWorkloadContainerAutoProtectionIntent(AzureWorkloadContainerAutoProtectionIntent),
+}
 #[doc = "Filters to list protection intent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtectionIntentQueryObject {
@@ -10014,7 +10112,7 @@ pub struct ProtectionIntentResource {
     pub resource: Resource,
     #[doc = "Base class for backup ProtectionIntent."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ProtectionIntent>,
+    pub properties: Option<ProtectionIntentUnion>,
 }
 impl ProtectionIntentResource {
     pub fn new() -> Self {
@@ -10071,6 +10169,18 @@ impl ProtectionPolicy {
             resource_guard_operation_requests: Vec::new(),
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "backupManagementType")]
+pub enum ProtectionPolicyUnion {
+    AzureStorage(AzureFileShareProtectionPolicy),
+    #[serde(rename = "AzureIaasVM")]
+    AzureIaasVm(AzureIaaSvmProtectionPolicy),
+    AzureSql(AzureSqlProtectionPolicy),
+    AzureWorkload(AzureVmWorkloadProtectionPolicy),
+    GenericProtectionPolicy(GenericProtectionPolicy),
+    #[serde(rename = "MAB")]
+    Mab(MabProtectionPolicy),
 }
 #[doc = "Filters the list backup policies API."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -10226,7 +10336,7 @@ pub struct ProtectionPolicyResource {
     pub resource: Resource,
     #[doc = "Base class for backup policy. Workload-specific backup policies are derived from this class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ProtectionPolicy>,
+    pub properties: Option<ProtectionPolicyUnion>,
 }
 impl ProtectionPolicyResource {
     pub fn new() -> Self {
@@ -10268,6 +10378,15 @@ impl RecoveryPoint {
     pub fn new(object_type: String) -> Self {
         Self { object_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "objectType")]
+pub enum RecoveryPointUnion {
+    AzureFileShareRecoveryPoint(AzureFileShareRecoveryPoint),
+    AzureWorkloadRecoveryPoint(AzureWorkloadRecoveryPoint),
+    GenericRecoveryPoint(GenericRecoveryPoint),
+    #[serde(rename = "IaasVMRecoveryPoint")]
+    IaasVmRecoveryPoint(IaasVmRecoveryPoint),
 }
 #[doc = "Disk configuration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -10374,7 +10493,7 @@ pub struct RecoveryPointResource {
     pub resource: Resource,
     #[doc = "Base class for backup copies. Workload-specific backup copies are derived from this class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RecoveryPoint>,
+    pub properties: Option<RecoveryPointUnion>,
 }
 impl RecoveryPointResource {
     pub fn new() -> Self {
@@ -10716,6 +10835,14 @@ impl RestoreRequest {
         Self { object_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "objectType")]
+pub enum RestoreRequestUnion {
+    AzureFileShareRestoreRequest(AzureFileShareRestoreRequest),
+    AzureWorkloadRestoreRequest(AzureWorkloadRestoreRequest),
+    #[serde(rename = "IaasVMRestoreRequest")]
+    IaasVmRestoreRequest(IaasVmRestoreRequest),
+}
 #[doc = "Base class for restore request. Workload-specific restore requests are derived from this class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestoreRequestResource {
@@ -10723,7 +10850,7 @@ pub struct RestoreRequestResource {
     pub resource: Resource,
     #[doc = "Base class for restore request. Workload-specific restore requests are derived from this class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RestoreRequest>,
+    pub properties: Option<RestoreRequestUnion>,
 }
 impl RestoreRequestResource {
     pub fn new() -> Self {
@@ -10802,6 +10929,12 @@ impl RetentionPolicy {
     pub fn new(retention_policy_type: String) -> Self {
         Self { retention_policy_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "retentionPolicyType")]
+pub enum RetentionPolicyUnion {
+    LongTermRetentionPolicy(LongTermRetentionPolicy),
+    SimpleRetentionPolicy(SimpleRetentionPolicy),
 }
 #[doc = "SQLDataDirectory info"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -10937,6 +11070,14 @@ impl SchedulePolicy {
     pub fn new(schedule_policy_type: String) -> Self {
         Self { schedule_policy_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "schedulePolicyType")]
+pub enum SchedulePolicyUnion {
+    LogSchedulePolicy(LogSchedulePolicy),
+    LongTermSchedulePolicy(LongTermSchedulePolicy),
+    SimpleSchedulePolicy(SimpleSchedulePolicy),
+    SimpleSchedulePolicyV2(SimpleSchedulePolicyV2),
 }
 #[doc = "Base class for get security pin request body"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -11154,10 +11295,10 @@ pub struct SubProtectionPolicy {
     pub policy_type: Option<sub_protection_policy::PolicyType>,
     #[doc = "Base class for backup schedule."]
     #[serde(rename = "schedulePolicy", default, skip_serializing_if = "Option::is_none")]
-    pub schedule_policy: Option<SchedulePolicy>,
+    pub schedule_policy: Option<SchedulePolicyUnion>,
     #[doc = "Base class for retention policy."]
     #[serde(rename = "retentionPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub retention_policy: Option<RetentionPolicy>,
+    pub retention_policy: Option<RetentionPolicyUnion>,
     #[doc = "Tiering policy to automatically move RPs to another tier.\r\nKey is Target Tier, defined in RecoveryPointTierType enum.\r\nTiering policy specifies the criteria to move RP to the target tier."]
     #[serde(rename = "tieringPolicy", default, skip_serializing_if = "Option::is_none")]
     pub tiering_policy: Option<serde_json::Value>,
@@ -11561,6 +11702,11 @@ impl ValidateOperationRequest {
         Self { object_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "objectType")]
+pub enum ValidateOperationRequestUnion {
+    ValidateRestoreOperationRequest(ValidateRestoreOperationRequest),
+}
 #[doc = "Base class for validate operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ValidateOperationResponse {
@@ -11596,7 +11742,7 @@ pub struct ValidateRestoreOperationRequest {
     pub validate_operation_request: ValidateOperationRequest,
     #[doc = "Base class for restore request. Workload-specific restore requests are derived from this class."]
     #[serde(rename = "restoreRequest", default, skip_serializing_if = "Option::is_none")]
-    pub restore_request: Option<RestoreRequest>,
+    pub restore_request: Option<RestoreRequestUnion>,
 }
 impl ValidateRestoreOperationRequest {
     pub fn new(validate_operation_request: ValidateOperationRequest) -> Self {
@@ -11690,6 +11836,11 @@ impl VaultStorageConfigOperationResultResponse {
     pub fn new(object_type: String) -> Self {
         Self { object_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "objectType")]
+pub enum VaultStorageConfigOperationResultResponseUnion {
+    PrepareDataMoveResponse(PrepareDataMoveResponse),
 }
 #[doc = "Weekly retention format."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -11861,6 +12012,11 @@ pub mod workload_item {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "workloadItemType")]
+pub enum WorkloadItemUnion {
+    AzureVmWorkloadItem(AzureVmWorkloadItem),
+}
 #[doc = "Base class for backup item. Workload-specific backup items are derived from this class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadItemResource {
@@ -11868,7 +12024,7 @@ pub struct WorkloadItemResource {
     pub resource: Resource,
     #[doc = "Base class for backup item. Workload-specific backup items are derived from this class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<WorkloadItem>,
+    pub properties: Option<WorkloadItemUnion>,
 }
 impl WorkloadItemResource {
     pub fn new() -> Self {
@@ -11975,6 +12131,14 @@ pub mod workload_protectable_item {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "protectableItemType")]
+pub enum WorkloadProtectableItemUnion {
+    AzureFileShare(AzureFileShareProtectableItem),
+    AzureVmWorkloadProtectableItem(AzureVmWorkloadProtectableItem),
+    #[serde(rename = "IaaSVMProtectableItem")]
+    IaaSvmProtectableItem(IaaSvmProtectableItem),
+}
 #[doc = "Base class for backup item. Workload-specific backup items are derived from this class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadProtectableItemResource {
@@ -11982,7 +12146,7 @@ pub struct WorkloadProtectableItemResource {
     pub resource: Resource,
     #[doc = "Base class for backup item. Workload-specific backup items are derived from this class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<WorkloadProtectableItem>,
+    pub properties: Option<WorkloadProtectableItemUnion>,
 }
 impl WorkloadProtectableItemResource {
     pub fn new() -> Self {

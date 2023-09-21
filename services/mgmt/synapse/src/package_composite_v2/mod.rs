@@ -29961,7 +29961,7 @@ pub mod kusto_pool_databases {
             workspace_name: impl Into<String>,
             kusto_pool_name: impl Into<String>,
             database_name: impl Into<String>,
-            parameters: impl Into<models::Database>,
+            parameters: impl Into<models::DatabaseUnion>,
         ) -> create_or_update::RequestBuilder {
             create_or_update::RequestBuilder {
                 client: self.0.clone(),
@@ -29989,7 +29989,7 @@ pub mod kusto_pool_databases {
             workspace_name: impl Into<String>,
             kusto_pool_name: impl Into<String>,
             database_name: impl Into<String>,
-            parameters: impl Into<models::Database>,
+            parameters: impl Into<models::DatabaseUnion>,
         ) -> update::RequestBuilder {
             update::RequestBuilder {
                 client: self.0.clone(),
@@ -30136,9 +30136,9 @@ pub mod kusto_pool_databases {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Database> {
+            pub async fn into_body(self) -> azure_core::Result<models::DatabaseUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Database = serde_json::from_slice(&bytes)?;
+                let body: models::DatabaseUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -30227,8 +30227,8 @@ pub mod kusto_pool_databases {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Database>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Database>>;
+            type Output = azure_core::Result<models::DatabaseUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DatabaseUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -30248,9 +30248,9 @@ pub mod kusto_pool_databases {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Database> {
+            pub async fn into_body(self) -> azure_core::Result<models::DatabaseUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Database = serde_json::from_slice(&bytes)?;
+                let body: models::DatabaseUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -30295,7 +30295,7 @@ pub mod kusto_pool_databases {
             pub(crate) workspace_name: String,
             pub(crate) kusto_pool_name: String,
             pub(crate) database_name: String,
-            pub(crate) parameters: models::Database,
+            pub(crate) parameters: models::DatabaseUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -30340,8 +30340,8 @@ pub mod kusto_pool_databases {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Database>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Database>>;
+            type Output = azure_core::Result<models::DatabaseUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DatabaseUnion>>;
             #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
@@ -30389,9 +30389,9 @@ pub mod kusto_pool_databases {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Database> {
+            pub async fn into_body(self) -> azure_core::Result<models::DatabaseUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Database = serde_json::from_slice(&bytes)?;
+                let body: models::DatabaseUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -30436,7 +30436,7 @@ pub mod kusto_pool_databases {
             pub(crate) workspace_name: String,
             pub(crate) kusto_pool_name: String,
             pub(crate) database_name: String,
-            pub(crate) parameters: models::Database,
+            pub(crate) parameters: models::DatabaseUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -30481,8 +30481,8 @@ pub mod kusto_pool_databases {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Database>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Database>>;
+            type Output = azure_core::Result<models::DatabaseUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DatabaseUnion>>;
             #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
@@ -30751,7 +30751,7 @@ pub mod kusto_pool_data_connections {
             kusto_pool_name: impl Into<String>,
             database_name: impl Into<String>,
             data_connection_name: impl Into<String>,
-            parameters: impl Into<models::DataConnection>,
+            parameters: impl Into<models::DataConnectionUnion>,
         ) -> create_or_update::RequestBuilder {
             create_or_update::RequestBuilder {
                 client: self.0.clone(),
@@ -30782,7 +30782,7 @@ pub mod kusto_pool_data_connections {
             kusto_pool_name: impl Into<String>,
             database_name: impl Into<String>,
             data_connection_name: impl Into<String>,
-            parameters: impl Into<models::DataConnection>,
+            parameters: impl Into<models::DataConnectionUnion>,
         ) -> update::RequestBuilder {
             update::RequestBuilder {
                 client: self.0.clone(),
@@ -31201,9 +31201,9 @@ pub mod kusto_pool_data_connections {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::DataConnection> {
+            pub async fn into_body(self) -> azure_core::Result<models::DataConnectionUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::DataConnection = serde_json::from_slice(&bytes)?;
+                let body: models::DataConnectionUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -31285,8 +31285,8 @@ pub mod kusto_pool_data_connections {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::DataConnection>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DataConnection>>;
+            type Output = azure_core::Result<models::DataConnectionUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DataConnectionUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -31306,9 +31306,9 @@ pub mod kusto_pool_data_connections {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::DataConnection> {
+            pub async fn into_body(self) -> azure_core::Result<models::DataConnectionUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::DataConnection = serde_json::from_slice(&bytes)?;
+                let body: models::DataConnectionUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -31354,7 +31354,7 @@ pub mod kusto_pool_data_connections {
             pub(crate) kusto_pool_name: String,
             pub(crate) database_name: String,
             pub(crate) data_connection_name: String,
-            pub(crate) parameters: models::DataConnection,
+            pub(crate) parameters: models::DataConnectionUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -31391,8 +31391,8 @@ pub mod kusto_pool_data_connections {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::DataConnection>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DataConnection>>;
+            type Output = azure_core::Result<models::DataConnectionUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DataConnectionUnion>>;
             #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
@@ -31440,9 +31440,9 @@ pub mod kusto_pool_data_connections {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::DataConnection> {
+            pub async fn into_body(self) -> azure_core::Result<models::DataConnectionUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::DataConnection = serde_json::from_slice(&bytes)?;
+                let body: models::DataConnectionUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -31488,7 +31488,7 @@ pub mod kusto_pool_data_connections {
             pub(crate) kusto_pool_name: String,
             pub(crate) database_name: String,
             pub(crate) data_connection_name: String,
-            pub(crate) parameters: models::DataConnection,
+            pub(crate) parameters: models::DataConnectionUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -31525,8 +31525,8 @@ pub mod kusto_pool_data_connections {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::DataConnection>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DataConnection>>;
+            type Output = azure_core::Result<models::DataConnectionUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DataConnectionUnion>>;
             #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]

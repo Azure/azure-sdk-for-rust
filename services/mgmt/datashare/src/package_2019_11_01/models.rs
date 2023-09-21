@@ -1812,6 +1812,24 @@ pub mod data_set {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum DataSetUnion {
+    AdlsGen1File(AdlsGen1FileDataSet),
+    AdlsGen1Folder(AdlsGen1FolderDataSet),
+    AdlsGen2File(AdlsGen2FileDataSet),
+    AdlsGen2FileSystem(AdlsGen2FileSystemDataSet),
+    AdlsGen2Folder(AdlsGen2FolderDataSet),
+    Container(BlobContainerDataSet),
+    Blob(BlobDataSet),
+    BlobFolder(BlobFolderDataSet),
+    KustoCluster(KustoClusterDataSet),
+    KustoDatabase(KustoDatabaseDataSet),
+    #[serde(rename = "SqlDBTable")]
+    SqlDbTable(SqlDbTableDataSet),
+    #[serde(rename = "SqlDWTable")]
+    SqlDwTable(SqlDwTableDataSet),
+}
 #[doc = "List response for get DataSets"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataSetList {
@@ -1819,7 +1837,7 @@ pub struct DataSetList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
-    pub value: Vec<DataSet>,
+    pub value: Vec<DataSetUnion>,
 }
 impl azure_core::Continuable for DataSetList {
     type Continuation = String;
@@ -1828,7 +1846,7 @@ impl azure_core::Continuable for DataSetList {
     }
 }
 impl DataSetList {
-    pub fn new(value: Vec<DataSet>) -> Self {
+    pub fn new(value: Vec<DataSetUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -1906,6 +1924,22 @@ pub mod data_set_mapping {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum DataSetMappingUnion {
+    AdlsGen2File(AdlsGen2FileDataSetMapping),
+    AdlsGen2FileSystem(AdlsGen2FileSystemDataSetMapping),
+    AdlsGen2Folder(AdlsGen2FolderDataSetMapping),
+    Container(BlobContainerDataSetMapping),
+    Blob(BlobDataSetMapping),
+    BlobFolder(BlobFolderDataSetMapping),
+    KustoCluster(KustoClusterDataSetMapping),
+    KustoDatabase(KustoDatabaseDataSetMapping),
+    #[serde(rename = "SqlDBTable")]
+    SqlDbTable(SqlDbTableDataSetMapping),
+    #[serde(rename = "SqlDWTable")]
+    SqlDwTable(SqlDwTableDataSetMapping),
+}
 #[doc = "List response for get DataSetMappings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataSetMappingList {
@@ -1913,7 +1947,7 @@ pub struct DataSetMappingList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
-    pub value: Vec<DataSetMapping>,
+    pub value: Vec<DataSetMappingUnion>,
 }
 impl azure_core::Continuable for DataSetMappingList {
     type Continuation = String;
@@ -1922,7 +1956,7 @@ impl azure_core::Continuable for DataSetMappingList {
     }
 }
 impl DataSetMappingList {
-    pub fn new(value: Vec<DataSetMapping>) -> Self {
+    pub fn new(value: Vec<DataSetMappingUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -4085,6 +4119,11 @@ pub mod source_share_synchronization_setting {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum SourceShareSynchronizationSettingUnion {
+    ScheduleBased(ScheduledSourceSynchronizationSetting),
+}
 #[doc = "List response for get source share Synchronization settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceShareSynchronizationSettingList {
@@ -4092,7 +4131,7 @@ pub struct SourceShareSynchronizationSettingList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
-    pub value: Vec<SourceShareSynchronizationSetting>,
+    pub value: Vec<SourceShareSynchronizationSettingUnion>,
 }
 impl azure_core::Continuable for SourceShareSynchronizationSettingList {
     type Continuation = String;
@@ -4101,7 +4140,7 @@ impl azure_core::Continuable for SourceShareSynchronizationSettingList {
     }
 }
 impl SourceShareSynchronizationSettingList {
-    pub fn new(value: Vec<SourceShareSynchronizationSetting>) -> Self {
+    pub fn new(value: Vec<SourceShareSynchronizationSettingUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -4675,6 +4714,11 @@ pub mod synchronization_setting {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum SynchronizationSettingUnion {
+    ScheduleBased(ScheduledSynchronizationSetting),
+}
 #[doc = "List response for get Synchronization settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SynchronizationSettingList {
@@ -4682,7 +4726,7 @@ pub struct SynchronizationSettingList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
-    pub value: Vec<SynchronizationSetting>,
+    pub value: Vec<SynchronizationSettingUnion>,
 }
 impl azure_core::Continuable for SynchronizationSettingList {
     type Continuation = String;
@@ -4691,7 +4735,7 @@ impl azure_core::Continuable for SynchronizationSettingList {
     }
 }
 impl SynchronizationSettingList {
-    pub fn new(value: Vec<SynchronizationSetting>) -> Self {
+    pub fn new(value: Vec<SynchronizationSettingUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -4801,6 +4845,11 @@ pub mod trigger {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum TriggerUnion {
+    ScheduleBased(ScheduledTrigger),
+}
 #[doc = "List response for get triggers"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TriggerList {
@@ -4808,7 +4857,7 @@ pub struct TriggerList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
-    pub value: Vec<Trigger>,
+    pub value: Vec<TriggerUnion>,
 }
 impl azure_core::Continuable for TriggerList {
     type Continuation = String;
@@ -4817,7 +4866,7 @@ impl azure_core::Continuable for TriggerList {
     }
 }
 impl TriggerList {
-    pub fn new(value: Vec<Trigger>) -> Self {
+    pub fn new(value: Vec<TriggerUnion>) -> Self {
         Self { next_link: None, value }
     }
 }

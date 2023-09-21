@@ -3670,7 +3670,7 @@ pub struct MediaJobCanceledEventData {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub outputs: Vec<MediaJobOutput>,
+    pub outputs: Vec<MediaJobOutputUnion>,
 }
 impl MediaJobCanceledEventData {
     pub fn new() -> Self {
@@ -3775,7 +3775,7 @@ pub struct MediaJobErroredEventData {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub outputs: Vec<MediaJobOutput>,
+    pub outputs: Vec<MediaJobOutputUnion>,
 }
 impl MediaJobErroredEventData {
     pub fn new() -> Self {
@@ -3793,7 +3793,7 @@ pub struct MediaJobFinishedEventData {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub outputs: Vec<MediaJobOutput>,
+    pub outputs: Vec<MediaJobOutputUnion>,
 }
 impl MediaJobFinishedEventData {
     pub fn new() -> Self {
@@ -3841,6 +3841,12 @@ pub mod media_job_output {
         Queued,
         Scheduled,
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@odata.type")]
+pub enum MediaJobOutputUnion {
+    #[serde(rename = "#Microsoft.Media.JobOutputAsset")]
+    MicrosoftMediaJobOutputAsset(MediaJobOutputAsset),
 }
 #[doc = "The event data for a Job output asset."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3951,7 +3957,7 @@ pub struct MediaJobOutputStateChangeEventData {
     pub previous_state: Option<media_job_output_state_change_event_data::PreviousState>,
     #[doc = "The event data for a Job output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub output: Option<MediaJobOutput>,
+    pub output: Option<MediaJobOutputUnion>,
     #[doc = "Gets the Job correlation data."]
     #[serde(rename = "jobCorrelationData", default, skip_serializing_if = "Option::is_none")]
     pub job_correlation_data: Option<serde_json::Value>,

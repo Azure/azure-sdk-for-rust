@@ -134,10 +134,10 @@ pub struct ApplicationScopedVolume {
     pub volume_reference: VolumeReference,
     #[doc = "Describes parameters for creating application-scoped volumes."]
     #[serde(rename = "creationParameters")]
-    pub creation_parameters: ApplicationScopedVolumeCreationParameters,
+    pub creation_parameters: ApplicationScopedVolumeCreationParametersUnion,
 }
 impl ApplicationScopedVolume {
-    pub fn new(volume_reference: VolumeReference, creation_parameters: ApplicationScopedVolumeCreationParameters) -> Self {
+    pub fn new(volume_reference: VolumeReference, creation_parameters: ApplicationScopedVolumeCreationParametersUnion) -> Self {
         Self {
             volume_reference,
             creation_parameters,
@@ -157,6 +157,11 @@ impl ApplicationScopedVolumeCreationParameters {
     pub fn new(kind: ApplicationScopedVolumeKind) -> Self {
         Self { kind, description: None }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ApplicationScopedVolumeCreationParametersUnion {
+    ServiceFabricVolumeDisk(ApplicationScopedVolumeCreationParametersServiceFabricVolumeDisk),
 }
 #[doc = "Describes parameters for creating application-scoped volumes provided by Service Fabric Volume Disks"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -268,6 +273,11 @@ impl AutoScalingMechanism {
         Self { kind }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AutoScalingMechanismUnion {
+    AddRemoveReplica(AddRemoveReplicaScalingMechanism),
+}
 #[doc = "Enumerates the mechanisms for auto scaling."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "AutoScalingMechanismKind")]
@@ -314,6 +324,11 @@ impl AutoScalingMetric {
         Self { kind }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AutoScalingMetricUnion {
+    Resource(AutoScalingResourceMetric),
+}
 #[doc = "Enumerates the metrics that are used for triggering auto scaling."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "AutoScalingMetricKind")]
@@ -355,12 +370,12 @@ pub struct AutoScalingPolicy {
     #[doc = "The name of the auto scaling policy."]
     pub name: String,
     #[doc = "Describes the trigger for performing auto scaling operation."]
-    pub trigger: AutoScalingTrigger,
+    pub trigger: AutoScalingTriggerUnion,
     #[doc = "Describes the mechanism for performing auto scaling operation. Derived classes will describe the actual mechanism."]
-    pub mechanism: AutoScalingMechanism,
+    pub mechanism: AutoScalingMechanismUnion,
 }
 impl AutoScalingPolicy {
-    pub fn new(name: String, trigger: AutoScalingTrigger, mechanism: AutoScalingMechanism) -> Self {
+    pub fn new(name: String, trigger: AutoScalingTriggerUnion, mechanism: AutoScalingMechanismUnion) -> Self {
         Self { name, trigger, mechanism }
     }
 }
@@ -426,6 +441,11 @@ impl AutoScalingTrigger {
     pub fn new(kind: AutoScalingTriggerKind) -> Self {
         Self { kind }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AutoScalingTriggerUnion {
+    AverageLoad(AverageLoadScalingTrigger),
 }
 #[doc = "Enumerates the triggers for auto scaling."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -501,7 +521,7 @@ pub struct AverageLoadScalingTrigger {
     #[serde(flatten)]
     pub auto_scaling_trigger: AutoScalingTrigger,
     #[doc = "Describes the metric that is used for triggering auto scaling operation. Derived classes will describe resources or metrics."]
-    pub metric: AutoScalingMetric,
+    pub metric: AutoScalingMetricUnion,
     #[doc = "Lower load threshold (if average load is below this threshold, service will scale down)."]
     #[serde(rename = "lowerLoadThreshold")]
     pub lower_load_threshold: f64,
@@ -515,7 +535,7 @@ pub struct AverageLoadScalingTrigger {
 impl AverageLoadScalingTrigger {
     pub fn new(
         auto_scaling_trigger: AutoScalingTrigger,
-        metric: AutoScalingMetric,
+        metric: AutoScalingMetricUnion,
         lower_load_threshold: f64,
         upper_load_threshold: f64,
         scale_interval_in_seconds: i64,
@@ -774,7 +794,7 @@ pub struct DiagnosticsDescription {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub sinks: Vec<DiagnosticsSinkProperties>,
+    pub sinks: Vec<DiagnosticsSinkPropertiesUnion>,
     #[doc = "Status of whether or not sinks are enabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
@@ -871,6 +891,11 @@ impl DiagnosticsSinkProperties {
             description: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum DiagnosticsSinkPropertiesUnion {
+    AzureInternalMonitoringPipeline(AzureInternalMonitoringPipelineSinkDescription),
 }
 #[doc = "Dimension of a resource metric. For e.g. instance specific HTTP requests for a web app, \nwhere instance name is dimension of the metric HTTP request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1637,6 +1662,9 @@ impl NetworkResourcePropertiesBase {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum NetworkResourcePropertiesBaseUnion {}
 #[doc = "The operation system required by the code in service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "OperatingSystemType")]
@@ -1991,6 +2019,9 @@ impl SecretResourcePropertiesBase {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum SecretResourcePropertiesBaseUnion {}
 #[doc = "This type represents the unencrypted value of the secret."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretValue {

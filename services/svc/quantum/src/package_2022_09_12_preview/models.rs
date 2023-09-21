@@ -143,10 +143,16 @@ pub mod item_details {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "itemType")]
+pub enum ItemDetailsUnion {
+    Job(JobDetails),
+    Session(SessionDetails),
+}
 #[doc = "List of item details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ItemDetailsList {
-    pub value: Vec<ItemDetails>,
+    pub value: Vec<ItemDetailsUnion>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -158,7 +164,7 @@ impl azure_core::Continuable for ItemDetailsList {
     }
 }
 impl ItemDetailsList {
-    pub fn new(value: Vec<ItemDetails>) -> Self {
+    pub fn new(value: Vec<ItemDetailsUnion>) -> Self {
         Self { value, next_link: None }
     }
 }

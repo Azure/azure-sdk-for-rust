@@ -4777,7 +4777,7 @@ pub mod tasks {
             service_name: impl Into<String>,
             project_name: impl Into<String>,
             task_name: impl Into<String>,
-            parameters: impl Into<models::CommandProperties>,
+            parameters: impl Into<models::CommandPropertiesUnion>,
         ) -> command::RequestBuilder {
             command::RequestBuilder {
                 client: self.0.clone(),
@@ -5504,9 +5504,9 @@ pub mod tasks {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::CommandProperties> {
+            pub async fn into_body(self) -> azure_core::Result<models::CommandPropertiesUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::CommandProperties = serde_json::from_slice(&bytes)?;
+                let body: models::CommandPropertiesUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -5552,7 +5552,7 @@ pub mod tasks {
             pub(crate) service_name: String,
             pub(crate) project_name: String,
             pub(crate) task_name: String,
-            pub(crate) parameters: models::CommandProperties,
+            pub(crate) parameters: models::CommandPropertiesUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -5597,8 +5597,8 @@ pub mod tasks {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::CommandProperties>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::CommandProperties>>;
+            type Output = azure_core::Result<models::CommandPropertiesUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::CommandPropertiesUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]

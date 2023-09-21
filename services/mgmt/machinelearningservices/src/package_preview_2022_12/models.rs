@@ -883,6 +883,13 @@ impl AssetReferenceBase {
         Self { reference_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "referenceType")]
+pub enum AssetReferenceBaseUnion {
+    DataPath(DataPathAssetReference),
+    Id(IdAssetReference),
+    OutputPath(OutputPathAssetReference),
+}
 #[doc = "A user that can be assigned to a compute instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AssignedUser {
@@ -927,10 +934,10 @@ pub struct AutoMlJob {
     pub resources: Option<JobResourceConfiguration>,
     #[doc = "AutoML vertical class.\r\nBase class for AutoML verticals - TableVertical/ImageVertical/NLPVertical"]
     #[serde(rename = "taskDetails")]
-    pub task_details: AutoMlVertical,
+    pub task_details: AutoMlVerticalUnion,
 }
 impl AutoMlJob {
-    pub fn new(job_base: JobBase, task_details: AutoMlVertical) -> Self {
+    pub fn new(job_base: JobBase, task_details: AutoMlVerticalUnion) -> Self {
         Self {
             job_base,
             environment_id: None,
@@ -965,6 +972,21 @@ impl AutoMlVertical {
             training_data,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "taskType")]
+pub enum AutoMlVerticalUnion {
+    Classification(Classification),
+    Forecasting(Forecasting),
+    ImageClassification(ImageClassification),
+    ImageClassificationMultilabel(ImageClassificationMultilabel),
+    ImageInstanceSegmentation(ImageInstanceSegmentation),
+    ImageObjectDetection(ImageObjectDetection),
+    Regression(Regression),
+    TextClassification(TextClassification),
+    TextClassificationMultilabel(TextClassificationMultilabel),
+    #[serde(rename = "TextNER")]
+    TextNer(TextNer),
 }
 #[doc = "N-Cross validations determined automatically."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1272,7 +1294,7 @@ pub struct BatchDeployment {
     pub mini_batch_size: Option<i64>,
     #[doc = "Base definition for asset references."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub model: Option<AssetReferenceBase>,
+    pub model: Option<AssetReferenceBaseUnion>,
     #[doc = "Enum to determine how batch inferencing will handle output"]
     #[serde(rename = "outputAction", default, skip_serializing_if = "Option::is_none")]
     pub output_action: Option<BatchOutputAction>,
@@ -2106,7 +2128,7 @@ pub struct CommandJob {
     pub command: String,
     #[doc = "Base definition for job distribution configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub distribution: Option<DistributionConfiguration>,
+    pub distribution: Option<DistributionConfigurationUnion>,
     #[doc = "[Required] The ARM resource ID of the Environment specification for the job."]
     #[serde(rename = "environmentId")]
     pub environment_id: String,
@@ -2374,6 +2396,22 @@ pub mod compute {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "computeType")]
+pub enum ComputeUnion {
+    #[serde(rename = "AKS")]
+    Aks(Aks),
+    AmlCompute(AmlCompute),
+    ComputeInstance(ComputeInstance),
+    DataFactory(DataFactory),
+    DataLakeAnalytics(DataLakeAnalytics),
+    Databricks(Databricks),
+    #[serde(rename = "HDInsight")]
+    HdInsight(HdInsight),
+    Kubernetes(Kubernetes),
+    SynapseSpark(SynapseSpark),
+    VirtualMachine(VirtualMachine),
 }
 #[doc = "An Azure Machine Learning compute instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3451,7 +3489,7 @@ impl ComputeResource {
 pub struct ComputeResourceSchema {
     #[doc = "Machine Learning compute object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<Compute>,
+    pub properties: Option<ComputeUnion>,
 }
 impl ComputeResourceSchema {
     pub fn new() -> Self {
@@ -3496,6 +3534,14 @@ impl ComputeSecrets {
     pub fn new(compute_type: ComputeType) -> Self {
         Self { compute_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "computeType")]
+pub enum ComputeSecretsUnion {
+    #[serde(rename = "AKS")]
+    Aks(AksComputeSecrets),
+    Databricks(DatabricksComputeSecrets),
+    VirtualMachine(VirtualMachineSecrets),
 }
 #[doc = "Compute start stop schedule properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -4212,16 +4258,26 @@ impl DataVersionBase {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "dataType")]
+pub enum DataVersionBaseUnion {
+    #[serde(rename = "mltable")]
+    Mltable(MlTableData),
+    #[serde(rename = "uri_file")]
+    UriFile(UriFileDataVersion),
+    #[serde(rename = "uri_folder")]
+    UriFolder(UriFolderDataVersion),
+}
 #[doc = "Azure Resource Manager resource envelope."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataVersionBaseResource {
     #[serde(flatten)]
     pub resource: Resource,
     #[doc = "Data version base definition"]
-    pub properties: DataVersionBase,
+    pub properties: DataVersionBaseUnion,
 }
 impl DataVersionBaseResource {
-    pub fn new(properties: DataVersionBase) -> Self {
+    pub fn new(properties: DataVersionBaseUnion) -> Self {
         Self {
             resource: Resource::default(),
             properties,
@@ -4345,7 +4401,7 @@ pub struct Datastore {
     #[serde(flatten)]
     pub resource_base: ResourceBase,
     #[doc = "Base definition for datastore credentials."]
-    pub credentials: DatastoreCredentials,
+    pub credentials: DatastoreCredentialsUnion,
     #[doc = "Enum to determine the datastore contents type."]
     #[serde(rename = "datastoreType")]
     pub datastore_type: DatastoreType,
@@ -4354,7 +4410,7 @@ pub struct Datastore {
     pub is_default: Option<bool>,
 }
 impl Datastore {
-    pub fn new(credentials: DatastoreCredentials, datastore_type: DatastoreType) -> Self {
+    pub fn new(credentials: DatastoreCredentialsUnion, datastore_type: DatastoreType) -> Self {
         Self {
             resource_base: ResourceBase::default(),
             credentials,
@@ -4362,6 +4418,15 @@ impl Datastore {
             is_default: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "datastoreType")]
+pub enum DatastoreUnion {
+    AzureBlob(AzureBlobDatastore),
+    AzureDataLakeGen1(AzureDataLakeGen1Datastore),
+    AzureDataLakeGen2(AzureDataLakeGen2Datastore),
+    AzureFile(AzureFileDatastore),
+    Hdfs(HdfsDatastore),
 }
 #[doc = "Base definition for datastore credentials."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -4375,16 +4440,27 @@ impl DatastoreCredentials {
         Self { credentials_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "credentialsType")]
+pub enum DatastoreCredentialsUnion {
+    AccountKey(AccountKeyDatastoreCredentials),
+    Certificate(CertificateDatastoreCredentials),
+    KerberosKeytab(KerberosKeytabCredentials),
+    KerberosPassword(KerberosPasswordCredentials),
+    None(NoneDatastoreCredentials),
+    Sas(SasDatastoreCredentials),
+    ServicePrincipal(ServicePrincipalDatastoreCredentials),
+}
 #[doc = "Azure Resource Manager resource envelope."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatastoreResource {
     #[serde(flatten)]
     pub resource: Resource,
     #[doc = "Base definition for datastore contents configuration."]
-    pub properties: Datastore,
+    pub properties: DatastoreUnion,
 }
 impl DatastoreResource {
-    pub fn new(properties: Datastore) -> Self {
+    pub fn new(properties: DatastoreUnion) -> Self {
         Self {
             resource: Resource::default(),
             properties,
@@ -4427,6 +4503,16 @@ impl DatastoreSecrets {
     pub fn new(secrets_type: SecretsType) -> Self {
         Self { secrets_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "secretsType")]
+pub enum DatastoreSecretsUnion {
+    AccountKey(AccountKeyDatastoreSecrets),
+    Certificate(CertificateDatastoreSecrets),
+    KerberosKeytab(KerberosKeytabSecrets),
+    KerberosPassword(KerberosPasswordSecrets),
+    Sas(SasDatastoreSecrets),
+    ServicePrincipal(ServicePrincipalDatastoreSecrets),
 }
 #[doc = "Enum to determine the datastore contents type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -4765,6 +4851,13 @@ impl DistributionConfiguration {
         Self { distribution_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "distributionType")]
+pub enum DistributionConfigurationUnion {
+    Mpi(Mpi),
+    PyTorch(PyTorch),
+    TensorFlow(TensorFlow),
+}
 #[doc = "Enum to determine the job distribution type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "DistributionType")]
@@ -4835,6 +4928,13 @@ impl EarlyTerminationPolicy {
             policy_type,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "policyType")]
+pub enum EarlyTerminationPolicyUnion {
+    Bandit(BanditPolicy),
+    MedianStopping(MedianStoppingPolicy),
+    TruncationSelection(TruncationSelectionPolicy),
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "EarlyTerminationPolicyType")]
@@ -5880,6 +5980,14 @@ impl ExportSummary {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "format")]
+pub enum ExportSummaryUnion {
+    Coco(CocoExportSummary),
+    #[serde(rename = "CSV")]
+    Csv(CsvExportSummary),
+    Dataset(DatasetExportSummary),
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExternalFqdnResponse {
     #[serde(
@@ -6076,6 +6184,12 @@ impl ForecastHorizon {
     pub fn new(mode: ForecastHorizonMode) -> Self {
         Self { mode }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "mode")]
+pub enum ForecastHorizonUnion {
+    Auto(AutoForecastHorizon),
+    Custom(CustomForecastHorizon),
 }
 #[doc = "Enum to determine forecast horizon selection mode."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -6277,13 +6391,13 @@ pub struct ForecastingSettings {
     pub feature_lags: Option<FeatureLags>,
     #[doc = "The desired maximum forecast horizon in units of time-series frequency."]
     #[serde(rename = "forecastHorizon", default, skip_serializing_if = "Option::is_none")]
-    pub forecast_horizon: Option<ForecastHorizon>,
+    pub forecast_horizon: Option<ForecastHorizonUnion>,
     #[doc = "When forecasting, this parameter represents the period with which the forecast is desired, for example daily, weekly, yearly, etc. The forecast frequency is dataset frequency by default."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frequency: Option<String>,
     #[doc = "Forecasting seasonality."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub seasonality: Option<Seasonality>,
+    pub seasonality: Option<SeasonalityUnion>,
     #[doc = "The parameter defining how if AutoML should handle short time series."]
     #[serde(rename = "shortSeriesHandlingConfig", default, skip_serializing_if = "Option::is_none")]
     pub short_series_handling_config: Option<ShortSeriesHandlingConfiguration>,
@@ -6292,10 +6406,10 @@ pub struct ForecastingSettings {
     pub target_aggregate_function: Option<TargetAggregationFunction>,
     #[doc = "The number of past periods to lag from the target column."]
     #[serde(rename = "targetLags", default, skip_serializing_if = "Option::is_none")]
-    pub target_lags: Option<TargetLags>,
+    pub target_lags: Option<TargetLagsUnion>,
     #[doc = "Forecasting target rolling window size."]
     #[serde(rename = "targetRollingWindowSize", default, skip_serializing_if = "Option::is_none")]
-    pub target_rolling_window_size: Option<TargetRollingWindowSize>,
+    pub target_rolling_window_size: Option<TargetRollingWindowSizeUnion>,
     #[doc = "The name of the time column. This parameter is required when forecasting to specify the datetime column in the input data used for building the time series and inferring its frequency."]
     #[serde(rename = "timeColumnName", default, skip_serializing_if = "Option::is_none")]
     pub time_column_name: Option<String>,
@@ -6488,6 +6602,14 @@ impl IdentityConfiguration {
     pub fn new(identity_type: IdentityConfigurationType) -> Self {
         Self { identity_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "identityType")]
+pub enum IdentityConfigurationUnion {
+    #[serde(rename = "AMLToken")]
+    AmlToken(AmlToken),
+    Managed(ManagedIdentity),
+    UserIdentity(UserIdentity),
 }
 #[doc = "Enum to determine identity framework."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -7167,7 +7289,7 @@ impl ImageObjectDetectionBase {
 pub struct ImageSweepSettings {
     #[doc = "Early termination policies enable canceling poor-performing runs before they complete"]
     #[serde(rename = "earlyTermination", default, skip_serializing_if = "Option::is_none")]
-    pub early_termination: Option<EarlyTerminationPolicy>,
+    pub early_termination: Option<EarlyTerminationPolicyUnion>,
     #[serde(rename = "samplingAlgorithm")]
     pub sampling_algorithm: SamplingAlgorithmType,
 }
@@ -7397,7 +7519,7 @@ pub struct JobBase {
     pub experiment_name: Option<String>,
     #[doc = "Base definition for identity configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<IdentityConfiguration>,
+    pub identity: Option<IdentityConfigurationUnion>,
     #[doc = "Is the asset archived?"]
     #[serde(rename = "isArchived", default, skip_serializing_if = "Option::is_none")]
     pub is_archived: Option<bool>,
@@ -7427,16 +7549,27 @@ impl JobBase {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "jobType")]
+pub enum JobBaseUnion {
+    #[serde(rename = "AutoML")]
+    AutoMl(AutoMlJob),
+    Command(CommandJob),
+    Labeling(LabelingJob),
+    Pipeline(PipelineJob),
+    Spark(SparkJob),
+    Sweep(SweepJob),
+}
 #[doc = "Azure Resource Manager resource envelope."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobBaseResource {
     #[serde(flatten)]
     pub resource: Resource,
     #[doc = "Base definition for a job."]
-    pub properties: JobBase,
+    pub properties: JobBaseUnion,
 }
 impl JobBaseResource {
-    pub fn new(properties: JobBase) -> Self {
+    pub fn new(properties: JobBaseUnion) -> Self {
         Self {
             resource: Resource::default(),
             properties,
@@ -7485,6 +7618,24 @@ impl JobInput {
             job_input_type,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "jobInputType")]
+pub enum JobInputUnion {
+    #[serde(rename = "custom_model")]
+    CustomModel(CustomModelJobInput),
+    #[serde(rename = "literal")]
+    Literal(LiteralJobInput),
+    #[serde(rename = "mlflow_model")]
+    MlflowModel(MlFlowModelJobInput),
+    #[serde(rename = "mltable")]
+    Mltable(MlTableJobInput),
+    #[serde(rename = "triton_model")]
+    TritonModel(TritonModelJobInput),
+    #[serde(rename = "uri_file")]
+    UriFile(UriFileJobInput),
+    #[serde(rename = "uri_folder")]
+    UriFolder(UriFolderJobInput),
 }
 #[doc = "Enum to determine the Job Input Type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -7556,6 +7707,12 @@ impl JobLimits {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "jobLimitsType")]
+pub enum JobLimitsUnion {
+    Command(CommandJobLimits),
+    Sweep(SweepJobLimits),
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "JobLimitsType")]
 pub enum JobLimitsType {
@@ -7609,6 +7766,22 @@ impl JobOutput {
             job_output_type,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "jobOutputType")]
+pub enum JobOutputUnion {
+    #[serde(rename = "custom_model")]
+    CustomModel(CustomModelJobOutput),
+    #[serde(rename = "mlflow_model")]
+    MlflowModel(MlFlowModelJobOutput),
+    #[serde(rename = "mltable")]
+    Mltable(MlTableJobOutput),
+    #[serde(rename = "triton_model")]
+    TritonModel(TritonModelJobOutput),
+    #[serde(rename = "uri_file")]
+    UriFile(UriFileJobOutput),
+    #[serde(rename = "uri_folder")]
+    UriFolder(UriFolderJobOutput),
 }
 #[doc = "Enum to determine the Job Output Type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -7724,10 +7897,10 @@ pub struct JobScheduleAction {
     pub schedule_action_base: ScheduleActionBase,
     #[doc = "Base definition for a job."]
     #[serde(rename = "jobDefinition")]
-    pub job_definition: JobBase,
+    pub job_definition: JobBaseUnion,
 }
 impl JobScheduleAction {
-    pub fn new(schedule_action_base: ScheduleActionBase, job_definition: JobBase) -> Self {
+    pub fn new(schedule_action_base: ScheduleActionBase, job_definition: JobBaseUnion) -> Self {
         Self {
             schedule_action_base,
             job_definition,
@@ -7748,7 +7921,7 @@ pub struct JobService {
     pub job_service_type: Option<String>,
     #[doc = "Abstract Nodes definition"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub nodes: Option<Nodes>,
+    pub nodes: Option<NodesUnion>,
     #[doc = "Port for endpoint set by user."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub port: Option<i32>,
@@ -8149,10 +8322,10 @@ pub struct LabelingJob {
     pub label_categories: Option<serde_json::Value>,
     #[doc = "Properties of a labeling job"]
     #[serde(rename = "labelingJobMediaProperties", default, skip_serializing_if = "Option::is_none")]
-    pub labeling_job_media_properties: Option<LabelingJobMediaProperties>,
+    pub labeling_job_media_properties: Option<LabelingJobMediaPropertiesUnion>,
     #[doc = "Labeling MLAssist configuration definition"]
     #[serde(rename = "mlAssistConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub ml_assist_configuration: Option<MlAssistConfiguration>,
+    pub ml_assist_configuration: Option<MlAssistConfigurationUnion>,
     #[doc = "Progress metrics definition"]
     #[serde(rename = "progressMetrics", default, skip_serializing_if = "Option::is_none")]
     pub progress_metrics: Option<ProgressMetrics>,
@@ -8228,6 +8401,12 @@ impl LabelingJobMediaProperties {
     pub fn new(media_type: MediaType) -> Self {
         Self { media_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "mediaType")]
+pub enum LabelingJobMediaPropertiesUnion {
+    Image(LabelingJobImageProperties),
+    Text(LabelingJobTextProperties),
 }
 #[doc = "Azure Resource Manager resource envelope."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -8547,6 +8726,12 @@ impl MlAssistConfiguration {
     pub fn new(ml_assist: MlAssistConfigurationType) -> Self {
         Self { ml_assist }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "mlAssist")]
+pub enum MlAssistConfigurationUnion {
+    Disabled(MlAssistConfigurationDisabled),
+    Enabled(MlAssistConfigurationEnabled),
 }
 #[doc = "Labeling MLAssist configuration definition when MLAssist is disabled"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -9136,6 +9321,12 @@ impl NCrossValidations {
         Self { mode }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "mode")]
+pub enum NCrossValidationsUnion {
+    Auto(AutoNCrossValidations),
+    Custom(CustomNCrossValidations),
+}
 #[doc = "Determines how N-Cross validations value is determined."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "NCrossValidationsMode")]
@@ -9297,7 +9488,7 @@ impl NlpParameterSubspace {
 pub struct NlpSweepSettings {
     #[doc = "Early termination policies enable canceling poor-performing runs before they complete"]
     #[serde(rename = "earlyTermination", default, skip_serializing_if = "Option::is_none")]
-    pub early_termination: Option<EarlyTerminationPolicy>,
+    pub early_termination: Option<EarlyTerminationPolicyUnion>,
     #[serde(rename = "samplingAlgorithm")]
     pub sampling_algorithm: SamplingAlgorithmType,
 }
@@ -9411,6 +9602,11 @@ impl Nodes {
     pub fn new(nodes_value_type: NodesValueType) -> Self {
         Self { nodes_value_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "nodesValueType")]
+pub enum NodesUnion {
+    All(AllNodes),
 }
 #[doc = "The enumerated types for the nodes value"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -9608,7 +9804,7 @@ pub struct OnlineDeployment {
     pub request_settings: Option<OnlineRequestSettings>,
     #[doc = "Online deployment scaling configuration."]
     #[serde(rename = "scaleSettings", default, skip_serializing_if = "Option::is_none")]
-    pub scale_settings: Option<OnlineScaleSettings>,
+    pub scale_settings: Option<OnlineScaleSettingsUnion>,
 }
 impl OnlineDeployment {
     pub fn new(endpoint_compute_type: EndpointComputeType) -> Self {
@@ -9628,6 +9824,12 @@ impl OnlineDeployment {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "endpointComputeType")]
+pub enum OnlineDeploymentUnion {
+    Kubernetes(KubernetesOnlineDeployment),
+    Managed(ManagedOnlineDeployment),
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OnlineDeploymentTrackedResource {
     #[serde(flatten)]
@@ -9638,13 +9840,13 @@ pub struct OnlineDeploymentTrackedResource {
     #[doc = "Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
-    pub properties: OnlineDeployment,
+    pub properties: OnlineDeploymentUnion,
     #[doc = "The resource model definition representing SKU"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
 }
 impl OnlineDeploymentTrackedResource {
-    pub fn new(tracked_resource: TrackedResource, properties: OnlineDeployment) -> Self {
+    pub fn new(tracked_resource: TrackedResource, properties: OnlineDeploymentUnion) -> Self {
         Self {
             tracked_resource,
             identity: None,
@@ -9792,6 +9994,12 @@ impl OnlineScaleSettings {
     pub fn new(scale_type: ScaleType) -> Self {
         Self { scale_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "scaleType")]
+pub enum OnlineScaleSettingsUnion {
+    Default(DefaultScaleSettings),
+    TargetUtilization(TargetUtilizationScaleSettings),
 }
 #[doc = "The type of operating system."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -11284,6 +11492,13 @@ impl SamplingAlgorithm {
         Self { sampling_algorithm_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "samplingAlgorithmType")]
+pub enum SamplingAlgorithmUnion {
+    Bayesian(BayesianSamplingAlgorithm),
+    Grid(GridSamplingAlgorithm),
+    Random(RandomSamplingAlgorithm),
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "SamplingAlgorithmType")]
 pub enum SamplingAlgorithmType {
@@ -11430,7 +11645,7 @@ impl Serialize for ScaleType {
 pub struct Schedule {
     #[serde(flatten)]
     pub resource_base: ResourceBase,
-    pub action: ScheduleActionBase,
+    pub action: ScheduleActionBaseUnion,
     #[doc = "Display name of schedule."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
@@ -11439,10 +11654,10 @@ pub struct Schedule {
     pub is_enabled: Option<bool>,
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ScheduleProvisioningStatus>,
-    pub trigger: TriggerBase,
+    pub trigger: TriggerBaseUnion,
 }
 impl Schedule {
-    pub fn new(action: ScheduleActionBase, trigger: TriggerBase) -> Self {
+    pub fn new(action: ScheduleActionBaseUnion, trigger: TriggerBaseUnion) -> Self {
         Self {
             resource_base: ResourceBase::default(),
             action,
@@ -11462,6 +11677,12 @@ impl ScheduleActionBase {
     pub fn new(action_type: ScheduleActionType) -> Self {
         Self { action_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "actionType")]
+pub enum ScheduleActionBaseUnion {
+    InvokeBatchEndpoint(EndpointScheduleAction),
+    CreateJob(JobScheduleAction),
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ScheduleActionType")]
@@ -11761,6 +11982,12 @@ impl Seasonality {
     pub fn new(mode: SeasonalityMode) -> Self {
         Self { mode }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "mode")]
+pub enum SeasonalityUnion {
+    Auto(AutoSeasonality),
+    Custom(CustomSeasonality),
 }
 #[doc = "Forecasting seasonality mode."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -12229,7 +12456,7 @@ pub struct SparkJob {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub conf: Option<serde_json::Value>,
     #[doc = "Spark job entry point definition."]
-    pub entry: SparkJobEntry,
+    pub entry: SparkJobEntryUnion,
     #[doc = "The ARM resource ID of the Environment specification for the job."]
     #[serde(rename = "environmentId", default, skip_serializing_if = "Option::is_none")]
     pub environment_id: Option<String>,
@@ -12265,7 +12492,7 @@ pub struct SparkJob {
     pub resources: Option<SparkResourceConfiguration>,
 }
 impl SparkJob {
-    pub fn new(job_base: JobBase, code_id: String, entry: SparkJobEntry) -> Self {
+    pub fn new(job_base: JobBase, code_id: String, entry: SparkJobEntryUnion) -> Self {
         Self {
             job_base,
             archives: Vec::new(),
@@ -12293,6 +12520,12 @@ impl SparkJobEntry {
     pub fn new(spark_job_entry_type: SparkJobEntryType) -> Self {
         Self { spark_job_entry_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "sparkJobEntryType")]
+pub enum SparkJobEntryUnion {
+    SparkJobPythonEntry(SparkJobPythonEntry),
+    SparkJobScalaEntry(SparkJobScalaEntry),
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "SparkJobEntryType")]
@@ -12631,7 +12864,7 @@ pub struct SweepJob {
     pub job_base: JobBase,
     #[doc = "Early termination policies enable canceling poor-performing runs before they complete"]
     #[serde(rename = "earlyTermination", default, skip_serializing_if = "Option::is_none")]
-    pub early_termination: Option<EarlyTerminationPolicy>,
+    pub early_termination: Option<EarlyTerminationPolicyUnion>,
     #[doc = "Mapping of input data bindings used in the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub inputs: Option<serde_json::Value>,
@@ -12645,7 +12878,7 @@ pub struct SweepJob {
     pub outputs: Option<serde_json::Value>,
     #[doc = "The Sampling Algorithm used to generate hyperparameter values, along with properties to\r\nconfigure the algorithm"]
     #[serde(rename = "samplingAlgorithm")]
-    pub sampling_algorithm: SamplingAlgorithm,
+    pub sampling_algorithm: SamplingAlgorithmUnion,
     #[doc = "[Required] A dictionary containing each parameter and its distribution. The dictionary key is the name of the parameter"]
     #[serde(rename = "searchSpace")]
     pub search_space: serde_json::Value,
@@ -12656,7 +12889,7 @@ impl SweepJob {
     pub fn new(
         job_base: JobBase,
         objective: Objective,
-        sampling_algorithm: SamplingAlgorithm,
+        sampling_algorithm: SamplingAlgorithmUnion,
         search_space: serde_json::Value,
         trial: TrialComponent,
     ) -> Self {
@@ -12942,7 +13175,7 @@ impl TableParameterSubspace {
 pub struct TableSweepSettings {
     #[doc = "Early termination policies enable canceling poor-performing runs before they complete"]
     #[serde(rename = "earlyTermination", default, skip_serializing_if = "Option::is_none")]
-    pub early_termination: Option<EarlyTerminationPolicy>,
+    pub early_termination: Option<EarlyTerminationPolicyUnion>,
     #[serde(rename = "samplingAlgorithm")]
     pub sampling_algorithm: SamplingAlgorithmType,
 }
@@ -12976,7 +13209,7 @@ pub struct TableVertical {
     pub limit_settings: Option<TableVerticalLimitSettings>,
     #[doc = "N-Cross validations value."]
     #[serde(rename = "nCrossValidations", default, skip_serializing_if = "Option::is_none")]
-    pub n_cross_validations: Option<NCrossValidations>,
+    pub n_cross_validations: Option<NCrossValidationsUnion>,
     #[doc = "Search space for sampling different combinations of models and their hyperparameters."]
     #[serde(
         rename = "searchSpace",
@@ -13130,6 +13363,12 @@ impl TargetLags {
         Self { mode }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "mode")]
+pub enum TargetLagsUnion {
+    Auto(AutoTargetLags),
+    Custom(CustomTargetLags),
+}
 #[doc = "Target lags selection modes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "TargetLagsMode")]
@@ -13177,6 +13416,12 @@ impl TargetRollingWindowSize {
     pub fn new(mode: TargetRollingWindowSizeMode) -> Self {
         Self { mode }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "mode")]
+pub enum TargetRollingWindowSizeUnion {
+    Auto(AutoTargetRollingWindowSize),
+    Custom(CustomTargetRollingWindowSize),
 }
 #[doc = "Target rolling windows size mode."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -13528,7 +13773,7 @@ pub struct TrialComponent {
     pub command: String,
     #[doc = "Base definition for job distribution configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub distribution: Option<DistributionConfiguration>,
+    pub distribution: Option<DistributionConfigurationUnion>,
     #[doc = "[Required] The ARM resource ID of the Environment specification for the job."]
     #[serde(rename = "environmentId")]
     pub environment_id: String,
@@ -13573,6 +13818,12 @@ impl TriggerBase {
             trigger_type,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "triggerType")]
+pub enum TriggerBaseUnion {
+    Cron(CronTrigger),
+    Recurrence(RecurrenceTrigger),
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "TriggerType")]
@@ -14576,14 +14827,27 @@ pub mod workspace_connection_properties_v2 {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "authType")]
+pub enum WorkspaceConnectionPropertiesV2Union {
+    AccessKey(AccessKeyAuthTypeWorkspaceConnectionProperties),
+    ManagedIdentity(ManagedIdentityAuthTypeWorkspaceConnectionProperties),
+    None(NoneAuthTypeWorkspaceConnectionProperties),
+    #[serde(rename = "PAT")]
+    Pat(PatAuthTypeWorkspaceConnectionProperties),
+    #[serde(rename = "SAS")]
+    Sas(SasAuthTypeWorkspaceConnectionProperties),
+    ServicePrincipal(ServicePrincipalAuthTypeWorkspaceConnectionProperties),
+    UsernamePassword(UsernamePasswordAuthTypeWorkspaceConnectionProperties),
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceConnectionPropertiesV2BasicResource {
     #[serde(flatten)]
     pub resource: Resource,
-    pub properties: WorkspaceConnectionPropertiesV2,
+    pub properties: WorkspaceConnectionPropertiesV2Union,
 }
 impl WorkspaceConnectionPropertiesV2BasicResource {
-    pub fn new(properties: WorkspaceConnectionPropertiesV2) -> Self {
+    pub fn new(properties: WorkspaceConnectionPropertiesV2Union) -> Self {
         Self {
             resource: Resource::default(),
             properties,

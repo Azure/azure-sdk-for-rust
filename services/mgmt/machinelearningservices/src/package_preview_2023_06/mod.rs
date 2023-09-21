@@ -1947,9 +1947,9 @@ pub mod compute {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ComputeSecrets> {
+            pub async fn into_body(self) -> azure_core::Result<models::ComputeSecretsUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ComputeSecrets = serde_json::from_slice(&bytes)?;
+                let body: models::ComputeSecretsUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2037,8 +2037,8 @@ pub mod compute {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::ComputeSecrets>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ComputeSecrets>>;
+            type Output = azure_core::Result<models::ComputeSecretsUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ComputeSecretsUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -15116,9 +15116,9 @@ pub mod datastores {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::DatastoreSecrets> {
+            pub async fn into_body(self) -> azure_core::Result<models::DatastoreSecretsUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::DatastoreSecrets = serde_json::from_slice(&bytes)?;
+                let body: models::DatastoreSecretsUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -15199,8 +15199,8 @@ pub mod datastores {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::DatastoreSecrets>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DatastoreSecrets>>;
+            type Output = azure_core::Result<models::DatastoreSecretsUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DatastoreSecretsUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -20683,7 +20683,7 @@ pub mod labeling_jobs {
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
             id: impl Into<String>,
-            body: impl Into<models::ExportSummary>,
+            body: impl Into<models::ExportSummaryUnion>,
         ) -> export_labels::RequestBuilder {
             export_labels::RequestBuilder {
                 client: self.0.clone(),
@@ -21249,9 +21249,9 @@ pub mod labeling_jobs {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ExportSummary> {
+            pub async fn into_body(self) -> azure_core::Result<models::ExportSummaryUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ExportSummary = serde_json::from_slice(&bytes)?;
+                let body: models::ExportSummaryUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -21309,7 +21309,7 @@ pub mod labeling_jobs {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) id: String,
-            pub(crate) body: models::ExportSummary,
+            pub(crate) body: models::ExportSummaryUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -21346,8 +21346,8 @@ pub mod labeling_jobs {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::ExportSummary>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ExportSummary>>;
+            type Output = azure_core::Result<models::ExportSummaryUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ExportSummaryUnion>>;
             #[doc = "Returns a future that polls the long running operation, returning once the operation completes."]
             #[doc = ""]
             #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]

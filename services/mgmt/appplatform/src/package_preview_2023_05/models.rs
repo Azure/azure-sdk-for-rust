@@ -15,6 +15,14 @@ impl AcceleratorAuthSetting {
         Self { auth_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "authType")]
+pub enum AcceleratorAuthSettingUnion {
+    BasicAuth(AcceleratorBasicAuthSetting),
+    Public(AcceleratorPublicSetting),
+    #[serde(rename = "SSH")]
+    Ssh(AcceleratorSshSetting),
+}
 #[doc = "Auth setting for basic auth."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcceleratorBasicAuthSetting {
@@ -57,10 +65,10 @@ pub struct AcceleratorGitRepository {
     pub git_tag: Option<String>,
     #[doc = "Auth setting payload."]
     #[serde(rename = "authSetting")]
-    pub auth_setting: AcceleratorAuthSetting,
+    pub auth_setting: AcceleratorAuthSettingUnion,
 }
 impl AcceleratorGitRepository {
-    pub fn new(url: String, auth_setting: AcceleratorAuthSetting) -> Self {
+    pub fn new(url: String, auth_setting: AcceleratorAuthSettingUnion) -> Self {
         Self {
             url,
             interval_in_seconds: None,
@@ -2044,6 +2052,12 @@ pub mod certificate_properties {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum CertificatePropertiesUnion {
+    ContentCertificate(ContentCertificateProperties),
+    KeyVaultCertificate(KeyVaultCertificateProperties),
+}
 #[doc = "A reference to the certificate"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateReference {
@@ -2064,7 +2078,7 @@ pub struct CertificateResource {
     pub proxy_resource: ProxyResource,
     #[doc = "Certificate resource payload."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<CertificateProperties>,
+    pub properties: Option<CertificatePropertiesUnion>,
 }
 impl CertificateResource {
     pub fn new() -> Self {
@@ -2858,17 +2872,22 @@ impl ContainerRegistryCredentials {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ContainerRegistryCredentialsUnion {
+    BasicAuth(ContainerRegistryBasicCredentials),
+}
 #[doc = "Container registry resource payload."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerRegistryProperties {
     #[doc = "The credential for the container registry resource."]
-    pub credentials: ContainerRegistryCredentials,
+    pub credentials: ContainerRegistryCredentialsUnion,
     #[doc = "State of the Container Registry."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<container_registry_properties::ProvisioningState>,
 }
 impl ContainerRegistryProperties {
-    pub fn new(credentials: ContainerRegistryCredentials) -> Self {
+    pub fn new(credentials: ContainerRegistryCredentialsUnion) -> Self {
         Self {
             credentials,
             provisioning_state: None,
@@ -3252,12 +3271,17 @@ pub mod custom_persistent_disk_properties {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum CustomPersistentDiskPropertiesUnion {
+    AzureFileVolume(AzureFileVolume),
+}
 #[doc = "Custom persistent disk resource payload."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomPersistentDiskResource {
     #[doc = "Custom persistent disk resource payload."]
     #[serde(rename = "customPersistentDiskProperties", default, skip_serializing_if = "Option::is_none")]
-    pub custom_persistent_disk_properties: Option<CustomPersistentDiskProperties>,
+    pub custom_persistent_disk_properties: Option<CustomPersistentDiskPropertiesUnion>,
     #[doc = "The resource id of Azure Spring Apps Storage resource."]
     #[serde(rename = "storageId")]
     pub storage_id: String,
@@ -3561,7 +3585,7 @@ impl DeploymentResourceCollection {
 pub struct DeploymentResourceProperties {
     #[doc = "Source information for a deployment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub source: Option<UserSourceInfo>,
+    pub source: Option<UserSourceInfoUnion>,
     #[doc = "Deployment settings payload"]
     #[serde(rename = "deploymentSettings", default, skip_serializing_if = "Option::is_none")]
     pub deployment_settings: Option<DeploymentSettings>,
@@ -5905,7 +5929,7 @@ impl PredefinedAcceleratorResourceCollection {
 pub struct Probe {
     #[doc = "The action of the probe."]
     #[serde(rename = "probeAction", default, skip_serializing_if = "Option::is_none")]
-    pub probe_action: Option<ProbeAction>,
+    pub probe_action: Option<ProbeActionUnion>,
     #[doc = "Indicate whether the probe is disabled."]
     #[serde(rename = "disableProbe")]
     pub disable_probe: bool,
@@ -5993,6 +6017,15 @@ pub mod probe_action {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ProbeActionUnion {
+    ExecAction(ExecAction),
+    #[serde(rename = "HTTPGetAction")]
+    HttpGetAction(HttpGetAction),
+    #[serde(rename = "TCPSocketAction")]
+    TcpSocketAction(TcpSocketAction),
 }
 #[doc = "The resource model definition for a ARM proxy resource. It will have everything other than required location and tags."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -7013,6 +7046,11 @@ pub mod storage_properties {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "storageType")]
+pub enum StoragePropertiesUnion {
+    StorageAccount(StorageAccount),
+}
 #[doc = "Storage resource payload."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageResource {
@@ -7020,7 +7058,7 @@ pub struct StorageResource {
     pub proxy_resource: ProxyResource,
     #[doc = "Storage resource payload."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<StorageProperties>,
+    pub properties: Option<StoragePropertiesUnion>,
 }
 impl StorageResource {
     pub fn new() -> Self {
@@ -7550,6 +7588,12 @@ impl UserSourceInfo {
     pub fn new(type_: String) -> Self {
         Self { type_, version: None }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum UserSourceInfoUnion {
+    BuildResult(BuildResultUserSourceInfo),
+    Container(CustomContainerUserSourceInfo),
 }
 #[doc = "Validate messages of the configuration service git repositories"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

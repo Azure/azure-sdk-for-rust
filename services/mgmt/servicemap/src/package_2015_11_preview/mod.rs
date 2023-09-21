@@ -3043,7 +3043,7 @@ pub mod maps {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
-            request: impl Into<models::MapRequest>,
+            request: impl Into<models::MapRequestUnion>,
         ) -> generate::RequestBuilder {
             generate::RequestBuilder {
                 client: self.0.clone(),
@@ -3109,7 +3109,7 @@ pub mod maps {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
-            pub(crate) request: models::MapRequest,
+            pub(crate) request: models::MapRequestUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]

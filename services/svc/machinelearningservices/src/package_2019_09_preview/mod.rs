@@ -3920,7 +3920,7 @@ pub mod services {
             subscription_id: impl Into<String>,
             resource_group: impl Into<String>,
             workspace: impl Into<String>,
-            request: impl Into<models::CreateServiceRequest>,
+            request: impl Into<models::CreateServiceRequestUnion>,
         ) -> create::RequestBuilder {
             create::RequestBuilder {
                 client: self.0.clone(),
@@ -4012,9 +4012,9 @@ pub mod services {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ServiceResponseBase> {
+            pub async fn into_body(self) -> azure_core::Result<models::ServiceResponseBaseUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ServiceResponseBase = serde_json::from_slice(&bytes)?;
+                let body: models::ServiceResponseBaseUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -4098,8 +4098,8 @@ pub mod services {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::ServiceResponseBase>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ServiceResponseBase>>;
+            type Output = azure_core::Result<models::ServiceResponseBaseUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ServiceResponseBaseUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -4540,7 +4540,7 @@ pub mod services {
             pub(crate) subscription_id: String,
             pub(crate) resource_group: String,
             pub(crate) workspace: String,
-            pub(crate) request: models::CreateServiceRequest,
+            pub(crate) request: models::CreateServiceRequestUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]

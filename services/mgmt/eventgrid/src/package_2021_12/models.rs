@@ -92,6 +92,29 @@ pub mod advanced_filter {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "operatorType")]
+pub enum AdvancedFilterUnion {
+    BoolEquals(BoolEqualsAdvancedFilter),
+    IsNotNull(IsNotNullAdvancedFilter),
+    IsNullOrUndefined(IsNullOrUndefinedAdvancedFilter),
+    NumberGreaterThan(NumberGreaterThanAdvancedFilter),
+    NumberGreaterThanOrEquals(NumberGreaterThanOrEqualsAdvancedFilter),
+    NumberIn(NumberInAdvancedFilter),
+    NumberInRange(NumberInRangeAdvancedFilter),
+    NumberLessThan(NumberLessThanAdvancedFilter),
+    NumberLessThanOrEquals(NumberLessThanOrEqualsAdvancedFilter),
+    NumberNotIn(NumberNotInAdvancedFilter),
+    NumberNotInRange(NumberNotInRangeAdvancedFilter),
+    StringBeginsWith(StringBeginsWithAdvancedFilter),
+    StringContains(StringContainsAdvancedFilter),
+    StringEndsWith(StringEndsWithAdvancedFilter),
+    StringIn(StringInAdvancedFilter),
+    StringNotBeginsWith(StringNotBeginsWithAdvancedFilter),
+    StringNotContains(StringNotContainsAdvancedFilter),
+    StringNotEndsWith(StringNotEndsWithAdvancedFilter),
+    StringNotIn(StringNotInAdvancedFilter),
+}
 #[doc = "Information about the azure function destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFunctionEventSubscriptionDestination {
@@ -128,7 +151,7 @@ pub struct AzureFunctionEventSubscriptionDestinationProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
+    pub delivery_attribute_mappings: Vec<DeliveryAttributeMappingUnion>,
 }
 impl AzureFunctionEventSubscriptionDestinationProperties {
     pub fn new() -> Self {
@@ -264,6 +287,11 @@ pub mod dead_letter_destination {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "endpointType")]
+pub enum DeadLetterDestinationUnion {
+    StorageBlob(StorageBlobDeadLetterDestination),
+}
 #[doc = "Information about the deadletter destination with resource identity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeadLetterWithResourceIdentity {
@@ -272,7 +300,7 @@ pub struct DeadLetterWithResourceIdentity {
     pub identity: Option<EventSubscriptionIdentity>,
     #[doc = "Information about the dead letter destination for an event subscription. To configure a deadletter destination, do not directly instantiate an object of this class. Instead, instantiate an object of a derived class. Currently, StorageBlobDeadLetterDestination is the only class that derives from this class."]
     #[serde(rename = "deadLetterDestination", default, skip_serializing_if = "Option::is_none")]
-    pub dead_letter_destination: Option<DeadLetterDestination>,
+    pub dead_letter_destination: Option<DeadLetterDestinationUnion>,
 }
 impl DeadLetterWithResourceIdentity {
     pub fn new() -> Self {
@@ -288,7 +316,7 @@ pub struct DeliveryAttributeListResult {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<DeliveryAttributeMapping>,
+    pub value: Vec<DeliveryAttributeMappingUnion>,
 }
 impl DeliveryAttributeListResult {
     pub fn new() -> Self {
@@ -350,6 +378,12 @@ pub mod delivery_attribute_mapping {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum DeliveryAttributeMappingUnion {
+    Dynamic(DynamicDeliveryAttributeMapping),
+    Static(StaticDeliveryAttributeMapping),
+}
 #[doc = "Information about the delivery for an event subscription with resource identity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeliveryWithResourceIdentity {
@@ -358,7 +392,7 @@ pub struct DeliveryWithResourceIdentity {
     pub identity: Option<EventSubscriptionIdentity>,
     #[doc = "Information about the destination for an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub destination: Option<EventSubscriptionDestination>,
+    pub destination: Option<EventSubscriptionDestinationUnion>,
 }
 impl DeliveryWithResourceIdentity {
     pub fn new() -> Self {
@@ -412,7 +446,7 @@ pub struct DomainProperties {
     pub input_schema: Option<domain_properties::InputSchema>,
     #[doc = "By default, Event Grid expects events to be in the Event Grid event schema. Specifying an input schema mapping enables publishing to Event Grid using a custom input schema. Currently, the only supported type of InputSchemaMapping is 'JsonInputSchemaMapping'."]
     #[serde(rename = "inputSchemaMapping", default, skip_serializing_if = "Option::is_none")]
-    pub input_schema_mapping: Option<InputSchemaMapping>,
+    pub input_schema_mapping: Option<InputSchemaMappingUnion>,
     #[doc = "Metric resource id for the domain."]
     #[serde(rename = "metricResourceId", default, skip_serializing_if = "Option::is_none")]
     pub metric_resource_id: Option<String>,
@@ -882,7 +916,7 @@ pub struct EventHubEventSubscriptionDestinationProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
+    pub delivery_attribute_mappings: Vec<DeliveryAttributeMappingUnion>,
 }
 impl EventHubEventSubscriptionDestinationProperties {
     pub fn new() -> Self {
@@ -968,6 +1002,17 @@ pub mod event_subscription_destination {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "endpointType")]
+pub enum EventSubscriptionDestinationUnion {
+    AzureFunction(AzureFunctionEventSubscriptionDestination),
+    EventHub(EventHubEventSubscriptionDestination),
+    HybridConnection(HybridConnectionEventSubscriptionDestination),
+    ServiceBusQueue(ServiceBusQueueEventSubscriptionDestination),
+    ServiceBusTopic(ServiceBusTopicEventSubscriptionDestination),
+    StorageQueue(StorageQueueEventSubscriptionDestination),
+    WebHook(WebHookEventSubscriptionDestination),
+}
 #[doc = "Filter for the Event Subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventSubscriptionFilter {
@@ -998,7 +1043,7 @@ pub struct EventSubscriptionFilter {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub advanced_filters: Vec<AdvancedFilter>,
+    pub advanced_filters: Vec<AdvancedFilterUnion>,
 }
 impl EventSubscriptionFilter {
     pub fn new() -> Self {
@@ -1083,7 +1128,7 @@ pub struct EventSubscriptionProperties {
     pub provisioning_state: Option<event_subscription_properties::ProvisioningState>,
     #[doc = "Information about the destination for an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub destination: Option<EventSubscriptionDestination>,
+    pub destination: Option<EventSubscriptionDestinationUnion>,
     #[doc = "Information about the delivery for an event subscription with resource identity."]
     #[serde(rename = "deliveryWithResourceIdentity", default, skip_serializing_if = "Option::is_none")]
     pub delivery_with_resource_identity: Option<DeliveryWithResourceIdentity>,
@@ -1108,7 +1153,7 @@ pub struct EventSubscriptionProperties {
     pub retry_policy: Option<RetryPolicy>,
     #[doc = "Information about the dead letter destination for an event subscription. To configure a deadletter destination, do not directly instantiate an object of this class. Instead, instantiate an object of a derived class. Currently, StorageBlobDeadLetterDestination is the only class that derives from this class."]
     #[serde(rename = "deadLetterDestination", default, skip_serializing_if = "Option::is_none")]
-    pub dead_letter_destination: Option<DeadLetterDestination>,
+    pub dead_letter_destination: Option<DeadLetterDestinationUnion>,
     #[doc = "Information about the deadletter destination with resource identity."]
     #[serde(rename = "deadLetterWithResourceIdentity", default, skip_serializing_if = "Option::is_none")]
     pub dead_letter_with_resource_identity: Option<DeadLetterWithResourceIdentity>,
@@ -1218,7 +1263,7 @@ pub mod event_subscription_properties {
 pub struct EventSubscriptionUpdateParameters {
     #[doc = "Information about the destination for an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub destination: Option<EventSubscriptionDestination>,
+    pub destination: Option<EventSubscriptionDestinationUnion>,
     #[doc = "Information about the delivery for an event subscription with resource identity."]
     #[serde(rename = "deliveryWithResourceIdentity", default, skip_serializing_if = "Option::is_none")]
     pub delivery_with_resource_identity: Option<DeliveryWithResourceIdentity>,
@@ -1243,7 +1288,7 @@ pub struct EventSubscriptionUpdateParameters {
     pub retry_policy: Option<RetryPolicy>,
     #[doc = "Information about the dead letter destination for an event subscription. To configure a deadletter destination, do not directly instantiate an object of this class. Instead, instantiate an object of a derived class. Currently, StorageBlobDeadLetterDestination is the only class that derives from this class."]
     #[serde(rename = "deadLetterDestination", default, skip_serializing_if = "Option::is_none")]
-    pub dead_letter_destination: Option<DeadLetterDestination>,
+    pub dead_letter_destination: Option<DeadLetterDestinationUnion>,
     #[doc = "Information about the deadletter destination with resource identity."]
     #[serde(rename = "deadLetterWithResourceIdentity", default, skip_serializing_if = "Option::is_none")]
     pub dead_letter_with_resource_identity: Option<DeadLetterWithResourceIdentity>,
@@ -1440,7 +1485,7 @@ pub struct HybridConnectionEventSubscriptionDestinationProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
+    pub delivery_attribute_mappings: Vec<DeliveryAttributeMappingUnion>,
 }
 impl HybridConnectionEventSubscriptionDestinationProperties {
     pub fn new() -> Self {
@@ -1614,6 +1659,11 @@ pub mod input_schema_mapping {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "inputSchemaMappingType")]
+pub enum InputSchemaMappingUnion {
+    Json(JsonInputSchemaMapping),
 }
 #[doc = "IsNotNull Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2185,7 +2235,7 @@ pub struct ServiceBusQueueEventSubscriptionDestinationProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
+    pub delivery_attribute_mappings: Vec<DeliveryAttributeMappingUnion>,
 }
 impl ServiceBusQueueEventSubscriptionDestinationProperties {
     pub fn new() -> Self {
@@ -2222,7 +2272,7 @@ pub struct ServiceBusTopicEventSubscriptionDestinationProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
+    pub delivery_attribute_mappings: Vec<DeliveryAttributeMappingUnion>,
 }
 impl ServiceBusTopicEventSubscriptionDestinationProperties {
     pub fn new() -> Self {
@@ -2676,7 +2726,7 @@ pub struct TopicProperties {
     pub input_schema: Option<topic_properties::InputSchema>,
     #[doc = "By default, Event Grid expects events to be in the Event Grid event schema. Specifying an input schema mapping enables publishing to Event Grid using a custom input schema. Currently, the only supported type of InputSchemaMapping is 'JsonInputSchemaMapping'."]
     #[serde(rename = "inputSchemaMapping", default, skip_serializing_if = "Option::is_none")]
-    pub input_schema_mapping: Option<InputSchemaMapping>,
+    pub input_schema_mapping: Option<InputSchemaMappingUnion>,
     #[doc = "Metric resource id for the topic."]
     #[serde(rename = "metricResourceId", default, skip_serializing_if = "Option::is_none")]
     pub metric_resource_id: Option<String>,
@@ -3221,7 +3271,7 @@ pub struct WebHookEventSubscriptionDestinationProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
+    pub delivery_attribute_mappings: Vec<DeliveryAttributeMappingUnion>,
 }
 impl WebHookEventSubscriptionDestinationProperties {
     pub fn new() -> Self {

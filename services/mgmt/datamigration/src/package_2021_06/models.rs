@@ -531,6 +531,20 @@ pub mod command_properties {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "commandType")]
+pub enum CommandPropertiesUnion {
+    #[serde(rename = "Migrate.SqlServer.AzureDbSqlMi.Complete")]
+    MigrateSqlServerAzureDbSqlMiComplete(MigrateMiSyncCompleteCommandProperties),
+    #[serde(rename = "Migrate.Sync.Complete.Database")]
+    MigrateSyncCompleteDatabase(MigrateSyncCompleteCommandProperties),
+    #[serde(rename = "cancel")]
+    Cancel(MongoDbCancelCommand),
+    #[serde(rename = "finish")]
+    Finish(MongoDbFinishCommand),
+    #[serde(rename = "restart")]
+    Restart(MongoDbRestartCommand),
+}
 #[doc = "Properties for the task that validates the connection to and provides information about a MongoDB server"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectToMongoDbTaskProperties {
@@ -791,7 +805,7 @@ pub struct ConnectToSourceSqlServerSyncTaskProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub output: Vec<ConnectToSourceSqlServerTaskOutput>,
+    pub output: Vec<ConnectToSourceSqlServerTaskOutputUnion>,
 }
 impl ConnectToSourceSqlServerSyncTaskProperties {
     pub fn new(project_task_properties: ProjectTaskProperties) -> Self {
@@ -854,6 +868,14 @@ impl ConnectToSourceSqlServerTaskOutput {
     pub fn new(result_type: String) -> Self {
         Self { id: None, result_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "resultType")]
+pub enum ConnectToSourceSqlServerTaskOutputUnion {
+    AgentJobLevelOutput(ConnectToSourceSqlServerTaskOutputAgentJobLevel),
+    DatabaseLevelOutput(ConnectToSourceSqlServerTaskOutputDatabaseLevel),
+    LoginLevelOutput(ConnectToSourceSqlServerTaskOutputLoginLevel),
+    TaskLevelOutput(ConnectToSourceSqlServerTaskOutputTaskLevel),
 }
 #[doc = "Agent Job level output for the task that validates connection to SQL Server and also validates source server requirements"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1032,7 +1054,7 @@ pub struct ConnectToSourceSqlServerTaskProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub output: Vec<ConnectToSourceSqlServerTaskOutput>,
+    pub output: Vec<ConnectToSourceSqlServerTaskOutputUnion>,
 }
 impl ConnectToSourceSqlServerTaskProperties {
     pub fn new(project_task_properties: ProjectTaskProperties) -> Self {
@@ -1554,6 +1576,15 @@ impl ConnectionInfo {
             password: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ConnectionInfoUnion {
+    MiSqlConnectionInfo(MiSqlConnectionInfo),
+    MySqlConnectionInfo(MySqlConnectionInfo),
+    OracleConnectionInfo(OracleConnectionInfo),
+    PostgreSqlConnectionInfo(PostgreSqlConnectionInfo),
+    SqlConnectionInfo(SqlConnectionInfo),
 }
 #[doc = "Results for checksum based Data Integrity validation results"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -3140,7 +3171,7 @@ pub struct MigrateMongoDbTaskProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub output: Vec<MongoDbProgress>,
+    pub output: Vec<MongoDbProgressUnion>,
 }
 impl MigrateMongoDbTaskProperties {
     pub fn new(project_task_properties: ProjectTaskProperties) -> Self {
@@ -3222,6 +3253,9 @@ impl MigrateMySqlAzureDbForMySqlOfflineTaskOutput {
         Self { id: None, result_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "resultType")]
+pub enum MigrateMySqlAzureDbForMySqlOfflineTaskOutputUnion {}
 #[doc = "Properties for the task that migrates MySQL databases to Azure Database for MySQL for offline migrations"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MigrateMySqlAzureDbForMySqlOfflineTaskProperties {
@@ -3236,7 +3270,7 @@ pub struct MigrateMySqlAzureDbForMySqlOfflineTaskProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub output: Vec<MigrateMySqlAzureDbForMySqlOfflineTaskOutput>,
+    pub output: Vec<MigrateMySqlAzureDbForMySqlOfflineTaskOutputUnion>,
 }
 impl MigrateMySqlAzureDbForMySqlOfflineTaskProperties {
     pub fn new(project_task_properties: ProjectTaskProperties) -> Self {
@@ -3314,6 +3348,15 @@ impl MigrateMySqlAzureDbForMySqlSyncTaskOutput {
     pub fn new(result_type: String) -> Self {
         Self { id: None, result_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "resultType")]
+pub enum MigrateMySqlAzureDbForMySqlSyncTaskOutputUnion {
+    DatabaseLevelErrorOutput(MigrateMySqlAzureDbForMySqlSyncTaskOutputDatabaseError),
+    DatabaseLevelOutput(MigrateMySqlAzureDbForMySqlSyncTaskOutputDatabaseLevel),
+    ErrorOutput(MigrateMySqlAzureDbForMySqlSyncTaskOutputError),
+    MigrationLevelOutput(MigrateMySqlAzureDbForMySqlSyncTaskOutputMigrationLevel),
+    TableLevelOutput(MigrateMySqlAzureDbForMySqlSyncTaskOutputTableLevel),
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MigrateMySqlAzureDbForMySqlSyncTaskOutputDatabaseError {
@@ -3541,7 +3584,7 @@ pub struct MigrateMySqlAzureDbForMySqlSyncTaskProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub output: Vec<MigrateMySqlAzureDbForMySqlSyncTaskOutput>,
+    pub output: Vec<MigrateMySqlAzureDbForMySqlSyncTaskOutputUnion>,
 }
 impl MigrateMySqlAzureDbForMySqlSyncTaskProperties {
     pub fn new(project_task_properties: ProjectTaskProperties) -> Self {
@@ -3566,7 +3609,7 @@ pub struct MigrateOracleAzureDbForPostgreSqlSyncTaskProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub output: Vec<MigrateOracleAzureDbPostgreSqlSyncTaskOutput>,
+    pub output: Vec<MigrateOracleAzureDbPostgreSqlSyncTaskOutputUnion>,
 }
 impl MigrateOracleAzureDbForPostgreSqlSyncTaskProperties {
     pub fn new(project_task_properties: ProjectTaskProperties) -> Self {
@@ -3650,6 +3693,15 @@ impl MigrateOracleAzureDbPostgreSqlSyncTaskOutput {
     pub fn new(result_type: String) -> Self {
         Self { id: None, result_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "resultType")]
+pub enum MigrateOracleAzureDbPostgreSqlSyncTaskOutputUnion {
+    DatabaseLevelErrorOutput(MigrateOracleAzureDbPostgreSqlSyncTaskOutputDatabaseError),
+    DatabaseLevelOutput(MigrateOracleAzureDbPostgreSqlSyncTaskOutputDatabaseLevel),
+    ErrorOutput(MigrateOracleAzureDbPostgreSqlSyncTaskOutputError),
+    MigrationLevelOutput(MigrateOracleAzureDbPostgreSqlSyncTaskOutputMigrationLevel),
+    TableLevelOutput(MigrateOracleAzureDbPostgreSqlSyncTaskOutputTableLevel),
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MigrateOracleAzureDbPostgreSqlSyncTaskOutputDatabaseError {
@@ -3948,6 +4000,15 @@ impl MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutput {
         Self { id: None, result_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "resultType")]
+pub enum MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputUnion {
+    DatabaseLevelErrorOutput(MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputDatabaseError),
+    DatabaseLevelOutput(MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputDatabaseLevel),
+    ErrorOutput(MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputError),
+    MigrationLevelOutput(MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputMigrationLevel),
+    TableLevelOutput(MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputTableLevel),
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputDatabaseError {
     #[serde(flatten)]
@@ -4186,7 +4247,7 @@ pub struct MigratePostgreSqlAzureDbForPostgreSqlSyncTaskProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub output: Vec<MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutput>,
+    pub output: Vec<MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputUnion>,
 }
 impl MigratePostgreSqlAzureDbForPostgreSqlSyncTaskProperties {
     pub fn new(project_task_properties: ProjectTaskProperties) -> Self {
@@ -4246,6 +4307,14 @@ impl MigrateSchemaSqlServerSqlDbTaskOutput {
     pub fn new(result_type: String) -> Self {
         Self { id: None, result_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "resultType")]
+pub enum MigrateSchemaSqlServerSqlDbTaskOutputUnion {
+    DatabaseLevelOutput(MigrateSchemaSqlServerSqlDbTaskOutputDatabaseLevel),
+    SchemaErrorOutput(MigrateSchemaSqlServerSqlDbTaskOutputError),
+    MigrationLevelOutput(MigrateSchemaSqlServerSqlDbTaskOutputMigrationLevel),
+    ErrorOutput(MigrateSchemaSqlTaskOutputError),
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MigrateSchemaSqlServerSqlDbTaskOutputDatabaseLevel {
@@ -4373,7 +4442,7 @@ pub struct MigrateSchemaSqlServerSqlDbTaskProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub output: Vec<MigrateSchemaSqlServerSqlDbTaskOutput>,
+    pub output: Vec<MigrateSchemaSqlServerSqlDbTaskOutputUnion>,
 }
 impl MigrateSchemaSqlServerSqlDbTaskProperties {
     pub fn new(project_task_properties: ProjectTaskProperties) -> Self {
@@ -4489,6 +4558,15 @@ impl MigrateSqlServerSqlDbSyncTaskOutput {
     pub fn new(result_type: String) -> Self {
         Self { id: None, result_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "resultType")]
+pub enum MigrateSqlServerSqlDbSyncTaskOutputUnion {
+    DatabaseLevelErrorOutput(MigrateSqlServerSqlDbSyncTaskOutputDatabaseError),
+    DatabaseLevelOutput(MigrateSqlServerSqlDbSyncTaskOutputDatabaseLevel),
+    ErrorOutput(MigrateSqlServerSqlDbSyncTaskOutputError),
+    MigrationLevelOutput(MigrateSqlServerSqlDbSyncTaskOutputMigrationLevel),
+    TableLevelOutput(MigrateSqlServerSqlDbSyncTaskOutputTableLevel),
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MigrateSqlServerSqlDbSyncTaskOutputDatabaseError {
@@ -4720,7 +4798,7 @@ pub struct MigrateSqlServerSqlDbSyncTaskProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub output: Vec<MigrateSqlServerSqlDbSyncTaskOutput>,
+    pub output: Vec<MigrateSqlServerSqlDbSyncTaskOutputUnion>,
 }
 impl MigrateSqlServerSqlDbSyncTaskProperties {
     pub fn new(project_task_properties: ProjectTaskProperties) -> Self {
@@ -4766,6 +4844,16 @@ impl MigrateSqlServerSqlDbTaskOutput {
     pub fn new(result_type: String) -> Self {
         Self { id: None, result_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "resultType")]
+pub enum MigrateSqlServerSqlDbTaskOutputUnion {
+    DatabaseLevelOutput(MigrateSqlServerSqlDbTaskOutputDatabaseLevel),
+    MigrationDatabaseLevelValidationOutput(MigrateSqlServerSqlDbTaskOutputDatabaseLevelValidationResult),
+    ErrorOutput(MigrateSqlServerSqlDbTaskOutputError),
+    MigrationLevelOutput(MigrateSqlServerSqlDbTaskOutputMigrationLevel),
+    TableLevelOutput(MigrateSqlServerSqlDbTaskOutputTableLevel),
+    MigrationValidationOutput(MigrateSqlServerSqlDbTaskOutputValidationResult),
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MigrateSqlServerSqlDbTaskOutputDatabaseLevel {
@@ -5029,7 +5117,7 @@ pub struct MigrateSqlServerSqlDbTaskProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub output: Vec<MigrateSqlServerSqlDbTaskOutput>,
+    pub output: Vec<MigrateSqlServerSqlDbTaskOutputUnion>,
 }
 impl MigrateSqlServerSqlDbTaskProperties {
     pub fn new(project_task_properties: ProjectTaskProperties) -> Self {
@@ -5097,6 +5185,13 @@ impl MigrateSqlServerSqlMiSyncTaskOutput {
     pub fn new(result_type: String) -> Self {
         Self { id: None, result_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "resultType")]
+pub enum MigrateSqlServerSqlMiSyncTaskOutputUnion {
+    DatabaseLevelOutput(MigrateSqlServerSqlMiSyncTaskOutputDatabaseLevel),
+    ErrorOutput(MigrateSqlServerSqlMiSyncTaskOutputError),
+    MigrationLevelOutput(MigrateSqlServerSqlMiSyncTaskOutputMigrationLevel),
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MigrateSqlServerSqlMiSyncTaskOutputDatabaseLevel {
@@ -5254,7 +5349,7 @@ pub struct MigrateSqlServerSqlMiSyncTaskProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub output: Vec<MigrateSqlServerSqlMiSyncTaskOutput>,
+    pub output: Vec<MigrateSqlServerSqlMiSyncTaskOutputUnion>,
 }
 impl MigrateSqlServerSqlMiSyncTaskProperties {
     pub fn new(project_task_properties: ProjectTaskProperties) -> Self {
@@ -5334,6 +5429,15 @@ impl MigrateSqlServerSqlMiTaskOutput {
     pub fn new(result_type: String) -> Self {
         Self { id: None, result_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "resultType")]
+pub enum MigrateSqlServerSqlMiTaskOutputUnion {
+    AgentJobLevelOutput(MigrateSqlServerSqlMiTaskOutputAgentJobLevel),
+    DatabaseLevelOutput(MigrateSqlServerSqlMiTaskOutputDatabaseLevel),
+    ErrorOutput(MigrateSqlServerSqlMiTaskOutputError),
+    LoginLevelOutput(MigrateSqlServerSqlMiTaskOutputLoginLevel),
+    MigrationLevelOutput(MigrateSqlServerSqlMiTaskOutputMigrationLevel),
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MigrateSqlServerSqlMiTaskOutputAgentJobLevel {
@@ -5590,7 +5694,7 @@ pub struct MigrateSqlServerSqlMiTaskProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub output: Vec<MigrateSqlServerSqlMiTaskOutput>,
+    pub output: Vec<MigrateSqlServerSqlMiTaskOutputUnion>,
 }
 impl MigrateSqlServerSqlMiTaskProperties {
     pub fn new(project_task_properties: ProjectTaskProperties) -> Self {
@@ -5658,6 +5762,12 @@ impl MigrateSsisTaskOutput {
     pub fn new(result_type: String) -> Self {
         Self { id: None, result_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "resultType")]
+pub enum MigrateSsisTaskOutputUnion {
+    MigrationLevelOutput(MigrateSsisTaskOutputMigrationLevel),
+    SsisProjectLevelOutput(MigrateSsisTaskOutputProjectLevel),
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MigrateSsisTaskOutputMigrationLevel {
@@ -5779,7 +5889,7 @@ pub struct MigrateSsisTaskProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub output: Vec<MigrateSsisTaskOutput>,
+    pub output: Vec<MigrateSsisTaskOutputUnion>,
 }
 impl MigrateSsisTaskProperties {
     pub fn new(project_task_properties: ProjectTaskProperties) -> Self {
@@ -6702,6 +6812,13 @@ pub mod mongo_db_progress {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "resultType")]
+pub enum MongoDbProgressUnion {
+    Collection(MongoDbCollectionProgress),
+    Database(MongoDbDatabaseProgress),
+    Migration(MongoDbMigrationProgress),
+}
 #[doc = "Properties for the command that restarts a migration in whole or in part"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MongoDbRestartCommand {
@@ -7340,10 +7457,10 @@ pub struct ProjectProperties {
     pub creation_time: Option<time::OffsetDateTime>,
     #[doc = "Defines the connection properties of a server"]
     #[serde(rename = "sourceConnectionInfo", default, skip_serializing_if = "Option::is_none")]
-    pub source_connection_info: Option<ConnectionInfo>,
+    pub source_connection_info: Option<ConnectionInfoUnion>,
     #[doc = "Defines the connection properties of a server"]
     #[serde(rename = "targetConnectionInfo", default, skip_serializing_if = "Option::is_none")]
-    pub target_connection_info: Option<ConnectionInfo>,
+    pub target_connection_info: Option<ConnectionInfoUnion>,
     #[doc = "List of DatabaseInfo"]
     #[serde(
         rename = "databasesInfo",
@@ -7511,7 +7628,7 @@ pub struct ProjectTask {
     pub etag: Option<String>,
     #[doc = "Base class for all types of DMS task properties. If task is not supported by current client, this object is returned."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ProjectTaskProperties>,
+    pub properties: Option<ProjectTaskPropertiesUnion>,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -7543,7 +7660,7 @@ pub struct ProjectTaskProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub commands: Vec<CommandProperties>,
+    pub commands: Vec<CommandPropertiesUnion>,
     #[doc = "Key value pairs of client data to attach meta data information to task"]
     #[serde(rename = "clientData", default, skip_serializing_if = "Option::is_none")]
     pub client_data: Option<serde_json::Value>,
@@ -7610,6 +7727,82 @@ pub mod project_task_properties {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "taskType")]
+pub enum ProjectTaskPropertiesUnion {
+    #[serde(rename = "Service.Check.OCI")]
+    ServiceCheckOci(CheckOciDriverTaskProperties),
+    #[serde(rename = "Connect.MongoDb")]
+    ConnectMongoDb(ConnectToMongoDbTaskProperties),
+    #[serde(rename = "ConnectToSource.MySql")]
+    ConnectToSourceMySql(ConnectToSourceMySqlTaskProperties),
+    #[serde(rename = "ConnectToSource.Oracle.Sync")]
+    ConnectToSourceOracleSync(ConnectToSourceOracleSyncTaskProperties),
+    #[serde(rename = "ConnectToSource.PostgreSql.Sync")]
+    ConnectToSourcePostgreSqlSync(ConnectToSourcePostgreSqlSyncTaskProperties),
+    #[serde(rename = "ConnectToSource.SqlServer.Sync")]
+    ConnectToSourceSqlServerSync(ConnectToSourceSqlServerSyncTaskProperties),
+    #[serde(rename = "ConnectToSource.SqlServer")]
+    ConnectToSourceSqlServer(ConnectToSourceSqlServerTaskProperties),
+    #[serde(rename = "ConnectToTarget.AzureDbForMySql")]
+    ConnectToTargetAzureDbForMySql(ConnectToTargetAzureDbForMySqlTaskProperties),
+    #[serde(rename = "ConnectToTarget.AzureDbForPostgreSql.Sync")]
+    ConnectToTargetAzureDbForPostgreSqlSync(ConnectToTargetAzureDbForPostgreSqlSyncTaskProperties),
+    #[serde(rename = "ConnectToTarget.Oracle.AzureDbForPostgreSql.Sync")]
+    ConnectToTargetOracleAzureDbForPostgreSqlSync(ConnectToTargetOracleAzureDbForPostgreSqlSyncTaskProperties),
+    #[serde(rename = "ConnectToTarget.SqlDb")]
+    ConnectToTargetSqlDb(ConnectToTargetSqlDbTaskProperties),
+    #[serde(rename = "ConnectToTarget.AzureSqlDbMI.Sync.LRS")]
+    ConnectToTargetAzureSqlDbMiSyncLrs(ConnectToTargetSqlMiSyncTaskProperties),
+    #[serde(rename = "ConnectToTarget.AzureSqlDbMI")]
+    ConnectToTargetAzureSqlDbMi(ConnectToTargetSqlMiTaskProperties),
+    #[serde(rename = "ConnectToTarget.SqlDb.Sync")]
+    ConnectToTargetSqlDbSync(ConnectToTargetSqlSqlDbSyncTaskProperties),
+    #[serde(rename = "GetTDECertificates.Sql")]
+    GetTdeCertificatesSql(GetTdeCertificatesSqlTaskProperties),
+    GetUserTablesMySql(GetUserTablesMySqlTaskProperties),
+    GetUserTablesOracle(GetUserTablesOracleTaskProperties),
+    GetUserTablesPostgreSql(GetUserTablesPostgreSqlTaskProperties),
+    #[serde(rename = "GetUserTables.AzureSqlDb.Sync")]
+    GetUserTablesAzureSqlDbSync(GetUserTablesSqlSyncTaskProperties),
+    #[serde(rename = "GetUserTables.Sql")]
+    GetUserTablesSql(GetUserTablesSqlTaskProperties),
+    #[serde(rename = "Service.Install.OCI")]
+    ServiceInstallOci(InstallOciDriverTaskProperties),
+    #[serde(rename = "Migrate.MongoDb")]
+    MigrateMongoDb(MigrateMongoDbTaskProperties),
+    #[serde(rename = "Migrate.MySql.AzureDbForMySql")]
+    MigrateMySqlAzureDbForMySql(MigrateMySqlAzureDbForMySqlOfflineTaskProperties),
+    #[serde(rename = "Migrate.MySql.AzureDbForMySql.Sync")]
+    MigrateMySqlAzureDbForMySqlSync(MigrateMySqlAzureDbForMySqlSyncTaskProperties),
+    #[serde(rename = "Migrate.Oracle.AzureDbForPostgreSql.Sync")]
+    MigrateOracleAzureDbForPostgreSqlSync(MigrateOracleAzureDbForPostgreSqlSyncTaskProperties),
+    #[serde(rename = "Migrate.PostgreSql.AzureDbForPostgreSql.SyncV2")]
+    MigratePostgreSqlAzureDbForPostgreSqlSyncV2(MigratePostgreSqlAzureDbForPostgreSqlSyncTaskProperties),
+    MigrateSchemaSqlServerSqlDb(MigrateSchemaSqlServerSqlDbTaskProperties),
+    #[serde(rename = "Migrate.SqlServer.AzureSqlDb.Sync")]
+    MigrateSqlServerAzureSqlDbSync(MigrateSqlServerSqlDbSyncTaskProperties),
+    #[serde(rename = "Migrate.SqlServer.SqlDb")]
+    MigrateSqlServerSqlDb(MigrateSqlServerSqlDbTaskProperties),
+    #[serde(rename = "Migrate.SqlServer.AzureSqlDbMI.Sync.LRS")]
+    MigrateSqlServerAzureSqlDbMiSyncLrs(MigrateSqlServerSqlMiSyncTaskProperties),
+    #[serde(rename = "Migrate.SqlServer.AzureSqlDbMI")]
+    MigrateSqlServerAzureSqlDbMi(MigrateSqlServerSqlMiTaskProperties),
+    #[serde(rename = "Migrate.Ssis")]
+    MigrateSsis(MigrateSsisTaskProperties),
+    #[serde(rename = "Service.Upload.OCI")]
+    ServiceUploadOci(UploadOciDriverTaskProperties),
+    #[serde(rename = "ValidateMigrationInput.SqlServer.SqlDb.Sync")]
+    ValidateMigrationInputSqlServerSqlDbSync(ValidateMigrationInputSqlServerSqlDbSyncTaskProperties),
+    #[serde(rename = "ValidateMigrationInput.SqlServer.AzureSqlDbMI.Sync.LRS")]
+    ValidateMigrationInputSqlServerAzureSqlDbMiSyncLrs(ValidateMigrationInputSqlServerSqlMiSyncTaskProperties),
+    #[serde(rename = "ValidateMigrationInput.SqlServer.AzureSqlDbMI")]
+    ValidateMigrationInputSqlServerAzureSqlDbMi(ValidateMigrationInputSqlServerSqlMiTaskProperties),
+    #[serde(rename = "Validate.MongoDb")]
+    ValidateMongoDb(ValidateMongoDbTaskProperties),
+    #[serde(rename = "Validate.Oracle.AzureDbPostgreSql.Sync")]
+    ValidateOracleAzureDbPostgreSqlSync(ValidateOracleAzureDbForPostgreSqlSyncTaskProperties),
 }
 #[doc = "Results for query analysis comparison between the source and target"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

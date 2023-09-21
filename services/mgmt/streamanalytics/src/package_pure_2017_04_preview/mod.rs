@@ -1120,13 +1120,13 @@ pub mod functions {
             pub(crate) resource_group_name: String,
             pub(crate) job_name: String,
             pub(crate) function_name: String,
-            pub(crate) function_retrieve_default_definition_parameters: Option<models::FunctionRetrieveDefaultDefinitionParameters>,
+            pub(crate) function_retrieve_default_definition_parameters: Option<models::FunctionRetrieveDefaultDefinitionParametersUnion>,
         }
         impl RequestBuilder {
             #[doc = "Parameters used to specify the type of function to retrieve the default definition for."]
             pub fn function_retrieve_default_definition_parameters(
                 mut self,
-                function_retrieve_default_definition_parameters: impl Into<models::FunctionRetrieveDefaultDefinitionParameters>,
+                function_retrieve_default_definition_parameters: impl Into<models::FunctionRetrieveDefaultDefinitionParametersUnion>,
             ) -> Self {
                 self.function_retrieve_default_definition_parameters = Some(function_retrieve_default_definition_parameters.into());
                 self

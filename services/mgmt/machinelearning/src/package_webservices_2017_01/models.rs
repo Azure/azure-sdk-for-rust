@@ -863,7 +863,7 @@ pub struct PatchedWebService {
     pub patched_resource: PatchedResource,
     #[doc = "The set of properties specific to the Azure ML web service resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<WebServiceProperties>,
+    pub properties: Option<WebServicePropertiesUnion>,
 }
 impl PatchedWebService {
     pub fn new() -> Self {
@@ -987,10 +987,10 @@ pub struct WebService {
     #[serde(flatten)]
     pub resource: Resource,
     #[doc = "The set of properties specific to the Azure ML web service resource."]
-    pub properties: WebServiceProperties,
+    pub properties: WebServicePropertiesUnion,
 }
 impl WebService {
-    pub fn new(resource: Resource, properties: WebServiceProperties) -> Self {
+    pub fn new(resource: Resource, properties: WebServicePropertiesUnion) -> Self {
         Self { resource, properties }
     }
 }
@@ -1170,6 +1170,11 @@ pub mod web_service_properties {
     pub enum PackageType {
         Graph,
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "packageType")]
+pub enum WebServicePropertiesUnion {
+    Graph(WebServicePropertiesForGraph),
 }
 #[doc = "Properties specific to a Graph based web service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

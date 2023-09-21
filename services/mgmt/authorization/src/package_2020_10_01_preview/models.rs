@@ -117,7 +117,7 @@ impl AccessReviewDecisionListResult {
 pub struct AccessReviewDecisionProperties {
     #[doc = "Target of the decision."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<AccessReviewDecisionTarget>,
+    pub target: Option<AccessReviewDecisionTargetUnion>,
     #[doc = "The feature- generated recommendation shown to the reviewer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recommendation: Option<access_review_decision_properties::Recommendation>,
@@ -333,6 +333,14 @@ pub mod access_review_decision_target {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AccessReviewDecisionTargetUnion {
+    #[serde(rename = "servicePrincipal")]
+    ServicePrincipal(ServicePrincipalDecisionTarget),
+    #[serde(rename = "user")]
+    User(UserDecisionTarget),
 }
 #[doc = "Access Review Default Settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -4591,7 +4599,7 @@ pub struct RoleManagementPolicyProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub rules: Vec<RoleManagementPolicyRule>,
+    pub rules: Vec<RoleManagementPolicyRuleUnion>,
     #[doc = "The readonly computed rule applied to the policy."]
     #[serde(
         rename = "effectiveRules",
@@ -4599,7 +4607,7 @@ pub struct RoleManagementPolicyProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub effective_rules: Vec<RoleManagementPolicyRule>,
+    pub effective_rules: Vec<RoleManagementPolicyRuleUnion>,
     #[serde(rename = "policyProperties", default, skip_serializing_if = "Option::is_none")]
     pub policy_properties: Option<PolicyProperties>,
 }
@@ -4630,6 +4638,9 @@ impl RoleManagementPolicyRule {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ruleType")]
+pub enum RoleManagementPolicyRuleUnion {}
 #[doc = "The role management policy rule target."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleManagementPolicyRuleTarget {

@@ -279,7 +279,7 @@ pub struct AksServiceResponse {
     #[serde(flatten)]
     pub aks_variant_response: AksVariantResponse,
     #[serde(rename = "imageDetails", default, skip_serializing_if = "Option::is_none")]
-    pub image_details: Option<ImageResponseBase>,
+    pub image_details: Option<ImageResponseBaseUnion>,
     #[doc = "The Id of the Image."]
     #[serde(rename = "imageId", default, skip_serializing_if = "Option::is_none")]
     pub image_id: Option<String>,
@@ -1368,6 +1368,16 @@ pub mod create_service_request {
         Batch,
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "computeType")]
+pub enum CreateServiceRequestUnion {
+    #[serde(rename = "ACI")]
+    Aci(AciServiceCreateRequest),
+    #[serde(rename = "AKSENDPOINT")]
+    Aksendpoint(CreateEndpointRequest),
+    #[serde(rename = "IOT")]
+    Iot(CreateIotServiceRequest),
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CreatedBy {
     #[doc = "A user or service principal's object ID.\r\nThis is PII and should never be logged."]
@@ -1998,7 +2008,7 @@ pub struct HyperDriveExperimentBase {
     #[doc = "Platform config object specifying the run definition structure."]
     pub platform_config: serde_json::Value,
     #[doc = "Early termination policy configuration."]
-    pub policy_config: HyperDrivePolicyConfigBase,
+    pub policy_config: HyperDrivePolicyConfigBaseUnion,
     #[doc = "Name of the primary metric and goal of optimizing."]
     pub primary_metric_config: hyper_drive_experiment_base::PrimaryMetricConfig,
     #[doc = "Study Id of the Hyperdrive run."]
@@ -2011,7 +2021,7 @@ impl HyperDriveExperimentBase {
         name: String,
         platform: hyper_drive_experiment_base::Platform,
         platform_config: serde_json::Value,
-        policy_config: HyperDrivePolicyConfigBase,
+        policy_config: HyperDrivePolicyConfigBaseUnion,
         primary_metric_config: hyper_drive_experiment_base::PrimaryMetricConfig,
     ) -> Self {
         Self {
@@ -2284,6 +2294,14 @@ pub mod hyper_drive_policy_config_base {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "name")]
+pub enum HyperDrivePolicyConfigBaseUnion {
+    Bandit(HyperDriveBanditPolicy),
+    Default(HyperDriveDefaultPolicy),
+    MedianStopping(HyperDriveMedianStoppingPolicy),
+    TruncationSelection(HyperDriveTruncationSelectionPolicy),
+}
 #[doc = "Truncation selection policy configuration. Please refer https://docs.microsoft.com/en-us/python/api/azureml-train-core/azureml.train.hyperdrive.truncationselectionpolicy?view=azure-ml-py for more information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperDriveTruncationSelectionPolicy {
@@ -2443,6 +2461,14 @@ pub mod image_response_base {
         TimedOut,
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "imageFlavor")]
+pub enum ImageResponseBaseUnion {
+    #[serde(rename = "WEBAPICONTAINER")]
+    Webapicontainer(DockerImageResponse),
+    #[serde(rename = "ACCELCONTAINER")]
+    Accelcontainer(FpgaDockerImageResponse),
+}
 #[doc = "A nested structure of errors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InnerErrorResponse {
@@ -2512,7 +2538,7 @@ pub struct IotServiceResponse {
     #[serde(rename = "authEnabled", default, skip_serializing_if = "Option::is_none")]
     pub auth_enabled: Option<bool>,
     #[serde(rename = "imageDetails", default, skip_serializing_if = "Option::is_none")]
-    pub image_details: Option<ImageResponseBase>,
+    pub image_details: Option<ImageResponseBaseUnion>,
     #[serde(rename = "imageId", default, skip_serializing_if = "Option::is_none")]
     pub image_id: Option<String>,
 }
@@ -3178,7 +3204,7 @@ pub struct PaginatedServiceList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<ServiceResponseBase>,
+    pub value: Vec<ServiceResponseBaseUnion>,
     #[doc = "A continuation link (absolute URI) to the next page of results in the list."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -3757,6 +3783,20 @@ pub mod service_response_base {
         HttpRealtimeEndpoint,
         Batch,
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "computeType")]
+pub enum ServiceResponseBaseUnion {
+    #[serde(rename = "ACI")]
+    Aci(AciServiceResponse),
+    #[serde(rename = "AKSENDPOINT")]
+    Aksendpoint(AksEndpointResponse),
+    #[serde(rename = "AMLCOMPUTE")]
+    Amlcompute(BatchServiceResponse),
+    #[serde(rename = "IOT")]
+    Iot(IotServiceResponse),
+    #[serde(rename = "UNKNOWON")]
+    Unknowon(UnknownServiceResponse),
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SparkConfiguration {

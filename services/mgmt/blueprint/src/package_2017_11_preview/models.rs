@@ -64,6 +64,16 @@ pub mod artifact {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ArtifactUnion {
+    #[serde(rename = "policyAssignment")]
+    PolicyAssignment(PolicyAssignmentArtifact),
+    #[serde(rename = "roleAssignment")]
+    RoleAssignment(RoleAssignmentArtifact),
+    #[serde(rename = "template")]
+    Template(TemplateArtifact),
+}
 #[doc = "List of Blueprint artifacts"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ArtifactList {
@@ -73,7 +83,7 @@ pub struct ArtifactList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<Artifact>,
+    pub value: Vec<ArtifactUnion>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,

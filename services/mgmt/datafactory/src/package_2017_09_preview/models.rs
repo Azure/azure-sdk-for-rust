@@ -33,6 +33,9 @@ impl Activity {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ActivityUnion {}
 #[doc = "Activity dependency information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityDependency {
@@ -192,6 +195,9 @@ impl Dataset {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum DatasetUnion {}
 #[doc = "A list of dataset resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetListResponse {
@@ -248,10 +254,10 @@ pub struct DatasetResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     #[doc = "The Azure Data Factory nested object which identifies data within different data stores, such as tables, files, folders, and documents."]
-    pub properties: Dataset,
+    pub properties: DatasetUnion,
 }
 impl DatasetResource {
-    pub fn new(properties: Dataset) -> Self {
+    pub fn new(properties: DatasetUnion) -> Self {
         Self {
             sub_resource: SubResource::default(),
             properties,
@@ -480,6 +486,9 @@ impl IntegrationRuntime {
         Self { type_, description: None }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum IntegrationRuntimeUnion {}
 #[doc = "The integration runtime authentication keys."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeAuthKeys {
@@ -745,10 +754,10 @@ pub struct IntegrationRuntimeResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     #[doc = "Azure Data Factory nested object which serves as a compute resource for activities."]
-    pub properties: IntegrationRuntime,
+    pub properties: IntegrationRuntimeUnion,
 }
 impl IntegrationRuntimeResource {
-    pub fn new(properties: IntegrationRuntime) -> Self {
+    pub fn new(properties: IntegrationRuntimeUnion) -> Self {
         Self {
             sub_resource: SubResource::default(),
             properties,
@@ -824,6 +833,9 @@ impl IntegrationRuntimeStatus {
         Self::default()
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum IntegrationRuntimeStatusUnion {}
 #[doc = "A list of integration runtime status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeStatusListResponse {
@@ -845,10 +857,10 @@ pub struct IntegrationRuntimeStatusResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Integration runtime status."]
-    pub properties: IntegrationRuntimeStatus,
+    pub properties: IntegrationRuntimeStatusUnion,
 }
 impl IntegrationRuntimeStatusResponse {
-    pub fn new(properties: IntegrationRuntimeStatus) -> Self {
+    pub fn new(properties: IntegrationRuntimeStatusUnion) -> Self {
         Self { name: None, properties }
     }
 }
@@ -923,6 +935,9 @@ impl LinkedService {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum LinkedServiceUnion {}
 #[doc = "A list of linked service resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedServiceListResponse {
@@ -979,10 +994,10 @@ pub struct LinkedServiceResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     #[doc = "The Azure Data Factory nested object which contains the information and credential which can be used to connect with related store or compute resource."]
-    pub properties: LinkedService,
+    pub properties: LinkedServiceUnion,
 }
 impl LinkedServiceResource {
-    pub fn new(properties: LinkedService) -> Self {
+    pub fn new(properties: LinkedServiceUnion) -> Self {
         Self {
             sub_resource: SubResource::default(),
             properties,
@@ -1259,7 +1274,7 @@ pub struct Pipeline {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub activities: Vec<Activity>,
+    pub activities: Vec<ActivityUnion>,
     #[doc = "Definition of all parameters for an entity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<ParameterDefinitionSpecification>,
@@ -1684,6 +1699,12 @@ impl SecretBase {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum SecretBaseUnion {
+    AzureKeyVaultSecret(AzureKeyVaultSecretReference),
+    SecureString(SecureString),
+}
 #[doc = "Azure Data Factory secure string definition. The string value will be masked with asterisks '*' during Get or List API calls."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecureString {
@@ -1890,6 +1911,9 @@ impl Trigger {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum TriggerUnion {}
 #[doc = "A list of trigger resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TriggerListResponse {
@@ -1931,10 +1955,10 @@ pub struct TriggerResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     #[doc = "Azure data factory nested object which contains information about creating pipeline run"]
-    pub properties: Trigger,
+    pub properties: TriggerUnion,
 }
 impl TriggerResource {
-    pub fn new(properties: Trigger) -> Self {
+    pub fn new(properties: TriggerUnion) -> Self {
         Self {
             sub_resource: SubResource::default(),
             properties,

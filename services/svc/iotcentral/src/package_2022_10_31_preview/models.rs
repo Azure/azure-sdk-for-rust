@@ -89,6 +89,16 @@ impl Attestation {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AttestationUnion {
+    #[serde(rename = "symmetricKey")]
+    SymmetricKey(SymmetricKeyAttestation),
+    #[serde(rename = "tpm")]
+    Tpm(TpmAttestation),
+    #[serde(rename = "x509")]
+    X509(X509Attestation),
+}
 #[doc = "Configuration specifying options for a bar chart tile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BarChartConfiguration {
@@ -126,10 +136,10 @@ pub struct BlobStorageV1Destination {
     #[serde(flatten)]
     pub destination: Destination,
     #[doc = "The authentication definition for blob storage destination."]
-    pub authorization: BlobStorageV1DestinationAuth,
+    pub authorization: BlobStorageV1DestinationAuthUnion,
 }
 impl BlobStorageV1Destination {
-    pub fn new(destination: Destination, authorization: BlobStorageV1DestinationAuth) -> Self {
+    pub fn new(destination: Destination, authorization: BlobStorageV1DestinationAuthUnion) -> Self {
         Self {
             destination,
             authorization,
@@ -147,6 +157,14 @@ impl BlobStorageV1DestinationAuth {
     pub fn new(type_: String) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum BlobStorageV1DestinationAuthUnion {
+    #[serde(rename = "connectionString")]
+    ConnectionString(BlobStorageV1DestinationConnectionStringAuth),
+    #[serde(rename = "systemAssignedManagedIdentity")]
+    SystemAssignedManagedIdentity(BlobStorageV1DestinationSystemAssignedManagedIdentityAuth),
 }
 #[doc = "The authentication definition with connection string for blob storage destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -479,7 +497,7 @@ pub struct DataExplorerV1Destination {
     #[doc = "The table within the Data Explorer database that will receive the data."]
     pub table: String,
     #[doc = "The authentication definition for azure data explorer destination."]
-    pub authorization: DataExplorerV1DestinationAuth,
+    pub authorization: DataExplorerV1DestinationAuthUnion,
 }
 impl DataExplorerV1Destination {
     pub fn new(
@@ -487,7 +505,7 @@ impl DataExplorerV1Destination {
         cluster_url: String,
         database: String,
         table: String,
-        authorization: DataExplorerV1DestinationAuth,
+        authorization: DataExplorerV1DestinationAuthUnion,
     ) -> Self {
         Self {
             destination,
@@ -509,6 +527,14 @@ impl DataExplorerV1DestinationAuth {
     pub fn new(type_: String) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum DataExplorerV1DestinationAuthUnion {
+    #[serde(rename = "servicePrincipal")]
+    ServicePrincipal(DataExplorerV1DestinationServicePrincipalAuth),
+    #[serde(rename = "systemAssignedManagedIdentity")]
+    SystemAssignedManagedIdentity(DataExplorerV1DestinationSystemAssignedManagedIdentityAuth),
 }
 #[doc = "The authentication definition with service principal for azure data explorer destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -681,11 +707,27 @@ impl Destination {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum DestinationUnion {
+    #[serde(rename = "blobstorage@v1")]
+    BlobstorageV1(BlobStorageV1Destination),
+    #[serde(rename = "dataexplorer@v1")]
+    DataexplorerV1(DataExplorerV1Destination),
+    #[serde(rename = "eventhubs@v1")]
+    EventhubsV1(EventHubsV1Destination),
+    #[serde(rename = "servicebusqueue@v1")]
+    ServicebusqueueV1(ServiceBusQueueV1Destination),
+    #[serde(rename = "servicebustopic@v1")]
+    ServicebustopicV1(ServiceBusTopicV1Destination),
+    #[serde(rename = "webhook@v1")]
+    WebhookV1(WebhookV1Destination),
+}
 #[doc = "The paged results of destinations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DestinationCollection {
     #[doc = "The collection of destinations."]
-    pub value: Vec<Destination>,
+    pub value: Vec<DestinationUnion>,
     #[doc = "URL to get the next page of destinations."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -697,7 +739,7 @@ impl azure_core::Continuable for DestinationCollection {
     }
 }
 impl DestinationCollection {
-    pub fn new(value: Vec<Destination>) -> Self {
+    pub fn new(value: Vec<DestinationUnion>) -> Self {
         Self { value, next_link: None }
     }
 }
@@ -1156,7 +1198,7 @@ pub struct EnrollmentGroup {
     #[serde(rename = "type")]
     pub type_: enrollment_group::Type,
     #[doc = "The attestation definition for an enrollment group."]
-    pub attestation: GroupAttestation,
+    pub attestation: GroupAttestationUnion,
     #[doc = "ETag used to prevent conflict in enrollment group updates."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -1165,7 +1207,7 @@ pub struct EnrollmentGroup {
     pub id_scope: Option<String>,
 }
 impl EnrollmentGroup {
-    pub fn new(display_name: String, type_: enrollment_group::Type, attestation: GroupAttestation) -> Self {
+    pub fn new(display_name: String, type_: enrollment_group::Type, attestation: GroupAttestationUnion) -> Self {
         Self {
             id: None,
             display_name,
@@ -1313,10 +1355,10 @@ pub struct EventHubsV1Destination {
     #[serde(flatten)]
     pub destination: Destination,
     #[doc = "The authentication definition for event hub destination."]
-    pub authorization: EventHubsV1DestinationAuth,
+    pub authorization: EventHubsV1DestinationAuthUnion,
 }
 impl EventHubsV1Destination {
-    pub fn new(destination: Destination, authorization: EventHubsV1DestinationAuth) -> Self {
+    pub fn new(destination: Destination, authorization: EventHubsV1DestinationAuthUnion) -> Self {
         Self {
             destination,
             authorization,
@@ -1334,6 +1376,14 @@ impl EventHubsV1DestinationAuth {
     pub fn new(type_: String) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum EventHubsV1DestinationAuthUnion {
+    #[serde(rename = "connectionString")]
+    ConnectionString(EventHubsV1DestinationConnectionStringAuth),
+    #[serde(rename = "systemAssignedManagedIdentity")]
+    SystemAssignedManagedIdentity(EventHubsV1DestinationSystemAssignedManagedIdentityAuth),
 }
 #[doc = "The authentication definition with connection string for event hub destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1585,6 +1635,14 @@ impl GroupAttestation {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum GroupAttestationUnion {
+    #[serde(rename = "symmetricKey")]
+    SymmetricKey(GroupSymmetricKeyAttestation),
+    #[serde(rename = "x509")]
+    X509(GroupX509Attestation),
+}
 #[doc = "The symmetric key attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GroupSymmetricKeyAttestation {
@@ -1786,7 +1844,7 @@ pub struct Job {
     #[serde(rename = "cancellationThreshold", default, skip_serializing_if = "Option::is_none")]
     pub cancellation_threshold: Option<JobCancellationThreshold>,
     #[doc = "The capabilities being updated by the job and the values with which they are being updated."]
-    pub data: Vec<JobData>,
+    pub data: Vec<JobDataUnion>,
     #[doc = "The start time of the job"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub start: Option<time::OffsetDateTime>,
@@ -1808,7 +1866,7 @@ pub struct Job {
     pub organizations: Vec<String>,
 }
 impl Job {
-    pub fn new(group: String, data: Vec<JobData>) -> Self {
+    pub fn new(group: String, data: Vec<JobDataUnion>) -> Self {
         Self {
             id: None,
             scheduled_job_id: None,
@@ -1911,6 +1969,20 @@ impl JobData {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum JobDataUnion {
+    #[serde(rename = "cloudProperty")]
+    CloudProperty(CloudPropertyJobData),
+    #[serde(rename = "command")]
+    Command(CommandJobData),
+    #[serde(rename = "deviceManifestMigration")]
+    DeviceManifestMigration(DeviceManifestMigrationJobData),
+    #[serde(rename = "deviceTemplateMigration")]
+    DeviceTemplateMigration(DeviceTemplateMigrationJobData),
+    #[serde(rename = "property")]
+    Property(PropertyJobData),
+}
 #[doc = "The job device status definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDeviceStatus {
@@ -1978,7 +2050,7 @@ pub struct JobSchedule {
     pub start: time::OffsetDateTime,
     #[doc = "The end definition of job schedule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub end: Option<JobScheduleEnd>,
+    pub end: Option<JobScheduleEndUnion>,
 }
 impl JobSchedule {
     pub fn new(start: time::OffsetDateTime) -> Self {
@@ -2013,6 +2085,14 @@ impl JobScheduleEnd {
     pub fn new(type_: String) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum JobScheduleEndUnion {
+    #[serde(rename = "date")]
+    Date(DateJobScheduleEnd),
+    #[serde(rename = "occurrences")]
+    Occurrences(OccurrencesJobScheduleEnd),
 }
 #[doc = "Configuration specifying options for KPI tile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2084,7 +2164,7 @@ pub struct LineChartConfiguration {
     pub tile_capability_configuration: TileCapabilityConfiguration,
     #[doc = "Configuration specifying how much data to return for a tile."]
     #[serde(rename = "queryRange")]
-    pub query_range: QueryRangeConfiguration,
+    pub query_range: QueryRangeConfigurationUnion,
     #[doc = "Configuration specifying formatting options for a chart tile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub format: Option<ChartFormatConfiguration>,
@@ -2093,7 +2173,7 @@ impl LineChartConfiguration {
     pub fn new(
         tile_configuration: TileConfiguration,
         group_tile_configuration: GroupTileConfiguration,
-        query_range: QueryRangeConfiguration,
+        query_range: QueryRangeConfigurationUnion,
     ) -> Self {
         Self {
             tile_configuration,
@@ -2366,6 +2446,14 @@ impl QueryRangeConfiguration {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum QueryRangeConfigurationUnion {
+    #[serde(rename = "count")]
+    Count(CountQueryRangeConfiguration),
+    #[serde(rename = "time")]
+    Time(TimeQueryRangeConfiguration),
+}
 #[doc = "The query request payload definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct QueryRequest {
@@ -2460,7 +2548,7 @@ pub struct ScheduledJob {
     #[serde(rename = "cancellationThreshold", default, skip_serializing_if = "Option::is_none")]
     pub cancellation_threshold: Option<JobCancellationThreshold>,
     #[doc = "Data related to the operation being performed by this job. All entries must be of the same type."]
-    pub data: Vec<JobData>,
+    pub data: Vec<JobDataUnion>,
     #[doc = "List of organizations of the job, only one organization is supported today, multiple organizations will be supported soon."]
     #[serde(
         default,
@@ -2478,7 +2566,7 @@ pub struct ScheduledJob {
     pub completed: Option<bool>,
 }
 impl ScheduledJob {
-    pub fn new(group: String, data: Vec<JobData>, schedule: JobSchedule) -> Self {
+    pub fn new(group: String, data: Vec<JobDataUnion>, schedule: JobSchedule) -> Self {
         Self {
             etag: None,
             id: None,
@@ -2521,10 +2609,10 @@ pub struct ServiceBusQueueV1Destination {
     #[serde(flatten)]
     pub destination: Destination,
     #[doc = "The authentication definition for service bus queue definition."]
-    pub authorization: ServiceBusQueueV1DestinationAuth,
+    pub authorization: ServiceBusQueueV1DestinationAuthUnion,
 }
 impl ServiceBusQueueV1Destination {
-    pub fn new(destination: Destination, authorization: ServiceBusQueueV1DestinationAuth) -> Self {
+    pub fn new(destination: Destination, authorization: ServiceBusQueueV1DestinationAuthUnion) -> Self {
         Self {
             destination,
             authorization,
@@ -2542,6 +2630,14 @@ impl ServiceBusQueueV1DestinationAuth {
     pub fn new(type_: String) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ServiceBusQueueV1DestinationAuthUnion {
+    #[serde(rename = "connectionString")]
+    ConnectionString(ServiceBusQueueV1DestinationConnectionStringAuth),
+    #[serde(rename = "systemAssignedManagedIdentity")]
+    SystemAssignedManagedIdentity(ServiceBusQueueV1DestinationSystemAssignedManagedIdentityAuth),
 }
 #[doc = "The authentication definition with connection string for service bus queue definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2587,10 +2683,10 @@ pub struct ServiceBusTopicV1Destination {
     #[serde(flatten)]
     pub destination: Destination,
     #[doc = "The authentication definition for service bus topic destination."]
-    pub authorization: ServiceBusTopicV1DestinationAuth,
+    pub authorization: ServiceBusTopicV1DestinationAuthUnion,
 }
 impl ServiceBusTopicV1Destination {
-    pub fn new(destination: Destination, authorization: ServiceBusTopicV1DestinationAuth) -> Self {
+    pub fn new(destination: Destination, authorization: ServiceBusTopicV1DestinationAuthUnion) -> Self {
         Self {
             destination,
             authorization,
@@ -2608,6 +2704,14 @@ impl ServiceBusTopicV1DestinationAuth {
     pub fn new(type_: String) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ServiceBusTopicV1DestinationAuthUnion {
+    #[serde(rename = "connectionString")]
+    ConnectionString(ServiceBusTopicV1DestinationConnectionStringAuth),
+    #[serde(rename = "systemAssignedManagedIdentity")]
+    SystemAssignedManagedIdentity(ServiceBusTopicV1DestinationSystemAssignedManagedIdentityAuth),
 }
 #[doc = "The authentication definition with connection string for service bus topic destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2843,7 +2947,7 @@ pub struct Tile {
     #[serde(rename = "displayName")]
     pub display_name: String,
     #[doc = "Configuration specifying information about a tile."]
-    pub configuration: TileConfiguration,
+    pub configuration: TileConfigurationUnion,
     #[doc = "Height of the tile"]
     pub height: f64,
     #[doc = "Width of the tile"]
@@ -2854,7 +2958,7 @@ pub struct Tile {
     pub y: f64,
 }
 impl Tile {
-    pub fn new(display_name: String, configuration: TileConfiguration, height: f64, width: f64, x: f64, y: f64) -> Self {
+    pub fn new(display_name: String, configuration: TileConfigurationUnion, height: f64, width: f64, x: f64, y: f64) -> Self {
         Self {
             id: None,
             display_name,
@@ -2909,6 +3013,52 @@ impl TileConfiguration {
     pub fn new(type_: String) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum TileConfigurationUnion {
+    #[serde(rename = "barChart")]
+    BarChart(BarChartConfiguration),
+    #[serde(rename = "command")]
+    Command(CommandConfiguration),
+    #[serde(rename = "command")]
+    Command(CommandTileConfiguration),
+    #[serde(rename = "dataExplorer")]
+    DataExplorer(DataExplorerTileConfiguration),
+    #[serde(rename = "deviceCount")]
+    DeviceCount(DeviceCountTileConfiguration),
+    #[serde(rename = "eventChart")]
+    EventChart(EventChartConfiguration),
+    #[serde(rename = "eventHistoryChart")]
+    EventHistoryChart(EventHistoryChartConfiguration),
+    #[serde(rename = "externalContent")]
+    ExternalContent(ExternalContentTileConfiguration),
+    #[serde(rename = "heatMapChart")]
+    HeatMapChart(HeatMapConfiguration),
+    #[serde(rename = "image")]
+    Image(ImageTileConfiguration),
+    #[serde(rename = "kpi")]
+    Kpi(KpiTileConfiguration),
+    #[serde(rename = "label")]
+    Label(LabelTileConfiguration),
+    #[serde(rename = "lineChart")]
+    LineChart(LineChartConfiguration),
+    #[serde(rename = "lkv")]
+    Lkv(LkvTileConfiguration),
+    #[serde(rename = "mapProperty")]
+    MapProperty(MapPropertyConfiguration),
+    #[serde(rename = "mapTelemetry")]
+    MapTelemetry(MapTelemetryConfiguration),
+    #[serde(rename = "markdown")]
+    Markdown(MarkdownTileConfiguration),
+    #[serde(rename = "pieChart")]
+    PieChart(PieChartConfiguration),
+    #[serde(rename = "property")]
+    Property(PropertyTileConfiguration),
+    #[serde(rename = "stateChart")]
+    StateChart(StateChartConfiguration),
+    #[serde(rename = "stateHistoryChart")]
+    StateHistoryChart(StateHistoryChartConfiguration),
 }
 #[doc = "The unit of size for the text in the tile"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3130,11 +3280,21 @@ impl User {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum UserUnion {
+    #[serde(rename = "adGroup")]
+    AdGroup(AdGroupUser),
+    #[serde(rename = "email")]
+    Email(EmailUser),
+    #[serde(rename = "servicePrincipal")]
+    ServicePrincipal(ServicePrincipalUser),
+}
 #[doc = "The paged results of users."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserCollection {
     #[doc = "The collection of users."]
-    pub value: Vec<User>,
+    pub value: Vec<UserUnion>,
     #[doc = "URL to get the next page of users."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -3146,7 +3306,7 @@ impl azure_core::Continuable for UserCollection {
     }
 }
 impl UserCollection {
-    pub fn new(value: Vec<User>) -> Self {
+    pub fn new(value: Vec<UserUnion>) -> Self {
         Self { value, next_link: None }
     }
 }
@@ -3165,7 +3325,7 @@ pub struct WebhookV1Destination {
     pub header_customizations: Option<serde_json::Value>,
     #[doc = "The authentication definition for webhook destination."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authorization: Option<WebhookV1DestinationAuth>,
+    pub authorization: Option<WebhookV1DestinationAuthUnion>,
 }
 impl WebhookV1Destination {
     pub fn new(destination: Destination, url: String) -> Self {
@@ -3189,6 +3349,14 @@ impl WebhookV1DestinationAuth {
     pub fn new(type_: String) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum WebhookV1DestinationAuthUnion {
+    #[serde(rename = "header")]
+    Header(WebhookV1DestinationHeaderAuth),
+    #[serde(rename = "oauth")]
+    Oauth(WebhookV1DestinationOAuthAuth),
 }
 #[doc = "The customization definition for webhook destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

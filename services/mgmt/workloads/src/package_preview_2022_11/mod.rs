@@ -203,9 +203,9 @@ pub mod sap_sizing_recommendations {
     #[derive(Debug)]
     pub struct Response(azure_core::Response);
     impl Response {
-        pub async fn into_body(self) -> azure_core::Result<models::SapSizingRecommendationResult> {
+        pub async fn into_body(self) -> azure_core::Result<models::SapSizingRecommendationResultUnion> {
             let bytes = self.0.into_body().collect().await?;
-            let body: models::SapSizingRecommendationResult = serde_json::from_slice(&bytes)?;
+            let body: models::SapSizingRecommendationResultUnion = serde_json::from_slice(&bytes)?;
             Ok(body)
         }
         pub fn into_raw_response(self) -> azure_core::Response {
@@ -294,8 +294,8 @@ pub mod sap_sizing_recommendations {
         }
     }
     impl std::future::IntoFuture for RequestBuilder {
-        type Output = azure_core::Result<models::SapSizingRecommendationResult>;
-        type IntoFuture = BoxFuture<'static, azure_core::Result<models::SapSizingRecommendationResult>>;
+        type Output = azure_core::Result<models::SapSizingRecommendationResultUnion>;
+        type IntoFuture = BoxFuture<'static, azure_core::Result<models::SapSizingRecommendationResultUnion>>;
         #[doc = "Returns a future that sends the request and returns the parsed response body."]
         #[doc = ""]
         #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]

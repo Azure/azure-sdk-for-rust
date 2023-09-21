@@ -1783,7 +1783,7 @@ pub mod databases {
             resource_group_name: impl Into<String>,
             cluster_name: impl Into<String>,
             database_name: impl Into<String>,
-            parameters: impl Into<models::Database>,
+            parameters: impl Into<models::DatabaseUnion>,
             subscription_id: impl Into<String>,
         ) -> create_or_update::RequestBuilder {
             create_or_update::RequestBuilder {
@@ -1808,7 +1808,7 @@ pub mod databases {
             resource_group_name: impl Into<String>,
             cluster_name: impl Into<String>,
             database_name: impl Into<String>,
-            parameters: impl Into<models::Database>,
+            parameters: impl Into<models::DatabaseUnion>,
             subscription_id: impl Into<String>,
         ) -> update::RequestBuilder {
             update::RequestBuilder {
@@ -2132,9 +2132,9 @@ pub mod databases {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Database> {
+            pub async fn into_body(self) -> azure_core::Result<models::DatabaseUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Database = serde_json::from_slice(&bytes)?;
+                let body: models::DatabaseUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2221,8 +2221,8 @@ pub mod databases {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Database>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Database>>;
+            type Output = azure_core::Result<models::DatabaseUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DatabaseUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -2242,9 +2242,9 @@ pub mod databases {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Database> {
+            pub async fn into_body(self) -> azure_core::Result<models::DatabaseUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Database = serde_json::from_slice(&bytes)?;
+                let body: models::DatabaseUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2287,7 +2287,7 @@ pub mod databases {
             pub(crate) resource_group_name: String,
             pub(crate) cluster_name: String,
             pub(crate) database_name: String,
-            pub(crate) parameters: models::Database,
+            pub(crate) parameters: models::DatabaseUnion,
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
@@ -2332,8 +2332,8 @@ pub mod databases {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Database>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Database>>;
+            type Output = azure_core::Result<models::DatabaseUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DatabaseUnion>>;
             #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
@@ -2381,9 +2381,9 @@ pub mod databases {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Database> {
+            pub async fn into_body(self) -> azure_core::Result<models::DatabaseUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Database = serde_json::from_slice(&bytes)?;
+                let body: models::DatabaseUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2426,7 +2426,7 @@ pub mod databases {
             pub(crate) resource_group_name: String,
             pub(crate) cluster_name: String,
             pub(crate) database_name: String,
-            pub(crate) parameters: models::Database,
+            pub(crate) parameters: models::DatabaseUnion,
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
@@ -2471,8 +2471,8 @@ pub mod databases {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Database>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Database>>;
+            type Output = azure_core::Result<models::DatabaseUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DatabaseUnion>>;
             #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
@@ -3586,7 +3586,7 @@ pub mod data_connections {
             cluster_name: impl Into<String>,
             database_name: impl Into<String>,
             data_connection_name: impl Into<String>,
-            parameters: impl Into<models::DataConnection>,
+            parameters: impl Into<models::DataConnectionUnion>,
             subscription_id: impl Into<String>,
         ) -> create_or_update::RequestBuilder {
             create_or_update::RequestBuilder {
@@ -3614,7 +3614,7 @@ pub mod data_connections {
             cluster_name: impl Into<String>,
             database_name: impl Into<String>,
             data_connection_name: impl Into<String>,
-            parameters: impl Into<models::DataConnection>,
+            parameters: impl Into<models::DataConnectionUnion>,
             subscription_id: impl Into<String>,
         ) -> update::RequestBuilder {
             update::RequestBuilder {
@@ -3986,9 +3986,9 @@ pub mod data_connections {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::DataConnection> {
+            pub async fn into_body(self) -> azure_core::Result<models::DataConnectionUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::DataConnection = serde_json::from_slice(&bytes)?;
+                let body: models::DataConnectionUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -4077,8 +4077,8 @@ pub mod data_connections {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::DataConnection>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DataConnection>>;
+            type Output = azure_core::Result<models::DataConnectionUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DataConnectionUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -4098,9 +4098,9 @@ pub mod data_connections {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::DataConnection> {
+            pub async fn into_body(self) -> azure_core::Result<models::DataConnectionUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::DataConnection = serde_json::from_slice(&bytes)?;
+                let body: models::DataConnectionUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -4144,7 +4144,7 @@ pub mod data_connections {
             pub(crate) cluster_name: String,
             pub(crate) database_name: String,
             pub(crate) data_connection_name: String,
-            pub(crate) parameters: models::DataConnection,
+            pub(crate) parameters: models::DataConnectionUnion,
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
@@ -4190,8 +4190,8 @@ pub mod data_connections {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::DataConnection>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DataConnection>>;
+            type Output = azure_core::Result<models::DataConnectionUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DataConnectionUnion>>;
             #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
@@ -4239,9 +4239,9 @@ pub mod data_connections {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::DataConnection> {
+            pub async fn into_body(self) -> azure_core::Result<models::DataConnectionUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::DataConnection = serde_json::from_slice(&bytes)?;
+                let body: models::DataConnectionUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -4285,7 +4285,7 @@ pub mod data_connections {
             pub(crate) cluster_name: String,
             pub(crate) database_name: String,
             pub(crate) data_connection_name: String,
-            pub(crate) parameters: models::DataConnection,
+            pub(crate) parameters: models::DataConnectionUnion,
             pub(crate) subscription_id: String,
         }
         impl RequestBuilder {
@@ -4331,8 +4331,8 @@ pub mod data_connections {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::DataConnection>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DataConnection>>;
+            type Output = azure_core::Result<models::DataConnectionUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DataConnectionUnion>>;
             #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]

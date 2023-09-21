@@ -1284,7 +1284,7 @@ pub mod feature_support {
             &self,
             azure_region: impl Into<String>,
             subscription_id: impl Into<String>,
-            parameters: impl Into<models::FeatureSupportRequest>,
+            parameters: impl Into<models::FeatureSupportRequestUnion>,
         ) -> validate::RequestBuilder {
             validate::RequestBuilder {
                 client: self.0.clone(),
@@ -1348,7 +1348,7 @@ pub mod feature_support {
             pub(crate) client: super::super::Client,
             pub(crate) azure_region: String,
             pub(crate) subscription_id: String,
-            pub(crate) parameters: models::FeatureSupportRequest,
+            pub(crate) parameters: models::FeatureSupportRequestUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -3560,9 +3560,9 @@ pub mod bms_prepare_data_move_operation_result {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::VaultStorageConfigOperationResultResponse> {
+            pub async fn into_body(self) -> azure_core::Result<models::VaultStorageConfigOperationResultResponseUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::VaultStorageConfigOperationResultResponse = serde_json::from_slice(&bytes)?;
+                let body: models::VaultStorageConfigOperationResultResponseUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -3642,8 +3642,8 @@ pub mod bms_prepare_data_move_operation_result {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::VaultStorageConfigOperationResultResponse>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::VaultStorageConfigOperationResultResponse>>;
+            type Output = azure_core::Result<models::VaultStorageConfigOperationResultResponseUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::VaultStorageConfigOperationResultResponseUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -6381,7 +6381,7 @@ pub mod operation {
             vault_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-            parameters: impl Into<models::ValidateOperationRequest>,
+            parameters: impl Into<models::ValidateOperationRequestUnion>,
         ) -> validate::RequestBuilder {
             validate::RequestBuilder {
                 client: self.0.clone(),
@@ -6447,7 +6447,7 @@ pub mod operation {
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
-            pub(crate) parameters: models::ValidateOperationRequest,
+            pub(crate) parameters: models::ValidateOperationRequestUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -6523,7 +6523,7 @@ pub mod validate_operation {
             vault_name: impl Into<String>,
             resource_group_name: impl Into<String>,
             subscription_id: impl Into<String>,
-            parameters: impl Into<models::ValidateOperationRequest>,
+            parameters: impl Into<models::ValidateOperationRequestUnion>,
         ) -> trigger::RequestBuilder {
             trigger::RequestBuilder {
                 client: self.0.clone(),
@@ -6583,7 +6583,7 @@ pub mod validate_operation {
             pub(crate) vault_name: String,
             pub(crate) resource_group_name: String,
             pub(crate) subscription_id: String,
-            pub(crate) parameters: models::ValidateOperationRequest,
+            pub(crate) parameters: models::ValidateOperationRequestUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]

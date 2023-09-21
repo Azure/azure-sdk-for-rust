@@ -171,6 +171,16 @@ pub mod offer_term_info {
         MonetaryCredit,
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Name")]
+pub enum OfferTermInfoUnion {
+    #[serde(rename = "Monetary Commitment")]
+    MonetaryCommitment(MonetaryCommitment),
+    #[serde(rename = "Monetary Credit")]
+    MonetaryCredit(MonetaryCredit),
+    #[serde(rename = "Recurring Charge")]
+    RecurringCharge(RecurringCharge),
+}
 #[doc = "Parameters that are used in the odata $filter query parameter for providing RateCard information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RateCardQueryParameters {
@@ -233,7 +243,7 @@ pub struct ResourceRateCardInfo {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub offer_terms: Vec<OfferTermInfo>,
+    pub offer_terms: Vec<OfferTermInfoUnion>,
     #[doc = "A list of meters."]
     #[serde(
         rename = "Meters",

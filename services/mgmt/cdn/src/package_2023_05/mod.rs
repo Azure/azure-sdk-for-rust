@@ -16101,13 +16101,13 @@ pub mod custom_domains {
             pub(crate) endpoint_name: String,
             pub(crate) custom_domain_name: String,
             pub(crate) subscription_id: String,
-            pub(crate) custom_domain_https_parameters: Option<models::CustomDomainHttpsParameters>,
+            pub(crate) custom_domain_https_parameters: Option<models::CustomDomainHttpsParametersUnion>,
         }
         impl RequestBuilder {
             #[doc = "The configuration specifying how to enable HTTPS for the custom domain - using CDN managed certificate or user's own certificate. If not specified, enabling ssl uses CDN managed certificate by default."]
             pub fn custom_domain_https_parameters(
                 mut self,
-                custom_domain_https_parameters: impl Into<models::CustomDomainHttpsParameters>,
+                custom_domain_https_parameters: impl Into<models::CustomDomainHttpsParametersUnion>,
             ) -> Self {
                 self.custom_domain_https_parameters = Some(custom_domain_https_parameters.into());
                 self

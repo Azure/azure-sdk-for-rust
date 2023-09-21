@@ -15,13 +15,19 @@ impl CertificateSource {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum CertificateSourceUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.PemCertificateList")]
+    MicrosoftVideoAnalyzerPemCertificateList(PemCertificateList),
+}
 #[doc = "A processor that allows the pipeline topology to send video frames to a Cognitive Services Vision extension. Inference results are relayed to downstream nodes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CognitiveServicesVisionProcessor {
     #[serde(flatten)]
     pub processor_node_base: ProcessorNodeBase,
     #[doc = "Base class for endpoints."]
-    pub endpoint: EndpointBase,
+    pub endpoint: EndpointBaseUnion,
     #[doc = "Image transformations and formatting options to be applied to the video frame(s)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub image: Option<ImageProperties>,
@@ -29,10 +35,10 @@ pub struct CognitiveServicesVisionProcessor {
     #[serde(rename = "samplingOptions", default, skip_serializing_if = "Option::is_none")]
     pub sampling_options: Option<SamplingOptions>,
     #[doc = "Base class for Azure Cognitive Services Spatial Analysis operations."]
-    pub operation: SpatialAnalysisOperationBase,
+    pub operation: SpatialAnalysisOperationBaseUnion,
 }
 impl CognitiveServicesVisionProcessor {
-    pub fn new(processor_node_base: ProcessorNodeBase, endpoint: EndpointBase, operation: SpatialAnalysisOperationBase) -> Self {
+    pub fn new(processor_node_base: ProcessorNodeBase, endpoint: EndpointBaseUnion, operation: SpatialAnalysisOperationBaseUnion) -> Self {
         Self {
             processor_node_base,
             endpoint,
@@ -54,6 +60,14 @@ impl CredentialsBase {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum CredentialsBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.HttpHeaderCredentials")]
+    MicrosoftVideoAnalyzerHttpHeaderCredentials(HttpHeaderCredentials),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.UsernamePasswordCredentials")]
+    MicrosoftVideoAnalyzerUsernamePasswordCredentials(UsernamePasswordCredentials),
+}
 #[doc = "Base class for endpoints."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EndpointBase {
@@ -62,7 +76,7 @@ pub struct EndpointBase {
     pub type_: String,
     #[doc = "Base class for credential objects."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub credentials: Option<CredentialsBase>,
+    pub credentials: Option<CredentialsBaseUnion>,
     #[doc = "The endpoint URL for Video Analyzer to connect to."]
     pub url: String,
 }
@@ -75,13 +89,21 @@ impl EndpointBase {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum EndpointBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.TlsEndpoint")]
+    MicrosoftVideoAnalyzerTlsEndpoint(TlsEndpoint),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.UnsecuredEndpoint")]
+    MicrosoftVideoAnalyzerUnsecuredEndpoint(UnsecuredEndpoint),
+}
 #[doc = "Base class for pipeline extension processors. Pipeline extensions allow for custom media analysis and processing to be plugged into the Video Analyzer pipeline."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExtensionProcessorBase {
     #[serde(flatten)]
     pub processor_node_base: ProcessorNodeBase,
     #[doc = "Base class for endpoints."]
-    pub endpoint: EndpointBase,
+    pub endpoint: EndpointBaseUnion,
     #[doc = "Image transformations and formatting options to be applied to the video frame(s)."]
     pub image: ImageProperties,
     #[doc = "Defines how often media is submitted to the extension plugin."]
@@ -89,7 +111,7 @@ pub struct ExtensionProcessorBase {
     pub sampling_options: Option<SamplingOptions>,
 }
 impl ExtensionProcessorBase {
-    pub fn new(processor_node_base: ProcessorNodeBase, endpoint: EndpointBase, image: ImageProperties) -> Self {
+    pub fn new(processor_node_base: ProcessorNodeBase, endpoint: EndpointBaseUnion, image: ImageProperties) -> Self {
         Self {
             processor_node_base,
             endpoint,
@@ -286,6 +308,18 @@ impl ImageFormatProperties {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum ImageFormatPropertiesUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.ImageFormatBmp")]
+    MicrosoftVideoAnalyzerImageFormatBmp(ImageFormatBmp),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.ImageFormatJpeg")]
+    MicrosoftVideoAnalyzerImageFormatJpeg(ImageFormatJpeg),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.ImageFormatPng")]
+    MicrosoftVideoAnalyzerImageFormatPng(ImageFormatPng),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.ImageFormatRaw")]
+    MicrosoftVideoAnalyzerImageFormatRaw(ImageFormatRaw),
+}
 #[doc = "Raw image formatting."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageFormatRaw {
@@ -380,7 +414,7 @@ pub struct ImageProperties {
     pub scale: Option<ImageScale>,
     #[doc = "Base class for image formatting properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub format: Option<ImageFormatProperties>,
+    pub format: Option<ImageFormatPropertiesUnion>,
 }
 impl ImageProperties {
     pub fn new() -> Self {
@@ -490,10 +524,10 @@ pub struct LineCrossingProcessor {
     #[serde(flatten)]
     pub processor_node_base: ProcessorNodeBase,
     #[doc = "An array of lines used to compute line crossing events."]
-    pub lines: Vec<NamedLineBase>,
+    pub lines: Vec<NamedLineBaseUnion>,
 }
 impl LineCrossingProcessor {
-    pub fn new(processor_node_base: ProcessorNodeBase, lines: Vec<NamedLineBase>) -> Self {
+    pub fn new(processor_node_base: ProcessorNodeBase, lines: Vec<NamedLineBaseUnion>) -> Self {
         Self {
             processor_node_base,
             lines,
@@ -736,6 +770,18 @@ pub mod method_request {
         N1_0,
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "methodName")]
+pub enum MethodRequestUnion {
+    #[serde(rename = "livePipelineList")]
+    LivePipelineList(LivePipelineListRequest),
+    #[serde(rename = "livePipelineSet")]
+    LivePipelineSet(LivePipelineSetRequest),
+    #[serde(rename = "pipelineTopologyList")]
+    PipelineTopologyList(PipelineTopologyListRequest),
+    #[serde(rename = "pipelineTopologySet")]
+    PipelineTopologySet(PipelineTopologySetRequest),
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MethodRequestEmptyBodyBase {
     #[serde(flatten)]
@@ -832,6 +878,12 @@ impl NamedLineBase {
         Self { type_, name }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum NamedLineBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.NamedLineString")]
+    MicrosoftVideoAnalyzerNamedLineString(NamedLineString),
+}
 #[doc = "Describes a line configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NamedLineString {
@@ -858,6 +910,12 @@ impl NamedPolygonBase {
     pub fn new(type_: String, name: String) -> Self {
         Self { type_, name }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum NamedPolygonBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.NamedPolygonString")]
+    MicrosoftVideoAnalyzerNamedPolygonString(NamedPolygonString),
 }
 #[doc = "Describes a closed polygon configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1258,21 +1316,21 @@ pub struct PipelineTopologyProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub sources: Vec<SourceNodeBase>,
+    pub sources: Vec<SourceNodeBaseUnion>,
     #[doc = "List of the topology processor nodes. Processor nodes enable pipeline data to be analyzed, processed or transformed."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub processors: Vec<ProcessorNodeBase>,
+    pub processors: Vec<ProcessorNodeBaseUnion>,
     #[doc = "List of the topology sink nodes. Sink nodes allow pipeline data to be stored or exported."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub sinks: Vec<SinkNodeBase>,
+    pub sinks: Vec<SinkNodeBaseUnion>,
 }
 impl PipelineTopologyProperties {
     pub fn new() -> Self {
@@ -1328,6 +1386,22 @@ impl ProcessorNodeBase {
         Self { type_, name, inputs }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum ProcessorNodeBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.CognitiveServicesVisionProcessor")]
+    MicrosoftVideoAnalyzerCognitiveServicesVisionProcessor(CognitiveServicesVisionProcessor),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.ExtensionProcessorBase")]
+    MicrosoftVideoAnalyzerExtensionProcessorBase(ExtensionProcessorBase),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.LineCrossingProcessor")]
+    MicrosoftVideoAnalyzerLineCrossingProcessor(LineCrossingProcessor),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.MotionDetectionProcessor")]
+    MicrosoftVideoAnalyzerMotionDetectionProcessor(MotionDetectionProcessor),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.ObjectTrackingProcessor")]
+    MicrosoftVideoAnalyzerObjectTrackingProcessor(ObjectTrackingProcessor),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.SignalGateProcessor")]
+    MicrosoftVideoAnalyzerSignalGateProcessor(SignalGateProcessor),
+}
 #[doc = "RTSP source allows for media from an RTSP camera or generic RTSP server to be ingested into a live pipeline."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RtspSource {
@@ -1337,10 +1411,10 @@ pub struct RtspSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub transport: Option<rtsp_source::Transport>,
     #[doc = "Base class for endpoints."]
-    pub endpoint: EndpointBase,
+    pub endpoint: EndpointBaseUnion,
 }
 impl RtspSource {
-    pub fn new(source_node_base: SourceNodeBase, endpoint: EndpointBase) -> Self {
+    pub fn new(source_node_base: SourceNodeBase, endpoint: EndpointBaseUnion) -> Self {
         Self {
             source_node_base,
             transport: None,
@@ -1450,6 +1524,16 @@ impl SinkNodeBase {
         Self { type_, name, inputs }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum SinkNodeBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.FileSink")]
+    MicrosoftVideoAnalyzerFileSink(FileSink),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.IotHubMessageSink")]
+    MicrosoftVideoAnalyzerIotHubMessageSink(IotHubMessageSink),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.VideoSink")]
+    MicrosoftVideoAnalyzerVideoSink(VideoSink),
+}
 #[doc = "Base class for topology source nodes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceNodeBase {
@@ -1463,6 +1547,14 @@ impl SourceNodeBase {
     pub fn new(type_: String, name: String) -> Self {
         Self { type_, name }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum SourceNodeBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.IotHubMessageSource")]
+    MicrosoftVideoAnalyzerIotHubMessageSource(IotHubMessageSource),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.RtspSource")]
+    MicrosoftVideoAnalyzerRtspSource(RtspSource),
 }
 #[doc = "Defines a Spatial Analysis custom operation. This requires the Azure Cognitive Services Spatial analysis module to be deployed alongside the Video Analyzer module, please see https://aka.ms/ava-spatial-analysis for more information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1492,6 +1584,12 @@ impl SpatialAnalysisOperationBase {
     pub fn new(type_: String) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum SpatialAnalysisOperationBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.SpatialAnalysisCustomOperation")]
+    MicrosoftVideoAnalyzerSpatialAnalysisCustomOperation(SpatialAnalysisCustomOperation),
 }
 #[doc = "Defines the Azure Cognitive Services Spatial Analysis operation eventing configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1634,7 +1732,7 @@ impl SpatialAnalysisPersonCountOperation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SpatialAnalysisPersonCountZoneEvents {
     #[doc = "Describes the named polygon."]
-    pub zone: NamedPolygonBase,
+    pub zone: NamedPolygonBaseUnion,
     #[doc = "The event configuration."]
     #[serde(
         default,
@@ -1644,7 +1742,7 @@ pub struct SpatialAnalysisPersonCountZoneEvents {
     pub events: Vec<SpatialAnalysisPersonCountEvent>,
 }
 impl SpatialAnalysisPersonCountZoneEvents {
-    pub fn new(zone: NamedPolygonBase) -> Self {
+    pub fn new(zone: NamedPolygonBaseUnion) -> Self {
         Self { zone, events: Vec::new() }
     }
 }
@@ -1735,7 +1833,7 @@ impl SpatialAnalysisPersonDistanceOperation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SpatialAnalysisPersonDistanceZoneEvents {
     #[doc = "Describes the named polygon."]
-    pub zone: NamedPolygonBase,
+    pub zone: NamedPolygonBaseUnion,
     #[doc = "The event configuration."]
     #[serde(
         default,
@@ -1745,7 +1843,7 @@ pub struct SpatialAnalysisPersonDistanceZoneEvents {
     pub events: Vec<SpatialAnalysisPersonDistanceEvent>,
 }
 impl SpatialAnalysisPersonDistanceZoneEvents {
-    pub fn new(zone: NamedPolygonBase) -> Self {
+    pub fn new(zone: NamedPolygonBaseUnion) -> Self {
         Self { zone, events: Vec::new() }
     }
 }
@@ -1763,7 +1861,7 @@ impl SpatialAnalysisPersonLineCrossingEvent {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SpatialAnalysisPersonLineCrossingLineEvents {
     #[doc = "Base class for named lines."]
-    pub line: NamedLineBase,
+    pub line: NamedLineBaseUnion,
     #[doc = "The event configuration."]
     #[serde(
         default,
@@ -1773,7 +1871,7 @@ pub struct SpatialAnalysisPersonLineCrossingLineEvents {
     pub events: Vec<SpatialAnalysisPersonLineCrossingEvent>,
 }
 impl SpatialAnalysisPersonLineCrossingLineEvents {
-    pub fn new(line: NamedLineBase) -> Self {
+    pub fn new(line: NamedLineBaseUnion) -> Self {
         Self { line, events: Vec::new() }
     }
 }
@@ -1874,7 +1972,7 @@ impl SpatialAnalysisPersonZoneCrossingOperation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SpatialAnalysisPersonZoneCrossingZoneEvents {
     #[doc = "Describes the named polygon."]
-    pub zone: NamedPolygonBase,
+    pub zone: NamedPolygonBaseUnion,
     #[doc = "The event configuration."]
     #[serde(
         default,
@@ -1884,7 +1982,7 @@ pub struct SpatialAnalysisPersonZoneCrossingZoneEvents {
     pub events: Vec<SpatialAnalysisPersonZoneCrossingEvent>,
 }
 impl SpatialAnalysisPersonZoneCrossingZoneEvents {
-    pub fn new(zone: NamedPolygonBase) -> Self {
+    pub fn new(zone: NamedPolygonBaseUnion) -> Self {
         Self { zone, events: Vec::new() }
     }
 }
@@ -1939,7 +2037,7 @@ pub struct TlsEndpoint {
     pub endpoint_base: EndpointBase,
     #[doc = "Base class for certificate sources."]
     #[serde(rename = "trustedCertificates", default, skip_serializing_if = "Option::is_none")]
-    pub trusted_certificates: Option<CertificateSource>,
+    pub trusted_certificates: Option<CertificateSourceUnion>,
     #[doc = "Options for controlling the validation of TLS endpoints."]
     #[serde(rename = "validationOptions", default, skip_serializing_if = "Option::is_none")]
     pub validation_options: Option<TlsValidationOptions>,

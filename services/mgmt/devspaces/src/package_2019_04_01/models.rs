@@ -39,7 +39,7 @@ impl Controller {
 pub struct ControllerConnectionDetails {
     #[doc = "Base class for types that supply values used to connect to container orchestrators"]
     #[serde(rename = "orchestratorSpecificConnectionDetails", default, skip_serializing_if = "Option::is_none")]
-    pub orchestrator_specific_connection_details: Option<OrchestratorSpecificConnectionDetails>,
+    pub orchestrator_specific_connection_details: Option<OrchestratorSpecificConnectionDetailsUnion>,
 }
 impl ControllerConnectionDetails {
     pub fn new() -> Self {
@@ -267,6 +267,11 @@ impl OrchestratorSpecificConnectionDetails {
     pub fn new() -> Self {
         Self::default()
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "instanceType")]
+pub enum OrchestratorSpecificConnectionDetailsUnion {
+    Kubernetes(KubernetesConnectionDetails),
 }
 #[doc = "An Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

@@ -293,7 +293,7 @@ pub mod environments {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             environment_name: impl Into<String>,
-            parameters: impl Into<models::EnvironmentCreateOrUpdateParameters>,
+            parameters: impl Into<models::EnvironmentCreateOrUpdateParametersUnion>,
         ) -> create_or_update::RequestBuilder {
             create_or_update::RequestBuilder {
                 client: self.0.clone(),
@@ -380,9 +380,9 @@ pub mod environments {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::EnvironmentResource> {
+            pub async fn into_body(self) -> azure_core::Result<models::EnvironmentResourceUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::EnvironmentResource = serde_json::from_slice(&bytes)?;
+                let body: models::EnvironmentResourceUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -476,8 +476,8 @@ pub mod environments {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::EnvironmentResource>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::EnvironmentResource>>;
+            type Output = azure_core::Result<models::EnvironmentResourceUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::EnvironmentResourceUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -497,9 +497,9 @@ pub mod environments {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::EnvironmentResource> {
+            pub async fn into_body(self) -> azure_core::Result<models::EnvironmentResourceUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::EnvironmentResource = serde_json::from_slice(&bytes)?;
+                let body: models::EnvironmentResourceUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -542,7 +542,7 @@ pub mod environments {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) environment_name: String,
-            pub(crate) parameters: models::EnvironmentCreateOrUpdateParameters,
+            pub(crate) parameters: models::EnvironmentCreateOrUpdateParametersUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -585,8 +585,8 @@ pub mod environments {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::EnvironmentResource>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::EnvironmentResource>>;
+            type Output = azure_core::Result<models::EnvironmentResourceUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::EnvironmentResourceUnion>>;
             #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
@@ -634,9 +634,9 @@ pub mod environments {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::EnvironmentResource> {
+            pub async fn into_body(self) -> azure_core::Result<models::EnvironmentResourceUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::EnvironmentResource = serde_json::from_slice(&bytes)?;
+                let body: models::EnvironmentResourceUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -722,8 +722,8 @@ pub mod environments {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::EnvironmentResource>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::EnvironmentResource>>;
+            type Output = azure_core::Result<models::EnvironmentResourceUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::EnvironmentResourceUnion>>;
             #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
@@ -1108,7 +1108,7 @@ pub mod event_sources {
             resource_group_name: impl Into<String>,
             environment_name: impl Into<String>,
             event_source_name: impl Into<String>,
-            parameters: impl Into<models::EventSourceCreateOrUpdateParameters>,
+            parameters: impl Into<models::EventSourceCreateOrUpdateParametersUnion>,
         ) -> create_or_update::RequestBuilder {
             create_or_update::RequestBuilder {
                 client: self.0.clone(),
@@ -1195,9 +1195,9 @@ pub mod event_sources {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::EventSourceResource> {
+            pub async fn into_body(self) -> azure_core::Result<models::EventSourceResourceUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::EventSourceResource = serde_json::from_slice(&bytes)?;
+                let body: models::EventSourceResourceUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1284,8 +1284,8 @@ pub mod event_sources {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::EventSourceResource>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::EventSourceResource>>;
+            type Output = azure_core::Result<models::EventSourceResourceUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::EventSourceResourceUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1305,9 +1305,9 @@ pub mod event_sources {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::EventSourceResource> {
+            pub async fn into_body(self) -> azure_core::Result<models::EventSourceResourceUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::EventSourceResource = serde_json::from_slice(&bytes)?;
+                let body: models::EventSourceResourceUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1352,7 +1352,7 @@ pub mod event_sources {
             pub(crate) resource_group_name: String,
             pub(crate) environment_name: String,
             pub(crate) event_source_name: String,
-            pub(crate) parameters: models::EventSourceCreateOrUpdateParameters,
+            pub(crate) parameters: models::EventSourceCreateOrUpdateParametersUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -1396,8 +1396,8 @@ pub mod event_sources {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::EventSourceResource>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::EventSourceResource>>;
+            type Output = azure_core::Result<models::EventSourceResourceUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::EventSourceResourceUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1417,9 +1417,9 @@ pub mod event_sources {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::EventSourceResource> {
+            pub async fn into_body(self) -> azure_core::Result<models::EventSourceResourceUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::EventSourceResource = serde_json::from_slice(&bytes)?;
+                let body: models::EventSourceResourceUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1508,8 +1508,8 @@ pub mod event_sources {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::EventSourceResource>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::EventSourceResource>>;
+            type Output = azure_core::Result<models::EventSourceResourceUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::EventSourceResourceUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]

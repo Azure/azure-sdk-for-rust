@@ -305,6 +305,12 @@ impl AuthCredentials {
         Self { kind }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AuthCredentialsUnion {
+    ApiKeyAuthCredentials(ApiKeyAuthCredentials),
+    OAuthClientCredentials(OAuthClientCredentials),
+}
 #[doc = "CredentialTypeEnum."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "AuthCredentialsKind")]
@@ -619,7 +625,7 @@ pub mod biomass_model_job {
 pub struct Boundary {
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub geometry: Option<GeoJsonObject>,
+    pub geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Indicates the type of boundary belonging to a parent."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
@@ -628,10 +634,10 @@ pub struct Boundary {
     pub crs: Option<String>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub centroid: Option<GeoJsonObject>,
+    pub centroid: Option<GeoJsonObjectUnion>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub bbox: Option<GeoJsonObject>,
+    pub bbox: Option<GeoJsonObjectUnion>,
     #[doc = "Party Id."]
     #[serde(rename = "partyId", default, skip_serializing_if = "Option::is_none")]
     pub party_id: Option<String>,
@@ -1854,6 +1860,13 @@ impl GeoJsonObject {
     pub fn new(type_: GeoJsonObjectType) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum GeoJsonObjectUnion {
+    MultiPolygon(MultiPolygon),
+    Point(Point),
+    Polygon(Polygon),
 }
 #[doc = "GeoJSON object type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3929,7 +3942,7 @@ pub struct SearchBoundaryQuery {
     pub max_area: Option<f64>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
-    pub intersects_with_geometry: Option<GeoJsonObject>,
+    pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
 }
 impl SearchBoundaryQuery {
     pub fn new() -> Self {
@@ -4004,7 +4017,7 @@ pub struct SearchFeaturesQuery {
     pub end_date_time: time::OffsetDateTime,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub intersects: Option<GeoJsonObject>,
+    pub intersects: Option<GeoJsonObjectUnion>,
     #[doc = "Only features that have a geometry that intersects the bounding box are selected.\r\nThe bounding box is provided as four numbers. The coordinate reference system of the values is WGS84 longitude/latitude."]
     #[serde(
         default,

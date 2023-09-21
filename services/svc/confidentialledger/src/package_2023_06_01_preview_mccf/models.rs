@@ -684,7 +684,7 @@ pub struct ServiceStateNode {
     pub retired_committed: bool,
     #[doc = "Common type for attestation information, describing the cryptographically-endorsed claim of what code is executing, and what platform it is executing on. Derived types contain platform-specific details."]
     #[serde(rename = "quoteInfo")]
-    pub quote_info: ServiceStateQuoteInfo,
+    pub quote_info: ServiceStateQuoteInfoUnion,
     #[doc = "A collection of interfaces by which this node may be contacted. Some may be limited to private networks, and others may be DNS names or internet-public network addresses. The keys are arbitrary strings determined by the node operator."]
     #[serde(rename = "rpcInterfaces")]
     pub rpc_interfaces: serde_json::Value,
@@ -695,7 +695,7 @@ impl ServiceStateNode {
         status: ServiceStateNodeStatus,
         certificate: ServiceStatePem,
         retired_committed: bool,
-        quote_info: ServiceStateQuoteInfo,
+        quote_info: ServiceStateQuoteInfoUnion,
         rpc_interfaces: serde_json::Value,
     ) -> Self {
         Self {
@@ -758,6 +758,14 @@ impl ServiceStateQuoteInfo {
     pub fn new(format: String) -> Self {
         Self { format }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "format")]
+pub enum ServiceStateQuoteInfoUnion {
+    #[serde(rename = "OE_SGX_v1")]
+    OeSgxV1(ServiceStateSgxQuoteInfo),
+    #[serde(rename = "AMD_SEV_SNP_v1")]
+    AmdSevSnpV1(ServiceStateSnpQuoteInfo),
 }
 #[doc = "General information about the current service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

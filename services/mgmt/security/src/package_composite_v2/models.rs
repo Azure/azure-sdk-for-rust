@@ -231,6 +231,13 @@ pub mod additional_data {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "assessedResourceType")]
+pub enum AdditionalDataUnion {
+    ContainerRegistryVulnerability(ContainerRegistryVulnerabilityProperties),
+    ServerVulnerabilityAssessment(ServerVulnerabilityProperties),
+    SqlServerVulnerability(SqlServerVulnerabilityProperties),
+}
 #[doc = "The Advanced Threat Protection settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdvancedThreatProtectionProperties {
@@ -948,6 +955,16 @@ pub mod authentication_details_properties {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "authenticationType")]
+pub enum AuthenticationDetailsPropertiesUnion {
+    #[serde(rename = "awsAssumeRole")]
+    AwsAssumeRole(AwAssumeRoleAuthenticationDetailsProperties),
+    #[serde(rename = "awsCreds")]
+    AwsCreds(AwsCredsAuthenticationDetailsProperties),
+    #[serde(rename = "gcpCredentials")]
+    GcpCredentials(GcpCredentialsDetailsProperties),
+}
 #[doc = "Auto provisioning setting"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoProvisioningSetting {
@@ -1107,6 +1124,13 @@ pub mod automation_action {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "actionType")]
+pub enum AutomationActionUnion {
+    EventHub(AutomationActionEventHub),
+    LogicApp(AutomationActionLogicApp),
+    Workspace(AutomationActionWorkspace),
+}
 #[doc = "The target Event Hub to which event data will be exported. To learn more about Microsoft Defender for Cloud continuous export capabilities, visit https://aka.ms/ASCExportLearnMore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationActionEventHub {
@@ -1219,7 +1243,7 @@ pub struct AutomationProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub actions: Vec<AutomationAction>,
+    pub actions: Vec<AutomationActionUnion>,
 }
 impl AutomationProperties {
     pub fn new() -> Self {
@@ -1534,7 +1558,7 @@ pub struct AwsEnvironmentData {
     pub environment_data: EnvironmentData,
     #[doc = "The awsOrganization data "]
     #[serde(rename = "organizationalData", default, skip_serializing_if = "Option::is_none")]
-    pub organizational_data: Option<AwsOrganizationalData>,
+    pub organizational_data: Option<AwsOrganizationalDataUnion>,
 }
 impl AwsEnvironmentData {
     pub fn new(environment_data: EnvironmentData) -> Self {
@@ -1597,6 +1621,12 @@ pub mod aws_organizational_data {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "organizationMembershipType")]
+pub enum AwsOrganizationalDataUnion {
+    Organization(AwsOrganizationalDataMaster),
+    Member(AwsOrganizationalDataMember),
 }
 #[doc = "The awsOrganization data for the master account"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2064,7 +2094,7 @@ pub struct ConnectorSettingProperties {
     pub hybrid_compute_settings: Option<HybridComputeSettingsProperties>,
     #[doc = "Settings for cloud authentication management"]
     #[serde(rename = "authenticationDetails", default, skip_serializing_if = "Option::is_none")]
-    pub authentication_details: Option<AuthenticationDetailsProperties>,
+    pub authentication_details: Option<AuthenticationDetailsPropertiesUnion>,
 }
 impl ConnectorSettingProperties {
     pub fn new() -> Self {
@@ -2150,6 +2180,9 @@ impl CustomAlertRule {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ruleType")]
+pub enum CustomAlertRuleUnion {}
 #[doc = "Custom entity store assignment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomEntityStoreAssignment {
@@ -2579,6 +2612,14 @@ pub mod environment_data {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "environmentType")]
+pub enum EnvironmentDataUnion {
+    AwsAccount(AwsEnvironmentData),
+    AzureDevOpsScope(AzureDevOpsScopeEnvironmentData),
+    GcpProject(GcpProjectEnvironmentData),
+    GithubScope(GithubScopeEnvironmentData),
+}
 #[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorAdditionalInfo {
@@ -2608,6 +2649,16 @@ impl ExternalSecuritySolution {
     pub fn new() -> Self {
         Self::default()
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ExternalSecuritySolutionUnion {
+    #[serde(rename = "AAD")]
+    Aad(AadExternalSecuritySolution),
+    #[serde(rename = "ATA")]
+    Ata(AtaExternalSecuritySolution),
+    #[serde(rename = "CEF")]
+    Cef(CefExternalSecuritySolution),
 }
 #[doc = "Describes an Azure resource with kind"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -2673,7 +2724,7 @@ pub struct ExternalSecuritySolutionList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<ExternalSecuritySolution>,
+    pub value: Vec<ExternalSecuritySolutionUnion>,
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -2864,6 +2915,12 @@ pub mod gcp_organizational_data {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "organizationMembershipType")]
+pub enum GcpOrganizationalDataUnion {
+    Member(GcpOrganizationalDataMember),
+    Organization(GcpOrganizationalDataOrganization),
+}
 #[doc = "The gcpOrganization data for the member account"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GcpOrganizationalDataMember {
@@ -2940,7 +2997,7 @@ pub struct GcpProjectEnvironmentData {
     pub environment_data: EnvironmentData,
     #[doc = "The gcpOrganization data"]
     #[serde(rename = "organizationalData", default, skip_serializing_if = "Option::is_none")]
-    pub organizational_data: Option<GcpOrganizationalData>,
+    pub organizational_data: Option<GcpOrganizationalDataUnion>,
     #[doc = "The details about the project represented by the security connector"]
     #[serde(rename = "projectDetails", default, skip_serializing_if = "Option::is_none")]
     pub project_details: Option<GcpProjectDetails>,
@@ -5455,6 +5512,9 @@ pub mod resource_details {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "source")]
+pub enum ResourceDetailsUnion {}
 #[doc = "Describes remote addresses that is recommended to communicate with the Azure resource on some (Protocol, Port, Direction). All other remote addresses are recommended to be blocked"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Rule {
@@ -6253,10 +6313,10 @@ pub struct SecurityConnectorProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub offerings: Vec<CloudOffering>,
+    pub offerings: Vec<CloudOfferingUnion>,
     #[doc = "The security connector environment data."]
     #[serde(rename = "environmentData", default, skip_serializing_if = "Option::is_none")]
-    pub environment_data: Option<EnvironmentData>,
+    pub environment_data: Option<EnvironmentDataUnion>,
 }
 impl SecurityConnectorProperties {
     pub fn new() -> Self {
@@ -6655,10 +6715,10 @@ pub struct SecuritySubAssessmentProperties {
     pub time_generated: Option<time::OffsetDateTime>,
     #[doc = "Details of the resource that was assessed"]
     #[serde(rename = "resourceDetails", default, skip_serializing_if = "Option::is_none")]
-    pub resource_details: Option<ResourceDetails>,
+    pub resource_details: Option<ResourceDetailsUnion>,
     #[doc = "Details of the sub-assessment"]
     #[serde(rename = "additionalData", default, skip_serializing_if = "Option::is_none")]
-    pub additional_data: Option<AdditionalData>,
+    pub additional_data: Option<AdditionalDataUnion>,
 }
 impl SecuritySubAssessmentProperties {
     pub fn new() -> Self {
@@ -6895,6 +6955,11 @@ pub mod setting {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum SettingUnion {
+    DataExportSetting(DataExportSetting),
+}
 #[doc = "Subscription settings list."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SettingsList {
@@ -6904,7 +6969,7 @@ pub struct SettingsList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<Setting>,
+    pub value: Vec<SettingUnion>,
     #[doc = "The URI to fetch the next page."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -7682,6 +7747,25 @@ pub mod cloud_offering {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "offeringType")]
+pub enum CloudOfferingUnion {
+    CspmMonitorAws(CspmMonitorAwsOffering),
+    CspmMonitorAzureDevOps(CspmMonitorAzureDevOpsOffering),
+    CspmMonitorGcp(CspmMonitorGcpOffering),
+    CspmMonitorGithub(CspmMonitorGithubOffering),
+    DefenderCspmAws(DefenderCspmAwsOffering),
+    DefenderCspmGcp(DefenderCspmGcpOffering),
+    DefenderForDatabasesAws(DefenderFoDatabasesAwsOffering),
+    DefenderForContainersAws(DefenderForContainersAwsOffering),
+    DefenderForContainersGcp(DefenderForContainersGcpOffering),
+    DefenderForDatabasesGcp(DefenderForDatabasesGcpOffering),
+    DefenderForDevOpsAzureDevOps(DefenderForDevOpsAzureDevOpsOffering),
+    DefenderForDevOpsGithub(DefenderForDevOpsGithubOffering),
+    DefenderForServersAws(DefenderForServersAwsOffering),
+    DefenderForServersGcp(DefenderForServersGcpOffering),
+    InformationProtectionAws(InformationProtectionAwsOffering),
 }
 #[doc = "The CSPM monitoring for AWS offering"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

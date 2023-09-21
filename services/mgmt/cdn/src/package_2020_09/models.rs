@@ -1622,6 +1622,12 @@ pub mod custom_domain_https_parameters {
         Tls12,
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "certificateSource")]
+pub enum CustomDomainHttpsParametersUnion {
+    Cdn(CdnManagedHttpsParameters),
+    AzureKeyVault(UserManagedHttpsParameters),
+}
 #[doc = "Result of the request to list custom domains. It contains a list of custom domain objects and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomDomainListResult {
@@ -1676,7 +1682,7 @@ pub struct CustomDomainProperties {
     pub custom_https_provisioning_substate: Option<custom_domain_properties::CustomHttpsProvisioningSubstate>,
     #[doc = "The JSON object that contains the properties to secure a custom domain."]
     #[serde(rename = "customHttpsParameters", default, skip_serializing_if = "Option::is_none")]
-    pub custom_https_parameters: Option<CustomDomainHttpsParameters>,
+    pub custom_https_parameters: Option<CustomDomainHttpsParametersUnion>,
     #[doc = "Special validation or data may be required when delivering CDN to some regions due to local compliance reasons. E.g. ICP license number of a custom domain is required to deliver content in China."]
     #[serde(rename = "validationData", default, skip_serializing_if = "Option::is_none")]
     pub validation_data: Option<String>,
@@ -2157,12 +2163,12 @@ pub struct DeliveryRule {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub conditions: Vec<DeliveryRuleCondition>,
+    pub conditions: Vec<DeliveryRuleConditionUnion>,
     #[doc = "A list of actions that are executed when all the conditions of a rule are satisfied."]
-    pub actions: Vec<DeliveryRuleAction>,
+    pub actions: Vec<DeliveryRuleActionUnion>,
 }
 impl DeliveryRule {
-    pub fn new(order: i64, actions: Vec<DeliveryRuleAction>) -> Self {
+    pub fn new(order: i64, actions: Vec<DeliveryRuleActionUnion>) -> Self {
         Self {
             name: None,
             order,
@@ -2233,6 +2239,18 @@ pub mod delivery_rule_action {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "name")]
+pub enum DeliveryRuleActionUnion {
+    CacheExpiration(DeliveryRuleCacheExpirationAction),
+    CacheKeyQueryString(DeliveryRuleCacheKeyQueryStringAction),
+    ModifyRequestHeader(DeliveryRuleRequestHeaderAction),
+    ModifyResponseHeader(DeliveryRuleResponseHeaderAction),
+    OriginGroupOverride(OriginGroupOverrideAction),
+    UrlRedirect(UrlRedirectAction),
+    UrlRewrite(UrlRewriteAction),
+    UrlSigning(UrlSigningAction),
 }
 #[doc = "Defines the cache expiration action for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2340,6 +2358,24 @@ pub mod delivery_rule_condition {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "name")]
+pub enum DeliveryRuleConditionUnion {
+    Cookies(DeliveryRuleCookiesCondition),
+    HttpVersion(DeliveryRuleHttpVersionCondition),
+    IsDevice(DeliveryRuleIsDeviceCondition),
+    PostArgs(DeliveryRulePostArgsCondition),
+    QueryString(DeliveryRuleQueryStringCondition),
+    RemoteAddress(DeliveryRuleRemoteAddressCondition),
+    RequestBody(DeliveryRuleRequestBodyCondition),
+    RequestHeader(DeliveryRuleRequestHeaderCondition),
+    RequestMethod(DeliveryRuleRequestMethodCondition),
+    RequestScheme(DeliveryRuleRequestSchemeCondition),
+    RequestUri(DeliveryRuleRequestUriCondition),
+    UrlFileExtension(DeliveryRuleUrlFileExtensionCondition),
+    UrlFileName(DeliveryRuleUrlFileNameCondition),
+    UrlPath(DeliveryRuleUrlPathCondition),
 }
 #[doc = "Defines the Cookies condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -5958,14 +5994,14 @@ pub struct RuleUpdatePropertiesParameters {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub conditions: Vec<DeliveryRuleCondition>,
+    pub conditions: Vec<DeliveryRuleConditionUnion>,
     #[doc = "A list of actions that are executed when all the conditions of a rule are satisfied."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub actions: Vec<DeliveryRuleAction>,
+    pub actions: Vec<DeliveryRuleActionUnion>,
     #[doc = "If this rule is a match should the rules engine continue running the remaining rules or stop. If not present, defaults to Continue."]
     #[serde(rename = "matchProcessingBehavior", default, skip_serializing_if = "Option::is_none")]
     pub match_processing_behavior: Option<rule_update_properties_parameters::MatchProcessingBehavior>,
@@ -6113,6 +6149,13 @@ pub mod secret_parameters {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum SecretParametersUnion {
+    CustomerCertificate(CustomerCertificateParameters),
+    ManagedCertificate(ManagedCertificateParameters),
+    UrlSigningKey(UrlSigningKeyParameters),
+}
 #[doc = "The JSON object that contains the properties of the Secret to create."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretProperties {
@@ -6120,7 +6163,7 @@ pub struct SecretProperties {
     pub afd_state_properties: AfdStateProperties,
     #[doc = "The json object containing secret parameters"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<SecretParameters>,
+    pub parameters: Option<SecretParametersUnion>,
 }
 impl SecretProperties {
     pub fn new() -> Self {
@@ -6216,6 +6259,11 @@ pub mod security_policy_parameters {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum SecurityPolicyParametersUnion {
+    WebApplicationFirewall(SecurityPolicyWebApplicationFirewallParameters),
+}
 #[doc = "The json object that contains properties required to create a security policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityPolicyProperties {
@@ -6223,7 +6271,7 @@ pub struct SecurityPolicyProperties {
     pub afd_state_properties: AfdStateProperties,
     #[doc = "The json object containing security policy parameters"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<SecurityPolicyParameters>,
+    pub parameters: Option<SecurityPolicyParametersUnion>,
 }
 impl SecurityPolicyProperties {
     pub fn new() -> Self {

@@ -68,10 +68,10 @@ pub struct ArtifactSourceProperties {
     #[serde(rename = "artifactRoot", default, skip_serializing_if = "Option::is_none")]
     pub artifact_root: Option<String>,
     #[doc = "Defines the authentication method and properties to access the artifacts."]
-    pub authentication: Authentication,
+    pub authentication: AuthenticationUnion,
 }
 impl ArtifactSourceProperties {
-    pub fn new(source_type: String, authentication: Authentication) -> Self {
+    pub fn new(source_type: String, authentication: AuthenticationUnion) -> Self {
         Self {
             source_type,
             artifact_root: None,
@@ -90,6 +90,11 @@ impl Authentication {
     pub fn new(type_: String) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AuthenticationUnion {
+    Sas(SasAuthentication),
 }
 #[doc = "The error information object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -154,16 +159,22 @@ impl HealthCheckStepAttributes {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum HealthCheckStepAttributesUnion {
+    #[serde(rename = "REST")]
+    Rest(RestHealthCheckStepAttributes),
+}
 #[doc = "Defines the properties of a health check step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthCheckStepProperties {
     #[serde(flatten)]
     pub step_properties: StepProperties,
     #[doc = "The attributes for the health check step."]
-    pub attributes: HealthCheckStepAttributes,
+    pub attributes: HealthCheckStepAttributesUnion,
 }
 impl HealthCheckStepProperties {
-    pub fn new(step_properties: StepProperties, attributes: HealthCheckStepAttributes) -> Self {
+    pub fn new(step_properties: StepProperties, attributes: HealthCheckStepAttributesUnion) -> Self {
         Self {
             step_properties,
             attributes,
@@ -368,10 +379,10 @@ pub struct RestRequest {
     #[doc = "The HTTP URI to use for the request."]
     pub uri: String,
     #[doc = "The authentication information required in the REST health check request to the health provider."]
-    pub authentication: RestRequestAuthentication,
+    pub authentication: RestRequestAuthenticationUnion,
 }
 impl RestRequest {
-    pub fn new(method: rest_request::Method, uri: String, authentication: RestRequestAuthentication) -> Self {
+    pub fn new(method: rest_request::Method, uri: String, authentication: RestRequestAuthenticationUnion) -> Self {
         Self {
             method,
             uri,
@@ -410,6 +421,12 @@ pub mod rest_request_authentication {
         ApiKey,
         RolloutIdentity,
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum RestRequestAuthenticationUnion {
+    ApiKey(ApiKeyAuthentication),
+    RolloutIdentity(RolloutIdentityAuthentication),
 }
 #[doc = "The properties that make up the expected REST response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -938,16 +955,22 @@ pub mod step_properties {
         HealthCheck,
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "stepType")]
+pub enum StepPropertiesUnion {
+    HealthCheck(HealthCheckStepProperties),
+    Wait(WaitStepProperties),
+}
 #[doc = "The resource representation of a rollout step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StepResource {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
     #[doc = "The properties of a step resource."]
-    pub properties: StepProperties,
+    pub properties: StepPropertiesUnion,
 }
 impl StepResource {
-    pub fn new(tracked_resource: TrackedResource, properties: StepProperties) -> Self {
+    pub fn new(tracked_resource: TrackedResource, properties: StepPropertiesUnion) -> Self {
         Self {
             tracked_resource,
             properties,

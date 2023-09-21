@@ -596,6 +596,12 @@ pub mod data_connection {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum DataConnectionUnion {
+    EventGrid(EventGridDataConnection),
+    EventHub(EventHubDataConnection),
+}
 #[doc = "The result returned from a data connections check name availability request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnectionCheckNameRequest {
@@ -628,7 +634,7 @@ pub struct DataConnectionListResult {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<DataConnection>,
+    pub value: Vec<DataConnectionUnion>,
 }
 impl azure_core::Continuable for DataConnectionListResult {
     type Continuation = String;
@@ -649,7 +655,7 @@ pub struct DataConnectionValidation {
     pub data_connection_name: Option<String>,
     #[doc = "Class representing an data connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DataConnection>,
+    pub properties: Option<DataConnectionUnion>,
 }
 impl DataConnectionValidation {
     pub fn new() -> Self {

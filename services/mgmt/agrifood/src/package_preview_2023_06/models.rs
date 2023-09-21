@@ -70,6 +70,12 @@ impl AuthCredentials {
         Self { kind }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AuthCredentialsUnion {
+    ApiKeyAuthCredentials(ApiKeyAuthCredentials),
+    OAuthClientCredentials(OAuthClientCredentials),
+}
 #[doc = "Enum for different types of AuthCredentials supported."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "AuthCredentialsKind")]
@@ -228,10 +234,10 @@ impl DataConnectorListResponse {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnectorProperties {
     #[doc = "AuthCredentials abstract base class for Auth Purpose."]
-    pub credentials: AuthCredentials,
+    pub credentials: AuthCredentialsUnion,
 }
 impl DataConnectorProperties {
-    pub fn new(credentials: AuthCredentials) -> Self {
+    pub fn new(credentials: AuthCredentialsUnion) -> Self {
         Self { credentials }
     }
 }

@@ -793,7 +793,7 @@ pub struct EventsResult {
     pub ai_messages: Vec<ErrorInfo>,
     #[doc = "Events query result data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<EventsResultData>,
+    pub value: Option<EventsResultDataUnion>,
 }
 impl EventsResult {
     pub fn new() -> Self {
@@ -887,6 +887,30 @@ pub mod events_result_data {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum EventsResultDataUnion {
+    #[serde(rename = "availabilityResult")]
+    AvailabilityResult(EventsAvailabilityResultResult),
+    #[serde(rename = "browserTiming")]
+    BrowserTiming(EventsBrowserTimingResult),
+    #[serde(rename = "customEvent")]
+    CustomEvent(EventsCustomEventResult),
+    #[serde(rename = "customMetric")]
+    CustomMetric(EventsCustomMetricResult),
+    #[serde(rename = "dependency")]
+    Dependency(EventsDependencyResult),
+    #[serde(rename = "exception")]
+    Exception(EventsExceptionResult),
+    #[serde(rename = "pageView")]
+    PageView(EventsPageViewResult),
+    #[serde(rename = "performanceCounter")]
+    PerformanceCounter(EventsPerformanceCounterResult),
+    #[serde(rename = "request")]
+    Request(EventsRequestResult),
+    #[serde(rename = "trace")]
+    Trace(EventsTraceResult),
+}
 #[doc = "An events query result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsResults {
@@ -907,7 +931,7 @@ pub struct EventsResults {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<EventsResultData>,
+    pub value: Vec<EventsResultDataUnion>,
 }
 impl EventsResults {
     pub fn new() -> Self {

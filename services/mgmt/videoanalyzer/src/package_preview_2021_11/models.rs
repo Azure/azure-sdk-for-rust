@@ -50,7 +50,7 @@ pub struct AccessPolicyProperties {
     pub role: Option<access_policy_properties::Role>,
     #[doc = "Base class for access policies authentication methods."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authentication: Option<AuthenticationBase>,
+    pub authentication: Option<AuthenticationBaseUnion>,
 }
 impl AccessPolicyProperties {
     pub fn new() -> Self {
@@ -187,6 +187,12 @@ impl AudioEncoderBase {
         Self { type_, bitrate_kbps: None }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum AudioEncoderBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.AudioEncoderAac")]
+    MicrosoftVideoAnalyzerAudioEncoderAac(AudioEncoderAac),
+}
 #[doc = "Base class for access policies authentication methods."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AuthenticationBase {
@@ -199,6 +205,12 @@ impl AuthenticationBase {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum AuthenticationBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.JwtAuthentication")]
+    MicrosoftVideoAnalyzerJwtAuthentication(JwtAuthentication),
+}
 #[doc = "Base class for certificate sources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateSource {
@@ -210,6 +222,12 @@ impl CertificateSource {
     pub fn new(type_: String) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum CertificateSourceUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.PemCertificateList")]
+    MicrosoftVideoAnalyzerPemCertificateList(PemCertificateList),
 }
 #[doc = "The check availability request body."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -295,6 +313,12 @@ impl CredentialsBase {
     pub fn new(type_: String) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum CredentialsBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.UsernamePasswordCredentials")]
+    MicrosoftVideoAnalyzerUsernamePasswordCredentials(UsernamePasswordCredentials),
 }
 #[doc = "Required validation properties for tokens generated with Elliptical Curve algorithm."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -431,10 +455,10 @@ pub struct EncoderCustomPreset {
     pub encoder_preset_base: EncoderPresetBase,
     #[doc = "Base type for all audio encoder presets, which define the recipe or instructions on how audio should be processed."]
     #[serde(rename = "audioEncoder", default, skip_serializing_if = "Option::is_none")]
-    pub audio_encoder: Option<AudioEncoderBase>,
+    pub audio_encoder: Option<AudioEncoderBaseUnion>,
     #[doc = "Base type for all video encoding presets, which define the recipe or instructions on how the input video should be processed."]
     #[serde(rename = "videoEncoder", default, skip_serializing_if = "Option::is_none")]
-    pub video_encoder: Option<VideoEncoderBase>,
+    pub video_encoder: Option<VideoEncoderBaseUnion>,
 }
 impl EncoderCustomPreset {
     pub fn new(encoder_preset_base: EncoderPresetBase) -> Self {
@@ -457,16 +481,24 @@ impl EncoderPresetBase {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum EncoderPresetBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.EncoderCustomPreset")]
+    MicrosoftVideoAnalyzerEncoderCustomPreset(EncoderCustomPreset),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.EncoderSystemPreset")]
+    MicrosoftVideoAnalyzerEncoderSystemPreset(EncoderSystemPreset),
+}
 #[doc = "Encoder processor allows for encoding of the input content. For example, it can used to change the resolution from 4K to 1280x720."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncoderProcessor {
     #[serde(flatten)]
     pub processor_node_base: ProcessorNodeBase,
     #[doc = "Base type for all encoder presets, which define the recipe or instructions on how the input content should be processed."]
-    pub preset: EncoderPresetBase,
+    pub preset: EncoderPresetBaseUnion,
 }
 impl EncoderProcessor {
-    pub fn new(processor_node_base: ProcessorNodeBase, preset: EncoderPresetBase) -> Self {
+    pub fn new(processor_node_base: ProcessorNodeBase, preset: EncoderPresetBaseUnion) -> Self {
         Self {
             processor_node_base,
             preset,
@@ -594,15 +626,15 @@ pub struct EndpointBase {
     #[serde(rename = "@type")]
     pub type_: String,
     #[doc = "Base class for credential objects."]
-    pub credentials: CredentialsBase,
+    pub credentials: CredentialsBaseUnion,
     #[doc = "The endpoint URL for Video Analyzer to connect to."]
     pub url: String,
     #[doc = "Base class for tunnel objects."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tunnel: Option<TunnelBase>,
+    pub tunnel: Option<TunnelBaseUnion>,
 }
 impl EndpointBase {
-    pub fn new(type_: String, credentials: CredentialsBase, url: String) -> Self {
+    pub fn new(type_: String, credentials: CredentialsBaseUnion, url: String) -> Self {
         Self {
             type_,
             credentials,
@@ -610,6 +642,14 @@ impl EndpointBase {
             tunnel: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum EndpointBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.TlsEndpoint")]
+    MicrosoftVideoAnalyzerTlsEndpoint(TlsEndpoint),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.UnsecuredEndpoint")]
+    MicrosoftVideoAnalyzerUnsecuredEndpoint(UnsecuredEndpoint),
 }
 #[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -781,7 +821,7 @@ pub struct JwtAuthentication {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub keys: Vec<TokenKey>,
+    pub keys: Vec<TokenKeyUnion>,
 }
 impl JwtAuthentication {
     pub fn new(authentication_base: AuthenticationBase) -> Self {
@@ -1291,6 +1331,16 @@ impl NodeBase {
     pub fn new(type_: String, name: String) -> Self {
         Self { type_, name }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum NodeBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.ProcessorNodeBase")]
+    MicrosoftVideoAnalyzerProcessorNodeBase(ProcessorNodeBase),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.SinkNodeBase")]
+    MicrosoftVideoAnalyzerSinkNodeBase(SinkNodeBase),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.SourceNodeBase")]
+    MicrosoftVideoAnalyzerSourceNodeBase(SourceNodeBase),
 }
 #[doc = "Describes an input signal to be used on a pipeline node."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1858,19 +1908,19 @@ pub struct PipelineTopologyProperties {
     )]
     pub parameters: Vec<ParameterDeclaration>,
     #[doc = "List of the topology source nodes. Source nodes enable external data to be ingested by the pipeline."]
-    pub sources: Vec<SourceNodeBase>,
+    pub sources: Vec<SourceNodeBaseUnion>,
     #[doc = "List of the topology processor nodes. Processor nodes enable pipeline data to be analyzed, processed or transformed."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub processors: Vec<ProcessorNodeBase>,
+    pub processors: Vec<ProcessorNodeBaseUnion>,
     #[doc = "List of the topology sink nodes. Sink nodes allow pipeline data to be stored or exported."]
-    pub sinks: Vec<SinkNodeBase>,
+    pub sinks: Vec<SinkNodeBaseUnion>,
 }
 impl PipelineTopologyProperties {
-    pub fn new(sources: Vec<SourceNodeBase>, sinks: Vec<SinkNodeBase>) -> Self {
+    pub fn new(sources: Vec<SourceNodeBaseUnion>, sinks: Vec<SinkNodeBaseUnion>) -> Self {
         Self {
             description: None,
             parameters: Vec::new(),
@@ -1899,21 +1949,21 @@ pub struct PipelineTopologyPropertiesUpdate {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub sources: Vec<SourceNodeBase>,
+    pub sources: Vec<SourceNodeBaseUnion>,
     #[doc = "List of the topology processor nodes. Processor nodes enable pipeline data to be analyzed, processed or transformed."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub processors: Vec<ProcessorNodeBase>,
+    pub processors: Vec<ProcessorNodeBaseUnion>,
     #[doc = "List of the topology sink nodes. Sink nodes allow pipeline data to be stored or exported."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub sinks: Vec<SinkNodeBase>,
+    pub sinks: Vec<SinkNodeBaseUnion>,
 }
 impl PipelineTopologyPropertiesUpdate {
     pub fn new() -> Self {
@@ -2216,6 +2266,12 @@ impl ProcessorNodeBase {
         Self { node_base, type_, inputs }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum ProcessorNodeBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.EncoderProcessor")]
+    MicrosoftVideoAnalyzerEncoderProcessor(EncoderProcessor),
+}
 #[doc = "Metric properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Properties {
@@ -2343,10 +2399,10 @@ pub struct RtspSource {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub transport: Option<rtsp_source::Transport>,
     #[doc = "Base class for endpoints."]
-    pub endpoint: EndpointBase,
+    pub endpoint: EndpointBaseUnion,
 }
 impl RtspSource {
-    pub fn new(source_node_base: SourceNodeBase, endpoint: EndpointBase) -> Self {
+    pub fn new(source_node_base: SourceNodeBase, endpoint: EndpointBaseUnion) -> Self {
         Self {
             source_node_base,
             transport: None,
@@ -2456,6 +2512,12 @@ impl SinkNodeBase {
         Self { node_base, type_, inputs }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum SinkNodeBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.VideoSink")]
+    MicrosoftVideoAnalyzerVideoSink(VideoSink),
+}
 #[doc = "The SKU details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sku {
@@ -2561,6 +2623,14 @@ impl SourceNodeBase {
         Self { node_base, type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum SourceNodeBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.RtspSource")]
+    MicrosoftVideoAnalyzerRtspSource(RtspSource),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.VideoSource")]
+    MicrosoftVideoAnalyzerVideoSource(VideoSource),
+}
 #[doc = "The details about the associated storage account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccount {
@@ -2594,6 +2664,12 @@ impl TimeSequenceBase {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum TimeSequenceBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.VideoSequenceAbsoluteTimeMarkers")]
+    MicrosoftVideoAnalyzerVideoSequenceAbsoluteTimeMarkers(VideoSequenceAbsoluteTimeMarkers),
+}
 #[doc = "TLS endpoint describes an endpoint that the pipeline can connect to over TLS transport (data is encrypted in transit)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TlsEndpoint {
@@ -2601,7 +2677,7 @@ pub struct TlsEndpoint {
     pub endpoint_base: EndpointBase,
     #[doc = "Base class for certificate sources."]
     #[serde(rename = "trustedCertificates", default, skip_serializing_if = "Option::is_none")]
-    pub trusted_certificates: Option<CertificateSource>,
+    pub trusted_certificates: Option<CertificateSourceUnion>,
     #[doc = "Options for controlling the validation of TLS endpoints."]
     #[serde(rename = "validationOptions", default, skip_serializing_if = "Option::is_none")]
     pub validation_options: Option<TlsValidationOptions>,
@@ -2657,6 +2733,14 @@ impl TokenKey {
         Self { type_, kid }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum TokenKeyUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.EccTokenKey")]
+    MicrosoftVideoAnalyzerEccTokenKey(EccTokenKey),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.RsaTokenKey")]
+    MicrosoftVideoAnalyzerRsaTokenKey(RsaTokenKey),
+}
 #[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TrackedResource {
@@ -2688,6 +2772,12 @@ impl TunnelBase {
     pub fn new(type_: String) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum TunnelBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.SecureIotDeviceRemoteTunnel")]
+    MicrosoftVideoAnalyzerSecureIotDeviceRemoteTunnel(SecureIotDeviceRemoteTunnel),
 }
 #[doc = "Unsecured endpoint describes an endpoint that the pipeline can connect to over clear transport (no encryption in transit)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3242,6 +3332,12 @@ impl VideoEncoderBase {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum VideoEncoderBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.VideoEncoderH264")]
+    MicrosoftVideoAnalyzerVideoEncoderH264(VideoEncoderH264),
+}
 #[doc = "A custom preset for encoding video with the H.264 (AVC) codec."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VideoEncoderH264 {
@@ -3540,10 +3636,10 @@ pub struct VideoSource {
     pub video_name: String,
     #[doc = "A sequence of datetime ranges as a string."]
     #[serde(rename = "timeSequences")]
-    pub time_sequences: TimeSequenceBase,
+    pub time_sequences: TimeSequenceBaseUnion,
 }
 impl VideoSource {
-    pub fn new(source_node_base: SourceNodeBase, video_name: String, time_sequences: TimeSequenceBase) -> Self {
+    pub fn new(source_node_base: SourceNodeBase, video_name: String, time_sequences: TimeSequenceBaseUnion) -> Self {
         Self {
             source_node_base,
             video_name,

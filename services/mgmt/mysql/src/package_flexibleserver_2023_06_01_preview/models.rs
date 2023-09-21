@@ -129,10 +129,10 @@ pub struct BackupAndExportRequest {
     pub backup_request_base: BackupRequestBase,
     #[doc = "Details about the target where the backup content will be stored."]
     #[serde(rename = "targetDetails")]
-    pub target_details: BackupStoreDetails,
+    pub target_details: BackupStoreDetailsUnion,
 }
 impl BackupAndExportRequest {
-    pub fn new(backup_request_base: BackupRequestBase, target_details: BackupStoreDetails) -> Self {
+    pub fn new(backup_request_base: BackupRequestBase, target_details: BackupStoreDetailsUnion) -> Self {
         Self {
             backup_request_base,
             target_details,
@@ -281,6 +281,9 @@ impl BackupStoreDetails {
         Self { object_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "objectType")]
+pub enum BackupStoreDetailsUnion {}
 #[doc = "location capability"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CapabilitiesListResult {
