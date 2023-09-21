@@ -1,7 +1,7 @@
 use crate::{
     codegen::TypeNameCode,
     identifier::{CamelCaseIdent, SnakeCaseIdent},
-    spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref, TypeName},
+    spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref},
     CodeGen, PropertyName, ResolvedSchema, Spec,
 };
 use crate::{Error, ErrorKind, Result};
@@ -12,10 +12,7 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use serde_json::Value;
 use spec::{get_schema_schema_references, openapi, RefKey};
-use std::{
-    collections::{HashMap, HashSet},
-    convert::TryFrom,
-};
+use std::collections::{HashMap, HashSet};
 
 #[derive(Clone)]
 pub struct PropertyGen {
@@ -142,8 +139,10 @@ impl SchemaGen {
         )
     }
 
-    pub fn type_name(&self) -> Result<TypeName> {
-        get_type_name_for_schema(&self.schema.common)
+    pub fn type_name(&self, cg: &CodeGen) -> Result<TypeNameCode> {
+        let mut type_name = TypeNameCode::new(&get_type_name_for_schema(&self.schema.common)?)?;
+        cg.set_if_union_type(&mut type_name);
+        Ok(type_name)
     }
 
     fn required(&self) -> HashSet<&str> {
@@ -418,7 +417,7 @@ impl ToTokens for ModelsCode {
     }
 }
 
-pub fn create_models(cg: &CodeGen) -> Result<ModelsCode> {
+pub fn create_models(cg: &mut CodeGen) -> Result<ModelsCode> {
     let mut pageable_response_names: HashMap<String, MsPageable> = HashMap::new();
     for operation in cg.spec.operations()? {
         if let Some(pageable) = operation.pageable.as_ref() {
@@ -451,6 +450,15 @@ pub fn create_models(cg: &CodeGen) -> Result<ModelsCode> {
     let mut models = Vec::new();
     let mut schema_names = IndexMap::new();
     let all_schemas = &all_schemas_resolved(&cg.spec)?;
+
+    // add union types
+    for (_ref_key, schema) in all_schemas {
+        if schema.discriminator().is_some() {
+            let name = schema.name()?.to_camel_case_id();
+            cg.add_union_type(name);
+        }
+    }
+
     for (ref_key, schema) in all_schemas {
         let doc_file = &ref_key.file_path;
         let schema_name = &ref_key.name;
@@ -466,7 +474,7 @@ pub fn create_models(cg: &CodeGen) -> Result<ModelsCode> {
             let enum_code = create_enum(None, schema, schema_name, false)?;
             models.push(ModelCode::Enum(enum_code));
         } else if schema.is_basic_type() {
-            let alias = create_basic_type_alias(schema_name, schema)?;
+            let alias = create_basic_type_alias(cg, schema_name, schema)?;
             models.push(ModelCode::TypeAlias(alias));
         } else {
             let pageable_name = format!("{}", schema_name.to_camel_case_ident()?);
@@ -506,7 +514,7 @@ impl UnionCode {
             {
                 if let Some(tag) = child_schema.discriminator_value() {
                     let name = tag.to_camel_case_ident()?;
-                    let type_name = TypeNameCode::try_from(child_ref_key.name.as_str())?;
+                    let type_name = TypeNameCode::from(child_ref_key.name.to_camel_case_ident()?);
                     values.push(UnionValueCode {
                         tag: tag.to_string(),
                         name,
@@ -574,9 +582,9 @@ impl ToTokens for TypeAliasCode {
     }
 }
 
-fn create_basic_type_alias(property_name: &str, property: &SchemaGen) -> Result<TypeAliasCode> {
+fn create_basic_type_alias(cg: &CodeGen, property_name: &str, property: &SchemaGen) -> Result<TypeAliasCode> {
     let id = property_name.to_camel_case_ident()?;
-    let value = TypeNameCode::new(&property.type_name()?)?;
+    let value = property.type_name(cg)?;
     Ok(TypeAliasCode { id, value })
 }
 
@@ -852,13 +860,14 @@ fn create_struct(
 
     for schema in schema.all_of() {
         let schema_name = schema.name()?;
-        let type_name = schema_name.to_camel_case_ident()?;
+        let mut type_name = TypeNameCode::from(schema_name.to_camel_case_ident()?);
+        type_name.union(false);
         let field_name = schema_name.to_snake_case_ident()?;
         props.push(StructPropCode {
             doc_comments: Vec::new(),
             serde: SerdeCode::flatten(),
             field_name: field_name.clone(),
-            field_type: type_name.clone().into(),
+            field_type: type_name.clone(),
         });
         if schema.implement_default() {
             new_fn_body.extend(quote! { #field_name: #type_name::default(), });
@@ -1306,11 +1315,9 @@ fn create_struct_field_code(
 ) -> Result<NamedTypeCode> {
     match &property.ref_key {
         Some(ref_key) => {
-            let tp = ref_key.name.to_camel_case_ident()?;
-            Ok(NamedTypeCode {
-                type_name: tp.into(),
-                code: None,
-            })
+            let mut type_name = TypeNameCode::from(ref_key.name.to_camel_case_ident()?);
+            cg.set_if_union_type(&mut type_name);
+            Ok(NamedTypeCode { type_name, code: None })
         }
         None => {
             if property.is_local_enum() {
@@ -1332,7 +1339,7 @@ fn create_struct_field_code(
                     .unwrap_or_else(|| id.clone());
                 let code = XmlWrappedCode {
                     struct_name: struct_name.clone(),
-                    type_name: TypeNameCode::new(&property.type_name()?)?,
+                    type_name: property.type_name(cg)?,
                 };
                 Ok(NamedTypeCode {
                     type_name: TypeNameCode::from(vec![namespace.clone(), struct_name]),
@@ -1340,7 +1347,7 @@ fn create_struct_field_code(
                 })
             } else {
                 Ok(NamedTypeCode {
-                    type_name: TypeNameCode::new(&property.type_name()?)?,
+                    type_name: property.type_name(cg)?,
                     code: None,
                 })
             }

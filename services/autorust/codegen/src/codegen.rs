@@ -29,9 +29,25 @@ pub struct CodeGen<'a> {
     optional_properties: HashSet<PropertyName>,
     fix_case_properties: HashSet<&'a str>,
     invalid_types: HashSet<PropertyName>,
+
+    pub union_types: HashSet<String>,
 }
 
 impl<'a> CodeGen<'a> {
+    pub fn add_union_type(&mut self, type_name: String) {
+        self.union_types.insert(type_name);
+    }
+
+    pub fn is_union_type(&self, type_name: &TypeNameCode) -> bool {
+        self.union_types.contains(&type_name.type_path.to_token_stream().to_string())
+    }
+
+    pub fn set_if_union_type(&self, type_name: &mut TypeNameCode) {
+        if self.is_union_type(type_name) {
+            type_name.union(true);
+        }
+    }
+
     pub fn new(
         crate_config: &'a CrateConfig,
         box_properties: HashSet<PropertyName>,
@@ -47,6 +63,7 @@ impl<'a> CodeGen<'a> {
             optional_properties,
             fix_case_properties,
             invalid_types,
+            union_types: HashSet::new(),
         })
     }
 
@@ -525,7 +542,8 @@ mod tests {
 
     #[test]
     fn test_with_union() -> anyhow::Result<()> {
-        let tp = TypeNameCode::try_from("farm::Animal")?.union(true);
+        let mut tp = TypeNameCode::try_from("farm::Animal")?;
+        tp.union(true);
         ensure!("farm :: AnimalUnion" == tp.to_string());
         Ok(())
     }
