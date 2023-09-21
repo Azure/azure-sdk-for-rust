@@ -376,6 +376,7 @@ pub enum ModelCode {
     Enum(NamedTypeCode),
     VecAlias(VecAliasCode),
     TypeAlias(TypeAliasCode),
+    Union(UnionCode),
 }
 
 impl ToTokens for ModelCode {
@@ -385,6 +386,7 @@ impl ToTokens for ModelCode {
             ModelCode::Enum(enum_code) => enum_code.to_tokens(tokens),
             ModelCode::VecAlias(vec_alias_code) => vec_alias_code.to_tokens(tokens),
             ModelCode::TypeAlias(type_alias_code) => type_alias_code.to_tokens(tokens),
+            ModelCode::Union(union_code) => union_code.to_tokens(tokens),
         }
     }
 }
@@ -475,20 +477,9 @@ pub fn create_models(cg: &CodeGen) -> Result<ModelsCode> {
                 pageable_response_names.get(&pageable_name),
                 HashSet::new(),
             )?));
-            if let Some(_discriminator) = schema.discriminator() {
-                let type_name = TypeNameCode::try_from(schema_name.as_str())?.union(true);
-                println!("pub enum {}", type_name.to_string());
-                for (child_ref_key, child_schema) in all_schemas {
-                    if child_schema
-                        .all_of()
-                        .iter()
-                        .any(|all_of_schema| all_of_schema.ref_key.as_ref() == Some(ref_key))
-                    {
-                        if let Some(descriminator_value) = child_schema.discriminator_value() {
-                            println!("  child: {}({})", descriminator_value, child_ref_key.name,);
-                        }
-                    }
-                }
+            // create union if discriminator
+            if let Some(tag) = schema.discriminator() {
+                models.push(ModelCode::Union(UnionCode::from_schema(tag, schema_name, ref_key, all_schemas)?));
             }
         }
     }
@@ -496,6 +487,76 @@ pub fn create_models(cg: &CodeGen) -> Result<ModelsCode> {
         has_case_workaround: cg.should_workaround_case(),
         models,
     })
+}
+
+pub struct UnionCode {
+    pub tag: String,
+    pub name: Ident,
+    pub values: Vec<UnionValueCode>,
+}
+
+impl UnionCode {
+    fn from_schema(tag: &str, schema_name: &str, ref_key: &RefKey, all_schemas: &Vec<(RefKey, SchemaGen)>) -> Result<Self> {
+        let mut values = Vec::new();
+        for (child_ref_key, child_schema) in all_schemas {
+            if child_schema
+                .all_of()
+                .iter()
+                .any(|all_of_schema| all_of_schema.ref_key.as_ref() == Some(ref_key))
+            {
+                if let Some(tag) = child_schema.discriminator_value() {
+                    let name = tag.to_camel_case_ident()?;
+                    let mut type_name = TypeNameCode::try_from(child_ref_key.name.as_str())?;
+                    type_name = type_name.union(true);
+                    values.push(UnionValueCode {
+                        tag: tag.to_string(),
+                        name,
+                        type_name,
+                    });
+                }
+            }
+        }
+        let name = schema_name.to_camel_case_ident()?;
+        Ok(Self {
+            tag: tag.to_string(),
+            name,
+            values,
+        })
+    }
+}
+
+impl ToTokens for UnionCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let UnionCode { tag, name, values } = self;
+        tokens.extend(quote! {
+            #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+            #[serde(tag = #tag)]
+            pub enum #name {
+                #(#values)*
+            }
+        });
+    }
+}
+
+pub struct UnionValueCode {
+    pub tag: String,
+    pub name: Ident,
+    pub type_name: TypeNameCode,
+}
+
+impl ToTokens for UnionValueCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let UnionValueCode { tag, name, type_name } = self;
+        let serde = if tag != &name.to_string() {
+            Some(SerdeCode::rename(tag))
+        } else {
+            None
+        };
+        tokens.extend(quote! {
+            #serde
+            #name(#type_name),
+        });
+    }
 }
 
 pub struct TypeAliasCode {
@@ -858,43 +919,45 @@ fn create_struct(
             type_name = type_name.optional(true);
         }
 
-        let mut serde_attrs: Vec<TokenStream> = Vec::new();
+        let mut serde = SerdeCode::default();
         if field_name != property_name {
             if property.xml_attribute() {
                 let as_attribute = format!("@{}", property_name);
-                serde_attrs.push(quote! { rename = #as_attribute });
+                serde.add_rename(&as_attribute);
             } else {
-                serde_attrs.push(quote! { rename = #property_name});
+                serde.add_rename(&property_name);
             }
         }
         #[allow(clippy::collapsible_else_if)]
         if is_required {
             if type_name.is_date_time() {
-                serde_attrs.push(quote! { with = "azure_core::date::rfc3339"});
+                serde.add_with("azure_core::date::rfc3339");
             } else if type_name.is_date_time_rfc1123() {
-                serde_attrs.push(quote! { with = "azure_core::date::rfc1123"});
+                serde.add_with("azure_core::date::rfc1123");
             }
         } else {
             if type_name.is_date_time() {
                 // Must specify `default` when using `with` for `Option`
-                serde_attrs.push(quote! { default, with = "azure_core::date::rfc3339::option"});
+                serde.add_default().add_with("azure_core::date::rfc3339::option");
             } else if type_name.is_date_time_rfc1123() {
                 // Must specify `default` when using `with` for `Option`
-                serde_attrs.push(quote! { default, with = "azure_core::date::rfc1123::option"});
+                serde.add_default().add_with("azure_core::date::rfc1123::option");
             } else if type_name.is_vec() {
-                serde_attrs.push(quote! { default, deserialize_with = "azure_core::util::deserialize_null_as_default", skip_serializing_if = "Vec::is_empty"});
+                serde.add_default();
+                serde.add_deserialize_with("azure_core::util::deserialize_null_as_default");
+                serde.add_skip_serializing_if("Vec::is_empty");
             } else {
-                serde_attrs.push(quote! { default, skip_serializing_if = "Option::is_none"});
+                serde.add_default();
+                serde.add_skip_serializing_if("Option::is_none");
             }
         }
         if property.schema.is_local_enum() {
             if lowercase_workaround {
-                serde_attrs.push(quote! { deserialize_with = "case_insensitive_deserialize"});
+                serde.add_deserialize_with("case_insensitive_deserialize");
             } else if cg.has_xml() {
-                serde_attrs.push(quote! { with = "azure_core::xml::text_content"});
+                serde.add_with("azure_core::xml::text_content");
             }
         }
-        let serde = SerdeCode::new(serde_attrs);
 
         // see if a field should be wrapped in a Box
         if cg.should_box_property(prop_nm) {
@@ -1083,17 +1146,71 @@ impl ToTokens for StructPropCode {
 
 #[derive(Default)]
 pub struct SerdeCode {
-    pub attributes: Vec<TokenStream>,
+    attributes: Vec<TokenStream>,
 }
 
 impl SerdeCode {
-    pub fn new(attributes: Vec<TokenStream>) -> Self {
-        Self { attributes }
-    }
     pub fn flatten() -> Self {
-        Self {
-            attributes: vec![quote! { flatten }],
-        }
+        let mut serde = Self::default();
+        serde.add_flatten();
+        serde
+    }
+    pub fn tag(tag: &str) -> Self {
+        let mut serde = Self::default();
+        serde.add_tag(tag);
+        serde
+    }
+    pub fn rename(rename: &str) -> Self {
+        let mut serde = Self::default();
+        serde.add_rename(rename);
+        serde
+    }
+    pub fn add_tag(&mut self, tag: &str) {
+        self.attributes.push(quote! { tag = #tag });
+    }
+    pub fn add_flatten(&mut self) -> &mut Self {
+        self.attributes.push(quote! { flatten });
+        self
+    }
+    pub fn add_rename(&mut self, rename: &str) -> &mut Self {
+        self.attributes.push(quote! { rename = #rename });
+        self
+    }
+    pub fn add_alias(&mut self, alias: &str) -> &mut Self {
+        self.attributes.push(quote! { alias = #alias });
+        self
+    }
+    pub fn add_skip_serializing_if(&mut self, skip_serializing_if: &str) -> &mut Self {
+        self.attributes.push(quote! { skip_serializing_if = #skip_serializing_if });
+        self
+    }
+    pub fn add_default(&mut self) -> &mut Self {
+        self.attributes.push(quote! { default });
+        self
+    }
+    pub fn add_default_value(&mut self, default: &str) -> &mut Self {
+        self.attributes.push(quote! { default = #default });
+        self
+    }
+    pub fn add_with(&mut self, with: &str) -> &mut Self {
+        self.attributes.push(quote! { with = #with });
+        self
+    }
+    pub fn add_deserialize_with(&mut self, deserialize_with: &str) -> &mut Self {
+        self.attributes.push(quote! { deserialize_with = #deserialize_with });
+        self
+    }
+    pub fn add_serialize_with(&mut self, serialize_with: &str) -> &mut Self {
+        self.attributes.push(quote! { serialize_with = #serialize_with });
+        self
+    }
+    pub fn add_remote(&mut self, remote: &str) -> &mut Self {
+        self.attributes.push(quote! { remote = #remote });
+        self
+    }
+    pub fn add_skip_deserializing(&mut self) -> &mut Self {
+        self.attributes.push(quote! { skip_deserializing });
+        self
     }
 }
 
