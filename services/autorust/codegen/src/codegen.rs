@@ -181,9 +181,8 @@ impl TypeNameCode {
         self.optional = optional;
         self
     }
-    pub fn union(mut self, union: bool) -> Self {
+    pub fn union(&mut self, union: bool) {
         self.union = union;
-        self
     }
     pub fn incr_vec_count(mut self) -> Self {
         self.vec_count += 1;

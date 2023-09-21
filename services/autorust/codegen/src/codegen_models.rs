@@ -199,11 +199,11 @@ impl SchemaGen {
     }
 
     fn discriminator(&self) -> Option<&str> {
-        self.schema.discriminator.as_ref().map(|d| d.as_str())
+        self.schema.discriminator.as_deref()
     }
 
     fn discriminator_value(&self) -> Option<&str> {
-        self.schema.x_ms_discriminator_value.as_ref().map(|d| d.as_str())
+        self.schema.x_ms_discriminator_value.as_deref()
     }
 }
 
@@ -491,7 +491,7 @@ pub fn create_models(cg: &CodeGen) -> Result<ModelsCode> {
 
 pub struct UnionCode {
     pub tag: String,
-    pub name: Ident,
+    pub name: TypeNameCode,
     pub values: Vec<UnionValueCode>,
 }
 
@@ -506,8 +506,7 @@ impl UnionCode {
             {
                 if let Some(tag) = child_schema.discriminator_value() {
                     let name = tag.to_camel_case_ident()?;
-                    let mut type_name = TypeNameCode::try_from(child_ref_key.name.as_str())?;
-                    type_name = type_name.union(true);
+                    let type_name = TypeNameCode::try_from(child_ref_key.name.as_str())?;
                     values.push(UnionValueCode {
                         tag: tag.to_string(),
                         name,
@@ -516,7 +515,8 @@ impl UnionCode {
                 }
             }
         }
-        let name = schema_name.to_camel_case_ident()?;
+        let mut name = TypeNameCode::from(schema_name.to_camel_case_ident()?);
+        name.union(true);
         Ok(Self {
             tag: tag.to_string(),
             name,
@@ -925,7 +925,7 @@ fn create_struct(
                 let as_attribute = format!("@{}", property_name);
                 serde.add_rename(&as_attribute);
             } else {
-                serde.add_rename(&property_name);
+                serde.add_rename(property_name);
             }
         }
         #[allow(clippy::collapsible_else_if)]
@@ -938,10 +938,12 @@ fn create_struct(
         } else {
             if type_name.is_date_time() {
                 // Must specify `default` when using `with` for `Option`
-                serde.add_default().add_with("azure_core::date::rfc3339::option");
+                serde.add_default();
+                serde.add_with("azure_core::date::rfc3339::option");
             } else if type_name.is_date_time_rfc1123() {
                 // Must specify `default` when using `with` for `Option`
-                serde.add_default().add_with("azure_core::date::rfc1123::option");
+                serde.add_default();
+                serde.add_with("azure_core::date::rfc1123::option");
             } else if type_name.is_vec() {
                 serde.add_default();
                 serde.add_deserialize_with("azure_core::util::deserialize_null_as_default");
@@ -1168,49 +1170,38 @@ impl SerdeCode {
     pub fn add_tag(&mut self, tag: &str) {
         self.attributes.push(quote! { tag = #tag });
     }
-    pub fn add_flatten(&mut self) -> &mut Self {
+    pub fn add_flatten(&mut self) {
         self.attributes.push(quote! { flatten });
-        self
     }
-    pub fn add_rename(&mut self, rename: &str) -> &mut Self {
+    pub fn add_rename(&mut self, rename: &str) {
         self.attributes.push(quote! { rename = #rename });
-        self
     }
-    pub fn add_alias(&mut self, alias: &str) -> &mut Self {
+    pub fn add_alias(&mut self, alias: &str) {
         self.attributes.push(quote! { alias = #alias });
-        self
     }
-    pub fn add_skip_serializing_if(&mut self, skip_serializing_if: &str) -> &mut Self {
+    pub fn add_skip_serializing_if(&mut self, skip_serializing_if: &str) {
         self.attributes.push(quote! { skip_serializing_if = #skip_serializing_if });
-        self
     }
-    pub fn add_default(&mut self) -> &mut Self {
+    pub fn add_default(&mut self) {
         self.attributes.push(quote! { default });
-        self
     }
-    pub fn add_default_value(&mut self, default: &str) -> &mut Self {
+    pub fn add_default_value(&mut self, default: &str) {
         self.attributes.push(quote! { default = #default });
-        self
     }
-    pub fn add_with(&mut self, with: &str) -> &mut Self {
+    pub fn add_with(&mut self, with: &str) {
         self.attributes.push(quote! { with = #with });
-        self
     }
-    pub fn add_deserialize_with(&mut self, deserialize_with: &str) -> &mut Self {
+    pub fn add_deserialize_with(&mut self, deserialize_with: &str) {
         self.attributes.push(quote! { deserialize_with = #deserialize_with });
-        self
     }
-    pub fn add_serialize_with(&mut self, serialize_with: &str) -> &mut Self {
+    pub fn add_serialize_with(&mut self, serialize_with: &str) {
         self.attributes.push(quote! { serialize_with = #serialize_with });
-        self
     }
-    pub fn add_remote(&mut self, remote: &str) -> &mut Self {
+    pub fn add_remote(&mut self, remote: &str) {
         self.attributes.push(quote! { remote = #remote });
-        self
     }
-    pub fn add_skip_deserializing(&mut self) -> &mut Self {
+    pub fn add_skip_deserializing(&mut self) {
         self.attributes.push(quote! { skip_deserializing });
-        self
     }
 }
 
