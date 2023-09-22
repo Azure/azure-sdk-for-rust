@@ -1,0 +1,7 @@
+[tags]
+deny = [
+    # duplicate "x-ms-discriminator-value"
+    # https://github.com/Azure/azure-rest-api-specs/issues/25931
+    "package-2022-10-31-preview",
+    "package-2022-06-30-preview",
+  ]

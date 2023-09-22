@@ -106,9 +106,6 @@ impl Client {
     pub fn api_tokens_client(&self) -> api_tokens::Client {
         api_tokens::Client(self.clone())
     }
-    pub fn dashboards_client(&self) -> dashboards::Client {
-        dashboards::Client(self.clone())
-    }
     pub fn destinations_client(&self) -> destinations::Client {
         destinations::Client(self.clone())
     }
@@ -120,9 +117,6 @@ impl Client {
     }
     pub fn devices_client(&self) -> devices::Client {
         devices::Client(self.clone())
-    }
-    pub fn enrollment_groups_client(&self) -> enrollment_groups::Client {
-        enrollment_groups::Client(self.clone())
     }
     pub fn exports_client(&self) -> exports::Client {
         exports::Client(self.clone())
@@ -141,9 +135,6 @@ impl Client {
     }
     pub fn roles_client(&self) -> roles::Client {
         roles::Client(self.clone())
-    }
-    pub fn scheduled_jobs_client(&self) -> scheduled_jobs::Client {
-        scheduled_jobs::Client(self.clone())
     }
     pub fn users_client(&self) -> users::Client {
         users::Client(self.clone())
@@ -269,7 +260,7 @@ pub mod api_tokens {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -305,7 +296,7 @@ pub mod api_tokens {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -393,7 +384,7 @@ pub mod api_tokens {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -495,7 +486,7 @@ pub mod api_tokens {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -590,569 +581,7 @@ pub mod api_tokens {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-    }
-}
-pub mod dashboards {
-    use super::models;
-    #[cfg(not(target_arch = "wasm32"))]
-    use futures::future::BoxFuture;
-    #[cfg(target_arch = "wasm32")]
-    use futures::future::LocalBoxFuture as BoxFuture;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Get the list of dashboards in an application."]
-        pub fn list(&self) -> list::RequestBuilder {
-            list::RequestBuilder { client: self.0.clone() }
-        }
-        #[doc = "Get a dashboard by ID."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `dashboard_id`: Unique ID for the dashboard."]
-        pub fn get(&self, dashboard_id: impl Into<String>) -> get::RequestBuilder {
-            get::RequestBuilder {
-                client: self.0.clone(),
-                dashboard_id: dashboard_id.into(),
-            }
-        }
-        #[doc = "Create a dashboard"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `dashboard_id`: Unique ID for the dashboard."]
-        #[doc = "* `body`: Dashboard definition."]
-        pub fn create(&self, dashboard_id: impl Into<String>, body: impl Into<models::Dashboard>) -> create::RequestBuilder {
-            create::RequestBuilder {
-                client: self.0.clone(),
-                dashboard_id: dashboard_id.into(),
-                body: body.into(),
-            }
-        }
-        #[doc = "Update a dashboard"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `dashboard_id`: Unique ID for the dashboard."]
-        #[doc = "* `body`: Dashboard definition."]
-        pub fn update(&self, dashboard_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::RequestBuilder {
-            update::RequestBuilder {
-                client: self.0.clone(),
-                dashboard_id: dashboard_id.into(),
-                body: body.into(),
-            }
-        }
-        #[doc = "Delete a dashboard"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `dashboard_id`: Unique ID for the dashboard."]
-        pub fn remove(&self, dashboard_id: impl Into<String>) -> remove::RequestBuilder {
-            remove::RequestBuilder {
-                client: self.0.clone(),
-                dashboard_id: dashboard_id.into(),
-            }
-        }
-    }
-    pub mod list {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::DashboardCollection> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::DashboardCollection = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-        }
-        impl RequestBuilder {
-            pub fn into_stream(self) -> azure_core::Pageable<models::DashboardCollection, azure_core::error::Error> {
-                let make_request = move |continuation: Option<String>| {
-                    let this = self.clone();
-                    async move {
-                        let mut url = this.url()?;
-                        let rsp = match continuation {
-                            Some(value) => {
-                                url.set_path("");
-                                url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                let has_api_version_already =
-                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                                if !has_api_version_already {
-                                    req.url_mut()
-                                        .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                                }
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                            None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                        };
-                        let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        };
-                        rsp?.into_body().await
-                    }
-                };
-                azure_core::Pageable::new(make_request)
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/dashboards", self.client.endpoint(),))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-    }
-    pub mod get {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Dashboard> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::Dashboard = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) dashboard_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/dashboards/{}", self.client.endpoint(), &self.dashboard_id))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Dashboard>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Dashboard>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod create {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Dashboard> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::Dashboard = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) dashboard_id: String,
-            pub(crate) body: models::Dashboard,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.body)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/dashboards/{}", self.client.endpoint(), &self.dashboard_id))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Dashboard>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Dashboard>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod update {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Dashboard> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::Dashboard = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) dashboard_id: String,
-            pub(crate) body: serde_json::Value,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.body)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/dashboards/{}", self.client.endpoint(), &self.dashboard_id))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Dashboard>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Dashboard>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod remove {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) dashboard_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/dashboards/{}", self.client.endpoint(), &self.dashboard_id))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -1303,7 +732,7 @@ pub mod destinations {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1339,7 +768,7 @@ pub mod destinations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -1431,7 +860,7 @@ pub mod destinations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -1537,7 +966,7 @@ pub mod destinations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -1643,7 +1072,7 @@ pub mod destinations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -1742,7 +1171,7 @@ pub mod destinations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -1824,7 +1253,7 @@ pub mod destinations {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1864,7 +1293,7 @@ pub mod destinations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -2015,7 +1444,7 @@ pub mod exports {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -2051,7 +1480,7 @@ pub mod exports {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -2139,7 +1568,7 @@ pub mod exports {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -2241,7 +1670,7 @@ pub mod exports {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -2343,7 +1772,7 @@ pub mod exports {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -2438,7 +1867,7 @@ pub mod exports {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -2520,7 +1949,7 @@ pub mod exports {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -2560,7 +1989,7 @@ pub mod exports {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -2577,70 +2006,7 @@ pub mod device_groups {
     impl Client {
         #[doc = "Get the list of device groups in an application."]
         pub fn list(&self) -> list::RequestBuilder {
-            list::RequestBuilder {
-                client: self.0.clone(),
-                filter: None,
-                top: None,
-                orderby: None,
-            }
-        }
-        #[doc = "Get the device group by ID."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `device_group_id`: Unique ID for the device group."]
-        pub fn get(&self, device_group_id: impl Into<String>) -> get::RequestBuilder {
-            get::RequestBuilder {
-                client: self.0.clone(),
-                device_group_id: device_group_id.into(),
-            }
-        }
-        #[doc = "Create or update a device group"]
-        #[doc = "Create or update a device group."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `device_group_id`: Unique ID for the device group."]
-        #[doc = "* `body`: Device group body."]
-        pub fn create(&self, device_group_id: impl Into<String>, body: impl Into<models::DeviceGroup>) -> create::RequestBuilder {
-            create::RequestBuilder {
-                client: self.0.clone(),
-                device_group_id: device_group_id.into(),
-                body: body.into(),
-            }
-        }
-        #[doc = "Update a device group via patch"]
-        #[doc = "Update an existing device group by ID."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `device_group_id`: Unique ID for the device group."]
-        #[doc = "* `body`: Device group patch body."]
-        pub fn update(&self, device_group_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::RequestBuilder {
-            update::RequestBuilder {
-                client: self.0.clone(),
-                device_group_id: device_group_id.into(),
-                body: body.into(),
-            }
-        }
-        #[doc = "Delete a device group."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `device_group_id`: Unique ID for the device group."]
-        pub fn remove(&self, device_group_id: impl Into<String>) -> remove::RequestBuilder {
-            remove::RequestBuilder {
-                client: self.0.clone(),
-                device_group_id: device_group_id.into(),
-            }
-        }
-        #[doc = "Get the devices of a device group"]
-        #[doc = "Get the list of devices by device group ID."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `device_group_id`: Unique ID for the device group."]
-        pub fn get_devices(&self, device_group_id: impl Into<String>) -> get_devices::RequestBuilder {
-            get_devices::RequestBuilder {
-                client: self.0.clone(),
-                device_group_id: device_group_id.into(),
-                top: None,
-            }
+            list::RequestBuilder { client: self.0.clone() }
         }
     }
     pub mod list {
@@ -2695,26 +2061,8 @@ pub mod device_groups {
         #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) filter: Option<String>,
-            pub(crate) top: Option<i64>,
-            pub(crate) orderby: Option<String>,
         }
         impl RequestBuilder {
-            #[doc = "An expression on the resource type that selects the resources to be returned."]
-            pub fn filter(mut self, filter: impl Into<String>) -> Self {
-                self.filter = Some(filter.into());
-                self
-            }
-            #[doc = "The maximum number of resources to return from the collection."]
-            pub fn top(mut self, top: i64) -> Self {
-                self.top = Some(top);
-                self
-            }
-            #[doc = "An expression that specify the order of the returned resources."]
-            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
-                self.orderby = Some(orderby.into());
-                self
-            }
             pub fn into_stream(self) -> azure_core::Pageable<models::DeviceGroupCollection, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
@@ -2736,7 +2084,7 @@ pub mod device_groups {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -2750,15 +2098,6 @@ pub mod device_groups {
                                     azure_core::headers::AUTHORIZATION,
                                     format!("Bearer {}", token_response.token.secret()),
                                 );
-                                if let Some(filter) = &this.filter {
-                                    req.url_mut().query_pairs_mut().append_pair("$filter", filter);
-                                }
-                                if let Some(top) = &this.top {
-                                    req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
-                                }
-                                if let Some(orderby) = &this.orderby {
-                                    req.url_mut().query_pairs_mut().append_pair("$orderby", orderby);
-                                }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -2781,525 +2120,7 @@ pub mod device_groups {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-    }
-    pub mod get {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::DeviceGroup> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::DeviceGroup = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) device_group_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/deviceGroups/{}", self.client.endpoint(), &self.device_group_id))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::DeviceGroup>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DeviceGroup>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod create {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::DeviceGroup> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::DeviceGroup = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) device_group_id: String,
-            pub(crate) body: models::DeviceGroup,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.body)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/deviceGroups/{}", self.client.endpoint(), &self.device_group_id))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::DeviceGroup>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DeviceGroup>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod update {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::DeviceGroup> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::DeviceGroup = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) device_group_id: String,
-            pub(crate) body: serde_json::Value,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.body)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/deviceGroups/{}", self.client.endpoint(), &self.device_group_id))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::DeviceGroup>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DeviceGroup>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod remove {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) device_group_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/deviceGroups/{}", self.client.endpoint(), &self.device_group_id))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-    }
-    pub mod get_devices {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::DeviceGroupDeviceCollection> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::DeviceGroupDeviceCollection = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) device_group_id: String,
-            pub(crate) top: Option<i64>,
-        }
-        impl RequestBuilder {
-            #[doc = "The maximum number of resources to return from the collection."]
-            pub fn top(mut self, top: i64) -> Self {
-                self.top = Some(top);
-                self
-            }
-            pub fn into_stream(self) -> azure_core::Pageable<models::DeviceGroupDeviceCollection, azure_core::error::Error> {
-                let make_request = move |continuation: Option<String>| {
-                    let this = self.clone();
-                    async move {
-                        let mut url = this.url()?;
-                        let rsp = match continuation {
-                            Some(value) => {
-                                url.set_path("");
-                                url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                let has_api_version_already =
-                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                                if !has_api_version_already {
-                                    req.url_mut()
-                                        .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                                }
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                            None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                if let Some(top) = &this.top {
-                                    req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
-                                }
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                        };
-                        let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        };
-                        rsp?.into_body().await
-                    }
-                };
-                azure_core::Pageable::new(make_request)
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/deviceGroups/{}/devices",
-                    self.client.endpoint(),
-                    &self.device_group_id
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -3426,17 +2247,17 @@ pub mod device_templates {
             pub(crate) orderby: Option<String>,
         }
         impl RequestBuilder {
-            #[doc = "An expression on the resource type that selects the resources to be returned."]
+            #[doc = "Filter string for results."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
-            #[doc = "The maximum number of resources to return from the collection."]
+            #[doc = "Page size of returned results."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
-            #[doc = "An expression that specify the order of the returned resources."]
+            #[doc = "The order by string for results."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -3462,7 +2283,7 @@ pub mod device_templates {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -3507,7 +2328,7 @@ pub mod device_templates {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -3595,7 +2416,7 @@ pub mod device_templates {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -3697,7 +2518,7 @@ pub mod device_templates {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -3799,7 +2620,7 @@ pub mod device_templates {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -3894,7 +2715,7 @@ pub mod device_templates {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -4120,7 +2941,6 @@ pub mod devices {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 component_name: component_name.into(),
-                unmodeled: None,
             }
         }
         #[doc = "Replace device properties for a specific component"]
@@ -4140,7 +2960,6 @@ pub mod devices {
                 device_id: device_id.into(),
                 component_name: component_name.into(),
                 body: body.into(),
-                unmodeled: None,
             }
         }
         #[doc = "Update device properties for a specific component via patch"]
@@ -4160,7 +2979,6 @@ pub mod devices {
                 device_id: device_id.into(),
                 component_name: component_name.into(),
                 body: body.into(),
-                unmodeled: None,
             }
         }
         #[doc = "Get component telemetry value"]
@@ -4481,7 +3299,6 @@ pub mod devices {
             get_properties::RequestBuilder {
                 client: self.0.clone(),
                 device_id: device_id.into(),
-                unmodeled: None,
             }
         }
         #[doc = "Replace device properties"]
@@ -4499,7 +3316,6 @@ pub mod devices {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
-                unmodeled: None,
             }
         }
         #[doc = "Update device properties via patch"]
@@ -4517,7 +3333,6 @@ pub mod devices {
                 client: self.0.clone(),
                 device_id: device_id.into(),
                 body: body.into(),
-                unmodeled: None,
             }
         }
         #[doc = "Given the ID for an upstream device, will return the upstream and the downstream relationships associated with that gateway. These downstream relationships are only those associated with the direct downstream level (they don’t work recursively)."]
@@ -4680,17 +3495,17 @@ pub mod devices {
             pub(crate) orderby: Option<String>,
         }
         impl RequestBuilder {
-            #[doc = "An expression on the resource type that selects the resources to be returned."]
+            #[doc = "Filter string for results."]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
             }
-            #[doc = "The maximum number of resources to return from the collection."]
+            #[doc = "Page size of returned results."]
             pub fn top(mut self, top: i64) -> Self {
                 self.top = Some(top);
                 self
             }
-            #[doc = "An expression that specify the order of the returned resources."]
+            #[doc = "The order by string for results."]
             pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
                 self.orderby = Some(orderby.into());
                 self
@@ -4716,7 +3531,7 @@ pub mod devices {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -4761,7 +3576,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -4849,7 +3664,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -4951,7 +3766,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -5053,7 +3868,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -5148,7 +3963,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -5236,7 +4051,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -5338,7 +4153,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -5440,7 +4255,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -5535,7 +4350,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -5618,7 +4433,7 @@ pub mod devices {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -5659,7 +4474,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -5755,7 +4570,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -5855,7 +4670,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -5951,7 +4766,7 @@ pub mod devices {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -5993,7 +4808,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -6091,7 +4906,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -6163,14 +4978,8 @@ pub mod devices {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) component_name: String,
-            pub(crate) unmodeled: Option<bool>,
         }
         impl RequestBuilder {
-            #[doc = "The query parameter for supporting unmodeled properties."]
-            pub fn unmodeled(mut self, unmodeled: bool) -> Self {
-                self.unmodeled = Some(unmodeled);
-                self
-            }
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -6187,9 +4996,6 @@ pub mod devices {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        if let Some(unmodeled) = &this.unmodeled {
-                            req.url_mut().query_pairs_mut().append_pair("unmodeled", &unmodeled.to_string());
-                        }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -6206,7 +5012,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -6279,14 +5085,8 @@ pub mod devices {
             pub(crate) device_id: String,
             pub(crate) component_name: String,
             pub(crate) body: models::DeviceProperties,
-            pub(crate) unmodeled: Option<bool>,
         }
         impl RequestBuilder {
-            #[doc = "The query parameter for supporting unmodeled properties."]
-            pub fn unmodeled(mut self, unmodeled: bool) -> Self {
-                self.unmodeled = Some(unmodeled);
-                self
-            }
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -6305,9 +5105,6 @@ pub mod devices {
                         );
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
-                        if let Some(unmodeled) = &this.unmodeled {
-                            req.url_mut().query_pairs_mut().append_pair("unmodeled", &unmodeled.to_string());
-                        }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
@@ -6323,7 +5120,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -6396,14 +5193,8 @@ pub mod devices {
             pub(crate) device_id: String,
             pub(crate) component_name: String,
             pub(crate) body: serde_json::Value,
-            pub(crate) unmodeled: Option<bool>,
         }
         impl RequestBuilder {
-            #[doc = "The query parameter for supporting unmodeled properties."]
-            pub fn unmodeled(mut self, unmodeled: bool) -> Self {
-                self.unmodeled = Some(unmodeled);
-                self
-            }
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -6422,9 +5213,6 @@ pub mod devices {
                         );
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
-                        if let Some(unmodeled) = &this.unmodeled {
-                            req.url_mut().query_pairs_mut().append_pair("unmodeled", &unmodeled.to_string());
-                        }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
@@ -6440,7 +5228,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -6548,7 +5336,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -6648,7 +5436,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -6748,7 +5536,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -6844,7 +5632,7 @@ pub mod devices {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -6886,7 +5674,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -6984,7 +5772,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -7090,7 +5878,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -7187,7 +5975,7 @@ pub mod devices {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -7230,7 +6018,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -7330,7 +6118,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -7438,7 +6226,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -7548,7 +6336,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -7658,7 +6446,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -7768,7 +6556,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -7874,7 +6662,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -7982,7 +6770,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -8090,7 +6878,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -8198,7 +6986,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -8269,14 +7057,8 @@ pub mod devices {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
-            pub(crate) unmodeled: Option<bool>,
         }
         impl RequestBuilder {
-            #[doc = "The query parameter for supporting unmodeled properties."]
-            pub fn unmodeled(mut self, unmodeled: bool) -> Self {
-                self.unmodeled = Some(unmodeled);
-                self
-            }
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -8293,9 +7075,6 @@ pub mod devices {
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        if let Some(unmodeled) = &this.unmodeled {
-                            req.url_mut().query_pairs_mut().append_pair("unmodeled", &unmodeled.to_string());
-                        }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -8307,7 +7086,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -8379,14 +7158,8 @@ pub mod devices {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: models::DeviceProperties,
-            pub(crate) unmodeled: Option<bool>,
         }
         impl RequestBuilder {
-            #[doc = "The query parameter for supporting unmodeled properties."]
-            pub fn unmodeled(mut self, unmodeled: bool) -> Self {
-                self.unmodeled = Some(unmodeled);
-                self
-            }
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -8405,9 +7178,6 @@ pub mod devices {
                         );
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
-                        if let Some(unmodeled) = &this.unmodeled {
-                            req.url_mut().query_pairs_mut().append_pair("unmodeled", &unmodeled.to_string());
-                        }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
@@ -8418,7 +7188,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -8490,14 +7260,8 @@ pub mod devices {
             pub(crate) client: super::super::Client,
             pub(crate) device_id: String,
             pub(crate) body: serde_json::Value,
-            pub(crate) unmodeled: Option<bool>,
         }
         impl RequestBuilder {
-            #[doc = "The query parameter for supporting unmodeled properties."]
-            pub fn unmodeled(mut self, unmodeled: bool) -> Self {
-                self.unmodeled = Some(unmodeled);
-                self
-            }
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -8516,9 +7280,6 @@ pub mod devices {
                         );
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
-                        if let Some(unmodeled) = &this.unmodeled {
-                            req.url_mut().query_pairs_mut().append_pair("unmodeled", &unmodeled.to_string());
-                        }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
@@ -8529,7 +7290,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -8625,11 +7386,11 @@ pub mod devices {
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/devices/{}/relationships", self.client.endpoint(), &self.device_id))?;
+                let mut url = azure_core::Url::parse(&format!("{}/devices/{}/relationships/", self.client.endpoint(), &self.device_id))?;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -8735,7 +7496,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -8843,7 +7604,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -8951,7 +7712,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -9052,7 +7813,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -9146,7 +7907,7 @@ pub mod devices {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -9161,1172 +7922,6 @@ pub mod devices {
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-}
-pub mod enrollment_groups {
-    use super::models;
-    #[cfg(not(target_arch = "wasm32"))]
-    use futures::future::BoxFuture;
-    #[cfg(target_arch = "wasm32")]
-    use futures::future::LocalBoxFuture as BoxFuture;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Get the list of enrollment groups in an application"]
-        pub fn list(&self) -> list::RequestBuilder {
-            list::RequestBuilder { client: self.0.clone() }
-        }
-        #[doc = "Get an enrollment group by ID"]
-        #[doc = "Get details about an enrollment group by ID."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
-        pub fn get(&self, enrollment_group_id: impl Into<String>) -> get::RequestBuilder {
-            get::RequestBuilder {
-                client: self.0.clone(),
-                enrollment_group_id: enrollment_group_id.into(),
-            }
-        }
-        #[doc = "Create an enrollment group"]
-        #[doc = "Create an enrollment group."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
-        #[doc = "* `body`: Enrollment group body."]
-        pub fn create(&self, enrollment_group_id: impl Into<String>, body: impl Into<models::EnrollmentGroup>) -> create::RequestBuilder {
-            create::RequestBuilder {
-                client: self.0.clone(),
-                enrollment_group_id: enrollment_group_id.into(),
-                body: body.into(),
-            }
-        }
-        #[doc = "Update an enrollment group"]
-        #[doc = "Update an enrollment group."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
-        #[doc = "* `body`: Enrollment group patch body."]
-        pub fn update(&self, enrollment_group_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::RequestBuilder {
-            update::RequestBuilder {
-                client: self.0.clone(),
-                enrollment_group_id: enrollment_group_id.into(),
-                body: body.into(),
-            }
-        }
-        #[doc = "Delete an enrollment group"]
-        #[doc = "Delete an enrollment group by ID."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
-        pub fn remove(&self, enrollment_group_id: impl Into<String>) -> remove::RequestBuilder {
-            remove::RequestBuilder {
-                client: self.0.clone(),
-                enrollment_group_id: enrollment_group_id.into(),
-            }
-        }
-        #[doc = "Get the primary or secondary x509 certificate of an enrollment group"]
-        #[doc = "Get details about the primary or secondary x509 certificate of an enrollment group, if it exists."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
-        #[doc = "* `entry`: Entry of certificate only support primary and secondary."]
-        pub fn get_x509(&self, enrollment_group_id: impl Into<String>, entry: impl Into<String>) -> get_x509::RequestBuilder {
-            get_x509::RequestBuilder {
-                client: self.0.clone(),
-                enrollment_group_id: enrollment_group_id.into(),
-                entry: entry.into(),
-            }
-        }
-        #[doc = "Sets the primary or secondary x509 certificate of an enrollment group"]
-        #[doc = "Sets the primary or secondary x509 certificate of an enrollment group."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
-        #[doc = "* `entry`: Entry of certificate only support primary and secondary."]
-        #[doc = "* `body`: Certificate definition."]
-        pub fn create_x509(
-            &self,
-            enrollment_group_id: impl Into<String>,
-            entry: impl Into<String>,
-            body: impl Into<models::SigningX509Certificate>,
-        ) -> create_x509::RequestBuilder {
-            create_x509::RequestBuilder {
-                client: self.0.clone(),
-                enrollment_group_id: enrollment_group_id.into(),
-                entry: entry.into(),
-                body: body.into(),
-            }
-        }
-        #[doc = "Removes the primary or secondary x509 certificate of an enrollment group"]
-        #[doc = "Removes the primary or secondary x509 certificate of an enrollment group."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
-        #[doc = "* `entry`: Entry of certificate only support primary and secondary."]
-        pub fn remove_x509(&self, enrollment_group_id: impl Into<String>, entry: impl Into<String>) -> remove_x509::RequestBuilder {
-            remove_x509::RequestBuilder {
-                client: self.0.clone(),
-                enrollment_group_id: enrollment_group_id.into(),
-                entry: entry.into(),
-            }
-        }
-        #[doc = "Generate a verification code for the primary or secondary x509 certificate of an enrollment group"]
-        #[doc = "Generate a verification code for the primary or secondary x509 certificate of an enrollment group."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
-        #[doc = "* `entry`: Entry of certificate only support primary and secondary."]
-        pub fn generate_verification_code_x509(
-            &self,
-            enrollment_group_id: impl Into<String>,
-            entry: impl Into<String>,
-        ) -> generate_verification_code_x509::RequestBuilder {
-            generate_verification_code_x509::RequestBuilder {
-                client: self.0.clone(),
-                enrollment_group_id: enrollment_group_id.into(),
-                entry: entry.into(),
-            }
-        }
-        #[doc = "Verify the primary or secondary x509 certificate of an enrollment group"]
-        #[doc = "Verify the primary or secondary x509 certificate of an enrollment group by providing a certificate with the signed verification code."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `enrollment_group_id`: Unique ID of the enrollment group."]
-        #[doc = "* `entry`: Entry of certificate only support primary and secondary."]
-        #[doc = "* `body`: Certificate for the signed verification code."]
-        pub fn verify_x509(
-            &self,
-            enrollment_group_id: impl Into<String>,
-            entry: impl Into<String>,
-            body: impl Into<models::X509VerificationCertificate>,
-        ) -> verify_x509::RequestBuilder {
-            verify_x509::RequestBuilder {
-                client: self.0.clone(),
-                enrollment_group_id: enrollment_group_id.into(),
-                entry: entry.into(),
-                body: body.into(),
-            }
-        }
-    }
-    pub mod list {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::EnrollmentGroupCollection> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::EnrollmentGroupCollection = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-        }
-        impl RequestBuilder {
-            pub fn into_stream(self) -> azure_core::Pageable<models::EnrollmentGroupCollection, azure_core::error::Error> {
-                let make_request = move |continuation: Option<String>| {
-                    let this = self.clone();
-                    async move {
-                        let mut url = this.url()?;
-                        let rsp = match continuation {
-                            Some(value) => {
-                                url.set_path("");
-                                url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                let has_api_version_already =
-                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                                if !has_api_version_already {
-                                    req.url_mut()
-                                        .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                                }
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                            None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                        };
-                        let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        };
-                        rsp?.into_body().await
-                    }
-                };
-                azure_core::Pageable::new(make_request)
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/enrollmentGroups", self.client.endpoint(),))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-    }
-    pub mod get {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::EnrollmentGroup> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::EnrollmentGroup = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) enrollment_group_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/enrollmentGroups/{}",
-                    self.client.endpoint(),
-                    &self.enrollment_group_id
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::EnrollmentGroup>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::EnrollmentGroup>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod create {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::EnrollmentGroup> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::EnrollmentGroup = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) enrollment_group_id: String,
-            pub(crate) body: models::EnrollmentGroup,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.body)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/enrollmentGroups/{}",
-                    self.client.endpoint(),
-                    &self.enrollment_group_id
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::EnrollmentGroup>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::EnrollmentGroup>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod update {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::EnrollmentGroup> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::EnrollmentGroup = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) enrollment_group_id: String,
-            pub(crate) body: serde_json::Value,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.insert_header("content-type", "application/merge-patch+json");
-                        let req_body = azure_core::to_json(&this.body)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/enrollmentGroups/{}",
-                    self.client.endpoint(),
-                    &self.enrollment_group_id
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::EnrollmentGroup>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::EnrollmentGroup>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod remove {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) enrollment_group_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/enrollmentGroups/{}",
-                    self.client.endpoint(),
-                    &self.enrollment_group_id
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-    }
-    pub mod get_x509 {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::SigningX509Certificate> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::SigningX509Certificate = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) enrollment_group_id: String,
-            pub(crate) entry: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/enrollmentGroups/{}/certificates/{}",
-                    self.client.endpoint(),
-                    &self.enrollment_group_id,
-                    &self.entry
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::SigningX509Certificate>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SigningX509Certificate>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod create_x509 {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::SigningX509Certificate> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::SigningX509Certificate = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) enrollment_group_id: String,
-            pub(crate) entry: String,
-            pub(crate) body: models::SigningX509Certificate,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.body)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/enrollmentGroups/{}/certificates/{}",
-                    self.client.endpoint(),
-                    &self.enrollment_group_id,
-                    &self.entry
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::SigningX509Certificate>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SigningX509Certificate>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod remove_x509 {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) enrollment_group_id: String,
-            pub(crate) entry: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/enrollmentGroups/{}/certificates/{}",
-                    self.client.endpoint(),
-                    &self.enrollment_group_id,
-                    &self.entry
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-    }
-    pub mod generate_verification_code_x509 {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::X509VerificationCode> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::X509VerificationCode = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) enrollment_group_id: String,
-            pub(crate) entry: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/enrollmentGroups/{}/certificates/{}/generateVerificationCode",
-                    self.client.endpoint(),
-                    &self.enrollment_group_id,
-                    &self.entry
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::X509VerificationCode>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::X509VerificationCode>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod verify_x509 {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) enrollment_group_id: String,
-            pub(crate) entry: String,
-            pub(crate) body: models::X509VerificationCertificate,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.body)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/enrollmentGroups/{}/certificates/{}/verify",
-                    self.client.endpoint(),
-                    &self.enrollment_group_id,
-                    &self.entry
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
             }
         }
     }
@@ -10449,7 +8044,7 @@ pub mod file_uploads {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -10550,7 +8145,7 @@ pub mod file_uploads {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -10651,7 +8246,7 @@ pub mod file_uploads {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -10745,7 +8340,7 @@ pub mod file_uploads {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -10910,7 +8505,7 @@ pub mod jobs {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -10946,7 +8541,7 @@ pub mod jobs {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -11034,7 +8629,7 @@ pub mod jobs {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -11136,7 +8731,7 @@ pub mod jobs {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -11209,66 +8804,48 @@ pub mod jobs {
             pub(crate) job_id: String,
         }
         impl RequestBuilder {
-            pub fn into_stream(self) -> azure_core::Pageable<models::JobDeviceStatusCollection, azure_core::error::Error> {
-                let make_request = move |continuation: Option<String>| {
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
                     let this = self.clone();
                     async move {
-                        let mut url = this.url()?;
-                        let rsp = match continuation {
-                            Some(value) => {
-                                url.set_path("");
-                                url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                let has_api_version_already =
-                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                                if !has_api_version_already {
-                                    req.url_mut()
-                                        .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                                }
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                            None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                        };
-                        let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        };
-                        rsp?.into_body().await
+                        let url = this.url()?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
                     }
-                };
-                azure_core::Pageable::new(make_request)
+                })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
                 let mut url = azure_core::Url::parse(&format!("{}/jobs/{}/devices", self.client.endpoint(), &self.job_id))?;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
+            }
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::JobDeviceStatusCollection>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::JobDeviceStatusCollection>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -11360,7 +8937,7 @@ pub mod jobs {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -11456,7 +9033,7 @@ pub mod jobs {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -11540,7 +9117,7 @@ pub mod jobs {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -11679,7 +9256,7 @@ pub mod organizations {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -11715,7 +9292,7 @@ pub mod organizations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -11803,7 +9380,7 @@ pub mod organizations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -11905,7 +9482,7 @@ pub mod organizations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -12007,7 +9584,7 @@ pub mod organizations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -12102,7 +9679,7 @@ pub mod organizations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -12120,7 +9697,7 @@ pub mod query {
         #[doc = "Run a query and obtain the result"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `body`: query, more details on [IoT central query language](https://aka.ms/iotcql)."]
+        #[doc = "* `body`: query, more details in [IoT central query language](https://aka.ms/iotcql)"]
         pub fn run(&self, body: impl Into<models::QueryRequest>) -> run::RequestBuilder {
             run::RequestBuilder {
                 client: self.0.clone(),
@@ -12211,7 +9788,7 @@ pub mod query {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -12328,7 +9905,7 @@ pub mod roles {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -12364,7 +9941,7 @@ pub mod roles {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -12452,7 +10029,7 @@ pub mod roles {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -12467,700 +10044,6 @@ pub mod roles {
             #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
             fn into_future(self) -> Self::IntoFuture {
                 Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-}
-pub mod scheduled_jobs {
-    use super::models;
-    #[cfg(not(target_arch = "wasm32"))]
-    use futures::future::BoxFuture;
-    #[cfg(target_arch = "wasm32")]
-    use futures::future::LocalBoxFuture as BoxFuture;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Get the list of scheduled job definitions in an application"]
-        pub fn list(&self) -> list::RequestBuilder {
-            list::RequestBuilder { client: self.0.clone() }
-        }
-        #[doc = "Get a scheduled job by ID"]
-        #[doc = "Get details about a scheduled job by ID."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `scheduled_job_id`: Unique ID of the scheduled job."]
-        pub fn get(&self, scheduled_job_id: impl Into<String>) -> get::RequestBuilder {
-            get::RequestBuilder {
-                client: self.0.clone(),
-                scheduled_job_id: scheduled_job_id.into(),
-            }
-        }
-        #[doc = "Create or update a scheduled job"]
-        #[doc = "Create or update a scheduled job by ID."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `scheduled_job_id`: Unique ID of the scheduled job."]
-        #[doc = "* `body`: Scheduled job definition."]
-        pub fn create(&self, scheduled_job_id: impl Into<String>, body: impl Into<models::ScheduledJob>) -> create::RequestBuilder {
-            create::RequestBuilder {
-                client: self.0.clone(),
-                scheduled_job_id: scheduled_job_id.into(),
-                body: body.into(),
-            }
-        }
-        #[doc = "Update a scheduled job via patch"]
-        #[doc = "Update an existing scheduled job by ID."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `scheduled_job_id`: Unique ID of the scheduled job."]
-        #[doc = "* `body`: Scheduled job patch."]
-        pub fn update(&self, scheduled_job_id: impl Into<String>, body: impl Into<serde_json::Value>) -> update::RequestBuilder {
-            update::RequestBuilder {
-                client: self.0.clone(),
-                scheduled_job_id: scheduled_job_id.into(),
-                body: body.into(),
-            }
-        }
-        #[doc = "Delete a scheduled job"]
-        #[doc = "Delete an existing scheduled job by ID."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `scheduled_job_id`: Unique ID of the scheduled job."]
-        pub fn remove(&self, scheduled_job_id: impl Into<String>) -> remove::RequestBuilder {
-            remove::RequestBuilder {
-                client: self.0.clone(),
-                scheduled_job_id: scheduled_job_id.into(),
-            }
-        }
-        #[doc = "Get the list of jobs for a scheduled job definition"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `scheduled_job_id`: Unique ID of the scheduled job."]
-        pub fn list_jobs(&self, scheduled_job_id: impl Into<String>) -> list_jobs::RequestBuilder {
-            list_jobs::RequestBuilder {
-                client: self.0.clone(),
-                scheduled_job_id: scheduled_job_id.into(),
-            }
-        }
-    }
-    pub mod list {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ScheduledJobCollection> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::ScheduledJobCollection = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-        }
-        impl RequestBuilder {
-            pub fn into_stream(self) -> azure_core::Pageable<models::ScheduledJobCollection, azure_core::error::Error> {
-                let make_request = move |continuation: Option<String>| {
-                    let this = self.clone();
-                    async move {
-                        let mut url = this.url()?;
-                        let rsp = match continuation {
-                            Some(value) => {
-                                url.set_path("");
-                                url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                let has_api_version_already =
-                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                                if !has_api_version_already {
-                                    req.url_mut()
-                                        .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                                }
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                            None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                        };
-                        let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        };
-                        rsp?.into_body().await
-                    }
-                };
-                azure_core::Pageable::new(make_request)
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/scheduledJobs", self.client.endpoint(),))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-    }
-    pub mod get {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ScheduledJob> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::ScheduledJob = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) scheduled_job_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/scheduledJobs/{}", self.client.endpoint(), &self.scheduled_job_id))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::ScheduledJob>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ScheduledJob>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod create {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ScheduledJob> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::ScheduledJob = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) scheduled_job_id: String,
-            pub(crate) body: models::ScheduledJob,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.body)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/scheduledJobs/{}", self.client.endpoint(), &self.scheduled_job_id))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::ScheduledJob>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ScheduledJob>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod update {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ScheduledJob> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::ScheduledJob = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) scheduled_job_id: String,
-            pub(crate) body: serde_json::Value,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.insert_header("content-type", "application/merge-patch+json");
-                        let req_body = azure_core::to_json(&this.body)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/scheduledJobs/{}", self.client.endpoint(), &self.scheduled_job_id))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::ScheduledJob>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ScheduledJob>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod remove {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) scheduled_job_id: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/scheduledJobs/{}", self.client.endpoint(), &self.scheduled_job_id))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
-            }
-        }
-    }
-    pub mod list_jobs {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::JobCollection> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::JobCollection = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) scheduled_job_id: String,
-        }
-        impl RequestBuilder {
-            pub fn into_stream(self) -> azure_core::Pageable<models::JobCollection, azure_core::error::Error> {
-                let make_request = move |continuation: Option<String>| {
-                    let this = self.clone();
-                    async move {
-                        let mut url = this.url()?;
-                        let rsp = match continuation {
-                            Some(value) => {
-                                url.set_path("");
-                                url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                let has_api_version_already =
-                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                                if !has_api_version_already {
-                                    req.url_mut()
-                                        .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                                }
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                            None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                        };
-                        let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        };
-                        rsp?.into_body().await
-                    }
-                };
-                azure_core::Pageable::new(make_request)
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!("{}/scheduledJobs/{}/jobs", self.client.endpoint(), &self.scheduled_job_id))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
-                }
-                Ok(url)
             }
         }
     }
@@ -13297,7 +10180,7 @@ pub mod users {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -13333,7 +10216,7 @@ pub mod users {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -13421,7 +10304,7 @@ pub mod users {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -13523,7 +10406,7 @@ pub mod users {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -13625,7 +10508,7 @@ pub mod users {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }
@@ -13720,7 +10603,7 @@ pub mod users {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2022-06-30-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "1.1-preview");
                 }
                 Ok(url)
             }

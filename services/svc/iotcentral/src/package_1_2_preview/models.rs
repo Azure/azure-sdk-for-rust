@@ -32,7 +32,7 @@ impl AnyValue {
         Self::default()
     }
 }
-#[doc = "The access token definition."]
+#[doc = "The access token definition for public API."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiToken {
     #[serde(flatten)]
@@ -57,7 +57,6 @@ impl ApiToken {
         }
     }
 }
-#[doc = "The paged results of API tokens."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiTokenCollection {
     #[doc = "The collection of API tokens."]
@@ -77,7 +76,7 @@ impl ApiTokenCollection {
         Self { value, next_link: None }
     }
 }
-#[doc = "The attestation definition."]
+#[doc = "The device attestation information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Attestation {
     #[doc = "Type of the attestation."]
@@ -99,43 +98,12 @@ pub enum AttestationUnion {
     #[serde(rename = "x509")]
     X509(X509Attestation),
 }
-#[doc = "Configuration specifying options for a bar chart tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BarChartConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[serde(flatten)]
-    pub group_tile_configuration: GroupTileConfiguration,
-    #[serde(flatten)]
-    pub tile_capability_configuration: TileCapabilityConfiguration,
-    #[doc = "Configuration specifying formatting options for a chart tile."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub format: Option<ChartFormatConfiguration>,
-    #[doc = "Configuration specifying the time range and resolution of data to return for a tile."]
-    #[serde(rename = "queryRange")]
-    pub query_range: TimeQueryRangeConfiguration,
-}
-impl BarChartConfiguration {
-    pub fn new(
-        tile_configuration: TileConfiguration,
-        group_tile_configuration: GroupTileConfiguration,
-        query_range: TimeQueryRangeConfiguration,
-    ) -> Self {
-        Self {
-            tile_configuration,
-            group_tile_configuration,
-            tile_capability_configuration: TileCapabilityConfiguration::default(),
-            format: None,
-            query_range,
-        }
-    }
-}
-#[doc = "The blob storage destination definition."]
+#[doc = "The blob storage destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobStorageV1Destination {
     #[serde(flatten)]
     pub destination: Destination,
-    #[doc = "The authentication definition for blob storage destination."]
+    #[doc = "The authentication definition of blob storage destination."]
     pub authorization: BlobStorageV1DestinationAuthUnion,
 }
 impl BlobStorageV1Destination {
@@ -146,7 +114,7 @@ impl BlobStorageV1Destination {
         }
     }
 }
-#[doc = "The authentication definition for blob storage destination."]
+#[doc = "The authentication definition of blob storage destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobStorageV1DestinationAuth {
     #[doc = "The kind of authentication to use."]
@@ -166,7 +134,7 @@ pub enum BlobStorageV1DestinationAuthUnion {
     #[serde(rename = "systemAssignedManagedIdentity")]
     SystemAssignedManagedIdentity(BlobStorageV1DestinationSystemAssignedManagedIdentityAuth),
 }
-#[doc = "The authentication definition with connection string for blob storage destination."]
+#[doc = "The authentication definition with connection string of blob storage destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobStorageV1DestinationConnectionStringAuth {
     #[serde(flatten)]
@@ -187,7 +155,7 @@ impl BlobStorageV1DestinationConnectionStringAuth {
         }
     }
 }
-#[doc = "The authentication definition with system assigned managed identity for blob storage destination."]
+#[doc = "The authentication definition with system assigned managed identity of blob storage destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobStorageV1DestinationSystemAssignedManagedIdentityAuth {
     #[serde(flatten)]
@@ -208,25 +176,6 @@ impl BlobStorageV1DestinationSystemAssignedManagedIdentityAuth {
         }
     }
 }
-#[doc = "The type of aggregation to be applied on capability data."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum CapabilityAggregateFunctionType {
-    #[serde(rename = "sum")]
-    Sum,
-    #[serde(rename = "count")]
-    Count,
-    #[serde(rename = "max")]
-    Max,
-    #[serde(rename = "min")]
-    Min,
-    #[serde(rename = "avg")]
-    Avg,
-}
-impl Default for CapabilityAggregateFunctionType {
-    fn default() -> Self {
-        Self::Count
-    }
-}
 #[doc = "The capability job data definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CapabilityJobData {
@@ -243,25 +192,7 @@ impl CapabilityJobData {
         Self { target, path, value: None }
     }
 }
-#[doc = "Configuration specifying formatting options for a chart tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ChartFormatConfiguration {
-    #[doc = "Whether to display the x-axis"]
-    #[serde(rename = "xAxisEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub x_axis_enabled: Option<bool>,
-    #[doc = "Whether to display the y-axis"]
-    #[serde(rename = "yAxisEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub y_axis_enabled: Option<bool>,
-    #[doc = "Whether to display the legend"]
-    #[serde(rename = "legendEnabled", default, skip_serializing_if = "Option::is_none")]
-    pub legend_enabled: Option<bool>,
-}
-impl ChartFormatConfiguration {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The cloud property job data."]
+#[doc = "The cloud property job data definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudPropertyJobData {
     #[serde(flatten)]
@@ -277,7 +208,6 @@ impl CloudPropertyJobData {
         }
     }
 }
-#[doc = "The collection of entities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Collection {
     #[doc = "The collection of entities."]
@@ -289,25 +219,6 @@ pub struct Collection {
 impl Collection {
     pub fn new(value: Vec<serde_json::Value>) -> Self {
         Self { value, next_link: None }
-    }
-}
-#[doc = "Configuration specifying options for a command tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CommandConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[doc = "The device id that the command is associated with"]
-    pub device: String,
-    #[doc = "The command id to associate the tile to"]
-    pub command: String,
-}
-impl CommandConfiguration {
-    pub fn new(tile_configuration: TileConfiguration, device: String, command: String) -> Self {
-        Self {
-            tile_configuration,
-            device,
-            command,
-        }
     }
 }
 #[doc = "The command job data definition."]
@@ -326,131 +237,7 @@ impl CommandJobData {
         }
     }
 }
-#[doc = "Configuration specifying options for a command tile"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CommandTileConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[doc = "The ID of the device group to display"]
-    pub group: String,
-    #[doc = "The command to reference in the tile"]
-    pub command: String,
-    #[doc = "The device to reference in the tile"]
-    pub device: serde_json::Value,
-}
-impl CommandTileConfiguration {
-    pub fn new(tile_configuration: TileConfiguration, group: String, command: String, device: serde_json::Value) -> Self {
-        Self {
-            tile_configuration,
-            group,
-            command,
-            device,
-        }
-    }
-}
-#[doc = "Configuration specifying the number of data points to query for a tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CountQueryRangeConfiguration {
-    #[serde(flatten)]
-    pub query_range_configuration: QueryRangeConfiguration,
-    #[doc = "The maximum number of data points to query for."]
-    pub count: i64,
-}
-impl CountQueryRangeConfiguration {
-    pub fn new(query_range_configuration: QueryRangeConfiguration, count: i64) -> Self {
-        Self {
-            query_range_configuration,
-            count,
-        }
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Dashboard {
-    #[doc = "Unique ID of the dashboard."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Display name of the dashboard."]
-    #[serde(rename = "displayName")]
-    pub display_name: String,
-    #[doc = "The tiles displayed by the dashboard."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub tiles: Vec<Tile>,
-    #[doc = "Whether the dashboard is personal and can only be viewed by the current user."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub personal: Option<bool>,
-    #[doc = "Whether the dashboard is favorited or not"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub favorite: Option<bool>,
-    #[doc = "Etag to prevent conflict when updating the dashboard."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
-    #[doc = "The organization the dashboard belongs to. If not present, the dashboard is root-level or personal. only one organization is supported today, multiple organizations will be supported soon."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub organizations: Vec<String>,
-}
-impl Dashboard {
-    pub fn new(display_name: String) -> Self {
-        Self {
-            id: None,
-            display_name,
-            tiles: Vec::new(),
-            personal: None,
-            favorite: None,
-            etag: None,
-            organizations: Vec::new(),
-        }
-    }
-}
-#[doc = "The paged results of dashboards."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DashboardCollection {
-    #[doc = "The collection of dashboards."]
-    pub value: Vec<Dashboard>,
-    #[doc = "URL to get the next page of dashboards."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for DashboardCollection {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone().filter(|value| !value.is_empty())
-    }
-}
-impl DashboardCollection {
-    pub fn new(value: Vec<Dashboard>) -> Self {
-        Self { value, next_link: None }
-    }
-}
-#[doc = "Configuration specifying options for an image tile"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataExplorerTileConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[doc = "Configuration specifying the time range and resolution of data to return for a tile."]
-    #[serde(rename = "queryRange")]
-    pub query_range: TimeQueryRangeConfiguration,
-    #[doc = "The id of the Data Explorer query to show in the tile"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub query: Option<String>,
-}
-impl DataExplorerTileConfiguration {
-    pub fn new(tile_configuration: TileConfiguration, query_range: TimeQueryRangeConfiguration) -> Self {
-        Self {
-            tile_configuration,
-            query_range,
-            query: None,
-        }
-    }
-}
-#[doc = "The azure data explorer destination definition."]
+#[doc = "The azure data explorer destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataExplorerV1Destination {
     #[serde(flatten)]
@@ -462,7 +249,7 @@ pub struct DataExplorerV1Destination {
     pub database: String,
     #[doc = "The table within the Data Explorer database that will receive the data."]
     pub table: String,
-    #[doc = "The authentication definition for azure data explorer destination."]
+    #[doc = "The authentication definition of azure data explorer destination."]
     pub authorization: DataExplorerV1DestinationAuthUnion,
 }
 impl DataExplorerV1Destination {
@@ -482,7 +269,7 @@ impl DataExplorerV1Destination {
         }
     }
 }
-#[doc = "The authentication definition for azure data explorer destination."]
+#[doc = "The authentication definition of azure data explorer destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataExplorerV1DestinationAuth {
     #[doc = "The kind of authentication to use."]
@@ -502,7 +289,7 @@ pub enum DataExplorerV1DestinationAuthUnion {
     #[serde(rename = "systemAssignedManagedIdentity")]
     SystemAssignedManagedIdentity(DataExplorerV1DestinationSystemAssignedManagedIdentityAuth),
 }
-#[doc = "The authentication definition with service principal for azure data explorer destination."]
+#[doc = "The authentication definition with service principal of azure data explorer destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataExplorerV1DestinationServicePrincipalAuth {
     #[serde(flatten)]
@@ -532,7 +319,7 @@ impl DataExplorerV1DestinationServicePrincipalAuth {
         }
     }
 }
-#[doc = "The authentication definition with system assigned managed identity for azure data explorer destination."]
+#[doc = "The authentication definition with system assigned managed identity of azure data explorer destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataExplorerV1DestinationSystemAssignedManagedIdentityAuth {
     #[serde(flatten)]
@@ -545,7 +332,6 @@ impl DataExplorerV1DestinationSystemAssignedManagedIdentityAuth {
         }
     }
 }
-#[doc = "The data export error definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataExportError {
     #[doc = "The code for the error that occurred."]
@@ -580,19 +366,6 @@ pub struct DataExportStatus {
 impl DataExportStatus {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "The date based end definition of job schedule."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DateJobScheduleEnd {
-    #[serde(flatten)]
-    pub job_schedule_end: JobScheduleEnd,
-    #[doc = "The date when to end the scheduled job."]
-    pub date: String,
-}
-impl DateJobScheduleEnd {
-    pub fn new(job_schedule_end: JobScheduleEnd, date: String) -> Self {
-        Self { job_schedule_end, date }
     }
 }
 #[doc = "The destination definition."]
@@ -636,7 +409,6 @@ pub enum DestinationUnion {
     #[serde(rename = "webhook@v1")]
     WebhookV1(WebhookV1Destination),
 }
-#[doc = "The paged results of destinations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DestinationCollection {
     #[doc = "The collection of destinations."]
@@ -708,7 +480,7 @@ pub struct Device {
     #[doc = "Whether the device is simulated."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub simulated: Option<bool>,
-    #[doc = "List of organization IDs that the device is a part of, only one organization is supported today, multiple organizations will be supported soon."]
+    #[doc = "List of organization IDs that the device is a part of."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
@@ -721,7 +493,6 @@ impl Device {
         Self::default()
     }
 }
-#[doc = "The paged results of devices."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceCollection {
     #[doc = "The collection of devices."]
@@ -753,10 +524,10 @@ pub struct DeviceCommand {
     #[doc = "Response timeout in seconds to wait for a command completion on a device. Defaults to 30 seconds."]
     #[serde(rename = "responseTimeout", default, skip_serializing_if = "Option::is_none")]
     pub response_timeout: Option<i64>,
-    #[doc = "The payload for the device command, support any primitive types or object."]
+    #[doc = "The payload for the device command."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub request: Option<serde_json::Value>,
-    #[doc = "The payload of the device command response, support any primitive types or object."]
+    #[doc = "The payload of the device command response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub response: Option<serde_json::Value>,
     #[doc = "The status code of the device command response."]
@@ -768,7 +539,6 @@ impl DeviceCommand {
         Self::default()
     }
 }
-#[doc = "The paged results of device command executions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceCommandCollection {
     #[doc = "The collection of device command executions."]
@@ -786,27 +556,6 @@ impl azure_core::Continuable for DeviceCommandCollection {
 impl DeviceCommandCollection {
     pub fn new(value: Vec<DeviceCommand>) -> Self {
         Self { value, next_link: None }
-    }
-}
-#[doc = "Configuration specifying options for a device count tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeviceCountTileConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[doc = "The ID of the device group to display"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub group: Option<String>,
-    #[doc = "Configuration specifying formatting options for a text based tile."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub format: Option<TextFormatConfiguration>,
-}
-impl DeviceCountTileConfiguration {
-    pub fn new(tile_configuration: TileConfiguration) -> Self {
-        Self {
-            tile_configuration,
-            group: None,
-            format: None,
-        }
     }
 }
 #[doc = "The device credentials definition."]
@@ -852,7 +601,7 @@ pub struct DeviceGroup {
     #[doc = "ETag used to prevent conflict in device group updates."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
-    #[doc = "List of organization IDs of the device group, only one organization is supported today, multiple organizations will be supported soon."]
+    #[doc = "List of organization IDs of the device group."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
@@ -872,7 +621,6 @@ impl DeviceGroup {
         }
     }
 }
-#[doc = "The paged results of device groups."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceGroupCollection {
     #[doc = "The collection of device groups."]
@@ -892,26 +640,6 @@ impl DeviceGroupCollection {
         Self { value, next_link: None }
     }
 }
-#[doc = "The paged results of devices belonging to the device group."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeviceGroupDeviceCollection {
-    #[doc = "The collection of devices belonging to the device group."]
-    pub value: Vec<Device>,
-    #[doc = "URL to get the next page of devices in the group."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for DeviceGroupDeviceCollection {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone().filter(|value| !value.is_empty())
-    }
-}
-impl DeviceGroupDeviceCollection {
-    pub fn new(value: Vec<Device>) -> Self {
-        Self { value, next_link: None }
-    }
-}
 #[doc = "Property values associated with the device."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceProperties {}
@@ -926,6 +654,9 @@ pub struct DeviceRelationship {
     #[doc = "The unique identifier of this relationship."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    #[doc = "The name which describes this relationship between given devices from source device template."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
     #[doc = "The device ID of the source (parent) device."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
@@ -938,7 +669,6 @@ impl DeviceRelationship {
         Self::default()
     }
 }
-#[doc = "The paged results of device relationships."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceRelationshipCollection {
     #[doc = "The collection of device relationships."]
@@ -1005,7 +735,6 @@ impl DeviceTemplate {
         }
     }
 }
-#[doc = "The paged results of device templates."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceTemplateCollection {
     #[doc = "The collection of device templates."]
@@ -1069,75 +798,12 @@ impl Enrichment {
         Self::default()
     }
 }
-#[doc = "The enrollment group definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EnrollmentGroup {
-    #[doc = "Unique ID of the enrollment group."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Display name of the enrollment group."]
-    #[serde(rename = "displayName")]
-    pub display_name: String,
-    #[doc = "Whether the devices using the group are allowed to connect to IoT Central."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-    #[doc = "Type of devices that connect through the group."]
-    #[serde(rename = "type")]
-    pub type_: enrollment_group::Type,
-    #[doc = "The attestation definition for an enrollment group."]
-    pub attestation: GroupAttestationUnion,
-    #[doc = "ETag used to prevent conflict in enrollment group updates."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
-}
-impl EnrollmentGroup {
-    pub fn new(display_name: String, type_: enrollment_group::Type, attestation: GroupAttestationUnion) -> Self {
-        Self {
-            id: None,
-            display_name,
-            enabled: None,
-            type_,
-            attestation,
-            etag: None,
-        }
-    }
-}
-pub mod enrollment_group {
-    use super::*;
-    #[doc = "Type of devices that connect through the group."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        #[serde(rename = "iot")]
-        Iot,
-        #[serde(rename = "iotEdge")]
-        IotEdge,
-    }
-}
-#[doc = "The paged results of enrollment groups."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EnrollmentGroupCollection {
-    #[doc = "The collection of enrollment groups."]
-    pub value: Vec<EnrollmentGroup>,
-    #[doc = "URL to get the next page of enrollment groups."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for EnrollmentGroupCollection {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone().filter(|value| !value.is_empty())
-    }
-}
-impl EnrollmentGroupCollection {
-    pub fn new(value: Vec<EnrollmentGroup>) -> Self {
-        Self { value, next_link: None }
-    }
-}
-#[doc = "The response error definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[doc = "The error model definition."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Error {
-    #[doc = "The detail information of the error."]
-    pub error: ErrorDetails,
+    #[doc = "The error details definition."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetails>,
 }
 impl azure_core::Continuable for Error {
     type Continuation = String;
@@ -1146,93 +812,32 @@ impl azure_core::Continuable for Error {
     }
 }
 impl Error {
-    pub fn new(error: ErrorDetails) -> Self {
-        Self { error }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
-#[doc = "The detail information of the error."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[doc = "The error details definition."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorDetails {
     #[doc = "Error code."]
-    pub code: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
     #[doc = "Error message details."]
-    pub message: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
     #[doc = "Correlation Id for current request."]
     #[serde(rename = "requestId", default, skip_serializing_if = "Option::is_none")]
     pub request_id: Option<String>,
-    #[doc = "The time that error request failed."]
-    #[serde(default, with = "azure_core::date::rfc1123::option")]
-    pub time: Option<time::OffsetDateTime>,
+    #[doc = "The time that request failed."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub time: Option<String>,
 }
 impl ErrorDetails {
-    pub fn new(code: String, message: String) -> Self {
-        Self {
-            code,
-            message,
-            request_id: None,
-            time: None,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
-#[doc = "Configuration specifying options for a event chart tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventChartConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[serde(flatten)]
-    pub group_tile_configuration: GroupTileConfiguration,
-    #[serde(flatten)]
-    pub tile_capability_configuration: TileCapabilityConfiguration,
-    #[doc = "Configuration specifying the time range and resolution of data to return for a tile."]
-    #[serde(rename = "queryRange")]
-    pub query_range: TimeQueryRangeConfiguration,
-}
-impl EventChartConfiguration {
-    pub fn new(
-        tile_configuration: TileConfiguration,
-        group_tile_configuration: GroupTileConfiguration,
-        query_range: TimeQueryRangeConfiguration,
-    ) -> Self {
-        Self {
-            tile_configuration,
-            group_tile_configuration,
-            tile_capability_configuration: TileCapabilityConfiguration::default(),
-            query_range,
-        }
-    }
-}
-#[doc = "Configuration specifying options for a event history chart tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventHistoryChartConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[serde(flatten)]
-    pub group_tile_configuration: GroupTileConfiguration,
-    #[serde(flatten)]
-    pub tile_capability_configuration: TileCapabilityConfiguration,
-    #[doc = "Configuration specifying the time range and resolution of data to return for a tile."]
-    #[serde(rename = "queryRange")]
-    pub query_range: TimeQueryRangeConfiguration,
-    #[doc = "Configuration specifying formatting options for a text based tile."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub format: Option<TextFormatConfiguration>,
-}
-impl EventHistoryChartConfiguration {
-    pub fn new(
-        tile_configuration: TileConfiguration,
-        group_tile_configuration: GroupTileConfiguration,
-        query_range: TimeQueryRangeConfiguration,
-    ) -> Self {
-        Self {
-            tile_configuration,
-            group_tile_configuration,
-            tile_capability_configuration: TileCapabilityConfiguration::default(),
-            query_range,
-            format: None,
-        }
-    }
-}
-#[doc = "the event hub destination definition."]
+#[doc = "The event hub destination definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubsV1Destination {
     #[serde(flatten)]
@@ -1361,7 +966,6 @@ pub mod export {
         DeviceConnectivity,
     }
 }
-#[doc = "The paged results of exports."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExportCollection {
     #[doc = "The collection of exports."]
@@ -1398,24 +1002,7 @@ impl ExportDestination {
         }
     }
 }
-#[doc = "Configuration specifying options for an external content tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExternalContentTileConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[doc = "URL of the website to render inside the tile. Must be a valid HTTPS URL."]
-    #[serde(rename = "sourceUrl")]
-    pub source_url: String,
-}
-impl ExternalContentTileConfiguration {
-    pub fn new(tile_configuration: TileConfiguration, source_url: String) -> Self {
-        Self {
-            tile_configuration,
-            source_url,
-        }
-    }
-}
-#[doc = "The file upload configuration definition."]
+#[doc = "The file upload configuration for application."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileUpload {
     #[doc = "The storage account name where to upload the file to"]
@@ -1465,182 +1052,12 @@ pub mod file_upload {
         Failed,
     }
 }
-#[doc = "The attestation definition for an enrollment group."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GroupAttestation {
-    #[doc = "Type of the attestation."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl GroupAttestation {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "type")]
-pub enum GroupAttestationUnion {
-    #[serde(rename = "symmetricKey")]
-    SymmetricKey(GroupSymmetricKeyAttestation),
-    #[serde(rename = "x509")]
-    X509(GroupX509Attestation),
-}
-#[doc = "The symmetric key attestation definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GroupSymmetricKeyAttestation {
-    #[serde(flatten)]
-    pub group_attestation: GroupAttestation,
-    #[doc = "The symmetric key definition."]
-    #[serde(rename = "symmetricKey", default, skip_serializing_if = "Option::is_none")]
-    pub symmetric_key: Option<SymmetricKey>,
-}
-impl GroupSymmetricKeyAttestation {
-    pub fn new(group_attestation: GroupAttestation) -> Self {
-        Self {
-            group_attestation,
-            symmetric_key: None,
-        }
-    }
-}
-#[doc = "Configuration specifying a set of devices to display data for in a tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GroupTileConfiguration {
-    #[doc = "The ID of the device group to display"]
-    pub group: String,
-    #[doc = "The list of associated devices to display"]
-    pub devices: Vec<String>,
-}
-impl GroupTileConfiguration {
-    pub fn new(group: String, devices: Vec<String>) -> Self {
-        Self { group, devices }
-    }
-}
-#[doc = "The X509 attestation definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GroupX509Attestation {
-    #[serde(flatten)]
-    pub group_attestation: GroupAttestation,
-    #[doc = "The X509 definition."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub x509: Option<SigningX509>,
-}
-impl GroupX509Attestation {
-    pub fn new(group_attestation: GroupAttestation) -> Self {
-        Self {
-            group_attestation,
-            x509: None,
-        }
-    }
-}
-#[doc = "Configuration specifying options for a heat map tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HeatMapConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[serde(flatten)]
-    pub group_tile_configuration: GroupTileConfiguration,
-    #[serde(flatten)]
-    pub tile_capability_configuration: TileCapabilityConfiguration,
-    #[doc = "Configuration specifying the time range and resolution of data to return for a tile."]
-    #[serde(rename = "queryRange")]
-    pub query_range: TimeQueryRangeConfiguration,
-    #[doc = "Configuration specifying formatting options for a chart tile."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub format: Option<ChartFormatConfiguration>,
-}
-impl HeatMapConfiguration {
-    pub fn new(
-        tile_configuration: TileConfiguration,
-        group_tile_configuration: GroupTileConfiguration,
-        query_range: TimeQueryRangeConfiguration,
-    ) -> Self {
-        Self {
-            tile_configuration,
-            group_tile_configuration,
-            tile_capability_configuration: TileCapabilityConfiguration::default(),
-            query_range,
-            format: None,
-        }
-    }
-}
-#[doc = "Configuration specifying options for an image tile"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageTileConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[doc = "The asset id of the image to display"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub image: Option<String>,
-    #[doc = "The URL the tile links to when clicked"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub href: Option<String>,
-    #[doc = "Format options for the image tile"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub format: Option<image_tile_configuration::Format>,
-}
-impl ImageTileConfiguration {
-    pub fn new(tile_configuration: TileConfiguration) -> Self {
-        Self {
-            tile_configuration,
-            image: None,
-            href: None,
-            format: None,
-        }
-    }
-}
-pub mod image_tile_configuration {
-    use super::*;
-    #[doc = "Format options for the image tile"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct Format {
-        #[doc = "The background color to show behind the image"]
-        #[serde(rename = "backgroundColor", default, skip_serializing_if = "Option::is_none")]
-        pub background_color: Option<String>,
-        #[doc = "Whether to stretch the image to fit the aspect ratio of the tile or display in the image's native aspect ratio"]
-        #[serde(rename = "fitImage", default, skip_serializing_if = "Option::is_none")]
-        pub fit_image: Option<bool>,
-        #[doc = "The color of the text in the tile"]
-        #[serde(rename = "textColor", default, skip_serializing_if = "Option::is_none")]
-        pub text_color: Option<String>,
-        #[doc = "Size of the test in the tile"]
-        #[serde(rename = "textSize", default, skip_serializing_if = "Option::is_none")]
-        pub text_size: Option<f64>,
-        #[doc = "The unit of size for the text in the tile"]
-        #[serde(rename = "textSizeUnit", default, skip_serializing_if = "Option::is_none")]
-        pub text_size_unit: Option<format::TextSizeUnit>,
-        #[doc = "Whether or not to show the display name text on the tile"]
-        #[serde(rename = "showTitle", default, skip_serializing_if = "Option::is_none")]
-        pub show_title: Option<bool>,
-    }
-    impl Format {
-        pub fn new() -> Self {
-            Self::default()
-        }
-    }
-    pub mod format {
-        use super::*;
-        #[doc = "The unit of size for the text in the tile"]
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        pub enum TextSizeUnit {
-            #[serde(rename = "px")]
-            Px,
-        }
-        impl Default for TextSizeUnit {
-            fn default() -> Self {
-                Self::Px
-            }
-        }
-    }
-}
 #[doc = "The job definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Job {
     #[doc = "Unique ID of the job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Id of the scheduled job definition that created this job."]
-    #[serde(rename = "scheduledJobId", default, skip_serializing_if = "Option::is_none")]
-    pub scheduled_job_id: Option<String>,
     #[doc = "Display name of the job."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
@@ -1649,27 +1066,18 @@ pub struct Job {
     pub description: Option<String>,
     #[doc = "The ID of the device group on which to execute the job."]
     pub group: String,
-    #[doc = "The job batch definition."]
+    #[doc = "The job batch definition for job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub batch: Option<JobBatch>,
-    #[doc = "The job cancellation threshold definition."]
+    #[doc = "The job cancellation threshold definition for job."]
     #[serde(rename = "cancellationThreshold", default, skip_serializing_if = "Option::is_none")]
     pub cancellation_threshold: Option<JobCancellationThreshold>,
     #[doc = "The capabilities being updated by the job and the values with which they are being updated."]
     pub data: Vec<JobDataUnion>,
-    #[doc = "The start time of the job"]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub start: Option<time::OffsetDateTime>,
-    #[doc = "The end time of the job"]
-    #[serde(default, with = "azure_core::date::rfc3339::option")]
-    pub end: Option<time::OffsetDateTime>,
-    #[doc = "progress summary for a scheduled job."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub progress: Option<JobProgress>,
     #[doc = "Indicates whether the job is starting, running, etc."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
-    #[doc = "List of organizations of the job, only one organization is supported today, multiple organizations will be supported soon."]
+    #[doc = "List of organizations of the job."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
@@ -1681,22 +1089,18 @@ impl Job {
     pub fn new(group: String, data: Vec<JobDataUnion>) -> Self {
         Self {
             id: None,
-            scheduled_job_id: None,
             display_name: None,
             description: None,
             group,
             batch: None,
             cancellation_threshold: None,
             data,
-            start: None,
-            end: None,
-            progress: None,
             status: None,
             organizations: Vec::new(),
         }
     }
 }
-#[doc = "The job batch definition."]
+#[doc = "The job batch definition for job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobBatch {
     #[doc = "Whether batching is done on a specified number of devices or a percentage of the total devices."]
@@ -1721,7 +1125,7 @@ pub mod job_batch {
         Percentage,
     }
 }
-#[doc = "The job cancellation threshold definition."]
+#[doc = "The job cancellation threshold definition for job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobCancellationThreshold {
     #[doc = "Whether the cancellation threshold is per a specified number of devices or a percentage of the total devices."]
@@ -1749,7 +1153,6 @@ pub mod job_cancellation_threshold {
         Percentage,
     }
 }
-#[doc = "The paged results of jobs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobCollection {
     #[doc = "The collection of jobs."]
@@ -1793,7 +1196,7 @@ pub enum JobDataUnion {
     #[serde(rename = "property")]
     Property(PropertyJobData),
 }
-#[doc = "The job device status definition."]
+#[doc = "The job status definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDeviceStatus {
     #[doc = "ID of the device whose job status is being provided."]
@@ -1808,7 +1211,6 @@ impl JobDeviceStatus {
         Self::default()
     }
 }
-#[doc = "The paged results of job device statuses."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobDeviceStatusCollection {
     #[doc = "The collection of job device statuses."]
@@ -1828,303 +1230,6 @@ impl JobDeviceStatusCollection {
         Self { value, next_link: None }
     }
 }
-#[doc = "progress summary for a scheduled job."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct JobProgress {
-    #[doc = "The total number of entities targeted by the job."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub total: Option<i64>,
-    #[doc = "The number of entities for which the job is not yet running."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub pending: Option<i64>,
-    #[doc = "The number of entities for which the job has completed."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub completed: Option<i64>,
-    #[doc = "The number of entities for which the job has failed."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub failed: Option<i64>,
-}
-impl JobProgress {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The schedule definition of job."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobSchedule {
-    #[doc = "The recurrence of the scheduled job. If not provided, the job will run once at the specified start time."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub recurrence: Option<job_schedule::Recurrence>,
-    #[doc = "The start time for the scheduled job"]
-    #[serde(with = "azure_core::date::rfc3339")]
-    pub start: time::OffsetDateTime,
-    #[doc = "The end definition of job schedule."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub end: Option<JobScheduleEndUnion>,
-}
-impl JobSchedule {
-    pub fn new(start: time::OffsetDateTime) -> Self {
-        Self {
-            recurrence: None,
-            start,
-            end: None,
-        }
-    }
-}
-pub mod job_schedule {
-    use super::*;
-    #[doc = "The recurrence of the scheduled job. If not provided, the job will run once at the specified start time."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Recurrence {
-        #[serde(rename = "daily")]
-        Daily,
-        #[serde(rename = "weekly")]
-        Weekly,
-        #[serde(rename = "monthly")]
-        Monthly,
-    }
-}
-#[doc = "The end definition of job schedule."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobScheduleEnd {
-    #[doc = "Type of the job schedule end."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl JobScheduleEnd {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "type")]
-pub enum JobScheduleEndUnion {
-    #[serde(rename = "date")]
-    Date(DateJobScheduleEnd),
-    #[serde(rename = "occurrences")]
-    Occurrences(OccurrencesJobScheduleEnd),
-}
-#[doc = "Configuration specifying options for kpi tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct KpiTileConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[serde(flatten)]
-    pub group_tile_configuration: GroupTileConfiguration,
-    #[serde(flatten)]
-    pub tile_capability_configuration: TileCapabilityConfiguration,
-    #[doc = "Configuration specifying the time range and resolution of data to return for a tile."]
-    #[serde(rename = "queryRange")]
-    pub query_range: TimeQueryRangeConfiguration,
-    #[doc = "Configuration specifying formatting options for a text based tile."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub format: Option<TextFormatConfiguration>,
-}
-impl KpiTileConfiguration {
-    pub fn new(
-        tile_configuration: TileConfiguration,
-        group_tile_configuration: GroupTileConfiguration,
-        query_range: TimeQueryRangeConfiguration,
-    ) -> Self {
-        Self {
-            tile_configuration,
-            group_tile_configuration,
-            tile_capability_configuration: TileCapabilityConfiguration::default(),
-            query_range,
-            format: None,
-        }
-    }
-}
-#[doc = "Configuration specifying options for a label tile"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LabelTileConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[doc = "The text to display in the tile"]
-    pub text: String,
-    #[doc = "The font size of the text being displayed"]
-    #[serde(rename = "textSize", default, skip_serializing_if = "Option::is_none")]
-    pub text_size: Option<f64>,
-    #[doc = "The unit of size for the text in the tile"]
-    #[serde(rename = "textSizeUnit", default, skip_serializing_if = "Option::is_none")]
-    pub text_size_unit: Option<TileTextSizeUnit>,
-    #[doc = "Whether to wrap the text being displayed"]
-    #[serde(rename = "wordWrap", default, skip_serializing_if = "Option::is_none")]
-    pub word_wrap: Option<bool>,
-}
-impl LabelTileConfiguration {
-    pub fn new(tile_configuration: TileConfiguration, text: String) -> Self {
-        Self {
-            tile_configuration,
-            text,
-            text_size: None,
-            text_size_unit: None,
-            word_wrap: None,
-        }
-    }
-}
-#[doc = "Configuration specifying options for a line chart tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LineChartConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[serde(flatten)]
-    pub group_tile_configuration: GroupTileConfiguration,
-    #[serde(flatten)]
-    pub tile_capability_configuration: TileCapabilityConfiguration,
-    #[doc = "Configuration specifying how much data to return for a tile."]
-    #[serde(rename = "queryRange")]
-    pub query_range: QueryRangeConfigurationUnion,
-    #[doc = "Configuration specifying formatting options for a chart tile."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub format: Option<ChartFormatConfiguration>,
-}
-impl LineChartConfiguration {
-    pub fn new(
-        tile_configuration: TileConfiguration,
-        group_tile_configuration: GroupTileConfiguration,
-        query_range: QueryRangeConfigurationUnion,
-    ) -> Self {
-        Self {
-            tile_configuration,
-            group_tile_configuration,
-            tile_capability_configuration: TileCapabilityConfiguration::default(),
-            query_range,
-            format: None,
-        }
-    }
-}
-#[doc = "Configuration specifying options for a last known value tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LkvTileConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[serde(flatten)]
-    pub group_tile_configuration: GroupTileConfiguration,
-    #[serde(flatten)]
-    pub tile_capability_configuration: TileCapabilityConfiguration,
-    #[doc = "Show the trend between the last known value and the value before that"]
-    #[serde(rename = "showTrend", default, skip_serializing_if = "Option::is_none")]
-    pub show_trend: Option<bool>,
-    #[doc = "Configuration specifying formatting options for a text based tile."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub format: Option<TextFormatConfiguration>,
-}
-impl LkvTileConfiguration {
-    pub fn new(tile_configuration: TileConfiguration, group_tile_configuration: GroupTileConfiguration) -> Self {
-        Self {
-            tile_configuration,
-            group_tile_configuration,
-            tile_capability_configuration: TileCapabilityConfiguration::default(),
-            show_trend: None,
-            format: None,
-        }
-    }
-}
-#[doc = "Configuration specifying formatting options for a map tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct MapFormatConfiguration {
-    #[doc = "The zoom level of the map"]
-    #[serde(rename = "zoomLevel", default, skip_serializing_if = "Option::is_none")]
-    pub zoom_level: Option<i64>,
-}
-impl MapFormatConfiguration {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Configuration specifying options for a map property tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MapPropertyConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[serde(flatten)]
-    pub map_tile_configuration: MapTileConfiguration,
-}
-impl MapPropertyConfiguration {
-    pub fn new(tile_configuration: TileConfiguration, map_tile_configuration: MapTileConfiguration) -> Self {
-        Self {
-            tile_configuration,
-            map_tile_configuration,
-        }
-    }
-}
-#[doc = "Configuration specifying options for a map telemetry tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MapTelemetryConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[serde(flatten)]
-    pub map_tile_configuration: MapTileConfiguration,
-}
-impl MapTelemetryConfiguration {
-    pub fn new(tile_configuration: TileConfiguration, map_tile_configuration: MapTileConfiguration) -> Self {
-        Self {
-            tile_configuration,
-            map_tile_configuration,
-        }
-    }
-}
-#[doc = "Configuration specifying options for a map tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MapTileConfiguration {
-    #[serde(flatten)]
-    pub group_tile_configuration: GroupTileConfiguration,
-    #[serde(flatten)]
-    pub tile_capability_configuration: TileCapabilityConfiguration,
-    #[doc = "The zoom level of the map"]
-    #[serde(rename = "zoomLevel", default, skip_serializing_if = "Option::is_none")]
-    pub zoom_level: Option<f64>,
-}
-impl MapTileConfiguration {
-    pub fn new(group_tile_configuration: GroupTileConfiguration) -> Self {
-        Self {
-            group_tile_configuration,
-            tile_capability_configuration: TileCapabilityConfiguration::default(),
-            zoom_level: None,
-        }
-    }
-}
-#[doc = "Configuration specifying options for a markdown tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MarkdownTileConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[doc = "Link to visit when tile is clicked"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub href: Option<String>,
-    #[doc = "Markdown string to render inside the tile"]
-    pub description: String,
-    #[doc = "Base64 encoded"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub image: Option<String>,
-}
-impl MarkdownTileConfiguration {
-    pub fn new(tile_configuration: TileConfiguration, description: String) -> Self {
-        Self {
-            tile_configuration,
-            href: None,
-            description,
-            image: None,
-        }
-    }
-}
-#[doc = "The occurences based end definition of job schedule."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OccurrencesJobScheduleEnd {
-    #[serde(flatten)]
-    pub job_schedule_end: JobScheduleEnd,
-    #[doc = "The number of occurrences after which to end the scheduled job."]
-    pub occurrences: i64,
-}
-impl OccurrencesJobScheduleEnd {
-    pub fn new(job_schedule_end: JobScheduleEnd, occurrences: i64) -> Self {
-        Self {
-            job_schedule_end,
-            occurrences,
-        }
-    }
-}
 #[doc = "The organization definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Organization {
@@ -2134,7 +1239,7 @@ pub struct Organization {
     #[doc = "Display name of the organization."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    #[doc = "ID of the parent of the organization."]
+    #[doc = "ID of the parent of the organization, for creation of top level organizations, this field is not required."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<String>,
 }
@@ -2143,7 +1248,6 @@ impl Organization {
         Self::default()
     }
 }
-#[doc = "The paged results of organizations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrganizationCollection {
     #[doc = "The collection of organizations."]
@@ -2174,37 +1278,6 @@ impl Permission {
         Self { roles }
     }
 }
-#[doc = "Configuration specifying options for a pie chart tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PieChartConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[serde(flatten)]
-    pub group_tile_configuration: GroupTileConfiguration,
-    #[serde(flatten)]
-    pub tile_capability_configuration: TileCapabilityConfiguration,
-    #[doc = "Configuration specifying the time range and resolution of data to return for a tile."]
-    #[serde(rename = "queryRange")]
-    pub query_range: TimeQueryRangeConfiguration,
-    #[doc = "Configuration specifying formatting options for a chart tile."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub format: Option<ChartFormatConfiguration>,
-}
-impl PieChartConfiguration {
-    pub fn new(
-        tile_configuration: TileConfiguration,
-        group_tile_configuration: GroupTileConfiguration,
-        query_range: TimeQueryRangeConfiguration,
-    ) -> Self {
-        Self {
-            tile_configuration,
-            group_tile_configuration,
-            tile_capability_configuration: TileCapabilityConfiguration::default(),
-            query_range,
-            format: None,
-        }
-    }
-}
 #[doc = "The property job data definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PropertyJobData {
@@ -2220,49 +1293,6 @@ impl PropertyJobData {
             capability_job_data,
         }
     }
-}
-#[doc = "Configuration specifying options for a property tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PropertyTileConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[serde(flatten)]
-    pub group_tile_configuration: GroupTileConfiguration,
-    #[serde(flatten)]
-    pub tile_capability_configuration: TileCapabilityConfiguration,
-    #[doc = "Configuration specifying formatting options for a text based tile."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub format: Option<TextFormatConfiguration>,
-}
-impl PropertyTileConfiguration {
-    pub fn new(tile_configuration: TileConfiguration, group_tile_configuration: GroupTileConfiguration) -> Self {
-        Self {
-            tile_configuration,
-            group_tile_configuration,
-            tile_capability_configuration: TileCapabilityConfiguration::default(),
-            format: None,
-        }
-    }
-}
-#[doc = "Configuration specifying how much data to return for a tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct QueryRangeConfiguration {
-    #[doc = "The type of time range - 'count' or 'time'."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl QueryRangeConfiguration {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "type")]
-pub enum QueryRangeConfigurationUnion {
-    #[serde(rename = "count")]
-    Count(CountQueryRangeConfiguration),
-    #[serde(rename = "time")]
-    Time(TimeQueryRangeConfiguration),
 }
 #[doc = "The query request payload definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2285,7 +1315,7 @@ impl QueryResponse {
         Self { results }
     }
 }
-#[doc = "The role definition."]
+#[doc = "The user role definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Role {
     #[doc = "Unique ID of the role."]
@@ -2300,7 +1330,7 @@ impl Role {
         Self::default()
     }
 }
-#[doc = "The role assignment definition."]
+#[doc = "The user role assignment definition associated with user."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignment {
     #[doc = "ID of the role for this role assignment."]
@@ -2314,7 +1344,6 @@ impl RoleAssignment {
         Self { role, organization: None }
     }
 }
-#[doc = "The paged results of roles."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleCollection {
     #[doc = "The collection of roles."]
@@ -2334,91 +1363,12 @@ impl RoleCollection {
         Self { value, next_link: None }
     }
 }
-#[doc = "The scheduled job definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScheduledJob {
-    #[doc = "ETag used to prevent conflict in scheduled job updates."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
-    #[doc = "Unique ID of the scheduled job."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Display name of the scheduled job."]
-    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-    #[doc = "Detailed description of the scheduled job."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[doc = "The ID of the device group on which to execute the scheduled job."]
-    pub group: String,
-    #[doc = "The job batch definition."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub batch: Option<JobBatch>,
-    #[doc = "The job cancellation threshold definition."]
-    #[serde(rename = "cancellationThreshold", default, skip_serializing_if = "Option::is_none")]
-    pub cancellation_threshold: Option<JobCancellationThreshold>,
-    #[doc = "Data related to the operation being performed by this job. All entries must be of the same type."]
-    pub data: Vec<JobDataUnion>,
-    #[doc = "List of organizations of the job, only one organization is supported today, multiple organizations will be supported soon."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub organizations: Vec<String>,
-    #[doc = "The schedule definition of job."]
-    pub schedule: JobSchedule,
-    #[doc = "Whether the scheduled job is enabled."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-    #[doc = "Whether the scheduled job has completed."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub completed: Option<bool>,
-}
-impl ScheduledJob {
-    pub fn new(group: String, data: Vec<JobDataUnion>, schedule: JobSchedule) -> Self {
-        Self {
-            etag: None,
-            id: None,
-            display_name: None,
-            description: None,
-            group,
-            batch: None,
-            cancellation_threshold: None,
-            data,
-            organizations: Vec::new(),
-            schedule,
-            enabled: None,
-            completed: None,
-        }
-    }
-}
-#[doc = "The paged results of scheduled job definitions."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScheduledJobCollection {
-    #[doc = "The collection of scheduled jobs."]
-    pub value: Vec<ScheduledJob>,
-    #[doc = "URL to get the next page of scheduled jobs."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for ScheduledJobCollection {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone().filter(|value| !value.is_empty())
-    }
-}
-impl ScheduledJobCollection {
-    pub fn new(value: Vec<ScheduledJob>) -> Self {
-        Self { value, next_link: None }
-    }
-}
 #[doc = "The service bus queue destination definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusQueueV1Destination {
     #[serde(flatten)]
     pub destination: Destination,
-    #[doc = "The authentication definition for service bus queue definition."]
+    #[doc = "The authentication definition for service bus queue destination."]
     pub authorization: ServiceBusQueueV1DestinationAuthUnion,
 }
 impl ServiceBusQueueV1Destination {
@@ -2429,7 +1379,7 @@ impl ServiceBusQueueV1Destination {
         }
     }
 }
-#[doc = "The authentication definition for service bus queue definition."]
+#[doc = "The authentication definition for service bus queue destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusQueueV1DestinationAuth {
     #[doc = "The kind of authentication to use."]
@@ -2449,7 +1399,7 @@ pub enum ServiceBusQueueV1DestinationAuthUnion {
     #[serde(rename = "systemAssignedManagedIdentity")]
     SystemAssignedManagedIdentity(ServiceBusQueueV1DestinationSystemAssignedManagedIdentityAuth),
 }
-#[doc = "The authentication definition with connection string for service bus queue definition."]
+#[doc = "The authentication definition with connection string for service bus queue destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusQueueV1DestinationConnectionStringAuth {
     #[serde(flatten)]
@@ -2466,7 +1416,7 @@ impl ServiceBusQueueV1DestinationConnectionStringAuth {
         }
     }
 }
-#[doc = "The authentication definition with system assigned managed identity for service bus queue definition."]
+#[doc = "The authentication definition with system assigned managed identity for service bus queue destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusQueueV1DestinationSystemAssignedManagedIdentityAuth {
     #[serde(flatten)]
@@ -2561,7 +1511,7 @@ impl ServiceBusTopicV1DestinationSystemAssignedManagedIdentityAuth {
         }
     }
 }
-#[doc = "The service principal user definition."]
+#[doc = "The service principal user destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalUser {
     #[serde(flatten)]
@@ -2579,112 +1529,6 @@ impl ServicePrincipalUser {
             user,
             tenant_id,
             object_id,
-        }
-    }
-}
-#[doc = "The X509 definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SigningX509 {
-    #[doc = "The X509 certificates definition."]
-    #[serde(rename = "signingCertificates", default, skip_serializing_if = "Option::is_none")]
-    pub signing_certificates: Option<SigningX509Certificates>,
-}
-impl SigningX509 {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The X509 certificate definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SigningX509Certificate {
-    #[doc = "Whether the certificate has been verified."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub verified: Option<bool>,
-    #[doc = "The string representation of this certificate."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub certificate: Option<String>,
-    #[doc = "The X509 certificate info."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub info: Option<X509CertificateInfo>,
-    #[doc = "ETag used to prevent conflict across multiple updates"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
-}
-impl SigningX509Certificate {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The X509 certificates definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SigningX509Certificates {
-    #[doc = "The X509 certificate definition."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub primary: Option<SigningX509Certificate>,
-    #[doc = "The X509 certificate definition."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub secondary: Option<SigningX509Certificate>,
-}
-impl SigningX509Certificates {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Configuration specifying options for a state chart tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StateChartConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[serde(flatten)]
-    pub group_tile_configuration: GroupTileConfiguration,
-    #[serde(flatten)]
-    pub tile_capability_configuration: TileCapabilityConfiguration,
-    #[doc = "Configuration specifying the time range and resolution of data to return for a tile."]
-    #[serde(rename = "queryRange")]
-    pub query_range: TimeQueryRangeConfiguration,
-}
-impl StateChartConfiguration {
-    pub fn new(
-        tile_configuration: TileConfiguration,
-        group_tile_configuration: GroupTileConfiguration,
-        query_range: TimeQueryRangeConfiguration,
-    ) -> Self {
-        Self {
-            tile_configuration,
-            group_tile_configuration,
-            tile_capability_configuration: TileCapabilityConfiguration::default(),
-            query_range,
-        }
-    }
-}
-#[doc = "Configuration specifying options for a state history chart tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StateHistoryChartConfiguration {
-    #[serde(flatten)]
-    pub tile_configuration: TileConfiguration,
-    #[serde(flatten)]
-    pub group_tile_configuration: GroupTileConfiguration,
-    #[serde(flatten)]
-    pub tile_capability_configuration: TileCapabilityConfiguration,
-    #[doc = "Configuration specifying the time range and resolution of data to return for a tile."]
-    #[serde(rename = "queryRange")]
-    pub query_range: TimeQueryRangeConfiguration,
-    #[doc = "Configuration specifying formatting options for a text based tile."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub format: Option<TextFormatConfiguration>,
-}
-impl StateHistoryChartConfiguration {
-    pub fn new(
-        tile_configuration: TileConfiguration,
-        group_tile_configuration: GroupTileConfiguration,
-        query_range: TimeQueryRangeConfiguration,
-    ) -> Self {
-        Self {
-            tile_configuration,
-            group_tile_configuration,
-            tile_capability_configuration: TileCapabilityConfiguration::default(),
-            query_range,
-            format: None,
         }
     }
 }
@@ -2723,221 +1567,6 @@ impl SymmetricKeyAttestation {
         }
     }
 }
-#[doc = "Configuration specifying formatting options for a text based tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct TextFormatConfiguration {
-    #[doc = "Whether to abbreviate the value"]
-    #[serde(rename = "abbreviateValue", default, skip_serializing_if = "Option::is_none")]
-    pub abbreviate_value: Option<bool>,
-    #[doc = "The number of decimal places being displayed"]
-    #[serde(rename = "decimalPlaces", default, skip_serializing_if = "Option::is_none")]
-    pub decimal_places: Option<i64>,
-    #[doc = "The font size of the text being displayed"]
-    #[serde(rename = "textSize", default, skip_serializing_if = "Option::is_none")]
-    pub text_size: Option<f64>,
-    #[doc = "The unit of size for the text in the tile"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub unit: Option<TileTextSizeUnit>,
-    #[doc = "Whether to wrap the text being displayed"]
-    #[serde(rename = "wordWrap", default, skip_serializing_if = "Option::is_none")]
-    pub word_wrap: Option<bool>,
-}
-impl TextFormatConfiguration {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Configuration specifying tile object, including the layout, display name and configuration."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Tile {
-    #[doc = "Display name of the tile."]
-    #[serde(rename = "displayName")]
-    pub display_name: String,
-    #[doc = "Configuration specifying information about a tile."]
-    pub configuration: TileConfigurationUnion,
-    #[doc = "Height of the tile"]
-    pub height: f64,
-    #[doc = "Width of the tile"]
-    pub width: f64,
-    #[doc = "Horizontal position of the tile"]
-    pub x: f64,
-    #[doc = "Vertical position of the tile"]
-    pub y: f64,
-}
-impl Tile {
-    pub fn new(display_name: String, configuration: TileConfigurationUnion, height: f64, width: f64, x: f64, y: f64) -> Self {
-        Self {
-            display_name,
-            configuration,
-            height,
-            width,
-            x,
-            y,
-        }
-    }
-}
-#[doc = "Specifies the capability to be displayed in the tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TileCapability {
-    #[doc = "The path of the capability associated with data to be rendered in the tile."]
-    pub capability: String,
-    #[doc = "The type of aggregation to be applied on capability data."]
-    #[serde(rename = "aggregateFunction")]
-    pub aggregate_function: CapabilityAggregateFunctionType,
-}
-impl TileCapability {
-    pub fn new(capability: String, aggregate_function: CapabilityAggregateFunctionType) -> Self {
-        Self {
-            capability,
-            aggregate_function,
-        }
-    }
-}
-#[doc = "Configuration specifying an array of capabilities to be displayed in the tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct TileCapabilityConfiguration {
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub capabilities: Vec<TileCapability>,
-}
-impl TileCapabilityConfiguration {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Configuration specifying information about a tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TileConfiguration {
-    #[doc = "The type of widget the tile renders"]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl TileConfiguration {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "type")]
-pub enum TileConfigurationUnion {
-    #[serde(rename = "barChart")]
-    BarChart(BarChartConfiguration),
-    #[serde(rename = "command")]
-    Command(CommandConfiguration),
-    #[serde(rename = "command")]
-    Command(CommandTileConfiguration),
-    #[serde(rename = "dataExplorer")]
-    DataExplorer(DataExplorerTileConfiguration),
-    #[serde(rename = "deviceCount")]
-    DeviceCount(DeviceCountTileConfiguration),
-    #[serde(rename = "eventChart")]
-    EventChart(EventChartConfiguration),
-    #[serde(rename = "eventHistoryChart")]
-    EventHistoryChart(EventHistoryChartConfiguration),
-    #[serde(rename = "externalContent")]
-    ExternalContent(ExternalContentTileConfiguration),
-    #[serde(rename = "heatMapChart")]
-    HeatMapChart(HeatMapConfiguration),
-    #[serde(rename = "image")]
-    Image(ImageTileConfiguration),
-    #[serde(rename = "kpi")]
-    Kpi(KpiTileConfiguration),
-    #[serde(rename = "label")]
-    Label(LabelTileConfiguration),
-    #[serde(rename = "lineChart")]
-    LineChart(LineChartConfiguration),
-    #[serde(rename = "lkv")]
-    Lkv(LkvTileConfiguration),
-    #[serde(rename = "mapProperty")]
-    MapProperty(MapPropertyConfiguration),
-    #[serde(rename = "mapTelemetry")]
-    MapTelemetry(MapTelemetryConfiguration),
-    #[serde(rename = "markdown")]
-    Markdown(MarkdownTileConfiguration),
-    #[serde(rename = "pieChart")]
-    PieChart(PieChartConfiguration),
-    #[serde(rename = "property")]
-    Property(PropertyTileConfiguration),
-    #[serde(rename = "stateChart")]
-    StateChart(StateChartConfiguration),
-    #[serde(rename = "stateHistoryChart")]
-    StateHistoryChart(StateHistoryChartConfiguration),
-}
-#[doc = "The unit of size for the text in the tile"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum TileTextSizeUnit {
-    #[serde(rename = "pt")]
-    Pt,
-}
-impl Default for TileTextSizeUnit {
-    fn default() -> Self {
-        Self::Pt
-    }
-}
-#[doc = "Configuration specifying the time range and resolution of data to return for a tile."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TimeQueryRangeConfiguration {
-    #[serde(flatten)]
-    pub query_range_configuration: QueryRangeConfiguration,
-    #[doc = "The duration of time to look back when querying data."]
-    pub duration: TimeRangeDuration,
-    #[doc = "The resolution to aggregate data over for each data point."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resolution: Option<TimeRangeResolution>,
-}
-impl TimeQueryRangeConfiguration {
-    pub fn new(query_range_configuration: QueryRangeConfiguration, duration: TimeRangeDuration) -> Self {
-        Self {
-            query_range_configuration,
-            duration,
-            resolution: None,
-        }
-    }
-}
-#[doc = "The duration of time to look back when querying data."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum TimeRangeDuration {
-    #[serde(rename = "PT30M")]
-    Pt30m,
-    #[serde(rename = "PT1H")]
-    Pt1h,
-    #[serde(rename = "PT12H")]
-    Pt12h,
-    #[serde(rename = "P1D")]
-    P1d,
-    #[serde(rename = "P1W")]
-    P1w,
-    #[serde(rename = "P30D")]
-    P30d,
-}
-#[doc = "The resolution to aggregate data over for each data point."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum TimeRangeResolution {
-    #[serde(rename = "PT1M")]
-    Pt1m,
-    #[serde(rename = "PT5M")]
-    Pt5m,
-    #[serde(rename = "PT10M")]
-    Pt10m,
-    #[serde(rename = "PT30M")]
-    Pt30m,
-    #[serde(rename = "PT1H")]
-    Pt1h,
-    #[serde(rename = "PT12H")]
-    Pt12h,
-    #[serde(rename = "P1D")]
-    P1d,
-    #[serde(rename = "P1W")]
-    P1w,
-}
-impl Default for TimeRangeResolution {
-    fn default() -> Self {
-        Self::Pt5m
-    }
-}
 #[doc = "The trusted platform module definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Tpm {
@@ -2950,7 +1579,7 @@ impl Tpm {
         Self { endorsement_key }
     }
 }
-#[doc = "The TPM attestation definition."]
+#[doc = "The trusted platform module attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TpmAttestation {
     #[serde(flatten)]
@@ -2994,7 +1623,6 @@ pub enum UserUnion {
     #[serde(rename = "servicePrincipal")]
     ServicePrincipal(ServicePrincipalUser),
 }
-#[doc = "The paged results of users."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserCollection {
     #[doc = "The collection of users."]
@@ -3173,7 +1801,7 @@ pub struct X509Certificate {
     #[doc = "The string representation of this certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub certificate: Option<String>,
-    #[doc = "The X509 certificate info."]
+    #[doc = "The X509 certificate information definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub info: Option<X509CertificateInfo>,
 }
@@ -3182,7 +1810,7 @@ impl X509Certificate {
         Self::default()
     }
 }
-#[doc = "The X509 certificate info."]
+#[doc = "The X509 certificate information definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509CertificateInfo {
     #[doc = "The SHA-1 hash value of the certificate."]
@@ -3206,28 +1834,5 @@ pub struct X509Certificates {
 impl X509Certificates {
     pub fn new(primary: X509Certificate) -> Self {
         Self { primary, secondary: None }
-    }
-}
-#[doc = "The X509 verification certificate definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct X509VerificationCertificate {
-    #[doc = "The string representation of this certificate."]
-    pub certificate: String,
-}
-impl X509VerificationCertificate {
-    pub fn new(certificate: String) -> Self {
-        Self { certificate }
-    }
-}
-#[doc = "The X509 certificate verification code."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct X509VerificationCode {
-    #[doc = "The X509 certificate verification code."]
-    #[serde(rename = "verificationCode", default, skip_serializing_if = "Option::is_none")]
-    pub verification_code: Option<String>,
-}
-impl X509VerificationCode {
-    pub fn new() -> Self {
-        Self::default()
     }
 }
