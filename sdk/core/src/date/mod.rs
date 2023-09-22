@@ -14,6 +14,7 @@ use time::{
 // Serde modules
 pub use time::serde::rfc3339;
 pub use time::serde::timestamp;
+pub mod iso8601;
 pub mod rfc1123;
 
 /// RFC 3339: Date and Time on the Internet: Timestamps
