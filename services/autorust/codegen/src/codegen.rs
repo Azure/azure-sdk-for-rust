@@ -30,7 +30,7 @@ pub struct CodeGen<'a> {
     fix_case_properties: HashSet<&'a str>,
     invalid_types: HashSet<PropertyName>,
 
-    pub union_types: HashSet<String>,
+    union_types: HashSet<String>,
 }
 
 impl<'a> CodeGen<'a> {
