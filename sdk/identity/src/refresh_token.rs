@@ -13,8 +13,6 @@ use std::sync::Arc;
 use url::{form_urlencoded, Url};
 
 /// Exchange a refresh token for a new access token and refresh token
-#[allow(clippy::manual_async_fn)]
-#[fix_hidden_lifetime_bug::fix_hidden_lifetime_bug]
 pub async fn exchange(
     http_client: Arc<dyn HttpClient>,
     tenant_id: &str,
