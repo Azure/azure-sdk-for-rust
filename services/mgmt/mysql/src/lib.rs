@@ -7,6 +7,10 @@
 pub mod package_flexibleserver_2023_06_30_privatelink;
 #[cfg(all(feature = "package-flexibleserver-2023-06-30-privatelink", not(feature = "no-default-tag")))]
 pub use package_flexibleserver_2023_06_30_privatelink::*;
+#[cfg(feature = "package-flexibleserver-2023-06-01-preview-new")]
+pub mod package_flexibleserver_2023_06_01_preview_new;
+#[cfg(all(feature = "package-flexibleserver-2023-06-01-preview-new", not(feature = "no-default-tag")))]
+pub use package_flexibleserver_2023_06_01_preview_new::*;
 #[cfg(feature = "package-flexibleserver-2023-06-01-preview")]
 pub mod package_flexibleserver_2023_06_01_preview;
 #[cfg(all(feature = "package-flexibleserver-2023-06-01-preview", not(feature = "no-default-tag")))]
@@ -19,7 +23,3 @@ pub use package_flexibleserver_2022_09_30_preview_privatelink::*;
 pub mod package_flexibleserver_2022_09_30_preview;
 #[cfg(all(feature = "package-flexibleserver-2022-09-30-preview", not(feature = "no-default-tag")))]
 pub use package_flexibleserver_2022_09_30_preview::*;
-#[cfg(feature = "package-flexibleserver-2022-01-01")]
-pub mod package_flexibleserver_2022_01_01;
-#[cfg(all(feature = "package-flexibleserver-2022-01-01", not(feature = "no-default-tag")))]
-pub use package_flexibleserver_2022_01_01::*;

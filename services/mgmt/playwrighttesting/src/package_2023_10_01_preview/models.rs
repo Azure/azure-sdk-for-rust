@@ -41,11 +41,11 @@ impl AccountListResult {
     }
 }
 #[doc = "Account properties"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountProperties {
     #[doc = "The Playwright testing dashboard URI for the account resource."]
-    #[serde(rename = "dashboardUri")]
-    pub dashboard_uri: String,
+    #[serde(rename = "dashboardUri", default, skip_serializing_if = "Option::is_none")]
+    pub dashboard_uri: Option<String>,
     #[doc = "The enablement status of a feature."]
     #[serde(rename = "regionalAffinity", default, skip_serializing_if = "Option::is_none")]
     pub regional_affinity: Option<EnablementStatus>,
@@ -60,14 +60,8 @@ pub struct AccountProperties {
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl AccountProperties {
-    pub fn new(dashboard_uri: String) -> Self {
-        Self {
-            dashboard_uri,
-            regional_affinity: None,
-            scalable_execution: None,
-            reporting: None,
-            provisioning_state: None,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The type used for update operations of the Account."]
@@ -103,7 +97,6 @@ impl AccountUpdateProperties {
         Self::default()
     }
 }
-pub type AzureCoreUuid = String;
 #[doc = "The enablement status of a feature."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "EnablementStatus")]
@@ -210,9 +203,9 @@ impl ErrorResponse {
 #[doc = "The free-trial properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FreeTrialProperties {
-    #[doc = "Universally Unique Identifier"]
+    #[doc = "The playwright account id."]
     #[serde(rename = "accountId")]
-    pub account_id: AzureCoreUuid,
+    pub account_id: String,
     #[doc = "The free-trial createdAt utcDateTime."]
     #[serde(rename = "createdAt", with = "azure_core::date::rfc3339")]
     pub created_at: time::OffsetDateTime,
@@ -233,7 +226,7 @@ pub struct FreeTrialProperties {
 }
 impl FreeTrialProperties {
     pub fn new(
-        account_id: AzureCoreUuid,
+        account_id: String,
         created_at: time::OffsetDateTime,
         expiry_at: time::OffsetDateTime,
         allocated_value: i32,
