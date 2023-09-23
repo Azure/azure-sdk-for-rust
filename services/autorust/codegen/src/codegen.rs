@@ -441,7 +441,6 @@ fn tp_date_time() -> TypePath {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use anyhow::ensure;
 
     #[test]
     fn test_parse_query_params() -> Result<()> {
@@ -541,10 +540,10 @@ mod tests {
     }
 
     #[test]
-    fn test_with_union() -> anyhow::Result<()> {
+    fn test_with_union() -> Result<()> {
         let mut tp = TypeNameCode::try_from("farm::Animal")?;
         tp.union(true);
-        ensure!("farm :: AnimalUnion" == tp.to_string());
+        assert_eq!("farm :: AnimalUnion", tp.to_string());
         Ok(())
     }
 }
