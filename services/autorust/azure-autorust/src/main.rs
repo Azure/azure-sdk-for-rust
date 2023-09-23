@@ -52,12 +52,12 @@ fn gen_crate(only_packages: &[&str], crate_type: &str, spec: &SpecReadme) -> Res
     let prefix = format!("azure_{crate_type}_");
 
     let run_config = RunConfig::new(&prefix);
-    let package_name = gen::package_name(&spec, &run_config);
+    let package_name = gen::package_name(spec, &run_config);
 
     if !only_packages.is_empty() && !only_packages.contains(&package_name.as_str()) {
         Ok(None)
     } else {
-        let tags = gen::gen_crate(&package_name, &spec, &run_config, &output_folder)
+        let tags = gen::gen_crate(&package_name, spec, &run_config, &output_folder)
             .with_context(ErrorKind::CodeGen, || format!("generating {package_name}"))?;
         Ok(Some((package_name, tags)))
     }
@@ -75,18 +75,16 @@ fn gen_crates(only_packages: &[&str]) -> Result<()> {
         .into_iter()
         .collect();
 
-    for result in results? {
-        if let Some((package_name, tags)) = result {
-            println!("{package_name}");
-            if tags.is_empty() {
-                println!("  No tags");
-            } else {
-                for tag in tags {
-                    println!("- {tag}");
-                }
+    (results?).into_iter().flatten().for_each(|(package_name, tags)| {
+        println!("{package_name}");
+        if tags.is_empty() {
+            println!("  No tags");
+        } else {
+            for tag in tags {
+                println!("- {tag}");
             }
         }
-    }
+    });
 
     Ok(())
 }
