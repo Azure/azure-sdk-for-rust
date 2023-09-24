@@ -3,6 +3,7 @@ pub mod cargo_toml;
 pub mod codegen;
 pub mod codegen_models;
 pub mod codegen_operations;
+pub mod codegen_routes;
 pub mod config_parser;
 pub mod content_type;
 pub mod crates;
@@ -44,6 +45,7 @@ pub struct PropertyName {
 pub enum Runs {
     Models,
     Operations,
+    Routes,
 }
 
 /// Settings for the entire run, generating multiple crates
@@ -119,6 +121,13 @@ pub fn run<'a>(crate_config: &'a CrateConfig, package_config: &'a PackageConfig)
         let operations = codegen_operations::create_operations(&cg)?;
         let operations_path = io::join(&crate_config.output_folder, "mod.rs")?;
         write_file(operations_path, &operations, crate_config.print_writing_file())?;
+    }
+
+    // create server-side routes
+    if crate_config.should_run(&Runs::Routes) {
+        let routes = codegen_routes::create_routes(&cg)?;
+        let routes_path = io::join(&crate_config.output_folder, "routes.rs")?;
+        write_file(&routes_path, &routes, crate_config.print_writing_file())?;
     }
 
     Ok(cg)

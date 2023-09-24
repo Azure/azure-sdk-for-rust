@@ -16,7 +16,7 @@ use syn::{
     punctuated::Punctuated,
     token::{Gt, Impl, Lt},
     AngleBracketedGenericArguments, GenericArgument, Path, PathArguments, PathSegment, TraitBound, TraitBoundModifier, Type, TypeImplTrait,
-    TypeParamBound, TypePath,
+    TypeParamBound, TypePath, TypeReference,
 };
 
 /// code generation context
@@ -130,6 +130,8 @@ pub fn parse_query_params(uri: &str) -> Result<HashSet<String>> {
 
 #[derive(Clone)]
 pub struct TypeNameCode {
+    /// Whether or not to pass a type as a reference.
+    is_ref: bool,
     type_path: TypePath,
     force_value: bool,
     optional: bool,
@@ -166,8 +168,20 @@ impl TypeNameCode {
         Ok(type_name_code)
     }
 
+    pub fn new_ref(type_name: &TypeName) -> Result<Self> {
+        let mut type_name_code = match type_name {
+            TypeName::String => TypeNameCode::from(tp_str()),
+            _ => Self::new(type_name)?,
+        };
+        type_name_code.is_ref = true;
+        Ok(type_name_code)
+    }
+
     pub fn is_string(&self) -> bool {
         self.type_name == Some(TypeName::String)
+    }
+    pub fn is_ref(&self) -> bool {
+        self.is_ref
     }
     pub fn is_bytes(&self) -> bool {
         self.type_name == Some(TypeName::Bytes)
@@ -247,6 +261,15 @@ impl TypeNameCode {
         if self.force_value {
             tp = Type::from(tp_json_value())
         }
+        if self.is_ref() {
+            let tr = TypeReference {
+                and_token: Default::default(),
+                lifetime: Default::default(),
+                mutability: Default::default(),
+                elem: Box::new(tp),
+            };
+            tp = Type::from(tr);
+        }
         if self.boxed {
             tp = generic_type(tp_box(), tp);
         }
@@ -315,6 +338,7 @@ fn generic_type(mut wrap_tp: TypePath, tp: Type) -> Type {
 impl From<TypePath> for TypeNameCode {
     fn from(type_path: TypePath) -> Self {
         Self {
+            is_ref: false,
             type_path,
             force_value: false,
             optional: false,
@@ -434,6 +458,10 @@ fn tp_box() -> TypePath {
     parse_type_path("Box").unwrap() // std::boxed::Box
 }
 
+fn tp_str() -> TypePath {
+    parse_type_path("str").unwrap() // std::str
+}
+
 fn tp_date_time() -> TypePath {
     parse_type_path("time::OffsetDateTime").unwrap()
 }
@@ -472,6 +500,13 @@ mod tests {
     fn test_type_path_code() -> Result<()> {
         let tp = TypeNameCode::try_from("farm::Goat")?;
         assert_eq!("farm :: Goat", tp.to_string());
+        Ok(())
+    }
+
+    #[test]
+    fn test_is_ref() -> Result<()> {
+        let mut tp = TypeNameCode::try_from("farm::Goat")?;
+        assert_eq!("& farm :: Goat", tp.to_string());
         Ok(())
     }
 
