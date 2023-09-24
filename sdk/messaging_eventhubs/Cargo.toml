@@ -43,7 +43,7 @@ fe2o3-amqp-types = "0.7.1"
 fe2o3-amqp-management = "0.2.2"
 fe2o3-amqp-cbs = "0.2"
 serde_amqp = { version = "0.5.9", features = ["derive", "time"] }
-fe2o3-amqp-ws = "0.3.1"
+fe2o3-amqp-ws = "0.4.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 tokio = { version = "1", features = ["rt", "macros", "sync", "time", "net"] }
