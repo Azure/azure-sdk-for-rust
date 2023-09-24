@@ -21,7 +21,7 @@ async fn main() -> azure_core::Result<()> {
     let container = std::env::var("STORAGE_CONTAINER").expect("missing STORAGE_CONTAINER");
     let blob_name = std::env::var("STORAGE_BLOB_NAME").expect("missing STORAGE_BLOB_NAME");
 
-    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
     let blob_client = ClientBuilder::new(account, storage_credentials).blob_client(&container, blob_name);
 
     blob_client.put_block_blob("hello world").content_type("text/plain").await?;

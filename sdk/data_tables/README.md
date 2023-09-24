@@ -29,7 +29,7 @@ async fn main() -> azure_core::Result<()> {
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
     let table_name = std::env::var("STORAGE_TABLE_NAME").expect("Set env variable STORAGE_TABLE_NAME first!");
 
-    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
     let table_service = TableServiceClient::new(account, storage_credentials);
 
     let table_client = table_service.table_client(table_name);
