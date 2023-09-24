@@ -10,34 +10,49 @@ use azure_storage::CloudLocation;
 pub struct DataLakeClientBuilder {
     cloud_location: CloudLocation,
     options: ClientOptions,
+    credentials: StorageCredentials,
 }
 
 impl DataLakeClientBuilder {
     /// Create a new instance of `DataLakeClientBuilder`.
     #[must_use]
-    pub fn new(account: impl Into<String>, credentials: StorageCredentials) -> Self {
-        Self::with_location(CloudLocation::Public {
-            account: account.into(),
+    pub fn new<A, C>(account: A, credentials: C) -> Self
+    where
+        A: Into<String>,
+        C: Into<StorageCredentials>,
+    {
+        Self::with_location(
+            CloudLocation::Public {
+                account: account.into(),
+            },
             credentials,
-        })
+        )
     }
 
     /// Create a new instance of `DataLakeClientBuilder` with a cloud location.
     #[must_use]
-    pub fn with_location(cloud_location: CloudLocation) -> Self {
+    pub fn with_location<C>(cloud_location: CloudLocation, credentials: C) -> Self
+    where
+        C: Into<StorageCredentials>,
+    {
         Self {
             options: ClientOptions::default(),
             cloud_location,
+            credentials: credentials.into(),
         }
     }
 
     /// Convert the builder into a `DataLakeClient` instance.
     #[must_use]
     pub fn build(self) -> DataLakeClient {
-        let credentials = self.cloud_location.credentials();
+        let Self {
+            credentials,
+            cloud_location,
+            options,
+        } = self;
         DataLakeClient {
-            pipeline: new_pipeline_from_options(self.options, credentials.clone()),
-            cloud_location: self.cloud_location,
+            pipeline: new_pipeline_from_options(options, credentials),
+            cloud_location,
         }
     }
 
