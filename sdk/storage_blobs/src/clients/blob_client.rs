@@ -15,9 +15,10 @@ use azure_storage::{
         service_sas::{BlobSharedAccessSignature, BlobSignedResource},
         SasToken,
     },
-    StorageCredentials,
+    StorageCredentialsInner,
 };
 use futures::StreamExt;
+use std::ops::Deref;
 use time::OffsetDateTime;
 use url::Url;
 
@@ -229,13 +230,18 @@ impl BlobClient {
     }
 
     /// Create a shared access signature.
-    pub fn shared_access_signature(
+    pub async fn shared_access_signature(
         &self,
         permissions: BlobSasPermissions,
         expiry: OffsetDateTime,
     ) -> azure_core::Result<BlobSharedAccessSignature> {
-        match self.container_client.credentials() {
-            StorageCredentials::Key(account, ref key) => {
+        let creds = self.container_client.credentials().0.lock().await;
+        let StorageCredentialsInner::Key(account, key) = creds.deref() else {
+            return Err(Error::message(
+                ErrorKind::Credential,
+                "Shared access signature generation - SAS can be generated with access_key clients",
+            ));
+        };
 
         let canonicalized_resource = format!(
             "/blob/{}/{}/{}",
@@ -243,13 +249,13 @@ impl BlobClient {
             self.container_client.container_name(),
             self.blob_name()
         );
-                Ok(
-                BlobSharedAccessSignature::new(key.to_string(), canonicalized_resource, permissions, expiry, BlobSignedResource::Blob)
-            )},
-            _ => Err(Error::message(ErrorKind::Credential,
-                "Shared access signature generation - SAS can be generated only from key and account clients",
-            )),
-        }
+        Ok(BlobSharedAccessSignature::new(
+            key.to_string(),
+            canonicalized_resource,
+            permissions,
+            expiry,
+            BlobSignedResource::Blob,
+        ))
     }
 
     /// Create a signed blob url
@@ -341,13 +347,26 @@ mod tests {
         assert_eq!(blob_client.blob_name(), path);
         assert_eq!(blob_client.container_client().container_name(), container);
 
-        let creds = blob_client.container_client.credentials();
-        assert!(matches!(creds, StorageCredentials::SASToken(_)));
+        let creds = blob_client
+            .container_client
+            .credentials()
+            .0
+            .try_lock()
+            .expect("creds should be unlocked at this point");
+        assert!(matches!(
+            creds.deref(),
+            StorageCredentialsInner::SASToken(_)
+        ));
 
         let url = Url::parse("https://accountname.blob.core.windows.net/mycontainer/myblob")?;
         let blob_client = BlobClient::from_sas_url(&url)?;
-        let creds = blob_client.container_client.credentials();
-        assert!(matches!(creds, StorageCredentials::Anonymous));
+        let creds = blob_client
+            .container_client
+            .credentials()
+            .0
+            .try_lock()
+            .expect("creds should be unlocked at this point");
+        assert!(matches!(creds.deref(), StorageCredentialsInner::Anonymous));
 
         let url = Url::parse("https://accountname.blob.core.windows.net/mycontainer?token=1")?;
         assert!(BlobClient::from_sas_url(&url).is_err(), "missing path");

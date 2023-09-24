@@ -1,15 +1,18 @@
-use crate::authorization::AuthorizationPolicy;
-use crate::shared_access_signature::account_sas::{
-    AccountSasPermissions, AccountSasResource, AccountSasResourceType, AccountSharedAccessSignature,
+use crate::{
+    authorization::{AuthorizationPolicy, StorageCredentialsInner},
+    shared_access_signature::account_sas::{
+        AccountSasPermissions, AccountSasResource, AccountSasResourceType,
+        AccountSharedAccessSignature,
+    },
+    StorageCredentials,
 };
-use crate::StorageCredentials;
-use azure_core::date;
 use azure_core::{
+    date,
     error::{Error, ErrorKind},
     headers::*,
     Body, ClientOptions, Method, Pipeline, Request,
 };
-use std::sync::Arc;
+use std::{ops::Deref, sync::Arc};
 use time::OffsetDateTime;
 use url::Url;
 
@@ -44,19 +47,29 @@ impl ServiceType {
     }
 }
 
-pub fn shared_access_signature(
+pub async fn shared_access_signature(
     storage_credentials: &StorageCredentials,
     resource: AccountSasResource,
     resource_type: AccountSasResourceType,
     expiry: OffsetDateTime,
     permissions: AccountSasPermissions,
 ) -> Result<AccountSharedAccessSignature, Error> {
-    match storage_credentials {
-            StorageCredentials::Key(account, key) => {
-                Ok(AccountSharedAccessSignature::new(account.clone(), key.clone(), resource, resource_type, expiry, permissions))
-            }
-            _ => Err(Error::message(ErrorKind::Credential, "failed shared access signature generation. SAS can be generated only from key and account clients")),
-        }
+    let creds = storage_credentials.0.lock().await;
+    let StorageCredentialsInner::Key(account, key) = creds.deref() else {
+        return Err(Error::message(
+            ErrorKind::Credential,
+            "Shared access signature generation - SAS can be generated with access_key clients",
+        ));
+    };
+
+    Ok(AccountSharedAccessSignature::new(
+        account.clone(),
+        key.clone(),
+        resource,
+        resource_type,
+        expiry,
+        permissions,
+    ))
 }
 
 pub fn finalize_request(
