@@ -48,8 +48,6 @@ use std::sync::Arc;
 use url::{form_urlencoded, Url};
 
 /// Perform the client credentials flow
-#[allow(clippy::manual_async_fn)]
-#[fix_hidden_lifetime_bug::fix_hidden_lifetime_bug]
 pub async fn perform(
     http_client: Arc<dyn HttpClient>,
     client_id: &str,
