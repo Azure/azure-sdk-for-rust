@@ -50,7 +50,7 @@ impl QueueServiceClientBuilder {
         Self::with_location(
             CloudLocation::Emulator {
                 address: "127.0.0.1".to_owned(),
-                port: 10002,
+                port: 10001,
             },
             StorageCredentials::emulator(),
         )

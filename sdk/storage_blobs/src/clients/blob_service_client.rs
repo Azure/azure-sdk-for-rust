@@ -56,7 +56,7 @@ impl ClientBuilder {
         Self::with_location(
             CloudLocation::Emulator {
                 address: "127.0.0.1".to_owned(),
-                port: 10002,
+                port: 10000,
             },
             StorageCredentials::emulator(),
         )
