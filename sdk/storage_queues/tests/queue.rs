@@ -16,7 +16,7 @@ async fn queue_create_put_and_get() -> azure_core::Result<()> {
 
     let queue_name = format!("sdk-{}", Uuid::new_v4());
 
-    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
     let queue_service = QueueServiceClient::new(account, storage_credentials);
 
     println!("creating queue {}", queue_name);

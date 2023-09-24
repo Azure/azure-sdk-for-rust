@@ -20,7 +20,7 @@ async fn main() -> azure_core::Result<()> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
     let service_client = BlobServiceClient::new(account, storage_credentials);
 
     // this is how you would use the SAS token:

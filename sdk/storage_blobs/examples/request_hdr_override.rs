@@ -60,7 +60,7 @@ async fn main() -> azure_core::Result<()> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
 
     let version_header_override_policy =
         Arc::new(VersionHeaderOverridePolicy::new()) as Arc<dyn Policy>;
