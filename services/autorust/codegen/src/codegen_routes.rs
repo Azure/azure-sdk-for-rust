@@ -9,7 +9,7 @@ use camino::Utf8Path;
 use heck::{ToPascalCase, ToShoutySnakeCase, ToSnakeCase};
 use indexmap::IndexMap;
 use proc_macro2::{Ident, TokenStream};
-use quote::{quote, ToTokens};
+use quote::quote;
 use regex::Replacer;
 
 /// Create a route call from the function name and to routes
@@ -340,11 +340,13 @@ fn create_function_params(parameters: &[&WebParameter]) -> crate::Result<TokenSt
     for param in parameters.iter() {
         let name = param.name().to_snake_case_ident()?;
         if param.in_body() {
-            let tp = TypeNameCode::new(&param.type_name()?)?.into_token_stream();
+            let mut tp = TypeNameCode::new(&param.type_name()?)?;
+            tp = tp.optional(!param.required());
             let body_tp = quote! { Json<#tp> };
             params.push(quote! { #name: #body_tp });
         } else {
-            let tp = TypeNameCode::new_ref(&param.type_name()?)?;
+            let mut tp = TypeNameCode::new_ref(&param.type_name()?)?;
+            tp = tp.optional(!param.required());
             params.push(quote! { #name: #tp });
         }
     }
