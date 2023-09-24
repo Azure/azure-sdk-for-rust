@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## 0.15.1
+
+- Updated `fe2o3-amqp-ws` dependency to 0.4.0, which includes an upstream fix for [CVE-2023-43669](https://github.com/snapview/tungstenite-rs/pull/379).
+
+### Breaking Changes
+
 ## 0.15.0 - Sep. 15, 2023
 
 - Updated `azure_core` dependency to 0.15.0
