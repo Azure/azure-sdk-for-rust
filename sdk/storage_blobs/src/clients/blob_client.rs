@@ -345,7 +345,9 @@ mod tests {
         assert!(matches!(creds, StorageCredentials::SASToken(_)));
 
         let url = Url::parse("https://accountname.blob.core.windows.net/mycontainer/myblob")?;
-        assert!(BlobClient::from_sas_url(&url).is_err(), "missing token");
+        let blob_client = BlobClient::from_sas_url(&url)?;
+        let creds = blob_client.container_client.credentials();
+        assert!(matches!(creds, StorageCredentials::Anonymous));
 
         let url = Url::parse("https://accountname.blob.core.windows.net/mycontainer?token=1")?;
         assert!(BlobClient::from_sas_url(&url).is_err(), "missing path");

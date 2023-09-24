@@ -68,12 +68,10 @@ impl TryFrom<&Url> for CloudLocation {
     // TODO: This only works for Public and China clouds.
     // ref: https://github.com/Azure/azure-sdk-for-rust/issues/502
     fn try_from(url: &Url) -> azure_core::Result<Self> {
-        let token = url.query().ok_or_else(|| {
-            azure_core::Error::with_message(azure_core::error::ErrorKind::DataConversion, || {
-                "unable to find SAS token in URL"
-            })
-        })?;
-        let credentials = StorageCredentials::sas_token(token)?;
+        let credentials = match url.query() {
+            Some(token) => StorageCredentials::sas_token(token)?,
+            None => StorageCredentials::Anonymous,
+        };
 
         let host = url.host_str().ok_or_else(|| {
             azure_core::Error::with_message(azure_core::error::ErrorKind::DataConversion, || {
