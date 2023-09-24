@@ -36,20 +36,130 @@ impl CertBasedSecurityPrincipal {
         Self::default()
     }
 }
-#[doc = "Confidential Ledger. Contains the properties of Confidential Ledger Resource."]
+#[doc = "Tags for Managed CCF Certificates"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CertificateTags {
+    #[doc = "Additional tags for Managed CCF Certificates"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl CertificateTags {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The check availability request body."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CheckNameAvailabilityRequest {
+    #[doc = "The name of the resource for which availability needs to be checked."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The resource type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+impl CheckNameAvailabilityRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The check availability result."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CheckNameAvailabilityResponse {
+    #[doc = "Indicates if the resource name is available."]
+    #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
+    pub name_available: Option<bool>,
+    #[doc = "The reason why the given name is not available."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<check_name_availability_response::Reason>,
+    #[doc = "Detailed reason why the given name is available."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+impl CheckNameAvailabilityResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod check_name_availability_response {
+    use super::*;
+    #[doc = "The reason why the given name is not available."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Reason")]
+    pub enum Reason {
+        Invalid,
+        AlreadyExists,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Reason {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Reason {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Reason {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Invalid => serializer.serialize_unit_variant("Reason", 0u32, "Invalid"),
+                Self::AlreadyExists => serializer.serialize_unit_variant("Reason", 1u32, "AlreadyExists"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Confidential Ledger. Contains the properties of Confidential Ledger Resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfidentialLedger {
     #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(flatten)]
-    pub location: Location,
-    #[serde(flatten)]
-    pub tags: Tags,
+    pub tracked_resource: TrackedResource,
     #[doc = "Additional Confidential Ledger properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LedgerProperties>,
 }
 impl ConfidentialLedger {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self {
+            tracked_resource,
+            properties: None,
+        }
+    }
+}
+#[doc = "Object representing Backup properties of a Confidential Ledger Resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConfidentialLedgerBackup {
+    #[doc = "The region where the backup of the ledger will eventually be restored to."]
+    #[serde(rename = "restoreRegion", default, skip_serializing_if = "Option::is_none")]
+    pub restore_region: Option<String>,
+    #[doc = "SAS URI used to access the backup Fileshare."]
+    pub uri: String,
+}
+impl ConfidentialLedgerBackup {
+    pub fn new(uri: String) -> Self {
+        Self { restore_region: None, uri }
+    }
+}
+#[doc = "Object representing the backup response of a Confidential Ledger Resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ConfidentialLedgerBackupResponse {
+    #[doc = "Response body stating if the ledger is being backed up."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+impl ConfidentialLedgerBackupResponse {
     pub fn new() -> Self {
         Self::default()
     }
@@ -75,6 +185,39 @@ impl azure_core::Continuable for ConfidentialLedgerList {
     }
 }
 impl ConfidentialLedgerList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Object representing Restore properties of a Confidential Ledger Resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConfidentialLedgerRestore {
+    #[doc = "Fileshare where the ledger backup is stored."]
+    #[serde(rename = "fileShareName")]
+    pub file_share_name: String,
+    #[doc = "The region the ledger is being restored to."]
+    #[serde(rename = "restoreRegion")]
+    pub restore_region: String,
+    #[doc = "SAS URI used to access the backup fileshare."]
+    pub uri: String,
+}
+impl ConfidentialLedgerRestore {
+    pub fn new(file_share_name: String, restore_region: String, uri: String) -> Self {
+        Self {
+            file_share_name,
+            restore_region,
+            uri,
+        }
+    }
+}
+#[doc = "Object representing the restore response of a Confidential Ledger Resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ConfidentialLedgerRestoreResponse {
+    #[doc = "Response body stating if the ledger is being restored."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+impl ConfidentialLedgerRestoreResponse {
     pub fn new() -> Self {
         Self::default()
     }
@@ -116,6 +259,21 @@ impl Serialize for ConfidentialLedgerType {
             Self::Private => serializer.serialize_unit_variant("ConfidentialLedgerType", 2u32, "Private"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
+    }
+}
+#[doc = "Object representing DeploymentType for Managed CCF."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DeploymentType {
+    #[doc = "Object representing LanguageRuntime for Manged CCF."]
+    #[serde(rename = "languageRuntime", default, skip_serializing_if = "Option::is_none")]
+    pub language_runtime: Option<LanguageRuntime>,
+    #[doc = "Source Uri containing ManagedCCF code"]
+    #[serde(rename = "appSourceUri", default, skip_serializing_if = "Option::is_none")]
+    pub app_source_uri: Option<String>,
+}
+impl DeploymentType {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The resource management error additional info."]
@@ -184,6 +342,45 @@ impl ErrorResponse {
         Self::default()
     }
 }
+#[doc = "Object representing LanguageRuntime for Manged CCF."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "LanguageRuntime")]
+pub enum LanguageRuntime {
+    #[serde(rename = "CPP")]
+    Cpp,
+    #[serde(rename = "JS")]
+    Js,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for LanguageRuntime {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for LanguageRuntime {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for LanguageRuntime {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Cpp => serializer.serialize_unit_variant("LanguageRuntime", 0u32, "CPP"),
+            Self::Js => serializer.serialize_unit_variant("LanguageRuntime", 1u32, "JS"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "Additional Confidential Ledger properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LedgerProperties {
@@ -199,9 +396,9 @@ pub struct LedgerProperties {
     #[doc = "Internal namespace for the Ledger"]
     #[serde(rename = "ledgerInternalNamespace", default, skip_serializing_if = "Option::is_none")]
     pub ledger_internal_namespace: Option<String>,
-    #[doc = "Name of the Blob Storage Account for saving ledger files"]
-    #[serde(rename = "ledgerStorageAccount", default, skip_serializing_if = "Option::is_none")]
-    pub ledger_storage_account: Option<String>,
+    #[doc = "Object representing RunningState for Confidential Ledger."]
+    #[serde(rename = "runningState", default, skip_serializing_if = "Option::is_none")]
+    pub running_state: Option<RunningState>,
     #[doc = "Type of the ledger. Private means transaction data is encrypted."]
     #[serde(rename = "ledgerType", default, skip_serializing_if = "Option::is_none")]
     pub ledger_type: Option<ConfidentialLedgerType>,
@@ -269,18 +466,163 @@ impl Serialize for LedgerRoleName {
         }
     }
 }
-#[doc = "Location of the ARM Resource"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct Location {
-    #[doc = "The Azure location where the Confidential Ledger is running."]
+#[doc = "Managed CCF. Contains the properties of Managed CCF Resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedCcf {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    #[doc = "Additional Managed CCF properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
+    pub properties: Option<ManagedCcfProperties>,
 }
-impl Location {
+impl ManagedCcf {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self {
+            tracked_resource,
+            properties: None,
+        }
+    }
+}
+#[doc = "Object representing Backup properties of a Managed CCF Resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedCcfBackup {
+    #[doc = "The region where the backup of the managed CCF resource will eventually be restored to."]
+    #[serde(rename = "restoreRegion", default, skip_serializing_if = "Option::is_none")]
+    pub restore_region: Option<String>,
+    #[doc = "SAS URI used to access the backup Fileshare."]
+    pub uri: String,
+}
+impl ManagedCcfBackup {
+    pub fn new(uri: String) -> Self {
+        Self { restore_region: None, uri }
+    }
+}
+#[doc = "Object representing the backup response of a Managed CCF Resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedCcfBackupResponse {
+    #[doc = "Response body stating if the managed CCF resource is being backed up."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+impl ManagedCcfBackupResponse {
     pub fn new() -> Self {
         Self::default()
     }
 }
+#[doc = "Object that includes an array of Managed CCF and a possible link for next set."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedCcfList {
+    #[doc = "List of Managed CCF"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<ManagedCcf>,
+    #[doc = "The URL the client should use to fetch the next page (per server side paging)."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ManagedCcfList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl ManagedCcfList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Additional Managed CCF properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedCcfProperties {
+    #[doc = "Unique name for the Managed CCF."]
+    #[serde(rename = "appName", default, skip_serializing_if = "Option::is_none")]
+    pub app_name: Option<String>,
+    #[doc = "Endpoint for calling Managed CCF Service."]
+    #[serde(rename = "appUri", default, skip_serializing_if = "Option::is_none")]
+    pub app_uri: Option<String>,
+    #[doc = "Endpoint for accessing network identity."]
+    #[serde(rename = "identityServiceUri", default, skip_serializing_if = "Option::is_none")]
+    pub identity_service_uri: Option<String>,
+    #[doc = "List of member identity certificates for  Managed CCF"]
+    #[serde(
+        rename = "memberIdentityCertificates",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub member_identity_certificates: Vec<MemberIdentityCertificate>,
+    #[doc = "Object representing DeploymentType for Managed CCF."]
+    #[serde(rename = "deploymentType", default, skip_serializing_if = "Option::is_none")]
+    pub deployment_type: Option<DeploymentType>,
+    #[doc = "Object representing RunningState for Managed CCF."]
+    #[serde(rename = "runningState", default, skip_serializing_if = "Option::is_none")]
+    pub running_state: Option<RunningState>,
+    #[doc = "Object representing ProvisioningState for Managed CCF."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
+    #[doc = "Number of CCF nodes in the Managed CCF."]
+    #[serde(rename = "nodeCount", default, skip_serializing_if = "Option::is_none")]
+    pub node_count: Option<NodeCount>,
+}
+impl ManagedCcfProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Object representing Restore properties of Managed CCF Resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagedCcfRestore {
+    #[doc = "Fileshare where the managed CCF resource backup is stored."]
+    #[serde(rename = "fileShareName")]
+    pub file_share_name: String,
+    #[doc = "The region the managed CCF resource is being restored to."]
+    #[serde(rename = "restoreRegion")]
+    pub restore_region: String,
+    #[doc = "SAS URI used to access the backup Fileshare."]
+    pub uri: String,
+}
+impl ManagedCcfRestore {
+    pub fn new(file_share_name: String, restore_region: String, uri: String) -> Self {
+        Self {
+            file_share_name,
+            restore_region,
+            uri,
+        }
+    }
+}
+#[doc = "Object representing the restore response of a Managed CCF Resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedCcfRestoreResponse {
+    #[doc = "Response body stating if the managed CCF resource is being restored."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+impl ManagedCcfRestoreResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Object representing MemberIdentityCertificate for Managed CCF."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MemberIdentityCertificate {
+    #[doc = "Member Identity Certificate"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub certificate: Option<String>,
+    #[doc = "Member Identity Certificate Encryption Key"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encryptionkey: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl MemberIdentityCertificate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub type NodeCount = i32;
 #[doc = "Object representing ProvisioningState for Confidential Ledger."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ProvisioningState")]
@@ -328,16 +670,16 @@ impl Serialize for ProvisioningState {
         }
     }
 }
-#[doc = "An Azure resource."]
+#[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
-    #[doc = "Name of the Resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[doc = "Fully qualified resource Id for the resource."]
+    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "The type of the resource."]
+    #[doc = "The name of the resource"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -413,16 +755,67 @@ impl ResourceProviderOperationList {
         Self::default()
     }
 }
-#[doc = "Tags for Confidential Ledger Resource"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct Tags {
-    #[doc = "Additional tags for Confidential Ledger"]
+#[doc = "Object representing RunningState for Confidential Ledger."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "RunningState")]
+pub enum RunningState {
+    Active,
+    Paused,
+    Unknown,
+    Pausing,
+    Resuming,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for RunningState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for RunningState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for RunningState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Active => serializer.serialize_unit_variant("RunningState", 0u32, "Active"),
+            Self::Paused => serializer.serialize_unit_variant("RunningState", 1u32, "Paused"),
+            Self::Unknown => serializer.serialize_unit_variant("RunningState", 2u32, "Unknown"),
+            Self::Pausing => serializer.serialize_unit_variant("RunningState", 3u32, "Pausing"),
+            Self::Resuming => serializer.serialize_unit_variant("RunningState", 4u32, "Resuming"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TrackedResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Resource tags."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
+    #[doc = "The geo-location where the resource lives"]
+    pub location: String,
 }
-impl Tags {
-    pub fn new() -> Self {
-        Self::default()
+impl TrackedResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            resource: Resource::default(),
+            tags: None,
+            location,
+        }
     }
 }
 #[doc = "Metadata pertaining to creation and last modification of the resource."]

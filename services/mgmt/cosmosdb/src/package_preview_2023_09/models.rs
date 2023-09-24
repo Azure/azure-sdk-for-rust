@@ -242,6 +242,9 @@ pub struct AuthenticationMethodLdapProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub server_certificates: Vec<Certificate>,
+    #[doc = "Timeout for connecting to the LDAP server in miliseconds. The default is 5000 ms."]
+    #[serde(rename = "connectionTimeoutInMs", default, skip_serializing_if = "Option::is_none")]
+    pub connection_timeout_in_ms: Option<i32>,
 }
 impl AuthenticationMethodLdapProperties {
     pub fn new() -> Self {
@@ -447,10 +450,21 @@ impl Serialize for BackupPolicyType {
 #[doc = "A restorable backup of a Cassandra cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupResource {
-    #[serde(flatten)]
-    pub arm_proxy_resource: ArmProxyResource,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<backup_resource::Properties>,
+    #[doc = "The unique identifier of backup."]
+    #[serde(rename = "backupId", default, skip_serializing_if = "Option::is_none")]
+    pub backup_id: Option<String>,
+    #[doc = "The current state of the backup."]
+    #[serde(rename = "backupState", default, skip_serializing_if = "Option::is_none")]
+    pub backup_state: Option<backup_resource::BackupState>,
+    #[doc = "The time at which the backup process begins."]
+    #[serde(rename = "backupStartTimestamp", default, with = "azure_core::date::rfc3339::option")]
+    pub backup_start_timestamp: Option<time::OffsetDateTime>,
+    #[doc = "The time at which the backup process ends."]
+    #[serde(rename = "backupStopTimestamp", default, with = "azure_core::date::rfc3339::option")]
+    pub backup_stop_timestamp: Option<time::OffsetDateTime>,
+    #[doc = "The time at which the backup will expire."]
+    #[serde(rename = "backupExpiryTimestamp", default, with = "azure_core::date::rfc3339::option")]
+    pub backup_expiry_timestamp: Option<time::OffsetDateTime>,
 }
 impl BackupResource {
     pub fn new() -> Self {
@@ -459,16 +473,63 @@ impl BackupResource {
 }
 pub mod backup_resource {
     use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct Properties {
-        #[doc = "The time this backup was taken, formatted like 2021-01-21T17:35:21"]
-        #[serde(default, with = "azure_core::date::rfc3339::option")]
-        pub timestamp: Option<time::OffsetDateTime>,
+    #[doc = "The current state of the backup."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "BackupState")]
+    pub enum BackupState {
+        Initiated,
+        InProgress,
+        Succeeded,
+        Failed,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
     }
-    impl Properties {
-        pub fn new() -> Self {
-            Self::default()
+    impl FromStr for BackupState {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
         }
+    }
+    impl<'de> Deserialize<'de> for BackupState {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for BackupState {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Initiated => serializer.serialize_unit_variant("BackupState", 0u32, "Initiated"),
+                Self::InProgress => serializer.serialize_unit_variant("BackupState", 1u32, "InProgress"),
+                Self::Succeeded => serializer.serialize_unit_variant("BackupState", 2u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("BackupState", 3u32, "Failed"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BackupSchedule {
+    #[doc = "The unique identifier of backup schedule."]
+    #[serde(rename = "scheduleName", default, skip_serializing_if = "Option::is_none")]
+    pub schedule_name: Option<String>,
+    #[doc = "The cron expression that defines when you want to back up your data."]
+    #[serde(rename = "cronExpression", default, skip_serializing_if = "Option::is_none")]
+    pub cron_expression: Option<String>,
+    #[doc = "The retention period (hours) of the backups. If you want to retain data forever, set retention to 0."]
+    #[serde(rename = "retentionInHours", default, skip_serializing_if = "Option::is_none")]
+    pub retention_in_hours: Option<i32>,
+}
+impl BackupSchedule {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Enum to indicate type of backup storage redundancy."]
@@ -510,6 +571,17 @@ impl Serialize for BackupStorageRedundancy {
         }
     }
 }
+#[doc = "A base CosmosDB data source/sink"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BaseCosmosDataTransferDataSourceSink {
+    #[serde(rename = "remoteAccountName", default, skip_serializing_if = "Option::is_none")]
+    pub remote_account_name: Option<String>,
+}
+impl BaseCosmosDataTransferDataSourceSink {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Cosmos DB capability object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Capability {
@@ -549,6 +621,13 @@ pub struct CassandraClusterPublicStatus {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub connection_errors: Vec<ConnectionError>,
+    #[doc = "List relevant information about any errors about cluster, data center and connection error."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub errors: Vec<CassandraError>,
     #[doc = "List of the status of each datacenter in this cluster."]
     #[serde(
         rename = "dataCenters",
@@ -559,6 +638,26 @@ pub struct CassandraClusterPublicStatus {
     pub data_centers: Vec<serde_json::Value>,
 }
 impl CassandraClusterPublicStatus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CassandraError {
+    #[doc = "The code of error that occurred."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "The message of the error."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[doc = "The target resource of the error."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[doc = "Additional information about the error."]
+    #[serde(rename = "additionalErrorInfo", default, skip_serializing_if = "Option::is_none")]
+    pub additional_error_info: Option<String>,
+}
+impl CassandraError {
     pub fn new() -> Self {
         Self::default()
     }
@@ -905,6 +1004,79 @@ impl Certificate {
         Self::default()
     }
 }
+#[doc = "The check availability request body."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CheckNameAvailabilityRequest {
+    #[doc = "The name of the resource for which availability needs to be checked."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The resource type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+impl CheckNameAvailabilityRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The check availability result."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CheckNameAvailabilityResponse {
+    #[doc = "Indicates if the resource name is available."]
+    #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
+    pub name_available: Option<bool>,
+    #[doc = "The reason why the given name is not available."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<check_name_availability_response::Reason>,
+    #[doc = "Detailed reason why the given name is available."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+impl CheckNameAvailabilityResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod check_name_availability_response {
+    use super::*;
+    #[doc = "The reason why the given name is not available."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Reason")]
+    pub enum Reason {
+        Invalid,
+        AlreadyExists,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Reason {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Reason {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Reason {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Invalid => serializer.serialize_unit_variant("Reason", 0u32, "Invalid"),
+                Self::AlreadyExists => serializer.serialize_unit_variant("Reason", 1u32, "AlreadyExists"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClientEncryptionIncludedPath {
@@ -1026,15 +1198,15 @@ pub struct ClientEncryptionPolicy {
     #[doc = "Paths of the item that need encryption along with path-specific settings."]
     #[serde(rename = "includedPaths")]
     pub included_paths: Vec<ClientEncryptionIncludedPath>,
-    #[doc = "Version of the client encryption policy definition. Please note, user passed value is ignored. Default policy version is 1."]
-    #[serde(rename = "policyFormatVersion", default, skip_serializing_if = "Option::is_none")]
-    pub policy_format_version: Option<i32>,
+    #[doc = "Version of the client encryption policy definition. Supported versions are 1 and 2. Version 2 supports id and partition key path encryption. "]
+    #[serde(rename = "policyFormatVersion")]
+    pub policy_format_version: i32,
 }
 impl ClientEncryptionPolicy {
-    pub fn new(included_paths: Vec<ClientEncryptionIncludedPath>) -> Self {
+    pub fn new(included_paths: Vec<ClientEncryptionIncludedPath>, policy_format_version: i32) -> Self {
         Self {
             included_paths,
-            policy_format_version: None,
+            policy_format_version,
         }
     }
 }
@@ -1105,7 +1277,7 @@ pub mod cluster_resource {
         #[doc = "If you need to set the clusterName property in cassandra.yaml to something besides the resource name of the cluster, set the value to use on this property."]
         #[serde(rename = "clusterNameOverride", default, skip_serializing_if = "Option::is_none")]
         pub cluster_name_override: Option<String>,
-        #[doc = "Which authentication method Cassandra should use to authenticate clients. 'None' turns off authentication, so should not be used except in emergencies. 'Cassandra' is the default password based authentication. The default is 'Cassandra'. 'Ldap' is in preview."]
+        #[doc = "Which authentication method Cassandra should use to authenticate clients. 'None' turns off authentication, so should not be used except in emergencies. 'Cassandra' is the default password based authentication. The default is 'Cassandra'."]
         #[serde(rename = "authenticationMethod", default, skip_serializing_if = "Option::is_none")]
         pub authentication_method: Option<properties::AuthenticationMethod>,
         #[doc = "Initial password for clients connecting as admin to the cluster. Should be changed after cluster creation. Returns null on GET. This field only applies when the authenticationMethod field is 'Cassandra'."]
@@ -1156,7 +1328,7 @@ pub mod cluster_resource {
             skip_serializing_if = "Vec::is_empty"
         )]
         pub seed_nodes: Vec<SeedNode>,
-        #[doc = "Number of hours to wait between taking a backup of the cluster."]
+        #[doc = "(Deprecated) Number of hours to wait between taking a backup of the cluster."]
         #[serde(rename = "hoursBetweenBackups", default, skip_serializing_if = "Option::is_none")]
         pub hours_between_backups: Option<i32>,
         #[doc = "Whether the cluster and associated data centers has been deallocated."]
@@ -1165,6 +1337,26 @@ pub mod cluster_resource {
         #[doc = "Whether Cassandra audit logging is enabled"]
         #[serde(rename = "cassandraAuditLoggingEnabled", default, skip_serializing_if = "Option::is_none")]
         pub cassandra_audit_logging_enabled: Option<bool>,
+        #[doc = "Type of the cluster. If set to Production, some operations might not be permitted on cluster."]
+        #[serde(rename = "clusterType", default, skip_serializing_if = "Option::is_none")]
+        pub cluster_type: Option<properties::ClusterType>,
+        #[serde(rename = "provisionError", default, skip_serializing_if = "Option::is_none")]
+        pub provision_error: Option<CassandraError>,
+        #[doc = "Extensions to be added or updated on cluster."]
+        #[serde(
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
+        pub extensions: Vec<String>,
+        #[doc = "List of backup schedules that define when you want to back up your data."]
+        #[serde(
+            rename = "backupSchedules",
+            default,
+            deserialize_with = "azure_core::util::deserialize_null_as_default",
+            skip_serializing_if = "Vec::is_empty"
+        )]
+        pub backup_schedules: Vec<BackupSchedule>,
     }
     impl Properties {
         pub fn new() -> Self {
@@ -1173,7 +1365,7 @@ pub mod cluster_resource {
     }
     pub mod properties {
         use super::*;
-        #[doc = "Which authentication method Cassandra should use to authenticate clients. 'None' turns off authentication, so should not be used except in emergencies. 'Cassandra' is the default password based authentication. The default is 'Cassandra'. 'Ldap' is in preview."]
+        #[doc = "Which authentication method Cassandra should use to authenticate clients. 'None' turns off authentication, so should not be used except in emergencies. 'Cassandra' is the default password based authentication. The default is 'Cassandra'."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         #[serde(remote = "AuthenticationMethod")]
         pub enum AuthenticationMethod {
@@ -1208,6 +1400,43 @@ pub mod cluster_resource {
                     Self::None => serializer.serialize_unit_variant("AuthenticationMethod", 0u32, "None"),
                     Self::Cassandra => serializer.serialize_unit_variant("AuthenticationMethod", 1u32, "Cassandra"),
                     Self::Ldap => serializer.serialize_unit_variant("AuthenticationMethod", 2u32, "Ldap"),
+                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                }
+            }
+        }
+        #[doc = "Type of the cluster. If set to Production, some operations might not be permitted on cluster."]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[serde(remote = "ClusterType")]
+        pub enum ClusterType {
+            Production,
+            NonProduction,
+            #[serde(skip_deserializing)]
+            UnknownValue(String),
+        }
+        impl FromStr for ClusterType {
+            type Err = value::Error;
+            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                Self::deserialize(s.into_deserializer())
+            }
+        }
+        impl<'de> Deserialize<'de> for ClusterType {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                let s = String::deserialize(deserializer)?;
+                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                Ok(deserialized)
+            }
+        }
+        impl Serialize for ClusterType {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                match self {
+                    Self::Production => serializer.serialize_unit_variant("ClusterType", 0u32, "Production"),
+                    Self::NonProduction => serializer.serialize_unit_variant("ClusterType", 1u32, "NonProduction"),
                     Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
                 }
             }
@@ -1466,6 +1695,21 @@ pub mod connection_error {
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
+    }
+}
+#[doc = "Connection string for the mongo cluster"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ConnectionString {
+    #[doc = "Value of the connection string"]
+    #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
+    pub connection_string: Option<String>,
+    #[doc = "Description of the connection string"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+impl ConnectionString {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The cassandra connector offer type for the Cosmos DB C* database account."]
@@ -1734,6 +1978,8 @@ impl CorsPolicy {
 pub struct CosmosCassandraDataTransferDataSourceSink {
     #[serde(flatten)]
     pub data_transfer_data_source_sink: DataTransferDataSourceSink,
+    #[serde(flatten)]
+    pub base_cosmos_data_transfer_data_source_sink: BaseCosmosDataTransferDataSourceSink,
     #[serde(rename = "keyspaceName")]
     pub keyspace_name: String,
     #[serde(rename = "tableName")]
@@ -1743,16 +1989,41 @@ impl CosmosCassandraDataTransferDataSourceSink {
     pub fn new(data_transfer_data_source_sink: DataTransferDataSourceSink, keyspace_name: String, table_name: String) -> Self {
         Self {
             data_transfer_data_source_sink,
+            base_cosmos_data_transfer_data_source_sink: BaseCosmosDataTransferDataSourceSink::default(),
             keyspace_name,
             table_name,
         }
     }
 }
-#[doc = "A CosmosDB Cassandra API data source/sink"]
+#[doc = "A CosmosDB Mongo API data source/sink"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CosmosMongoDataTransferDataSourceSink {
+    #[serde(flatten)]
+    pub data_transfer_data_source_sink: DataTransferDataSourceSink,
+    #[serde(flatten)]
+    pub base_cosmos_data_transfer_data_source_sink: BaseCosmosDataTransferDataSourceSink,
+    #[serde(rename = "databaseName")]
+    pub database_name: String,
+    #[serde(rename = "collectionName")]
+    pub collection_name: String,
+}
+impl CosmosMongoDataTransferDataSourceSink {
+    pub fn new(data_transfer_data_source_sink: DataTransferDataSourceSink, database_name: String, collection_name: String) -> Self {
+        Self {
+            data_transfer_data_source_sink,
+            base_cosmos_data_transfer_data_source_sink: BaseCosmosDataTransferDataSourceSink::default(),
+            database_name,
+            collection_name,
+        }
+    }
+}
+#[doc = "A CosmosDB No Sql API data source/sink"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CosmosSqlDataTransferDataSourceSink {
     #[serde(flatten)]
     pub data_transfer_data_source_sink: DataTransferDataSourceSink,
+    #[serde(flatten)]
+    pub base_cosmos_data_transfer_data_source_sink: BaseCosmosDataTransferDataSourceSink,
     #[serde(rename = "databaseName")]
     pub database_name: String,
     #[serde(rename = "containerName")]
@@ -1762,6 +2033,7 @@ impl CosmosSqlDataTransferDataSourceSink {
     pub fn new(data_transfer_data_source_sink: DataTransferDataSourceSink, database_name: String, container_name: String) -> Self {
         Self {
             data_transfer_data_source_sink,
+            base_cosmos_data_transfer_data_source_sink: BaseCosmosDataTransferDataSourceSink::default(),
             database_name,
             container_name,
         }
@@ -1839,6 +2111,79 @@ impl CreateUpdateOptions {
         Self::default()
     }
 }
+#[doc = "Indicates the status of the Customer Managed Key feature on the account. In case there are errors, the property provides troubleshooting guidance."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "CustomerManagedKeyStatus")]
+pub enum CustomerManagedKeyStatus {
+    #[serde(
+        rename = "Access to your account is currently revoked because the Azure Cosmos DB service is unable to obtain the AAD authentication token for the account's default identity; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide#azure-active-directory-token-acquisition-error (4000)."
+    )]
+    AccessToYourAccountIsCurrentlyRevokedBecauseTheAzureCosmosDbServiceIsUnableToObtainTheAadAuthenticationTokenForTheAccountSDefaultIdentityForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuideAzureActiveDirectoryTokenAcquisitionError4000,
+    #[serde(
+        rename = "Access to your account is currently revoked because the Azure Cosmos DB account's key vault key URI does not follow the expected format; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide#improper-syntax-detected-on-the-key-vault-uri-property (4006)."
+    )]
+    AccessToYourAccountIsCurrentlyRevokedBecauseTheAzureCosmosDbAccountSKeyVaultKeyUriDoesNotFollowTheExpectedFormatForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuideImproperSyntaxDetectedOnTheKeyVaultUriProperty4006,
+    #[serde(
+        rename = "Access to your account is currently revoked because the current default identity no longer has permission to the associated Key Vault key; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide#default-identity-is-unauthorized-to-access-the-azure-key-vault-key (4002)."
+    )]
+    AccessToYourAccountIsCurrentlyRevokedBecauseTheCurrentDefaultIdentityNoLongerHasPermissionToTheAssociatedKeyVaultKeyForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuideDefaultIdentityIsUnauthorizedToAccessTheAzureKeyVaultKey4002,
+    #[serde(
+        rename = "Access to your account is currently revoked because the Azure Key Vault DNS name specified by the account's keyvaultkeyuri property could not be resolved; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide#unable-to-resolve-the-key-vaults-dns (4009)."
+    )]
+    AccessToYourAccountIsCurrentlyRevokedBecauseTheAzureKeyVaultDnsNameSpecifiedByTheAccountSKeyvaultkeyuriPropertyCouldNotBeResolvedForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuideUnableToResolveTheKeyVaultsDns4009,
+    #[serde(
+        rename = "Access to your account is currently revoked because the correspondent key is not found on the specified Key Vault; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide#azure-key-vault-resource-not-found (4003)."
+    )]
+    AccessToYourAccountIsCurrentlyRevokedBecauseTheCorrespondentKeyIsNotFoundOnTheSpecifiedKeyVaultForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuideAzureKeyVaultResourceNotFound4003,
+    #[serde(
+        rename = "Access to your account is currently revoked because the Azure Cosmos DB service is unable to wrap or unwrap the key; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide#internal-unwrapping-procedure-error (4005)."
+    )]
+    AccessToYourAccountIsCurrentlyRevokedBecauseTheAzureCosmosDbServiceIsUnableToWrapOrUnwrapTheKeyForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuideInternalUnwrappingProcedureError4005,
+    #[serde(
+        rename = "Access to your account is currently revoked because the Azure Cosmos DB account has an undefined default identity; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide#invalid-azure-cosmos-db-default-identity (4015)."
+    )]
+    AccessToYourAccountIsCurrentlyRevokedBecauseTheAzureCosmosDbAccountHasAnUndefinedDefaultIdentityForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuideInvalidAzureCosmosDbDefaultIdentity4015,
+    #[serde(
+        rename = "Access to your account is currently revoked because the access rules are blocking outbound requests to the Azure Key Vault service; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide (4016)."
+    )]
+    AccessToYourAccountIsCurrentlyRevokedBecauseTheAccessRulesAreBlockingOutboundRequestsToTheAzureKeyVaultServiceForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuide4016,
+    #[serde(
+        rename = "Access to your account is currently revoked because the correspondent Azure Key Vault was not found; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide#azure-key-vault-resource-not-found (4017)."
+    )]
+    AccessToYourAccountIsCurrentlyRevokedBecauseTheCorrespondentAzureKeyVaultWasNotFoundForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuideAzureKeyVaultResourceNotFound4017,
+    #[serde(
+        rename = "Access to your account is currently revoked; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide"
+    )]
+    AccessToYourAccountIsCurrentlyRevokedForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuide,
+    #[serde(rename = "Access to the configured customer managed key confirmed.")]
+    AccessToTheConfiguredCustomerManagedKeyConfirmed,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for CustomerManagedKeyStatus {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for CustomerManagedKeyStatus {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for CustomerManagedKeyStatus {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self { Self :: AccessToYourAccountIsCurrentlyRevokedBecauseTheAzureCosmosDbServiceIsUnableToObtainTheAadAuthenticationTokenForTheAccountSDefaultIdentityForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuideAzureActiveDirectoryTokenAcquisitionError4000 => serializer . serialize_unit_variant ("CustomerManagedKeyStatus" , 0u32 , "Access to your account is currently revoked because the Azure Cosmos DB service is unable to obtain the AAD authentication token for the account's default identity; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide#azure-active-directory-token-acquisition-error (4000).") , Self :: AccessToYourAccountIsCurrentlyRevokedBecauseTheAzureCosmosDbAccountSKeyVaultKeyUriDoesNotFollowTheExpectedFormatForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuideImproperSyntaxDetectedOnTheKeyVaultUriProperty4006 => serializer . serialize_unit_variant ("CustomerManagedKeyStatus" , 1u32 , "Access to your account is currently revoked because the Azure Cosmos DB account's key vault key URI does not follow the expected format; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide#improper-syntax-detected-on-the-key-vault-uri-property (4006).") , Self :: AccessToYourAccountIsCurrentlyRevokedBecauseTheCurrentDefaultIdentityNoLongerHasPermissionToTheAssociatedKeyVaultKeyForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuideDefaultIdentityIsUnauthorizedToAccessTheAzureKeyVaultKey4002 => serializer . serialize_unit_variant ("CustomerManagedKeyStatus" , 2u32 , "Access to your account is currently revoked because the current default identity no longer has permission to the associated Key Vault key; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide#default-identity-is-unauthorized-to-access-the-azure-key-vault-key (4002).") , Self :: AccessToYourAccountIsCurrentlyRevokedBecauseTheAzureKeyVaultDnsNameSpecifiedByTheAccountSKeyvaultkeyuriPropertyCouldNotBeResolvedForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuideUnableToResolveTheKeyVaultsDns4009 => serializer . serialize_unit_variant ("CustomerManagedKeyStatus" , 3u32 , "Access to your account is currently revoked because the Azure Key Vault DNS name specified by the account's keyvaultkeyuri property could not be resolved; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide#unable-to-resolve-the-key-vaults-dns (4009).") , Self :: AccessToYourAccountIsCurrentlyRevokedBecauseTheCorrespondentKeyIsNotFoundOnTheSpecifiedKeyVaultForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuideAzureKeyVaultResourceNotFound4003 => serializer . serialize_unit_variant ("CustomerManagedKeyStatus" , 4u32 , "Access to your account is currently revoked because the correspondent key is not found on the specified Key Vault; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide#azure-key-vault-resource-not-found (4003).") , Self :: AccessToYourAccountIsCurrentlyRevokedBecauseTheAzureCosmosDbServiceIsUnableToWrapOrUnwrapTheKeyForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuideInternalUnwrappingProcedureError4005 => serializer . serialize_unit_variant ("CustomerManagedKeyStatus" , 5u32 , "Access to your account is currently revoked because the Azure Cosmos DB service is unable to wrap or unwrap the key; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide#internal-unwrapping-procedure-error (4005).") , Self :: AccessToYourAccountIsCurrentlyRevokedBecauseTheAzureCosmosDbAccountHasAnUndefinedDefaultIdentityForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuideInvalidAzureCosmosDbDefaultIdentity4015 => serializer . serialize_unit_variant ("CustomerManagedKeyStatus" , 6u32 , "Access to your account is currently revoked because the Azure Cosmos DB account has an undefined default identity; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide#invalid-azure-cosmos-db-default-identity (4015).") , Self :: AccessToYourAccountIsCurrentlyRevokedBecauseTheAccessRulesAreBlockingOutboundRequestsToTheAzureKeyVaultServiceForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuide4016 => serializer . serialize_unit_variant ("CustomerManagedKeyStatus" , 7u32 , "Access to your account is currently revoked because the access rules are blocking outbound requests to the Azure Key Vault service; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide (4016).") , Self :: AccessToYourAccountIsCurrentlyRevokedBecauseTheCorrespondentAzureKeyVaultWasNotFoundForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuideAzureKeyVaultResourceNotFound4017 => serializer . serialize_unit_variant ("CustomerManagedKeyStatus" , 8u32 , "Access to your account is currently revoked because the correspondent Azure Key Vault was not found; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide#azure-key-vault-resource-not-found (4017).") , Self :: AccessToYourAccountIsCurrentlyRevokedForMoreDetailsAboutThisErrorAndHowToRestoreAccessToYourAccountPleaseVisitHttpsLearnMicrosoftComEnUsAzureCosmosDbCmkTroubleshootingGuide => serializer . serialize_unit_variant ("CustomerManagedKeyStatus" , 9u32 , "Access to your account is currently revoked; for more details about this error and how to restore access to your account please visit https://learn.microsoft.com/en-us/azure/cosmos-db/cmk-troubleshooting-guide") , Self :: AccessToTheConfiguredCustomerManagedKeyConfirmed => serializer . serialize_unit_variant ("CustomerManagedKeyStatus" , 10u32 , "Access to the configured customer managed key confirmed.") , Self :: UnknownValue (s) => serializer . serialize_str (s . as_str ()) , }
+    }
+}
 #[doc = "A managed Cassandra data center."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataCenterResource {
@@ -1893,15 +2238,20 @@ pub mod data_center_resource {
         #[doc = "Disk SKU used for data centers. Default value is P30."]
         #[serde(rename = "diskSku", default, skip_serializing_if = "Option::is_none")]
         pub disk_sku: Option<String>,
-        #[doc = "Number of disk used for data centers. Default value is 4."]
+        #[doc = "Number of disks attached to each node. Default is 4."]
         #[serde(rename = "diskCapacity", default, skip_serializing_if = "Option::is_none")]
         pub disk_capacity: Option<i32>,
-        #[doc = "If the data center has Availability Zone feature, apply it to the Virtual Machine ScaleSet that host the cassandra data center virtual machines."]
+        #[doc = "If the data center has Availability Zone support, apply it to the Virtual Machine ScaleSet that host the cassandra data center virtual machines."]
         #[serde(rename = "availabilityZone", default, skip_serializing_if = "Option::is_none")]
         pub availability_zone: Option<bool>,
         #[doc = "Ldap authentication method properties. This feature is in preview."]
         #[serde(rename = "authenticationMethodLdapProperties", default, skip_serializing_if = "Option::is_none")]
         pub authentication_method_ldap_properties: Option<AuthenticationMethodLdapProperties>,
+        #[doc = "Whether the data center has been deallocated."]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub deallocated: Option<bool>,
+        #[serde(rename = "provisionError", default, skip_serializing_if = "Option::is_none")]
+        pub provision_error: Option<CassandraError>,
     }
     impl Properties {
         pub fn new() -> Self {
@@ -1926,6 +2276,8 @@ pub mod data_transfer_data_source_sink {
     pub enum Component {
         #[serde(rename = "CosmosDBCassandra")]
         CosmosDbCassandra,
+        #[serde(rename = "CosmosDBMongo")]
+        CosmosDbMongo,
         #[serde(rename = "CosmosDBSql")]
         CosmosDbSql,
         AzureBlobStorage,
@@ -1955,8 +2307,9 @@ pub mod data_transfer_data_source_sink {
         {
             match self {
                 Self::CosmosDbCassandra => serializer.serialize_unit_variant("Component", 0u32, "CosmosDBCassandra"),
-                Self::CosmosDbSql => serializer.serialize_unit_variant("Component", 1u32, "CosmosDBSql"),
-                Self::AzureBlobStorage => serializer.serialize_unit_variant("Component", 2u32, "AzureBlobStorage"),
+                Self::CosmosDbMongo => serializer.serialize_unit_variant("Component", 1u32, "CosmosDBMongo"),
+                Self::CosmosDbSql => serializer.serialize_unit_variant("Component", 2u32, "CosmosDBSql"),
+                Self::AzureBlobStorage => serializer.serialize_unit_variant("Component", 3u32, "AzureBlobStorage"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -1973,6 +2326,8 @@ pub enum DataTransferDataSourceSinkUnion {
     AzureBlobStorage(AzureBlobDataTransferDataSourceSink),
     #[serde(rename = "CosmosDBCassandra")]
     CosmosDbCassandra(CosmosCassandraDataTransferDataSourceSink),
+    #[serde(rename = "CosmosDBMongo")]
+    CosmosDbMongo(CosmosMongoDataTransferDataSourceSink),
     #[serde(rename = "CosmosDBSql")]
     CosmosDbSql(CosmosSqlDataTransferDataSourceSink),
 }
@@ -2112,10 +2467,112 @@ pub struct DatabaseAccountConnectionString {
     #[doc = "Description of the connection string"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[doc = "Kind of the connection string key"]
+    #[serde(rename = "keyKind", default, skip_serializing_if = "Option::is_none")]
+    pub key_kind: Option<database_account_connection_string::KeyKind>,
+    #[doc = "Type of the connection string"]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<database_account_connection_string::Type>,
 }
 impl DatabaseAccountConnectionString {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod database_account_connection_string {
+    use super::*;
+    #[doc = "Kind of the connection string key"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "KeyKind")]
+    pub enum KeyKind {
+        Primary,
+        Secondary,
+        PrimaryReadonly,
+        SecondaryReadonly,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for KeyKind {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for KeyKind {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for KeyKind {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Primary => serializer.serialize_unit_variant("KeyKind", 0u32, "Primary"),
+                Self::Secondary => serializer.serialize_unit_variant("KeyKind", 1u32, "Secondary"),
+                Self::PrimaryReadonly => serializer.serialize_unit_variant("KeyKind", 2u32, "PrimaryReadonly"),
+                Self::SecondaryReadonly => serializer.serialize_unit_variant("KeyKind", 3u32, "SecondaryReadonly"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Type of the connection string"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
+    pub enum Type {
+        Sql,
+        Table,
+        #[serde(rename = "MongoDB")]
+        MongoDb,
+        Cassandra,
+        CassandraConnectorMetadata,
+        Gremlin,
+        SqlDedicatedGateway,
+        GremlinV2,
+        Undefined,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Sql => serializer.serialize_unit_variant("Type", 0u32, "Sql"),
+                Self::Table => serializer.serialize_unit_variant("Type", 1u32, "Table"),
+                Self::MongoDb => serializer.serialize_unit_variant("Type", 2u32, "MongoDB"),
+                Self::Cassandra => serializer.serialize_unit_variant("Type", 3u32, "Cassandra"),
+                Self::CassandraConnectorMetadata => serializer.serialize_unit_variant("Type", 4u32, "CassandraConnectorMetadata"),
+                Self::Gremlin => serializer.serialize_unit_variant("Type", 5u32, "Gremlin"),
+                Self::SqlDedicatedGateway => serializer.serialize_unit_variant("Type", 6u32, "SqlDedicatedGateway"),
+                Self::GremlinV2 => serializer.serialize_unit_variant("Type", 7u32, "GremlinV2"),
+                Self::Undefined => serializer.serialize_unit_variant("Type", 8u32, "Undefined"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "Parameters to create and update Cosmos DB database accounts."]
@@ -2300,6 +2757,24 @@ pub struct DatabaseAccountCreateUpdateProperties {
     #[doc = "The metadata related to each access key for the given Cosmos DB database account."]
     #[serde(rename = "keysMetadata", default, skip_serializing_if = "Option::is_none")]
     pub keys_metadata: Option<DatabaseAccountKeysMetadata>,
+    #[doc = "Flag to indicate enabling/disabling of Partition Merge feature on the account"]
+    #[serde(rename = "enablePartitionMerge", default, skip_serializing_if = "Option::is_none")]
+    pub enable_partition_merge: Option<bool>,
+    #[doc = "Flag to indicate enabling/disabling of Burst Capacity Preview feature on the account"]
+    #[serde(rename = "enableBurstCapacity", default, skip_serializing_if = "Option::is_none")]
+    pub enable_burst_capacity: Option<bool>,
+    #[doc = "Indicates the minimum allowed Tls version. The default is Tls 1.0, except for Cassandra and Mongo API's, which only work with Tls 1.2."]
+    #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
+    pub minimal_tls_version: Option<MinimalTlsVersion>,
+    #[doc = "Indicates the status of the Customer Managed Key feature on the account. In case there are errors, the property provides troubleshooting guidance."]
+    #[serde(rename = "customerManagedKeyStatus", default, skip_serializing_if = "Option::is_none")]
+    pub customer_managed_key_status: Option<CustomerManagedKeyStatus>,
+    #[doc = "Flag to indicate enabling/disabling of Priority Based Execution Preview feature on the account"]
+    #[serde(rename = "enablePriorityBasedExecution", default, skip_serializing_if = "Option::is_none")]
+    pub enable_priority_based_execution: Option<bool>,
+    #[doc = "Enum to indicate default priorityLevel of requests"]
+    #[serde(rename = "defaultPriorityLevel", default, skip_serializing_if = "Option::is_none")]
+    pub default_priority_level: Option<DefaultPriorityLevel>,
 }
 impl DatabaseAccountCreateUpdateProperties {
     pub fn new(locations: Vec<Location>, database_account_offer_type: DatabaseAccountOfferType) -> Self {
@@ -2334,6 +2809,12 @@ impl DatabaseAccountCreateUpdateProperties {
             capacity: None,
             enable_materialized_views: None,
             keys_metadata: None,
+            enable_partition_merge: None,
+            enable_burst_capacity: None,
+            minimal_tls_version: None,
+            customer_managed_key_status: None,
+            enable_priority_based_execution: None,
+            default_priority_level: None,
         }
     }
 }
@@ -2492,6 +2973,24 @@ pub struct DatabaseAccountGetProperties {
     #[doc = "The metadata related to each access key for the given Cosmos DB database account."]
     #[serde(rename = "keysMetadata", default, skip_serializing_if = "Option::is_none")]
     pub keys_metadata: Option<DatabaseAccountKeysMetadata>,
+    #[doc = "Flag to indicate enabling/disabling of Partition Merge feature on the account"]
+    #[serde(rename = "enablePartitionMerge", default, skip_serializing_if = "Option::is_none")]
+    pub enable_partition_merge: Option<bool>,
+    #[doc = "Flag to indicate enabling/disabling of Burst Capacity Preview feature on the account"]
+    #[serde(rename = "enableBurstCapacity", default, skip_serializing_if = "Option::is_none")]
+    pub enable_burst_capacity: Option<bool>,
+    #[doc = "Indicates the minimum allowed Tls version. The default is Tls 1.0, except for Cassandra and Mongo API's, which only work with Tls 1.2."]
+    #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
+    pub minimal_tls_version: Option<MinimalTlsVersion>,
+    #[doc = "Indicates the status of the Customer Managed Key feature on the account. In case there are errors, the property provides troubleshooting guidance."]
+    #[serde(rename = "customerManagedKeyStatus", default, skip_serializing_if = "Option::is_none")]
+    pub customer_managed_key_status: Option<CustomerManagedKeyStatus>,
+    #[doc = "Flag to indicate enabling/disabling of Priority Based Execution Preview feature on the account"]
+    #[serde(rename = "enablePriorityBasedExecution", default, skip_serializing_if = "Option::is_none")]
+    pub enable_priority_based_execution: Option<bool>,
+    #[doc = "Enum to indicate default priorityLevel of requests"]
+    #[serde(rename = "defaultPriorityLevel", default, skip_serializing_if = "Option::is_none")]
+    pub default_priority_level: Option<DefaultPriorityLevel>,
 }
 impl DatabaseAccountGetProperties {
     pub fn new() -> Self {
@@ -2831,6 +3330,24 @@ pub struct DatabaseAccountUpdateProperties {
     #[doc = "The metadata related to each access key for the given Cosmos DB database account."]
     #[serde(rename = "keysMetadata", default, skip_serializing_if = "Option::is_none")]
     pub keys_metadata: Option<DatabaseAccountKeysMetadata>,
+    #[doc = "Flag to indicate enabling/disabling of Partition Merge feature on the account"]
+    #[serde(rename = "enablePartitionMerge", default, skip_serializing_if = "Option::is_none")]
+    pub enable_partition_merge: Option<bool>,
+    #[doc = "Flag to indicate enabling/disabling of Burst Capacity Preview feature on the account"]
+    #[serde(rename = "enableBurstCapacity", default, skip_serializing_if = "Option::is_none")]
+    pub enable_burst_capacity: Option<bool>,
+    #[doc = "Indicates the minimum allowed Tls version. The default is Tls 1.0, except for Cassandra and Mongo API's, which only work with Tls 1.2."]
+    #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
+    pub minimal_tls_version: Option<MinimalTlsVersion>,
+    #[doc = "Indicates the status of the Customer Managed Key feature on the account. In case there are errors, the property provides troubleshooting guidance."]
+    #[serde(rename = "customerManagedKeyStatus", default, skip_serializing_if = "Option::is_none")]
+    pub customer_managed_key_status: Option<CustomerManagedKeyStatus>,
+    #[doc = "Flag to indicate enabling/disabling of Priority Based Execution Preview feature on the account"]
+    #[serde(rename = "enablePriorityBasedExecution", default, skip_serializing_if = "Option::is_none")]
+    pub enable_priority_based_execution: Option<bool>,
+    #[doc = "Enum to indicate default priorityLevel of requests"]
+    #[serde(rename = "defaultPriorityLevel", default, skip_serializing_if = "Option::is_none")]
+    pub default_priority_level: Option<DefaultPriorityLevel>,
 }
 impl DatabaseAccountUpdateProperties {
     pub fn new() -> Self {
@@ -2879,6 +3396,43 @@ impl DatabaseRestoreResource {
         Self::default()
     }
 }
+#[doc = "Enum to indicate default priorityLevel of requests"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "DefaultPriorityLevel")]
+pub enum DefaultPriorityLevel {
+    High,
+    Low,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for DefaultPriorityLevel {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for DefaultPriorityLevel {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for DefaultPriorityLevel {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::High => serializer.serialize_unit_variant("DefaultPriorityLevel", 0u32, "High"),
+            Self::Low => serializer.serialize_unit_variant("DefaultPriorityLevel", 1u32, "Low"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "Indicates what diagnostic log settings are to be enabled."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticLogSettings {
@@ -2899,6 +3453,54 @@ pub mod diagnostic_log_settings {
         None,
         True,
         False,
+    }
+}
+#[doc = "The resource management error additional info."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ErrorAdditionalInfo {
+    #[doc = "The additional info type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "The additional info."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub info: Option<serde_json::Value>,
+}
+impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The error detail."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ErrorDetail {
+    #[doc = "The error code."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "The error message."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[doc = "The error target."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[doc = "The error details."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub details: Vec<ErrorDetail>,
+    #[doc = "The error additional info."]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+impl ErrorDetail {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Error Response."]
@@ -2979,6 +3581,69 @@ pub struct FailoverPolicy {
 impl FailoverPolicy {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Represents a mongo cluster firewall rule."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FirewallRule {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "The properties of a mongo cluster firewall rule."]
+    pub properties: FirewallRuleProperties,
+}
+impl FirewallRule {
+    pub fn new(properties: FirewallRuleProperties) -> Self {
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
+    }
+}
+#[doc = "A list of firewall rules."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct FirewallRuleListResult {
+    #[doc = "The list of firewall rules in a mongo cluster."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<FirewallRule>,
+    #[doc = "The link used to get the next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for FirewallRuleListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl FirewallRuleListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The properties of a mongo cluster firewall rule."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FirewallRuleProperties {
+    #[doc = "The provisioning state of the resource."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
+    #[doc = "The start IP address of the mongo cluster firewall rule. Must be IPv4 format."]
+    #[serde(rename = "startIpAddress")]
+    pub start_ip_address: String,
+    #[doc = "The end IP address of the mongo cluster firewall rule. Must be IPv4 format."]
+    #[serde(rename = "endIpAddress")]
+    pub end_ip_address: String,
+}
+impl FirewallRuleProperties {
+    pub fn new(start_ip_address: String, end_ip_address: String) -> Self {
+        Self {
+            provisioning_state: None,
+            start_ip_address,
+            end_ip_address,
+        }
     }
 }
 #[doc = "Resource for a regional service location."]
@@ -3207,10 +3872,20 @@ impl GremlinDatabaseListResult {
 pub struct GremlinDatabaseResource {
     #[doc = "Name of the Cosmos DB Gremlin database"]
     pub id: String,
+    #[doc = "Parameters to indicate the information about the restore."]
+    #[serde(rename = "restoreParameters", default, skip_serializing_if = "Option::is_none")]
+    pub restore_parameters: Option<ResourceRestoreParameters>,
+    #[doc = "Enum to indicate the mode of account creation."]
+    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    pub create_mode: Option<CreateMode>,
 }
 impl GremlinDatabaseResource {
     pub fn new(id: String) -> Self {
-        Self { id }
+        Self {
+            id,
+            restore_parameters: None,
+            create_mode: None,
+        }
     }
 }
 #[doc = "Specific Gremlin Databases to restore."]
@@ -3335,6 +4010,12 @@ pub struct GremlinGraphResource {
     #[doc = "Analytical TTL."]
     #[serde(rename = "analyticalStorageTtl", default, skip_serializing_if = "Option::is_none")]
     pub analytical_storage_ttl: Option<i64>,
+    #[doc = "Parameters to indicate the information about the restore."]
+    #[serde(rename = "restoreParameters", default, skip_serializing_if = "Option::is_none")]
+    pub restore_parameters: Option<ResourceRestoreParameters>,
+    #[doc = "Enum to indicate the mode of account creation."]
+    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    pub create_mode: Option<CreateMode>,
 }
 impl GremlinGraphResource {
     pub fn new(id: String) -> Self {
@@ -3346,6 +4027,8 @@ impl GremlinGraphResource {
             unique_key_policy: None,
             conflict_resolution_policy: None,
             analytical_storage_ttl: None,
+            restore_parameters: None,
+            create_mode: None,
         }
     }
 }
@@ -3659,6 +4342,23 @@ impl ListClusters {
         Self::default()
     }
 }
+#[doc = "The connection strings for the given mongo cluster."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ListConnectionStringsResult {
+    #[doc = "An array that contains the connection strings for a mongo cluster."]
+    #[serde(
+        rename = "connectionStrings",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub connection_strings: Vec<ConnectionString>,
+}
+impl ListConnectionStringsResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "List of managed Cassandra data centers and their properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListDataCenters {
@@ -3747,9 +4447,6 @@ impl LocationListResult {
 #[doc = "Cosmos DB location metadata"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LocationProperties {
-    #[doc = "The current status of location in Azure."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
     #[doc = "Flag indicating whether the location supports availability zones or not."]
     #[serde(rename = "supportsAvailabilityZone", default, skip_serializing_if = "Option::is_none")]
     pub supports_availability_zone: Option<bool>,
@@ -3764,10 +4461,73 @@ pub struct LocationProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub backup_storage_redundancies: Vec<BackupStorageRedundancy>,
+    #[doc = "Flag indicating whether the subscription have access in region for Non-Availability Zones."]
+    #[serde(
+        rename = "isSubscriptionRegionAccessAllowedForRegular",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub is_subscription_region_access_allowed_for_regular: Option<bool>,
+    #[doc = "Flag indicating whether the subscription have access in region for Availability Zones(Az)."]
+    #[serde(
+        rename = "isSubscriptionRegionAccessAllowedForAz",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub is_subscription_region_access_allowed_for_az: Option<bool>,
+    #[doc = "Enum to indicate current buildout status of the region."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<location_properties::Status>,
 }
 impl LocationProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+pub mod location_properties {
+    use super::*;
+    #[doc = "Enum to indicate current buildout status of the region."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Status")]
+    pub enum Status {
+        Uninitialized,
+        Initializing,
+        InternallyReady,
+        Online,
+        Deleting,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Status {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Status {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Status {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Uninitialized => serializer.serialize_unit_variant("Status", 0u32, "Uninitialized"),
+                Self::Initializing => serializer.serialize_unit_variant("Status", 1u32, "Initializing"),
+                Self::InternallyReady => serializer.serialize_unit_variant("Status", 2u32, "InternallyReady"),
+                Self::Online => serializer.serialize_unit_variant("Status", 3u32, "Online"),
+                Self::Deleting => serializer.serialize_unit_variant("Status", 4u32, "Deleting"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "The core properties of ARM resources."]
@@ -4025,6 +4785,27 @@ pub mod managed_service_identity {
         #[serde(rename = "SystemAssigned,UserAssigned")]
         SystemAssignedUserAssigned,
         None,
+    }
+}
+#[doc = "Materialized View definition for the container."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MaterializedViewDefinition {
+    #[doc = "An unique identifier for the source collection. This is a system generated property."]
+    #[serde(rename = "sourceCollectionRid", default, skip_serializing_if = "Option::is_none")]
+    pub source_collection_rid: Option<String>,
+    #[doc = "The name of the source container on which the Materialized View will be created."]
+    #[serde(rename = "sourceCollectionId")]
+    pub source_collection_id: String,
+    #[doc = "The definition should be an SQL query which would be used to fetch data from the source container to populate into the Materialized View container."]
+    pub definition: String,
+}
+impl MaterializedViewDefinition {
+    pub fn new(source_collection_id: String, definition: String) -> Self {
+        Self {
+            source_collection_rid: None,
+            source_collection_id,
+            definition,
+        }
     }
 }
 #[doc = "Resource for a regional service location."]
@@ -4293,6 +5074,248 @@ impl MetricValue {
         Self::default()
     }
 }
+#[doc = "Indicates the minimum allowed Tls version. The default is Tls 1.0, except for Cassandra and Mongo API's, which only work with Tls 1.2."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "MinimalTlsVersion")]
+pub enum MinimalTlsVersion {
+    Tls,
+    Tls11,
+    Tls12,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for MinimalTlsVersion {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for MinimalTlsVersion {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for MinimalTlsVersion {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Tls => serializer.serialize_unit_variant("MinimalTlsVersion", 0u32, "Tls"),
+            Self::Tls11 => serializer.serialize_unit_variant("MinimalTlsVersion", 1u32, "Tls11"),
+            Self::Tls12 => serializer.serialize_unit_variant("MinimalTlsVersion", 2u32, "Tls12"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Represents a mongo cluster resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MongoCluster {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    #[doc = "The properties of a mongo cluster."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MongoClusterProperties>,
+}
+impl MongoCluster {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self {
+            tracked_resource,
+            properties: None,
+        }
+    }
+}
+#[doc = "A list of mongo clusters."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MongoClusterListResult {
+    #[doc = "The list of mongo clusters"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<MongoCluster>,
+    #[doc = "The link used to get the next page of results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for MongoClusterListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl MongoClusterListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The properties of a mongo cluster."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MongoClusterProperties {
+    #[doc = "The mode to create a mongo cluster."]
+    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    pub create_mode: Option<mongo_cluster_properties::CreateMode>,
+    #[doc = "Parameters used for restore operations"]
+    #[serde(rename = "restoreParameters", default, skip_serializing_if = "Option::is_none")]
+    pub restore_parameters: Option<MongoClusterRestoreParameters>,
+    #[doc = "The administrator's login for the mongo cluster."]
+    #[serde(rename = "administratorLogin", default, skip_serializing_if = "Option::is_none")]
+    pub administrator_login: Option<String>,
+    #[doc = "The password of the administrator login."]
+    #[serde(rename = "administratorLoginPassword", default, skip_serializing_if = "Option::is_none")]
+    pub administrator_login_password: Option<String>,
+    #[doc = "The Mongo DB server version. Defaults to the latest available version if not specified."]
+    #[serde(rename = "serverVersion", default, skip_serializing_if = "Option::is_none")]
+    pub server_version: Option<String>,
+    #[doc = "The default mongo connection string for the cluster."]
+    #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
+    pub connection_string: Option<String>,
+    #[doc = "Earliest restore timestamp in UTC ISO8601 format."]
+    #[serde(rename = "earliestRestoreTime", default, skip_serializing_if = "Option::is_none")]
+    pub earliest_restore_time: Option<String>,
+    #[doc = "The provisioning state of the resource."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
+    #[doc = "The status of the resource at the time the operation was called."]
+    #[serde(rename = "clusterStatus", default, skip_serializing_if = "Option::is_none")]
+    pub cluster_status: Option<MongoClusterStatus>,
+    #[doc = "The list of node group specifications for the cluster. Must include one node group spec with kind = 'Shard'."]
+    #[serde(rename = "nodeGroupSpecs", default, skip_serializing_if = "Option::is_none")]
+    pub node_group_specs: Option<NodeGroupSpecList>,
+}
+impl MongoClusterProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod mongo_cluster_properties {
+    use super::*;
+    #[doc = "The mode to create a mongo cluster."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "CreateMode")]
+    pub enum CreateMode {
+        Default,
+        PointInTimeRestore,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for CreateMode {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for CreateMode {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for CreateMode {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Default => serializer.serialize_unit_variant("CreateMode", 0u32, "Default"),
+                Self::PointInTimeRestore => serializer.serialize_unit_variant("CreateMode", 1u32, "PointInTimeRestore"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for CreateMode {
+        fn default() -> Self {
+            Self::Default
+        }
+    }
+}
+#[doc = "Parameters used for restore operations"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MongoClusterRestoreParameters {
+    #[doc = "UTC point in time to restore a mongo cluster"]
+    #[serde(rename = "pointInTimeUTC", default, with = "azure_core::date::rfc3339::option")]
+    pub point_in_time_utc: Option<time::OffsetDateTime>,
+    #[doc = "Resource ID to locate the source cluster to restore"]
+    #[serde(rename = "sourceResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub source_resource_id: Option<String>,
+}
+impl MongoClusterRestoreParameters {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The status of the resource at the time the operation was called."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "MongoClusterStatus")]
+pub enum MongoClusterStatus {
+    Ready,
+    Provisioning,
+    Updating,
+    Starting,
+    Stopping,
+    Stopped,
+    Dropping,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for MongoClusterStatus {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for MongoClusterStatus {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for MongoClusterStatus {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Ready => serializer.serialize_unit_variant("MongoClusterStatus", 0u32, "Ready"),
+            Self::Provisioning => serializer.serialize_unit_variant("MongoClusterStatus", 1u32, "Provisioning"),
+            Self::Updating => serializer.serialize_unit_variant("MongoClusterStatus", 2u32, "Updating"),
+            Self::Starting => serializer.serialize_unit_variant("MongoClusterStatus", 3u32, "Starting"),
+            Self::Stopping => serializer.serialize_unit_variant("MongoClusterStatus", 4u32, "Stopping"),
+            Self::Stopped => serializer.serialize_unit_variant("MongoClusterStatus", 5u32, "Stopped"),
+            Self::Dropping => serializer.serialize_unit_variant("MongoClusterStatus", 6u32, "Dropping"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Represents a mongo cluster resource for updates."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MongoClusterUpdate {
+    #[doc = "The properties of a mongo cluster."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<MongoClusterProperties>,
+    #[doc = "Application-specific metadata in the form of key-value pairs."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl MongoClusterUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Parameters to create and update Cosmos DB MongoDB collection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MongoDbCollectionCreateUpdateParameters {
@@ -4390,6 +5413,12 @@ pub struct MongoDbCollectionResource {
     #[doc = "Analytical TTL."]
     #[serde(rename = "analyticalStorageTtl", default, skip_serializing_if = "Option::is_none")]
     pub analytical_storage_ttl: Option<i64>,
+    #[doc = "Parameters to indicate the information about the restore."]
+    #[serde(rename = "restoreParameters", default, skip_serializing_if = "Option::is_none")]
+    pub restore_parameters: Option<ResourceRestoreParameters>,
+    #[doc = "Enum to indicate the mode of account creation."]
+    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    pub create_mode: Option<CreateMode>,
 }
 impl MongoDbCollectionResource {
     pub fn new(id: String) -> Self {
@@ -4398,6 +5427,8 @@ impl MongoDbCollectionResource {
             shard_key: None,
             indexes: Vec::new(),
             analytical_storage_ttl: None,
+            restore_parameters: None,
+            create_mode: None,
         }
     }
 }
@@ -4485,10 +5516,20 @@ impl MongoDbDatabaseListResult {
 pub struct MongoDbDatabaseResource {
     #[doc = "Name of the Cosmos DB MongoDB database"]
     pub id: String,
+    #[doc = "Parameters to indicate the information about the restore."]
+    #[serde(rename = "restoreParameters", default, skip_serializing_if = "Option::is_none")]
+    pub restore_parameters: Option<ResourceRestoreParameters>,
+    #[doc = "Enum to indicate the mode of account creation."]
+    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    pub create_mode: Option<CreateMode>,
 }
 impl MongoDbDatabaseResource {
     pub fn new(id: String) -> Self {
-        Self { id }
+        Self {
+            id,
+            restore_parameters: None,
+            create_mode: None,
+        }
     }
 }
 #[doc = "Cosmos DB MongoDB collection index key"]
@@ -4711,6 +5752,77 @@ pub enum NetworkAclBypass {
     None,
     AzureServices,
 }
+#[doc = "The properties of the node group on a cluster."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NodeGroupProperties {
+    #[doc = "The resource sku for the node group. This defines the size of CPU and memory that is provisioned for each node. Example values: 'M30', 'M40'."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<String>,
+    #[doc = "The disk storage size for the node group in GB. Example values: 128, 256, 512, 1024."]
+    #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
+    pub disk_size_gb: Option<i64>,
+    #[doc = "Whether high availability is enabled on the node group."]
+    #[serde(rename = "enableHa", default, skip_serializing_if = "Option::is_none")]
+    pub enable_ha: Option<bool>,
+}
+impl NodeGroupProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Specification for a node group."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NodeGroupSpec {
+    #[serde(flatten)]
+    pub node_group_properties: NodeGroupProperties,
+    #[doc = "The kind of a node in the mongo cluster."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<NodeKind>,
+    #[doc = "The number of nodes in the node group."]
+    #[serde(rename = "nodeCount", default, skip_serializing_if = "Option::is_none")]
+    pub node_count: Option<i32>,
+}
+impl NodeGroupSpec {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub type NodeGroupSpecList = Vec<NodeGroupSpec>;
+#[doc = "The kind of a node in the mongo cluster."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "NodeKind")]
+pub enum NodeKind {
+    Shard,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for NodeKind {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for NodeKind {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for NodeKind {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Shard => serializer.serialize_unit_variant("NodeKind", 0u32, "Shard"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "A notebook workspace resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotebookWorkspace {
@@ -4859,6 +5971,7 @@ pub enum OperationType {
     Create,
     Replace,
     Delete,
+    Recreate,
     SystemOperation,
     #[serde(skip_deserializing)]
     UnknownValue(String),
@@ -4888,7 +6001,8 @@ impl Serialize for OperationType {
             Self::Create => serializer.serialize_unit_variant("OperationType", 0u32, "Create"),
             Self::Replace => serializer.serialize_unit_variant("OperationType", 1u32, "Replace"),
             Self::Delete => serializer.serialize_unit_variant("OperationType", 2u32, "Delete"),
-            Self::SystemOperation => serializer.serialize_unit_variant("OperationType", 3u32, "SystemOperation"),
+            Self::Recreate => serializer.serialize_unit_variant("OperationType", 3u32, "Recreate"),
+            Self::SystemOperation => serializer.serialize_unit_variant("OperationType", 4u32, "SystemOperation"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -5423,6 +6537,7 @@ impl ProxyResource {
 pub enum PublicNetworkAccess {
     Enabled,
     Disabled,
+    SecuredByPerimeter,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -5450,6 +6565,7 @@ impl Serialize for PublicNetworkAccess {
         match self {
             Self::Enabled => serializer.serialize_unit_variant("PublicNetworkAccess", 0u32, "Enabled"),
             Self::Disabled => serializer.serialize_unit_variant("PublicNetworkAccess", 1u32, "Disabled"),
+            Self::SecuredByPerimeter => serializer.serialize_unit_variant("PublicNetworkAccess", 2u32, "SecuredByPerimeter"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -5595,6 +6711,17 @@ pub struct Resource {
     pub type_: Option<String>,
 }
 impl Resource {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Parameters to indicate the information about the restore."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceRestoreParameters {
+    #[serde(flatten)]
+    pub restore_parameters_base: RestoreParametersBase,
+}
+impl ResourceRestoreParameters {
     pub fn new() -> Self {
         Self::default()
     }
@@ -6528,6 +7655,8 @@ impl RestorableTablesListResult {
 #[doc = "Parameters to indicate the information about the restore."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestoreParameters {
+    #[serde(flatten)]
+    pub restore_parameters_base: RestoreParametersBase,
     #[doc = "Describes the mode of the restore."]
     #[serde(rename = "restoreMode", default, skip_serializing_if = "Option::is_none")]
     pub restore_mode: Option<restore_parameters::RestoreMode>,
@@ -6561,6 +7690,9 @@ pub struct RestoreParameters {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub tables_to_restore: Vec<TableName>,
+    #[doc = "The source backup location for restore."]
+    #[serde(rename = "sourceBackupLocation", default, skip_serializing_if = "Option::is_none")]
+    pub source_backup_location: Option<String>,
 }
 impl RestoreParameters {
     pub fn new() -> Self {
@@ -6603,6 +7735,21 @@ pub mod restore_parameters {
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
+    }
+}
+#[doc = "Parameters to indicate the information about the restore."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct RestoreParametersBase {
+    #[doc = "The id of the restorable database account from which the restore has to be initiated. For example: /subscriptions/{subscriptionId}/providers/Microsoft.DocumentDB/locations/{location}/restorableDatabaseAccounts/{restorableDatabaseAccountName}"]
+    #[serde(rename = "restoreSource", default, skip_serializing_if = "Option::is_none")]
+    pub restore_source: Option<String>,
+    #[doc = "Time to which the account has to be restored (ISO-8601 format)."]
+    #[serde(rename = "restoreTimestampInUtc", default, with = "azure_core::date::rfc3339::option")]
+    pub restore_timestamp_in_utc: Option<time::OffsetDateTime>,
+}
+impl RestoreParametersBase {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Cosmos DB retrieve throughput parameters object"]
@@ -7076,6 +8223,15 @@ pub struct SqlContainerResource {
     #[doc = "Analytical TTL."]
     #[serde(rename = "analyticalStorageTtl", default, skip_serializing_if = "Option::is_none")]
     pub analytical_storage_ttl: Option<i64>,
+    #[doc = "Parameters to indicate the information about the restore."]
+    #[serde(rename = "restoreParameters", default, skip_serializing_if = "Option::is_none")]
+    pub restore_parameters: Option<ResourceRestoreParameters>,
+    #[doc = "Enum to indicate the mode of account creation."]
+    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    pub create_mode: Option<CreateMode>,
+    #[doc = "Materialized View definition for the container."]
+    #[serde(rename = "materializedViewDefinition", default, skip_serializing_if = "Option::is_none")]
+    pub materialized_view_definition: Option<MaterializedViewDefinition>,
 }
 impl SqlContainerResource {
     pub fn new(id: String) -> Self {
@@ -7088,6 +8244,9 @@ impl SqlContainerResource {
             conflict_resolution_policy: None,
             client_encryption_policy: None,
             analytical_storage_ttl: None,
+            restore_parameters: None,
+            create_mode: None,
+            materialized_view_definition: None,
         }
     }
 }
@@ -7201,10 +8360,20 @@ impl SqlDatabaseListResult {
 pub struct SqlDatabaseResource {
     #[doc = "Name of the Cosmos DB SQL database"]
     pub id: String,
+    #[doc = "Parameters to indicate the information about the restore."]
+    #[serde(rename = "restoreParameters", default, skip_serializing_if = "Option::is_none")]
+    pub restore_parameters: Option<ResourceRestoreParameters>,
+    #[doc = "Enum to indicate the mode of account creation."]
+    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    pub create_mode: Option<CreateMode>,
 }
 impl SqlDatabaseResource {
     pub fn new(id: String) -> Self {
-        Self { id }
+        Self {
+            id,
+            restore_parameters: None,
+            create_mode: None,
+        }
     }
 }
 #[doc = "Resource for a regional service location."]
@@ -7863,10 +9032,20 @@ pub type TableName = String;
 pub struct TableResource {
     #[doc = "Name of the Cosmos DB table"]
     pub id: String,
+    #[doc = "Parameters to indicate the information about the restore."]
+    #[serde(rename = "restoreParameters", default, skip_serializing_if = "Option::is_none")]
+    pub restore_parameters: Option<ResourceRestoreParameters>,
+    #[doc = "Enum to indicate the mode of account creation."]
+    #[serde(rename = "createMode", default, skip_serializing_if = "Option::is_none")]
+    pub create_mode: Option<CreateMode>,
 }
 impl TableResource {
     pub fn new(id: String) -> Self {
-        Self { id }
+        Self {
+            id,
+            restore_parameters: None,
+            create_mode: None,
+        }
     }
 }
 #[doc = "Tags are a list of key-value pairs that describe the resource. These tags can be used in viewing and grouping this resource (across resource groups). A maximum of 15 tags can be provided for a resource. Each tag must have a key no greater than 128 characters and value no greater than 256 characters. For example, the default experience for a template type is set with \"defaultExperience\": \"Cassandra\". Current \"defaultExperience\" values also include \"Table\", \"Graph\", \"DocumentDB\", and \"MongoDB\"."]
@@ -7932,6 +9111,12 @@ pub struct ThroughputSettingsResource {
     #[doc = "The throughput replace is pending"]
     #[serde(rename = "offerReplacePending", default, skip_serializing_if = "Option::is_none")]
     pub offer_replace_pending: Option<String>,
+    #[doc = "The offer throughput value to instantly scale up without triggering splits"]
+    #[serde(rename = "instantMaximumThroughput", default, skip_serializing_if = "Option::is_none")]
+    pub instant_maximum_throughput: Option<String>,
+    #[doc = "The maximum throughput value or the maximum maxThroughput value (for autoscale) that can be specified"]
+    #[serde(rename = "softAllowedMaximumThroughput", default, skip_serializing_if = "Option::is_none")]
+    pub soft_allowed_maximum_throughput: Option<String>,
 }
 impl ThroughputSettingsResource {
     pub fn new() -> Self {
@@ -7963,6 +9148,26 @@ pub struct ThroughputSettingsUpdateProperties {
 impl ThroughputSettingsUpdateProperties {
     pub fn new(resource: ThroughputSettingsResource) -> Self {
         Self { resource }
+    }
+}
+#[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TrackedResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+    #[doc = "The geo-location where the resource lives"]
+    pub location: String,
+}
+impl TrackedResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            resource: Resource::default(),
+            tags: None,
+            location,
+        }
     }
 }
 #[doc = "The unique key on that enforces uniqueness constraint on documents in the collection in the Azure Cosmos DB service."]

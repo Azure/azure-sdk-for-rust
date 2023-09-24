@@ -19,7 +19,7 @@ async fn put_append_blob() {
     let container_name: &'static str = "rust-upload-test";
     let _data = b"abcdef";
 
-    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
     let blob_service = BlobServiceClient::new(account, storage_credentials);
     let container = blob_service.container_client(container_name);
     let blob = container.blob_client(blob_name);

@@ -16,7 +16,7 @@ async fn main() -> azure_core::Result<()> {
     let access_key = std::env::var("STORAGE_ACCESS_KEY").expect("missing STORAGE_ACCESS_KEY");
     let queue_name = std::env::var("STORAGE_QUEUE_NAME").expect("missing STORAGE_QUEUE_NAME");
 
-    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
     let queue_service = QueueServiceClient::new(account, storage_credentials);
     let queue = queue_service.queue_client(queue_name);
 
