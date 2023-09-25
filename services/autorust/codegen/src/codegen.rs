@@ -16,7 +16,7 @@ use syn::{
     punctuated::Punctuated,
     token::{Gt, Impl, Lt},
     AngleBracketedGenericArguments, GenericArgument, Path, PathArguments, PathSegment, TraitBound, TraitBoundModifier, Type, TypeImplTrait,
-    TypeParamBound, TypePath,
+    TypeParamBound, TypePath, TypeReference,
 };
 
 /// code generation context
@@ -130,6 +130,8 @@ pub fn parse_query_params(uri: &str) -> Result<HashSet<String>> {
 
 #[derive(Clone)]
 pub struct TypeNameCode {
+    /// Whether or not to pass a type as a reference.
+    is_ref: bool,
     type_path: TypePath,
     force_value: bool,
     optional: bool,
@@ -166,71 +168,102 @@ impl TypeNameCode {
         Ok(type_name_code)
     }
 
+    pub fn set_is_ref(&mut self, is_ref: bool) {
+        self.is_ref = is_ref;
+    }
+
     pub fn is_string(&self) -> bool {
         self.type_name == Some(TypeName::String)
     }
+
+    pub fn is_ref(&self) -> bool {
+        self.is_ref
+    }
+
     pub fn is_bytes(&self) -> bool {
         self.type_name == Some(TypeName::Bytes)
     }
+
     pub fn set_as_bytes(&mut self) {
         self.force_value = false;
         self.type_name = Some(TypeName::Bytes);
         self.type_path = tp_bytes();
     }
+
     pub fn is_value(&self) -> bool {
         self.type_name == Some(TypeName::Value)
     }
+
     pub fn is_date_time(&self) -> bool {
         self.type_name == Some(TypeName::DateTime)
     }
+
     pub fn is_date_time_rfc1123(&self) -> bool {
         self.type_name == Some(TypeName::DateTimeRfc1123)
     }
+
     pub fn is_vec(&self) -> bool {
         self.vec_count > 0 && !self.force_value
     }
+
     /// Forces the type to be `serde_json::Value`
     pub fn force_value(mut self, force_value: bool) -> Self {
         self.force_value = force_value;
         self
     }
+
     pub fn optional(mut self, optional: bool) -> Self {
         self.optional = optional;
         self
     }
+
     pub fn union(&mut self, union: bool) {
         self.union = union;
     }
+
     pub fn incr_vec_count(mut self) -> Self {
         self.vec_count += 1;
         self
     }
+
     pub fn impl_into(mut self, impl_into: bool) -> Self {
         self.impl_into = impl_into;
         self
     }
+
     pub fn has_impl_into(&self) -> bool {
         self.allow_impl_into && self.impl_into
     }
+
     fn allow_impl_into(mut self, allow_impl_into: bool) -> Self {
         self.allow_impl_into = allow_impl_into;
         self
     }
+
     pub fn boxed(mut self, boxed: bool) -> Self {
         self.boxed = boxed;
         self
     }
+
     pub fn qualify_models(mut self, qualify_models: bool) -> Self {
         self.qualify_models = qualify_models;
         self
     }
+
     fn allow_qualify_models(mut self, allow_qualify_models: bool) -> Self {
         self.allow_qualify_models = allow_qualify_models;
         self
     }
 
+    fn type_path(&self) -> TypePath {
+        if self.is_string() && self.is_ref() {
+            return tp_str();
+        }
+        self.type_path.clone()
+    }
+
     fn to_type(&self) -> Type {
-        let mut tp = self.type_path.clone();
+        let mut tp = self.type_path();
         if self.union {
             if let Some(last) = tp.path.segments.last_mut() {
                 last.ident = Ident::new(&format!("{}Union", last.ident), last.ident.span());
@@ -246,6 +279,15 @@ impl TypeNameCode {
         }
         if self.force_value {
             tp = Type::from(tp_json_value())
+        }
+        if self.is_ref() {
+            let tr = TypeReference {
+                and_token: Default::default(),
+                lifetime: Default::default(),
+                mutability: Default::default(),
+                elem: Box::new(tp),
+            };
+            tp = Type::from(tr);
         }
         if self.boxed {
             tp = generic_type(tp_box(), tp);
@@ -277,6 +319,7 @@ impl TypeNameCode {
     pub fn is_optional(&self) -> bool {
         self.optional
     }
+
     pub fn is_union(&self) -> bool {
         self.union
     }
@@ -315,6 +358,7 @@ fn generic_type(mut wrap_tp: TypePath, tp: Type) -> Type {
 impl From<TypePath> for TypeNameCode {
     fn from(type_path: TypePath) -> Self {
         Self {
+            is_ref: false,
             type_path,
             force_value: false,
             optional: false,
@@ -434,6 +478,10 @@ fn tp_box() -> TypePath {
     parse_type_path("Box").unwrap() // std::boxed::Box
 }
 
+fn tp_str() -> TypePath {
+    parse_type_path("str").unwrap() // std::str
+}
+
 fn tp_date_time() -> TypePath {
     parse_type_path("time::OffsetDateTime").unwrap()
 }
@@ -472,6 +520,14 @@ mod tests {
     fn test_type_path_code() -> Result<()> {
         let tp = TypeNameCode::try_from("farm::Goat")?;
         assert_eq!("farm :: Goat", tp.to_string());
+        Ok(())
+    }
+
+    #[test]
+    fn test_is_ref() -> Result<()> {
+        let mut tp = TypeNameCode::try_from("farm::Goat")?;
+        tp.set_is_ref(true);
+        assert_eq!("& farm :: Goat", tp.to_string());
         Ok(())
     }
 
