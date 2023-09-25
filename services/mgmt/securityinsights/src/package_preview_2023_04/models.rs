@@ -703,6 +703,18 @@ impl AlertRule {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AlertRuleUnion {
+    Fusion(FusionAlertRule),
+    #[serde(rename = "MLBehaviorAnalytics")]
+    MlBehaviorAnalytics(MlBehaviorAnalyticsAlertRule),
+    MicrosoftSecurityIncidentCreation(MicrosoftSecurityIncidentCreationAlertRule),
+    #[serde(rename = "NRT")]
+    Nrt(NrtAlertRule),
+    Scheduled(ScheduledAlertRule),
+    ThreatIntelligence(ThreatIntelligenceAlertRule),
+}
 #[doc = "The kind of the alert rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "AlertRuleKindEnum")]
@@ -767,6 +779,18 @@ impl AlertRuleTemplate {
             kind,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AlertRuleTemplateUnion {
+    Fusion(FusionAlertRuleTemplate),
+    #[serde(rename = "MLBehaviorAnalytics")]
+    MlBehaviorAnalytics(MlBehaviorAnalyticsAlertRuleTemplate),
+    MicrosoftSecurityIncidentCreation(MicrosoftSecurityIncidentCreationAlertRuleTemplate),
+    #[serde(rename = "NRT")]
+    Nrt(NrtAlertRuleTemplate),
+    Scheduled(ScheduledAlertRuleTemplate),
+    ThreatIntelligence(ThreatIntelligenceAlertRuleTemplate),
 }
 #[doc = "alert rule template data sources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -894,7 +918,7 @@ pub struct AlertRuleTemplatesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of alert rule templates."]
-    pub value: Vec<AlertRuleTemplate>,
+    pub value: Vec<AlertRuleTemplateUnion>,
 }
 impl azure_core::Continuable for AlertRuleTemplatesList {
     type Continuation = String;
@@ -903,7 +927,7 @@ impl azure_core::Continuable for AlertRuleTemplatesList {
     }
 }
 impl AlertRuleTemplatesList {
-    pub fn new(value: Vec<AlertRuleTemplate>) -> Self {
+    pub fn new(value: Vec<AlertRuleTemplateUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -922,7 +946,7 @@ pub struct AlertRulesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of alert rules."]
-    pub value: Vec<AlertRule>,
+    pub value: Vec<AlertRuleUnion>,
 }
 impl azure_core::Continuable for AlertRulesList {
     type Continuation = String;
@@ -931,7 +955,7 @@ impl azure_core::Continuable for AlertRulesList {
     }
 }
 impl AlertRulesList {
-    pub fn new(value: Vec<AlertRule>) -> Self {
+    pub fn new(value: Vec<AlertRuleUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -1359,6 +1383,13 @@ impl AutomationRuleAction {
         Self { order, action_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "actionType")]
+pub enum AutomationRuleActionUnion {
+    AddIncidentTask(AutomationRuleAddIncidentTaskAction),
+    ModifyProperties(AutomationRuleModifyPropertiesAction),
+    RunPlaybook(AutomationRuleRunPlaybookAction),
+}
 #[doc = "Describes an automation rule action to add a task to an incident"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationRuleAddIncidentTaskAction {
@@ -1385,7 +1416,7 @@ pub struct AutomationRuleBooleanCondition {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub inner_conditions: Vec<AutomationRuleCondition>,
+    pub inner_conditions: Vec<AutomationRuleConditionUnion>,
 }
 impl AutomationRuleBooleanCondition {
     pub fn new() -> Self {
@@ -1439,6 +1470,15 @@ impl AutomationRuleCondition {
         Self { condition_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "conditionType")]
+pub enum AutomationRuleConditionUnion {
+    Boolean(BooleanConditionProperties),
+    PropertyArrayChanged(PropertyArrayChangedConditionProperties),
+    PropertyArray(PropertyArrayConditionProperties),
+    PropertyChanged(PropertyChangedConditionProperties),
+    Property(PropertyConditionProperties),
+}
 #[doc = "Describes an automation rule action to modify an object's properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationRuleModifyPropertiesAction {
@@ -1467,7 +1507,7 @@ pub struct AutomationRuleProperties {
     #[serde(rename = "triggeringLogic")]
     pub triggering_logic: AutomationRuleTriggeringLogic,
     #[doc = "The actions to execute when the automation rule is triggered."]
-    pub actions: Vec<AutomationRuleAction>,
+    pub actions: Vec<AutomationRuleActionUnion>,
     #[doc = "The last time the automation rule was updated."]
     #[serde(rename = "lastModifiedTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time_utc: Option<time::OffsetDateTime>,
@@ -1486,7 +1526,7 @@ impl AutomationRuleProperties {
         display_name: String,
         order: i32,
         triggering_logic: AutomationRuleTriggeringLogic,
-        actions: Vec<AutomationRuleAction>,
+        actions: Vec<AutomationRuleActionUnion>,
     ) -> Self {
         Self {
             display_name,
@@ -1684,7 +1724,7 @@ pub struct AutomationRulePropertyArrayValuesCondition {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub item_conditions: Vec<AutomationRuleCondition>,
+    pub item_conditions: Vec<AutomationRuleConditionUnion>,
 }
 impl AutomationRulePropertyArrayValuesCondition {
     pub fn new() -> Self {
@@ -2178,7 +2218,7 @@ pub struct AutomationRuleTriggeringLogic {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub conditions: Vec<AutomationRuleCondition>,
+    pub conditions: Vec<AutomationRuleConditionUnion>,
 }
 impl AutomationRuleTriggeringLogic {
     pub fn new(is_enabled: bool, triggers_on: TriggersOn, triggers_when: TriggersWhen) -> Self {
@@ -2467,7 +2507,7 @@ pub mod bookmark_expand_response {
             deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
-        pub entities: Vec<Entity>,
+        pub entities: Vec<EntityUnion>,
         #[doc = "Array of expansion result connected entities"]
         #[serde(
             default,
@@ -3294,6 +3334,11 @@ impl CustomEntityQuery {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum CustomEntityQueryUnion {
+    Activity(ActivityCustomEntityQuery),
+}
 #[doc = "The kind of the entity query that supports put request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "CustomEntityQueryKind")]
@@ -3370,6 +3415,37 @@ impl DataConnector {
             kind,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum DataConnectorUnion {
+    AzureActiveDirectory(AadDataConnector),
+    AzureAdvancedThreatProtection(AatpDataConnector),
+    AzureSecurityCenter(AscDataConnector),
+    AmazonWebServicesCloudTrail(AwsCloudTrailDataConnector),
+    AmazonWebServicesS3(AwsS3DataConnector),
+    #[serde(rename = "APIPolling")]
+    ApiPolling(CodelessApiPollingDataConnector),
+    #[serde(rename = "GenericUI")]
+    GenericUi(CodelessUiDataConnector),
+    Dynamics365(Dynamics365DataConnector),
+    #[serde(rename = "IOT")]
+    Iot(IoTDataConnector),
+    MicrosoftCloudAppSecurity(McasDataConnector),
+    MicrosoftDefenderAdvancedThreatProtection(MdatpDataConnector),
+    MicrosoftThreatIntelligence(MstiDataConnector),
+    MicrosoftThreatProtection(MtpDataConnector),
+    MicrosoftPurviewInformationProtection(MicrosoftPurviewInformationProtectionDataConnector),
+    Office365Project(Office365ProjectDataConnector),
+    #[serde(rename = "OfficeATP")]
+    OfficeAtp(OfficeAtpDataConnector),
+    Office365(OfficeDataConnector),
+    #[serde(rename = "OfficeIRM")]
+    OfficeIrm(OfficeIrmDataConnector),
+    #[serde(rename = "OfficePowerBI")]
+    OfficePowerBi(OfficePowerBiDataConnector),
+    ThreatIntelligence(TiDataConnector),
+    ThreatIntelligenceTaxii(TiTaxiiDataConnector),
 }
 #[doc = "Describes the state of user's authorization for a connector kind."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3686,7 +3762,7 @@ pub struct DataConnectorList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of data connectors."]
-    pub value: Vec<DataConnector>,
+    pub value: Vec<DataConnectorUnion>,
 }
 impl azure_core::Continuable for DataConnectorList {
     type Continuation = String;
@@ -3695,7 +3771,7 @@ impl azure_core::Continuable for DataConnectorList {
     }
 }
 impl DataConnectorList {
-    pub fn new(value: Vec<DataConnector>) -> Self {
+    pub fn new(value: Vec<DataConnectorUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -3748,6 +3824,32 @@ impl DataConnectorsCheckRequirements {
     pub fn new(kind: DataConnectorKind) -> Self {
         Self { kind }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum DataConnectorsCheckRequirementsUnion {
+    AzureActiveDirectory(AadCheckRequirements),
+    AzureAdvancedThreatProtection(AatpCheckRequirements),
+    AzureSecurityCenter(AscCheckRequirements),
+    AmazonWebServicesCloudTrail(AwsCloudTrailCheckRequirements),
+    AmazonWebServicesS3(AwsS3CheckRequirements),
+    Dynamics365(Dynamics365CheckRequirements),
+    #[serde(rename = "IOT")]
+    Iot(IoTCheckRequirements),
+    MicrosoftCloudAppSecurity(McasCheckRequirements),
+    MicrosoftDefenderAdvancedThreatProtection(MdatpCheckRequirements),
+    MicrosoftThreatIntelligence(MstiCheckRequirements),
+    MicrosoftPurviewInformationProtection(MicrosoftPurviewInformationProtectionCheckRequirements),
+    MicrosoftThreatProtection(MtpCheckRequirements),
+    Office365Project(Office365ProjectCheckRequirements),
+    #[serde(rename = "OfficeATP")]
+    OfficeAtp(OfficeAtpCheckRequirements),
+    #[serde(rename = "OfficeIRM")]
+    OfficeIrm(OfficeIrmCheckRequirements),
+    #[serde(rename = "OfficePowerBI")]
+    OfficePowerBi(OfficePowerBiCheckRequirements),
+    ThreatIntelligence(TiCheckRequirements),
+    ThreatIntelligenceTaxii(TiTaxiiCheckRequirements),
 }
 #[doc = "The data type definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -4223,6 +4325,12 @@ impl Entity {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EntityUnion {
+    Bookmark(HuntingBookmark),
+    SecurityAlert(SecurityAlert),
+}
 #[doc = "Settings with single toggle."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EntityAnalytics {
@@ -4331,7 +4439,7 @@ pub mod entity_expand_response {
             deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
-        pub entities: Vec<Entity>,
+        pub entities: Vec<EntityUnion>,
         #[doc = "Array of edges that connects the entity to the list of entities."]
         #[serde(
             default,
@@ -4619,7 +4727,7 @@ pub struct EntityList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of entities."]
-    pub value: Vec<Entity>,
+    pub value: Vec<EntityUnion>,
 }
 impl azure_core::Continuable for EntityList {
     type Continuation = String;
@@ -4628,7 +4736,7 @@ impl azure_core::Continuable for EntityList {
     }
 }
 impl EntityList {
-    pub fn new(value: Vec<Entity>) -> Self {
+    pub fn new(value: Vec<EntityUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -4801,6 +4909,12 @@ impl EntityQuery {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EntityQueryUnion {
+    Activity(ActivityEntityQuery),
+    Expansion(ExpansionEntityQuery),
+}
 #[doc = "An abstract Query item for entity"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EntityQueryItem {
@@ -4825,6 +4939,11 @@ impl EntityQueryItem {
             kind,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EntityQueryItemUnion {
+    Insight(InsightQueryItem),
 }
 #[doc = "An properties abstract Query item for entity"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -4903,7 +5022,7 @@ pub struct EntityQueryList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of entity queries."]
-    pub value: Vec<EntityQuery>,
+    pub value: Vec<EntityQueryUnion>,
 }
 impl azure_core::Continuable for EntityQueryList {
     type Continuation = String;
@@ -4912,7 +5031,7 @@ impl azure_core::Continuable for EntityQueryList {
     }
 }
 impl EntityQueryList {
-    pub fn new(value: Vec<EntityQuery>) -> Self {
+    pub fn new(value: Vec<EntityQueryUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -4931,6 +5050,11 @@ impl EntityQueryTemplate {
             kind,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EntityQueryTemplateUnion {
+    Activity(ActivityEntityQueryTemplate),
 }
 #[doc = "The kind of the entity query template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -4974,7 +5098,7 @@ pub struct EntityQueryTemplateList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of entity query templates."]
-    pub value: Vec<EntityQueryTemplate>,
+    pub value: Vec<EntityQueryTemplateUnion>,
 }
 impl azure_core::Continuable for EntityQueryTemplateList {
     type Continuation = String;
@@ -4983,7 +5107,7 @@ impl azure_core::Continuable for EntityQueryTemplateList {
     }
 }
 impl EntityQueryTemplateList {
-    pub fn new(value: Vec<EntityQueryTemplate>) -> Self {
+    pub fn new(value: Vec<EntityQueryTemplateUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -4997,6 +5121,14 @@ impl EntityTimelineItem {
     pub fn new(kind: EntityTimelineKind) -> Self {
         Self { kind }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EntityTimelineItemUnion {
+    Activity(ActivityTimelineItem),
+    Anomaly(AnomalyTimelineItem),
+    Bookmark(BookmarkTimelineItem),
+    SecurityAlert(SecurityAlertTimelineItem),
 }
 #[doc = "The entity query kind"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -5081,7 +5213,7 @@ pub struct EntityTimelineResponse {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<EntityTimelineItem>,
+    pub value: Vec<EntityTimelineItemUnion>,
 }
 impl EntityTimelineResponse {
     pub fn new() -> Self {
@@ -6107,7 +6239,7 @@ pub struct GetQueriesResponse {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<EntityQueryItem>,
+    pub value: Vec<EntityQueryItemUnion>,
 }
 impl GetQueriesResponse {
     pub fn new() -> Self {
@@ -6920,7 +7052,7 @@ pub struct IncidentEntitiesResponse {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub entities: Vec<Entity>,
+    pub entities: Vec<EntityUnion>,
     #[doc = "The metadata from the incident related entities results."]
     #[serde(
         rename = "metaData",
@@ -10726,6 +10858,11 @@ impl SecurityMlAnalyticsSetting {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum SecurityMlAnalyticsSettingUnion {
+    Anomaly(AnomalySecurityMlAnalyticsSettings),
+}
 #[doc = "security ml analytics settings data sources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityMlAnalyticsSettingsDataSource {
@@ -10788,7 +10925,7 @@ pub struct SecurityMlAnalyticsSettingsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of SecurityMLAnalyticsSettings"]
-    pub value: Vec<SecurityMlAnalyticsSetting>,
+    pub value: Vec<SecurityMlAnalyticsSettingUnion>,
 }
 impl azure_core::Continuable for SecurityMlAnalyticsSettingsList {
     type Continuation = String;
@@ -10797,7 +10934,7 @@ impl azure_core::Continuable for SecurityMlAnalyticsSettingsList {
     }
 }
 impl SecurityMlAnalyticsSettingsList {
-    pub fn new(value: Vec<SecurityMlAnalyticsSetting>) -> Self {
+    pub fn new(value: Vec<SecurityMlAnalyticsSettingUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -10855,10 +10992,10 @@ impl SentinelOnboardingStatesList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SettingList {
     #[doc = "Array of settings."]
-    pub value: Vec<Settings>,
+    pub value: Vec<SettingsUnion>,
 }
 impl SettingList {
-    pub fn new(value: Vec<Settings>) -> Self {
+    pub fn new(value: Vec<SettingsUnion>) -> Self {
         Self { value }
     }
 }
@@ -10921,6 +11058,14 @@ pub mod settings {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum SettingsUnion {
+    Anomalies(Anomalies),
+    EntityAnalytics(EntityAnalytics),
+    EyesOn(EyesOn),
+    Ueba(Ueba),
 }
 #[doc = "Represents a SourceControl in Azure Security Insights."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -11550,6 +11695,12 @@ impl ThreatIntelligenceInformation {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ThreatIntelligenceInformationUnion {
+    #[serde(rename = "indicator")]
+    Indicator(ThreatIntelligenceIndicatorModel),
+}
 #[doc = "List of all the threat intelligence information objects."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreatIntelligenceInformationList {
@@ -11557,7 +11708,7 @@ pub struct ThreatIntelligenceInformationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of threat intelligence information objects."]
-    pub value: Vec<ThreatIntelligenceInformation>,
+    pub value: Vec<ThreatIntelligenceInformationUnion>,
 }
 impl azure_core::Continuable for ThreatIntelligenceInformationList {
     type Continuation = String;
@@ -11566,7 +11717,7 @@ impl azure_core::Continuable for ThreatIntelligenceInformationList {
     }
 }
 impl ThreatIntelligenceInformationList {
-    pub fn new(value: Vec<ThreatIntelligenceInformation>) -> Self {
+    pub fn new(value: Vec<ThreatIntelligenceInformationUnion>) -> Self {
         Self { next_link: None, value }
     }
 }

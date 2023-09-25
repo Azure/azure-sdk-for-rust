@@ -294,6 +294,9 @@ impl Action {
         Self { type_, name }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ActionUnion {}
 #[doc = "Model that represents the an action and its status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionStatus {
@@ -331,10 +334,10 @@ pub struct Branch {
     #[doc = "String of the branch name."]
     pub name: String,
     #[doc = "List of actions."]
-    pub actions: Vec<Action>,
+    pub actions: Vec<ActionUnion>,
 }
 impl Branch {
-    pub fn new(name: String, actions: Vec<Action>) -> Self {
+    pub fn new(name: String, actions: Vec<ActionUnion>) -> Self {
         Self { name, actions }
     }
 }
@@ -900,6 +903,9 @@ pub mod filter {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum FilterUnion {}
 #[doc = "The identity of a resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceIdentity {
@@ -948,7 +954,7 @@ pub struct Selector {
     pub targets: Vec<TargetReference>,
     #[doc = "Model that represents available filter types that can be applied to a targets list."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub filter: Option<Filter>,
+    pub filter: Option<FilterUnion>,
 }
 impl Selector {
     pub fn new(type_: selector::Type, id: String, targets: Vec<TargetReference>) -> Self {

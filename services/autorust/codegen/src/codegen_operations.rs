@@ -454,7 +454,7 @@ impl ToTokens for SetRequestParamsCode {
                         })
                     };
                     if let Some(query_body) = query_body {
-                        if !param.optional() || is_vec {
+                        if !param.is_optional() || is_vec {
                             tokens.extend(quote! {
                                 let #param_name_var = &this.#param_name_var;
                                 #query_body
@@ -471,7 +471,7 @@ impl ToTokens for SetRequestParamsCode {
                 ParamKind::Header => {
                     // always use lowercase header names
                     let header_name = param_name.to_lowercase();
-                    if !param.optional() || is_vec {
+                    if !param.is_optional() || is_vec {
                         if param.is_string() {
                             tokens.extend(quote! {
                                 req.insert_header(#header_name, &this.#param_name_var);
@@ -505,7 +505,7 @@ impl ToTokens for SetRequestParamsCode {
                         quote! {}
                     };
 
-                    if !param.optional() || is_vec {
+                    if !param.is_optional() || is_vec {
                         tokens.extend(quote! {
                             #set_content_type
                             let req_body = azure_core::to_json(&this.#param_name_var)?;
@@ -546,7 +546,7 @@ impl ToTokens for SetRequestParamsCode {
 
 // Create code for the web operation
 fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<OperationCode> {
-    let parameters = &FunctionParams::new(operation)?;
+    let parameters = &FunctionParams::new(cg, operation)?;
 
     let verb = operation.0.verb.clone();
     let auth = AuthCode {};
@@ -574,7 +574,7 @@ fn create_operation_code(cg: &CodeGen, operation: &WebOperationGen) -> Result<Op
     let client_function_code = ClientFunctionCode::new(operation, parameters, in_operation_group)?;
     let request_builder_struct_code = RequestBuilderStructCode::new(parameters, in_operation_group, lro, lro_options.clone());
     let request_builder_setters_code = RequestBuilderSettersCode::new(parameters);
-    let response_code = ResponseCode::new(operation, produces)?;
+    let response_code = ResponseCode::new(cg, operation, produces)?;
     let request_builder_send_code = RequestBuilderSendCode::new(new_request_code, request_builder, response_code.clone())?;
     let request_builder_intofuture_code = RequestBuilderIntoFutureCode::new(response_code.clone(), lro, lro_options)?;
 
@@ -782,14 +782,14 @@ struct StatusResponseCode {
 }
 
 impl ResponseCode {
-    fn new(operation: &WebOperationGen, produces: String) -> Result<Self> {
+    fn new(cg: &CodeGen, operation: &WebOperationGen, produces: String) -> Result<Self> {
         let success_responses = operation.success_responses();
         let status_responses = success_responses
             .iter()
             .map(|(status_code, rsp)| {
                 Ok(StatusResponseCode {
                     status_code_name: get_status_code_ident(status_code)?,
-                    response_type: create_response_type(rsp)?,
+                    response_type: create_response_type(cg, rsp)?,
                 })
             })
             .collect::<Result<Vec<_>>>()?;
@@ -1368,8 +1368,8 @@ impl FunctionParam {
     fn is_vec(&self) -> bool {
         self.type_name.is_vec()
     }
-    fn optional(&self) -> bool {
-        self.type_name.optional
+    fn is_optional(&self) -> bool {
+        self.type_name.is_optional()
     }
     fn is_string(&self) -> bool {
         self.type_name.is_string()
@@ -1383,7 +1383,7 @@ struct FunctionParams {
     has_x_ms_version: bool,
 }
 impl FunctionParams {
-    fn new(operation: &WebOperationGen) -> Result<Self> {
+    fn new(cg: &CodeGen, operation: &WebOperationGen) -> Result<Self> {
         let parameters = operation.0.parameters();
         let has_api_version = parameters.iter().any(|p| p.name() == API_VERSION);
         let has_x_ms_version = parameters.iter().any(|p| p.name() == X_MS_VERSION);
@@ -1397,9 +1397,10 @@ impl FunctionParams {
             let name = param.name().to_owned();
             let description = param.description().clone();
             let variable_name = name.to_snake_case_ident()?;
-            let type_name = TypeNameCode::new(&param.type_name()?)?
+            let mut type_name = TypeNameCode::new(&param.type_name()?)?
                 .qualify_models(true)
                 .optional(!param.required());
+            cg.set_if_union_type(&mut type_name);
             let kind = ParamKind::from(param.type_());
             let collection_format = param.collection_format().clone();
             params.push(FunctionParam {
@@ -1422,10 +1423,10 @@ impl FunctionParams {
         self.params.iter().collect()
     }
     fn required_params(&self) -> Vec<&FunctionParam> {
-        self.params.iter().filter(|p| !p.type_name.optional).collect()
+        self.params.iter().filter(|p| !p.type_name.is_optional()).collect()
     }
     fn optional_params(&self) -> Vec<&FunctionParam> {
-        self.params.iter().filter(|p| p.type_name.optional).collect()
+        self.params.iter().filter(|p| p.type_name.is_optional()).collect()
     }
     #[allow(dead_code)]
     fn params_of_kind(&self, kind: &ParamKind) -> Vec<&FunctionParam> {
@@ -1755,11 +1756,11 @@ impl ToTokens for RequestBuilderSettersCode {
     }
 }
 
-pub fn create_response_type(rsp: &Response) -> Result<Option<TypeNameCode>> {
+pub fn create_response_type(cg: &CodeGen, rsp: &Response) -> Result<Option<TypeNameCode>> {
     if let Some(schema) = &rsp.schema {
-        Ok(Some(
-            TypeNameCode::new(&get_type_name_for_schema_ref(schema)?)?.qualify_models(true),
-        ))
+        let mut type_name = TypeNameCode::new(&get_type_name_for_schema_ref(schema)?)?.qualify_models(true);
+        cg.set_if_union_type(&mut type_name);
+        Ok(Some(type_name))
     } else {
         Ok(None)
     }

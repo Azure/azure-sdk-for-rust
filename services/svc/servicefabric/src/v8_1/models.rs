@@ -1141,10 +1141,10 @@ pub struct ApplicationScopedVolume {
     pub volume_reference: VolumeReference,
     #[doc = "Describes parameters for creating application-scoped volumes."]
     #[serde(rename = "creationParameters")]
-    pub creation_parameters: ApplicationScopedVolumeCreationParameters,
+    pub creation_parameters: ApplicationScopedVolumeCreationParametersUnion,
 }
 impl ApplicationScopedVolume {
-    pub fn new(volume_reference: VolumeReference, creation_parameters: ApplicationScopedVolumeCreationParameters) -> Self {
+    pub fn new(volume_reference: VolumeReference, creation_parameters: ApplicationScopedVolumeCreationParametersUnion) -> Self {
         Self {
             volume_reference,
             creation_parameters,
@@ -1164,6 +1164,11 @@ impl ApplicationScopedVolumeCreationParameters {
     pub fn new(kind: ApplicationScopedVolumeKind) -> Self {
         Self { kind, description: None }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ApplicationScopedVolumeCreationParametersUnion {
+    ServiceFabricVolumeDisk(ApplicationScopedVolumeCreationParametersServiceFabricVolumeDisk),
 }
 #[doc = "Describes parameters for creating application-scoped volumes provided by Service Fabric Volume Disks"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1902,6 +1907,11 @@ impl AutoScalingMechanism {
         Self { kind }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AutoScalingMechanismUnion {
+    AddRemoveReplica(AddRemoveReplicaScalingMechanism),
+}
 #[doc = "Enumerates the mechanisms for auto scaling."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "AutoScalingMechanismKind")]
@@ -1948,6 +1958,11 @@ impl AutoScalingMetric {
         Self { kind }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AutoScalingMetricUnion {
+    Resource(AutoScalingResourceMetric),
+}
 #[doc = "Enumerates the metrics that are used for triggering auto scaling."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "AutoScalingMetricKind")]
@@ -1989,12 +2004,12 @@ pub struct AutoScalingPolicy {
     #[doc = "The name of the auto scaling policy."]
     pub name: String,
     #[doc = "Describes the trigger for performing auto scaling operation."]
-    pub trigger: AutoScalingTrigger,
+    pub trigger: AutoScalingTriggerUnion,
     #[doc = "Describes the mechanism for performing auto scaling operation. Derived classes will describe the actual mechanism."]
-    pub mechanism: AutoScalingMechanism,
+    pub mechanism: AutoScalingMechanismUnion,
 }
 impl AutoScalingPolicy {
-    pub fn new(name: String, trigger: AutoScalingTrigger, mechanism: AutoScalingMechanism) -> Self {
+    pub fn new(name: String, trigger: AutoScalingTriggerUnion, mechanism: AutoScalingMechanismUnion) -> Self {
         Self { name, trigger, mechanism }
     }
 }
@@ -2061,6 +2076,11 @@ impl AutoScalingTrigger {
         Self { kind }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AutoScalingTriggerUnion {
+    AverageLoad(AverageLoadScalingTrigger),
+}
 #[doc = "Enumerates the triggers for auto scaling."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "AutoScalingTriggerKind")]
@@ -2102,7 +2122,7 @@ pub struct AverageLoadScalingTrigger {
     #[serde(flatten)]
     pub auto_scaling_trigger: AutoScalingTrigger,
     #[doc = "Describes the metric that is used for triggering auto scaling operation. Derived classes will describe resources or metrics."]
-    pub metric: AutoScalingMetric,
+    pub metric: AutoScalingMetricUnion,
     #[doc = "Lower load threshold (if average load is below this threshold, service will scale down)."]
     #[serde(rename = "lowerLoadThreshold")]
     pub lower_load_threshold: f64,
@@ -2116,7 +2136,7 @@ pub struct AverageLoadScalingTrigger {
 impl AverageLoadScalingTrigger {
     pub fn new(
         auto_scaling_trigger: AutoScalingTrigger,
-        metric: AutoScalingMetric,
+        metric: AutoScalingMetricUnion,
         lower_load_threshold: f64,
         upper_load_threshold: f64,
         scale_interval_in_seconds: i64,
@@ -2285,6 +2305,13 @@ impl BackupConfigurationInfo {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Kind")]
+pub enum BackupConfigurationInfoUnion {
+    Application(ApplicationBackupConfigurationInfo),
+    Partition(PartitionBackupConfigurationInfo),
+    Service(ServiceBackupConfigurationInfo),
+}
 #[doc = "Describes the Service Fabric entity that is configured for backup."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupEntity {
@@ -2296,6 +2323,13 @@ impl BackupEntity {
     pub fn new(entity_kind: BackupEntityKind) -> Self {
         Self { entity_kind }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "EntityKind")]
+pub enum BackupEntityUnion {
+    Application(ApplicationBackupEntity),
+    Partition(PartitionBackupEntity),
+    Service(ServiceBackupEntity),
 }
 #[doc = "The entity type of a Service Fabric entity such as Application, Service or a Partition where periodic backups can be enabled."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2355,7 +2389,7 @@ pub struct BackupInfo {
     pub service_name: Option<String>,
     #[doc = "Information about the partition identity, partitioning scheme and keys supported by it."]
     #[serde(rename = "PartitionInformation", default, skip_serializing_if = "Option::is_none")]
-    pub partition_information: Option<PartitionInformation>,
+    pub partition_information: Option<PartitionInformationUnion>,
     #[doc = "Location of the backup, relative to the backup store."]
     #[serde(rename = "BackupLocation", default, skip_serializing_if = "Option::is_none")]
     pub backup_location: Option<String>,
@@ -2388,7 +2422,7 @@ impl BackupInfo {
 pub struct BackupPartitionDescription {
     #[doc = "Describes the parameters for the backup storage."]
     #[serde(rename = "BackupStorage", default, skip_serializing_if = "Option::is_none")]
-    pub backup_storage: Option<BackupStorageDescription>,
+    pub backup_storage: Option<BackupStorageDescriptionUnion>,
 }
 impl BackupPartitionDescription {
     pub fn new() -> Self {
@@ -2409,21 +2443,21 @@ pub struct BackupPolicyDescription {
     pub max_incremental_backups: i64,
     #[doc = "Describes the backup schedule parameters."]
     #[serde(rename = "Schedule")]
-    pub schedule: BackupScheduleDescription,
+    pub schedule: BackupScheduleDescriptionUnion,
     #[doc = "Describes the parameters for the backup storage."]
     #[serde(rename = "Storage")]
-    pub storage: BackupStorageDescription,
+    pub storage: BackupStorageDescriptionUnion,
     #[doc = "Describes the retention policy configured."]
     #[serde(rename = "RetentionPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub retention_policy: Option<RetentionPolicyDescription>,
+    pub retention_policy: Option<RetentionPolicyDescriptionUnion>,
 }
 impl BackupPolicyDescription {
     pub fn new(
         name: String,
         auto_restore_on_data_loss: bool,
         max_incremental_backups: i64,
-        schedule: BackupScheduleDescription,
-        storage: BackupStorageDescription,
+        schedule: BackupScheduleDescriptionUnion,
+        storage: BackupStorageDescriptionUnion,
     ) -> Self {
         Self {
             name,
@@ -2517,6 +2551,12 @@ impl BackupScheduleDescription {
     pub fn new(schedule_kind: BackupScheduleKind) -> Self {
         Self { schedule_kind }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ScheduleKind")]
+pub enum BackupScheduleDescriptionUnion {
+    FrequencyBased(FrequencyBasedBackupScheduleDescription),
+    TimeBased(TimeBasedBackupScheduleDescription),
 }
 #[doc = "Describes the frequency with which to run the time based backup schedule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2658,6 +2698,14 @@ impl BackupStorageDescription {
             friendly_name: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "StorageKind")]
+pub enum BackupStorageDescriptionUnion {
+    AzureBlobStore(AzureBlobBackupStorageDescription),
+    DsmsAzureBlobStore(DsmsAzureBlobBackupStorageDescription),
+    FileShare(FileShareBackupStorageDescription),
+    ManagedIdentityAzureBlobStore(ManagedIdentityAzureBlobBackupStorageDescription),
 }
 #[doc = "The kind of backup storage, where backups are saved."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2933,6 +2981,16 @@ impl ChaosEvent {
         Self { kind, time_stamp_utc }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Kind")]
+pub enum ChaosEventUnion {
+    ExecutingFaults(ExecutingFaultsChaosEvent),
+    Started(StartedChaosEvent),
+    Stopped(StoppedChaosEvent),
+    TestError(TestErrorChaosEvent),
+    ValidationFailed(ValidationFailedChaosEvent),
+    Waiting(WaitingChaosEvent),
+}
 pub type ChaosEventHistory = Vec<ChaosEventWrapper>;
 #[doc = "The kind of Chaos event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2986,7 +3044,7 @@ impl Serialize for ChaosEventKind {
 pub struct ChaosEventWrapper {
     #[doc = "Represents an event generated during a Chaos run."]
     #[serde(rename = "ChaosEvent", default, skip_serializing_if = "Option::is_none")]
-    pub chaos_event: Option<ChaosEvent>,
+    pub chaos_event: Option<ChaosEventUnion>,
 }
 impl ChaosEventWrapper {
     pub fn new() -> Self {
@@ -3549,10 +3607,10 @@ pub struct CheckValuePropertyBatchOperation {
     pub property_batch_operation: PropertyBatchOperation,
     #[doc = "Describes a Service Fabric property value."]
     #[serde(rename = "Value")]
-    pub value: PropertyValue,
+    pub value: PropertyValueUnion,
 }
 impl CheckValuePropertyBatchOperation {
-    pub fn new(property_batch_operation: PropertyBatchOperation, value: PropertyValue) -> Self {
+    pub fn new(property_batch_operation: PropertyBatchOperation, value: PropertyValueUnion) -> Self {
         Self {
             property_batch_operation,
             value,
@@ -5862,6 +5920,12 @@ impl DeployedServiceReplicaDetailInfo {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ServiceKind")]
+pub enum DeployedServiceReplicaDetailInfoUnion {
+    Stateful(DeployedStatefulServiceReplicaDetailInfo),
+    Stateless(DeployedStatelessServiceInstanceDetailInfo),
+}
 #[doc = "Information about a Service Fabric service replica deployed on a node."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeployedServiceReplicaInfo {
@@ -5912,6 +5976,12 @@ impl DeployedServiceReplicaInfo {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ServiceKind")]
+pub enum DeployedServiceReplicaInfoUnion {
+    Stateful(DeployedStatefulServiceReplicaInfo),
+    Stateless(DeployedStatelessServiceInstanceInfo),
+}
 pub type DeployedServiceReplicaInfoList = Vec<DeployedServiceReplicaInfo>;
 #[doc = "Information about service type deployed on a node, information such as the status of the service type registration on a node."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -5957,7 +6027,7 @@ pub struct DeployedStatefulServiceReplicaDetailInfo {
     pub write_status: Option<PartitionAccessStatus>,
     #[doc = "Represents a base class for primary or secondary replicator status.\nContains information about the service fabric replicator like the replication/copy queue utilization, last acknowledgement received timestamp, etc."]
     #[serde(rename = "ReplicatorStatus", default, skip_serializing_if = "Option::is_none")]
-    pub replicator_status: Option<ReplicatorStatus>,
+    pub replicator_status: Option<ReplicatorStatusUnion>,
     #[doc = "Key value store related information for the replica."]
     #[serde(rename = "ReplicaStatus", default, skip_serializing_if = "Option::is_none")]
     pub replica_status: Option<KeyValueStoreReplicaStatus>,
@@ -6101,7 +6171,7 @@ pub struct DiagnosticsDescription {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub sinks: Vec<DiagnosticsSinkProperties>,
+    pub sinks: Vec<DiagnosticsSinkPropertiesUnion>,
     #[doc = "Status of whether or not sinks are enabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
@@ -6198,6 +6268,11 @@ impl DiagnosticsSinkProperties {
             description: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum DiagnosticsSinkPropertiesUnion {
+    AzureInternalMonitoringPipeline(AzureInternalMonitoringPipelineSinkDescription),
 }
 #[doc = "It describes the body parameters while disabling backup of a backup entity(Application/Service/Partition)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -6630,6 +6705,12 @@ impl ExecutionPolicy {
     pub fn new(type_: ExecutionPolicyType) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ExecutionPolicyUnion {
+    Default(DefaultExecutionPolicy),
+    RunToCompletion(RunToCompletionExecutionPolicy),
 }
 #[doc = "Enumerates the execution policy types for services."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -7168,6 +7249,17 @@ impl FabricEvent {
             has_correlated_events: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Kind")]
+pub enum FabricEventUnion {
+    ApplicationEvent(ApplicationEvent),
+    ClusterEvent(ClusterEvent),
+    ContainerInstanceEvent(ContainerInstanceEvent),
+    NodeEvent(NodeEvent),
+    PartitionEvent(PartitionEvent),
+    ReplicaEvent(ReplicaEvent),
+    ServiceEvent(ServiceEvent),
 }
 #[doc = "The kind of FabricEvent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -7765,13 +7857,13 @@ pub struct GetBackupByStorageQueryDescription {
     pub latest: Option<bool>,
     #[doc = "Describes the parameters for the backup storage."]
     #[serde(rename = "Storage")]
-    pub storage: BackupStorageDescription,
+    pub storage: BackupStorageDescriptionUnion,
     #[doc = "Describes the Service Fabric entity that is configured for backup."]
     #[serde(rename = "BackupEntity")]
-    pub backup_entity: BackupEntity,
+    pub backup_entity: BackupEntityUnion,
 }
 impl GetBackupByStorageQueryDescription {
-    pub fn new(storage: BackupStorageDescription, backup_entity: BackupEntity) -> Self {
+    pub fn new(storage: BackupStorageDescriptionUnion, backup_entity: BackupEntityUnion) -> Self {
         Self {
             start_date_time_filter: None,
             end_date_time_filter: None,
@@ -7836,6 +7928,32 @@ impl HealthEvaluation {
             description: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Kind")]
+pub enum HealthEvaluationUnion {
+    Application(ApplicationHealthEvaluation),
+    ApplicationTypeApplications(ApplicationTypeApplicationsHealthEvaluation),
+    Applications(ApplicationsHealthEvaluation),
+    DeltaNodesCheck(DeltaNodesCheckHealthEvaluation),
+    DeployedApplication(DeployedApplicationHealthEvaluation),
+    DeployedApplications(DeployedApplicationsHealthEvaluation),
+    DeployedServicePackage(DeployedServicePackageHealthEvaluation),
+    DeployedServicePackages(DeployedServicePackagesHealthEvaluation),
+    Event(EventHealthEvaluation),
+    Node(NodeHealthEvaluation),
+    NodeTypeNodes(NodeTypeNodesHealthEvaluation),
+    Nodes(NodesHealthEvaluation),
+    Partition(PartitionHealthEvaluation),
+    Partitions(PartitionsHealthEvaluation),
+    Replica(ReplicaHealthEvaluation),
+    Replicas(ReplicasHealthEvaluation),
+    Service(ServiceHealthEvaluation),
+    Services(ServicesHealthEvaluation),
+    SystemApplication(SystemApplicationHealthEvaluation),
+    UpgradeDomainDeltaNodesCheck(UpgradeDomainDeltaNodesCheckHealthEvaluation),
+    UpgradeDomainDeployedApplications(UpgradeDomainDeployedApplicationsHealthEvaluation),
+    UpgradeDomainNodes(UpgradeDomainNodesHealthEvaluation),
 }
 #[doc = "The health manager in the cluster performs health evaluations in determining the aggregated health state of an entity. This enumeration provides information on the kind of evaluation that was performed. Following are the possible values."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -7927,7 +8045,7 @@ impl Serialize for HealthEvaluationKind {
 pub struct HealthEvaluationWrapper {
     #[doc = "Represents a health evaluation which describes the data and the algorithm used by health manager to evaluate the health of an entity."]
     #[serde(rename = "HealthEvaluation", default, skip_serializing_if = "Option::is_none")]
-    pub health_evaluation: Option<HealthEvaluation>,
+    pub health_evaluation: Option<HealthEvaluationUnion>,
 }
 impl HealthEvaluationWrapper {
     pub fn new() -> Self {
@@ -9236,6 +9354,9 @@ impl NetworkResourcePropertiesBase {
         Self { kind }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum NetworkResourcePropertiesBaseUnion {}
 pub type NextUpgradeDomain = String;
 #[doc = "Node Aborted event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -10849,7 +10970,7 @@ pub struct PagedBackupConfigurationInfoList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub items: Vec<BackupConfigurationInfo>,
+    pub items: Vec<BackupConfigurationInfoUnion>,
 }
 impl PagedBackupConfigurationInfoList {
     pub fn new() -> Self {
@@ -10869,7 +10990,7 @@ pub struct PagedBackupEntityList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub items: Vec<BackupEntity>,
+    pub items: Vec<BackupEntityUnion>,
 }
 impl PagedBackupEntityList {
     pub fn new() -> Self {
@@ -11052,7 +11173,7 @@ pub struct PagedReplicaInfoList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub items: Vec<ReplicaInfo>,
+    pub items: Vec<ReplicaInfoUnion>,
 }
 impl PagedReplicaInfoList {
     pub fn new() -> Self {
@@ -11112,7 +11233,7 @@ pub struct PagedServiceInfoList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub items: Vec<ServiceInfo>,
+    pub items: Vec<ServiceInfoUnion>,
 }
 impl PagedServiceInfoList {
     pub fn new() -> Self {
@@ -11132,7 +11253,7 @@ pub struct PagedServicePartitionInfoList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub items: Vec<ServicePartitionInfo>,
+    pub items: Vec<ServicePartitionInfoUnion>,
 }
 impl PagedServicePartitionInfoList {
     pub fn new() -> Self {
@@ -11389,7 +11510,7 @@ pub struct PartitionHealth {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub replica_health_states: Vec<ReplicaHealthState>,
+    pub replica_health_states: Vec<ReplicaHealthStateUnion>,
 }
 impl PartitionHealth {
     pub fn new() -> Self {
@@ -11561,6 +11682,13 @@ impl PartitionInformation {
             id: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ServicePartitionKind")]
+pub enum PartitionInformationUnion {
+    Int64Range(Int64RangePartitionInformation),
+    Named(NamedPartitionInformation),
+    Singleton(SingletonPartitionInformation),
 }
 #[doc = "Represents a scaling mechanism for adding or removing instances of stateless service partition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -11956,6 +12084,13 @@ impl PartitionSchemeDescription {
         Self { partition_scheme }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "PartitionScheme")]
+pub enum PartitionSchemeDescriptionUnion {
+    Named(NamedPartitionSchemeDescription),
+    Singleton(SingletonPartitionSchemeDescription),
+    UniformInt64Range(UniformInt64RangePartitionSchemeDescription),
+}
 #[doc = "Represents health evaluation for the partitions of a service, containing health evaluations for each unhealthy partition that impacts current aggregated health state. Can be returned when evaluating service health and the aggregated health state is either Error or Warning."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionsHealthEvaluation {
@@ -12160,7 +12295,7 @@ pub struct PropertyBatchDescriptionList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub operations: Vec<PropertyBatchOperation>,
+    pub operations: Vec<PropertyBatchOperationUnion>,
 }
 impl PropertyBatchDescriptionList {
     pub fn new() -> Self {
@@ -12178,6 +12313,12 @@ impl PropertyBatchInfo {
     pub fn new(kind: PropertyBatchInfoKind) -> Self {
         Self { kind }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Kind")]
+pub enum PropertyBatchInfoUnion {
+    Failed(FailedPropertyBatchInfo),
+    Successful(SuccessfulPropertyBatchInfo),
 }
 #[doc = "The kind of property batch info, determined by the results of a property batch. The following are the possible values."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -12232,6 +12373,16 @@ impl PropertyBatchOperation {
     pub fn new(kind: PropertyBatchOperationKind, property_name: PropertyName) -> Self {
         Self { kind, property_name }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Kind")]
+pub enum PropertyBatchOperationUnion {
+    CheckExists(CheckExistsPropertyBatchOperation),
+    CheckSequence(CheckSequencePropertyBatchOperation),
+    CheckValue(CheckValuePropertyBatchOperation),
+    Delete(DeletePropertyBatchOperation),
+    Get(GetPropertyBatchOperation),
+    Put(PutPropertyBatchOperation),
 }
 #[doc = "The kind of property batch operation, determined by the operation to be performed. The following are the possible values."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -12292,10 +12443,10 @@ pub struct PropertyDescription {
     pub custom_type_id: Option<PropertyCustomTypeId>,
     #[doc = "Describes a Service Fabric property value."]
     #[serde(rename = "Value")]
-    pub value: PropertyValue,
+    pub value: PropertyValueUnion,
 }
 impl PropertyDescription {
-    pub fn new(property_name: PropertyName, value: PropertyValue) -> Self {
+    pub fn new(property_name: PropertyName, value: PropertyValueUnion) -> Self {
         Self {
             property_name,
             custom_type_id: None,
@@ -12311,7 +12462,7 @@ pub struct PropertyInfo {
     pub name: PropertyName,
     #[doc = "Describes a Service Fabric property value."]
     #[serde(rename = "Value", default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<PropertyValue>,
+    pub value: Option<PropertyValueUnion>,
     #[doc = "The metadata associated with a property, including the property's name."]
     #[serde(rename = "Metadata")]
     pub metadata: PropertyMetadata,
@@ -12364,6 +12515,15 @@ impl PropertyValue {
     pub fn new(kind: PropertyValueKind) -> Self {
         Self { kind }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Kind")]
+pub enum PropertyValueUnion {
+    Binary(BinaryPropertyValue),
+    Double(DoublePropertyValue),
+    Guid(GuidPropertyValue),
+    Int64(Int64PropertyValue),
+    String(StringPropertyValue),
 }
 #[doc = "The kind of property, determined by the type of data. Following are the possible values."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -12449,6 +12609,12 @@ impl ProvisionApplicationTypeDescriptionBase {
         Self { kind, async_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Kind")]
+pub enum ProvisionApplicationTypeDescriptionBaseUnion {
+    ExternalStore(ExternalStoreProvisionApplicationTypeDescription),
+    ImageStorePath(ProvisionApplicationTypeDescription),
+}
 #[doc = "The kind of application type registration or provision requested. The application package can be registered or provisioned either from the image store or from an external store. Following are the kinds of the application type provision."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ProvisionApplicationTypeKind")]
@@ -12510,13 +12676,13 @@ pub struct PutPropertyBatchOperation {
     pub property_batch_operation: PropertyBatchOperation,
     #[doc = "Describes a Service Fabric property value."]
     #[serde(rename = "Value")]
-    pub value: PropertyValue,
+    pub value: PropertyValueUnion,
     #[doc = "The property's custom type ID. Using this property, the user is able to tag the type of the value of the property."]
     #[serde(rename = "CustomTypeId", default, skip_serializing_if = "Option::is_none")]
     pub custom_type_id: Option<PropertyCustomTypeId>,
 }
 impl PutPropertyBatchOperation {
-    pub fn new(property_batch_operation: PropertyBatchOperation, value: PropertyValue) -> Self {
+    pub fn new(property_batch_operation: PropertyBatchOperation, value: PropertyValueUnion) -> Self {
         Self {
             property_batch_operation,
             value,
@@ -12760,6 +12926,11 @@ impl RepairImpactDescriptionBase {
         Self { kind }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Kind")]
+pub enum RepairImpactDescriptionBaseUnion {
+    Node(NodeRepairImpactDescription),
+}
 #[doc = "Specifies the kind of the impact. This type supports the Service Fabric platform; it is not meant to be used directly from your code.'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "RepairImpactKind")]
@@ -12808,6 +12979,11 @@ impl RepairTargetDescriptionBase {
     pub fn new(kind: RepairTargetKind) -> Self {
         Self { kind }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Kind")]
+pub enum RepairTargetDescriptionBaseUnion {
+    Node(NodeRepairTargetDescription),
 }
 #[doc = "Specifies the kind of the repair target. This type supports the Service Fabric platform; it is not meant to be used directly from your code.'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -12869,7 +13045,7 @@ pub struct RepairTask {
     pub action: String,
     #[doc = "Describes the entities targeted by a repair action.\n\nThis type supports the Service Fabric platform; it is not meant to be used directly from your code."]
     #[serde(rename = "Target", default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<RepairTargetDescriptionBase>,
+    pub target: Option<RepairTargetDescriptionBaseUnion>,
     #[doc = "The name of the repair executor. Must be specified in Claimed and later states, and is immutable once set."]
     #[serde(rename = "Executor", default, skip_serializing_if = "Option::is_none")]
     pub executor: Option<String>,
@@ -12878,7 +13054,7 @@ pub struct RepairTask {
     pub executor_data: Option<String>,
     #[doc = "Describes the expected impact of executing a repair task.\n\nThis type supports the Service Fabric platform; it is not meant to be used directly from your code."]
     #[serde(rename = "Impact", default, skip_serializing_if = "Option::is_none")]
-    pub impact: Option<RepairImpactDescriptionBase>,
+    pub impact: Option<RepairImpactDescriptionBaseUnion>,
     #[doc = "A value describing the overall result of the repair task execution. Must be specified in the Restoring and later states, and is immutable once set."]
     #[serde(rename = "ResultStatus", default, skip_serializing_if = "Option::is_none")]
     pub result_status: Option<repair_task::ResultStatus>,
@@ -13260,6 +13436,12 @@ impl ReplicaHealth {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ServiceKind")]
+pub enum ReplicaHealthUnion {
+    Stateful(StatefulServiceReplicaHealth),
+    Stateless(StatelessServiceInstanceHealth),
+}
 #[doc = "Represents health evaluation for a replica, containing information about the data and the algorithm used by health store to evaluate health. The evaluation is returned only when the aggregated health state is either Error or Warning."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicaHealthEvaluation {
@@ -13305,6 +13487,12 @@ impl ReplicaHealthState {
             partition_id: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ServiceKind")]
+pub enum ReplicaHealthStateUnion {
+    Stateful(StatefulServiceReplicaHealthState),
+    Stateless(StatelessServiceInstanceHealthState),
 }
 #[doc = "Represents the health state chunk of a stateful service replica or a stateless service instance.\nThe replica health state contains the replica ID and its aggregated health state."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -13387,6 +13575,12 @@ impl ReplicaInfo {
             last_in_build_duration_in_seconds: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ServiceKind")]
+pub enum ReplicaInfoUnion {
+    Stateful(StatefulServiceReplicaInfo),
+    Stateless(StatelessServiceInstanceInfo),
 }
 #[doc = "The role of a replica of a stateful service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -13571,6 +13765,11 @@ impl ReplicaStatusBase {
         Self { kind }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Kind")]
+pub enum ReplicaStatusBaseUnion {
+    KeyValueStore(KeyValueStoreReplicaStatus),
+}
 #[doc = "Represents health evaluation for replicas, containing health evaluations for each unhealthy replica that impacted current aggregated health state. Can be returned when evaluating partition health and the aggregated health state is either Error or Warning."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicasHealthEvaluation {
@@ -13692,6 +13891,11 @@ impl ReplicatorStatus {
         Self { kind }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Kind")]
+pub enum ReplicatorStatusUnion {
+    Primary(PrimaryReplicatorStatus),
+}
 #[doc = "Endpoint of a resolved service partition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResolvedServiceEndpoint {
@@ -13716,7 +13920,7 @@ pub struct ResolvedServicePartition {
     pub name: ServiceName,
     #[doc = "Information about the partition identity, partitioning scheme and keys supported by it."]
     #[serde(rename = "PartitionInformation")]
-    pub partition_information: PartitionInformation,
+    pub partition_information: PartitionInformationUnion,
     #[doc = "List of resolved service endpoints of a service partition."]
     #[serde(rename = "Endpoints")]
     pub endpoints: ResolvedServiceEndpointList,
@@ -13727,7 +13931,7 @@ pub struct ResolvedServicePartition {
 impl ResolvedServicePartition {
     pub fn new(
         name: ServiceName,
-        partition_information: PartitionInformation,
+        partition_information: PartitionInformationUnion,
         endpoints: ResolvedServiceEndpointList,
         version: String,
     ) -> Self {
@@ -13983,7 +14187,7 @@ pub struct RestorePartitionDescription {
     pub backup_location: String,
     #[doc = "Describes the parameters for the backup storage."]
     #[serde(rename = "BackupStorage", default, skip_serializing_if = "Option::is_none")]
-    pub backup_storage: Option<BackupStorageDescription>,
+    pub backup_storage: Option<BackupStorageDescriptionUnion>,
 }
 impl RestorePartitionDescription {
     pub fn new(backup_id: String, backup_location: String) -> Self {
@@ -14098,6 +14302,11 @@ impl RetentionPolicyDescription {
     pub fn new(retention_policy_type: RetentionPolicyType) -> Self {
         Self { retention_policy_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "RetentionPolicyType")]
+pub enum RetentionPolicyDescriptionUnion {
+    Basic(BasicRetentionPolicyDescription),
 }
 #[doc = "The type of retention policy. Currently only \"Basic\" retention policy is supported."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -14261,6 +14470,11 @@ impl SafetyCheck {
         Self { kind }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Kind")]
+pub enum SafetyCheckUnion {
+    EnsureSeedNodeQuorum(SeedNodeSafetyCheck),
+}
 pub type SafetyCheckInfoList = Vec<SafetyCheckWrapper>;
 #[doc = "The kind of safety check performed by service fabric before continuing with the operations. These checks ensure the availability of the service and the reliability of the state. Following are the kinds of safety checks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -14316,7 +14530,7 @@ impl Serialize for SafetyCheckKind {
 pub struct SafetyCheckWrapper {
     #[doc = "Represents a safety check performed by service fabric before continuing with the operations. These checks ensure the availability of the service and the reliability of the state."]
     #[serde(rename = "SafetyCheck", default, skip_serializing_if = "Option::is_none")]
-    pub safety_check: Option<SafetyCheck>,
+    pub safety_check: Option<SafetyCheckUnion>,
 }
 impl SafetyCheckWrapper {
     pub fn new() -> Self {
@@ -14334,6 +14548,12 @@ impl ScalingMechanismDescription {
     pub fn new(kind: ScalingMechanismKind) -> Self {
         Self { kind }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Kind")]
+pub enum ScalingMechanismDescriptionUnion {
+    AddRemoveIncrementalNamedPartition(AddRemoveIncrementalNamedPartitionScalingMechanism),
+    PartitionInstanceCount(PartitionInstanceCountScaleMechanism),
 }
 #[doc = "Enumerates the ways that a service can be scaled."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -14381,13 +14601,13 @@ impl Serialize for ScalingMechanismKind {
 pub struct ScalingPolicyDescription {
     #[doc = "Describes the trigger for performing a scaling operation."]
     #[serde(rename = "ScalingTrigger")]
-    pub scaling_trigger: ScalingTriggerDescription,
+    pub scaling_trigger: ScalingTriggerDescriptionUnion,
     #[doc = "Describes the mechanism for performing a scaling operation."]
     #[serde(rename = "ScalingMechanism")]
-    pub scaling_mechanism: ScalingMechanismDescription,
+    pub scaling_mechanism: ScalingMechanismDescriptionUnion,
 }
 impl ScalingPolicyDescription {
-    pub fn new(scaling_trigger: ScalingTriggerDescription, scaling_mechanism: ScalingMechanismDescription) -> Self {
+    pub fn new(scaling_trigger: ScalingTriggerDescriptionUnion, scaling_mechanism: ScalingMechanismDescriptionUnion) -> Self {
         Self {
             scaling_trigger,
             scaling_mechanism,
@@ -14406,6 +14626,12 @@ impl ScalingTriggerDescription {
     pub fn new(kind: ScalingTriggerKind) -> Self {
         Self { kind }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Kind")]
+pub enum ScalingTriggerDescriptionUnion {
+    AveragePartitionLoad(AveragePartitionLoadScalingTrigger),
+    AverageServiceLoad(AverageServiceLoadScalingTrigger),
 }
 #[doc = "Enumerates the ways that a service can be scaled."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -14606,6 +14832,9 @@ impl SecretResourcePropertiesBase {
         Self { kind }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum SecretResourcePropertiesBaseUnion {}
 #[doc = "This type represents the unencrypted value of the secret."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretValue {
@@ -14915,7 +15144,7 @@ pub struct ServiceDescription {
     pub initialization_data: Option<ByteArray>,
     #[doc = "Describes how the service is partitioned."]
     #[serde(rename = "PartitionDescription")]
-    pub partition_description: PartitionSchemeDescription,
+    pub partition_description: PartitionSchemeDescriptionUnion,
     #[doc = "The placement constraints as a string. Placement constraints are boolean expressions on node properties and allow for restricting a service to particular nodes based on the service requirements. For example, to place a service on nodes where NodeType is blue specify the following: \"NodeColor == blue)\"."]
     #[serde(rename = "PlacementConstraints", default, skip_serializing_if = "Option::is_none")]
     pub placement_constraints: Option<String>,
@@ -14955,7 +15184,7 @@ impl ServiceDescription {
         service_kind: ServiceKind,
         service_name: ServiceName,
         service_type_name: ServiceTypeName,
-        partition_description: PartitionSchemeDescription,
+        partition_description: PartitionSchemeDescriptionUnion,
     ) -> Self {
         Self {
             service_kind,
@@ -14977,6 +15206,12 @@ impl ServiceDescription {
             tags_required_to_run: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ServiceKind")]
+pub enum ServiceDescriptionUnion {
+    Stateful(StatefulServiceDescription),
+    Stateless(StatelessServiceDescription),
 }
 #[doc = "The role of the replica where the endpoint is reported."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -15300,6 +15535,12 @@ impl ServiceInfo {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ServiceKind")]
+pub enum ServiceInfoUnion {
+    Stateful(StatefulServiceInfo),
+    Stateless(StatelessServiceInfo),
+}
 #[doc = "The kind of service (Stateless or Stateful)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ServiceKind")]
@@ -15589,7 +15830,7 @@ pub struct ServicePartitionInfo {
     pub partition_status: Option<ServicePartitionStatus>,
     #[doc = "Information about the partition identity, partitioning scheme and keys supported by it."]
     #[serde(rename = "PartitionInformation", default, skip_serializing_if = "Option::is_none")]
-    pub partition_information: Option<PartitionInformation>,
+    pub partition_information: Option<PartitionInformationUnion>,
 }
 impl ServicePartitionInfo {
     pub fn new(service_kind: ServiceKind) -> Self {
@@ -15600,6 +15841,12 @@ impl ServicePartitionInfo {
             partition_information: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ServiceKind")]
+pub enum ServicePartitionInfoUnion {
+    Stateful(StatefulServicePartitionInfo),
+    Stateless(StatelessServicePartitionInfo),
 }
 #[doc = "The kind of partitioning scheme used to partition the service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -15747,6 +15994,16 @@ impl ServicePlacementPolicyDescription {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Type")]
+pub enum ServicePlacementPolicyDescriptionUnion {
+    AllowMultipleStatelessInstancesOnNode(ServicePlacementAllowMultipleStatelessInstancesOnNodePolicyDescription),
+    InvalidDomain(ServicePlacementInvalidDomainPolicyDescription),
+    NonPartiallyPlaceService(ServicePlacementNonPartiallyPlaceServicePolicyDescription),
+    PreferPrimaryDomain(ServicePlacementPreferPrimaryDomainPolicyDescription),
+    RequireDomainDistribution(ServicePlacementRequireDomainDistributionPolicyDescription),
+    RequireDomain(ServicePlacementRequiredDomainPolicyDescription),
+}
 pub type ServicePlacementPolicyDescriptionList = Vec<ServicePlacementPolicyDescription>;
 #[doc = "The type of placement policy for a service fabric service. Following are the possible values."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -15863,7 +16120,7 @@ pub struct ServiceProperties {
     pub replica_count: Option<i64>,
     #[doc = "The execution policy of the service"]
     #[serde(rename = "executionPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub execution_policy: Option<ExecutionPolicy>,
+    pub execution_policy: Option<ExecutionPolicyUnion>,
     #[doc = "Auto scaling policies"]
     #[serde(
         rename = "autoScalingPolicies",
@@ -16062,6 +16319,12 @@ impl ServiceTypeDescription {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "Kind")]
+pub enum ServiceTypeDescriptionUnion {
+    Stateful(StatefulServiceTypeDescription),
+    Stateless(StatelessServiceTypeDescription),
+}
 #[doc = "Describes extension of a service type defined in the service manifest."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceTypeExtensionDescription {
@@ -16125,7 +16388,7 @@ impl ServiceTypeHealthPolicyMapItem {
 pub struct ServiceTypeInfo {
     #[doc = "Describes a service type defined in the service manifest of a provisioned application type. The properties the ones defined in the service manifest."]
     #[serde(rename = "ServiceTypeDescription", default, skip_serializing_if = "Option::is_none")]
-    pub service_type_description: Option<ServiceTypeDescription>,
+    pub service_type_description: Option<ServiceTypeDescriptionUnion>,
     #[doc = "The name of the service manifest."]
     #[serde(rename = "ServiceManifestName", default, skip_serializing_if = "Option::is_none")]
     pub service_manifest_name: Option<ServiceManifestName>,
@@ -16249,6 +16512,12 @@ impl ServiceUpdateDescription {
             tags_for_running: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ServiceKind")]
+pub enum ServiceUpdateDescriptionUnion {
+    Stateful(StatefulServiceUpdateDescription),
+    Stateless(StatelessServiceUpdateDescription),
 }
 #[doc = "Information about how many replicas are completed or pending for a specific service during upgrade."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

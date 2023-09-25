@@ -81,6 +81,12 @@ pub mod addon {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AddonUnion {
+    ArcForKubernetes(ArcAddon),
+    IotEdge(IoTAddon),
+}
 #[doc = "Collection of all the Role addon on the Azure Stack Edge device."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AddonList {
@@ -90,7 +96,7 @@ pub struct AddonList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<Addon>,
+    pub value: Vec<AddonUnion>,
     #[doc = "Link to the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -5407,6 +5413,16 @@ pub mod role {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum RoleUnion {
+    CloudEdgeManagement(CloudEdgeManagementRole),
+    #[serde(rename = "IOT")]
+    Iot(IoTRole),
+    Kubernetes(KubernetesRole),
+    #[serde(rename = "MEC")]
+    Mec(MecRole),
+}
 #[doc = "Collection of all the roles on the Data Box Edge device."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleList {
@@ -5416,7 +5432,7 @@ pub struct RoleList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<Role>,
+    pub value: Vec<RoleUnion>,
     #[doc = "Link to the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -6718,6 +6734,12 @@ pub mod trigger {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum TriggerUnion {
+    FileEvent(FileEventTrigger),
+    PeriodicTimerEvent(PeriodicTimerEventTrigger),
+}
 #[doc = "Collection of all trigger on the data box edge device."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TriggerList {
@@ -6727,7 +6749,7 @@ pub struct TriggerList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<Trigger>,
+    pub value: Vec<TriggerUnion>,
     #[doc = "Link to the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,

@@ -223,6 +223,12 @@ pub mod environment_create_or_update_parameters {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EnvironmentCreateOrUpdateParametersUnion {
+    LongTerm(LongTermEnvironmentCreateOrUpdateParameters),
+    Standard(StandardEnvironmentCreateOrUpdateParameters),
+}
 #[doc = "The response of the List Environments operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EnvironmentListResponse {
@@ -232,7 +238,7 @@ pub struct EnvironmentListResponse {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<EnvironmentResource>,
+    pub value: Vec<EnvironmentResourceUnion>,
 }
 impl EnvironmentListResponse {
     pub fn new() -> Self {
@@ -266,6 +272,12 @@ pub mod environment_resource {
         Standard,
         LongTerm,
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EnvironmentResourceUnion {
+    LongTerm(LongTermEnvironmentResource),
+    Standard(StandardEnvironmentResource),
 }
 #[doc = "Properties of the environment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -536,6 +548,14 @@ pub mod event_source_create_or_update_parameters {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EventSourceCreateOrUpdateParametersUnion {
+    #[serde(rename = "Microsoft.EventHub")]
+    MicrosoftEventHub(EventHubEventSourceCreateOrUpdateParameters),
+    #[serde(rename = "Microsoft.IoTHub")]
+    MicrosoftIoTHub(IoTHubEventSourceCreateOrUpdateParameters),
+}
 #[doc = "The response of the List EventSources operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventSourceListResponse {
@@ -545,7 +565,7 @@ pub struct EventSourceListResponse {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<EventSourceResource>,
+    pub value: Vec<EventSourceResourceUnion>,
 }
 impl EventSourceListResponse {
     pub fn new() -> Self {
@@ -590,6 +610,14 @@ pub mod event_source_resource {
         #[serde(rename = "Microsoft.IoTHub")]
         MicrosoftIoTHub,
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EventSourceResourceUnion {
+    #[serde(rename = "Microsoft.EventHub")]
+    MicrosoftEventHub(EventHubEventSourceResource),
+    #[serde(rename = "Microsoft.IoTHub")]
+    MicrosoftIoTHub(IoTHubEventSourceResource),
 }
 #[doc = "Parameters supplied to the Update Event Source operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

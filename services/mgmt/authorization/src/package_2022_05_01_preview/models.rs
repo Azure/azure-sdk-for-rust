@@ -215,6 +215,14 @@ pub mod access_review_decision_identity {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AccessReviewDecisionIdentityUnion {
+    #[serde(rename = "servicePrincipal")]
+    ServicePrincipal(AccessReviewDecisionServicePrincipalIdentity),
+    #[serde(rename = "user")]
+    User(AccessReviewDecisionUserIdentity),
+}
 #[doc = "Access Review Decision Insight."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessReviewDecisionInsight {
@@ -229,7 +237,7 @@ pub struct AccessReviewDecisionInsight {
     pub type_: Option<String>,
     #[doc = "Details of the Insight."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AccessReviewDecisionInsightProperties>,
+    pub properties: Option<AccessReviewDecisionInsightPropertiesUnion>,
 }
 impl AccessReviewDecisionInsight {
     pub fn new() -> Self {
@@ -293,6 +301,12 @@ pub mod access_review_decision_insight_properties {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AccessReviewDecisionInsightPropertiesUnion {
+    #[serde(rename = "userSignInInsight")]
+    UserSignInInsight(AccessReviewDecisionUserSignInInsightProperties),
+}
 #[doc = "List of access review decisions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessReviewDecisionListResult {
@@ -340,7 +354,7 @@ impl AccessReviewDecisionPrincipalResourceMembership {
 pub struct AccessReviewDecisionProperties {
     #[doc = "Target of the decision."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub principal: Option<AccessReviewDecisionIdentity>,
+    pub principal: Option<AccessReviewDecisionIdentityUnion>,
     #[doc = "Target of the decision."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource: Option<AccessReviewDecisionResource>,
@@ -1747,7 +1761,7 @@ pub struct AlertConfiguration {
     pub type_: Option<String>,
     #[doc = "Alert configuration properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AlertConfigurationProperties>,
+    pub properties: Option<AlertConfigurationPropertiesUnion>,
 }
 impl AlertConfiguration {
     pub fn new() -> Self {
@@ -1808,6 +1822,14 @@ impl AlertConfigurationProperties {
             alert_definition: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "alertConfigurationType")]
+pub enum AlertConfigurationPropertiesUnion {
+    AzureRolesAssignedOutsidePimAlertConfiguration(AzureRolesAssignedOutsidePimAlertConfigurationProperties),
+    DuplicateRoleCreatedAlertConfiguration(DuplicateRoleCreatedAlertConfigurationProperties),
+    TooManyOwnersAssignedToResourceAlertConfiguration(TooManyOwnersAssignedToResourceAlertConfigurationProperties),
+    TooManyPermanentOwnersAssignedToResourceAlertConfiguration(TooManyPermanentOwnersAssignedToResourceAlertConfigurationProperties),
 }
 #[doc = "Alert definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1947,7 +1969,7 @@ pub struct AlertIncident {
     pub type_: Option<String>,
     #[doc = "Alert incident properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AlertIncidentProperties>,
+    pub properties: Option<AlertIncidentPropertiesUnion>,
 }
 impl AlertIncident {
     pub fn new() -> Self {
@@ -1990,6 +2012,14 @@ impl AlertIncidentProperties {
     pub fn new(alert_incident_type: String) -> Self {
         Self { alert_incident_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "alertIncidentType")]
+pub enum AlertIncidentPropertiesUnion {
+    AzureRolesAssignedOutsidePimAlertIncident(AzureRolesAssignedOutsidePimAlertIncidentProperties),
+    DuplicateRoleCreatedAlertIncident(DuplicateRoleCreatedAlertIncidentProperties),
+    TooManyOwnersAssignedToResourceAlertIncident(TooManyOwnersAssignedToResourceAlertIncidentProperties),
+    TooManyPermanentOwnersAssignedToResourceAlertIncident(TooManyPermanentOwnersAssignedToResourceAlertIncidentProperties),
 }
 #[doc = "Alert list operation result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -5920,7 +5950,7 @@ pub struct RoleManagementPolicyProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub rules: Vec<RoleManagementPolicyRule>,
+    pub rules: Vec<RoleManagementPolicyRuleUnion>,
     #[doc = "The readonly computed rule applied to the policy."]
     #[serde(
         rename = "effectiveRules",
@@ -5928,7 +5958,7 @@ pub struct RoleManagementPolicyProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub effective_rules: Vec<RoleManagementPolicyRule>,
+    pub effective_rules: Vec<RoleManagementPolicyRuleUnion>,
     #[serde(rename = "policyProperties", default, skip_serializing_if = "Option::is_none")]
     pub policy_properties: Option<PolicyProperties>,
 }
@@ -5959,6 +5989,9 @@ impl RoleManagementPolicyRule {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ruleType")]
+pub enum RoleManagementPolicyRuleUnion {}
 #[doc = "The role management policy rule target."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleManagementPolicyRuleTarget {

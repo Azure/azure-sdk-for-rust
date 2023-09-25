@@ -55,6 +55,12 @@ pub mod action {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "actionType")]
+pub enum ActionUnion {
+    AddActionGroups(AddActionGroups),
+    RemoveAllActionGroups(RemoveAllActionGroups),
+}
 #[doc = "Add action groups to alert processing rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddActionGroups {
@@ -102,7 +108,7 @@ pub struct AlertProcessingRuleProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<Schedule>,
     #[doc = "Actions to be applied."]
-    pub actions: Vec<Action>,
+    pub actions: Vec<ActionUnion>,
     #[doc = "Description of alert processing rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -111,7 +117,7 @@ pub struct AlertProcessingRuleProperties {
     pub enabled: Option<bool>,
 }
 impl AlertProcessingRuleProperties {
-    pub fn new(scopes: Scopes, actions: Vec<Action>) -> Self {
+    pub fn new(scopes: Scopes, actions: Vec<ActionUnion>) -> Self {
         Self {
             scopes,
             conditions: None,
@@ -483,6 +489,13 @@ pub mod recurrence {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "recurrenceType")]
+pub enum RecurrenceUnion {
+    Daily(DailyRecurrence),
+    Monthly(MonthlyRecurrence),
+    Weekly(WeeklyRecurrence),
+}
 #[doc = "Indicates if all action groups should be removed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RemoveAllActionGroups {
@@ -530,7 +543,7 @@ pub struct Schedule {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub recurrences: Vec<Recurrence>,
+    pub recurrences: Vec<RecurrenceUnion>,
 }
 impl Schedule {
     pub fn new() -> Self {
@@ -713,7 +726,7 @@ impl AlertsList {
 pub struct AlertsMetaData {
     #[doc = "alert meta data property bag"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AlertsMetaDataProperties>,
+    pub properties: Option<AlertsMetaDataPropertiesUnion>,
 }
 impl AlertsMetaData {
     pub fn new() -> Self {
@@ -770,6 +783,9 @@ pub mod alerts_meta_data_properties {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "metadataIdentifier")]
+pub enum AlertsMetaDataPropertiesUnion {}
 #[doc = "Summary of alerts based on the input filters and 'groupby' parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertsSummary {

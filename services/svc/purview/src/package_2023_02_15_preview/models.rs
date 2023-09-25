@@ -86,6 +86,12 @@ impl Artifact {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "storeKind")]
+pub enum ArtifactUnion {
+    AdlsGen2Account(AdlsGen2Artifact),
+    BlobAccount(BlobStorageArtifact),
+}
 #[doc = "Blob Sink"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobAccountSink {
@@ -214,7 +220,7 @@ pub struct InPlaceReceivedShareProperties {
     pub share_status: Option<ShareStatus>,
     #[doc = "Holds details on the destination of the mapped artifact"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sink: Option<Sink>,
+    pub sink: Option<SinkUnion>,
     #[doc = "State of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<State>,
@@ -241,7 +247,7 @@ impl InPlaceSentShare {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InPlaceSentShareProperties {
     #[doc = "A class for sent share artifact."]
-    pub artifact: Artifact,
+    pub artifact: ArtifactUnion,
     #[doc = "Time at which the sent share was created. Represented in the standard date-time format as defined by [RFC 3339](https://www.rfc-editor.org/rfc/rfc3339)"]
     #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
     pub created_at: Option<time::OffsetDateTime>,
@@ -273,7 +279,7 @@ pub struct InPlaceSentShareProperties {
     pub state: Option<State>,
 }
 impl InPlaceSentShareProperties {
-    pub fn new(artifact: Artifact, display_name: String) -> Self {
+    pub fn new(artifact: ArtifactUnion, display_name: String) -> Self {
         Self {
             artifact,
             created_at: None,
@@ -473,6 +479,11 @@ impl ReceivedShare {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "shareKind")]
+pub enum ReceivedShareUnion {
+    InPlace(InPlaceReceivedShare),
+}
 #[doc = "List of received shares."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReceivedShareList {
@@ -480,7 +491,7 @@ pub struct ReceivedShareList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
-    pub value: Vec<ReceivedShare>,
+    pub value: Vec<ReceivedShareUnion>,
 }
 impl azure_core::Continuable for ReceivedShareList {
     type Continuation = String;
@@ -489,7 +500,7 @@ impl azure_core::Continuable for ReceivedShareList {
     }
 }
 impl ReceivedShareList {
-    pub fn new(value: Vec<ReceivedShare>) -> Self {
+    pub fn new(value: Vec<ReceivedShareUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -545,6 +556,11 @@ impl SentShare {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "shareKind")]
+pub enum SentShareUnion {
+    InPlace(InPlaceSentShare),
+}
 #[doc = "A sent share invitation data transfer object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SentShareInvitation {
@@ -562,6 +578,12 @@ impl SentShareInvitation {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "invitationKind")]
+pub enum SentShareInvitationUnion {
+    Service(ServiceInvitation),
+    User(UserInvitation),
+}
 #[doc = "List of the sent share invitations"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SentShareInvitationList {
@@ -569,7 +591,7 @@ pub struct SentShareInvitationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
-    pub value: Vec<SentShareInvitation>,
+    pub value: Vec<SentShareInvitationUnion>,
 }
 impl azure_core::Continuable for SentShareInvitationList {
     type Continuation = String;
@@ -578,7 +600,7 @@ impl azure_core::Continuable for SentShareInvitationList {
     }
 }
 impl SentShareInvitationList {
-    pub fn new(value: Vec<SentShareInvitation>) -> Self {
+    pub fn new(value: Vec<SentShareInvitationUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -589,7 +611,7 @@ pub struct SentShareList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
-    pub value: Vec<SentShare>,
+    pub value: Vec<SentShareUnion>,
 }
 impl azure_core::Continuable for SentShareList {
     type Continuation = String;
@@ -598,7 +620,7 @@ impl azure_core::Continuable for SentShareList {
     }
 }
 impl SentShareList {
-    pub fn new(value: Vec<SentShare>) -> Self {
+    pub fn new(value: Vec<SentShareUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -753,6 +775,12 @@ impl Sink {
             store_reference,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "storeKind")]
+pub enum SinkUnion {
+    AdlsGen2Account(AdlsGen2AccountSink),
+    BlobAccount(BlobAccountSink),
 }
 #[doc = "State of the resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

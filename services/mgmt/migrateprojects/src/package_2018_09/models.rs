@@ -1121,7 +1121,7 @@ pub struct MigrateEvent {
     pub type_: Option<String>,
     #[doc = "Properties of the error resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MigrateEventProperties>,
+    pub properties: Option<MigrateEventPropertiesUnion>,
 }
 impl MigrateEvent {
     pub fn new() -> Self {
@@ -1157,6 +1157,12 @@ impl MigrateEventProperties {
     pub fn new() -> Self {
         Self::default()
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "instanceType")]
+pub enum MigrateEventPropertiesUnion {
+    Databases(DatabaseMigrateEventProperties),
+    Servers(MachineMigrateEventProperties),
 }
 #[doc = "Migrate Project REST Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1541,6 +1547,12 @@ pub mod project_summary {
         Failed,
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "instanceType")]
+pub enum ProjectSummaryUnion {
+    Databases(DatabaseProjectSummary),
+    Servers(ServersProjectSummary),
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RangeVariable {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1841,7 +1853,7 @@ pub struct SolutionProperties {
     pub cleanup_state: Option<solution_properties::CleanupState>,
     #[doc = "The solution summary class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub summary: Option<SolutionSummary>,
+    pub summary: Option<SolutionSummaryUnion>,
     #[doc = "Class representing the details of the solution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<SolutionDetails>,
@@ -1910,6 +1922,12 @@ impl SolutionSummary {
     pub fn new() -> Self {
         Self::default()
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "instanceType")]
+pub enum SolutionSummaryUnion {
+    Databases(DatabasesSolutionSummary),
+    Servers(ServersSolutionSummary),
 }
 #[doc = "Collection of solutions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

@@ -138,7 +138,7 @@ pub mod received_shares {
         pub fn create_or_replace(
             &self,
             received_share_id: impl Into<String>,
-            received_share: impl Into<models::ReceivedShare>,
+            received_share: impl Into<models::ReceivedShareUnion>,
         ) -> create_or_replace::RequestBuilder {
             create_or_replace::RequestBuilder {
                 client: self.0.clone(),
@@ -214,9 +214,9 @@ pub mod received_shares {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ReceivedShare> {
+            pub async fn into_body(self) -> azure_core::Result<models::ReceivedShareUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ReceivedShare = serde_json::from_slice(&bytes)?;
+                let body: models::ReceivedShareUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -293,8 +293,8 @@ pub mod received_shares {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::ReceivedShare>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ReceivedShare>>;
+            type Output = azure_core::Result<models::ReceivedShareUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ReceivedShareUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -314,9 +314,9 @@ pub mod received_shares {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ReceivedShare> {
+            pub async fn into_body(self) -> azure_core::Result<models::ReceivedShareUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ReceivedShare = serde_json::from_slice(&bytes)?;
+                let body: models::ReceivedShareUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -367,7 +367,7 @@ pub mod received_shares {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) received_share_id: String,
-            pub(crate) received_share: models::ReceivedShare,
+            pub(crate) received_share: models::ReceivedShareUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -404,8 +404,8 @@ pub mod received_shares {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::ReceivedShare>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ReceivedShare>>;
+            type Output = azure_core::Result<models::ReceivedShareUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ReceivedShareUnion>>;
             #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
@@ -1134,7 +1134,7 @@ pub mod sent_shares {
         pub fn create_or_replace(
             &self,
             sent_share_id: impl Into<String>,
-            sent_share: impl Into<models::SentShare>,
+            sent_share: impl Into<models::SentShareUnion>,
         ) -> create_or_replace::RequestBuilder {
             create_or_replace::RequestBuilder {
                 client: self.0.clone(),
@@ -1195,7 +1195,7 @@ pub mod sent_shares {
             &self,
             sent_share_id: impl Into<String>,
             sent_share_invitation_id: impl Into<String>,
-            sent_share_invitation: impl Into<models::SentShareInvitation>,
+            sent_share_invitation: impl Into<models::SentShareInvitationUnion>,
         ) -> create_invitation::RequestBuilder {
             create_invitation::RequestBuilder {
                 client: self.0.clone(),
@@ -1396,9 +1396,9 @@ pub mod sent_shares {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::SentShare> {
+            pub async fn into_body(self) -> azure_core::Result<models::SentShareUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::SentShare = serde_json::from_slice(&bytes)?;
+                let body: models::SentShareUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1475,8 +1475,8 @@ pub mod sent_shares {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::SentShare>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SentShare>>;
+            type Output = azure_core::Result<models::SentShareUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SentShareUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -1496,9 +1496,9 @@ pub mod sent_shares {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::SentShare> {
+            pub async fn into_body(self) -> azure_core::Result<models::SentShareUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::SentShare = serde_json::from_slice(&bytes)?;
+                let body: models::SentShareUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -1549,7 +1549,7 @@ pub mod sent_shares {
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_id: String,
-            pub(crate) sent_share: models::SentShare,
+            pub(crate) sent_share: models::SentShareUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -1586,8 +1586,8 @@ pub mod sent_shares {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::SentShare>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SentShare>>;
+            type Output = azure_core::Result<models::SentShareUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SentShareUnion>>;
             #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
@@ -1921,9 +1921,9 @@ pub mod sent_shares {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::SentShareInvitation> {
+            pub async fn into_body(self) -> azure_core::Result<models::SentShareInvitationUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::SentShareInvitation = serde_json::from_slice(&bytes)?;
+                let body: models::SentShareInvitationUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2006,8 +2006,8 @@ pub mod sent_shares {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::SentShareInvitation>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SentShareInvitation>>;
+            type Output = azure_core::Result<models::SentShareInvitationUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SentShareInvitationUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -2027,9 +2027,9 @@ pub mod sent_shares {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::SentShareInvitation> {
+            pub async fn into_body(self) -> azure_core::Result<models::SentShareInvitationUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::SentShareInvitation = serde_json::from_slice(&bytes)?;
+                let body: models::SentShareInvitationUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2072,7 +2072,7 @@ pub mod sent_shares {
             pub(crate) client: super::super::Client,
             pub(crate) sent_share_id: String,
             pub(crate) sent_share_invitation_id: String,
-            pub(crate) sent_share_invitation: models::SentShareInvitation,
+            pub(crate) sent_share_invitation: models::SentShareInvitationUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -2114,8 +2114,8 @@ pub mod sent_shares {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::SentShareInvitation>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SentShareInvitation>>;
+            type Output = azure_core::Result<models::SentShareInvitationUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SentShareInvitationUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -2278,9 +2278,9 @@ pub mod sent_shares {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::SentShareInvitation> {
+            pub async fn into_body(self) -> azure_core::Result<models::SentShareInvitationUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::SentShareInvitation = serde_json::from_slice(&bytes)?;
+                let body: models::SentShareInvitationUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -2373,8 +2373,8 @@ pub mod sent_shares {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::SentShareInvitation>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SentShareInvitation>>;
+            type Output = azure_core::Result<models::SentShareInvitationUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SentShareInvitationUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]

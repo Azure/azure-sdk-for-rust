@@ -2349,6 +2349,13 @@ impl Partition {
         Self { partition_scheme }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "partitionScheme")]
+pub enum PartitionUnion {
+    Named(NamedPartitionScheme),
+    Singleton(SingletonPartitionScheme),
+    UniformInt64Range(UniformInt64RangePartitionScheme),
+}
 #[doc = "Represents a scaling mechanism for adding or removing instances of stateless service partition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionInstanceCountScaleMechanism {
@@ -2624,18 +2631,24 @@ impl ScalingMechanism {
         Self { kind }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ScalingMechanismUnion {
+    AddRemoveIncrementalNamedPartition(AddRemoveIncrementalNamedPartitionScalingMechanism),
+    ScalePartitionInstanceCount(PartitionInstanceCountScaleMechanism),
+}
 #[doc = "Specifies a metric to load balance a service during runtime."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScalingPolicy {
     #[doc = "Describes the mechanism for performing a scaling operation."]
     #[serde(rename = "scalingMechanism")]
-    pub scaling_mechanism: ScalingMechanism,
+    pub scaling_mechanism: ScalingMechanismUnion,
     #[doc = "Describes the trigger for performing a scaling operation."]
     #[serde(rename = "scalingTrigger")]
-    pub scaling_trigger: ScalingTrigger,
+    pub scaling_trigger: ScalingTriggerUnion,
 }
 impl ScalingPolicy {
-    pub fn new(scaling_mechanism: ScalingMechanism, scaling_trigger: ScalingTrigger) -> Self {
+    pub fn new(scaling_mechanism: ScalingMechanismUnion, scaling_trigger: ScalingTriggerUnion) -> Self {
         Self {
             scaling_mechanism,
             scaling_trigger,
@@ -2653,6 +2666,12 @@ impl ScalingTrigger {
     pub fn new(kind: ServiceScalingTriggerKind) -> Self {
         Self { kind }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ScalingTriggerUnion {
+    AveragePartitionLoadTrigger(AveragePartitionLoadScalingTrigger),
+    AverageServiceLoadTrigger(AverageServiceLoadScalingTrigger),
 }
 #[doc = "Creates a particular correlation between services."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2876,6 +2895,15 @@ impl ServicePlacementPolicy {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ServicePlacementPolicyUnion {
+    InvalidDomain(ServicePlacementInvalidDomainPolicy),
+    NonPartiallyPlaceService(ServicePlacementNonPartiallyPlaceServicePolicy),
+    PreferredPrimaryDomain(ServicePlacementPreferPrimaryDomainPolicy),
+    RequiredDomainDistribution(ServicePlacementRequireDomainDistributionPolicy),
+    RequiredDomain(ServicePlacementRequiredDomainPolicy),
+}
 #[doc = "The type of placement policy for a service fabric service. Following are the possible values."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ServicePlacementPolicyType")]
@@ -2981,7 +3009,7 @@ pub struct ServiceResource {
     pub proxy_resource: ProxyResource,
     #[doc = "The service resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ServiceResourceProperties>,
+    pub properties: Option<ServiceResourcePropertiesUnion>,
 }
 impl ServiceResource {
     pub fn new() -> Self {
@@ -3028,7 +3056,7 @@ pub struct ServiceResourceProperties {
     pub service_type_name: String,
     #[doc = "Describes how the service is partitioned."]
     #[serde(rename = "partitionDescription")]
-    pub partition_description: Partition,
+    pub partition_description: PartitionUnion,
     #[doc = "The activation Mode of the service package"]
     #[serde(rename = "servicePackageActivationMode", default, skip_serializing_if = "Option::is_none")]
     pub service_package_activation_mode: Option<service_resource_properties::ServicePackageActivationMode>,
@@ -3037,7 +3065,7 @@ pub struct ServiceResourceProperties {
     pub service_dns_name: Option<String>,
 }
 impl ServiceResourceProperties {
-    pub fn new(service_kind: ServiceKind, service_type_name: String, partition_description: Partition) -> Self {
+    pub fn new(service_kind: ServiceKind, service_type_name: String, partition_description: PartitionUnion) -> Self {
         Self {
             service_resource_properties_base: ServiceResourcePropertiesBase::default(),
             provisioning_state: None,
@@ -3088,6 +3116,12 @@ pub mod service_resource_properties {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "serviceKind")]
+pub enum ServiceResourcePropertiesUnion {
+    Stateful(StatefulServiceProperties),
+    Stateless(StatelessServiceProperties),
 }
 #[doc = "The common service resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

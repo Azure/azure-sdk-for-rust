@@ -1538,3 +1538,13 @@ impl Variable {
         Self { kind, filter: None }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum VariableUnion {
+    #[serde(rename = "aggregate")]
+    Aggregate(AggregateVariable),
+    #[serde(rename = "categorical")]
+    Categorical(CategoricalVariable),
+    #[serde(rename = "numeric")]
+    Numeric(NumericVariable),
+}

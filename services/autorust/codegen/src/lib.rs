@@ -101,7 +101,7 @@ pub fn run<'a>(crate_config: &'a CrateConfig, package_config: &'a PackageConfig)
     let fix_case_properties: HashSet<&'a str> = package_config.properties.fix_case.iter().map(AsRef::as_ref).collect();
     let invalid_types: HashSet<PropertyName> = package_config.properties.invalid_type.iter().map(to_property_name).collect();
 
-    let cg = CodeGen::new(
+    let mut cg = CodeGen::new(
         crate_config,
         box_properties,
         optional_properties,
@@ -111,7 +111,7 @@ pub fn run<'a>(crate_config: &'a CrateConfig, package_config: &'a PackageConfig)
 
     // create models from schemas
     if crate_config.should_run(&Runs::Models) {
-        let models = codegen_models::create_models(&cg)?;
+        let models = codegen_models::create_models(&mut cg)?;
         let models_path = io::join(&crate_config.output_folder, "models.rs")?;
         write_file(models_path, &models.to_token_stream(), crate_config.print_writing_file())?;
     }

@@ -101,6 +101,12 @@ pub mod analytics_connector_data_destination {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AnalyticsConnectorDataDestinationUnion {
+    #[serde(rename = "datalake")]
+    Datalake(AnalyticsConnectorDataLakeDataDestination),
+}
 #[doc = "The Data Lake data destination for Analytics Connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnalyticsConnectorDataLakeDataDestination {
@@ -168,6 +174,12 @@ pub mod analytics_connector_data_source {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AnalyticsConnectorDataSourceUnion {
+    #[serde(rename = "fhirservice")]
+    Fhirservice(AnalyticsConnectorFhirServiceDataSource),
 }
 #[doc = "The FHIR service data source for Analytics Connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -305,6 +317,12 @@ pub mod analytics_connector_mapping {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AnalyticsConnectorMappingUnion {
+    #[serde(rename = "fhirToParquet")]
+    FhirToParquet(AnalyticsConnectorFhirToParquetMapping),
+}
 #[doc = "AnalyticsConnector patch properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AnalyticsConnectorPatchResource {
@@ -326,19 +344,19 @@ pub struct AnalyticsConnectorProperties {
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Data source for Analytics Connector. The target resource must be in the same workspace with the Analytics Connector."]
     #[serde(rename = "dataSourceConfiguration")]
-    pub data_source_configuration: AnalyticsConnectorDataSource,
+    pub data_source_configuration: AnalyticsConnectorDataSourceUnion,
     #[doc = "Data mapping configuration for Analytics Connector."]
     #[serde(rename = "dataMappingConfiguration")]
-    pub data_mapping_configuration: AnalyticsConnectorMapping,
+    pub data_mapping_configuration: AnalyticsConnectorMappingUnion,
     #[doc = "Data destination configuration for Analytics Connector."]
     #[serde(rename = "dataDestinationConfiguration")]
-    pub data_destination_configuration: AnalyticsConnectorDataDestination,
+    pub data_destination_configuration: AnalyticsConnectorDataDestinationUnion,
 }
 impl AnalyticsConnectorProperties {
     pub fn new(
-        data_source_configuration: AnalyticsConnectorDataSource,
-        data_mapping_configuration: AnalyticsConnectorMapping,
-        data_destination_configuration: AnalyticsConnectorDataDestination,
+        data_source_configuration: AnalyticsConnectorDataSourceUnion,
+        data_mapping_configuration: AnalyticsConnectorMappingUnion,
+        data_destination_configuration: AnalyticsConnectorDataDestinationUnion,
     ) -> Self {
         Self {
             provisioning_state: None,

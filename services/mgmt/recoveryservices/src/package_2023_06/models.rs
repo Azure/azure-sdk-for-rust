@@ -1358,6 +1358,12 @@ impl ResourceCertificateDetails {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "authType")]
+pub enum ResourceCertificateDetailsUnion {
+    AzureActiveDirectory(ResourceCertificateAndAadDetails),
+    AccessControlService(ResourceCertificateAndAcsDetails),
+}
 #[doc = "Restore Settings  of the vault"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestoreSettings {
@@ -1711,7 +1717,7 @@ pub struct VaultCertificateResponse {
     pub id: Option<String>,
     #[doc = "Certificate details representing the Vault credentials."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ResourceCertificateDetails>,
+    pub properties: Option<ResourceCertificateDetailsUnion>,
 }
 impl VaultCertificateResponse {
     pub fn new() -> Self {

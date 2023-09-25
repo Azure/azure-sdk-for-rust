@@ -1,0 +1,10 @@
+[tags]
+# Only generate stable tags.
+# They are not following the naming convension of package-date-preview.
+deny_contains_preview = true
+deny = [
+    # duplicate "x-ms-discriminator-value": "uri_folder" with DataVersionBase
+    # https://github.com/Azure/azure-rest-api-specs/issues/25911
+    "package-preview-2023-06", # duplicate tag https://github.com/Azure/azure-rest-api-specs/issues/16692
+    "package-preview-2023-04",
+  ]

@@ -269,7 +269,7 @@ pub struct BillingMeterDetails {
     pub name: Option<String>,
     #[doc = "Holds details about billing type and its meter guids"]
     #[serde(rename = "meterDetails", default, skip_serializing_if = "Option::is_none")]
-    pub meter_details: Option<MeterDetails>,
+    pub meter_details: Option<MeterDetailsUnion>,
     #[doc = "Represents Metering type (eg one-time or recurrent)"]
     #[serde(rename = "meteringType", default, skip_serializing_if = "Option::is_none")]
     pub metering_type: Option<billing_meter_details::MeteringType>,
@@ -1210,6 +1210,12 @@ pub mod meter_details {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "billingType")]
+pub enum MeterDetailsUnion {
+    Pav2(Pav2MeterDetails),
+    Purchase(PurchaseMeterDetails),
 }
 #[doc = "Notification preference for a job stage."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

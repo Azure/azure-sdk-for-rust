@@ -6139,6 +6139,14 @@ impl RunRequest {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum RunRequestUnion {
+    DockerBuildRequest(DockerBuildRequest),
+    EncodedTaskRunRequest(EncodedTaskRunRequest),
+    FileTaskRunRequest(FileTaskRunRequest),
+    TaskRunRequest(TaskRunRequest),
+}
 #[doc = "The set of run properties that can be updated."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunUpdateParameters {
@@ -7246,7 +7254,7 @@ pub struct TaskProperties {
     pub timeout: Option<i32>,
     #[doc = "Base properties for any task step."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub step: Option<TaskStepProperties>,
+    pub step: Option<TaskStepPropertiesUnion>,
     #[doc = "The properties of a trigger."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trigger: Option<TriggerProperties>,
@@ -7370,7 +7378,7 @@ pub struct TaskPropertiesUpdateParameters {
     pub timeout: Option<i32>,
     #[doc = "Base properties for updating any task step."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub step: Option<TaskStepUpdateParameters>,
+    pub step: Option<TaskStepUpdateParametersUnion>,
     #[doc = "The properties for updating triggers."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trigger: Option<TriggerUpdateParameters>,
@@ -7479,7 +7487,7 @@ pub struct TaskRunProperties {
     pub provisioning_state: Option<task_run_properties::ProvisioningState>,
     #[doc = "The request parameters for scheduling a run."]
     #[serde(rename = "runRequest", default, skip_serializing_if = "Option::is_none")]
-    pub run_request: Option<RunRequest>,
+    pub run_request: Option<RunRequestUnion>,
     #[doc = "Run resource properties"]
     #[serde(rename = "runResult", default, skip_serializing_if = "Option::is_none")]
     pub run_result: Option<Run>,
@@ -7545,7 +7553,7 @@ pub mod task_run_properties {
 pub struct TaskRunPropertiesUpdateParameters {
     #[doc = "The request parameters for scheduling a run."]
     #[serde(rename = "runRequest", default, skip_serializing_if = "Option::is_none")]
-    pub run_request: Option<RunRequest>,
+    pub run_request: Option<RunRequestUnion>,
     #[doc = "How the run should be forced to rerun even if the run request configuration has not changed"]
     #[serde(rename = "forceUpdateTag", default, skip_serializing_if = "Option::is_none")]
     pub force_update_tag: Option<String>,
@@ -7669,6 +7677,13 @@ pub mod task_step_properties {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum TaskStepPropertiesUnion {
+    Docker(DockerBuildStep),
+    EncodedTask(EncodedTaskStep),
+    FileTask(FileTaskStep),
+}
 #[doc = "Base properties for updating any task step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskStepUpdateParameters {
@@ -7732,6 +7747,13 @@ pub mod task_step_update_parameters {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum TaskStepUpdateParametersUnion {
+    Docker(DockerBuildStepUpdateParameters),
+    EncodedTask(EncodedTaskStepUpdateParameters),
+    FileTask(FileTaskStepUpdateParameters),
 }
 #[doc = "The parameters for updating a task."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

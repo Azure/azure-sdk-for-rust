@@ -89,6 +89,16 @@ impl Attestation {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AttestationUnion {
+    #[serde(rename = "symmetricKey")]
+    SymmetricKey(SymmetricKeyAttestation),
+    #[serde(rename = "tpm")]
+    Tpm(TpmAttestation),
+    #[serde(rename = "x509")]
+    X509(X509Attestation),
+}
 #[doc = "The capability job data definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CapabilityJobData {
@@ -528,13 +538,13 @@ pub struct EnrollmentGroup {
     #[serde(rename = "type")]
     pub type_: enrollment_group::Type,
     #[doc = "The attestation definition for an enrollment group."]
-    pub attestation: GroupAttestation,
+    pub attestation: GroupAttestationUnion,
     #[doc = "ETag used to prevent conflict in enrollment group updates."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
 }
 impl EnrollmentGroup {
-    pub fn new(display_name: String, type_: enrollment_group::Type, attestation: GroupAttestation) -> Self {
+    pub fn new(display_name: String, type_: enrollment_group::Type, attestation: GroupAttestationUnion) -> Self {
         Self {
             id: None,
             display_name,
@@ -679,6 +689,14 @@ impl GroupAttestation {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum GroupAttestationUnion {
+    #[serde(rename = "symmetricKey")]
+    SymmetricKey(GroupSymmetricKeyAttestation),
+    #[serde(rename = "x509")]
+    X509(GroupX509Attestation),
+}
 #[doc = "The symmetric key attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GroupSymmetricKeyAttestation {
@@ -737,7 +755,7 @@ pub struct Job {
     #[serde(rename = "cancellationThreshold", default, skip_serializing_if = "Option::is_none")]
     pub cancellation_threshold: Option<JobCancellationThreshold>,
     #[doc = "The capabilities being updated by the job and the values with which they are being updated."]
-    pub data: Vec<JobData>,
+    pub data: Vec<JobDataUnion>,
     #[doc = "The start time of the job"]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub start: Option<time::OffsetDateTime>,
@@ -759,7 +777,7 @@ pub struct Job {
     pub organizations: Vec<String>,
 }
 impl Job {
-    pub fn new(group: String, data: Vec<JobData>) -> Self {
+    pub fn new(group: String, data: Vec<JobDataUnion>) -> Self {
         Self {
             id: None,
             scheduled_job_id: None,
@@ -862,6 +880,18 @@ impl JobData {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum JobDataUnion {
+    #[serde(rename = "cloudProperty")]
+    CloudProperty(CloudPropertyJobData),
+    #[serde(rename = "command")]
+    Command(CommandJobData),
+    #[serde(rename = "deviceTemplateMigration")]
+    DeviceTemplateMigration(DeviceTemplateMigrationJobData),
+    #[serde(rename = "property")]
+    Property(PropertyJobData),
+}
 #[doc = "The job device status definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDeviceStatus {
@@ -929,7 +959,7 @@ pub struct JobSchedule {
     pub start: time::OffsetDateTime,
     #[doc = "The end definition of job schedule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub end: Option<JobScheduleEnd>,
+    pub end: Option<JobScheduleEndUnion>,
 }
 impl JobSchedule {
     pub fn new(start: time::OffsetDateTime) -> Self {
@@ -964,6 +994,14 @@ impl JobScheduleEnd {
     pub fn new(type_: String) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum JobScheduleEndUnion {
+    #[serde(rename = "date")]
+    Date(DateJobScheduleEnd),
+    #[serde(rename = "occurrences")]
+    Occurrences(OccurrencesJobScheduleEnd),
 }
 #[doc = "The occurences based end definition of job schedule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1119,7 +1157,7 @@ pub struct ScheduledJob {
     #[serde(rename = "cancellationThreshold", default, skip_serializing_if = "Option::is_none")]
     pub cancellation_threshold: Option<JobCancellationThreshold>,
     #[doc = "Data related to the operation being performed by this job. All entries must be of the same type."]
-    pub data: Vec<JobData>,
+    pub data: Vec<JobDataUnion>,
     #[doc = "List of organizations of the job, only one organization is supported today, multiple organizations will be supported soon."]
     #[serde(
         default,
@@ -1137,7 +1175,7 @@ pub struct ScheduledJob {
     pub completed: Option<bool>,
 }
 impl ScheduledJob {
-    pub fn new(group: String, data: Vec<JobData>, schedule: JobSchedule) -> Self {
+    pub fn new(group: String, data: Vec<JobDataUnion>, schedule: JobSchedule) -> Self {
         Self {
             etag: None,
             id: None,
@@ -1324,11 +1362,21 @@ impl User {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum UserUnion {
+    #[serde(rename = "adGroup")]
+    AdGroup(AdGroupUser),
+    #[serde(rename = "email")]
+    Email(EmailUser),
+    #[serde(rename = "servicePrincipal")]
+    ServicePrincipal(ServicePrincipalUser),
+}
 #[doc = "The paged results of users."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserCollection {
     #[doc = "The collection of users."]
-    pub value: Vec<User>,
+    pub value: Vec<UserUnion>,
     #[doc = "URL to get the next page of users."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -1340,7 +1388,7 @@ impl azure_core::Continuable for UserCollection {
     }
 }
 impl UserCollection {
-    pub fn new(value: Vec<User>) -> Self {
+    pub fn new(value: Vec<UserUnion>) -> Self {
         Self { value, next_link: None }
     }
 }

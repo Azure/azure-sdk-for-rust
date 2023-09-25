@@ -342,6 +342,12 @@ impl BackupPolicy {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum BackupPolicyUnion {
+    Continuous(ContinuousModeBackupPolicy),
+    Periodic(PeriodicModeBackupPolicy),
+}
 #[doc = "The object representing the state of the migration between the backup policies."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupPolicyMigrationState {
@@ -1961,6 +1967,15 @@ pub mod data_transfer_data_source_sink {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "component")]
+pub enum DataTransferDataSourceSinkUnion {
+    AzureBlobStorage(AzureBlobDataTransferDataSourceSink),
+    #[serde(rename = "CosmosDBCassandra")]
+    CosmosDbCassandra(CosmosCassandraDataTransferDataSourceSink),
+    #[serde(rename = "CosmosDBSql")]
+    CosmosDbSql(CosmosSqlDataTransferDataSourceSink),
+}
 #[doc = "The List operation response, that contains the Data Transfer jobs and their properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataTransferJobFeedResults {
@@ -2007,9 +2022,9 @@ pub struct DataTransferJobProperties {
     #[serde(rename = "jobName", default, skip_serializing_if = "Option::is_none")]
     pub job_name: Option<String>,
     #[doc = "Base class for all DataTransfer source/sink"]
-    pub source: DataTransferDataSourceSink,
+    pub source: DataTransferDataSourceSinkUnion,
     #[doc = "Base class for all DataTransfer source/sink"]
-    pub destination: DataTransferDataSourceSink,
+    pub destination: DataTransferDataSourceSinkUnion,
     #[doc = "Job Status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -2030,7 +2045,7 @@ pub struct DataTransferJobProperties {
     pub error: Option<ErrorResponse>,
 }
 impl DataTransferJobProperties {
-    pub fn new(source: DataTransferDataSourceSink, destination: DataTransferDataSourceSink) -> Self {
+    pub fn new(source: DataTransferDataSourceSinkUnion, destination: DataTransferDataSourceSinkUnion) -> Self {
         Self {
             job_name: None,
             source,
@@ -2248,7 +2263,7 @@ pub struct DatabaseAccountCreateUpdateProperties {
     pub create_mode: Option<CreateMode>,
     #[doc = "The object representing the policy for taking backups on an account."]
     #[serde(rename = "backupPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub backup_policy: Option<BackupPolicy>,
+    pub backup_policy: Option<BackupPolicyUnion>,
     #[doc = "The CORS policy for the Cosmos DB database account."]
     #[serde(
         default,
@@ -2455,7 +2470,7 @@ pub struct DatabaseAccountGetProperties {
     pub restore_parameters: Option<RestoreParameters>,
     #[doc = "The object representing the policy for taking backups on an account."]
     #[serde(rename = "backupPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub backup_policy: Option<BackupPolicy>,
+    pub backup_policy: Option<BackupPolicyUnion>,
     #[doc = "The CORS policy for the Cosmos DB database account."]
     #[serde(
         default,
@@ -2803,7 +2818,7 @@ pub struct DatabaseAccountUpdateProperties {
     pub analytical_storage_configuration: Option<AnalyticalStorageConfiguration>,
     #[doc = "The object representing the policy for taking backups on an account."]
     #[serde(rename = "backupPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub backup_policy: Option<BackupPolicy>,
+    pub backup_policy: Option<BackupPolicyUnion>,
     #[doc = "The CORS policy for the Cosmos DB database account."]
     #[serde(
         default,
@@ -6797,7 +6812,7 @@ pub struct ServiceResource {
     pub arm_proxy_resource: ArmProxyResource,
     #[doc = "Services response resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ServiceResourceProperties>,
+    pub properties: Option<ServiceResourcePropertiesUnion>,
 }
 impl ServiceResource {
     pub fn new() -> Self {
@@ -6927,6 +6942,15 @@ impl ServiceResourceProperties {
             status: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "serviceType")]
+pub enum ServiceResourcePropertiesUnion {
+    DataTransfer(DataTransferServiceResourceProperties),
+    #[serde(rename = "GraphAPICompute")]
+    GraphApiCompute(GraphApiComputeServiceResourceProperties),
+    MaterializedViewsBuilder(MaterializedViewsBuilderServiceResourceProperties),
+    SqlDedicatedGateway(SqlDedicatedGatewayServiceResourceProperties),
 }
 #[doc = "Describes the status of a service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

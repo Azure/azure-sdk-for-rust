@@ -75,7 +75,7 @@ pub struct BotChannel {
     pub resource: Resource,
     #[doc = "Channel definition"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<Channel>,
+    pub properties: Option<ChannelUnion>,
 }
 impl BotChannel {
     pub fn new() -> Self {
@@ -386,6 +386,29 @@ impl Channel {
             location: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "channelName")]
+pub enum ChannelUnion {
+    AcsChatChannel(AcsChatChannel),
+    AlexaChannel(AlexaChannel),
+    DirectLineChannel(DirectLineChannel),
+    DirectLineSpeechChannel(DirectLineSpeechChannel),
+    EmailChannel(EmailChannel),
+    FacebookChannel(FacebookChannel),
+    KikChannel(KikChannel),
+    LineChannel(LineChannel),
+    M365Extensions(M365Extensions),
+    MsTeamsChannel(MsTeamsChannel),
+    Omnichannel(Omnichannel),
+    OutlookChannel(OutlookChannel),
+    SearchAssistant(SearchAssistant),
+    SkypeChannel(SkypeChannel),
+    SlackChannel(SlackChannel),
+    SmsChannel(SmsChannel),
+    TelegramChannel(TelegramChannel),
+    TelephonyChannel(TelephonyChannel),
+    WebChatChannel(WebChatChannel),
 }
 #[doc = "The list of bot service channel operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1047,7 +1070,7 @@ pub struct ListChannelWithKeysResponse {
     pub bot_channel: BotChannel,
     #[doc = "Channel definition"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resource: Option<Channel>,
+    pub resource: Option<ChannelUnion>,
     #[doc = "Channel settings definition"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub setting: Option<ChannelSettings>,

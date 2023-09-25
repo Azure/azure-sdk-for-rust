@@ -109,6 +109,11 @@ impl LimitJsonObject {
         Self { limit_object_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "limitObjectType")]
+pub enum LimitJsonObjectUnion {
+    LimitValue(LimitObject),
+}
 #[doc = "The resource quota limit value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LimitObject {
@@ -307,7 +312,7 @@ impl QuotaLimitsResponse {
 pub struct QuotaProperties {
     #[doc = "LimitJson abstract class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limit: Option<LimitJsonObject>,
+    pub limit: Option<LimitJsonObjectUnion>,
     #[doc = " The quota units, such as Count and Bytes. When requesting quota, use the **unit** value returned in the GET response in the request body of your PUT operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
@@ -621,7 +626,7 @@ pub struct SubRequest {
     pub sub_request_id: Option<String>,
     #[doc = "LimitJson abstract class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limit: Option<LimitJsonObject>,
+    pub limit: Option<LimitJsonObjectUnion>,
 }
 impl SubRequest {
     pub fn new() -> Self {

@@ -604,6 +604,12 @@ impl DirectoryObject {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "objectType")]
+pub enum DirectoryObjectUnion {
+    Group(AdGroup),
+    AppRoleAssignment(AppRoleAssignment),
+}
 #[doc = "DirectoryObject list operation result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DirectoryObjectListResult {
@@ -613,7 +619,7 @@ pub struct DirectoryObjectListResult {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<DirectoryObject>,
+    pub value: Vec<DirectoryObjectUnion>,
     #[doc = "The URL to get the next set of results."]
     #[serde(rename = "odata.nextLink", default, skip_serializing_if = "Option::is_none")]
     pub odata_next_link: Option<String>,

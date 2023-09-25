@@ -15,6 +15,20 @@ impl AuthInfoBase {
         Self { auth_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "authType")]
+pub enum AuthInfoBaseUnion {
+    #[serde(rename = "secret")]
+    Secret(SecretAuthInfo),
+    #[serde(rename = "servicePrincipalCertificate")]
+    ServicePrincipalCertificate(ServicePrincipalCertificateAuthInfo),
+    #[serde(rename = "servicePrincipalSecret")]
+    ServicePrincipalSecret(ServicePrincipalSecretAuthInfo),
+    #[serde(rename = "systemAssignedIdentity")]
+    SystemAssignedIdentity(SystemAssignedIdentityAuthInfo),
+    #[serde(rename = "userAssignedIdentity")]
+    UserAssignedIdentity(UserAssignedIdentityAuthInfo),
+}
 #[doc = "The authentication type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "AuthType")]
@@ -174,7 +188,7 @@ pub struct LinkerProperties {
     pub target_id: Option<String>,
     #[doc = "The authentication info"]
     #[serde(rename = "authInfo", default, skip_serializing_if = "Option::is_none")]
-    pub auth_info: Option<AuthInfoBase>,
+    pub auth_info: Option<AuthInfoBaseUnion>,
     #[doc = "The application client type"]
     #[serde(rename = "clientType", default, skip_serializing_if = "Option::is_none")]
     pub client_type: Option<linker_properties::ClientType>,

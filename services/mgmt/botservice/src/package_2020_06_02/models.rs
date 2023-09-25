@@ -64,7 +64,7 @@ pub struct BotChannel {
     pub resource: Resource,
     #[doc = "Channel definition"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<Channel>,
+    pub properties: Option<ChannelUnion>,
 }
 impl BotChannel {
     pub fn new() -> Self {
@@ -191,6 +191,23 @@ impl Channel {
     pub fn new(channel_name: String) -> Self {
         Self { channel_name }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "channelName")]
+pub enum ChannelUnion {
+    AlexaChannel(AlexaChannel),
+    DirectLineChannel(DirectLineChannel),
+    DirectLineSpeechChannel(DirectLineSpeechChannel),
+    EmailChannel(EmailChannel),
+    FacebookChannel(FacebookChannel),
+    KikChannel(KikChannel),
+    LineChannel(LineChannel),
+    MsTeamsChannel(MsTeamsChannel),
+    SkypeChannel(SkypeChannel),
+    SlackChannel(SlackChannel),
+    SmsChannel(SmsChannel),
+    TelegramChannel(TelegramChannel),
+    WebChatChannel(WebChatChannel),
 }
 #[doc = "The list of bot service channel operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

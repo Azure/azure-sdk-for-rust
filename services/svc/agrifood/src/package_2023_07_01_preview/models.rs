@@ -90,7 +90,7 @@ pub struct ApplicationData {
     pub source: Option<String>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub geometry: Option<GeoJsonObject>,
+    pub geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Name to identify resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -363,6 +363,12 @@ impl AuthCredentials {
     pub fn new(kind: AuthCredentialsKind) -> Self {
         Self { kind }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AuthCredentialsUnion {
+    ApiKeyAuthCredentials(ApiKeyAuthCredentials),
+    OAuthClientCredentials(OAuthClientCredentials),
 }
 #[doc = "CredentialTypeEnum."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1575,7 +1581,7 @@ pub struct Field {
     pub source: Option<String>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub geometry: Option<GeoJsonObject>,
+    pub geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Name to identify resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -1670,6 +1676,13 @@ impl GeoJsonObject {
     pub fn new(type_: GeoJsonObjectType) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum GeoJsonObjectUnion {
+    MultiPolygon(MultiPolygon),
+    Point(Point),
+    Polygon(Polygon),
 }
 #[doc = "GeoJSON object type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1846,7 +1859,7 @@ pub struct HarvestData {
     pub source: Option<String>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub geometry: Option<GeoJsonObject>,
+    pub geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Name to identify resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -3236,7 +3249,7 @@ pub struct PlantTissueAnalysis {
     pub source: Option<String>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub geometry: Option<GeoJsonObject>,
+    pub geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Name to identify resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -3417,7 +3430,7 @@ pub struct PlantingData {
     pub source: Option<String>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub geometry: Option<GeoJsonObject>,
+    pub geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Name to identify resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -3649,7 +3662,7 @@ pub struct Prescription {
     pub source: Option<String>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub geometry: Option<GeoJsonObject>,
+    pub geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Name to identify resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -4160,7 +4173,7 @@ pub struct SearchApplicationDataQuery {
     pub max_last_modified_date_time: Option<time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
-    pub intersects_with_geometry: Option<GeoJsonObject>,
+    pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Party ID which belongs to the operation data."]
     #[serde(rename = "partyId", default, skip_serializing_if = "Option::is_none")]
     pub party_id: Option<String>,
@@ -4184,7 +4197,7 @@ pub struct SearchFeaturesQuery {
     pub end_date_time: time::OffsetDateTime,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub intersects: Option<GeoJsonObject>,
+    pub intersects: Option<GeoJsonObjectUnion>,
     #[doc = "Only features that have a geometry that intersects the bounding box are selected.\r\nThe bounding box is provided as four numbers. The coordinate reference system of the values is WGS84 longitude/latitude."]
     #[serde(
         default,
@@ -4284,7 +4297,7 @@ pub struct SearchFieldQuery {
     pub max_last_modified_date_time: Option<time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
-    pub intersects_with_geometry: Option<GeoJsonObject>,
+    pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
 }
 impl SearchFieldQuery {
     pub fn new() -> Self {
@@ -4415,7 +4428,7 @@ pub struct SearchHarvestDataQuery {
     pub max_last_modified_date_time: Option<time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
-    pub intersects_with_geometry: Option<GeoJsonObject>,
+    pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Party ID which belongs to the operation data."]
     #[serde(rename = "partyId", default, skip_serializing_if = "Option::is_none")]
     pub party_id: Option<String>,
@@ -4503,7 +4516,7 @@ pub struct SearchPlantTissueAnalysisQuery {
     pub max_last_modified_date_time: Option<time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
-    pub intersects_with_geometry: Option<GeoJsonObject>,
+    pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Party ID which belongs to the operation data."]
     #[serde(rename = "partyId", default, skip_serializing_if = "Option::is_none")]
     pub party_id: Option<String>,
@@ -4619,7 +4632,7 @@ pub struct SearchPlantingDataQuery {
     pub max_last_modified_date_time: Option<time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
-    pub intersects_with_geometry: Option<GeoJsonObject>,
+    pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Party ID which belongs to the operation data."]
     #[serde(rename = "partyId", default, skip_serializing_if = "Option::is_none")]
     pub party_id: Option<String>,
@@ -4713,7 +4726,7 @@ pub struct SearchPrescriptionQuery {
     pub max_last_modified_date_time: Option<time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
-    pub intersects_with_geometry: Option<GeoJsonObject>,
+    pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Party ID which belongs to the operation data."]
     #[serde(rename = "partyId", default, skip_serializing_if = "Option::is_none")]
     pub party_id: Option<String>,
@@ -4809,7 +4822,7 @@ pub struct SearchSeasonalFieldQuery {
     pub max_last_modified_date_time: Option<time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
-    pub intersects_with_geometry: Option<GeoJsonObject>,
+    pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Party ID which belongs to the operation data."]
     #[serde(rename = "partyId", default, skip_serializing_if = "Option::is_none")]
     pub party_id: Option<String>,
@@ -4919,7 +4932,7 @@ pub struct SearchTillageDataQuery {
     pub max_last_modified_date_time: Option<time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
-    pub intersects_with_geometry: Option<GeoJsonObject>,
+    pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Party ID which belongs to the operation data."]
     #[serde(rename = "partyId", default, skip_serializing_if = "Option::is_none")]
     pub party_id: Option<String>,
@@ -4997,7 +5010,7 @@ pub struct SearchZoneQuery {
     pub max_last_modified_date_time: Option<time::OffsetDateTime>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(rename = "intersectsWithGeometry", default, skip_serializing_if = "Option::is_none")]
-    pub intersects_with_geometry: Option<GeoJsonObject>,
+    pub intersects_with_geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Party ID which belongs to the operation data."]
     #[serde(rename = "partyId", default, skip_serializing_if = "Option::is_none")]
     pub party_id: Option<String>,
@@ -5134,7 +5147,7 @@ pub struct SeasonalField {
     pub source: Option<String>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub geometry: Option<GeoJsonObject>,
+    pub geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Name to identify resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -6508,7 +6521,7 @@ pub struct TillageData {
     pub source: Option<String>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub geometry: Option<GeoJsonObject>,
+    pub geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Name to identify resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -7066,7 +7079,7 @@ pub struct Zone {
     pub source: Option<String>,
     #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub geometry: Option<GeoJsonObject>,
+    pub geometry: Option<GeoJsonObjectUnion>,
     #[doc = "Name to identify resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,

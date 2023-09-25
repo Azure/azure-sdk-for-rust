@@ -2220,10 +2220,10 @@ impl ClientScriptForConnect {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CrossRegionRestoreRequest {
     #[serde(rename = "crossRegionRestoreAccessDetails", default, skip_serializing_if = "Option::is_none")]
-    pub cross_region_restore_access_details: Option<CrrAccessToken>,
+    pub cross_region_restore_access_details: Option<CrrAccessTokenUnion>,
     #[doc = "Base class for restore request. Workload-specific restore requests are derived from this class."]
     #[serde(rename = "restoreRequest", default, skip_serializing_if = "Option::is_none")]
-    pub restore_request: Option<RestoreRequest>,
+    pub restore_request: Option<RestoreRequestUnion>,
 }
 impl CrossRegionRestoreRequest {
     pub fn new() -> Self {
@@ -2355,12 +2355,17 @@ impl CrrAccessToken {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "objectType")]
+pub enum CrrAccessTokenUnion {
+    WorkloadCrrAccessToken(WorkloadCrrAccessToken),
+}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CrrAccessTokenResource {
     #[serde(flatten)]
     pub resource: Resource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<CrrAccessToken>,
+    pub properties: Option<CrrAccessTokenUnion>,
 }
 impl CrrAccessTokenResource {
     pub fn new() -> Self {
@@ -3249,6 +3254,16 @@ pub mod job {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "jobType")]
+pub enum JobUnion {
+    #[serde(rename = "AzureIaaSVMJob")]
+    AzureIaaSvmJob(AzureIaaSvmJob),
+    AzureStorageJob(AzureStorageJob),
+    AzureWorkloadJob(AzureWorkloadJob),
+    DpmJob(DpmJob),
+    MabJob(MabJob),
+}
 #[doc = "Filters to list the jobs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobQueryObject {
@@ -3442,7 +3457,7 @@ pub struct JobResource {
     pub resource: Resource,
     #[doc = "Defines workload agnostic properties for a job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<Job>,
+    pub properties: Option<JobUnion>,
 }
 impl JobResource {
     pub fn new() -> Self {
@@ -3986,7 +4001,7 @@ pub struct OperationStatus {
     pub error: Option<OperationStatusError>,
     #[doc = "Base class for additional information of operation status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<OperationStatusExtendedInfo>,
+    pub properties: Option<OperationStatusExtendedInfoUnion>,
 }
 impl OperationStatus {
     pub fn new() -> Self {
@@ -4066,6 +4081,15 @@ impl OperationStatusExtendedInfo {
         Self { object_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "objectType")]
+pub enum OperationStatusExtendedInfoUnion {
+    OperationStatusJobExtendedInfo(OperationStatusJobExtendedInfo),
+    OperationStatusJobsExtendedInfo(OperationStatusJobsExtendedInfo),
+    #[serde(rename = "OperationStatusProvisionILRExtendedInfo")]
+    OperationStatusProvisionIlrExtendedInfo(OperationStatusProvisionIlrExtendedInfo),
+    OperationStatusRecoveryPointExtendedInfo(OperationStatusRecoveryPointExtendedInfo),
+}
 #[doc = "Operation status job extended info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationStatusJobExtendedInfo {
@@ -4133,7 +4157,7 @@ pub struct OperationStatusRecoveryPointExtendedInfo {
     pub operation_status_extended_info: OperationStatusExtendedInfo,
     #[doc = "Base class for backup copies. Workload-specific backup copies are derived from this class."]
     #[serde(rename = "updatedRecoveryPoint", default, skip_serializing_if = "Option::is_none")]
-    pub updated_recovery_point: Option<RecoveryPoint>,
+    pub updated_recovery_point: Option<RecoveryPointUnion>,
     #[doc = "In case the share is in soft-deleted state, populate this field with deleted backup item"]
     #[serde(rename = "deletedBackupItemVersion", default, skip_serializing_if = "Option::is_none")]
     pub deleted_backup_item_version: Option<String>,
@@ -4402,6 +4426,20 @@ pub mod protected_item {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "protectedItemType")]
+pub enum ProtectedItemUnion {
+    AzureFileShareProtectedItem(AzureFileshareProtectedItem),
+    #[serde(rename = "AzureIaaSVMProtectedItem")]
+    AzureIaaSvmProtectedItem(AzureIaaSvmProtectedItem),
+    #[serde(rename = "Microsoft.Sql/servers/databases")]
+    MicrosoftSqlServersDatabases(AzureSqlProtectedItem),
+    AzureVmWorkloadProtectedItem(AzureVmWorkloadProtectedItem),
+    #[serde(rename = "DPMProtectedItem")]
+    DpmProtectedItem(DpmProtectedItem),
+    GenericProtectedItem(GenericProtectedItem),
+    MabFileFolderProtectedItem(MabFileFolderProtectedItem),
+}
 #[doc = "Filters to list backup items."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtectedItemQueryObject {
@@ -4612,7 +4650,7 @@ pub struct ProtectedItemResource {
     pub resource: Resource,
     #[doc = "Base class for backup items."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ProtectedItem>,
+    pub properties: Option<ProtectedItemUnion>,
 }
 impl ProtectedItemResource {
     pub fn new() -> Self {
@@ -4654,6 +4692,15 @@ impl RecoveryPoint {
     pub fn new(object_type: String) -> Self {
         Self { object_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "objectType")]
+pub enum RecoveryPointUnion {
+    AzureFileShareRecoveryPoint(AzureFileShareRecoveryPoint),
+    AzureWorkloadRecoveryPoint(AzureWorkloadRecoveryPoint),
+    GenericRecoveryPoint(GenericRecoveryPoint),
+    #[serde(rename = "IaasVMRecoveryPoint")]
+    IaasVmRecoveryPoint(IaasVmRecoveryPoint),
 }
 #[doc = "Disk configuration"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -4723,7 +4770,7 @@ pub struct RecoveryPointResource {
     pub resource: Resource,
     #[doc = "Base class for backup copies. Workload-specific backup copies are derived from this class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RecoveryPoint>,
+    pub properties: Option<RecoveryPointUnion>,
 }
 impl RecoveryPointResource {
     pub fn new() -> Self {
@@ -4888,6 +4935,14 @@ impl RestoreRequest {
     pub fn new(object_type: String) -> Self {
         Self { object_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "objectType")]
+pub enum RestoreRequestUnion {
+    AzureFileShareRestoreRequest(AzureFileShareRestoreRequest),
+    AzureWorkloadRestoreRequest(AzureWorkloadRestoreRequest),
+    #[serde(rename = "IaasVMRestoreRequest")]
+    IaasVmRestoreRequest(IaasVmRestoreRequest),
 }
 #[doc = "SQLDataDirectory info"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

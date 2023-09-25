@@ -534,10 +534,10 @@ pub struct CmdkeySetupTypeProperties {
     #[serde(rename = "userName")]
     pub user_name: serde_json::Value,
     #[doc = "The base definition of a secret type."]
-    pub password: SecretBase,
+    pub password: SecretBaseUnion,
 }
 impl CmdkeySetupTypeProperties {
-    pub fn new(target_name: serde_json::Value, user_name: serde_json::Value, password: SecretBase) -> Self {
+    pub fn new(target_name: serde_json::Value, user_name: serde_json::Value, password: SecretBaseUnion) -> Self {
         Self {
             target_name,
             user_name,
@@ -598,6 +598,9 @@ impl CustomSetupBase {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum CustomSetupBaseUnion {}
 #[doc = "Details of the customer managed key associated with the workspace"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomerManagedKeyDetails {
@@ -1749,6 +1752,12 @@ impl IntegrationRuntime {
         Self { type_, description: None }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum IntegrationRuntimeUnion {
+    Managed(ManagedIntegrationRuntime),
+    SelfHosted(SelfHostedIntegrationRuntime),
+}
 #[doc = "The integration runtime authentication keys."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeAuthKeys {
@@ -2288,10 +2297,10 @@ pub struct IntegrationRuntimeResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     #[doc = "Azure Synapse nested object which serves as a compute resource for activities."]
-    pub properties: IntegrationRuntime,
+    pub properties: IntegrationRuntimeUnion,
 }
 impl IntegrationRuntimeResource {
-    pub fn new(properties: IntegrationRuntime) -> Self {
+    pub fn new(properties: IntegrationRuntimeUnion) -> Self {
         Self {
             sub_resource: SubResource::default(),
             properties,
@@ -2389,7 +2398,7 @@ pub struct IntegrationRuntimeSsisProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub express_custom_setup_properties: Vec<CustomSetupBase>,
+    pub express_custom_setup_properties: Vec<CustomSetupBaseUnion>,
 }
 impl IntegrationRuntimeSsisProperties {
     pub fn new() -> Self {
@@ -2548,6 +2557,12 @@ impl IntegrationRuntimeStatus {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum IntegrationRuntimeStatusUnion {
+    Managed(ManagedIntegrationRuntimeStatus),
+    SelfHosted(SelfHostedIntegrationRuntimeStatus),
+}
 #[doc = "Integration runtime status response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeStatusResponse {
@@ -2555,10 +2570,10 @@ pub struct IntegrationRuntimeStatusResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Integration runtime status."]
-    pub properties: IntegrationRuntimeStatus,
+    pub properties: IntegrationRuntimeStatusUnion,
 }
 impl IntegrationRuntimeStatusResponse {
-    pub fn new(properties: IntegrationRuntimeStatus) -> Self {
+    pub fn new(properties: IntegrationRuntimeStatusUnion) -> Self {
         Self { name: None, properties }
     }
 }
@@ -2952,7 +2967,7 @@ pub struct LicensedComponentSetupTypeProperties {
     pub component_name: String,
     #[doc = "The base definition of a secret type."]
     #[serde(rename = "licenseKey", default, skip_serializing_if = "Option::is_none")]
-    pub license_key: Option<SecretBase>,
+    pub license_key: Option<SecretBaseUnion>,
 }
 impl LicensedComponentSetupTypeProperties {
     pub fn new(component_name: String) -> Self {
@@ -3030,6 +3045,13 @@ impl LinkedIntegrationRuntimeType {
     pub fn new(authorization_type: String) -> Self {
         Self { authorization_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "authorizationType")]
+pub enum LinkedIntegrationRuntimeTypeUnion {
+    Key(LinkedIntegrationRuntimeKeyAuthorization),
+    #[serde(rename = "RBAC")]
+    Rbac(LinkedIntegrationRuntimeRbacAuthorization),
 }
 #[doc = "A list of SQL pool security alert policies."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -4830,6 +4852,11 @@ impl SecretBase {
         Self { type_ }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum SecretBaseUnion {
+    SecureString(SecureString),
+}
 #[doc = "Azure Synapse secure string definition. The string value will be masked with asterisks '*' during Get or List API calls."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecureString {
@@ -5232,7 +5259,7 @@ pub mod self_hosted_integration_runtime_status_type_properties {
 pub struct SelfHostedIntegrationRuntimeTypeProperties {
     #[doc = "The base definition of a linked integration runtime."]
     #[serde(rename = "linkedInfo", default, skip_serializing_if = "Option::is_none")]
-    pub linked_info: Option<LinkedIntegrationRuntimeType>,
+    pub linked_info: Option<LinkedIntegrationRuntimeTypeUnion>,
 }
 impl SelfHostedIntegrationRuntimeTypeProperties {
     pub fn new() -> Self {
@@ -6875,6 +6902,14 @@ impl SsisObjectMetadata {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum SsisObjectMetadataUnion {
+    Environment(SsisEnvironment),
+    Folder(SsisFolder),
+    Package(SsisPackage),
+    Project(SsisProject),
+}
 #[doc = "A list of SSIS object metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SsisObjectMetadataListResponse {
@@ -6884,7 +6919,7 @@ pub struct SsisObjectMetadataListResponse {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<SsisObjectMetadata>,
+    pub value: Vec<SsisObjectMetadataUnion>,
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,

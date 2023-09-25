@@ -97,7 +97,7 @@ pub struct Device {
     pub tracked_resource: TrackedResource,
     #[doc = "Device properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DevicePropertiesFormat>,
+    pub properties: Option<DevicePropertiesFormatUnion>,
 }
 impl Device {
     pub fn new(tracked_resource: TrackedResource) -> Self {
@@ -243,6 +243,11 @@ pub mod device_properties_format {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "deviceType")]
+pub enum DevicePropertiesFormatUnion {
+    AzureStackEdge(AzureStackEdgeFormat),
 }
 #[doc = "The device registration key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

@@ -537,6 +537,13 @@ pub mod data_connection {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum DataConnectionUnion {
+    EventGrid(EventGridDataConnection),
+    EventHub(EventHubDataConnection),
+    IotHub(IotHubDataConnection),
+}
 #[doc = "The list Kusto data connections operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataConnectionListResult {
@@ -546,7 +553,7 @@ pub struct DataConnectionListResult {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<DataConnection>,
+    pub value: Vec<DataConnectionUnion>,
 }
 impl azure_core::Continuable for DataConnectionListResult {
     type Continuation = String;
@@ -623,6 +630,11 @@ pub mod database {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum DatabaseUnion {
+    ReadWrite(ReadWriteDatabase),
+}
 #[doc = "The list Kusto databases operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseListResult {
@@ -632,7 +644,7 @@ pub struct DatabaseListResult {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<Database>,
+    pub value: Vec<DatabaseUnion>,
 }
 impl azure_core::Continuable for DatabaseListResult {
     type Continuation = String;

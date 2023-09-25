@@ -247,10 +247,10 @@ pub struct JobInformation {
     #[serde(rename = "hierarchyQueueNode", default, skip_serializing_if = "Option::is_none")]
     pub hierarchy_queue_node: Option<String>,
     #[doc = "The common Data Lake Analytics job properties."]
-    pub properties: JobProperties,
+    pub properties: JobPropertiesUnion,
 }
 impl JobInformation {
-    pub fn new(name: String, type_: job_information::Type, properties: JobProperties) -> Self {
+    pub fn new(name: String, type_: job_information::Type, properties: JobPropertiesUnion) -> Self {
         Self {
             job_id: None,
             name,
@@ -376,6 +376,12 @@ impl JobProperties {
             type_,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum JobPropertiesUnion {
+    Hive(HiveJobProperties),
+    USql(USqlJobProperties),
 }
 #[doc = "The Data Lake Analytics job resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

@@ -10,7 +10,7 @@ pub struct Addon {
     pub resource: Resource,
     #[doc = "The properties of an addon"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AddonProperties>,
+    pub properties: Option<AddonPropertiesUnion>,
 }
 impl Addon {
     pub fn new() -> Self {
@@ -162,6 +162,16 @@ pub mod addon_properties {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "addonType")]
+pub enum AddonPropertiesUnion {
+    #[serde(rename = "HCX")]
+    Hcx(AddonHcxProperties),
+    #[serde(rename = "SRM")]
+    Srm(AddonSrmProperties),
+    #[serde(rename = "VR")]
+    Vr(AddonVrProperties),
 }
 #[doc = "The properties of a Site Recovery Manager (SRM) addon"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1869,6 +1879,13 @@ pub mod script_execution_parameter {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ScriptExecutionParameterUnion {
+    Credential(PsCredentialExecutionParameter),
+    SecureValue(ScriptSecureStringExecutionParameter),
+    Value(ScriptStringExecutionParameter),
+}
 #[doc = "Properties of a user-invoked script"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScriptExecutionProperties {
@@ -1881,7 +1898,7 @@ pub struct ScriptExecutionProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub parameters: Vec<ScriptExecutionParameter>,
+    pub parameters: Vec<ScriptExecutionParameterUnion>,
     #[doc = "Parameters that will be hidden/not visible to ARM, such as passwords and credentials"]
     #[serde(
         rename = "hiddenParameters",
@@ -1889,7 +1906,7 @@ pub struct ScriptExecutionProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub hidden_parameters: Vec<ScriptExecutionParameter>,
+    pub hidden_parameters: Vec<ScriptExecutionParameterUnion>,
     #[doc = "Error message if the script was able to run, but if the script itself had errors or powershell threw an exception"]
     #[serde(rename = "failureReason", default, skip_serializing_if = "Option::is_none")]
     pub failure_reason: Option<String>,
@@ -2389,7 +2406,7 @@ pub struct WorkloadNetworkDhcp {
     pub proxy_resource: ProxyResource,
     #[doc = "Base class for WorkloadNetworkDhcpServer and WorkloadNetworkDhcpRelay to inherit from"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<WorkloadNetworkDhcpEntity>,
+    pub properties: Option<WorkloadNetworkDhcpEntityUnion>,
 }
 impl WorkloadNetworkDhcp {
     pub fn new() -> Self {
@@ -2514,6 +2531,14 @@ pub mod workload_network_dhcp_entity {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "dhcpType")]
+pub enum WorkloadNetworkDhcpEntityUnion {
+    #[serde(rename = "RELAY")]
+    Relay(WorkloadNetworkDhcpRelay),
+    #[serde(rename = "SERVER")]
+    Server(WorkloadNetworkDhcpServer),
 }
 #[doc = "A list of NSX dhcp entities"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

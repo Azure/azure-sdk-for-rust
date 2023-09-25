@@ -765,7 +765,7 @@ pub struct ServerForCreate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
     #[doc = "The properties used to create a new server."]
-    pub properties: ServerPropertiesForCreate,
+    pub properties: ServerPropertiesForCreateUnion,
     #[doc = "The location the resource resides in."]
     pub location: String,
     #[doc = "Application-specific metadata in the form of key-value pairs."]
@@ -773,7 +773,7 @@ pub struct ServerForCreate {
     pub tags: Option<serde_json::Value>,
 }
 impl ServerForCreate {
-    pub fn new(properties: ServerPropertiesForCreate, location: String) -> Self {
+    pub fn new(properties: ServerPropertiesForCreateUnion, location: String) -> Self {
         Self {
             sku: None,
             properties,
@@ -961,6 +961,14 @@ pub mod server_properties_for_create {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "createMode")]
+pub enum ServerPropertiesForCreateUnion {
+    Default(ServerPropertiesForDefaultCreate),
+    GeoRestore(ServerPropertiesForGeoRestore),
+    Replica(ServerPropertiesForReplica),
+    PointInTimeRestore(ServerPropertiesForRestore),
 }
 #[doc = "The properties used to create a new server."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

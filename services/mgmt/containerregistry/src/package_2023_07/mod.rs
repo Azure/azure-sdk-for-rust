@@ -2088,7 +2088,7 @@ pub mod registries {
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             registry_name: impl Into<String>,
-            run_request: impl Into<models::RunRequest>,
+            run_request: impl Into<models::RunRequestUnion>,
         ) -> schedule_run::RequestBuilder {
             schedule_run::RequestBuilder {
                 client: self.0.clone(),
@@ -3940,7 +3940,7 @@ pub mod registries {
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
             pub(crate) registry_name: String,
-            pub(crate) run_request: models::RunRequest,
+            pub(crate) run_request: models::RunRequestUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]

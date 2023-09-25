@@ -53,7 +53,7 @@ pub struct AccessPolicyProperties {
     pub role: Option<access_policy_properties::Role>,
     #[doc = "Base class for access policies authentication methods."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authentication: Option<AuthenticationBase>,
+    pub authentication: Option<AuthenticationBaseUnion>,
 }
 impl AccessPolicyProperties {
     pub fn new() -> Self {
@@ -175,6 +175,12 @@ impl AuthenticationBase {
     pub fn new(type_: String) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum AuthenticationBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.JwtAuthentication")]
+    MicrosoftVideoAnalyzerJwtAuthentication(JwtAuthentication),
 }
 #[doc = "The check availability request body."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -531,7 +537,7 @@ pub struct JwtAuthentication {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub keys: Vec<TokenKey>,
+    pub keys: Vec<TokenKeyUnion>,
 }
 impl JwtAuthentication {
     pub fn new(authentication_base: AuthenticationBase) -> Self {
@@ -1093,6 +1099,14 @@ impl TokenKey {
     pub fn new(type_: String, kid: String) -> Self {
         Self { type_, kid }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum TokenKeyUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.EccTokenKey")]
+    MicrosoftVideoAnalyzerEccTokenKey(EccTokenKey),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.RsaTokenKey")]
+    MicrosoftVideoAnalyzerRsaTokenKey(RsaTokenKey),
 }
 #[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

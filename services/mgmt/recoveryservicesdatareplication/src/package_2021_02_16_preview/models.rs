@@ -219,6 +219,11 @@ impl DraModelCustomProperties {
         Self { instance_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "instanceType")]
+pub enum DraModelCustomPropertiesUnion {
+    VMware(VMwareDraModelCustomProperties),
+}
 #[doc = "Dra model properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DraModelProperties {
@@ -259,7 +264,7 @@ pub struct DraModelProperties {
     pub health_errors: Vec<HealthErrorModel>,
     #[doc = "Dra model custom properties."]
     #[serde(rename = "customProperties")]
-    pub custom_properties: DraModelCustomProperties,
+    pub custom_properties: DraModelCustomPropertiesUnion,
 }
 impl DraModelProperties {
     pub fn new(
@@ -267,7 +272,7 @@ impl DraModelProperties {
         machine_name: String,
         authentication_identity: IdentityModel,
         resource_access_identity: IdentityModel,
-        custom_properties: DraModelCustomProperties,
+        custom_properties: DraModelCustomPropertiesUnion,
     ) -> Self {
         Self {
             correlation_id: None,
@@ -575,6 +580,12 @@ impl EventModelCustomProperties {
         Self { instance_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "instanceType")]
+pub enum EventModelCustomPropertiesUnion {
+    #[serde(rename = "HyperVToAzStackHCI")]
+    HyperVToAzStackHci(HyperVToAzStackHciEventModelCustomProperties),
+}
 #[doc = "Event model properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventModelProperties {
@@ -612,10 +623,10 @@ pub struct EventModelProperties {
     pub health_errors: Vec<HealthErrorModel>,
     #[doc = "Event model custom properties."]
     #[serde(rename = "customProperties")]
-    pub custom_properties: EventModelCustomProperties,
+    pub custom_properties: EventModelCustomPropertiesUnion,
 }
 impl EventModelProperties {
-    pub fn new(custom_properties: EventModelCustomProperties) -> Self {
+    pub fn new(custom_properties: EventModelCustomPropertiesUnion) -> Self {
         Self {
             resource_type: None,
             resource_name: None,
@@ -702,6 +713,14 @@ impl FabricModelCustomProperties {
         Self { instance_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "instanceType")]
+pub enum FabricModelCustomPropertiesUnion {
+    #[serde(rename = "AzStackHCI")]
+    AzStackHci(AzStackHciFabricModelCustomProperties),
+    HyperVMigrate(HyperVMigrateFabricModelCustomProperties),
+    VMwareMigrate(VMwareMigrateFabricModelCustomProperties),
+}
 #[doc = "Fabric model properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FabricModelProperties {
@@ -727,10 +746,10 @@ pub struct FabricModelProperties {
     pub health_errors: Vec<HealthErrorModel>,
     #[doc = "Fabric model custom properties."]
     #[serde(rename = "customProperties")]
-    pub custom_properties: FabricModelCustomProperties,
+    pub custom_properties: FabricModelCustomPropertiesUnion,
 }
 impl FabricModelProperties {
-    pub fn new(custom_properties: FabricModelCustomProperties) -> Self {
+    pub fn new(custom_properties: FabricModelCustomPropertiesUnion) -> Self {
         Self {
             provisioning_state: None,
             service_endpoint: None,
@@ -1981,15 +2000,23 @@ impl PlannedFailoverModelCustomProperties {
         Self { instance_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "instanceType")]
+pub enum PlannedFailoverModelCustomPropertiesUnion {
+    #[serde(rename = "HyperVToAzStackHCI")]
+    HyperVToAzStackHci(HyperVToAzStackHciPlannedFailoverModelCustomProperties),
+    #[serde(rename = "VMwareToAzStackHCI")]
+    VMwareToAzStackHci(VMwareToAzStackHciPlannedFailoverModelCustomProperties),
+}
 #[doc = "Planned failover model properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PlannedFailoverModelProperties {
     #[doc = "Planned failover model custom properties."]
     #[serde(rename = "customProperties")]
-    pub custom_properties: PlannedFailoverModelCustomProperties,
+    pub custom_properties: PlannedFailoverModelCustomPropertiesUnion,
 }
 impl PlannedFailoverModelProperties {
-    pub fn new(custom_properties: PlannedFailoverModelCustomProperties) -> Self {
+    pub fn new(custom_properties: PlannedFailoverModelCustomPropertiesUnion) -> Self {
         Self { custom_properties }
     }
 }
@@ -2058,6 +2085,14 @@ impl PolicyModelCustomProperties {
         Self { instance_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "instanceType")]
+pub enum PolicyModelCustomPropertiesUnion {
+    #[serde(rename = "HyperVToAzStackHCI")]
+    HyperVToAzStackHci(HyperVToAzStackHciPolicyModelCustomProperties),
+    #[serde(rename = "VMwareToAzStackHCI")]
+    VMwareToAzStackHci(VMwareToAzStackHciPolicyModelCustomProperties),
+}
 #[doc = "Policy model properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyModelProperties {
@@ -2066,10 +2101,10 @@ pub struct PolicyModelProperties {
     pub provisioning_state: Option<policy_model_properties::ProvisioningState>,
     #[doc = "Policy model custom properties."]
     #[serde(rename = "customProperties")]
-    pub custom_properties: PolicyModelCustomProperties,
+    pub custom_properties: PolicyModelCustomPropertiesUnion,
 }
 impl PolicyModelProperties {
-    pub fn new(custom_properties: PolicyModelCustomProperties) -> Self {
+    pub fn new(custom_properties: PolicyModelCustomPropertiesUnion) -> Self {
         Self {
             provisioning_state: None,
             custom_properties,
@@ -2243,6 +2278,14 @@ impl ProtectedItemModelCustomProperties {
         Self { instance_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "instanceType")]
+pub enum ProtectedItemModelCustomPropertiesUnion {
+    #[serde(rename = "HyperVToAzStackHCI")]
+    HyperVToAzStackHci(HyperVToAzStackHciProtectedItemModelCustomProperties),
+    #[serde(rename = "VMwareToAzStackHCI")]
+    VMwareToAzStackHci(VMwareToAzStackHciProtectedItemModelCustomProperties),
+}
 #[doc = "Protected item model properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProtectedItemModelProperties {
@@ -2342,10 +2385,14 @@ pub struct ProtectedItemModelProperties {
     pub health_errors: Vec<HealthErrorModel>,
     #[doc = "Protected item model custom properties."]
     #[serde(rename = "customProperties")]
-    pub custom_properties: ProtectedItemModelCustomProperties,
+    pub custom_properties: ProtectedItemModelCustomPropertiesUnion,
 }
 impl ProtectedItemModelProperties {
-    pub fn new(policy_name: String, replication_extension_name: String, custom_properties: ProtectedItemModelCustomProperties) -> Self {
+    pub fn new(
+        policy_name: String,
+        replication_extension_name: String,
+        custom_properties: ProtectedItemModelCustomPropertiesUnion,
+    ) -> Self {
         Self {
             policy_name,
             replication_extension_name,
@@ -2826,6 +2873,12 @@ impl RecoveryPointModelCustomProperties {
         Self { instance_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "instanceType")]
+pub enum RecoveryPointModelCustomPropertiesUnion {
+    #[serde(rename = "HyperVToAzStackHCI")]
+    HyperVToAzStackHci(HyperVToAzStackHciRecoveryPointModelCustomProperties),
+}
 #[doc = "Recovery point model properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPointModelProperties {
@@ -2837,13 +2890,13 @@ pub struct RecoveryPointModelProperties {
     pub recovery_point_type: recovery_point_model_properties::RecoveryPointType,
     #[doc = "Recovery point model custom properties."]
     #[serde(rename = "customProperties")]
-    pub custom_properties: RecoveryPointModelCustomProperties,
+    pub custom_properties: RecoveryPointModelCustomPropertiesUnion,
 }
 impl RecoveryPointModelProperties {
     pub fn new(
         recovery_point_time: time::OffsetDateTime,
         recovery_point_type: recovery_point_model_properties::RecoveryPointType,
-        custom_properties: RecoveryPointModelCustomProperties,
+        custom_properties: RecoveryPointModelCustomPropertiesUnion,
     ) -> Self {
         Self {
             recovery_point_time,
@@ -2957,6 +3010,14 @@ impl ReplicationExtensionModelCustomProperties {
         Self { instance_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "instanceType")]
+pub enum ReplicationExtensionModelCustomPropertiesUnion {
+    #[serde(rename = "HyperVToAzStackHCI")]
+    HyperVToAzStackHci(HyperVToAzStackHciReplicationExtensionModelCustomProperties),
+    #[serde(rename = "VMwareToAzStackHCI")]
+    VMwareToAzStackHci(VMwareToAzStackHciReplicationExtensionModelCustomProperties),
+}
 #[doc = "Replication extension model properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReplicationExtensionModelProperties {
@@ -2965,10 +3026,10 @@ pub struct ReplicationExtensionModelProperties {
     pub provisioning_state: Option<replication_extension_model_properties::ProvisioningState>,
     #[doc = "Replication extension model custom properties."]
     #[serde(rename = "customProperties")]
-    pub custom_properties: ReplicationExtensionModelCustomProperties,
+    pub custom_properties: ReplicationExtensionModelCustomPropertiesUnion,
 }
 impl ReplicationExtensionModelProperties {
-    pub fn new(custom_properties: ReplicationExtensionModelCustomProperties) -> Self {
+    pub fn new(custom_properties: ReplicationExtensionModelCustomPropertiesUnion) -> Self {
         Self {
             provisioning_state: None,
             custom_properties,
@@ -4179,6 +4240,13 @@ impl WorkflowModelCustomProperties {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "instanceType")]
+pub enum WorkflowModelCustomPropertiesUnion {
+    FailoverWorkflowDetails(FailoverWorkflowModelCustomProperties),
+    TestFailoverCleanupWorkflowDetails(TestFailoverCleanupWorkflowModelCustomProperties),
+    TestFailoverWorkflowDetails(TestFailoverWorkflowModelCustomProperties),
+}
 #[doc = "Workflow model properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkflowModelProperties {
@@ -4245,10 +4313,10 @@ pub struct WorkflowModelProperties {
     pub errors: Vec<ErrorModel>,
     #[doc = "Workflow model custom properties."]
     #[serde(rename = "customProperties")]
-    pub custom_properties: WorkflowModelCustomProperties,
+    pub custom_properties: WorkflowModelCustomPropertiesUnion,
 }
 impl WorkflowModelProperties {
-    pub fn new(custom_properties: WorkflowModelCustomProperties) -> Self {
+    pub fn new(custom_properties: WorkflowModelCustomPropertiesUnion) -> Self {
         Self {
             display_name: None,
             state: None,

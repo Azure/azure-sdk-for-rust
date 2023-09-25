@@ -215,6 +215,14 @@ pub mod access_review_decision_identity {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AccessReviewDecisionIdentityUnion {
+    #[serde(rename = "servicePrincipal")]
+    ServicePrincipal(AccessReviewDecisionServicePrincipalIdentity),
+    #[serde(rename = "user")]
+    User(AccessReviewDecisionUserIdentity),
+}
 #[doc = "List of access review decisions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessReviewDecisionListResult {
@@ -245,10 +253,10 @@ impl AccessReviewDecisionListResult {
 pub struct AccessReviewDecisionProperties {
     #[doc = "Target of the decision."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub principal: Option<AccessReviewDecisionIdentity>,
+    pub principal: Option<AccessReviewDecisionIdentityUnion>,
     #[doc = "Target of the decision."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resource: Option<AccessReviewDecisionResource>,
+    pub resource: Option<AccessReviewDecisionResourceUnion>,
     #[doc = "The feature- generated recommendation shown to the reviewer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recommendation: Option<access_review_decision_properties::Recommendation>,
@@ -471,6 +479,12 @@ pub mod access_review_decision_resource {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AccessReviewDecisionResourceUnion {
+    #[serde(rename = "azureRole")]
+    AzureRole(AccessReviewDecisionResourceAzureRole),
 }
 #[doc = "Target of the decision."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -4988,7 +4988,7 @@ pub mod roles {
             &self,
             device_name: impl Into<String>,
             name: impl Into<String>,
-            role: impl Into<models::Role>,
+            role: impl Into<models::RoleUnion>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
         ) -> create_or_update::RequestBuilder {
@@ -5159,9 +5159,9 @@ pub mod roles {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Role> {
+            pub async fn into_body(self) -> azure_core::Result<models::RoleUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Role = serde_json::from_slice(&bytes)?;
+                let body: models::RoleUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -5248,8 +5248,8 @@ pub mod roles {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Role>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Role>>;
+            type Output = azure_core::Result<models::RoleUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::RoleUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -5269,9 +5269,9 @@ pub mod roles {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Role> {
+            pub async fn into_body(self) -> azure_core::Result<models::RoleUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Role = serde_json::from_slice(&bytes)?;
+                let body: models::RoleUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -5313,7 +5313,7 @@ pub mod roles {
             pub(crate) client: super::super::Client,
             pub(crate) device_name: String,
             pub(crate) name: String,
-            pub(crate) role: models::Role,
+            pub(crate) role: models::RoleUnion,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
@@ -5359,8 +5359,8 @@ pub mod roles {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Role>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Role>>;
+            type Output = azure_core::Result<models::RoleUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::RoleUnion>>;
             #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
@@ -5561,7 +5561,7 @@ pub mod addons {
             device_name: impl Into<String>,
             role_name: impl Into<String>,
             addon_name: impl Into<String>,
-            addon: impl Into<models::Addon>,
+            addon: impl Into<models::AddonUnion>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
         ) -> create_or_update::RequestBuilder {
@@ -5738,9 +5738,9 @@ pub mod addons {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Addon> {
+            pub async fn into_body(self) -> azure_core::Result<models::AddonUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Addon = serde_json::from_slice(&bytes)?;
+                let body: models::AddonUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -5829,8 +5829,8 @@ pub mod addons {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Addon>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Addon>>;
+            type Output = azure_core::Result<models::AddonUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::AddonUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -5850,9 +5850,9 @@ pub mod addons {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Addon> {
+            pub async fn into_body(self) -> azure_core::Result<models::AddonUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Addon = serde_json::from_slice(&bytes)?;
+                let body: models::AddonUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -5895,7 +5895,7 @@ pub mod addons {
             pub(crate) device_name: String,
             pub(crate) role_name: String,
             pub(crate) addon_name: String,
-            pub(crate) addon: models::Addon,
+            pub(crate) addon: models::AddonUnion,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
@@ -5942,8 +5942,8 @@ pub mod addons {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Addon>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Addon>>;
+            type Output = azure_core::Result<models::AddonUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::AddonUnion>>;
             #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]
@@ -9143,7 +9143,7 @@ pub mod triggers {
             &self,
             device_name: impl Into<String>,
             name: impl Into<String>,
-            trigger: impl Into<models::Trigger>,
+            trigger: impl Into<models::TriggerUnion>,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
         ) -> create_or_update::RequestBuilder {
@@ -9323,9 +9323,9 @@ pub mod triggers {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Trigger> {
+            pub async fn into_body(self) -> azure_core::Result<models::TriggerUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Trigger = serde_json::from_slice(&bytes)?;
+                let body: models::TriggerUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -9412,8 +9412,8 @@ pub mod triggers {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Trigger>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Trigger>>;
+            type Output = azure_core::Result<models::TriggerUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::TriggerUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -9433,9 +9433,9 @@ pub mod triggers {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Trigger> {
+            pub async fn into_body(self) -> azure_core::Result<models::TriggerUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Trigger = serde_json::from_slice(&bytes)?;
+                let body: models::TriggerUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -9477,7 +9477,7 @@ pub mod triggers {
             pub(crate) client: super::super::Client,
             pub(crate) device_name: String,
             pub(crate) name: String,
-            pub(crate) trigger: models::Trigger,
+            pub(crate) trigger: models::TriggerUnion,
             pub(crate) subscription_id: String,
             pub(crate) resource_group_name: String,
         }
@@ -9523,8 +9523,8 @@ pub mod triggers {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Trigger>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Trigger>>;
+            type Output = azure_core::Result<models::TriggerUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::TriggerUnion>>;
             #[doc = "Returns a future that polls the long running operation and checks for the state via `properties.provisioningState` in the response body."]
             #[doc = ""]
             #[doc = "To only submit the request but not monitor the status of the operation until completion, use `send()` instead."]

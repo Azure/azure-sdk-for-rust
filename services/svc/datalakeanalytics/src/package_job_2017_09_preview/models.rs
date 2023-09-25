@@ -10,10 +10,10 @@ pub struct BaseJobParameters {
     #[serde(rename = "type")]
     pub type_: base_job_parameters::Type,
     #[doc = "The common Data Lake Analytics job properties for job submission."]
-    pub properties: CreateJobProperties,
+    pub properties: CreateJobPropertiesUnion,
 }
 impl BaseJobParameters {
-    pub fn new(type_: base_job_parameters::Type, properties: CreateJobProperties) -> Self {
+    pub fn new(type_: base_job_parameters::Type, properties: CreateJobPropertiesUnion) -> Self {
         Self { type_, properties }
     }
 }
@@ -105,6 +105,12 @@ impl CreateJobProperties {
             type_,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum CreateJobPropertiesUnion {
+    Scope(CreateScopeJobProperties),
+    USql(CreateUSqlJobProperties),
 }
 #[doc = "The parameters used to submit a new Data Lake Analytics Scope job. (Only for use internally with Scope job type.)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -377,10 +383,10 @@ pub struct JobInformation {
     )]
     pub state_audit_records: Vec<JobStateAuditRecord>,
     #[doc = "The common Data Lake Analytics job properties."]
-    pub properties: JobProperties,
+    pub properties: JobPropertiesUnion,
 }
 impl JobInformation {
-    pub fn new(job_information_basic: JobInformationBasic, properties: JobProperties) -> Self {
+    pub fn new(job_information_basic: JobInformationBasic, properties: JobPropertiesUnion) -> Self {
         Self {
             job_information_basic,
             error_message: Vec::new(),
@@ -676,6 +682,13 @@ impl JobProperties {
             type_,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum JobPropertiesUnion {
+    Hive(HiveJobProperties),
+    Scope(ScopeJobProperties),
+    USql(USqlJobProperties),
 }
 #[doc = "Recurrence job information for a specific recurrence."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

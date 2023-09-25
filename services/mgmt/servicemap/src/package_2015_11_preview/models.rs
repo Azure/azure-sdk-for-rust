@@ -273,10 +273,10 @@ pub mod client_group {
     pub struct Properties {
         #[doc = "Represents a reference to another resource."]
         #[serde(rename = "clientsOf")]
-        pub clients_of: ResourceReference,
+        pub clients_of: ResourceReferenceUnion,
     }
     impl Properties {
-        pub fn new(clients_of: ResourceReference) -> Self {
+        pub fn new(clients_of: ResourceReferenceUnion) -> Self {
             Self { clients_of }
         }
     }
@@ -494,6 +494,20 @@ pub mod core_resource {
         MachineGroup,
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum CoreResourceUnion {
+    #[serde(rename = "clientGroup")]
+    ClientGroup(ClientGroup),
+    #[serde(rename = "machine")]
+    Machine(Machine),
+    #[serde(rename = "machineGroup")]
+    MachineGroup(MachineGroup),
+    #[serde(rename = "port")]
+    Port(Port),
+    #[serde(rename = "process")]
+    Process(Process),
+}
 #[doc = "Error details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Error {
@@ -553,6 +567,12 @@ pub mod hosting_configuration {
         #[serde(rename = "provider:azure")]
         ProviderAzure,
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum HostingConfigurationUnion {
+    #[serde(rename = "provider:azure")]
+    ProviderAzure(AzureHostingConfiguration),
 }
 #[doc = "Describes the hypervisor configuration of a machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -715,7 +735,7 @@ pub mod machine {
         pub hypervisor: Option<HypervisorConfiguration>,
         #[doc = "Describes the hosting configuration of a machine."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub hosting: Option<HostingConfiguration>,
+        pub hosting: Option<HostingConfigurationUnion>,
     }
     impl Properties {
         pub fn new() -> Self {
@@ -1146,6 +1166,12 @@ pub mod map_request {
         MapMachineListDependency,
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum MapRequestUnion {
+    #[serde(rename = "map:single-machine-dependency")]
+    MapSingleMachineDependency(SingleMachineDependencyMapRequest),
+}
 #[doc = "Specified the contents of a map response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MapResponse {
@@ -1298,7 +1324,7 @@ pub mod port {
         pub monitoring_state: Option<MonitoringState>,
         #[doc = "Represents a reference to another resource."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub machine: Option<ResourceReference>,
+        pub machine: Option<ResourceReferenceUnion>,
         #[doc = "Name to use for display purposes."]
         #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
         pub display_name: Option<String>,
@@ -1408,7 +1434,7 @@ pub mod process {
         pub monitoring_state: Option<MonitoringState>,
         #[doc = "Represents a reference to another resource."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub machine: Option<ResourceReference>,
+        pub machine: Option<ResourceReferenceUnion>,
         #[doc = "The name of the process executable"]
         #[serde(rename = "executableName", default, skip_serializing_if = "Option::is_none")]
         pub executable_name: Option<String>,
@@ -1432,13 +1458,13 @@ pub mod process {
         pub user: Option<ProcessUser>,
         #[doc = "Represents a reference to another resource."]
         #[serde(rename = "clientOf", default, skip_serializing_if = "Option::is_none")]
-        pub client_of: Option<ResourceReference>,
+        pub client_of: Option<ResourceReferenceUnion>,
         #[doc = "Represents a reference to another resource."]
         #[serde(rename = "acceptorOf", default, skip_serializing_if = "Option::is_none")]
-        pub acceptor_of: Option<ResourceReference>,
+        pub acceptor_of: Option<ResourceReferenceUnion>,
         #[doc = "Describes the hosting configuration of a process."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub hosting: Option<ProcessHostingConfiguration>,
+        pub hosting: Option<ProcessHostingConfigurationUnion>,
     }
     impl Properties {
         pub fn new() -> Self {
@@ -1621,6 +1647,12 @@ pub mod process_hosting_configuration {
         ProviderAzure,
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ProcessHostingConfigurationUnion {
+    #[serde(rename = "provider:azure")]
+    ProviderAzure(AzureProcessHostingConfiguration),
+}
 #[doc = "Reference to a process."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProcessReference {
@@ -1695,13 +1727,21 @@ pub mod relationship {
         RelAcceptor,
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum RelationshipUnion {
+    #[serde(rename = "rel:acceptor")]
+    RelAcceptor(Acceptor),
+    #[serde(rename = "rel:connection")]
+    RelConnection(Connection),
+}
 #[doc = "Relationship properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RelationshipProperties {
     #[doc = "Represents a reference to another resource."]
-    pub source: ResourceReference,
+    pub source: ResourceReferenceUnion,
     #[doc = "Represents a reference to another resource."]
-    pub destination: ResourceReference,
+    pub destination: ResourceReferenceUnion,
     #[doc = "Relationship start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
@@ -1710,7 +1750,7 @@ pub struct RelationshipProperties {
     pub end_time: Option<time::OffsetDateTime>,
 }
 impl RelationshipProperties {
-    pub fn new(source: ResourceReference, destination: ResourceReference) -> Self {
+    pub fn new(source: ResourceReferenceUnion, destination: ResourceReferenceUnion) -> Self {
         Self {
             source,
             destination,
@@ -1779,6 +1819,20 @@ pub mod resource_reference {
         #[serde(rename = "ref:clientgroup")]
         RefClientgroup,
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ResourceReferenceUnion {
+    #[serde(rename = "ref:clientgroup")]
+    RefClientgroup(ClientGroupReference),
+    #[serde(rename = "ref:machine")]
+    RefMachine(MachineReference),
+    #[serde(rename = "ref:machinewithhints")]
+    RefMachinewithhints(MachineReferenceWithHints),
+    #[serde(rename = "ref:port")]
+    RefPort(PortReference),
+    #[serde(rename = "ref:process")]
+    RefProcess(ProcessReference),
 }
 #[doc = "Specifies the computation of a single server dependency map. A single server dependency map includes all direct dependencies of a given machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -15,6 +15,20 @@ impl AuthInfoBase {
         Self { auth_type }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "authType")]
+pub enum AuthInfoBaseUnion {
+    #[serde(rename = "secret")]
+    Secret(SecretAuthInfo),
+    #[serde(rename = "servicePrincipalCertificate")]
+    ServicePrincipalCertificate(ServicePrincipalCertificateAuthInfo),
+    #[serde(rename = "servicePrincipalSecret")]
+    ServicePrincipalSecret(ServicePrincipalSecretAuthInfo),
+    #[serde(rename = "systemAssignedIdentity")]
+    SystemAssignedIdentity(SystemAssignedIdentityAuthInfo),
+    #[serde(rename = "userAssignedIdentity")]
+    UserAssignedIdentity(UserAssignedIdentityAuthInfo),
+}
 #[doc = "The authentication type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "AuthType")]
@@ -90,7 +104,7 @@ pub struct AzureResource {
     pub id: Option<String>,
     #[doc = "The azure resource properties"]
     #[serde(rename = "resourceProperties", default, skip_serializing_if = "Option::is_none")]
-    pub resource_properties: Option<AzureResourcePropertiesBase>,
+    pub resource_properties: Option<AzureResourcePropertiesBaseUnion>,
 }
 impl AzureResource {
     pub fn new(target_service_base: TargetServiceBase) -> Self {
@@ -112,6 +126,11 @@ impl AzureResourcePropertiesBase {
     pub fn new(type_: AzureResourceType) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AzureResourcePropertiesBaseUnion {
+    KeyVault(AzureKeyVaultProperties),
 }
 #[doc = "The azure resource type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -328,10 +347,10 @@ impl LinkerPatch {
 pub struct LinkerProperties {
     #[doc = "The target service properties"]
     #[serde(rename = "targetService", default, skip_serializing_if = "Option::is_none")]
-    pub target_service: Option<TargetServiceBase>,
+    pub target_service: Option<TargetServiceBaseUnion>,
     #[doc = "The authentication info"]
     #[serde(rename = "authInfo", default, skip_serializing_if = "Option::is_none")]
-    pub auth_info: Option<AuthInfoBase>,
+    pub auth_info: Option<AuthInfoBaseUnion>,
     #[doc = "The application client type"]
     #[serde(rename = "clientType", default, skip_serializing_if = "Option::is_none")]
     pub client_type: Option<linker_properties::ClientType>,
@@ -628,7 +647,7 @@ pub struct SecretAuthInfo {
     pub name: Option<String>,
     #[doc = "The secret info"]
     #[serde(rename = "secretInfo", default, skip_serializing_if = "Option::is_none")]
-    pub secret_info: Option<SecretInfoBase>,
+    pub secret_info: Option<SecretInfoBaseUnion>,
 }
 impl SecretAuthInfo {
     pub fn new(auth_info_base: AuthInfoBase) -> Self {
@@ -650,6 +669,16 @@ impl SecretInfoBase {
     pub fn new(secret_type: SecretType) -> Self {
         Self { secret_type }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "secretType")]
+pub enum SecretInfoBaseUnion {
+    #[serde(rename = "keyVaultSecretReference")]
+    KeyVaultSecretReference(KeyVaultSecretReferenceSecretInfo),
+    #[serde(rename = "keyVaultSecretUri")]
+    KeyVaultSecretUri(KeyVaultSecretUriSecretInfo),
+    #[serde(rename = "rawValue")]
+    RawValue(ValueSecretInfo),
 }
 #[doc = "An option to store secret value in secure place"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -806,6 +835,13 @@ impl TargetServiceBase {
     pub fn new(type_: TargetServiceType) -> Self {
         Self { type_ }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum TargetServiceBaseUnion {
+    AzureResource(AzureResource),
+    ConfluentBootstrapServer(ConfluentBootstrapServer),
+    ConfluentSchemaRegistry(ConfluentSchemaRegistry),
 }
 #[doc = "The target service type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

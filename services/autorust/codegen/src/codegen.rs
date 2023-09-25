@@ -29,9 +29,25 @@ pub struct CodeGen<'a> {
     optional_properties: HashSet<PropertyName>,
     fix_case_properties: HashSet<&'a str>,
     invalid_types: HashSet<PropertyName>,
+
+    union_types: HashSet<String>,
 }
 
 impl<'a> CodeGen<'a> {
+    pub fn add_union_type(&mut self, type_name: String) {
+        self.union_types.insert(type_name);
+    }
+
+    pub fn is_union_type(&self, type_name: &TypeNameCode) -> bool {
+        self.union_types.contains(&type_name.type_path.to_token_stream().to_string())
+    }
+
+    pub fn set_if_union_type(&self, type_name: &mut TypeNameCode) {
+        if self.is_union_type(type_name) {
+            type_name.union(true);
+        }
+    }
+
     pub fn new(
         crate_config: &'a CrateConfig,
         box_properties: HashSet<PropertyName>,
@@ -47,6 +63,7 @@ impl<'a> CodeGen<'a> {
             optional_properties,
             fix_case_properties,
             invalid_types,
+            union_types: HashSet::new(),
         })
     }
 
@@ -115,7 +132,7 @@ pub fn parse_query_params(uri: &str) -> Result<HashSet<String>> {
 pub struct TypeNameCode {
     type_path: TypePath,
     force_value: bool,
-    pub optional: bool,
+    optional: bool,
     vec_count: i32,
     impl_into: bool,
     allow_impl_into: bool,
@@ -123,6 +140,7 @@ pub struct TypeNameCode {
     qualify_models: bool,
     allow_qualify_models: bool,
     type_name: Option<TypeName>,
+    union: bool,
 }
 
 impl TypeNameCode {
@@ -180,6 +198,9 @@ impl TypeNameCode {
         self.optional = optional;
         self
     }
+    pub fn union(&mut self, union: bool) {
+        self.union = union;
+    }
     pub fn incr_vec_count(mut self) -> Self {
         self.vec_count += 1;
         self
@@ -210,6 +231,12 @@ impl TypeNameCode {
 
     fn to_type(&self) -> Type {
         let mut tp = self.type_path.clone();
+        if self.union {
+            if let Some(last) = tp.path.segments.last_mut() {
+                last.ident = Ident::new(&format!("{}Union", last.ident), last.ident.span());
+            }
+        }
+
         if self.allow_qualify_models && self.qualify_models {
             tp.path.segments.insert(0, id_models().into());
         }
@@ -245,6 +272,13 @@ impl TypeNameCode {
             }
         }
         tp
+    }
+
+    pub fn is_optional(&self) -> bool {
+        self.optional
+    }
+    pub fn is_union(&self) -> bool {
+        self.union
     }
 }
 
@@ -291,6 +325,7 @@ impl From<TypePath> for TypeNameCode {
             qualify_models: false,
             allow_qualify_models: false,
             type_name: None,
+            union: false,
         }
     }
 }
@@ -501,6 +536,14 @@ mod tests {
         tp.set_as_bytes();
         assert!(tp.is_bytes());
         assert_eq!("bytes :: Bytes", tp.to_string());
+        Ok(())
+    }
+
+    #[test]
+    fn test_with_union() -> Result<()> {
+        let mut tp = TypeNameCode::try_from("farm::Animal")?;
+        tp.union(true);
+        assert_eq!("farm :: AnimalUnion", tp.to_string());
         Ok(())
     }
 }

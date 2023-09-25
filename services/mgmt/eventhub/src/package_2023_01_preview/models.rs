@@ -65,7 +65,7 @@ pub mod application_group {
             deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
-        pub policies: Vec<ApplicationGroupPolicy>,
+        pub policies: Vec<ApplicationGroupPolicyUnion>,
     }
     impl Properties {
         pub fn new(client_app_group_identifier: String) -> Self {
@@ -153,6 +153,11 @@ pub mod application_group_policy {
             }
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ApplicationGroupPolicyUnion {
+    ThrottlingPolicy(ThrottlingPolicy),
 }
 #[doc = "Single item in List or Get Alias(Disaster Recovery configuration) operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

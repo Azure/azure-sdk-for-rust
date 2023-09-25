@@ -10437,7 +10437,7 @@ pub mod settings {
             &self,
             subscription_id: impl Into<String>,
             setting_name: impl Into<String>,
-            setting: impl Into<models::Setting>,
+            setting: impl Into<models::SettingUnion>,
         ) -> update::RequestBuilder {
             update::RequestBuilder {
                 client: self.0.clone(),
@@ -10578,9 +10578,9 @@ pub mod settings {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Setting> {
+            pub async fn into_body(self) -> azure_core::Result<models::SettingUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Setting = serde_json::from_slice(&bytes)?;
+                let body: models::SettingUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -10663,8 +10663,8 @@ pub mod settings {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Setting>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Setting>>;
+            type Output = azure_core::Result<models::SettingUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SettingUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -10684,9 +10684,9 @@ pub mod settings {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::Setting> {
+            pub async fn into_body(self) -> azure_core::Result<models::SettingUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::Setting = serde_json::from_slice(&bytes)?;
+                let body: models::SettingUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -10729,7 +10729,7 @@ pub mod settings {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) setting_name: String,
-            pub(crate) setting: models::Setting,
+            pub(crate) setting: models::SettingUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -10771,8 +10771,8 @@ pub mod settings {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::Setting>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Setting>>;
+            type Output = azure_core::Result<models::SettingUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::SettingUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -18075,9 +18075,9 @@ pub mod external_security_solutions {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ExternalSecuritySolution> {
+            pub async fn into_body(self) -> azure_core::Result<models::ExternalSecuritySolutionUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ExternalSecuritySolution = serde_json::from_slice(&bytes)?;
+                let body: models::ExternalSecuritySolutionUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -18164,8 +18164,8 @@ pub mod external_security_solutions {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::ExternalSecuritySolution>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ExternalSecuritySolution>>;
+            type Output = azure_core::Result<models::ExternalSecuritySolutionUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ExternalSecuritySolutionUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]

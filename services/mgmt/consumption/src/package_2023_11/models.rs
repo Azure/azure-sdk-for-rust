@@ -476,6 +476,14 @@ pub mod charge_summary {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ChargeSummaryUnion {
+    #[serde(rename = "legacy")]
+    Legacy(LegacyChargeSummary),
+    #[serde(rename = "modern")]
+    Modern(ModernChargeSummary),
+}
 #[doc = "Result of listing charge summary."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ChargesListResult {
@@ -485,7 +493,7 @@ pub struct ChargesListResult {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<ChargeSummary>,
+    pub value: Vec<ChargeSummaryUnion>,
 }
 impl ChargesListResult {
     pub fn new() -> Self {
@@ -937,10 +945,10 @@ pub struct LegacyReservationRecommendation {
     #[serde(flatten)]
     pub reservation_recommendation: ReservationRecommendation,
     #[doc = "The properties of the reservation recommendation."]
-    pub properties: LegacyReservationRecommendationProperties,
+    pub properties: LegacyReservationRecommendationPropertiesUnion,
 }
 impl LegacyReservationRecommendation {
-    pub fn new(reservation_recommendation: ReservationRecommendation, properties: LegacyReservationRecommendationProperties) -> Self {
+    pub fn new(reservation_recommendation: ReservationRecommendation, properties: LegacyReservationRecommendationPropertiesUnion) -> Self {
         Self {
             reservation_recommendation,
             properties,
@@ -1020,6 +1028,12 @@ impl LegacyReservationRecommendationProperties {
             sku_properties: Vec::new(),
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "scope")]
+pub enum LegacyReservationRecommendationPropertiesUnion {
+    Shared(LegacySharedScopeReservationRecommendationProperties),
+    Single(LegacySingleScopeReservationRecommendationProperties),
 }
 #[doc = "Legacy Reservation transaction resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1891,10 +1905,10 @@ pub struct ModernReservationRecommendation {
     #[serde(flatten)]
     pub reservation_recommendation: ReservationRecommendation,
     #[doc = "The properties of the reservation recommendation."]
-    pub properties: ModernReservationRecommendationProperties,
+    pub properties: ModernReservationRecommendationPropertiesUnion,
 }
 impl ModernReservationRecommendation {
-    pub fn new(reservation_recommendation: ReservationRecommendation, properties: ModernReservationRecommendationProperties) -> Self {
+    pub fn new(reservation_recommendation: ReservationRecommendation, properties: ModernReservationRecommendationPropertiesUnion) -> Self {
         Self {
             reservation_recommendation,
             properties,
@@ -1982,6 +1996,12 @@ impl ModernReservationRecommendationProperties {
             sku_name: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "scope")]
+pub enum ModernReservationRecommendationPropertiesUnion {
+    Shared(ModernSharedScopeReservationRecommendationProperties),
+    Single(ModernSingleScopeReservationRecommendationProperties),
 }
 #[doc = "Modern Reservation transaction resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3025,6 +3045,14 @@ pub mod reservation_recommendation {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ReservationRecommendationUnion {
+    #[serde(rename = "legacy")]
+    Legacy(LegacyReservationRecommendation),
+    #[serde(rename = "modern")]
+    Modern(ModernReservationRecommendation),
+}
 #[doc = "Details of estimated savings. The costs and savings are estimated for the term."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReservationRecommendationDetailsCalculatedSavingsProperties {
@@ -3204,7 +3232,7 @@ pub struct ReservationRecommendationsListResult {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<ReservationRecommendation>,
+    pub value: Vec<ReservationRecommendationUnion>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -3565,6 +3593,14 @@ pub mod usage_detail {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum UsageDetailUnion {
+    #[serde(rename = "legacy")]
+    Legacy(LegacyUsageDetail),
+    #[serde(rename = "modern")]
+    Modern(ModernUsageDetail),
+}
 #[doc = "Result of listing usage details. It contains a list of available usage details in reverse chronological order by billing period."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UsageDetailsListResult {
@@ -3574,7 +3610,7 @@ pub struct UsageDetailsListResult {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<UsageDetail>,
+    pub value: Vec<UsageDetailUnion>,
     #[doc = "The link (url) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,

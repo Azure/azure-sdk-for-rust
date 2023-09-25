@@ -763,10 +763,10 @@ pub struct MoveResourceProperties {
     pub existing_target_id: Option<String>,
     #[doc = "Gets or sets the resource settings."]
     #[serde(rename = "resourceSettings", default, skip_serializing_if = "Option::is_none")]
-    pub resource_settings: Option<ResourceSettings>,
+    pub resource_settings: Option<ResourceSettingsUnion>,
     #[doc = "Gets or sets the resource settings."]
     #[serde(rename = "sourceResourceSettings", default, skip_serializing_if = "Option::is_none")]
-    pub source_resource_settings: Option<ResourceSettings>,
+    pub source_resource_settings: Option<ResourceSettingsUnion>,
     #[doc = "Defines the move resource status."]
     #[serde(rename = "moveStatus", default, skip_serializing_if = "Option::is_none")]
     pub move_status: Option<serde_json::Value>,
@@ -1445,6 +1445,36 @@ impl ResourceSettings {
             target_resource_name,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "resourceType")]
+pub enum ResourceSettingsUnion {
+    #[serde(rename = "Microsoft.Compute/availabilitySets")]
+    MicrosoftComputeAvailabilitySets(AvailabilitySetResourceSettings),
+    #[serde(rename = "Microsoft.Compute/diskEncryptionSets")]
+    MicrosoftComputeDiskEncryptionSets(DiskEncryptionSetResourceSettings),
+    #[serde(rename = "Microsoft.KeyVault/vaults")]
+    MicrosoftKeyVaultVaults(KeyVaultResourceSettings),
+    #[serde(rename = "Microsoft.Network/loadBalancers")]
+    MicrosoftNetworkLoadBalancers(LoadBalancerResourceSettings),
+    #[serde(rename = "Microsoft.Network/networkInterfaces")]
+    MicrosoftNetworkNetworkInterfaces(NetworkInterfaceResourceSettings),
+    #[serde(rename = "Microsoft.Network/networkSecurityGroups")]
+    MicrosoftNetworkNetworkSecurityGroups(NetworkSecurityGroupResourceSettings),
+    #[serde(rename = "Microsoft.Network/publicIPAddresses")]
+    MicrosoftNetworkPublicIpAddresses(PublicIpAddressResourceSettings),
+    #[serde(rename = "resourceGroups")]
+    ResourceGroups(ResourceGroupResourceSettings),
+    #[serde(rename = "Microsoft.Sql/servers/databases")]
+    MicrosoftSqlServersDatabases(SqlDatabaseResourceSettings),
+    #[serde(rename = "Microsoft.Sql/servers/elasticPools")]
+    MicrosoftSqlServersElasticPools(SqlElasticPoolResourceSettings),
+    #[serde(rename = "Microsoft.Sql/servers")]
+    MicrosoftSqlServers(SqlServerResourceSettings),
+    #[serde(rename = "Microsoft.Compute/virtualMachines")]
+    MicrosoftComputeVirtualMachines(VirtualMachineResourceSettings),
+    #[serde(rename = "Microsoft.Network/virtualNetworks")]
+    MicrosoftNetworkVirtualNetworks(VirtualNetworkResourceSettings),
 }
 #[doc = "Defines the Sql Database resource settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

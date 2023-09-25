@@ -881,13 +881,13 @@ pub struct InventoryItem {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
     #[doc = "Defines the resource properties."]
-    pub properties: InventoryItemProperties,
+    pub properties: InventoryItemPropertiesUnion,
     #[doc = "Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
 }
 impl InventoryItem {
-    pub fn new(properties: InventoryItemProperties) -> Self {
+    pub fn new(properties: InventoryItemPropertiesUnion) -> Self {
         Self {
             proxy_resource: ProxyResource::default(),
             properties,
@@ -939,6 +939,14 @@ impl InventoryItemProperties {
             provisioning_state: None,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "inventoryType")]
+pub enum InventoryItemPropertiesUnion {
+    Cloud(CloudInventoryItem),
+    VirtualMachine(VirtualMachineInventoryItem),
+    VirtualMachineTemplate(VirtualMachineTemplateInventoryItem),
+    VirtualNetwork(VirtualNetworkInventoryItem),
 }
 #[doc = "List of InventoryItems."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

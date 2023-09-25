@@ -598,7 +598,7 @@ pub struct BenefitUtilizationSummariesListResult {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<BenefitUtilizationSummary>,
+    pub value: Vec<BenefitUtilizationSummaryUnion>,
     #[doc = "The link (URL) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -629,6 +629,12 @@ impl BenefitUtilizationSummary {
             kind,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum BenefitUtilizationSummaryUnion {
+    IncludedQuantity(IncludedQuantityUtilizationSummary),
+    SavingsPlan(SavingsPlanUtilizationSummary),
 }
 #[doc = "The properties of a benefit utilization summary."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -5384,7 +5390,7 @@ pub struct BenefitRecommendationModel {
     pub benefit_resource: BenefitResource,
     #[doc = "The properties of the benefit recommendations."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<BenefitRecommendationProperties>,
+    pub properties: Option<BenefitRecommendationPropertiesUnion>,
 }
 impl BenefitRecommendationModel {
     pub fn new() -> Self {
@@ -5451,6 +5457,12 @@ impl BenefitRecommendationProperties {
             scope,
         }
     }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "scope")]
+pub enum BenefitRecommendationPropertiesUnion {
+    Shared(SharedScopeBenefitRecommendationProperties),
+    Single(SingleScopeBenefitRecommendationProperties),
 }
 #[doc = "Result of listing benefit recommendations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

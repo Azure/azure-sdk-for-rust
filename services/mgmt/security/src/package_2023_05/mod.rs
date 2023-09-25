@@ -147,7 +147,7 @@ pub mod server_vulnerability_assessments_settings {
             &self,
             subscription_id: impl Into<String>,
             setting_kind: impl Into<String>,
-            server_vulnerability_assessments_setting: impl Into<models::ServerVulnerabilityAssessmentsSetting>,
+            server_vulnerability_assessments_setting: impl Into<models::ServerVulnerabilityAssessmentsSettingUnion>,
         ) -> create_or_update::RequestBuilder {
             create_or_update::RequestBuilder {
                 client: self.0.clone(),
@@ -300,9 +300,9 @@ pub mod server_vulnerability_assessments_settings {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ServerVulnerabilityAssessmentsSetting> {
+            pub async fn into_body(self) -> azure_core::Result<models::ServerVulnerabilityAssessmentsSettingUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ServerVulnerabilityAssessmentsSetting = serde_json::from_slice(&bytes)?;
+                let body: models::ServerVulnerabilityAssessmentsSettingUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -385,8 +385,8 @@ pub mod server_vulnerability_assessments_settings {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::ServerVulnerabilityAssessmentsSetting>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ServerVulnerabilityAssessmentsSetting>>;
+            type Output = azure_core::Result<models::ServerVulnerabilityAssessmentsSettingUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ServerVulnerabilityAssessmentsSettingUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -406,9 +406,9 @@ pub mod server_vulnerability_assessments_settings {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::ServerVulnerabilityAssessmentsSetting> {
+            pub async fn into_body(self) -> azure_core::Result<models::ServerVulnerabilityAssessmentsSettingUnion> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::ServerVulnerabilityAssessmentsSetting = serde_json::from_slice(&bytes)?;
+                let body: models::ServerVulnerabilityAssessmentsSettingUnion = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -451,7 +451,7 @@ pub mod server_vulnerability_assessments_settings {
             pub(crate) client: super::super::Client,
             pub(crate) subscription_id: String,
             pub(crate) setting_kind: String,
-            pub(crate) server_vulnerability_assessments_setting: models::ServerVulnerabilityAssessmentsSetting,
+            pub(crate) server_vulnerability_assessments_setting: models::ServerVulnerabilityAssessmentsSettingUnion,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -493,8 +493,8 @@ pub mod server_vulnerability_assessments_settings {
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::ServerVulnerabilityAssessmentsSetting>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ServerVulnerabilityAssessmentsSetting>>;
+            type Output = azure_core::Result<models::ServerVulnerabilityAssessmentsSettingUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ServerVulnerabilityAssessmentsSettingUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
