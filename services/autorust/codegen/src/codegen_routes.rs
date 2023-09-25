@@ -345,7 +345,8 @@ fn create_function_params(parameters: &[&WebParameter]) -> crate::Result<TokenSt
             let body_tp = quote! { Json<#tp> };
             params.push(quote! { #name: #body_tp });
         } else {
-            let mut tp = TypeNameCode::new_ref(&param.type_name()?)?;
+            let mut tp = TypeNameCode::new(&param.type_name()?)?;
+            tp.set_is_ref(true);
             tp = tp.optional(!param.required());
             params.push(quote! { #name: #tp });
         }
