@@ -16,16 +16,18 @@ pub mod lib_rs;
 pub mod readme_md;
 pub mod spec;
 mod status_codes;
+
 use autorust_toml::PackageConfig;
 use camino::{Utf8Path, Utf8PathBuf};
 use config_parser::Configuration;
 pub use error::{Error, ErrorKind, Result, ResultExt};
 use proc_macro2::TokenStream;
 use quote::ToTokens;
-use std::io::Write;
 use std::{
     collections::HashSet,
     fs::{self, File},
+    io::Write,
+    process::{Command, Stdio},
 };
 
 pub use self::{
@@ -133,15 +135,40 @@ pub fn run<'a>(crate_config: &'a CrateConfig, package_config: &'a PackageConfig)
     Ok(cg)
 }
 
+fn rustfmt(input: &str) -> Result<Vec<u8>> {
+    let mut cmd = Command::new("rustfmt");
+    cmd.args(["--emit", "stdout", "--edition", "2021"]);
+    let mut child = cmd
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()
+        .with_context(ErrorKind::Io, || "spawn rustfmt")?;
+    child
+        .stdin
+        .as_mut()
+        .ok_or_else(|| Error::message(ErrorKind::Io, "rustfmt stdin is not available"))?
+        .write_all(input.as_bytes())
+        .with_context(ErrorKind::Io, || "write to rustfmt stdin")?;
+    let output = child.wait_with_output().with_context(ErrorKind::Io, || "wait for rustfmt")?;
+    if !output.status.success() {
+        return Err(Error::message(
+            ErrorKind::Io,
+            format!("rustfmt failed: {}", String::from_utf8_lossy(&output.stderr)),
+        ));
+    }
+    Ok(output.stdout)
+}
+
 fn write_file<P: AsRef<Utf8Path>>(file: P, tokens: &TokenStream, print_writing_file: bool) -> Result<()> {
     let file = file.as_ref();
     if print_writing_file {
         println!("writing file {}", &file);
     }
     let code = tokens.to_string();
+    let code = rustfmt(&code)?;
     let mut buffer = File::create(file).with_context(ErrorKind::Io, || format!("create file {file}"))?;
     buffer
-        .write_all(code.as_bytes())
+        .write_all(&code)
         .with_context(ErrorKind::Io, || format!("write file {file}"))?;
     Ok(())
 }
