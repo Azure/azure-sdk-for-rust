@@ -5,8 +5,11 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
 };
 use std::sync::Arc;
+use url::Url;
 
 pub(crate) use authorization_policy::AuthorizationPolicy;
+
+use crate::clients::{EMULATOR_ACCOUNT, EMULATOR_ACCOUNT_KEY};
 
 /// Credentials for accessing a storage account.
 ///
@@ -112,6 +115,11 @@ impl StorageCredentials {
     pub fn anonymous() -> Self {
         Self::Anonymous
     }
+
+    /// Create an Access Key credential for use with the Azure Storage emulator
+    pub fn emulator() -> Self {
+        Self::access_key(EMULATOR_ACCOUNT, EMULATOR_ACCOUNT_KEY)
+    }
 }
 
 impl std::fmt::Debug for StorageCredentials {
@@ -144,6 +152,16 @@ impl std::fmt::Debug for StorageCredentials {
 impl From<Arc<dyn TokenCredential>> for StorageCredentials {
     fn from(cred: Arc<dyn TokenCredential>) -> Self {
         Self::TokenCredential(cred)
+    }
+}
+
+impl TryFrom<&Url> for StorageCredentials {
+    type Error = azure_core::Error;
+    fn try_from(value: &Url) -> Result<Self, Self::Error> {
+        match value.query() {
+            Some(query) => Self::sas_token(query),
+            None => Ok(Self::Anonymous),
+        }
     }
 }
 

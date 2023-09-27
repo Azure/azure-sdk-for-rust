@@ -32,6 +32,7 @@ impl ContainerClient {
 
     pub fn from_sas_url(url: &Url) -> azure_core::Result<Self> {
         let cloud_location: CloudLocation = url.try_into()?;
+        let credentials: StorageCredentials = url.try_into()?;
 
         let container = url.path().split_terminator('/').nth(1).ok_or_else(|| {
             azure_core::Error::with_message(azure_core::error::ErrorKind::DataConversion, || {
@@ -39,7 +40,8 @@ impl ContainerClient {
             })
         })?;
 
-        let client = ClientBuilder::with_location(cloud_location).container_client(container);
+        let client =
+            ClientBuilder::with_location(cloud_location, credentials).container_client(container);
         Ok(client)
     }
 
