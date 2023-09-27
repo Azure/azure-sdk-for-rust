@@ -15,7 +15,7 @@ async fn main() -> azure_core::Result<()> {
     let blob_name = format!("file-{}.txt", Uuid::new_v4());
     let blob_notags_name = format!("file-{}.txt", Uuid::new_v4());
 
-    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
     let container_client =
         BlobServiceClient::new(account, storage_credentials).container_client(container_name);
     container_client.create().await?;

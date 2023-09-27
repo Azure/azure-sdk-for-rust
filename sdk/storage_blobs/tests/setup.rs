@@ -9,12 +9,12 @@ pub fn initialize(transaction_name: impl Into<String>) -> azure_core::Result<Blo
     {
         let account_name = var("STORAGE_ACCOUNT").expect("missing env STORAGE_ACCOUNT");
         let account_key = var("STORAGE_ACCESS_KEY").expect("missing env STORAGE_ACCESS_KEY");
-        let storage_credentials = StorageCredentials::Key(account_name.clone(), account_key);
+        let storage_credentials = StorageCredentials::access_key(account_name.clone(), account_key);
         (account_name, storage_credentials)
     } else {
         (
             String::new(),
-            StorageCredentials::BearerToken(String::new()),
+            StorageCredentials::bearer_token(String::new()),
         )
     };
 

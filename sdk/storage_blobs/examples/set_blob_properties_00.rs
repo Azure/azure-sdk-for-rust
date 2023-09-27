@@ -22,7 +22,7 @@ async fn main() -> azure_core::Result<()> {
     // let storage_client = StorageAccountClient::new_sas_token(http_client.clone(), &account,
     //      "sv=2018-11-09&ss=b&srt=o&se=2021-01-15T12%3A09%3A01Z&sp=r&st=2021-01-15T11%3A09%3A01Z&spr=http,https&sig=some_signature")?;
 
-    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
     let blob_client = BlobServiceClient::new(account, storage_credentials)
         .container_client(&container)
         .blob_client(blob);
