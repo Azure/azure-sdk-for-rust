@@ -98,9 +98,6 @@ pub struct AzureAdAdministrator {
     #[doc = "The properties of an administrator."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AdministratorProperties>,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
 }
 impl AzureAdAdministrator {
     pub fn new() -> Self {
@@ -125,6 +122,168 @@ impl Backup {
         Self::default()
     }
 }
+#[doc = "BackupAndExport API Request"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupAndExportRequest {
+    #[serde(flatten)]
+    pub backup_request_base: BackupRequestBase,
+    #[doc = "Details about the target where the backup content will be stored."]
+    #[serde(rename = "targetDetails")]
+    pub target_details: BackupStoreDetailsUnion,
+}
+impl BackupAndExportRequest {
+    pub fn new(backup_request_base: BackupRequestBase, target_details: BackupStoreDetailsUnion) -> Self {
+        Self {
+            backup_request_base,
+            target_details,
+        }
+    }
+}
+#[doc = "Represents BackupAndExport API Response"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BackupAndExportResponse {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[serde(flatten)]
+    pub error_response: ErrorResponse,
+    #[doc = "The operation status"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<backup_and_export_response::Status>,
+    #[doc = "Start time"]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
+    #[doc = "End time"]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
+    pub end_time: Option<time::OffsetDateTime>,
+    #[doc = "Operation progress (0-100)."]
+    #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
+    pub percent_complete: Option<f64>,
+    #[doc = "BackupAndExport Response Properties"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<BackupAndExportResponseProperties>,
+}
+impl BackupAndExportResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod backup_and_export_response {
+    use super::*;
+    #[doc = "The operation status"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Status {
+        Pending,
+        InProgress,
+        Succeeded,
+        Failed,
+        CancelInProgress,
+        Canceled,
+    }
+}
+#[doc = "BackupAndExport Response Properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BackupAndExportResponseProperties {
+    #[doc = "Size of datasource in bytes"]
+    #[serde(rename = "datasourceSizeInBytes", default, skip_serializing_if = "Option::is_none")]
+    pub datasource_size_in_bytes: Option<i64>,
+    #[doc = "Data transferred in bytes"]
+    #[serde(rename = "dataTransferredInBytes", default, skip_serializing_if = "Option::is_none")]
+    pub data_transferred_in_bytes: Option<i64>,
+    #[doc = "Metadata related to backup to be stored for restoring resource in key-value pairs."]
+    #[serde(rename = "backupMetadata", default, skip_serializing_if = "Option::is_none")]
+    pub backup_metadata: Option<String>,
+}
+impl BackupAndExportResponseProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub type BackupName = String;
+#[doc = "BackupRequestBase is the base for all backup request."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupRequestBase {
+    #[doc = "Backup Settings"]
+    #[serde(rename = "backupSettings")]
+    pub backup_settings: BackupSettings,
+}
+impl BackupRequestBase {
+    pub fn new(backup_settings: BackupSettings) -> Self {
+        Self { backup_settings }
+    }
+}
+#[doc = "Backup Settings"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupSettings {
+    #[doc = "The name of the backup."]
+    #[serde(rename = "backupName")]
+    pub backup_name: BackupName,
+    #[doc = "Backup Format for the current backup. (CollatedFormat is INTERNAL – DO NOT USE)"]
+    #[serde(rename = "backupFormat", default, skip_serializing_if = "Option::is_none")]
+    pub backup_format: Option<backup_settings::BackupFormat>,
+}
+impl BackupSettings {
+    pub fn new(backup_name: BackupName) -> Self {
+        Self {
+            backup_name,
+            backup_format: None,
+        }
+    }
+}
+pub mod backup_settings {
+    use super::*;
+    #[doc = "Backup Format for the current backup. (CollatedFormat is INTERNAL – DO NOT USE)"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "BackupFormat")]
+    pub enum BackupFormat {
+        CollatedFormat,
+        Raw,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for BackupFormat {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for BackupFormat {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for BackupFormat {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::CollatedFormat => serializer.serialize_unit_variant("BackupFormat", 0u32, "CollatedFormat"),
+                Self::Raw => serializer.serialize_unit_variant("BackupFormat", 1u32, "Raw"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Details about the target where the backup content will be stored."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BackupStoreDetails {
+    #[doc = "Type of the specific object - used for deserializing"]
+    #[serde(rename = "objectType")]
+    pub object_type: String,
+}
+impl BackupStoreDetails {
+    pub fn new(object_type: String) -> Self {
+        Self { object_type }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "objectType")]
+pub enum BackupStoreDetailsUnion {}
 #[doc = "location capability"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CapabilitiesListResult {
@@ -212,9 +371,6 @@ pub struct Configuration {
     #[doc = "The properties of a configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProperties>,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
 }
 impl Configuration {
     pub fn new() -> Self {
@@ -574,9 +730,6 @@ pub struct Database {
     #[doc = "The properties of a database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseProperties>,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
 }
 impl Database {
     pub fn new() -> Self {
@@ -690,6 +843,39 @@ impl ErrorAdditionalInfo {
         Self::default()
     }
 }
+#[doc = "The error detail."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ErrorDetail {
+    #[doc = "The error code."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "The error message."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[doc = "The error target."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[doc = "The error details."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub details: Vec<ErrorDetail>,
+    #[doc = "The error additional info."]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+impl ErrorDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -718,6 +904,12 @@ pub struct ErrorResponse {
     )]
     pub additional_info: Vec<ErrorAdditionalInfo>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -730,16 +922,12 @@ pub struct FirewallRule {
     pub proxy_resource: ProxyResource,
     #[doc = "The properties of a server firewall rule."]
     pub properties: FirewallRuleProperties,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
 }
 impl FirewallRule {
     pub fn new(properties: FirewallRuleProperties) -> Self {
         Self {
             proxy_resource: ProxyResource::default(),
             properties,
-            system_data: None,
         }
     }
 }
@@ -783,6 +971,23 @@ impl FirewallRuleProperties {
         Self {
             start_ip_address,
             end_ip_address,
+        }
+    }
+}
+#[doc = "FullBackupStoreDetails is used for scenarios where backup data is streamed/copied over to a storage destination."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct FullBackupStoreDetails {
+    #[serde(flatten)]
+    pub backup_store_details: BackupStoreDetails,
+    #[doc = "SASUriList of storage containers where backup data is to be streamed/copied."]
+    #[serde(rename = "sasUriList")]
+    pub sas_uri_list: Vec<String>,
+}
+impl FullBackupStoreDetails {
+    pub fn new(backup_store_details: BackupStoreDetails, sas_uri_list: Vec<String>) -> Self {
+        Self {
+            backup_store_details,
+            sas_uri_list,
         }
     }
 }
@@ -901,33 +1106,63 @@ pub mod high_availability {
         }
     }
 }
-#[doc = "Properties to configure Identity for Bring your Own Keys"]
+#[doc = "Import source related properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct Identity {
-    #[doc = "ObjectId from the KeyVault"]
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[doc = "TenantId from the KeyVault"]
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[doc = "Type of managed service identity."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<identity::Type>,
-    #[doc = "Metadata of user assigned identity."]
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<serde_json::Value>,
+pub struct ImportSourceProperties {
+    #[doc = "Storage type of import source."]
+    #[serde(rename = "storageType", default, skip_serializing_if = "Option::is_none")]
+    pub storage_type: Option<import_source_properties::StorageType>,
+    #[doc = "Uri of the import source storage."]
+    #[serde(rename = "storageUrl", default, skip_serializing_if = "Option::is_none")]
+    pub storage_url: Option<String>,
+    #[doc = "Sas token for accessing source storage. Read and list permissions are required for sas token."]
+    #[serde(rename = "sasToken", default, skip_serializing_if = "Option::is_none")]
+    pub sas_token: Option<String>,
+    #[doc = "Relative path of data directory in storage."]
+    #[serde(rename = "dataDirPath", default, skip_serializing_if = "Option::is_none")]
+    pub data_dir_path: Option<String>,
 }
-impl Identity {
+impl ImportSourceProperties {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub mod identity {
+pub mod import_source_properties {
     use super::*;
-    #[doc = "Type of managed service identity."]
+    #[doc = "Storage type of import source."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        UserAssigned,
+    #[serde(remote = "StorageType")]
+    pub enum StorageType {
+        AzureBlob,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for StorageType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for StorageType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for StorageType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::AzureBlob => serializer.serialize_unit_variant("StorageType", 0u32, "AzureBlob"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "Represents a logFile."]
@@ -938,9 +1173,6 @@ pub struct LogFile {
     #[doc = "The properties of a logFile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LogFileProperties>,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
 }
 impl LogFile {
     pub fn new() -> Self {
@@ -1015,6 +1247,120 @@ pub struct MaintenanceWindow {
 impl MaintenanceWindow {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Properties to configure Identity for Bring your Own Keys"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MySqlServerIdentity {
+    #[doc = "ObjectId from the KeyVault"]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "TenantId from the KeyVault"]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "Type of managed service identity."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<my_sql_server_identity::Type>,
+    #[doc = "Metadata of user assigned identity."]
+    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
+    pub user_assigned_identities: Option<serde_json::Value>,
+}
+impl MySqlServerIdentity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod my_sql_server_identity {
+    use super::*;
+    #[doc = "Type of managed service identity."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Type")]
+    pub enum Type {
+        UserAssigned,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Type {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Type {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Type {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::UserAssigned => serializer.serialize_unit_variant("Type", 0u32, "UserAssigned"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Billing information related properties of a server."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct MySqlServerSku {
+    #[doc = "The name of the sku, e.g. Standard_D32s_v3."]
+    pub name: String,
+    #[doc = "The tier of the particular SKU, e.g. GeneralPurpose."]
+    pub tier: my_sql_server_sku::Tier,
+}
+impl MySqlServerSku {
+    pub fn new(name: String, tier: my_sql_server_sku::Tier) -> Self {
+        Self { name, tier }
+    }
+}
+pub mod my_sql_server_sku {
+    use super::*;
+    #[doc = "The tier of the particular SKU, e.g. GeneralPurpose."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Tier")]
+    pub enum Tier {
+        Burstable,
+        GeneralPurpose,
+        MemoryOptimized,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Tier {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Tier {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Tier {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Burstable => serializer.serialize_unit_variant("Tier", 0u32, "Burstable"),
+                Self::GeneralPurpose => serializer.serialize_unit_variant("Tier", 1u32, "GeneralPurpose"),
+                Self::MemoryOptimized => serializer.serialize_unit_variant("Tier", 2u32, "MemoryOptimized"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "Represents a resource name availability."]
@@ -1134,6 +1480,227 @@ impl OperationListResult {
         Self::default()
     }
 }
+#[doc = "Represents Operation Results API Response"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationStatusExtendedResult {
+    #[serde(flatten)]
+    pub operation_status_result: OperationStatusResult,
+    #[doc = "A name-value pair that represents extended info."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ExtendedData>,
+}
+impl OperationStatusExtendedResult {
+    pub fn new(operation_status_result: OperationStatusResult) -> Self {
+        Self {
+            operation_status_result,
+            properties: None,
+        }
+    }
+}
+#[doc = "The current status of an async operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationStatusResult {
+    #[doc = "Fully qualified ID for the async operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Fully qualified ID of the resource against which the original async operation was started."]
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    #[doc = "Name of the async operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Operation status."]
+    pub status: String,
+    #[doc = "Percent of the operation that is complete."]
+    #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
+    pub percent_complete: Option<f64>,
+    #[doc = "The start time of the operation."]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
+    #[doc = "The end time of the operation."]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
+    pub end_time: Option<time::OffsetDateTime>,
+    #[doc = "The operations list."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub operations: Vec<OperationStatusResult>,
+    #[doc = "The error detail."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+}
+impl OperationStatusResult {
+    pub fn new(status: String) -> Self {
+        Self {
+            id: None,
+            resource_id: None,
+            name: None,
+            status,
+            percent_complete: None,
+            start_time: None,
+            end_time: None,
+            operations: Vec::new(),
+            error: None,
+        }
+    }
+}
+#[doc = "The private endpoint resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PrivateEndpoint {
+    #[doc = "The ARM identifier for private endpoint."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+impl PrivateEndpoint {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The private endpoint connection resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PrivateEndpointConnection {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Properties of the private endpoint connection."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PrivateEndpointConnectionProperties>,
+}
+impl PrivateEndpointConnection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Properties of the private endpoint connection."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PrivateEndpointConnectionProperties {
+    #[doc = "The group ids for the private endpoint resource."]
+    #[serde(
+        rename = "groupIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub group_ids: Vec<String>,
+    #[doc = "The private endpoint resource."]
+    #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
+    pub private_endpoint: Option<PrivateEndpoint>,
+    #[doc = "A collection of information about the state of the connection between service consumer and provider."]
+    #[serde(rename = "privateLinkServiceConnectionState")]
+    pub private_link_service_connection_state: PrivateLinkServiceConnectionState,
+    #[doc = "The current provisioning state."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<PrivateEndpointConnectionProvisioningState>,
+}
+impl PrivateEndpointConnectionProperties {
+    pub fn new(private_link_service_connection_state: PrivateLinkServiceConnectionState) -> Self {
+        Self {
+            group_ids: Vec::new(),
+            private_endpoint: None,
+            private_link_service_connection_state,
+            provisioning_state: None,
+        }
+    }
+}
+#[doc = "The current provisioning state."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "PrivateEndpointConnectionProvisioningState")]
+pub enum PrivateEndpointConnectionProvisioningState {
+    Succeeded,
+    Creating,
+    Deleting,
+    Failed,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for PrivateEndpointConnectionProvisioningState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for PrivateEndpointConnectionProvisioningState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for PrivateEndpointConnectionProvisioningState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Succeeded => serializer.serialize_unit_variant("PrivateEndpointConnectionProvisioningState", 0u32, "Succeeded"),
+            Self::Creating => serializer.serialize_unit_variant("PrivateEndpointConnectionProvisioningState", 1u32, "Creating"),
+            Self::Deleting => serializer.serialize_unit_variant("PrivateEndpointConnectionProvisioningState", 2u32, "Deleting"),
+            Self::Failed => serializer.serialize_unit_variant("PrivateEndpointConnectionProvisioningState", 3u32, "Failed"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "The private endpoint connection status."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "PrivateEndpointServiceConnectionStatus")]
+pub enum PrivateEndpointServiceConnectionStatus {
+    Pending,
+    Approved,
+    Rejected,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for PrivateEndpointServiceConnectionStatus {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for PrivateEndpointServiceConnectionStatus {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for PrivateEndpointServiceConnectionStatus {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Pending => serializer.serialize_unit_variant("PrivateEndpointServiceConnectionStatus", 0u32, "Pending"),
+            Self::Approved => serializer.serialize_unit_variant("PrivateEndpointServiceConnectionStatus", 1u32, "Approved"),
+            Self::Rejected => serializer.serialize_unit_variant("PrivateEndpointServiceConnectionStatus", 2u32, "Rejected"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "A collection of information about the state of the connection between service consumer and provider."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PrivateLinkServiceConnectionState {
+    #[doc = "The private endpoint connection status."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<PrivateEndpointServiceConnectionStatus>,
+    #[doc = "The reason for approval/rejection of the connection."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "A message indicating if changes on the service provider require any updates on the consumer."]
+    #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
+    pub actions_required: Option<String>,
+}
+impl PrivateLinkServiceConnectionState {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
@@ -1187,7 +1754,7 @@ impl Serialize for ReplicationRole {
 #[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
-    #[doc = "Fully qualified resource ID for the resource. Ex - /subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}"]
+    #[doc = "Fully qualified resource ID for the resource. E.g. \"/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/{resourceProviderNamespace}/{resourceType}/{resourceName}\""]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
     #[doc = "The name of the resource"]
@@ -1196,6 +1763,9 @@ pub struct Resource {
     #[doc = "The type of the resource. E.g. \"Microsoft.Compute/virtualMachines\" or \"Microsoft.Storage/storageAccounts\""]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
 }
 impl Resource {
     pub fn new() -> Self {
@@ -1209,16 +1779,13 @@ pub struct Server {
     pub tracked_resource: TrackedResource,
     #[doc = "Properties to configure Identity for Bring your Own Keys"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<Identity>,
+    pub identity: Option<MySqlServerIdentity>,
     #[doc = "Billing information related properties of a server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
+    pub sku: Option<MySqlServerSku>,
     #[doc = "The properties of a server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerProperties>,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
 }
 impl Server {
     pub fn new(tracked_resource: TrackedResource) -> Self {
@@ -1227,7 +1794,6 @@ impl Server {
             identity: None,
             sku: None,
             properties: None,
-            system_data: None,
         }
     }
 }
@@ -1239,9 +1805,6 @@ pub struct ServerBackup {
     #[doc = "The properties of a server backup."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerBackupProperties>,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
 }
 impl ServerBackup {
     pub fn new() -> Self {
@@ -1324,10 +1887,10 @@ impl ServerEditionCapability {
 pub struct ServerForUpdate {
     #[doc = "Properties to configure Identity for Bring your Own Keys"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<Identity>,
+    pub identity: Option<MySqlServerIdentity>,
     #[doc = "Billing information related properties of a server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
+    pub sku: Option<MySqlServerSku>,
     #[doc = "The properties that can be updated for a server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerPropertiesForUpdate>,
@@ -1336,6 +1899,18 @@ pub struct ServerForUpdate {
     pub tags: Option<serde_json::Value>,
 }
 impl ServerForUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Server Gtid set parameters."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ServerGtidSetParameter {
+    #[doc = "The Gtid set of server."]
+    #[serde(rename = "gtidSet", default, skip_serializing_if = "Option::is_none")]
+    pub gtid_set: Option<String>,
+}
+impl ServerGtidSetParameter {
     pub fn new() -> Self {
         Self::default()
     }
@@ -1416,9 +1991,20 @@ pub struct ServerProperties {
     #[doc = "Network related properties of a server"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network: Option<Network>,
+    #[doc = "PrivateEndpointConnections related properties of a server."]
+    #[serde(
+        rename = "privateEndpointConnections",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
     #[doc = "Maintenance window of a server."]
     #[serde(rename = "maintenanceWindow", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_window: Option<MaintenanceWindow>,
+    #[doc = "Import source related properties."]
+    #[serde(rename = "importSourceProperties", default, skip_serializing_if = "Option::is_none")]
+    pub import_source_properties: Option<ImportSourceProperties>,
 }
 impl ServerProperties {
     pub fn new() -> Self {
@@ -1543,6 +2129,9 @@ pub struct ServerPropertiesForUpdate {
     #[doc = "The date encryption for cmk."]
     #[serde(rename = "dataEncryption", default, skip_serializing_if = "Option::is_none")]
     pub data_encryption: Option<DataEncryption>,
+    #[doc = "Network related properties of a server"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub network: Option<Network>,
 }
 impl ServerPropertiesForUpdate {
     pub fn new() -> Self {
@@ -1621,61 +2210,6 @@ pub struct ServerVersionCapability {
 impl ServerVersionCapability {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Billing information related properties of a server."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Sku {
-    #[doc = "The name of the sku, e.g. Standard_D32s_v3."]
-    pub name: String,
-    #[doc = "The tier of the particular SKU, e.g. GeneralPurpose."]
-    pub tier: sku::Tier,
-}
-impl Sku {
-    pub fn new(name: String, tier: sku::Tier) -> Self {
-        Self { name, tier }
-    }
-}
-pub mod sku {
-    use super::*;
-    #[doc = "The tier of the particular SKU, e.g. GeneralPurpose."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Tier")]
-    pub enum Tier {
-        Burstable,
-        GeneralPurpose,
-        MemoryOptimized,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Tier {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Tier {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Tier {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Burstable => serializer.serialize_unit_variant("Tier", 0u32, "Burstable"),
-                Self::GeneralPurpose => serializer.serialize_unit_variant("Tier", 1u32, "GeneralPurpose"),
-                Self::MemoryOptimized => serializer.serialize_unit_variant("Tier", 2u32, "MemoryOptimized"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
     }
 }
 #[doc = "Sku capability"]
@@ -1785,6 +2319,30 @@ impl UserAssignedIdentity {
         Self::default()
     }
 }
+#[doc = "Represents ValidateBackup API Response"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ValidateBackupResponse {
+    #[doc = "ValidateBackup Response Properties"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ValidateBackupResponseProperties>,
+}
+impl ValidateBackupResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "ValidateBackup Response Properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ValidateBackupResponseProperties {
+    #[doc = "Estimated no of storage containers required for resource data to be backed up."]
+    #[serde(rename = "numberOfContainers", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_containers: Option<i32>,
+}
+impl ValidateBackupResponseProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Virtual network subnet usage parameter"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkSubnetUsageParameter {
@@ -1816,6 +2374,14 @@ pub struct VirtualNetworkSubnetUsageResult {
     pub delegated_subnets_usage: Vec<DelegatedSubnetUsage>,
 }
 impl VirtualNetworkSubnetUsageResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A name-value pair that represents extended info."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ExtendedData {}
+impl ExtendedData {
     pub fn new() -> Self {
         Self::default()
     }

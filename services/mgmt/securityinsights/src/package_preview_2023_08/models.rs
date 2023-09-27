@@ -13843,16 +13843,16 @@ impl WorkspaceManagerMember {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceManagerMemberProperties {
     #[doc = "Fully qualified resource ID of the target Sentinel workspace joining the given Sentinel workspace manager"]
-    #[serde(rename = "targetWorkspaceId")]
-    pub target_workspace_id: String,
+    #[serde(rename = "targetWorkspaceResourceId")]
+    pub target_workspace_resource_id: String,
     #[doc = "Tenant id of the target Sentinel workspace joining the given Sentinel workspace manager"]
     #[serde(rename = "targetWorkspaceTenantId")]
     pub target_workspace_tenant_id: String,
 }
 impl WorkspaceManagerMemberProperties {
-    pub fn new(target_workspace_id: String, target_workspace_tenant_id: String) -> Self {
+    pub fn new(target_workspace_resource_id: String, target_workspace_tenant_id: String) -> Self {
         Self {
-            target_workspace_id,
+            target_workspace_resource_id,
             target_workspace_tenant_id,
         }
     }

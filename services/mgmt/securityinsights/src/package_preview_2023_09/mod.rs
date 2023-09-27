@@ -118,6 +118,9 @@ impl Client {
     pub fn automation_rules_client(&self) -> automation_rules::Client {
         automation_rules::Client(self.clone())
     }
+    pub fn billing_statistics_client(&self) -> billing_statistics::Client {
+        billing_statistics::Client(self.clone())
+    }
     pub fn bookmark_client(&self) -> bookmark::Client {
         bookmark::Client(self.clone())
     }
@@ -138,6 +141,9 @@ impl Client {
     }
     pub fn content_templates_client(&self) -> content_templates::Client {
         content_templates::Client(self.clone())
+    }
+    pub fn data_connector_definitions_client(&self) -> data_connector_definitions::Client {
+        data_connector_definitions::Client(self.clone())
     }
     pub fn data_connectors_client(&self) -> data_connectors::Client {
         data_connectors::Client(self.clone())
@@ -450,7 +456,7 @@ pub mod alert_rules {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -486,7 +492,7 @@ pub mod alert_rules {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -577,7 +583,7 @@ pub mod alert_rules {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -682,7 +688,7 @@ pub mod alert_rules {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -780,7 +786,7 @@ pub mod alert_rules {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -975,7 +981,7 @@ pub mod actions {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1011,7 +1017,7 @@ pub mod actions {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -1103,7 +1109,7 @@ pub mod actions {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -1209,7 +1215,7 @@ pub mod actions {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -1308,7 +1314,7 @@ pub mod actions {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -1443,7 +1449,7 @@ pub mod alert_rule_templates {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -1479,7 +1485,7 @@ pub mod alert_rule_templates {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -1570,7 +1576,7 @@ pub mod alert_rule_templates {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -1769,7 +1775,7 @@ pub mod automation_rules {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -1883,7 +1889,7 @@ pub mod automation_rules {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -1986,7 +1992,7 @@ pub mod automation_rules {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -2082,7 +2088,7 @@ pub mod automation_rules {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -2118,7 +2124,7 @@ pub mod automation_rules {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -2364,7 +2370,7 @@ pub mod entities {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -2448,7 +2454,7 @@ pub mod entities {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -2484,7 +2490,7 @@ pub mod entities {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -2575,7 +2581,7 @@ pub mod entities {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -2680,7 +2686,7 @@ pub mod entities {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -2786,7 +2792,7 @@ pub mod entities {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -2891,7 +2897,7 @@ pub mod entities {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -3219,7 +3225,7 @@ pub mod incidents {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -3339,7 +3345,7 @@ pub mod incidents {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -3387,7 +3393,7 @@ pub mod incidents {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -3478,7 +3484,7 @@ pub mod incidents {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -3583,7 +3589,7 @@ pub mod incidents {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -3681,7 +3687,7 @@ pub mod incidents {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -3774,7 +3780,7 @@ pub mod incidents {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -3878,7 +3884,7 @@ pub mod incidents {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -3982,7 +3988,7 @@ pub mod incidents {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -4086,7 +4092,7 @@ pub mod incidents {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -4094,6 +4100,280 @@ pub mod incidents {
         impl std::future::IntoFuture for RequestBuilder {
             type Output = azure_core::Result<models::IncidentEntitiesResponse>;
             type IntoFuture = BoxFuture<'static, azure_core::Result<models::IncidentEntitiesResponse>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+}
+pub mod billing_statistics {
+    use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Gets all Microsoft Sentinel billing statistics."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        pub fn list(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                workspace_name: workspace_name.into(),
+            }
+        }
+        #[doc = "Gets a billing statistic"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `billing_statistic_name`: The name of the billing statistic"]
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+            billing_statistic_name: impl Into<String>,
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                workspace_name: workspace_name.into(),
+                billing_statistic_name: billing_statistic_name.into(),
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::BillingStatisticList> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::BillingStatisticList = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) workspace_name: String,
+        }
+        impl RequestBuilder {
+            pub fn into_stream(self) -> azure_core::Pageable<models::BillingStatisticList, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = this.url()?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/billingStatistics" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ? ;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
+                }
+                Ok(url)
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::BillingStatisticUnion> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::BillingStatisticUnion = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) workspace_name: String,
+            pub(crate) billing_statistic_name: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = this.url()?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/billingStatistics/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . billing_statistic_name)) ? ;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
+                }
+                Ok(url)
+            }
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::BillingStatisticUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::BillingStatisticUnion>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -4280,7 +4560,7 @@ pub mod bookmarks {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -4316,7 +4596,7 @@ pub mod bookmarks {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -4407,7 +4687,7 @@ pub mod bookmarks {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -4512,7 +4792,7 @@ pub mod bookmarks {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -4610,7 +4890,7 @@ pub mod bookmarks {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -4833,7 +5113,7 @@ pub mod bookmark_relations {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -4881,7 +5161,7 @@ pub mod bookmark_relations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -4973,7 +5253,7 @@ pub mod bookmark_relations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -5079,7 +5359,7 @@ pub mod bookmark_relations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -5178,7 +5458,7 @@ pub mod bookmark_relations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -5306,7 +5586,7 @@ pub mod bookmark {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -5481,7 +5761,7 @@ pub mod content_packages {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -5529,7 +5809,7 @@ pub mod content_packages {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -5620,7 +5900,7 @@ pub mod content_packages {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -5782,7 +6062,7 @@ pub mod content_package {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -5880,7 +6160,7 @@ pub mod content_package {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -5928,9 +6208,9 @@ pub mod product_packages {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::PackageList> {
+            pub async fn into_body(self) -> azure_core::Result<models::ProductPackageList> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::PackageList = serde_json::from_slice(&bytes)?;
+                let body: models::ProductPackageList = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -6000,7 +6280,7 @@ pub mod product_packages {
                 self.skip_token = Some(skip_token.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<models::PackageList, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::ProductPackageList, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -6021,7 +6301,7 @@ pub mod product_packages {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -6069,7 +6349,7 @@ pub mod product_packages {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -6116,9 +6396,9 @@ pub mod product_package {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::PackageModel> {
+            pub async fn into_body(self) -> azure_core::Result<models::ProductPackageModel> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::PackageModel = serde_json::from_slice(&bytes)?;
+                let body: models::ProductPackageModel = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -6192,14 +6472,14 @@ pub mod product_package {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::PackageModel>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::PackageModel>>;
+            type Output = azure_core::Result<models::ProductPackageModel>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ProductPackageModel>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -6252,9 +6532,9 @@ pub mod product_templates {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::TemplateList> {
+            pub async fn into_body(self) -> azure_core::Result<models::ProductTemplateList> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::TemplateList = serde_json::from_slice(&bytes)?;
+                let body: models::ProductTemplateList = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -6324,7 +6604,7 @@ pub mod product_templates {
                 self.skip_token = Some(skip_token.into());
                 self
             }
-            pub fn into_stream(self) -> azure_core::Pageable<models::TemplateList, azure_core::error::Error> {
+            pub fn into_stream(self) -> azure_core::Pageable<models::ProductTemplateList, azure_core::error::Error> {
                 let make_request = move |continuation: Option<String>| {
                     let this = self.clone();
                     async move {
@@ -6345,7 +6625,7 @@ pub mod product_templates {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -6393,7 +6673,7 @@ pub mod product_templates {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -6440,9 +6720,9 @@ pub mod product_template {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::TemplateModel> {
+            pub async fn into_body(self) -> azure_core::Result<models::ProductTemplateModel> {
                 let bytes = self.0.into_body().collect().await?;
-                let body: models::TemplateModel = serde_json::from_slice(&bytes)?;
+                let body: models::ProductTemplateModel = serde_json::from_slice(&bytes)?;
                 Ok(body)
             }
             pub fn into_raw_response(self) -> azure_core::Response {
@@ -6516,14 +6796,14 @@ pub mod product_template {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
         }
         impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::TemplateModel>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::TemplateModel>>;
+            type Output = azure_core::Result<models::ProductTemplateModel>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::ProductTemplateModel>>;
             #[doc = "Returns a future that sends the request and returns the parsed response body."]
             #[doc = ""]
             #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
@@ -6669,7 +6949,7 @@ pub mod content_templates {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -6717,7 +6997,7 @@ pub mod content_templates {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -6887,7 +7167,7 @@ pub mod content_template {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -6992,7 +7272,7 @@ pub mod content_template {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -7090,7 +7370,7 @@ pub mod content_template {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -7216,7 +7496,7 @@ pub mod ip_geodata {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -7354,7 +7634,7 @@ pub mod domain_whois {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -7494,7 +7774,7 @@ pub mod entities_get_timeline {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -7651,7 +7931,7 @@ pub mod entities_relations {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -7699,7 +7979,7 @@ pub mod entities_relations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -7826,7 +8106,7 @@ pub mod entity_relations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -8027,7 +8307,7 @@ pub mod entity_queries {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -8066,7 +8346,7 @@ pub mod entity_queries {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -8157,7 +8437,7 @@ pub mod entity_queries {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -8262,7 +8542,7 @@ pub mod entity_queries {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -8360,7 +8640,7 @@ pub mod entity_queries {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -8502,7 +8782,7 @@ pub mod entity_query_templates {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -8541,7 +8821,7 @@ pub mod entity_query_templates {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -8632,7 +8912,7 @@ pub mod entity_query_templates {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -8854,7 +9134,7 @@ pub mod file_imports {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -8902,7 +9182,7 @@ pub mod file_imports {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -8993,7 +9273,7 @@ pub mod file_imports {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -9098,7 +9378,7 @@ pub mod file_imports {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -9200,7 +9480,7 @@ pub mod file_imports {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -9485,7 +9765,7 @@ pub mod hunts {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -9533,7 +9813,7 @@ pub mod hunts {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -9624,7 +9904,7 @@ pub mod hunts {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -9729,7 +10009,7 @@ pub mod hunts {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -9827,7 +10107,7 @@ pub mod hunts {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -10050,7 +10330,7 @@ pub mod hunt_relations {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -10098,7 +10378,7 @@ pub mod hunt_relations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -10190,7 +10470,7 @@ pub mod hunt_relations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -10296,7 +10576,7 @@ pub mod hunt_relations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -10395,7 +10675,7 @@ pub mod hunt_relations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -10618,7 +10898,7 @@ pub mod hunt_comments {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -10666,7 +10946,7 @@ pub mod hunt_comments {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -10758,7 +11038,7 @@ pub mod hunt_comments {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -10864,7 +11144,7 @@ pub mod hunt_comments {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -10963,7 +11243,7 @@ pub mod hunt_comments {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -11186,7 +11466,7 @@ pub mod incident_comments {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -11234,7 +11514,7 @@ pub mod incident_comments {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -11326,7 +11606,7 @@ pub mod incident_comments {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -11432,7 +11712,7 @@ pub mod incident_comments {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -11531,7 +11811,7 @@ pub mod incident_comments {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -11754,7 +12034,7 @@ pub mod incident_relations {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -11802,7 +12082,7 @@ pub mod incident_relations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -11894,7 +12174,7 @@ pub mod incident_relations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -12000,7 +12280,7 @@ pub mod incident_relations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -12099,7 +12379,7 @@ pub mod incident_relations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -12294,7 +12574,7 @@ pub mod incident_tasks {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -12330,7 +12610,7 @@ pub mod incident_tasks {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -12422,7 +12702,7 @@ pub mod incident_tasks {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -12528,7 +12808,7 @@ pub mod incident_tasks {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -12627,7 +12907,7 @@ pub mod incident_tasks {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -12862,7 +13142,7 @@ pub mod metadata {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -12910,7 +13190,7 @@ pub mod metadata {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -13001,7 +13281,7 @@ pub mod metadata {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -13106,7 +13386,7 @@ pub mod metadata {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -13211,7 +13491,7 @@ pub mod metadata {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -13309,7 +13589,7 @@ pub mod metadata {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -13466,7 +13746,7 @@ pub mod office_consents {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -13502,7 +13782,7 @@ pub mod office_consents {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -13593,7 +13873,7 @@ pub mod office_consents {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -13691,7 +13971,7 @@ pub mod office_consents {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -13878,7 +14158,7 @@ pub mod sentinel_onboarding_states {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -13995,7 +14275,7 @@ pub mod sentinel_onboarding_states {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -14093,7 +14373,7 @@ pub mod sentinel_onboarding_states {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -14183,7 +14463,7 @@ pub mod sentinel_onboarding_states {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -14314,7 +14594,7 @@ pub mod get_recommendations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -14449,7 +14729,7 @@ pub mod get {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -14588,7 +14868,7 @@ pub mod update {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -14810,7 +15090,7 @@ pub mod security_ml_analytics_settings {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -14846,7 +15126,7 @@ pub mod security_ml_analytics_settings {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -14937,7 +15217,7 @@ pub mod security_ml_analytics_settings {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -15042,7 +15322,7 @@ pub mod security_ml_analytics_settings {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -15140,7 +15420,7 @@ pub mod security_ml_analytics_settings {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -15328,7 +15608,7 @@ pub mod product_settings {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -15431,7 +15711,7 @@ pub mod product_settings {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -15536,7 +15816,7 @@ pub mod product_settings {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -15634,7 +15914,7 @@ pub mod product_settings {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -15751,7 +16031,7 @@ pub mod source_control {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -15788,7 +16068,7 @@ pub mod source_control {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -15876,12 +16156,14 @@ pub mod source_controls {
         #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
         #[doc = "* `workspace_name`: The name of the workspace."]
         #[doc = "* `source_control_id`: Source control Id"]
+        #[doc = "* `repository_access`: The repository access credentials."]
         pub fn delete(
             &self,
             subscription_id: impl Into<String>,
             resource_group_name: impl Into<String>,
             workspace_name: impl Into<String>,
             source_control_id: impl Into<String>,
+            repository_access: impl Into<serde_json::Value>,
         ) -> delete::RequestBuilder {
             delete::RequestBuilder {
                 client: self.0.clone(),
@@ -15889,6 +16171,7 @@ pub mod source_controls {
                 resource_group_name: resource_group_name.into(),
                 workspace_name: workspace_name.into(),
                 source_control_id: source_control_id.into(),
+                repository_access: repository_access.into(),
             }
         }
     }
@@ -15970,7 +16253,7 @@ pub mod source_controls {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -16006,7 +16289,7 @@ pub mod source_controls {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -16097,7 +16380,7 @@ pub mod source_controls {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -16202,7 +16485,7 @@ pub mod source_controls {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -16229,6 +16512,11 @@ pub mod source_controls {
         #[derive(Debug)]
         pub struct Response(azure_core::Response);
         impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::Warning> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::Warning = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
             pub fn into_raw_response(self) -> azure_core::Response {
                 self.0
             }
@@ -16271,6 +16559,7 @@ pub mod source_controls {
             pub(crate) resource_group_name: String,
             pub(crate) workspace_name: String,
             pub(crate) source_control_id: String,
+            pub(crate) repository_access: serde_json::Value,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -16282,27 +16571,40 @@ pub mod source_controls {
                     let this = self.clone();
                     async move {
                         let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
                         let credential = this.client.token_credential();
                         let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
                         req.insert_header(
                             azure_core::headers::AUTHORIZATION,
                             format!("Bearer {}", token_response.token.secret()),
                         );
-                        let req_body = azure_core::EMPTY_BODY;
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.repository_access)?;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
                     }
                 })
             }
             fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/sourcecontrols/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . source_control_id)) ? ;
+                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/sourcecontrols/{}/delete" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . source_control_id)) ? ;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
+            }
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::Warning>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::Warning>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
+                Box::pin(async move { self.send().await?.into_body().await })
             }
         }
     }
@@ -16565,7 +16867,7 @@ pub mod threat_intelligence_indicator {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -16668,7 +16970,7 @@ pub mod threat_intelligence_indicator {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -16773,7 +17075,7 @@ pub mod threat_intelligence_indicator {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -16871,7 +17173,7 @@ pub mod threat_intelligence_indicator {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -16956,7 +17258,7 @@ pub mod threat_intelligence_indicator {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -16993,7 +17295,7 @@ pub mod threat_intelligence_indicator {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -17081,7 +17383,7 @@ pub mod threat_intelligence_indicator {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -17174,7 +17476,7 @@ pub mod threat_intelligence_indicator {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -17327,7 +17629,7 @@ pub mod threat_intelligence_indicators {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -17375,7 +17677,7 @@ pub mod threat_intelligence_indicators {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -17494,7 +17796,7 @@ pub mod threat_intelligence_indicator_metrics {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -17629,7 +17931,7 @@ pub mod triggered_analytics_rule_run {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -17754,7 +18056,7 @@ pub mod get_triggered_analytics_rule_runs {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -17790,7 +18092,7 @@ pub mod get_triggered_analytics_rule_runs {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -17921,7 +18223,7 @@ pub mod alert_rule {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -18110,7 +18412,7 @@ pub mod watchlists {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -18149,7 +18451,7 @@ pub mod watchlists {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -18240,7 +18542,7 @@ pub mod watchlists {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -18356,7 +18658,7 @@ pub mod watchlists {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -18465,7 +18767,7 @@ pub mod watchlists {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -18667,7 +18969,7 @@ pub mod watchlist_items {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -18706,7 +19008,7 @@ pub mod watchlist_items {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -18798,7 +19100,7 @@ pub mod watchlist_items {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -18904,7 +19206,7 @@ pub mod watchlist_items {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -19003,549 +19305,7 @@ pub mod watchlist_items {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
-                }
-                Ok(url)
-            }
-        }
-    }
-}
-pub mod workspace_manager_groups {
-    use super::models;
-    #[cfg(not(target_arch = "wasm32"))]
-    use futures::future::BoxFuture;
-    #[cfg(target_arch = "wasm32")]
-    use futures::future::LocalBoxFuture as BoxFuture;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Gets all workspace manager groups in the Sentinel workspace manager"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `workspace_name`: The name of the workspace."]
-        pub fn list(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            workspace_name: impl Into<String>,
-        ) -> list::RequestBuilder {
-            list::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                workspace_name: workspace_name.into(),
-                orderby: None,
-                top: None,
-                skip_token: None,
-            }
-        }
-        #[doc = "Gets a workspace manager group"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `workspace_name`: The name of the workspace."]
-        #[doc = "* `workspace_manager_group_name`: The name of the workspace manager group"]
-        pub fn get(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            workspace_name: impl Into<String>,
-            workspace_manager_group_name: impl Into<String>,
-        ) -> get::RequestBuilder {
-            get::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                workspace_name: workspace_name.into(),
-                workspace_manager_group_name: workspace_manager_group_name.into(),
-            }
-        }
-        #[doc = "Creates or updates a workspace manager group."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `workspace_name`: The name of the workspace."]
-        #[doc = "* `workspace_manager_group_name`: The name of the workspace manager group"]
-        #[doc = "* `workspace_manager_group`: The workspace manager group object"]
-        pub fn create_or_update(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            workspace_name: impl Into<String>,
-            workspace_manager_group_name: impl Into<String>,
-            workspace_manager_group: impl Into<models::WorkspaceManagerGroup>,
-        ) -> create_or_update::RequestBuilder {
-            create_or_update::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                workspace_name: workspace_name.into(),
-                workspace_manager_group_name: workspace_manager_group_name.into(),
-                workspace_manager_group: workspace_manager_group.into(),
-            }
-        }
-        #[doc = "Deletes a workspace manager group"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `workspace_name`: The name of the workspace."]
-        #[doc = "* `workspace_manager_group_name`: The name of the workspace manager group"]
-        pub fn delete(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            workspace_name: impl Into<String>,
-            workspace_manager_group_name: impl Into<String>,
-        ) -> delete::RequestBuilder {
-            delete::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                workspace_name: workspace_name.into(),
-                workspace_manager_group_name: workspace_manager_group_name.into(),
-            }
-        }
-    }
-    pub mod list {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::WorkspaceManagerGroupList> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::WorkspaceManagerGroupList = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) workspace_name: String,
-            pub(crate) orderby: Option<String>,
-            pub(crate) top: Option<i32>,
-            pub(crate) skip_token: Option<String>,
-        }
-        impl RequestBuilder {
-            #[doc = "Sorts the results. Optional."]
-            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
-                self.orderby = Some(orderby.into());
-                self
-            }
-            #[doc = "Returns only the first n results. Optional."]
-            pub fn top(mut self, top: i32) -> Self {
-                self.top = Some(top);
-                self
-            }
-            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls. Optional."]
-            pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
-                self.skip_token = Some(skip_token.into());
-                self
-            }
-            pub fn into_stream(self) -> azure_core::Pageable<models::WorkspaceManagerGroupList, azure_core::error::Error> {
-                let make_request = move |continuation: Option<String>| {
-                    let this = self.clone();
-                    async move {
-                        let mut url = this.url()?;
-                        let rsp = match continuation {
-                            Some(value) => {
-                                url.set_path("");
-                                url = url.join(&value)?;
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                let has_api_version_already =
-                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                                if !has_api_version_already {
-                                    req.url_mut()
-                                        .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
-                                }
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                            None => {
-                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
-                                if let Some(orderby) = &this.orderby {
-                                    req.url_mut().query_pairs_mut().append_pair("$orderby", orderby);
-                                }
-                                if let Some(top) = &this.top {
-                                    req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
-                                }
-                                if let Some(skip_token) = &this.skip_token {
-                                    req.url_mut().query_pairs_mut().append_pair("$skipToken", skip_token);
-                                }
-                                let req_body = azure_core::EMPTY_BODY;
-                                req.set_body(req_body);
-                                this.client.send(&mut req).await?
-                            }
-                        };
-                        let rsp = match rsp.status() {
-                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
-                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
-                                status: status_code,
-                                error_code: None,
-                            })),
-                        };
-                        rsp?.into_body().await
-                    }
-                };
-                azure_core::Pageable::new(make_request)
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/workspaceManagerGroups" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ? ;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
-                }
-                Ok(url)
-            }
-        }
-    }
-    pub mod get {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::WorkspaceManagerGroup> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::WorkspaceManagerGroup = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) workspace_name: String,
-            pub(crate) workspace_manager_group_name: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/workspaceManagerGroups/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . workspace_manager_group_name)) ? ;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::WorkspaceManagerGroup>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::WorkspaceManagerGroup>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod create_or_update {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::WorkspaceManagerGroup> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::WorkspaceManagerGroup = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) workspace_name: String,
-            pub(crate) workspace_manager_group_name: String,
-            pub(crate) workspace_manager_group: models::WorkspaceManagerGroup,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        req.insert_header("content-type", "application/json");
-                        let req_body = azure_core::to_json(&this.workspace_manager_group)?;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/workspaceManagerGroups/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . workspace_manager_group_name)) ? ;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
-                }
-                Ok(url)
-            }
-        }
-        impl std::future::IntoFuture for RequestBuilder {
-            type Output = azure_core::Result<models::WorkspaceManagerGroup>;
-            type IntoFuture = BoxFuture<'static, azure_core::Result<models::WorkspaceManagerGroup>>;
-            #[doc = "Returns a future that sends the request and returns the parsed response body."]
-            #[doc = ""]
-            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
-            #[doc = ""]
-            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
-            fn into_future(self) -> Self::IntoFuture {
-                Box::pin(async move { self.send().await?.into_body().await })
-            }
-        }
-    }
-    pub mod delete {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) workspace_name: String,
-            pub(crate) workspace_manager_group_name: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/workspaceManagerGroups/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . workspace_manager_group_name)) ? ;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -19748,7 +19508,7 @@ pub mod workspace_manager_assignments {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -19793,7 +19553,7 @@ pub mod workspace_manager_assignments {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -19884,7 +19644,7 @@ pub mod workspace_manager_assignments {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -19989,7 +19749,7 @@ pub mod workspace_manager_assignments {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -20087,7 +19847,7 @@ pub mod workspace_manager_assignments {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -20297,7 +20057,7 @@ pub mod workspace_manager_assignment_jobs {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -20342,7 +20102,7 @@ pub mod workspace_manager_assignment_jobs {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -20434,7 +20194,7 @@ pub mod workspace_manager_assignment_jobs {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -20538,7 +20298,7 @@ pub mod workspace_manager_assignment_jobs {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -20637,7 +20397,7 @@ pub mod workspace_manager_assignment_jobs {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -20840,7 +20600,7 @@ pub mod workspace_manager_configurations {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -20885,7 +20645,7 @@ pub mod workspace_manager_configurations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -20976,7 +20736,7 @@ pub mod workspace_manager_configurations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -21081,7 +20841,7 @@ pub mod workspace_manager_configurations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -21179,7 +20939,549 @@ pub mod workspace_manager_configurations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
+                }
+                Ok(url)
+            }
+        }
+    }
+}
+pub mod workspace_manager_groups {
+    use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Gets all workspace manager groups in the Sentinel workspace manager"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        pub fn list(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                workspace_name: workspace_name.into(),
+                orderby: None,
+                top: None,
+                skip_token: None,
+            }
+        }
+        #[doc = "Gets a workspace manager group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `workspace_manager_group_name`: The name of the workspace manager group"]
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+            workspace_manager_group_name: impl Into<String>,
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                workspace_name: workspace_name.into(),
+                workspace_manager_group_name: workspace_manager_group_name.into(),
+            }
+        }
+        #[doc = "Creates or updates a workspace manager group."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `workspace_manager_group_name`: The name of the workspace manager group"]
+        #[doc = "* `workspace_manager_group`: The workspace manager group object"]
+        pub fn create_or_update(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+            workspace_manager_group_name: impl Into<String>,
+            workspace_manager_group: impl Into<models::WorkspaceManagerGroup>,
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                workspace_name: workspace_name.into(),
+                workspace_manager_group_name: workspace_manager_group_name.into(),
+                workspace_manager_group: workspace_manager_group.into(),
+            }
+        }
+        #[doc = "Deletes a workspace manager group"]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `workspace_manager_group_name`: The name of the workspace manager group"]
+        pub fn delete(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+            workspace_manager_group_name: impl Into<String>,
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                workspace_name: workspace_name.into(),
+                workspace_manager_group_name: workspace_manager_group_name.into(),
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::WorkspaceManagerGroupList> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::WorkspaceManagerGroupList = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) workspace_name: String,
+            pub(crate) orderby: Option<String>,
+            pub(crate) top: Option<i32>,
+            pub(crate) skip_token: Option<String>,
+        }
+        impl RequestBuilder {
+            #[doc = "Sorts the results. Optional."]
+            pub fn orderby(mut self, orderby: impl Into<String>) -> Self {
+                self.orderby = Some(orderby.into());
+                self
+            }
+            #[doc = "Returns only the first n results. Optional."]
+            pub fn top(mut self, top: i32) -> Self {
+                self.top = Some(top);
+                self
+            }
+            #[doc = "Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls. Optional."]
+            pub fn skip_token(mut self, skip_token: impl Into<String>) -> Self {
+                self.skip_token = Some(skip_token.into());
+                self
+            }
+            pub fn into_stream(self) -> azure_core::Pageable<models::WorkspaceManagerGroupList, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = this.url()?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                if let Some(orderby) = &this.orderby {
+                                    req.url_mut().query_pairs_mut().append_pair("$orderby", orderby);
+                                }
+                                if let Some(top) = &this.top {
+                                    req.url_mut().query_pairs_mut().append_pair("$top", &top.to_string());
+                                }
+                                if let Some(skip_token) = &this.skip_token {
+                                    req.url_mut().query_pairs_mut().append_pair("$skipToken", skip_token);
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/workspaceManagerGroups" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ? ;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
+                }
+                Ok(url)
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::WorkspaceManagerGroup> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::WorkspaceManagerGroup = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) workspace_name: String,
+            pub(crate) workspace_manager_group_name: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = this.url()?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/workspaceManagerGroups/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . workspace_manager_group_name)) ? ;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
+                }
+                Ok(url)
+            }
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::WorkspaceManagerGroup>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::WorkspaceManagerGroup>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::WorkspaceManagerGroup> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::WorkspaceManagerGroup = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) workspace_name: String,
+            pub(crate) workspace_manager_group_name: String,
+            pub(crate) workspace_manager_group: models::WorkspaceManagerGroup,
+        }
+        impl RequestBuilder {
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = this.url()?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.workspace_manager_group)?;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/workspaceManagerGroups/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . workspace_manager_group_name)) ? ;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
+                }
+                Ok(url)
+            }
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::WorkspaceManagerGroup>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::WorkspaceManagerGroup>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) workspace_name: String,
+            pub(crate) workspace_manager_group_name: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = this.url()?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/workspaceManagerGroups/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . workspace_manager_group_name)) ? ;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -21382,7 +21684,7 @@ pub mod workspace_manager_members {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -21427,7 +21729,7 @@ pub mod workspace_manager_members {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -21518,7 +21820,7 @@ pub mod workspace_manager_members {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -21623,7 +21925,7 @@ pub mod workspace_manager_members {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -21721,7 +22023,521 @@ pub mod workspace_manager_members {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
+                }
+                Ok(url)
+            }
+        }
+    }
+}
+pub mod data_connector_definitions {
+    use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
+    pub struct Client(pub(crate) super::Client);
+    impl Client {
+        #[doc = "Gets all data connector definitions."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        pub fn list(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+        ) -> list::RequestBuilder {
+            list::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                workspace_name: workspace_name.into(),
+            }
+        }
+        #[doc = "Gets a data connector definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `data_connector_definition_name`: The data connector definition name."]
+        pub fn get(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+            data_connector_definition_name: impl Into<String>,
+        ) -> get::RequestBuilder {
+            get::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                workspace_name: workspace_name.into(),
+                data_connector_definition_name: data_connector_definition_name.into(),
+            }
+        }
+        #[doc = "Creates or updates the data connector definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `data_connector_definition_name`: The data connector definition name."]
+        #[doc = "* `connector_definition_input`: The data connector definition"]
+        pub fn create_or_update(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+            data_connector_definition_name: impl Into<String>,
+            connector_definition_input: impl Into<models::DataConnectorDefinitionUnion>,
+        ) -> create_or_update::RequestBuilder {
+            create_or_update::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                workspace_name: workspace_name.into(),
+                data_connector_definition_name: data_connector_definition_name.into(),
+                connector_definition_input: connector_definition_input.into(),
+            }
+        }
+        #[doc = "Delete the data connector definition."]
+        #[doc = ""]
+        #[doc = "Arguments:"]
+        #[doc = "* `subscription_id`: The ID of the target subscription."]
+        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
+        #[doc = "* `workspace_name`: The name of the workspace."]
+        #[doc = "* `data_connector_definition_name`: The data connector definition name."]
+        pub fn delete(
+            &self,
+            subscription_id: impl Into<String>,
+            resource_group_name: impl Into<String>,
+            workspace_name: impl Into<String>,
+            data_connector_definition_name: impl Into<String>,
+        ) -> delete::RequestBuilder {
+            delete::RequestBuilder {
+                client: self.0.clone(),
+                subscription_id: subscription_id.into(),
+                resource_group_name: resource_group_name.into(),
+                workspace_name: workspace_name.into(),
+                data_connector_definition_name: data_connector_definition_name.into(),
+            }
+        }
+    }
+    pub mod list {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::DataConnectorDefinitionArmCollectionWrapper> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::DataConnectorDefinitionArmCollectionWrapper = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) workspace_name: String,
+        }
+        impl RequestBuilder {
+            pub fn into_stream(
+                self,
+            ) -> azure_core::Pageable<models::DataConnectorDefinitionArmCollectionWrapper, azure_core::error::Error> {
+                let make_request = move |continuation: Option<String>| {
+                    let this = self.clone();
+                    async move {
+                        let mut url = this.url()?;
+                        let rsp = match continuation {
+                            Some(value) => {
+                                url.set_path("");
+                                url = url.join(&value)?;
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let has_api_version_already =
+                                    req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                                if !has_api_version_already {
+                                    req.url_mut()
+                                        .query_pairs_mut()
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
+                                }
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                            None => {
+                                let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                                let credential = this.client.token_credential();
+                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                                req.insert_header(
+                                    azure_core::headers::AUTHORIZATION,
+                                    format!("Bearer {}", token_response.token.secret()),
+                                );
+                                let req_body = azure_core::EMPTY_BODY;
+                                req.set_body(req_body);
+                                this.client.send(&mut req).await?
+                            }
+                        };
+                        let rsp = match rsp.status() {
+                            azure_core::StatusCode::Ok => Ok(Response(rsp)),
+                            status_code => Err(azure_core::error::Error::from(azure_core::error::ErrorKind::HttpResponse {
+                                status: status_code,
+                                error_code: None,
+                            })),
+                        };
+                        rsp?.into_body().await
+                    }
+                };
+                azure_core::Pageable::new(make_request)
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectorDefinitions" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name)) ? ;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
+                }
+                Ok(url)
+            }
+        }
+    }
+    pub mod get {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::DataConnectorDefinitionUnion> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::DataConnectorDefinitionUnion = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) workspace_name: String,
+            pub(crate) data_connector_definition_name: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = this.url()?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectorDefinitions/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . data_connector_definition_name)) ? ;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
+                }
+                Ok(url)
+            }
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::DataConnectorDefinitionUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DataConnectorDefinitionUnion>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod create_or_update {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub async fn into_body(self) -> azure_core::Result<models::DataConnectorDefinitionUnion> {
+                let bytes = self.0.into_body().collect().await?;
+                let body: models::DataConnectorDefinitionUnion = serde_json::from_slice(&bytes)?;
+                Ok(body)
+            }
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) workspace_name: String,
+            pub(crate) data_connector_definition_name: String,
+            pub(crate) connector_definition_input: models::DataConnectorDefinitionUnion,
+        }
+        impl RequestBuilder {
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = this.url()?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Put);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        req.insert_header("content-type", "application/json");
+                        let req_body = azure_core::to_json(&this.connector_definition_input)?;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectorDefinitions/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . data_connector_definition_name)) ? ;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
+                }
+                Ok(url)
+            }
+        }
+        impl std::future::IntoFuture for RequestBuilder {
+            type Output = azure_core::Result<models::DataConnectorDefinitionUnion>;
+            type IntoFuture = BoxFuture<'static, azure_core::Result<models::DataConnectorDefinitionUnion>>;
+            #[doc = "Returns a future that sends the request and returns the parsed response body."]
+            #[doc = ""]
+            #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+            #[doc = ""]
+            #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+            fn into_future(self) -> Self::IntoFuture {
+                Box::pin(async move { self.send().await?.into_body().await })
+            }
+        }
+    }
+    pub mod delete {
+        use super::models;
+        #[cfg(not(target_arch = "wasm32"))]
+        use futures::future::BoxFuture;
+        #[cfg(target_arch = "wasm32")]
+        use futures::future::LocalBoxFuture as BoxFuture;
+        #[derive(Debug)]
+        pub struct Response(azure_core::Response);
+        impl Response {
+            pub fn into_raw_response(self) -> azure_core::Response {
+                self.0
+            }
+            pub fn as_raw_response(&self) -> &azure_core::Response {
+                &self.0
+            }
+        }
+        impl From<Response> for azure_core::Response {
+            fn from(rsp: Response) -> Self {
+                rsp.into_raw_response()
+            }
+        }
+        impl AsRef<azure_core::Response> for Response {
+            fn as_ref(&self) -> &azure_core::Response {
+                self.as_raw_response()
+            }
+        }
+        #[derive(Clone)]
+        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+        #[doc = r""]
+        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+        #[doc = r" parameters can be chained."]
+        #[doc = r""]
+        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+        #[doc = r" executes the request and returns a `Result` with the parsed"]
+        #[doc = r" response."]
+        #[doc = r""]
+        #[doc = r" In order to execute the request without polling the service"]
+        #[doc = r" until the operation completes, use `.send().await` instead."]
+        #[doc = r""]
+        #[doc = r" If you need lower-level access to the raw response details"]
+        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+        #[doc = r" can finalize the request using the"]
+        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+        #[doc = r" that resolves to a lower-level [`Response`] value."]
+        pub struct RequestBuilder {
+            pub(crate) client: super::super::Client,
+            pub(crate) subscription_id: String,
+            pub(crate) resource_group_name: String,
+            pub(crate) workspace_name: String,
+            pub(crate) data_connector_definition_name: String,
+        }
+        impl RequestBuilder {
+            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+            #[doc = ""]
+            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+            #[doc = "However, this function can provide more flexibility when required."]
+            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
+                Box::pin({
+                    let this = self.clone();
+                    async move {
+                        let url = this.url()?;
+                        let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
+                        let credential = this.client.token_credential();
+                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                        req.insert_header(
+                            azure_core::headers::AUTHORIZATION,
+                            format!("Bearer {}", token_response.token.secret()),
+                        );
+                        let req_body = azure_core::EMPTY_BODY;
+                        req.set_body(req_body);
+                        Ok(Response(this.client.send(&mut req).await?))
+                    }
+                })
+            }
+            fn url(&self) -> azure_core::Result<azure_core::Url> {
+                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.OperationalInsights/workspaces/{}/providers/Microsoft.SecurityInsights/dataConnectorDefinitions/{}" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . workspace_name , & self . data_connector_definition_name)) ? ;
+                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+                if !has_api_version_already {
+                    url.query_pairs_mut()
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -21950,7 +22766,7 @@ pub mod data_connectors {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -21986,7 +22802,7 @@ pub mod data_connectors {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -22077,7 +22893,7 @@ pub mod data_connectors {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -22182,7 +22998,7 @@ pub mod data_connectors {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -22280,7 +23096,7 @@ pub mod data_connectors {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -22368,7 +23184,7 @@ pub mod data_connectors {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -22455,7 +23271,7 @@ pub mod data_connectors {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -22579,7 +23395,7 @@ pub mod data_connectors_check_requirements {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }
@@ -22686,7 +23502,7 @@ pub mod operations {
                                 if !has_api_version_already {
                                     req.url_mut()
                                         .query_pairs_mut()
-                                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -22725,7 +23541,7 @@ pub mod operations {
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
                     url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-04-01-preview");
+                        .append_pair(azure_core::query_param::API_VERSION, "2023-09-01-preview");
                 }
                 Ok(url)
             }

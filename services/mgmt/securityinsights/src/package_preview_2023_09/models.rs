@@ -2274,6 +2274,7 @@ pub mod availability {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {}
 }
+pub type AvailabilityStatus = i32;
 #[doc = "Amazon Web Services CloudTrail requirements check request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AwsCloudTrailCheckRequirements {
@@ -2427,6 +2428,82 @@ pub struct AzureEntityResource {
 impl AzureEntityResource {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Billing statistic"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BillingStatistic {
+    #[serde(flatten)]
+    pub azure_entity_resource: AzureEntityResource,
+    #[doc = "The kind of the billing statistic"]
+    pub kind: BillingStatisticKindEnum,
+}
+impl BillingStatistic {
+    pub fn new(kind: BillingStatisticKindEnum) -> Self {
+        Self {
+            azure_entity_resource: AzureEntityResource::default(),
+            kind,
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum BillingStatisticUnion {
+    SapSolutionUsage(SapSolutionUsageStatistic),
+}
+#[doc = "The kind of the billing statistic"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "BillingStatisticKindEnum")]
+pub enum BillingStatisticKindEnum {
+    SapSolutionUsage,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for BillingStatisticKindEnum {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for BillingStatisticKindEnum {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for BillingStatisticKindEnum {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::SapSolutionUsage => serializer.serialize_unit_variant("BillingStatisticKindEnum", 0u32, "SapSolutionUsage"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "List of all Microsoft Sentinel billing statistics."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BillingStatisticList {
+    #[doc = "URL to fetch the next set of billing statistics."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "Array of billing statistics."]
+    pub value: Vec<BillingStatisticUnion>,
+}
+impl azure_core::Continuable for BillingStatisticList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl BillingStatisticList {
+    pub fn new(value: Vec<BillingStatisticUnion>) -> Self {
+        Self { next_link: None, value }
     }
 }
 #[doc = "Represents a bookmark in Azure Security Insights."]
@@ -3196,6 +3273,129 @@ pub mod connectivity_criteria {
         }
     }
 }
+#[doc = "The criteria by which we determine whether the connector is connected or not.\r\nFor Example, use a KQL query to check if  the expected data type is flowing)."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConnectivityCriterion {
+    #[doc = "Gets or sets the type of connectivity."]
+    #[serde(rename = "type")]
+    pub type_: String,
+    #[doc = "Gets or sets the queries for checking connectivity."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<String>,
+}
+impl ConnectivityCriterion {
+    pub fn new(type_: String) -> Self {
+        Self { type_, value: Vec::new() }
+    }
+}
+#[doc = "The data type which is created by the connector,\r\nincluding a query indicated when was the last time that data type was received in the workspace."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConnectorDataType {
+    #[doc = "Gets or sets the name of the data type to show in the graph."]
+    pub name: String,
+    #[doc = "Gets or sets the query to indicate when relevant data was last received in the workspace."]
+    #[serde(rename = "lastDataReceivedQuery")]
+    pub last_data_received_query: String,
+}
+impl ConnectorDataType {
+    pub fn new(name: String, last_data_received_query: String) -> Self {
+        Self {
+            name,
+            last_data_received_query,
+        }
+    }
+}
+#[doc = "The exposure status of the connector to the customers."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ConnectorDefinitionsAvailability {
+    #[doc = "The exposure status of the connector to the customers. Available values are 0-4 (0=None, 1=Available, 2=FeatureFlag, 3=Internal)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<AvailabilityStatus>,
+    #[doc = "Gets or sets a value indicating whether the connector is preview."]
+    #[serde(rename = "isPreview", default, skip_serializing_if = "Option::is_none")]
+    pub is_preview: Option<bool>,
+}
+impl ConnectorDefinitionsAvailability {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The required Permissions for the connector."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ConnectorDefinitionsPermissions {
+    #[doc = "Gets or sets the required tenant permissions for the connector."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub tenant: Vec<String>,
+    #[doc = "Gets or sets the required licenses for the user to create connections."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub licenses: Vec<String>,
+    #[doc = "Gets or sets the resource provider permissions required for the user to create connections."]
+    #[serde(
+        rename = "resourceProvider",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub resource_provider: Vec<ConnectorDefinitionsResourceProvider>,
+    #[doc = "Gets or sets the customs permissions required for the user to create connections."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub customs: Vec<CustomPermissionDetails>,
+}
+impl ConnectorDefinitionsPermissions {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The resource provider details include the required permissions for the user to create connections.\r\nThe user should have the required permissions(Read\\Write, ..) in the specified scope ProviderPermissionsScope against the specified resource provider."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ConnectorDefinitionsResourceProvider {
+    #[doc = "Gets or sets the provider name."]
+    pub provider: String,
+    #[doc = "Gets or sets the permissions description text."]
+    #[serde(rename = "permissionsDisplayText")]
+    pub permissions_display_text: String,
+    #[doc = "Gets or sets the permissions provider display name."]
+    #[serde(rename = "providerDisplayName")]
+    pub provider_display_name: String,
+    #[doc = "The scope on which the user should have permissions, in order to be able to create connections."]
+    pub scope: ProviderPermissionsScope,
+    #[doc = "Required permissions for the connector resource provider that define in ResourceProviders.\r\nFor more information about the permissions see <see href=\"https://docs.microsoft.com/en-us/azure/role-based-access-control/role-definitions#actions-format\">here</see>."]
+    #[serde(rename = "requiredPermissions")]
+    pub required_permissions: ResourceProviderRequiredPermissions,
+}
+impl ConnectorDefinitionsResourceProvider {
+    pub fn new(
+        provider: String,
+        permissions_display_text: String,
+        provider_display_name: String,
+        scope: ProviderPermissionsScope,
+        required_permissions: ResourceProviderRequiredPermissions,
+    ) -> Self {
+        Self {
+            provider,
+            permissions_display_text,
+            provider_display_name,
+            scope,
+            required_permissions,
+        }
+    }
+}
 #[doc = "Instruction step details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectorInstructionModelBase {
@@ -3266,26 +3466,15 @@ impl Content {
         Self { title, description }
     }
 }
-#[doc = "The mapping of content type to a repo path."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ContentPathMap {
-    #[doc = "The content type of a source control path."]
-    #[serde(rename = "contentType", default, skip_serializing_if = "Option::is_none")]
-    pub content_type: Option<ContentType>,
-    #[doc = "The path to the content."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub path: Option<String>,
-}
-impl ContentPathMap {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "The content type of a source control path."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ContentType")]
 pub enum ContentType {
     AnalyticRule,
+    AutomationRule,
+    HuntingQuery,
+    Parser,
+    Playbook,
     Workbook,
     #[serde(skip_deserializing)]
     UnknownValue(String),
@@ -3313,7 +3502,11 @@ impl Serialize for ContentType {
     {
         match self {
             Self::AnalyticRule => serializer.serialize_unit_variant("ContentType", 0u32, "AnalyticRule"),
-            Self::Workbook => serializer.serialize_unit_variant("ContentType", 1u32, "Workbook"),
+            Self::AutomationRule => serializer.serialize_unit_variant("ContentType", 1u32, "AutomationRule"),
+            Self::HuntingQuery => serializer.serialize_unit_variant("ContentType", 2u32, "HuntingQuery"),
+            Self::Parser => serializer.serialize_unit_variant("ContentType", 3u32, "Parser"),
+            Self::Playbook => serializer.serialize_unit_variant("ContentType", 4u32, "Playbook"),
+            Self::Workbook => serializer.serialize_unit_variant("ContentType", 5u32, "Workbook"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -3374,6 +3567,153 @@ impl Serialize for CustomEntityQueryKind {
         }
     }
 }
+#[doc = "The Custom permissions required for the connector."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomPermissionDetails {
+    #[doc = "Gets or sets the custom permissions name."]
+    pub name: String,
+    #[doc = "Gets or sets the custom permissions description."]
+    pub description: String,
+}
+impl CustomPermissionDetails {
+    pub fn new(name: String, description: String) -> Self {
+        Self { name, description }
+    }
+}
+#[doc = "The UiConfig for 'Customizable' connector definition kind."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomizableConnectionsConfig {
+    #[doc = "Gets or sets the template name. The template includes ARM templates that can be created by the connector, usually it will be the dataConnectors ARM templates."]
+    #[serde(rename = "templateSpecName")]
+    pub template_spec_name: String,
+    #[doc = "Gets or sets the template version."]
+    #[serde(rename = "templateSpecVersion")]
+    pub template_spec_version: String,
+}
+impl CustomizableConnectionsConfig {
+    pub fn new(template_spec_name: String, template_spec_version: String) -> Self {
+        Self {
+            template_spec_name,
+            template_spec_version,
+        }
+    }
+}
+#[doc = "Connector definition for kind 'Customizable'."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomizableConnectorDefinition {
+    #[serde(flatten)]
+    pub data_connector_definition: DataConnectorDefinition,
+    #[doc = "The UiConfig for 'Customizable' connector definition kind."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<CustomizableConnectorDefinitionProperties>,
+}
+impl CustomizableConnectorDefinition {
+    pub fn new(data_connector_definition: DataConnectorDefinition) -> Self {
+        Self {
+            data_connector_definition,
+            properties: None,
+        }
+    }
+}
+#[doc = "The UiConfig for 'Customizable' connector definition kind."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomizableConnectorDefinitionProperties {
+    #[doc = "Gets or sets the connector definition created date in UTC format."]
+    #[serde(rename = "createdTimeUtc", default, with = "azure_core::date::rfc3339::option")]
+    pub created_time_utc: Option<time::OffsetDateTime>,
+    #[doc = "Gets or sets the connector definition last modified date in UTC format."]
+    #[serde(rename = "lastModifiedUtc", default, with = "azure_core::date::rfc3339::option")]
+    pub last_modified_utc: Option<time::OffsetDateTime>,
+    #[doc = "The UiConfig for 'Customizable' connector definition kind."]
+    #[serde(rename = "connectorUiConfig")]
+    pub connector_ui_config: CustomizableConnectorUiConfig,
+    #[doc = "The UiConfig for 'Customizable' connector definition kind."]
+    #[serde(rename = "connectionsConfig", default, skip_serializing_if = "Option::is_none")]
+    pub connections_config: Option<CustomizableConnectionsConfig>,
+}
+impl CustomizableConnectorDefinitionProperties {
+    pub fn new(connector_ui_config: CustomizableConnectorUiConfig) -> Self {
+        Self {
+            created_time_utc: None,
+            last_modified_utc: None,
+            connector_ui_config,
+            connections_config: None,
+        }
+    }
+}
+#[doc = "The UiConfig for 'Customizable' connector definition kind."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomizableConnectorUiConfig {
+    #[doc = "Gets or sets custom connector id. optional field."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Gets or sets the connector blade title."]
+    pub title: String,
+    #[doc = "Gets or sets the connector publisher name."]
+    pub publisher: String,
+    #[doc = "Gets or sets the connector description in markdown format."]
+    #[serde(rename = "descriptionMarkdown")]
+    pub description_markdown: String,
+    #[doc = "Gets or sets the name of the table the connector will insert the data to.\r\nThis name can be used in other queries by specifying {{graphQueriesTableName}} placeholder\r\n in Query and LastDataReceivedQuery values."]
+    #[serde(rename = "graphQueriesTableName", default, skip_serializing_if = "Option::is_none")]
+    pub graph_queries_table_name: Option<String>,
+    #[doc = "Gets or sets the graph queries to show the current data volume over time."]
+    #[serde(rename = "graphQueries")]
+    pub graph_queries: Vec<GraphQuery>,
+    #[doc = "Gets or sets the sample queries for the connector."]
+    #[serde(rename = "sampleQueries")]
+    pub sample_queries: Vec<SampleQuery>,
+    #[doc = "Gets or sets the data types to check for last data received."]
+    #[serde(rename = "dataTypes")]
+    pub data_types: Vec<ConnectorDataType>,
+    #[doc = "Gets or sets the way the connector checks whether the connector is connected."]
+    #[serde(rename = "connectivityCriteria")]
+    pub connectivity_criteria: Vec<ConnectivityCriterion>,
+    #[doc = "The exposure status of the connector to the customers."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub availability: Option<ConnectorDefinitionsAvailability>,
+    #[doc = "The required Permissions for the connector."]
+    pub permissions: ConnectorDefinitionsPermissions,
+    #[doc = "Gets or sets the instruction steps to enable the connector."]
+    #[serde(rename = "instructionSteps")]
+    pub instruction_steps: Vec<InstructionStep>,
+    #[doc = "Gets or sets the connector logo to be used when displaying the connector within Azure Sentinel's connector's gallery.\r\nThe logo value should be in SVG format."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logo: Option<String>,
+    #[doc = "Gets or sets a value indicating whether to use 'OR'(SOME) or 'AND' between ConnectivityCriteria items."]
+    #[serde(rename = "isConnectivityCriteriasMatchSome", default, skip_serializing_if = "Option::is_none")]
+    pub is_connectivity_criterias_match_some: Option<bool>,
+}
+impl CustomizableConnectorUiConfig {
+    pub fn new(
+        title: String,
+        publisher: String,
+        description_markdown: String,
+        graph_queries: Vec<GraphQuery>,
+        sample_queries: Vec<SampleQuery>,
+        data_types: Vec<ConnectorDataType>,
+        connectivity_criteria: Vec<ConnectivityCriterion>,
+        permissions: ConnectorDefinitionsPermissions,
+        instruction_steps: Vec<InstructionStep>,
+    ) -> Self {
+        Self {
+            id: None,
+            title,
+            publisher,
+            description_markdown,
+            graph_queries_table_name: None,
+            graph_queries,
+            sample_queries,
+            data_types,
+            connectivity_criteria,
+            availability: None,
+            permissions,
+            instruction_steps,
+            logo: None,
+            is_connectivity_criterias_match_some: None,
+        }
+    }
+}
 #[doc = "Customs permissions required for the connector"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Customs {
@@ -3398,6 +3738,28 @@ pub struct CustomsPermission {
 impl CustomsPermission {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "The configuration of the destination of the data."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DcrConfiguration {
+    #[doc = "Represents the data collection ingestion endpoint in log analytics."]
+    #[serde(rename = "dataCollectionEndpoint")]
+    pub data_collection_endpoint: String,
+    #[doc = "The data collection rule immutable id, the rule defines the transformation and data destination."]
+    #[serde(rename = "dataCollectionRuleImmutableId")]
+    pub data_collection_rule_immutable_id: String,
+    #[doc = "The stream we are sending the data to."]
+    #[serde(rename = "streamName")]
+    pub stream_name: String,
+}
+impl DcrConfiguration {
+    pub fn new(data_collection_endpoint: String, data_collection_rule_immutable_id: String, stream_name: String) -> Self {
+        Self {
+            data_collection_endpoint,
+            data_collection_rule_immutable_id,
+            stream_name,
+        }
     }
 }
 #[doc = "Data connector"]
@@ -3429,6 +3791,8 @@ pub enum DataConnectorUnion {
     #[serde(rename = "GenericUI")]
     GenericUi(CodelessUiDataConnector),
     Dynamics365(Dynamics365DataConnector),
+    #[serde(rename = "GCP")]
+    Gcp(GcpDataConnector),
     #[serde(rename = "IOT")]
     Iot(IoTDataConnector),
     MicrosoftCloudAppSecurity(McasDataConnector),
@@ -3625,6 +3989,85 @@ pub mod data_connector_data_type_common {
         }
     }
 }
+#[doc = "An Azure resource, which encapsulate the entire info requires to display a data connector page in Azure portal,\r\nand the info required to define data connections."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataConnectorDefinition {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    #[doc = "The kind of the data connector definitions"]
+    pub kind: DataConnectorDefinitionKind,
+}
+impl DataConnectorDefinition {
+    pub fn new(kind: DataConnectorDefinitionKind) -> Self {
+        Self {
+            resource_with_etag: ResourceWithEtag::default(),
+            kind,
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum DataConnectorDefinitionUnion {
+    Customizable(CustomizableConnectorDefinition),
+}
+#[doc = "Encapsulate the data connector definition object"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DataConnectorDefinitionArmCollectionWrapper {
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<DataConnectorDefinitionUnion>,
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DataConnectorDefinitionArmCollectionWrapper {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl DataConnectorDefinitionArmCollectionWrapper {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The kind of the data connector definitions"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "DataConnectorDefinitionKind")]
+pub enum DataConnectorDefinitionKind {
+    Customizable,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for DataConnectorDefinitionKind {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for DataConnectorDefinitionKind {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for DataConnectorDefinitionKind {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Customizable => serializer.serialize_unit_variant("DataConnectorDefinitionKind", 0u32, "Customizable"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "The kind of the data connector"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "DataConnectorKind")]
@@ -3656,6 +4099,8 @@ pub enum DataConnectorKind {
     ApiPolling,
     #[serde(rename = "IOT")]
     Iot,
+    #[serde(rename = "GCP")]
+    Gcp,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -3712,6 +4157,7 @@ impl Serialize for DataConnectorKind {
             Self::GenericUi => serializer.serialize_unit_variant("DataConnectorKind", 18u32, "GenericUI"),
             Self::ApiPolling => serializer.serialize_unit_variant("DataConnectorKind", 19u32, "APIPolling"),
             Self::Iot => serializer.serialize_unit_variant("DataConnectorKind", 20u32, "IOT"),
+            Self::Gcp => serializer.serialize_unit_variant("DataConnectorKind", 21u32, "GCP"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -6149,6 +6595,87 @@ impl FusionTemplateSubTypeSeverityFilter {
         }
     }
 }
+#[doc = "Google Cloud Platform auth section properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GcpAuthProperties {
+    #[doc = "The service account that is used to access the GCP project."]
+    #[serde(rename = "serviceAccountEmail")]
+    pub service_account_email: String,
+    #[doc = "The GCP project number."]
+    #[serde(rename = "projectNumber")]
+    pub project_number: String,
+    #[doc = "The workload identity provider id that is used to gain access to the GCP project."]
+    #[serde(rename = "workloadIdentityProviderId")]
+    pub workload_identity_provider_id: String,
+}
+impl GcpAuthProperties {
+    pub fn new(service_account_email: String, project_number: String, workload_identity_provider_id: String) -> Self {
+        Self {
+            service_account_email,
+            project_number,
+            workload_identity_provider_id,
+        }
+    }
+}
+#[doc = "Represents Google Cloud Platform data connector."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GcpDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
+    #[doc = "Google Cloud Platform data connector properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GcpDataConnectorProperties>,
+}
+impl GcpDataConnector {
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
+    }
+}
+#[doc = "Google Cloud Platform data connector properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GcpDataConnectorProperties {
+    #[doc = "The name of the connector definition that represents the UI config."]
+    #[serde(rename = "connectorDefinitionName")]
+    pub connector_definition_name: String,
+    #[doc = "Google Cloud Platform auth section properties."]
+    pub auth: GcpAuthProperties,
+    #[doc = "Google Cloud Platform request section properties."]
+    pub request: GcpRequestProperties,
+    #[doc = "The configuration of the destination of the data."]
+    #[serde(rename = "dcrConfig", default, skip_serializing_if = "Option::is_none")]
+    pub dcr_config: Option<DcrConfiguration>,
+}
+impl GcpDataConnectorProperties {
+    pub fn new(connector_definition_name: String, auth: GcpAuthProperties, request: GcpRequestProperties) -> Self {
+        Self {
+            connector_definition_name,
+            auth,
+            request,
+            dcr_config: None,
+        }
+    }
+}
+#[doc = "Google Cloud Platform request section properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GcpRequestProperties {
+    #[doc = "The GCP project id."]
+    #[serde(rename = "projectId")]
+    pub project_id: String,
+    #[doc = "The GCP pub/sub subscription names."]
+    #[serde(rename = "subscriptionNames")]
+    pub subscription_names: Vec<String>,
+}
+impl GcpRequestProperties {
+    pub fn new(project_id: String, subscription_names: Vec<String>) -> Self {
+        Self {
+            project_id,
+            subscription_names,
+        }
+    }
+}
 #[doc = "GetInsights Query Errors."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GetInsightsErrorKind {
@@ -6274,6 +6801,27 @@ pub struct GraphQueries {
 impl GraphQueries {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "The graph query to show the volume of data arriving into the workspace over time."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GraphQuery {
+    #[doc = "Gets or sets the metric name that the query is checking. For example: 'Total data receive'."]
+    #[serde(rename = "metricName")]
+    pub metric_name: String,
+    #[doc = "Gets or sets the legend for the graph."]
+    pub legend: String,
+    #[doc = "Gets or sets the base query for the graph.\r\nThe base query is wrapped by Sentinel UI infra with a KQL query, that measures the volume over time."]
+    #[serde(rename = "baseQuery")]
+    pub base_query: String,
+}
+impl GraphQuery {
+    pub fn new(metric_name: String, legend: String, base_query: String) -> Self {
+        Self {
+            metric_name,
+            legend,
+            base_query,
+        }
     }
 }
 #[doc = "Grouping configuration property bag."]
@@ -6584,6 +7132,8 @@ pub mod hunt_properties {
         New,
         Active,
         Closed,
+        Backlog,
+        Approved,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -6612,6 +7162,8 @@ pub mod hunt_properties {
                 Self::New => serializer.serialize_unit_variant("Status", 0u32, "New"),
                 Self::Active => serializer.serialize_unit_variant("Status", 1u32, "Active"),
                 Self::Closed => serializer.serialize_unit_variant("Status", 2u32, "Closed"),
+                Self::Backlog => serializer.serialize_unit_variant("Status", 3u32, "Backlog"),
+                Self::Approved => serializer.serialize_unit_variant("Status", 4u32, "Approved"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -7699,6 +8251,50 @@ pub struct InsightsTableResult {
 impl InsightsTableResult {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Instruction steps to enable the connector."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct InstructionStep {
+    #[doc = "Gets or sets the instruction step title."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[doc = "Gets or sets the instruction step description."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[doc = "Gets or sets the instruction step details."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub instructions: Vec<InstructionStepDetails>,
+    #[doc = "Gets or sets the inner instruction steps details.\r\nFoe Example: instruction step 1 might contain inner instruction steps: [instruction step 1.1, instruction step 1.2]."]
+    #[serde(
+        rename = "innerSteps",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub inner_steps: Vec<InstructionStep>,
+}
+impl InstructionStep {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Instruction step details, to be displayed in the Instructions steps section in the connector's page in Sentinel Portal."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct InstructionStepDetails {
+    #[doc = "Gets or sets the instruction type parameters settings."]
+    pub parameters: serde_json::Value,
+    #[doc = "Gets or sets the instruction type name."]
+    #[serde(rename = "type")]
+    pub type_: String,
+}
+impl InstructionStepDetails {
+    pub fn new(parameters: serde_json::Value, type_: String) -> Self {
+        Self { parameters, type_ }
     }
 }
 #[doc = "Instruction steps to enable the connector"]
@@ -9406,6 +10002,45 @@ impl PropertyConditionProperties {
         }
     }
 }
+#[doc = "The scope on which the user should have permissions, in order to be able to create connections."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ProviderPermissionsScope")]
+pub enum ProviderPermissionsScope {
+    Subscription,
+    ResourceGroup,
+    Workspace,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ProviderPermissionsScope {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ProviderPermissionsScope {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ProviderPermissionsScope {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Subscription => serializer.serialize_unit_variant("ProviderPermissionsScope", 0u32, "Subscription"),
+            Self::ResourceGroup => serializer.serialize_unit_variant("ProviderPermissionsScope", 1u32, "ResourceGroup"),
+            Self::Workspace => serializer.serialize_unit_variant("ProviderPermissionsScope", 2u32, "Workspace"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "The triggered analytics rule run provisioning state"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ProvisioningState")]
@@ -9445,6 +10080,58 @@ impl Serialize for ProvisioningState {
             Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Succeeded"),
             Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Failed"),
             Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Canceled"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Information regarding pull request for protected branches."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PullRequest {
+    #[doc = "URL of pull request"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[doc = "Status of the pull request."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<PullRequestState>,
+}
+impl PullRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Status of the pull request."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "PullRequestState")]
+pub enum PullRequestState {
+    Open,
+    Closed,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for PullRequestState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for PullRequestState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for PullRequestState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Open => serializer.serialize_unit_variant("PullRequestState", 0u32, "Open"),
+            Self::Closed => serializer.serialize_unit_variant("PullRequestState", 1u32, "Closed"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -9899,7 +10586,7 @@ impl RepoList {
 #[serde(remote = "RepoType")]
 pub enum RepoType {
     Github,
-    DevOps,
+    AzureDevOps,
     #[serde(skip_deserializing)]
     UnknownValue(String),
 }
@@ -9926,38 +10613,106 @@ impl Serialize for RepoType {
     {
         match self {
             Self::Github => serializer.serialize_unit_variant("RepoType", 0u32, "Github"),
-            Self::DevOps => serializer.serialize_unit_variant("RepoType", 1u32, "DevOps"),
+            Self::AzureDevOps => serializer.serialize_unit_variant("RepoType", 1u32, "AzureDevOps"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }
 #[doc = "metadata of a repository."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Repository {
     #[doc = "Url of repository."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub url: Option<String>,
+    pub url: String,
     #[doc = "Branch name of repository."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub branch: Option<String>,
+    pub branch: String,
     #[doc = "Display url of repository."]
     #[serde(rename = "displayUrl", default, skip_serializing_if = "Option::is_none")]
     pub display_url: Option<String>,
     #[doc = "Url to access repository action logs."]
     #[serde(rename = "deploymentLogsUrl", default, skip_serializing_if = "Option::is_none")]
     pub deployment_logs_url: Option<String>,
-    #[doc = "Dictionary of source control content type and path mapping."]
-    #[serde(
-        rename = "pathMapping",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub path_mapping: Vec<ContentPathMap>,
 }
 impl Repository {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(url: String, branch: String) -> Self {
+        Self {
+            url,
+            branch,
+            display_url: None,
+            deployment_logs_url: None,
+        }
+    }
+}
+#[doc = "Credentials to access repository."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RepositoryAccess {
+    #[doc = "The kind of repository access credentials"]
+    pub kind: RepositoryAccessKind,
+    #[doc = "OAuth Code. Required when `kind` is `OAuth`"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "OAuth State. Required when `kind` is `OAuth`"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+    #[doc = "OAuth ClientId. Required when `kind` is `OAuth`"]
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<String>,
+    #[doc = "Personal Access Token. Required when `kind` is `PAT`"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
+    #[doc = "Application installation ID. Required when `kind` is `App`. Supported by `GitHub` only."]
+    #[serde(rename = "installationId", default, skip_serializing_if = "Option::is_none")]
+    pub installation_id: Option<String>,
+}
+impl RepositoryAccess {
+    pub fn new(kind: RepositoryAccessKind) -> Self {
+        Self {
+            kind,
+            code: None,
+            state: None,
+            client_id: None,
+            token: None,
+            installation_id: None,
+        }
+    }
+}
+#[doc = "The kind of repository access credentials"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "RepositoryAccessKind")]
+pub enum RepositoryAccessKind {
+    OAuth,
+    #[serde(rename = "PAT")]
+    Pat,
+    App,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for RepositoryAccessKind {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for RepositoryAccessKind {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for RepositoryAccessKind {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::OAuth => serializer.serialize_unit_variant("RepositoryAccessKind", 0u32, "OAuth"),
+            Self::Pat => serializer.serialize_unit_variant("RepositoryAccessKind", 1u32, "PAT"),
+            Self::App => serializer.serialize_unit_variant("RepositoryAccessKind", 2u32, "App"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "Resources created in user's repository for the source-control."]
@@ -10149,6 +10904,27 @@ pub mod resource_provider {
         }
     }
 }
+#[doc = "Required permissions for the connector resource provider that define in ResourceProviders.\r\nFor more information about the permissions see <see href=\"https://docs.microsoft.com/en-us/azure/role-based-access-control/role-definitions#actions-format\">here</see>."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceProviderRequiredPermissions {
+    #[doc = "Gets or sets a value indicating whether the permission is read action (GET)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub read: Option<bool>,
+    #[doc = "Gets or sets a value indicating whether the permission is write action (PUT or PATCH)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub write: Option<bool>,
+    #[doc = "Gets or sets a value indicating whether the permission is delete action (DELETE)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub delete: Option<bool>,
+    #[doc = "Gets or sets a value indicating whether the permission is custom actions (POST)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<bool>,
+}
+impl ResourceProviderRequiredPermissions {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "An azure resource object with an Etag property"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceWithEtag {
@@ -10174,6 +10950,48 @@ pub struct SampleQueries {
     pub query: Option<String>,
 }
 impl SampleQueries {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The sample queries for the connector."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SampleQuery {
+    #[doc = "Gets or sets the  sample query description."]
+    pub description: String,
+    #[doc = "Gets or sets the KQL sample query."]
+    pub query: String,
+}
+impl SampleQuery {
+    pub fn new(description: String, query: String) -> Self {
+        Self { description, query }
+    }
+}
+#[doc = "Billing statistic about the Microsoft Sentinel solution for SAP Usage"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SapSolutionUsageStatistic {
+    #[serde(flatten)]
+    pub billing_statistic: BillingStatistic,
+    #[doc = "Properties of the billing statistic about the Microsoft Sentinel solution for SAP usage"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<SapSolutionUsageStatisticProperties>,
+}
+impl SapSolutionUsageStatistic {
+    pub fn new(billing_statistic: BillingStatistic) -> Self {
+        Self {
+            billing_statistic,
+            properties: None,
+        }
+    }
+}
+#[doc = "Properties of the billing statistic about the Microsoft Sentinel solution for SAP usage"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SapSolutionUsageStatisticProperties {
+    #[doc = "The latest count of active SAP system IDs under the Microsoft Sentinel solution for SAP Usage"]
+    #[serde(rename = "activeSystemIdCount", default, skip_serializing_if = "Option::is_none")]
+    pub active_system_id_count: Option<i64>,
+}
+impl SapSolutionUsageStatisticProperties {
     pub fn new() -> Self {
         Self::default()
     }
@@ -10988,6 +11806,24 @@ impl SentinelOnboardingStatesList {
         Self { value }
     }
 }
+#[doc = "Service principal metadata."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ServicePrincipal {
+    #[doc = "Id of service principal."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Tenant id of service principal."]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "App id of service principal."]
+    #[serde(rename = "appId", default, skip_serializing_if = "Option::is_none")]
+    pub app_id: Option<String>,
+}
+impl ServicePrincipal {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "List of all the settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SettingList {
@@ -11124,12 +11960,21 @@ pub struct SourceControlProperties {
     pub content_types: Vec<ContentType>,
     #[doc = "metadata of a repository."]
     pub repository: Repository,
+    #[doc = "Service principal metadata."]
+    #[serde(rename = "servicePrincipal", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal: Option<ServicePrincipal>,
+    #[doc = "Credentials to access repository."]
+    #[serde(rename = "repositoryAccess", default, skip_serializing_if = "Option::is_none")]
+    pub repository_access: Option<RepositoryAccess>,
     #[doc = "Resources created in user's repository for the source-control."]
     #[serde(rename = "repositoryResourceInfo", default, skip_serializing_if = "Option::is_none")]
     pub repository_resource_info: Option<RepositoryResourceInfo>,
     #[doc = "Information regarding a deployment."]
     #[serde(rename = "lastDeploymentInfo", default, skip_serializing_if = "Option::is_none")]
     pub last_deployment_info: Option<DeploymentInfo>,
+    #[doc = "Information regarding pull request for protected branches."]
+    #[serde(rename = "pullRequest", default, skip_serializing_if = "Option::is_none")]
+    pub pull_request: Option<PullRequest>,
 }
 impl SourceControlProperties {
     pub fn new(display_name: String, repo_type: RepoType, content_types: Vec<ContentType>, repository: Repository) -> Self {
@@ -11141,8 +11986,11 @@ impl SourceControlProperties {
             repo_type,
             content_types,
             repository,
+            service_principal: None,
+            repository_access: None,
             repository_resource_info: None,
             last_deployment_info: None,
+            pull_request: None,
         }
     }
 }
@@ -12364,6 +13212,97 @@ impl Serialize for Version {
         }
     }
 }
+#[doc = "Warning response structure."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Warning {
+    #[doc = "Warning details."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub warning: Option<WarningBody>,
+}
+impl Warning {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Warning details."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct WarningBody {
+    #[doc = "The type of repository."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<WarningCode>,
+    #[doc = "A message describing the warning, intended to be suitable for display in a user interface."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub details: Vec<WarningBody>,
+}
+impl WarningBody {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The type of repository."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "WarningCode")]
+pub enum WarningCode {
+    #[serde(rename = "SourceControlWarning_DeleteServicePrincipal")]
+    SourceControlWarningDeleteServicePrincipal,
+    #[serde(rename = "SourceControlWarning_DeletePipelineFromAzureDevOps")]
+    SourceControlWarningDeletePipelineFromAzureDevOps,
+    #[serde(rename = "SourceControlWarning_DeleteWorkflowAndSecretFromGitHub")]
+    SourceControlWarningDeleteWorkflowAndSecretFromGitHub,
+    #[serde(rename = "SourceControlWarning_DeleteRoleAssignment")]
+    SourceControlWarningDeleteRoleAssignment,
+    #[serde(rename = "SourceControl_DeletedWithWarnings")]
+    SourceControlDeletedWithWarnings,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for WarningCode {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for WarningCode {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for WarningCode {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::SourceControlWarningDeleteServicePrincipal => {
+                serializer.serialize_unit_variant("WarningCode", 0u32, "SourceControlWarning_DeleteServicePrincipal")
+            }
+            Self::SourceControlWarningDeletePipelineFromAzureDevOps => {
+                serializer.serialize_unit_variant("WarningCode", 1u32, "SourceControlWarning_DeletePipelineFromAzureDevOps")
+            }
+            Self::SourceControlWarningDeleteWorkflowAndSecretFromGitHub => {
+                serializer.serialize_unit_variant("WarningCode", 2u32, "SourceControlWarning_DeleteWorkflowAndSecretFromGitHub")
+            }
+            Self::SourceControlWarningDeleteRoleAssignment => {
+                serializer.serialize_unit_variant("WarningCode", 3u32, "SourceControlWarning_DeleteRoleAssignment")
+            }
+            Self::SourceControlDeletedWithWarnings => {
+                serializer.serialize_unit_variant("WarningCode", 4u32, "SourceControl_DeletedWithWarnings")
+            }
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "Represents a Watchlist in Azure Security Insights."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Watchlist {
@@ -12631,8 +13570,8 @@ pub struct Webhook {
     #[serde(rename = "webhookUrl", default, skip_serializing_if = "Option::is_none")]
     pub webhook_url: Option<String>,
     #[doc = "Time when the webhook secret was updated."]
-    #[serde(rename = "webhookSecretUpdateTime", default, skip_serializing_if = "Option::is_none")]
-    pub webhook_secret_update_time: Option<String>,
+    #[serde(rename = "webhookSecretUpdateTime", default, with = "azure_core::date::rfc3339::option")]
+    pub webhook_secret_update_time: Option<time::OffsetDateTime>,
     #[doc = "A flag to instruct the backend service to rotate webhook secret."]
     #[serde(rename = "rotateWebhookSecret", default, skip_serializing_if = "Option::is_none")]
     pub rotate_webhook_secret: Option<bool>,
@@ -12904,16 +13843,16 @@ impl WorkspaceManagerMember {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceManagerMemberProperties {
     #[doc = "Fully qualified resource ID of the target Sentinel workspace joining the given Sentinel workspace manager"]
-    #[serde(rename = "targetWorkspaceId")]
-    pub target_workspace_id: String,
+    #[serde(rename = "targetWorkspaceResourceId")]
+    pub target_workspace_resource_id: String,
     #[doc = "Tenant id of the target Sentinel workspace joining the given Sentinel workspace manager"]
     #[serde(rename = "targetWorkspaceTenantId")]
     pub target_workspace_tenant_id: String,
 }
 impl WorkspaceManagerMemberProperties {
-    pub fn new(target_workspace_id: String, target_workspace_tenant_id: String) -> Self {
+    pub fn new(target_workspace_resource_id: String, target_workspace_tenant_id: String) -> Self {
         Self {
-            target_workspace_id,
+            target_workspace_resource_id,
             target_workspace_tenant_id,
         }
     }
@@ -13037,6 +13976,14 @@ pub mod job_item {
     }
 }
 pub type LastPublishDate = String;
+#[doc = "The JSON of the ARM template to deploy active content"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MainTemplate {}
+impl MainTemplate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Publisher or creator of the content item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataAuthor {
@@ -13157,73 +14104,7 @@ pub mod metadata_dependencies {
 pub type MetadataDisplayName = String;
 pub type MetadataFirstPublishDate = String;
 pub type MetadataIcon = String;
-#[doc = "The kind of content the metadata is for."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-#[serde(remote = "MetadataKind")]
-pub enum MetadataKind {
-    DataConnector,
-    DataType,
-    Workbook,
-    WorkbookTemplate,
-    Playbook,
-    PlaybookTemplate,
-    AnalyticsRuleTemplate,
-    AnalyticsRule,
-    HuntingQuery,
-    InvestigationQuery,
-    Parser,
-    Watchlist,
-    WatchlistTemplate,
-    Solution,
-    AzureFunction,
-    LogicAppsCustomConnector,
-    AutomationRule,
-    #[serde(skip_deserializing)]
-    UnknownValue(String),
-}
-impl FromStr for MetadataKind {
-    type Err = value::Error;
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        Self::deserialize(s.into_deserializer())
-    }
-}
-impl<'de> Deserialize<'de> for MetadataKind {
-    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-        Ok(deserialized)
-    }
-}
-impl Serialize for MetadataKind {
-    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        match self {
-            Self::DataConnector => serializer.serialize_unit_variant("MetadataKind", 0u32, "DataConnector"),
-            Self::DataType => serializer.serialize_unit_variant("MetadataKind", 1u32, "DataType"),
-            Self::Workbook => serializer.serialize_unit_variant("MetadataKind", 2u32, "Workbook"),
-            Self::WorkbookTemplate => serializer.serialize_unit_variant("MetadataKind", 3u32, "WorkbookTemplate"),
-            Self::Playbook => serializer.serialize_unit_variant("MetadataKind", 4u32, "Playbook"),
-            Self::PlaybookTemplate => serializer.serialize_unit_variant("MetadataKind", 5u32, "PlaybookTemplate"),
-            Self::AnalyticsRuleTemplate => serializer.serialize_unit_variant("MetadataKind", 6u32, "AnalyticsRuleTemplate"),
-            Self::AnalyticsRule => serializer.serialize_unit_variant("MetadataKind", 7u32, "AnalyticsRule"),
-            Self::HuntingQuery => serializer.serialize_unit_variant("MetadataKind", 8u32, "HuntingQuery"),
-            Self::InvestigationQuery => serializer.serialize_unit_variant("MetadataKind", 9u32, "InvestigationQuery"),
-            Self::Parser => serializer.serialize_unit_variant("MetadataKind", 10u32, "Parser"),
-            Self::Watchlist => serializer.serialize_unit_variant("MetadataKind", 11u32, "Watchlist"),
-            Self::WatchlistTemplate => serializer.serialize_unit_variant("MetadataKind", 12u32, "WatchlistTemplate"),
-            Self::Solution => serializer.serialize_unit_variant("MetadataKind", 13u32, "Solution"),
-            Self::AzureFunction => serializer.serialize_unit_variant("MetadataKind", 14u32, "AzureFunction"),
-            Self::LogicAppsCustomConnector => serializer.serialize_unit_variant("MetadataKind", 15u32, "LogicAppsCustomConnector"),
-            Self::AutomationRule => serializer.serialize_unit_variant("MetadataKind", 16u32, "AutomationRule"),
-            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-        }
-    }
-}
+pub type MetadataKind = String;
 pub type MetadataLastPublishDate = String;
 #[doc = "The package kind"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -13605,49 +14486,18 @@ impl Serialize for MetadataTrueFalseFlag {
     }
 }
 pub type MetadataVersion = String;
-#[doc = "List available packages."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PackageList {
-    #[doc = "URL to fetch the next set of packages."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-    #[doc = "Array of packages."]
-    pub value: Vec<PackageModel>,
-}
-impl azure_core::Continuable for PackageList {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone().filter(|value| !value.is_empty())
-    }
-}
-impl PackageList {
-    pub fn new(value: Vec<PackageModel>) -> Self {
-        Self { next_link: None, value }
-    }
-}
-#[doc = "Represents a Package in Azure Security Insights."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PackageModel {
-    #[serde(flatten)]
-    pub resource_with_etag: ResourceWithEtag,
-    #[doc = "Describes package properties"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PackageProperties>,
-}
-impl PackageModel {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Describes package properties"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PackageProperties {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PackageBaseProperties {
     #[doc = "Static ID for the content.  Used to identify dependencies and content from solutions or community.  Hard-coded/static for out of the box content and solutions. Can be optionally set for user created content to define dependencies.  If an active content item is made from a metadata, both will have the same contentId."]
-    #[serde(rename = "contentId")]
-    pub content_id: MetadataContentId,
+    #[serde(rename = "contentId", default, skip_serializing_if = "Option::is_none")]
+    pub content_id: Option<MetadataContentId>,
+    #[doc = "Unique ID for the content. It should be generated based on the contentId, contentKind and the contentVersion of the package"]
+    #[serde(rename = "contentProductId", default, skip_serializing_if = "Option::is_none")]
+    pub content_product_id: Option<String>,
     #[doc = "The package kind"]
-    #[serde(rename = "contentKind")]
-    pub content_kind: MetadataPackageKind,
+    #[serde(rename = "contentKind", default, skip_serializing_if = "Option::is_none")]
+    pub content_kind: Option<MetadataPackageKind>,
     #[doc = "Version of the content.  Default and recommended format is numeric (e.g. 1, 1.0, 1.0.0, 1.0.0.0), following ARM template best practices.  Can also be any string, but then we cannot guarantee any version checks"]
     #[serde(rename = "contentSchemaVersion", default, skip_serializing_if = "Option::is_none")]
     pub content_schema_version: Option<MetadataVersion>,
@@ -13661,10 +14511,11 @@ pub struct PackageProperties {
     #[serde(rename = "isFeatured", default, skip_serializing_if = "Option::is_none")]
     pub is_featured: Option<MetadataTrueFalseFlag>,
     #[doc = "Version of the content.  Default and recommended format is numeric (e.g. 1, 1.0, 1.0.0, 1.0.0.0), following ARM template best practices.  Can also be any string, but then we cannot guarantee any version checks"]
-    pub version: MetadataVersion,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<MetadataVersion>,
     #[doc = "DisplayName of the content."]
-    #[serde(rename = "displayName")]
-    pub display_name: MetadataDisplayName,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<MetadataDisplayName>,
     #[doc = "The description of the package"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -13705,35 +14556,193 @@ pub struct PackageProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub icon: Option<MetadataIcon>,
 }
+impl PackageBaseProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List available packages."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PackageList {
+    #[doc = "URL to fetch the next set of packages."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "Array of packages."]
+    pub value: Vec<PackageModel>,
+}
+impl azure_core::Continuable for PackageList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl PackageList {
+    pub fn new(value: Vec<PackageModel>) -> Self {
+        Self { next_link: None, value }
+    }
+}
+#[doc = "Represents a Package in Azure Security Insights."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PackageModel {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    #[doc = "Describes package properties"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<PackageProperties>,
+}
+impl PackageModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes package properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PackageProperties {
+    #[serde(flatten)]
+    pub package_base_properties: PackageBaseProperties,
+}
 impl PackageProperties {
-    pub fn new(
-        content_id: MetadataContentId,
-        content_kind: MetadataPackageKind,
-        version: MetadataVersion,
-        display_name: MetadataDisplayName,
-    ) -> Self {
+    pub fn new() -> Self {
         Self {
-            content_id,
-            content_kind,
-            content_schema_version: None,
-            is_new: None,
-            is_preview: None,
-            is_featured: None,
-            version,
-            display_name,
-            description: None,
-            publisher_display_name: None,
-            source: None,
-            author: None,
-            support: None,
-            dependencies: None,
-            providers: None,
-            first_publish_date: None,
-            last_publish_date: None,
-            categories: None,
-            threat_analysis_tactics: None,
-            threat_analysis_techniques: None,
-            icon: None,
+            package_base_properties: PackageBaseProperties::default(),
+        }
+    }
+}
+#[doc = "the json to deploy"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct PackagedContent {}
+impl PackagedContent {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "product package additional properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ProductPackageAdditionalProperties {
+    #[doc = "Version of the content.  Default and recommended format is numeric (e.g. 1, 1.0, 1.0.0, 1.0.0.0), following ARM template best practices.  Can also be any string, but then we cannot guarantee any version checks"]
+    #[serde(rename = "installedVersion", default, skip_serializing_if = "Option::is_none")]
+    pub installed_version: Option<MetadataVersion>,
+    #[doc = "Static ID for the content.  Used to identify dependencies and content from solutions or community.  Hard-coded/static for out of the box content and solutions. Can be optionally set for user created content to define dependencies.  If an active content item is made from a metadata, both will have the same contentId."]
+    #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<MetadataContentId>,
+    #[doc = "the json to deploy"]
+    #[serde(rename = "packagedContent", default, skip_serializing_if = "Option::is_none")]
+    pub packaged_content: Option<PackagedContent>,
+}
+impl ProductPackageAdditionalProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List available packages."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProductPackageList {
+    #[doc = "URL to fetch the next set of packages."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+    #[doc = "Array of packages."]
+    pub value: Vec<ProductPackageModel>,
+}
+impl azure_core::Continuable for ProductPackageList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl ProductPackageList {
+    pub fn new(value: Vec<ProductPackageModel>) -> Self {
+        Self { next_link: None, value }
+    }
+}
+#[doc = "Represents a Package in Azure Security Insights."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ProductPackageModel {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    #[doc = "Describes package properties"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ProductPackageProperties>,
+}
+impl ProductPackageModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes package properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProductPackageProperties {
+    #[serde(flatten)]
+    pub package_base_properties: PackageBaseProperties,
+    #[serde(flatten)]
+    pub product_package_additional_properties: ProductPackageAdditionalProperties,
+}
+impl ProductPackageProperties {
+    pub fn new() -> Self {
+        Self {
+            package_base_properties: PackageBaseProperties::default(),
+            product_package_additional_properties: ProductPackageAdditionalProperties::default(),
+        }
+    }
+}
+#[doc = "additional properties of product template."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ProductTemplateAdditionalProperties {
+    #[doc = "the json to deploy"]
+    #[serde(rename = "packagedContent", default, skip_serializing_if = "Option::is_none")]
+    pub packaged_content: Option<serde_json::Value>,
+}
+impl ProductTemplateAdditionalProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List of all the template."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProductTemplateList {
+    #[doc = "Array of templates."]
+    pub value: Vec<ProductTemplateModel>,
+    #[doc = "URL to fetch the next page of template."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ProductTemplateList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl ProductTemplateList {
+    pub fn new(value: Vec<ProductTemplateModel>) -> Self {
+        Self { value, next_link: None }
+    }
+}
+#[doc = "Template resource definition."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ProductTemplateModel {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    #[doc = "Template property bag."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ProductTemplateProperties>,
+}
+impl ProductTemplateModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Template property bag."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ProductTemplateProperties {
+    #[serde(flatten)]
+    pub template_base_properties: TemplateBaseProperties,
+    #[serde(flatten)]
+    pub product_template_additional_properties: ProductTemplateAdditionalProperties,
+}
+impl ProductTemplateProperties {
+    pub fn new() -> Self {
+        Self {
+            template_base_properties: TemplateBaseProperties::default(),
+            product_template_additional_properties: ProductTemplateAdditionalProperties::default(),
         }
     }
 }
@@ -13849,59 +14858,42 @@ pub mod system_data {
         }
     }
 }
-#[doc = "List of all the template."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TemplateList {
-    #[doc = "Array of templates."]
-    pub value: Vec<TemplateModel>,
-    #[doc = "URL to fetch the next page of template."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for TemplateList {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone().filter(|value| !value.is_empty())
-    }
-}
-impl TemplateList {
-    pub fn new(value: Vec<TemplateModel>) -> Self {
-        Self { value, next_link: None }
-    }
-}
-#[doc = "Template resource definition."]
+#[doc = "additional properties of product template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct TemplateModel {
-    #[serde(flatten)]
-    pub resource_with_etag: ResourceWithEtag,
-    #[doc = "Template property bag."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<TemplateProperties>,
+pub struct TemplateAdditionalProperties {
+    #[doc = "The JSON of the ARM template to deploy active content"]
+    #[serde(rename = "mainTemplate", default, skip_serializing_if = "Option::is_none")]
+    pub main_template: Option<MainTemplate>,
 }
-impl TemplateModel {
+impl TemplateAdditionalProperties {
     pub fn new() -> Self {
         Self::default()
     }
 }
 #[doc = "Template property bag."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TemplateProperties {
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct TemplateBaseProperties {
     #[doc = "Static ID for the content.  Used to identify dependencies and content from solutions or community.  Hard-coded/static for out of the box content and solutions. Can be optionally set for user created content to define dependencies.  If an active content item is made from a metadata, both will have the same contentId."]
-    #[serde(rename = "contentId")]
-    pub content_id: MetadataContentId,
-    #[doc = "Full parent resource ID of the content item the metadata is for.  This is the full resource ID including the scope (subscription and resource group)"]
-    #[serde(rename = "parentId", default, skip_serializing_if = "Option::is_none")]
-    pub parent_id: Option<MetadataParentId>,
+    #[serde(rename = "contentId", default, skip_serializing_if = "Option::is_none")]
+    pub content_id: Option<MetadataContentId>,
+    #[doc = "Unique ID for the content. It should be generated based on the contentId of the package, contentId of the template, contentKind of the template and the contentVersion of the template"]
+    #[serde(rename = "contentProductId", default, skip_serializing_if = "Option::is_none")]
+    pub content_product_id: Option<String>,
     #[doc = "Version of the content.  Default and recommended format is numeric (e.g. 1, 1.0, 1.0.0, 1.0.0.0), following ARM template best practices.  Can also be any string, but then we cannot guarantee any version checks"]
-    pub version: MetadataVersion,
+    #[serde(rename = "packageVersion", default, skip_serializing_if = "Option::is_none")]
+    pub package_version: Option<MetadataVersion>,
+    #[doc = "Version of the content.  Default and recommended format is numeric (e.g. 1, 1.0, 1.0.0, 1.0.0.0), following ARM template best practices.  Can also be any string, but then we cannot guarantee any version checks"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<MetadataVersion>,
     #[doc = "DisplayName of the content."]
-    #[serde(rename = "displayName")]
-    pub display_name: MetadataDisplayName,
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<MetadataDisplayName>,
     #[doc = "The kind of content the metadata is for."]
-    #[serde(rename = "contentKind")]
-    pub content_kind: MetadataKind,
+    #[serde(rename = "contentKind", default, skip_serializing_if = "Option::is_none")]
+    pub content_kind: Option<MetadataKind>,
     #[doc = "The original source of the content item, where it comes from."]
-    pub source: MetadataSource,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<MetadataSource>,
     #[doc = "Publisher or creator of the content item."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub author: Option<MetadataAuthor>,
@@ -13953,43 +14945,59 @@ pub struct TemplateProperties {
     #[doc = "DisplayName of the content."]
     #[serde(rename = "packageName", default, skip_serializing_if = "Option::is_none")]
     pub package_name: Option<MetadataDisplayName>,
-    #[doc = "the json to deploy"]
-    #[serde(rename = "packagedContent", default, skip_serializing_if = "Option::is_none")]
-    pub packaged_content: Option<serde_json::Value>,
+}
+impl TemplateBaseProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List of all the template."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TemplateList {
+    #[doc = "Array of templates."]
+    pub value: Vec<TemplateModel>,
+    #[doc = "URL to fetch the next page of template."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for TemplateList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl TemplateList {
+    pub fn new(value: Vec<TemplateModel>) -> Self {
+        Self { value, next_link: None }
+    }
+}
+#[doc = "Template resource definition."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct TemplateModel {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+    #[doc = "Template property bag."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<TemplateProperties>,
+}
+impl TemplateModel {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Template property bag."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TemplateProperties {
+    #[serde(flatten)]
+    pub template_base_properties: TemplateBaseProperties,
+    #[serde(flatten)]
+    pub template_additional_properties: TemplateAdditionalProperties,
 }
 impl TemplateProperties {
-    pub fn new(
-        content_id: MetadataContentId,
-        version: MetadataVersion,
-        display_name: MetadataDisplayName,
-        content_kind: MetadataKind,
-        source: MetadataSource,
-    ) -> Self {
+    pub fn new() -> Self {
         Self {
-            content_id,
-            parent_id: None,
-            version,
-            display_name,
-            content_kind,
-            source,
-            author: None,
-            support: None,
-            dependencies: None,
-            categories: None,
-            providers: None,
-            first_publish_date: None,
-            last_publish_date: None,
-            custom_version: None,
-            content_schema_version: None,
-            icon: None,
-            threat_analysis_tactics: None,
-            threat_analysis_techniques: None,
-            preview_images: None,
-            preview_images_dark: None,
-            package_id: None,
-            package_kind: None,
-            package_name: None,
-            packaged_content: None,
+            template_base_properties: TemplateBaseProperties::default(),
+            template_additional_properties: TemplateAdditionalProperties::default(),
         }
     }
 }

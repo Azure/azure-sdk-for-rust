@@ -211,6 +211,7 @@ members = [
   "mgmt/sqlvirtualmachine",
   "mgmt/stack",
   "mgmt/storage",
+  "mgmt/storageactions",
   "mgmt/storagecache",
   "mgmt/storageimportexport",
   "mgmt/storagemover",
