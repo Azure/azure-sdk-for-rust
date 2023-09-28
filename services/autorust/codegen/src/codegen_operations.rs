@@ -1449,9 +1449,9 @@ impl FunctionParams {
             let name = param.name().to_owned();
             let description = param.description().clone();
             let variable_name = name.to_snake_case_ident()?;
-            let mut type_name = TypeNameCode::new(&param.type_name()?)?
-                .qualify_models(true)
-                .optional(!param.required());
+            let mut type_name = TypeNameCode::new(&param.type_name()?)?;
+            type_name.qualify_models(true);
+            type_name.optional(!param.required());
             cg.set_if_union_type(&mut type_name);
             let kind = ParamKind::from(param.in_());
             let collection_format = param.collection_format().clone();
@@ -1504,7 +1504,7 @@ impl ToTokens for FunctionCallParamsCode {
         {
             let mut type_name = type_name.clone();
             let is_vec = type_name.is_vec();
-            type_name = type_name.impl_into(!is_vec);
+            type_name.impl_into(!is_vec);
             params.push(quote! { #variable_name: #type_name });
         }
         let slf = quote! { &self };
@@ -1552,7 +1552,7 @@ impl ToTokens for ClientFunctionCode {
             } = param;
             let mut type_name = type_name.clone();
             let is_vec = type_name.is_vec();
-            type_name = type_name.impl_into(!is_vec);
+            type_name.impl_into(!is_vec);
             if type_name.has_impl_into() {
                 params.push(quote! { #variable_name: #variable_name.into() });
             } else {
@@ -1676,7 +1676,7 @@ impl ToTokens for RequestBuilderStructCode {
             } = param;
             let mut type_name = type_name.clone();
             if type_name.is_vec() {
-                type_name = type_name.optional(false);
+                type_name.optional(false);
             }
             params.push(quote! { pub(crate) #variable_name: #type_name });
         }
@@ -1783,8 +1783,8 @@ impl ToTokens for RequestBuilderSettersCode {
             } = param;
             let is_vec = type_name.is_vec();
             let mut type_name = type_name.clone();
-            type_name = type_name.optional(false);
-            type_name = type_name.impl_into(!is_vec);
+            type_name.optional(false);
+            type_name.impl_into(!is_vec);
             let mut value = if type_name.has_impl_into() {
                 quote! { #variable_name.into() }
             } else {
@@ -1810,7 +1810,8 @@ impl ToTokens for RequestBuilderSettersCode {
 
 pub fn create_response_type(cg: &CodeGen, rsp: &Response) -> Result<Option<TypeNameCode>> {
     if let Some(schema) = &rsp.schema {
-        let mut type_name = TypeNameCode::new(&get_type_name_for_schema_ref(schema)?)?.qualify_models(true);
+        let mut type_name = TypeNameCode::new(&get_type_name_for_schema_ref(schema)?)?;
+        type_name.qualify_models(true);
         cg.set_if_union_type(&mut type_name);
         Ok(Some(type_name))
     } else {

@@ -917,7 +917,7 @@ fn create_struct(
         }
 
         if cg.should_force_obj(prop_nm) {
-            type_name = type_name.force_value(true);
+            type_name.force_value(true);
         }
 
         let is_required = required.contains(property_name) && !cg.should_force_optional(prop_nm);
@@ -925,7 +925,7 @@ fn create_struct(
         field_names.insert(format!("{field_name}"), is_required);
 
         if !type_name.is_vec() && !is_required {
-            type_name = type_name.optional(true);
+            type_name.optional(true);
         }
 
         let mut serde = SerdeCode::default();
@@ -974,7 +974,7 @@ fn create_struct(
         if cg.should_box_property(prop_nm) {
             boxed = true;
         }
-        type_name = type_name.boxed(boxed);
+        type_name.boxed(boxed);
 
         doc_comments.push(DocCommentCode::from(&property.schema.schema.common.description));
 
