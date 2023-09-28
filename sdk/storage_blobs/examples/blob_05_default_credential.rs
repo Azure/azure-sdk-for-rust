@@ -1,14 +1,12 @@
-#[macro_use]
-extern crate log;
-
-use std::sync::Arc;
-
 use azure_core::{
     auth::TokenCredential,
     error::{ErrorKind, ResultExt},
 };
 use azure_identity::DefaultAzureCredential;
-use azure_storage_blobs::prelude::*;
+use azure_storage::StorageCredentials;
+use azure_storage_blobs::prelude::BlobServiceClient;
+use log::trace;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -25,8 +23,9 @@ async fn main() -> azure_core::Result<()> {
         .nth(3)
         .expect("please specify the blob name as third command line parameter");
 
-    let storage_credentials: Arc<dyn TokenCredential> = Arc::new(DefaultAzureCredential::default());
-    let blob_client = BlobServiceClient::new(account, storage_credentials)
+    let default_creds: Arc<dyn TokenCredential> = Arc::new(DefaultAzureCredential::default());
+    let credentials = StorageCredentials::token_credential(default_creds);
+    let blob_client = BlobServiceClient::new(account, credentials)
         .container_client(&container)
         .blob_client(&blob);
 

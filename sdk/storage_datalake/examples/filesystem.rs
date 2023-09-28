@@ -59,6 +59,6 @@ fn create_data_lake_client() -> DataLakeClient {
     let account_key = std::env::var("ADLSGEN2_STORAGE_ACCESS_KEY")
         .expect("Set env variable ADLSGEN2_STORAGE_ACCESS_KEY first!");
 
-    let storage_credentials = StorageCredentials::Key(account_name.clone(), account_key);
+    let storage_credentials = StorageCredentials::access_key(account_name.clone(), account_key);
     DataLakeClient::new(account_name, storage_credentials)
 }

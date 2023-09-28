@@ -6720,6 +6720,9 @@ pub struct IaasVmRecoveryPoint {
     #[doc = "This flag denotes if any of the disks in the VM are using Private access network setting"]
     #[serde(rename = "isPrivateAccessEnabledOnAnyDisk", default, skip_serializing_if = "Option::is_none")]
     pub is_private_access_enabled_on_any_disk: Option<bool>,
+    #[doc = "The extended location of Recovery point where VM was present."]
+    #[serde(rename = "extendedLocation", default, skip_serializing_if = "Option::is_none")]
+    pub extended_location: Option<ExtendedLocation>,
 }
 impl IaasVmRecoveryPoint {
     pub fn new(recovery_point: RecoveryPoint) -> Self {
@@ -6743,6 +6746,7 @@ impl IaasVmRecoveryPoint {
             security_type: None,
             recovery_point_properties: None,
             is_private_access_enabled_on_any_disk: None,
+            extended_location: None,
         }
     }
 }

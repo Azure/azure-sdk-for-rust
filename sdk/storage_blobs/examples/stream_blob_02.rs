@@ -43,7 +43,7 @@ async fn main() -> azure_core::Result<()> {
     let args = Args::parse();
 
     let storage_credentials =
-        StorageCredentials::Key(args.account.clone(), args.access_key.clone());
+        StorageCredentials::access_key(args.account.clone(), args.access_key.clone());
     let blob_client = BlobServiceClient::new(&args.account, storage_credentials)
         .container_client(&args.container_name)
         .blob_client(&args.blob_name);
