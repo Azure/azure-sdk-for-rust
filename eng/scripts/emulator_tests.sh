@@ -3,6 +3,8 @@
 set -eux -o pipefail
 cd $(dirname ${BASH_SOURCE[0]})/../../
 
+./eng/scripts/github-disk-cleanup.sh
+
 BUILD=${1:-stable}
 
 npm install azurite@3.26.0
