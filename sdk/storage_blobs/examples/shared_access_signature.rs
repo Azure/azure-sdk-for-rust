@@ -37,7 +37,8 @@ async fn main() -> azure_core::Result<()> {
                 read: true,
                 ..Default::default()
             },
-        )?
+        )
+        .await?
         .start(now)
         .protocol(SasProtocol::Https);
 
@@ -52,7 +53,8 @@ async fn main() -> azure_core::Result<()> {
                 ..Default::default()
             },
             later,
-        )?
+        )
+        .await?
         .start(now);
     println!("blob service token: {}", sas.token());
     let url = blob_client.generate_signed_blob_url(&sas)?;
@@ -67,7 +69,8 @@ async fn main() -> azure_core::Result<()> {
                 ..Default::default()
             },
             later,
-        )?
+        )
+        .await?
         .start(now)
         .protocol(SasProtocol::HttpHttps);
 

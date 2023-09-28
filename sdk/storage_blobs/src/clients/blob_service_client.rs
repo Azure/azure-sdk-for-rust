@@ -208,7 +208,7 @@ impl BlobServiceClient {
         GetUserDelegationKeyBuilder::new(self.clone(), start, expiry)
     }
 
-    pub fn shared_access_signature(
+    pub async fn shared_access_signature(
         &self,
         resource_type: AccountSasResourceType,
         expiry: OffsetDateTime,
@@ -221,6 +221,7 @@ impl BlobServiceClient {
             expiry,
             permissions,
         )
+        .await
     }
 
     pub(crate) fn credentials(&self) -> &StorageCredentials {

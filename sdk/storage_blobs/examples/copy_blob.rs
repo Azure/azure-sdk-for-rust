@@ -56,7 +56,8 @@ async fn main() -> azure_core::Result<()> {
                     read: true,
                     ..Default::default()
                 },
-            )?
+            )
+            .await?
             .start(now)
             .protocol(SasProtocol::HttpHttps);
         println!("token: '{}'", sas.token());
