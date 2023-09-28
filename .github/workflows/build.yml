@@ -48,9 +48,21 @@ jobs:
           - build: nightly
             experimental: true
     steps:
+      - name: display free disk space
+        run: df -h /
+        if: ${{ always() }}
       - uses: actions/checkout@v4
+      - name: display free disk space
+        run: df -h /
+        if: ${{ always() }}
       - uses: Swatinem/rust-cache@v2
+      - name: display free disk space
+        run: df -h /
+        if: ${{ always() }}
       - run: eng/scripts/sdk_tests.sh ${{ matrix.build }}
+      - name: display free disk space
+        run: df -h /
+        if: ${{ always() }}
 
   test-wasm:
     name: WASM Tests
