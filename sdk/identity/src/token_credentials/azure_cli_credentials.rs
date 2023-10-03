@@ -33,8 +33,14 @@ mod az_cli_date_format {
     pub(crate) fn assume_local(date: &PrimitiveDateTime) -> OffsetDateTime {
         let as_utc = date.assume_utc();
 
-        // if we can't get the local timezone, just return the UTC date
-        let Ok(tz) = tz::TimeZone::local() else {
+        // try parsing the timezone from `TZ` enviornment variable.  If that
+        // fails, or the enviornment variable doesn't exist, try using
+        // `TimeZone::local`.  If that fails, then just return the UTC date.
+        let Some(tz) = std::env::var("TZ")
+            .ok()
+            .and_then(|x| tz::TimeZone::from_posix_tz(&x).ok())
+            .or_else(|| tz::TimeZone::local().ok())
+        else {
             return as_utc;
         };
 
@@ -204,8 +210,8 @@ mod tests {
     /// the TZ enviornment variable.
     fn check_timezone() -> azure_core::Result<()> {
         let before = std::env::var("TZ").ok();
-        std::env::set_var("TZ", "PST");
-        let expires_on = "2022-07-30 12:12:53.919110";
+        std::env::set_var("TZ", "US/Pacific");
+        let expires_on = "2022-11-30 12:12:53.919110";
         let result = az_cli_date_format::parse(expires_on);
 
         if let Some(before) = before {
@@ -214,7 +220,7 @@ mod tests {
             std::env::remove_var("TZ");
         }
 
-        let expected = datetime!(2022-07-30 16:12:53).assume_utc();
+        let expected = datetime!(2022-11-30 20:12:53.0).assume_utc();
         assert_eq!(expected, result?);
 
         Ok(())
