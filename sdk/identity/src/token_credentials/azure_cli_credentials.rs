@@ -10,7 +10,9 @@ mod az_cli_date_format {
     use serde::{self, Deserialize, Deserializer};
     use time::format_description::FormatItem;
     use time::macros::format_description;
-    use time::{OffsetDateTime, PrimitiveDateTime, UtcOffset};
+    #[cfg(not(unix))]
+    use time::UtcOffset;
+    use time::{OffsetDateTime, PrimitiveDateTime};
 
     const FORMAT: &[FormatItem] =
         format_description!("[year]-[month]-[day] [hour]:[minute]:[second].[subsecond digits:6]");
@@ -24,7 +26,35 @@ mod az_cli_date_format {
         Ok(assume_local(&dt))
     }
 
+    #[cfg(unix)]
+    /// attempt to convert `PrimitiveDateTime` to `OffsetDate` using
+    /// `tz::TimeZone`.  If any part of the conversion fails, such as if no
+    /// timezone can be found, then use use the value as UTC.
+    pub(crate) fn assume_local(date: &PrimitiveDateTime) -> OffsetDateTime {
+        let as_utc = date.assume_utc();
+
+        // if we can't get the local timezone, just return the UTC date
+        let Ok(tz) = tz::TimeZone::local() else {
+            return as_utc;
+        };
+
+        let as_unix = as_utc.unix_timestamp();
+        // if we can't convert the unix timestamp to a DateTime, just return the UTC date
+        let Ok(date) = tz::DateTime::from_timespec(as_unix, 0, tz.as_ref()) else {
+            return as_utc;
+        };
+
+        // if we can't then convert to unix time (with the timezone) and then
+        // back into an OffsetDateTime, then return the UTC date
+        let Ok(date) = OffsetDateTime::from_unix_timestamp(date.unix_time()) else {
+            return as_utc;
+        };
+
+        date
+    }
+
     /// Assumes the local offset. Default to UTC if unable to get local offset.
+    #[cfg(not(unix))]
     pub(crate) fn assume_local(date: &PrimitiveDateTime) -> OffsetDateTime {
         date.assume_offset(UtcOffset::current_local_offset().unwrap_or(UtcOffset::UTC))
     }

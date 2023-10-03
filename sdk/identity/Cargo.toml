@@ -27,6 +27,9 @@ openssl = { version = "0.10.46",  optional=true }
 uuid = { version = "1.0",  features = ["v4"] }
 pin-project = "1.0"
 
+[target.'cfg(unix)'.dependencies]
+tz-rs = "0.6"
+
 [dev-dependencies]
 reqwest = { version = "0.11", features = ["json"], default-features = false }
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
