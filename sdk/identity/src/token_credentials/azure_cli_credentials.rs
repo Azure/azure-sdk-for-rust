@@ -10,6 +10,8 @@ mod az_cli_date_format {
     use serde::{self, Deserialize, Deserializer};
     use time::format_description::FormatItem;
     use time::macros::format_description;
+    #[cfg(not(unix))]
+    use time::UtcOffset;
     use time::{OffsetDateTime, PrimitiveDateTime};
 
     const FORMAT: &[FormatItem] =
