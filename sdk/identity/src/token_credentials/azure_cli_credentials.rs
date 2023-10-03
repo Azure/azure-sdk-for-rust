@@ -188,9 +188,11 @@ impl TokenCredential for AzureCliCredential {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
     use time::macros::datetime;
 
     #[test]
+    #[serial]
     fn can_parse_expires_on() -> azure_core::Result<()> {
         let expires_on = "2022-07-30 12:12:53.919110";
         assert_eq!(
@@ -203,6 +205,7 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    #[serial]
     /// test the timezone conversion works as expected on unix platforms
     ///
     /// To validate the timezone conversion works as expected, this test
