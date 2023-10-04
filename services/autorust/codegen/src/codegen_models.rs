@@ -490,15 +490,17 @@ pub fn create_models(cg: &mut CodeGen) -> Result<ModelsCode> {
                 let tag_property = schema.properties.iter().find(|property| property.name() == tag);
                 let tag_property_description = tag_property.and_then(|property| property.schema().schema.common.description.clone());
                 schema.properties.retain(|property| property.name() != tag);
+                if !schema.properties.is_empty() {
+                    models.push(ModelCode::Struct(create_struct(
+                        cg,
+                        &schema,
+                        schema_name,
+                        pageable_response_names.get(&pageable_name),
+                        HashSet::new(),
+                    )?));
+                }
 
                 // create the union type with the discriminator
-                models.push(ModelCode::Struct(create_struct(
-                    cg,
-                    &schema,
-                    schema_name,
-                    pageable_response_names.get(&pageable_name),
-                    HashSet::new(),
-                )?));
                 models.push(ModelCode::Union(UnionCode::from_schema(
                     tag,
                     schema_name,
@@ -900,6 +902,14 @@ fn create_struct(
     needs_boxing.insert(struct_name.to_camel_case_ident()?.to_string());
 
     for schema in schema.all_of() {
+        // skip empty base types
+        let mut properties_len = schema.properties().len();
+        if schema.discriminator().is_some() {
+            properties_len = properties_len.saturating_sub(1);
+        }
+        if properties_len < 1 {
+            continue;
+        }
         let schema_name = schema.name()?;
         let mut type_name = TypeNameCode::from(schema_name.to_camel_case_ident()?);
         type_name.union(false);
