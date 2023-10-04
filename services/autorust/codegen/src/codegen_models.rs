@@ -36,6 +36,10 @@ impl PropertyGen {
     pub fn schema(&self) -> &SchemaGen {
         &self.schema
     }
+
+    pub fn discriminator(&self) -> Option<&str> {
+        self.schema.discriminator()
+    }
 }
 
 #[derive(Clone)]
@@ -478,16 +482,38 @@ pub fn create_models(cg: &mut CodeGen) -> Result<ModelsCode> {
             models.push(ModelCode::TypeAlias(alias));
         } else {
             let pageable_name = format!("{}", schema_name.to_camel_case_ident()?);
-            models.push(ModelCode::Struct(create_struct(
-                cg,
-                schema,
-                schema_name,
-                pageable_response_names.get(&pageable_name),
-                HashSet::new(),
-            )?));
-            // create union if discriminator
+
+            // create a base type and union type if there is a discriminator
             if let Some(tag) = schema.discriminator() {
-                models.push(ModelCode::Union(UnionCode::from_schema(tag, schema_name, ref_key, all_schemas)?));
+                // create the base type without the discriminator
+                let mut schema = schema.clone();
+                let tag_property = schema.properties.iter().find(|property| property.name() == tag);
+                let tag_property_description = tag_property.and_then(|property| property.schema().schema.common.description.clone());
+                schema.properties.retain(|property| property.name() != tag);
+
+                // create the union type with the discriminator
+                models.push(ModelCode::Struct(create_struct(
+                    cg,
+                    &schema,
+                    schema_name,
+                    pageable_response_names.get(&pageable_name),
+                    HashSet::new(),
+                )?));
+                models.push(ModelCode::Union(UnionCode::from_schema(
+                    tag,
+                    schema_name,
+                    ref_key,
+                    all_schemas,
+                    tag_property_description,
+                )?));
+            } else {
+                models.push(ModelCode::Struct(create_struct(
+                    cg,
+                    schema,
+                    schema_name,
+                    pageable_response_names.get(&pageable_name),
+                    HashSet::new(),
+                )?));
             }
         }
     }
@@ -501,10 +527,17 @@ pub struct UnionCode {
     pub tag: String,
     pub name: TypeNameCode,
     pub values: Vec<UnionValueCode>,
+    pub description: Option<String>,
 }
 
 impl UnionCode {
-    fn from_schema(tag: &str, schema_name: &str, ref_key: &RefKey, all_schemas: &Vec<(RefKey, SchemaGen)>) -> Result<Self> {
+    fn from_schema(
+        tag: &str,
+        schema_name: &str,
+        ref_key: &RefKey,
+        all_schemas: &Vec<(RefKey, SchemaGen)>,
+        description: Option<String>,
+    ) -> Result<Self> {
         let mut values = Vec::new();
         for (child_ref_key, child_schema) in all_schemas {
             if child_schema
@@ -529,14 +562,22 @@ impl UnionCode {
             tag: tag.to_string(),
             name,
             values,
+            description,
         })
     }
 }
 
 impl ToTokens for UnionCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        let UnionCode { tag, name, values } = self;
+        let UnionCode {
+            tag,
+            name,
+            values,
+            description,
+        } = self;
+        let doc_comment = DocCommentCode::from(description);
         tokens.extend(quote! {
+            #doc_comment
             #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
             #[serde(tag = #tag)]
             pub enum #name {
