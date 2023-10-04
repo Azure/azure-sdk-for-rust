@@ -365,8 +365,6 @@ impl CertificateObject {
 #[doc = "GlobalRulestack Certificate Object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateObjectGlobalRulestackResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "certificate used for inbound and outbound decryption"]
     pub properties: CertificateObject,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -376,7 +374,6 @@ pub struct CertificateObjectGlobalRulestackResource {
 impl CertificateObjectGlobalRulestackResource {
     pub fn new(properties: CertificateObject) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -405,8 +402,6 @@ impl CertificateObjectGlobalRulestackResourceListResult {
 #[doc = "LocalRulestack Certificate Object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateObjectLocalRulestackResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "certificate used for inbound and outbound decryption"]
     pub properties: CertificateObject,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -416,7 +411,6 @@ pub struct CertificateObjectLocalRulestackResource {
 impl CertificateObjectLocalRulestackResource {
     pub fn new(properties: CertificateObject) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -1052,8 +1046,6 @@ impl FirewallStatusProperty {
 #[doc = "Firewall Status"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirewallStatusResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Firewall Status"]
     pub properties: FirewallStatusProperty,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -1063,7 +1055,6 @@ pub struct FirewallStatusResource {
 impl FirewallStatusResource {
     pub fn new(properties: FirewallStatusProperty) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -1092,8 +1083,6 @@ impl FirewallStatusResourceListResult {
 #[doc = "GlobalRulestack fqdnList"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FqdnListGlobalRulestackResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "fqdn object"]
     pub properties: FqdnObject,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -1103,7 +1092,6 @@ pub struct FqdnListGlobalRulestackResource {
 impl FqdnListGlobalRulestackResource {
     pub fn new(properties: FqdnObject) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -1132,8 +1120,6 @@ impl FqdnListGlobalRulestackResourceListResult {
 #[doc = "LocalRulestack fqdnList"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FqdnListLocalRulestackResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "fqdn object"]
     pub properties: FqdnObject,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -1143,7 +1129,6 @@ pub struct FqdnListLocalRulestackResource {
 impl FqdnListLocalRulestackResource {
     pub fn new(properties: FqdnObject) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -1243,8 +1228,6 @@ impl GlobalRulestackInfo {
 #[doc = "PaloAltoNetworks GlobalRulestack"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GlobalRulestackResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "PAN Rulestack Describe Object"]
     pub properties: RulestackProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -1259,7 +1242,6 @@ pub struct GlobalRulestackResource {
 impl GlobalRulestackResource {
     pub fn new(properties: RulestackProperties, location: String) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
             location,
@@ -1448,8 +1430,6 @@ impl ListFirewallsResponse {
 #[doc = "LocalRulestack rule list"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LocalRulesResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "definition of rule"]
     pub properties: RuleEntry,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -1459,7 +1439,6 @@ pub struct LocalRulesResource {
 impl LocalRulesResource {
     pub fn new(properties: RuleEntry) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -2148,8 +2127,6 @@ impl PlanData {
 #[doc = "PostRulestack rule list"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PostRulesResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "definition of rule"]
     pub properties: RuleEntry,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -2159,7 +2136,6 @@ pub struct PostRulesResource {
 impl PostRulesResource {
     pub fn new(properties: RuleEntry) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -2188,8 +2164,6 @@ impl PostRulesResourceListResult {
 #[doc = "PreRulestack rule list"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PreRulesResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "definition of rule"]
     pub properties: RuleEntry,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -2199,7 +2173,6 @@ pub struct PreRulesResource {
 impl PreRulesResource {
     pub fn new(properties: RuleEntry) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -2253,8 +2226,6 @@ impl PredefinedUrlCategory {
 #[doc = "GlobalRulestack prefixList"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrefixListGlobalRulestackResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "prefix entry"]
     pub properties: PrefixObject,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -2264,7 +2235,6 @@ pub struct PrefixListGlobalRulestackResource {
 impl PrefixListGlobalRulestackResource {
     pub fn new(properties: PrefixObject) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -2293,8 +2263,6 @@ impl PrefixListGlobalRulestackResourceListResult {
 #[doc = "LocalRulestack prefixList"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrefixListResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "prefix entry"]
     pub properties: PrefixObject,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -2304,7 +2272,6 @@ pub struct PrefixListResource {
 impl PrefixListResource {
     pub fn new(properties: PrefixObject) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }

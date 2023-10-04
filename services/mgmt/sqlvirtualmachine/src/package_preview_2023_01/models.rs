@@ -458,8 +458,6 @@ pub mod auto_patching_settings {
 #[doc = "A SQL Server availability group listener."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailabilityGroupListener {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of an availability group listener."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AvailabilityGroupListenerProperties>,

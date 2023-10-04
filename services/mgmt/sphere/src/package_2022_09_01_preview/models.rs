@@ -141,8 +141,6 @@ impl CatalogUpdate {
 #[doc = "An certificate resource belonging to a catalog resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Certificate {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of certificate"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CertificateProperties>,
@@ -292,8 +290,6 @@ impl CountElementsResponse {
 #[doc = "An deployment resource belonging to a device group resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Deployment {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of deployment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DeploymentProperties>,
@@ -352,8 +348,6 @@ impl DeploymentProperties {
 #[doc = "An device resource belonging to a device group resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Device {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of device"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DeviceProperties>,
@@ -366,8 +360,6 @@ impl Device {
 #[doc = "An device group resource belonging to a product resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeviceGroup {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of deviceGroup"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DeviceGroupProperties>,
@@ -679,8 +671,6 @@ impl GenerateCapabilityImageRequest {
 #[doc = "An image resource belonging to a catalog resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Image {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of image"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ImageProperties>,
@@ -1060,8 +1050,6 @@ impl PagedDeviceInsight {
 #[doc = "An product resource belonging to a catalog resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Product {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of product"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProductProperties>,

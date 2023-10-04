@@ -104,8 +104,6 @@ impl CloudErrorBody {
 #[doc = "Describes a federated identity credential."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FederatedIdentityCredential {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties associated with a federated identity credential."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FederatedIdentityCredentialProperties>,
@@ -289,8 +287,6 @@ impl Resource {
 #[doc = "Describes a system assigned identity resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemAssignedIdentity {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The geo-location where the resource lives"]
     pub location: String,
     #[doc = "Resource tags"]
@@ -303,7 +299,6 @@ pub struct SystemAssignedIdentity {
 impl SystemAssignedIdentity {
     pub fn new(location: String) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             location,
             tags: None,
             properties: None,

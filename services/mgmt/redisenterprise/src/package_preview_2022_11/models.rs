@@ -286,8 +286,6 @@ impl ClusterUpdate {
 #[doc = "Describes a database on the RedisEnterprise cluster"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Database {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of RedisEnterprise databases, as opposed to general resource properties like location, tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseProperties>,

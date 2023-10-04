@@ -530,8 +530,6 @@ impl Serialize for FirmwareType {
 #[doc = "Defines the GuestAgent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestAgent {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Defines the resource properties."]
     pub properties: GuestAgentProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -541,7 +539,6 @@ pub struct GuestAgent {
 impl GuestAgent {
     pub fn new(properties: GuestAgentProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -850,8 +847,6 @@ impl HttpProxyConfiguration {
 #[doc = "Defines the HybridIdentityMetadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HybridIdentityMetadata {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Defines the resource properties."]
     pub properties: HybridIdentityMetadataProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -861,7 +856,6 @@ pub struct HybridIdentityMetadata {
 impl HybridIdentityMetadata {
     pub fn new(properties: HybridIdentityMetadataProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -1024,8 +1018,6 @@ pub mod identity {
 #[doc = "Defines the inventory item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InventoryItem {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Defines the resource properties."]
     pub properties: InventoryItemPropertiesUnion,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -1038,7 +1030,6 @@ pub struct InventoryItem {
 impl InventoryItem {
     pub fn new(properties: InventoryItemPropertiesUnion) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
             kind: None,

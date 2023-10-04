@@ -6,8 +6,6 @@ use std::str::FromStr;
 #[doc = "Represents an Active Directory administrator."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActiveDirectoryAdministrator {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of an Active Directory administrator."]
     pub properties: AdministratorProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -17,7 +15,6 @@ pub struct ActiveDirectoryAdministrator {
 impl ActiveDirectoryAdministrator {
     pub fn new(properties: AdministratorProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -531,8 +528,6 @@ pub mod check_name_availability_response {
 #[doc = "Represents a Configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Configuration {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProperties>,
@@ -815,8 +810,6 @@ pub mod data_encryption {
 #[doc = "Represents a Database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Database {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseProperties>,
@@ -997,8 +990,6 @@ impl FastProvisioningEditionCapability {
 #[doc = "Represents a server firewall rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirewallRule {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a server firewall rule."]
     pub properties: FirewallRuleProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -1008,7 +999,6 @@ pub struct FirewallRule {
 impl FirewallRule {
     pub fn new(properties: FirewallRuleProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -1524,8 +1514,6 @@ pub mod high_availability {
 #[doc = "Represents a logFile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogFile {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a logFile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LogFileProperties>,
@@ -1743,18 +1731,13 @@ impl LtrPreBackupResponseProperties {
 #[doc = "Response for the LTR backup Operation API call"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LtrServerBackupOperation {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Response for the backup request."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LtrBackupOperationResponseProperties>,
 }
 impl LtrServerBackupOperation {
     pub fn new() -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties: None,
-        }
+        Self { properties: None }
     }
 }
 #[doc = "A list of long term retention backup operations for server."]
@@ -3063,8 +3046,6 @@ impl Server {
 #[doc = "Server backup properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerBackup {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a server backup."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerBackupProperties>,

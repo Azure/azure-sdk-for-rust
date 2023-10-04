@@ -97,14 +97,6 @@ impl ExceptionResponse {
         Self::default()
     }
 }
-#[doc = "LimitJson abstract class."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LimitJsonObject {}
-impl LimitJsonObject {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The limit object type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "limitObjectType")]
@@ -114,8 +106,6 @@ pub enum LimitJsonObjectUnion {
 #[doc = "The resource quota limit value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LimitObject {
-    #[serde(flatten)]
-    pub limit_json_object: LimitJsonObject,
     #[doc = "The quota/limit value"]
     pub value: i32,
     #[doc = "The quota or usages limit types."]
@@ -123,12 +113,8 @@ pub struct LimitObject {
     pub limit_type: Option<LimitTypes>,
 }
 impl LimitObject {
-    pub fn new(limit_json_object: LimitJsonObject, value: i32) -> Self {
-        Self {
-            limit_json_object,
-            value,
-            limit_type: None,
-        }
+    pub fn new(value: i32) -> Self {
+        Self { value, limit_type: None }
     }
 }
 #[doc = "The limit object type."]

@@ -46,14 +46,6 @@ impl CloudErrorBody {
         Self::default()
     }
 }
-#[doc = "Describes how to generate new x.y.z version number for distribution."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DistributeVersioner {}
-impl DistributeVersioner {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Version numbering scheme to be used."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "scheme")]
@@ -64,29 +56,21 @@ pub enum DistributeVersionerUnion {
 #[doc = "Generates version number that will be latest based on existing version numbers."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DistributeVersionerLatest {
-    #[serde(flatten)]
-    pub distribute_versioner: DistributeVersioner,
     #[doc = "Major version for the generated version number. Determine what is \"latest\" based on versions with this value as the major version. -1 is equivalent to leaving it unset."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub major: Option<i32>,
 }
 impl DistributeVersionerLatest {
-    pub fn new(distribute_versioner: DistributeVersioner) -> Self {
-        Self {
-            distribute_versioner,
-            major: None,
-        }
+    pub fn new() -> Self {
+        Self { major: None }
     }
 }
 #[doc = "Generates version number based on version number of source image"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DistributeVersionerSource {
-    #[serde(flatten)]
-    pub distribute_versioner: DistributeVersioner,
-}
+pub struct DistributeVersionerSource {}
 impl DistributeVersionerSource {
-    pub fn new(distribute_versioner: DistributeVersioner) -> Self {
-        Self { distribute_versioner }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Image template is an ARM resource managed by Microsoft.VirtualMachineImages provider"]
@@ -347,25 +331,18 @@ impl ImageTemplateManagedImageDistributor {
 #[doc = "Describes an image source that is a managed image in customer subscription. This image must reside in the same subscription and region as the Image Builder template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateManagedImageSource {
-    #[serde(flatten)]
-    pub image_template_source: ImageTemplateSource,
     #[doc = "ARM resource id of the managed image in customer subscription"]
     #[serde(rename = "imageId")]
     pub image_id: String,
 }
 impl ImageTemplateManagedImageSource {
-    pub fn new(image_template_source: ImageTemplateSource, image_id: String) -> Self {
-        Self {
-            image_template_source,
-            image_id,
-        }
+    pub fn new(image_id: String) -> Self {
+        Self { image_id }
     }
 }
 #[doc = "Describes an image source from [Azure Gallery Images](https://docs.microsoft.com/en-us/rest/api/compute/virtualmachineimages)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplatePlatformImageSource {
-    #[serde(flatten)]
-    pub image_template_source: ImageTemplateSource,
     #[doc = "Image Publisher in [Azure Gallery Images](https://docs.microsoft.com/en-us/rest/api/compute/virtualmachineimages)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
@@ -386,9 +363,8 @@ pub struct ImageTemplatePlatformImageSource {
     pub plan_info: Option<PlatformImagePurchasePlan>,
 }
 impl ImageTemplatePlatformImageSource {
-    pub fn new(image_template_source: ImageTemplateSource) -> Self {
+    pub fn new() -> Self {
         Self {
-            image_template_source,
             publisher: None,
             offer: None,
             sku: None,
@@ -687,8 +663,6 @@ impl ImageTemplateSharedImageDistributor {
 #[doc = "Describes an image source that is an image version in an Azure Compute Gallery or a Direct Shared Gallery."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateSharedImageVersionSource {
-    #[serde(flatten)]
-    pub image_template_source: ImageTemplateSource,
     #[doc = "ARM resource id of the image version. When image version name is 'latest', the version is evaluated when the image build takes place."]
     #[serde(rename = "imageVersionId")]
     pub image_version_id: String,
@@ -697,9 +671,8 @@ pub struct ImageTemplateSharedImageVersionSource {
     pub exact_version: Option<String>,
 }
 impl ImageTemplateSharedImageVersionSource {
-    pub fn new(image_template_source: ImageTemplateSource, image_version_id: String) -> Self {
+    pub fn new(image_version_id: String) -> Self {
         Self {
-            image_template_source,
             image_version_id,
             exact_version: None,
         }
@@ -761,14 +734,6 @@ impl ImageTemplateShellValidator {
             sha256_checksum: None,
             inline: Vec::new(),
         }
-    }
-}
-#[doc = "Describes a virtual machine image source for building, customizing and distributing"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageTemplateSource {}
-impl ImageTemplateSource {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Specifies the type of source image you want to start with."]
@@ -1086,8 +1051,6 @@ impl Resource {
 #[doc = "Represents an output that was created by running an image template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunOutput {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Describes the properties of a run output"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RunOutputProperties>,
@@ -1237,8 +1200,6 @@ impl TrackedResource {
 #[doc = "Represents a trigger that can invoke an image template build."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Trigger {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Describes the properties of a trigger"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TriggerPropertiesUnion>,

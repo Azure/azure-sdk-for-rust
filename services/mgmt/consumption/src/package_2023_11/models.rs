@@ -418,19 +418,6 @@ impl BudgetsListResult {
         Self::default()
     }
 }
-#[doc = "A charge summary resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ChargeSummary {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-}
-impl ChargeSummary {
-    pub fn new() -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-        }
-    }
-}
 #[doc = "Specifies the kind of charge summary."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
@@ -852,17 +839,12 @@ impl HighCasedErrorResponse {
 #[doc = "Legacy charge summary."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LegacyChargeSummary {
-    #[serde(flatten)]
-    pub charge_summary: ChargeSummary,
     #[doc = "The properties of legacy charge summary."]
     pub properties: LegacyChargeSummaryProperties,
 }
 impl LegacyChargeSummary {
-    pub fn new(charge_summary: ChargeSummary, properties: LegacyChargeSummaryProperties) -> Self {
-        Self {
-            charge_summary,
-            properties,
-        }
+    pub fn new(properties: LegacyChargeSummaryProperties) -> Self {
+        Self { properties }
     }
 }
 #[doc = "The properties of legacy charge summary."]
@@ -898,17 +880,12 @@ impl LegacyChargeSummaryProperties {
 #[doc = "Legacy reservation recommendation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LegacyReservationRecommendation {
-    #[serde(flatten)]
-    pub reservation_recommendation: ReservationRecommendation,
     #[doc = "The properties of the reservation recommendation."]
     pub properties: LegacyReservationRecommendationPropertiesUnion,
 }
 impl LegacyReservationRecommendation {
-    pub fn new(reservation_recommendation: ReservationRecommendation, properties: LegacyReservationRecommendationPropertiesUnion) -> Self {
-        Self {
-            reservation_recommendation,
-            properties,
-        }
+    pub fn new(properties: LegacyReservationRecommendationPropertiesUnion) -> Self {
+        Self { properties }
     }
 }
 #[doc = "The properties of the reservation recommendation."]
@@ -1116,14 +1093,12 @@ impl LegacySingleScopeReservationRecommendationProperties {
 #[doc = "Legacy usage detail."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LegacyUsageDetail {
-    #[serde(flatten)]
-    pub usage_detail: UsageDetail,
     #[doc = "The properties of the legacy usage detail."]
     pub properties: LegacyUsageDetailProperties,
 }
 impl LegacyUsageDetail {
-    pub fn new(usage_detail: UsageDetail, properties: LegacyUsageDetailProperties) -> Self {
-        Self { usage_detail, properties }
+    pub fn new(properties: LegacyUsageDetailProperties) -> Self {
+        Self { properties }
     }
 }
 #[doc = "The properties of the legacy usage detail."]
@@ -1795,17 +1770,12 @@ impl MeterDetailsResponse {
 #[doc = "Modern charge summary."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ModernChargeSummary {
-    #[serde(flatten)]
-    pub charge_summary: ChargeSummary,
     #[doc = "The properties of modern charge summary."]
     pub properties: ModernChargeSummaryProperties,
 }
 impl ModernChargeSummary {
-    pub fn new(charge_summary: ChargeSummary, properties: ModernChargeSummaryProperties) -> Self {
-        Self {
-            charge_summary,
-            properties,
-        }
+    pub fn new(properties: ModernChargeSummaryProperties) -> Self {
+        Self { properties }
     }
 }
 #[doc = "The properties of modern charge summary."]
@@ -1856,17 +1826,12 @@ impl ModernChargeSummaryProperties {
 #[doc = "Modern reservation recommendation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ModernReservationRecommendation {
-    #[serde(flatten)]
-    pub reservation_recommendation: ReservationRecommendation,
     #[doc = "The properties of the reservation recommendation."]
     pub properties: ModernReservationRecommendationPropertiesUnion,
 }
 impl ModernReservationRecommendation {
-    pub fn new(reservation_recommendation: ReservationRecommendation, properties: ModernReservationRecommendationPropertiesUnion) -> Self {
-        Self {
-            reservation_recommendation,
-            properties,
-        }
+    pub fn new(properties: ModernReservationRecommendationPropertiesUnion) -> Self {
+        Self { properties }
     }
 }
 #[doc = "The properties of the reservation recommendation."]
@@ -2098,14 +2063,12 @@ impl ModernSingleScopeReservationRecommendationProperties {
 #[doc = "Modern usage detail."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ModernUsageDetail {
-    #[serde(flatten)]
-    pub usage_detail: UsageDetail,
     #[doc = "The properties of the usage detail."]
     pub properties: ModernUsageDetailProperties,
 }
 impl ModernUsageDetail {
-    pub fn new(usage_detail: UsageDetail, properties: ModernUsageDetailProperties) -> Self {
-        Self { usage_detail, properties }
+    pub fn new(properties: ModernUsageDetailProperties) -> Self {
+        Self { properties }
     }
 }
 #[doc = "The properties of the usage detail."]
@@ -2936,22 +2899,6 @@ impl ReservationDetailsListResult {
         Self::default()
     }
 }
-#[doc = "A reservation recommendation resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReservationRecommendation {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[serde(flatten)]
-    pub resource_attributes: ResourceAttributes,
-}
-impl ReservationRecommendation {
-    pub fn new() -> Self {
-        Self {
-            resource: Resource::default(),
-            resource_attributes: ResourceAttributes::default(),
-        }
-    }
-}
 #[doc = "Specifies the kind of reservation recommendation."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
@@ -3441,19 +3388,6 @@ pub struct TagsResult {
 impl TagsResult {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "An usage detail resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UsageDetail {
-    #[serde(flatten)]
-    pub resource: Resource,
-}
-impl UsageDetail {
-    pub fn new() -> Self {
-        Self {
-            resource: Resource::default(),
-        }
     }
 }
 #[doc = "Specifies the kind of usage details."]

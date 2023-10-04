@@ -77,14 +77,6 @@ impl ApiTokenCollection {
         Self { value, next_link: None }
     }
 }
-#[doc = "The attestation definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Attestation {}
-impl Attestation {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Type of the attestation."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -116,16 +108,11 @@ impl CapabilityJobData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudPropertyJobData {
     #[serde(flatten)]
-    pub job_data: JobData,
-    #[serde(flatten)]
     pub capability_job_data: CapabilityJobData,
 }
 impl CloudPropertyJobData {
-    pub fn new(job_data: JobData, capability_job_data: CapabilityJobData) -> Self {
-        Self {
-            job_data,
-            capability_job_data,
-        }
+    pub fn new(capability_job_data: CapabilityJobData) -> Self {
+        Self { capability_job_data }
     }
 }
 #[doc = "The paged results of entities."]
@@ -146,29 +133,22 @@ impl Collection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommandJobData {
     #[serde(flatten)]
-    pub job_data: JobData,
-    #[serde(flatten)]
     pub capability_job_data: CapabilityJobData,
 }
 impl CommandJobData {
-    pub fn new(job_data: JobData, capability_job_data: CapabilityJobData) -> Self {
-        Self {
-            job_data,
-            capability_job_data,
-        }
+    pub fn new(capability_job_data: CapabilityJobData) -> Self {
+        Self { capability_job_data }
     }
 }
 #[doc = "The date based end definition of job schedule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DateJobScheduleEnd {
-    #[serde(flatten)]
-    pub job_schedule_end: JobScheduleEnd,
     #[doc = "The date when to end the scheduled job."]
     pub date: String,
 }
 impl DateJobScheduleEnd {
-    pub fn new(job_schedule_end: JobScheduleEnd, date: String) -> Self {
-        Self { job_schedule_end, date }
+    pub fn new(date: String) -> Self {
+        Self { date }
     }
 }
 #[doc = "The device definition."]
@@ -496,14 +476,12 @@ impl DeviceTemplateCollection {
 #[doc = "The device template migration job data definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceTemplateMigrationJobData {
-    #[serde(flatten)]
-    pub job_data: JobData,
     #[doc = "The target device template to which devices will be migrated."]
     pub template: String,
 }
 impl DeviceTemplateMigrationJobData {
-    pub fn new(job_data: JobData, template: String) -> Self {
-        Self { job_data, template }
+    pub fn new(template: String) -> Self {
+        Self { template }
     }
 }
 #[doc = "The email user definition."]
@@ -674,14 +652,6 @@ pub mod file_upload {
         Failed,
     }
 }
-#[doc = "The attestation definition for an enrollment group."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GroupAttestation {}
-impl GroupAttestation {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Type of the attestation."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -694,35 +664,25 @@ pub enum GroupAttestationUnion {
 #[doc = "The symmetric key attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GroupSymmetricKeyAttestation {
-    #[serde(flatten)]
-    pub group_attestation: GroupAttestation,
     #[doc = "The symmetric key definition."]
     #[serde(rename = "symmetricKey", default, skip_serializing_if = "Option::is_none")]
     pub symmetric_key: Option<SymmetricKey>,
 }
 impl GroupSymmetricKeyAttestation {
-    pub fn new(group_attestation: GroupAttestation) -> Self {
-        Self {
-            group_attestation,
-            symmetric_key: None,
-        }
+    pub fn new() -> Self {
+        Self { symmetric_key: None }
     }
 }
 #[doc = "The X509 attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GroupX509Attestation {
-    #[serde(flatten)]
-    pub group_attestation: GroupAttestation,
     #[doc = "The X509 definition."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub x509: Option<SigningX509>,
 }
 impl GroupX509Attestation {
-    pub fn new(group_attestation: GroupAttestation) -> Self {
-        Self {
-            group_attestation,
-            x509: None,
-        }
+    pub fn new() -> Self {
+        Self { x509: None }
     }
 }
 #[doc = "The job definition."]
@@ -862,14 +822,6 @@ impl JobCollection {
         Self { value, next_link: None }
     }
 }
-#[doc = "The job data definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobData {}
-impl JobData {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Type of the job data."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -974,14 +926,6 @@ pub mod job_schedule {
         Monthly,
     }
 }
-#[doc = "The end definition of job schedule."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobScheduleEnd {}
-impl JobScheduleEnd {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Type of the job schedule end."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -994,17 +938,12 @@ pub enum JobScheduleEndUnion {
 #[doc = "The occurences based end definition of job schedule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OccurrencesJobScheduleEnd {
-    #[serde(flatten)]
-    pub job_schedule_end: JobScheduleEnd,
     #[doc = "The number of occurrences after which to end the scheduled job."]
     pub occurrences: i32,
 }
 impl OccurrencesJobScheduleEnd {
-    pub fn new(job_schedule_end: JobScheduleEnd, occurrences: i32) -> Self {
-        Self {
-            job_schedule_end,
-            occurrences,
-        }
+    pub fn new(occurrences: i32) -> Self {
+        Self { occurrences }
     }
 }
 #[doc = "The organization definition."]
@@ -1060,16 +999,11 @@ impl Permission {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PropertyJobData {
     #[serde(flatten)]
-    pub job_data: JobData,
-    #[serde(flatten)]
     pub capability_job_data: CapabilityJobData,
 }
 impl PropertyJobData {
-    pub fn new(job_data: JobData, capability_job_data: CapabilityJobData) -> Self {
-        Self {
-            job_data,
-            capability_job_data,
-        }
+    pub fn new(capability_job_data: CapabilityJobData) -> Self {
+        Self { capability_job_data }
     }
 }
 #[doc = "The role definition."]
@@ -1290,18 +1224,13 @@ impl SymmetricKey {
 #[doc = "The symmetric key attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SymmetricKeyAttestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     #[doc = "The symmetric key definition."]
     #[serde(rename = "symmetricKey")]
     pub symmetric_key: SymmetricKey,
 }
 impl SymmetricKeyAttestation {
-    pub fn new(attestation: Attestation, symmetric_key: SymmetricKey) -> Self {
-        Self {
-            attestation,
-            symmetric_key,
-        }
+    pub fn new(symmetric_key: SymmetricKey) -> Self {
+        Self { symmetric_key }
     }
 }
 #[doc = "The trusted platform module definition."]
@@ -1319,14 +1248,12 @@ impl Tpm {
 #[doc = "The TPM attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TpmAttestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     #[doc = "The trusted platform module definition."]
     pub tpm: Tpm,
 }
 impl TpmAttestation {
-    pub fn new(attestation: Attestation, tpm: Tpm) -> Self {
-        Self { attestation, tpm }
+    pub fn new(tpm: Tpm) -> Self {
+        Self { tpm }
     }
 }
 #[doc = "The user definition."]
@@ -1389,14 +1316,12 @@ impl X509 {
 #[doc = "The X509 attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509Attestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     #[doc = "The X509 definition."]
     pub x509: X509,
 }
 impl X509Attestation {
-    pub fn new(attestation: Attestation, x509: X509) -> Self {
-        Self { attestation, x509 }
+    pub fn new(x509: X509) -> Self {
+        Self { x509 }
     }
 }
 #[doc = "The X509 certificate definition."]

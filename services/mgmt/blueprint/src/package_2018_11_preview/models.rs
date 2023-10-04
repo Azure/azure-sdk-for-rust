@@ -3,19 +3,6 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "Represents a blueprint artifact."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Artifact {
-    #[serde(flatten)]
-    pub azure_resource_base: AzureResourceBase,
-}
-impl Artifact {
-    pub fn new() -> Self {
-        Self {
-            azure_resource_base: AzureResourceBase::default(),
-        }
-    }
-}
 #[doc = "Specifies the kind of blueprint artifact."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
@@ -838,14 +825,12 @@ impl ParameterValue {
 #[doc = "Blueprint artifact that applies a Policy assignment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyAssignmentArtifact {
-    #[serde(flatten)]
-    pub artifact: Artifact,
     #[doc = "Properties of a Policy assignment blueprint artifact."]
     pub properties: PolicyAssignmentArtifactProperties,
 }
 impl PolicyAssignmentArtifact {
-    pub fn new(artifact: Artifact, properties: PolicyAssignmentArtifactProperties) -> Self {
-        Self { artifact, properties }
+    pub fn new(properties: PolicyAssignmentArtifactProperties) -> Self {
+        Self { properties }
     }
 }
 #[doc = "Properties of a Policy assignment blueprint artifact."]
@@ -1035,14 +1020,12 @@ impl ResourceProviderOperationList {
 #[doc = "Blueprint artifact that applies a Role assignment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentArtifact {
-    #[serde(flatten)]
-    pub artifact: Artifact,
     #[doc = "Properties of a Role assignment blueprint artifact."]
     pub properties: RoleAssignmentArtifactProperties,
 }
 impl RoleAssignmentArtifact {
-    pub fn new(artifact: Artifact, properties: RoleAssignmentArtifactProperties) -> Self {
-        Self { artifact, properties }
+    pub fn new(properties: RoleAssignmentArtifactProperties) -> Self {
+        Self { properties }
     }
 }
 #[doc = "Properties of a Role assignment blueprint artifact."]
@@ -1163,14 +1146,12 @@ pub mod shared_blueprint_properties {
 #[doc = "Blueprint artifact that deploys a Resource Manager template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TemplateArtifact {
-    #[serde(flatten)]
-    pub artifact: Artifact,
     #[doc = "Properties of a Resource Manager template blueprint artifact."]
     pub properties: TemplateArtifactProperties,
 }
 impl TemplateArtifact {
-    pub fn new(artifact: Artifact, properties: TemplateArtifactProperties) -> Self {
-        Self { artifact, properties }
+    pub fn new(properties: TemplateArtifactProperties) -> Self {
+        Self { properties }
     }
 }
 #[doc = "Properties of a Resource Manager template blueprint artifact."]

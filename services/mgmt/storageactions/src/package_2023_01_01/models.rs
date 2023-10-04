@@ -722,8 +722,6 @@ pub mod storage_task_properties {
 #[doc = "Storage Tasks run report instance"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageTaskReportInstance {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Storage task execution report for a run instance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageTaskReportProperties>,

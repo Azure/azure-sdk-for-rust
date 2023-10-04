@@ -92,8 +92,6 @@ impl AccountProperties {
 #[doc = "The details of a account resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "List of all the New relic accounts for the given user"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccountProperties>,
@@ -1164,8 +1162,6 @@ impl OrganizationProperties {
 #[doc = "The details of a Organization resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OrganizationResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Details of Organizations"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OrganizationProperties>,
@@ -1257,8 +1253,6 @@ impl PlanDataProperties {
 #[doc = "The details of a PlanData resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PlanDataResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Plan details"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PlanDataProperties>,
@@ -1692,17 +1686,12 @@ impl Serialize for TagAction {
 #[doc = "A tag rule belonging to NewRelic account"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TagRule {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The resource-specific properties for this resource."]
     pub properties: MonitoringTagRulesProperties,
 }
 impl TagRule {
     pub fn new(properties: MonitoringTagRulesProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "The response of a TagRule list operation."]

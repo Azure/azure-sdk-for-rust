@@ -602,8 +602,6 @@ impl AzureQueryProperties {
 #[doc = "Definition of the certificate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Certificate {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of the certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CertificateProperties>,
@@ -734,8 +732,6 @@ impl CertificateUpdateProperties {
 #[doc = "Definition of the connection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Connection {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Definition of the connection properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConnectionProperties>,
@@ -1069,8 +1065,6 @@ pub mod content_source {
 #[doc = "Definition of the credential."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Credential {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Definition of the credential properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CredentialProperties>,
@@ -1196,8 +1190,6 @@ impl CredentialUpdateProperties {
 #[doc = "Definition of the Dsc Compilation job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscCompilationJob {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Definition of Dsc Compilation job properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DscCompilationJobProperties>,
@@ -1660,8 +1652,6 @@ impl DscMetaConfiguration {
 #[doc = "Definition of a DscNode"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscNode {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a DscNode"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DscNodeProperties>,
@@ -1674,8 +1664,6 @@ impl DscNode {
 #[doc = "Definition of the dsc node configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DscNodeConfiguration {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties for the DscNodeConfiguration"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DscNodeConfigurationProperties>,
@@ -2345,8 +2333,6 @@ pub mod identity {
 #[doc = "Definition of the job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Job {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Definition of job properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobProperties>,
@@ -2359,17 +2345,12 @@ impl Job {
 #[doc = "Job collection item properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobCollectionItem {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Job collection item properties."]
     pub properties: JobCollectionItemProperties,
 }
 impl JobCollectionItem {
     pub fn new(properties: JobCollectionItemProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "Job collection item properties."]
@@ -3425,8 +3406,6 @@ impl OperationListResult {
 #[doc = "A private endpoint connection"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a private endpoint connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
@@ -3491,8 +3470,6 @@ impl PrivateEndpointProperty {
 #[doc = "A private link resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a private link resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
@@ -4352,8 +4329,6 @@ impl SucScheduleProperties {
 #[doc = "Definition of the schedule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Schedule {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Definition of schedule parameters."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScheduleProperties>,
@@ -4595,8 +4570,6 @@ pub mod sku {
 #[doc = "Definition of the source control."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceControl {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Definition of the source control properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SourceControlProperties>,
@@ -5644,8 +5617,6 @@ impl UsageListResult {
 #[doc = "Definition of the variable."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Variable {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Definition of the variable properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VariableProperties>,
@@ -5878,8 +5849,6 @@ impl WatcherUpdateProperties {
 #[doc = "Definition of the webhook type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Webhook {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Definition of the webhook properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebhookProperties>,

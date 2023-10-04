@@ -66,13 +66,6 @@ impl ApiTokenCollection {
         Self { value, next_link: None }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Attestation {}
-impl Attestation {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Type of the attestation."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -719,17 +712,12 @@ impl SymmetricKey {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SymmetricKeyAttestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     #[serde(rename = "symmetricKey")]
     pub symmetric_key: SymmetricKey,
 }
 impl SymmetricKeyAttestation {
-    pub fn new(attestation: Attestation, symmetric_key: SymmetricKey) -> Self {
-        Self {
-            attestation,
-            symmetric_key,
-        }
+    pub fn new(symmetric_key: SymmetricKey) -> Self {
+        Self { symmetric_key }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -745,13 +733,11 @@ impl Tpm {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TpmAttestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     pub tpm: Tpm,
 }
 impl TpmAttestation {
-    pub fn new(attestation: Attestation, tpm: Tpm) -> Self {
-        Self { attestation, tpm }
+    pub fn new(tpm: Tpm) -> Self {
+        Self { tpm }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -802,13 +788,11 @@ impl X509 {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509Attestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     pub x509: X509,
 }
 impl X509Attestation {
-    pub fn new(attestation: Attestation, x509: X509) -> Self {
-        Self { attestation, x509 }
+    pub fn new(x509: X509) -> Self {
+        Self { x509 }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

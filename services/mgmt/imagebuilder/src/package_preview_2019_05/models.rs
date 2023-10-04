@@ -176,8 +176,6 @@ pub mod image_template_identity {
 #[doc = "Describes an image source that is an installation ISO. Currently only supports Red Hat Enterprise Linux 7.2-7.5 ISO's."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateIsoSource {
-    #[serde(flatten)]
-    pub image_template_source: ImageTemplateSource,
     #[doc = "URI to get the ISO image. This URI has to be accessible to the resource provider at the time of the image template creation."]
     #[serde(rename = "sourceUri")]
     pub source_uri: String,
@@ -186,9 +184,8 @@ pub struct ImageTemplateIsoSource {
     pub sha256_checksum: String,
 }
 impl ImageTemplateIsoSource {
-    pub fn new(image_template_source: ImageTemplateSource, source_uri: String, sha256_checksum: String) -> Self {
+    pub fn new(source_uri: String, sha256_checksum: String) -> Self {
         Self {
-            image_template_source,
             source_uri,
             sha256_checksum,
         }
@@ -285,25 +282,18 @@ impl ImageTemplateManagedImageDistributor {
 #[doc = "Describes an image source that is a managed image in customer subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateManagedImageSource {
-    #[serde(flatten)]
-    pub image_template_source: ImageTemplateSource,
     #[doc = "ARM resource id of the managed image in customer subscription"]
     #[serde(rename = "imageId")]
     pub image_id: String,
 }
 impl ImageTemplateManagedImageSource {
-    pub fn new(image_template_source: ImageTemplateSource, image_id: String) -> Self {
-        Self {
-            image_template_source,
-            image_id,
-        }
+    pub fn new(image_id: String) -> Self {
+        Self { image_id }
     }
 }
 #[doc = "Describes an image source from [Azure Gallery Images](https://docs.microsoft.com/en-us/rest/api/compute/virtualmachineimages)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplatePlatformImageSource {
-    #[serde(flatten)]
-    pub image_template_source: ImageTemplateSource,
     #[doc = "Image Publisher in [Azure Gallery Images](https://docs.microsoft.com/en-us/rest/api/compute/virtualmachineimages)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
@@ -318,9 +308,8 @@ pub struct ImageTemplatePlatformImageSource {
     pub version: Option<String>,
 }
 impl ImageTemplatePlatformImageSource {
-    pub fn new(image_template_source: ImageTemplateSource) -> Self {
+    pub fn new() -> Self {
         Self {
-            image_template_source,
             publisher: None,
             offer: None,
             sku: None,
@@ -463,18 +452,13 @@ impl ImageTemplateSharedImageDistributor {
 #[doc = "Describes an image source that is an image version in a shared image gallery."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateSharedImageVersionSource {
-    #[serde(flatten)]
-    pub image_template_source: ImageTemplateSource,
     #[doc = "ARM resource id of the image version in the shared image gallery"]
     #[serde(rename = "imageVersionId")]
     pub image_version_id: String,
 }
 impl ImageTemplateSharedImageVersionSource {
-    pub fn new(image_template_source: ImageTemplateSource, image_version_id: String) -> Self {
-        Self {
-            image_template_source,
-            image_version_id,
-        }
+    pub fn new(image_version_id: String) -> Self {
+        Self { image_version_id }
     }
 }
 #[doc = "Runs a shell script during the customization phase (Linux). Corresponds to Packer shell provisioner. Exactly one of 'scriptUri' or 'inline' can be specified."]
@@ -504,14 +488,6 @@ impl ImageTemplateShellCustomizer {
             sha256_checksum: None,
             inline: Vec::new(),
         }
-    }
-}
-#[doc = "Describes a virtual machine image source for building, customizing and distributing"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageTemplateSource {}
-impl ImageTemplateSource {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Specifies the type of source image you want to start with."]

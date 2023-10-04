@@ -154,14 +154,11 @@ pub mod aks {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AksComputeSecrets {
     #[serde(flatten)]
-    pub compute_secrets: ComputeSecrets,
-    #[serde(flatten)]
     pub aks_compute_secrets_properties: AksComputeSecretsProperties,
 }
 impl AksComputeSecrets {
-    pub fn new(compute_secrets: ComputeSecrets) -> Self {
+    pub fn new() -> Self {
         Self {
-            compute_secrets,
             aks_compute_secrets_properties: AksComputeSecretsProperties::default(),
         }
     }
@@ -1229,14 +1226,6 @@ impl ComputeResource {
         Self::default()
     }
 }
-#[doc = "Secrets related to a Machine Learning compute. Might differ for every type of compute."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ComputeSecrets {}
-impl ComputeSecrets {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The type of compute"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "computeType")]
@@ -1395,14 +1384,11 @@ impl Databricks {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabricksComputeSecrets {
     #[serde(flatten)]
-    pub compute_secrets: ComputeSecrets,
-    #[serde(flatten)]
     pub databricks_compute_secrets_properties: DatabricksComputeSecretsProperties,
 }
 impl DatabricksComputeSecrets {
-    pub fn new(compute_secrets: ComputeSecrets) -> Self {
+    pub fn new() -> Self {
         Self {
-            compute_secrets,
             databricks_compute_secrets_properties: DatabricksComputeSecretsProperties::default(),
         }
     }
@@ -3749,16 +3735,13 @@ impl VirtualMachineImage {
 #[doc = "Secrets related to a Machine Learning compute based on AKS."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineSecrets {
-    #[serde(flatten)]
-    pub compute_secrets: ComputeSecrets,
     #[doc = "Admin credentials for virtual machine"]
     #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
     pub administrator_account: Option<VirtualMachineSshCredentials>,
 }
 impl VirtualMachineSecrets {
-    pub fn new(compute_secrets: ComputeSecrets) -> Self {
+    pub fn new() -> Self {
         Self {
-            compute_secrets,
             administrator_account: None,
         }
     }

@@ -627,8 +627,6 @@ impl ServiceSpecification {
 #[doc = "Information regarding Subscription Quota Item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionQuotaItem {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "SubscriptionQuotaItem Properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubscriptionQuotaItemProperties>,
@@ -2845,8 +2843,6 @@ impl SnapshotsList {
 #[doc = "Subvolume Information properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubvolumeInfo {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "This represents path associated with the subvolume"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubvolumeProperties>,

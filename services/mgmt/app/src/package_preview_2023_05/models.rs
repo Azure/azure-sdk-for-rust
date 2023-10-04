@@ -109,8 +109,6 @@ impl AppleRegistration {
 #[doc = "Configuration settings for the Azure ContainerApp Service Authentication / Authorization feature."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthConfig {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "AuthConfig resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<auth_config::Properties>,
@@ -213,8 +211,6 @@ impl AvailableOperations {
 #[doc = "A workload profile with specific hardware configure to run container apps."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AvailableWorkloadProfile {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Region of the workload profile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -574,8 +570,6 @@ impl BaseContainer {
 #[doc = "Billing meter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BillingMeter {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Region for the billing meter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -1085,8 +1079,6 @@ impl ConnectedEnvironmentCollection {
 #[doc = "Storage resource for connectedEnvironment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConnectedEnvironmentStorage {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Storage properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<connected_environment_storage::Properties>,
@@ -1988,8 +1980,6 @@ pub mod dapr {
 #[doc = "Dapr Component."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DaprComponent {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Dapr Component resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<dapr_component::Properties>,
@@ -2295,8 +2285,6 @@ impl DiagnosticSupportTopic {
 #[doc = "Diagnostics data for a resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Diagnostics {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Diagnostics resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<diagnostics::Properties>,
@@ -4215,8 +4203,6 @@ pub mod managed_environment {
 #[doc = "Storage resource for managedEnvironment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedEnvironmentStorage {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Storage properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<managed_environment_storage::Properties>,
@@ -4572,8 +4558,6 @@ impl RegistryInfo {
 #[doc = "Container App Revision Replica."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Replica {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Replica resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<replica::Properties>,
@@ -4775,8 +4759,6 @@ impl Resource {
 #[doc = "Container App Revision."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Revision {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Revision resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<revision::Properties>,
@@ -5119,8 +5101,6 @@ impl ServiceBind {
 #[doc = "Container App SourceControl."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceControl {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "SourceControl resource specific properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<source_control::Properties>,
@@ -5697,8 +5677,6 @@ pub mod system_data {
 #[doc = "Collection of all the workload Profile States for a Managed Environment.."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadProfileStates {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Workload Profile resource specific properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<workload_profile_states::Properties>,

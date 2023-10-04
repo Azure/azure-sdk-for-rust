@@ -377,8 +377,6 @@ pub mod error_response {
 #[doc = "Guest configuration assignment is an association between a VM and guest configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GuestConfigurationAssignment {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Guest configuration assignment properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GuestConfigurationAssignmentProperties>,

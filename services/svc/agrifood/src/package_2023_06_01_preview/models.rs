@@ -21,18 +21,13 @@ impl AdditionalProviderParameters {
 #[doc = "Api Key Auth Credentials class for API Key based Auth."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiKeyAuthCredentials {
-    #[serde(flatten)]
-    pub auth_credentials: AuthCredentials,
     #[doc = "Properties of the key vault."]
     #[serde(rename = "apiKey", default, skip_serializing_if = "Option::is_none")]
     pub api_key: Option<KeyVaultProperties>,
 }
 impl ApiKeyAuthCredentials {
-    pub fn new(auth_credentials: AuthCredentials) -> Self {
-        Self {
-            auth_credentials,
-            api_key: None,
-        }
+    pub fn new() -> Self {
+        Self { api_key: None }
     }
 }
 #[doc = "Schema of application data resource."]
@@ -292,14 +287,6 @@ impl AttachmentListResponse {
             skip_token: None,
             next_link: None,
         }
-    }
-}
-#[doc = "AuthCredentials abstract base class for Auth Purpose. ."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthCredentials {}
-impl AuthCredentials {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "CredentialTypeEnum."]
@@ -1847,14 +1834,6 @@ impl FieldListResponse {
         }
     }
 }
-#[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GeoJsonObject {}
-impl GeoJsonObject {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "GeoJSON object type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -2680,8 +2659,6 @@ impl Measures {
 #[doc = "MultiPolygon geometry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MultiPolygon {
-    #[serde(flatten)]
-    pub geo_json_object: GeoJsonObject,
     #[doc = "Gets or sets Coordinates of GeoJSON Object.\r\nIt must be an array of polygons, each polygon contains list of linear rings.\r\nFor Polygons with more than one of these rings, the first MUST be the exterior ring,\r\nand any others MUST be interior rings."]
     #[serde(
         default,
@@ -2691,11 +2668,8 @@ pub struct MultiPolygon {
     pub coordinates: Vec<Vec<Vec<Vec<f64>>>>,
 }
 impl MultiPolygon {
-    pub fn new(geo_json_object: GeoJsonObject) -> Self {
-        Self {
-            geo_json_object,
-            coordinates: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { coordinates: Vec::new() }
     }
 }
 #[doc = "Api Model for nutrient analysis object."]
@@ -2842,8 +2816,6 @@ impl NutrientAnalysisListResponse {
 #[doc = "OAuthClientCredentials for clientId clientSecret auth."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OAuthClientCredentials {
-    #[serde(flatten)]
-    pub auth_credentials: AuthCredentials,
     #[doc = "ClientId associated with the provider."]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
@@ -2852,9 +2824,8 @@ pub struct OAuthClientCredentials {
     pub client_secret: Option<KeyVaultProperties>,
 }
 impl OAuthClientCredentials {
-    pub fn new(auth_credentials: AuthCredentials) -> Self {
+    pub fn new() -> Self {
         Self {
-            auth_credentials,
             client_id: None,
             client_secret: None,
         }
@@ -3409,8 +3380,6 @@ impl PlantingProductDetail {
 #[doc = "Point geometry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Point {
-    #[serde(flatten)]
-    pub geo_json_object: GeoJsonObject,
     #[doc = "Gets or sets the coordinate of this point.\r\nIt must be an array of 2 or 3 elements for a 2D or 3D system."]
     #[serde(
         default,
@@ -3420,18 +3389,13 @@ pub struct Point {
     pub coordinates: Vec<f64>,
 }
 impl Point {
-    pub fn new(geo_json_object: GeoJsonObject) -> Self {
-        Self {
-            geo_json_object,
-            coordinates: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { coordinates: Vec::new() }
     }
 }
 #[doc = "Polygon geometry."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Polygon {
-    #[serde(flatten)]
-    pub geo_json_object: GeoJsonObject,
     #[doc = "Gets or sets type of the GeoJSON Object.\r\nIt must be an array of linear ring coordinate arrays.\r\nFor Polygons with more than one of these rings, the first MUST be the exterior ring,\r\nand any others MUST be interior rings."]
     #[serde(
         default,
@@ -3441,11 +3405,8 @@ pub struct Polygon {
     pub coordinates: Vec<Vec<Vec<f64>>>,
 }
 impl Polygon {
-    pub fn new(geo_json_object: GeoJsonObject) -> Self {
-        Self {
-            geo_json_object,
-            coordinates: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { coordinates: Vec::new() }
     }
 }
 #[doc = "Schema for storing port values."]

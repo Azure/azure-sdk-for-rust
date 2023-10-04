@@ -6,8 +6,6 @@ use std::str::FromStr;
 #[doc = "Policy that determines how a video can be accessed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicyEntity {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Application level properties for the access policy resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccessPolicyProperties>,
@@ -164,14 +162,6 @@ pub mod account_encryption {
         }
     }
 }
-#[doc = "Base class for access policies authentication methods."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthenticationBase {}
-impl AuthenticationBase {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
@@ -317,8 +307,6 @@ pub mod ecc_token_key {
 #[doc = "The representation of an edge module."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgeModuleEntity {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Application level properties for the edge module resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EdgeModuleProperties>,
@@ -505,8 +493,6 @@ impl ErrorResponse {
 #[doc = "Properties for access validation based on JSON Web Tokens (JWT)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JwtAuthentication {
-    #[serde(flatten)]
-    pub authentication_base: AuthenticationBase,
     #[doc = "List of expected token issuers. Token issuer is valid if it matches at least one of the given values."]
     #[serde(
         default,
@@ -537,9 +523,8 @@ pub struct JwtAuthentication {
     pub keys: Vec<TokenKeyUnion>,
 }
 impl JwtAuthentication {
-    pub fn new(authentication_base: AuthenticationBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            authentication_base,
             issuers: Vec::new(),
             audiences: Vec::new(),
             claims: Vec::new(),
@@ -1264,8 +1249,6 @@ impl VideoAnalyzerUpdate {
 #[doc = "The representation of a single video in a Video Analyzer account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VideoEntity {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Application level properties for the video resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VideoProperties>,

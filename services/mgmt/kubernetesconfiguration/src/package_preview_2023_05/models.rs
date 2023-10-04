@@ -6,8 +6,6 @@ use std::str::FromStr;
 #[doc = "Extension scope settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterScopeSettings {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Extension scope settings"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<cluster_scope_settings::Properties>,
@@ -104,8 +102,6 @@ impl ErrorResponse {
 #[doc = "The Extension Type object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionType {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<extension_type::Properties>,
 }
@@ -190,8 +186,6 @@ pub mod extension_type {
 #[doc = "The Extension Type Version object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionTypeVersionForReleaseTrain {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<extension_type_version_for_release_train::Properties>,
 }

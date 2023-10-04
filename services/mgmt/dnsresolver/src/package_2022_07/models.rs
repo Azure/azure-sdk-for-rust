@@ -267,8 +267,6 @@ pub mod dns_resolver_properties {
 #[doc = "Describes a forwarding rule within a DNS forwarding ruleset."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ForwardingRule {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "ETag of the forwarding rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -281,7 +279,6 @@ pub struct ForwardingRule {
 impl ForwardingRule {
     pub fn new(properties: ForwardingRuleProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             etag: None,
             properties,
             system_data: None,
@@ -883,8 +880,6 @@ impl VirtualNetworkDnsForwardingRulesetListResult {
 #[doc = "Describes a virtual network link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualNetworkLink {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "ETag of the virtual network link."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -897,7 +892,6 @@ pub struct VirtualNetworkLink {
 impl VirtualNetworkLink {
     pub fn new(properties: VirtualNetworkLinkProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             etag: None,
             properties,
             system_data: None,

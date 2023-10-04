@@ -42,18 +42,13 @@ pub enum AdvancedFilterUnion {
 #[doc = "Information about the azure function destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFunctionEventSubscriptionDestination {
-    #[serde(flatten)]
-    pub event_subscription_destination: EventSubscriptionDestination,
     #[doc = "The properties that represent the Azure Function destination of an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureFunctionEventSubscriptionDestinationProperties>,
 }
 impl AzureFunctionEventSubscriptionDestination {
-    pub fn new(event_subscription_destination: EventSubscriptionDestination) -> Self {
-        Self {
-            event_subscription_destination,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that represent the Azure Function destination of an event subscription."]
@@ -379,14 +374,6 @@ pub mod connection_state {
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
-    }
-}
-#[doc = "Information about the dead letter destination for an event subscription. To configure a deadletter destination, do not directly instantiate an object of this class. Instead, instantiate an object of a derived class. Currently, StorageBlobDeadLetterDestination is the only class that derives from this class."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeadLetterDestination {}
-impl DeadLetterDestination {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Type of the endpoint for the dead letter destination"]
@@ -1030,18 +1017,13 @@ impl DynamicDeliveryAttributeMappingProperties {
 #[doc = "Information about the event hub destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubEventSubscriptionDestination {
-    #[serde(flatten)]
-    pub event_subscription_destination: EventSubscriptionDestination,
     #[doc = "The properties for a event hub destination."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventHubEventSubscriptionDestinationProperties>,
 }
 impl EventHubEventSubscriptionDestination {
-    pub fn new(event_subscription_destination: EventSubscriptionDestination) -> Self {
-        Self {
-            event_subscription_destination,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties for a event hub destination."]
@@ -1079,14 +1061,6 @@ pub struct EventSubscription {
 impl EventSubscription {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Information about the destination for an event subscription."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventSubscriptionDestination {}
-impl EventSubscriptionDestination {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Type of the endpoint for the event subscription destination."]
@@ -1599,18 +1573,13 @@ impl ExtensionTopicProperties {
 #[doc = "Information about the HybridConnection destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HybridConnectionEventSubscriptionDestination {
-    #[serde(flatten)]
-    pub event_subscription_destination: EventSubscriptionDestination,
     #[doc = "The properties for a hybrid connection destination."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HybridConnectionEventSubscriptionDestinationProperties>,
 }
 impl HybridConnectionEventSubscriptionDestination {
-    pub fn new(event_subscription_destination: EventSubscriptionDestination) -> Self {
-        Self {
-            event_subscription_destination,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties for a hybrid connection destination."]
@@ -1772,14 +1741,6 @@ impl InlineEventProperties {
         Self::default()
     }
 }
-#[doc = "By default, Event Grid expects events to be in the Event Grid event schema. Specifying an input schema mapping enables publishing to Event Grid using a custom input schema. Currently, the only supported type of InputSchemaMapping is 'JsonInputSchemaMapping'."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InputSchemaMapping {}
-impl InputSchemaMapping {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Type of the custom mapping"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "inputSchemaMappingType")]
@@ -1838,18 +1799,13 @@ impl JsonFieldWithDefault {
 #[doc = "This enables publishing to Event Grid using a custom input schema. This can be used to map properties from a custom input JSON schema to the Event Grid event schema."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JsonInputSchemaMapping {
-    #[serde(flatten)]
-    pub input_schema_mapping: InputSchemaMapping,
     #[doc = "This can be used to map properties of a source schema (or default values, for certain supported properties) to properties of the EventGridEvent schema."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JsonInputSchemaMappingProperties>,
 }
 impl JsonInputSchemaMapping {
-    pub fn new(input_schema_mapping: InputSchemaMapping) -> Self {
-        Self {
-            input_schema_mapping,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "This can be used to map properties of a source schema (or default values, for certain supported properties) to properties of the EventGridEvent schema."]
@@ -3199,18 +3155,13 @@ impl RetryPolicy {
 #[doc = "Information about the service bus destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusQueueEventSubscriptionDestination {
-    #[serde(flatten)]
-    pub event_subscription_destination: EventSubscriptionDestination,
     #[doc = "The properties that represent the Service Bus destination of an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceBusQueueEventSubscriptionDestinationProperties>,
 }
 impl ServiceBusQueueEventSubscriptionDestination {
-    pub fn new(event_subscription_destination: EventSubscriptionDestination) -> Self {
-        Self {
-            event_subscription_destination,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that represent the Service Bus destination of an event subscription."]
@@ -3236,18 +3187,13 @@ impl ServiceBusQueueEventSubscriptionDestinationProperties {
 #[doc = "Information about the service bus topic destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusTopicEventSubscriptionDestination {
-    #[serde(flatten)]
-    pub event_subscription_destination: EventSubscriptionDestination,
     #[doc = "The properties that represent the Service Bus Topic destination of an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceBusTopicEventSubscriptionDestinationProperties>,
 }
 impl ServiceBusTopicEventSubscriptionDestination {
-    pub fn new(event_subscription_destination: EventSubscriptionDestination) -> Self {
-        Self {
-            event_subscription_destination,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that represent the Service Bus Topic destination of an event subscription."]
@@ -3305,18 +3251,13 @@ impl StaticDeliveryAttributeMappingProperties {
 #[doc = "Information about the storage blob based dead letter destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageBlobDeadLetterDestination {
-    #[serde(flatten)]
-    pub dead_letter_destination: DeadLetterDestination,
     #[doc = "Properties of the storage blob based dead letter destination."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageBlobDeadLetterDestinationProperties>,
 }
 impl StorageBlobDeadLetterDestination {
-    pub fn new(dead_letter_destination: DeadLetterDestination) -> Self {
-        Self {
-            dead_letter_destination,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "Properties of the storage blob based dead letter destination."]
@@ -3337,18 +3278,13 @@ impl StorageBlobDeadLetterDestinationProperties {
 #[doc = "Information about the storage queue destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageQueueEventSubscriptionDestination {
-    #[serde(flatten)]
-    pub event_subscription_destination: EventSubscriptionDestination,
     #[doc = "The properties for a storage queue destination."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageQueueEventSubscriptionDestinationProperties>,
 }
 impl StorageQueueEventSubscriptionDestination {
-    pub fn new(event_subscription_destination: EventSubscriptionDestination) -> Self {
-        Self {
-            event_subscription_destination,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties for a storage queue destination."]
@@ -4410,18 +4346,13 @@ impl VerifiedPartnersListResult {
 #[doc = "Information about the webhook destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebHookEventSubscriptionDestination {
-    #[serde(flatten)]
-    pub event_subscription_destination: EventSubscriptionDestination,
     #[doc = "Information about the webhook destination properties for an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebHookEventSubscriptionDestinationProperties>,
 }
 impl WebHookEventSubscriptionDestination {
-    pub fn new(event_subscription_destination: EventSubscriptionDestination) -> Self {
-        Self {
-            event_subscription_destination,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "Information about the webhook destination properties for an event subscription."]

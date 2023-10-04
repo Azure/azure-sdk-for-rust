@@ -3,14 +3,6 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "Action to be applied."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Action {}
-impl Action {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Action that should be applied."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "actionType")]
@@ -22,15 +14,13 @@ pub enum ActionUnion {
 #[doc = "Add action groups to alert processing rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddActionGroups {
-    #[serde(flatten)]
-    pub action: Action,
     #[doc = "List of action group Ids to add to alert processing rule."]
     #[serde(rename = "actionGroupIds")]
     pub action_group_ids: Vec<String>,
 }
 impl AddActionGroups {
-    pub fn new(action: Action, action_group_ids: Vec<String>) -> Self {
-        Self { action, action_group_ids }
+    pub fn new(action_group_ids: Vec<String>) -> Self {
+        Self { action_group_ids }
     }
 }
 #[doc = "Alert processing rule object containing target scopes, conditions and scheduling logic."]
@@ -236,8 +226,6 @@ pub type Conditions = Vec<Condition>;
 #[doc = "Add logic for alerts correlation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CorrelateAlerts {
-    #[serde(flatten)]
-    pub action: Action,
     #[doc = "The list of conditions for the alerts correlations."]
     #[serde(rename = "correlateBy")]
     pub correlate_by: Vec<CorrelateBy>,
@@ -251,9 +239,8 @@ pub struct CorrelateAlerts {
     pub notifications_for_correlated_alerts: Option<correlate_alerts::NotificationsForCorrelatedAlerts>,
 }
 impl CorrelateAlerts {
-    pub fn new(action: Action, correlate_by: Vec<CorrelateBy>, correlation_interval: String, priority: i32) -> Self {
+    pub fn new(correlate_by: Vec<CorrelateBy>, correlation_interval: String, priority: i32) -> Self {
         Self {
-            action,
             correlate_by,
             correlation_interval,
             priority,
@@ -465,13 +452,10 @@ pub enum RecurrenceUnion {
 }
 #[doc = "Indicates if all action groups should be removed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RemoveAllActionGroups {
-    #[serde(flatten)]
-    pub action: Action,
-}
+pub struct RemoveAllActionGroups {}
 impl RemoveAllActionGroups {
-    pub fn new(action: Action) -> Self {
-        Self { action }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "An azure resource object"]

@@ -36,8 +36,6 @@ impl AadPropertiesResource {
 #[doc = "Azure File Share workload specific backup copy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFileShareRecoveryPoint {
-    #[serde(flatten)]
-    pub recovery_point: RecoveryPoint,
     #[doc = "Type of the backup copy. Specifies whether it is a crash consistent backup or app consistent."]
     #[serde(rename = "recoveryPointType", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_type: Option<String>,
@@ -55,9 +53,8 @@ pub struct AzureFileShareRecoveryPoint {
     pub recovery_point_properties: Option<RecoveryPointProperties>,
 }
 impl AzureFileShareRecoveryPoint {
-    pub fn new(recovery_point: RecoveryPoint) -> Self {
+    pub fn new() -> Self {
         Self {
-            recovery_point,
             recovery_point_type: None,
             recovery_point_time: None,
             file_share_snapshot_uri: None,
@@ -69,8 +66,6 @@ impl AzureFileShareRecoveryPoint {
 #[doc = "AzureFileShare Restore Request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFileShareRestoreRequest {
-    #[serde(flatten)]
-    pub restore_request: RestoreRequest,
     #[doc = "Type of this recovery."]
     #[serde(rename = "recoveryType", default, skip_serializing_if = "Option::is_none")]
     pub recovery_type: Option<azure_file_share_restore_request::RecoveryType>,
@@ -96,9 +91,8 @@ pub struct AzureFileShareRestoreRequest {
     pub target_details: Option<TargetAfsRestoreInfo>,
 }
 impl AzureFileShareRestoreRequest {
-    pub fn new(restore_request: RestoreRequest) -> Self {
+    pub fn new() -> Self {
         Self {
-            restore_request,
             recovery_type: None,
             source_resource_id: None,
             copy_options: None,
@@ -1346,8 +1340,6 @@ impl AzureWorkloadPointInTimeRestoreRequest {
 #[doc = "Workload specific recovery point, specifically encapsulates full/diff recovery point"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadRecoveryPoint {
-    #[serde(flatten)]
-    pub recovery_point: RecoveryPoint,
     #[doc = "UTC time at which recovery point was created"]
     #[serde(rename = "recoveryPointTimeInUTC", default, with = "azure_core::date::rfc3339::option")]
     pub recovery_point_time_in_utc: Option<time::OffsetDateTime>,
@@ -1370,9 +1362,8 @@ pub struct AzureWorkloadRecoveryPoint {
     pub recovery_point_properties: Option<RecoveryPointProperties>,
 }
 impl AzureWorkloadRecoveryPoint {
-    pub fn new(recovery_point: RecoveryPoint) -> Self {
+    pub fn new() -> Self {
         Self {
-            recovery_point,
             recovery_point_time_in_utc: None,
             type_: None,
             recovery_point_tier_details: Vec::new(),
@@ -1430,8 +1421,6 @@ pub mod azure_workload_recovery_point {
 #[doc = "AzureWorkload-specific restore."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadRestoreRequest {
-    #[serde(flatten)]
-    pub restore_request: RestoreRequest,
     #[doc = "Type of this recovery."]
     #[serde(rename = "recoveryType", default, skip_serializing_if = "Option::is_none")]
     pub recovery_type: Option<azure_workload_restore_request::RecoveryType>,
@@ -1452,9 +1441,8 @@ pub struct AzureWorkloadRestoreRequest {
     pub target_virtual_machine_id: Option<String>,
 }
 impl AzureWorkloadRestoreRequest {
-    pub fn new(restore_request: RestoreRequest) -> Self {
+    pub fn new() -> Self {
         Self {
-            restore_request,
             recovery_type: None,
             source_resource_id: None,
             property_bag: None,
@@ -1565,18 +1553,13 @@ impl AzureWorkloadSapHanaPointInTimeRecoveryPoint {
 #[doc = "AzureWorkload SAP Hana -specific restore. Specifically for PointInTime/Log restore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadSapHanaPointInTimeRestoreRequest {
-    #[serde(flatten)]
-    pub azure_workload_sap_hana_restore_request: AzureWorkloadSapHanaRestoreRequest,
     #[doc = "PointInTime value"]
     #[serde(rename = "pointInTime", default, with = "azure_core::date::rfc3339::option")]
     pub point_in_time: Option<time::OffsetDateTime>,
 }
 impl AzureWorkloadSapHanaPointInTimeRestoreRequest {
-    pub fn new(azure_workload_sap_hana_restore_request: AzureWorkloadSapHanaRestoreRequest) -> Self {
-        Self {
-            azure_workload_sap_hana_restore_request,
-            point_in_time: None,
-        }
+    pub fn new() -> Self {
+        Self { point_in_time: None }
     }
 }
 #[doc = "SAPHana specific recoverypoint, specifically encapsulates full/diff recoverypoints"]
@@ -2841,8 +2824,6 @@ pub mod generic_protected_item {
 #[doc = "Generic backup copy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GenericRecoveryPoint {
-    #[serde(flatten)]
-    pub recovery_point: RecoveryPoint,
     #[doc = "Friendly name of the backup copy."]
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
@@ -2860,9 +2841,8 @@ pub struct GenericRecoveryPoint {
     pub recovery_point_properties: Option<RecoveryPointProperties>,
 }
 impl GenericRecoveryPoint {
-    pub fn new(recovery_point: RecoveryPoint) -> Self {
+    pub fn new() -> Self {
         Self {
-            recovery_point,
             friendly_name: None,
             recovery_point_type: None,
             recovery_point_time: None,
@@ -2874,8 +2854,6 @@ impl GenericRecoveryPoint {
 #[doc = "IaaS VM workload specific backup copy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IaasVmRecoveryPoint {
-    #[serde(flatten)]
-    pub recovery_point: RecoveryPoint,
     #[doc = "Type of the backup copy."]
     #[serde(rename = "recoveryPointType", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_type: Option<String>,
@@ -2935,9 +2913,8 @@ pub struct IaasVmRecoveryPoint {
     pub recovery_point_properties: Option<RecoveryPointProperties>,
 }
 impl IaasVmRecoveryPoint {
-    pub fn new(recovery_point: RecoveryPoint) -> Self {
+    pub fn new() -> Self {
         Self {
-            recovery_point,
             recovery_point_type: None,
             recovery_point_time: None,
             recovery_point_additional_info: None,
@@ -2960,8 +2937,6 @@ impl IaasVmRecoveryPoint {
 #[doc = "IaaS VM workload-specific restore."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IaasVmRestoreRequest {
-    #[serde(flatten)]
-    pub restore_request: RestoreRequest,
     #[doc = "ID of the backup copy to be recovered."]
     #[serde(rename = "recoveryPointId", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_id: Option<String>,
@@ -3033,9 +3008,8 @@ pub struct IaasVmRestoreRequest {
     pub identity_based_restore_details: Option<IdentityBasedRestoreDetails>,
 }
 impl IaasVmRestoreRequest {
-    pub fn new(restore_request: RestoreRequest) -> Self {
+    pub fn new() -> Self {
         Self {
-            restore_request,
             recovery_point_id: None,
             recovery_type: None,
             source_resource_id: None,
@@ -4063,14 +4037,6 @@ impl OperationStatusError {
         Self::default()
     }
 }
-#[doc = "Base class for additional information of operation status."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationStatusExtendedInfo {}
-impl OperationStatusExtendedInfo {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
@@ -4084,25 +4050,18 @@ pub enum OperationStatusExtendedInfoUnion {
 #[doc = "Operation status job extended info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationStatusJobExtendedInfo {
-    #[serde(flatten)]
-    pub operation_status_extended_info: OperationStatusExtendedInfo,
     #[doc = "ID of the job created for this protected item."]
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
 }
 impl OperationStatusJobExtendedInfo {
-    pub fn new(operation_status_extended_info: OperationStatusExtendedInfo) -> Self {
-        Self {
-            operation_status_extended_info,
-            job_id: None,
-        }
+    pub fn new() -> Self {
+        Self { job_id: None }
     }
 }
 #[doc = "Operation status extended info for list of jobs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationStatusJobsExtendedInfo {
-    #[serde(flatten)]
-    pub operation_status_extended_info: OperationStatusExtendedInfo,
     #[doc = "IDs of the jobs created for the protected item."]
     #[serde(
         rename = "jobIds",
@@ -4116,9 +4075,8 @@ pub struct OperationStatusJobsExtendedInfo {
     pub failed_jobs_error: Option<serde_json::Value>,
 }
 impl OperationStatusJobsExtendedInfo {
-    pub fn new(operation_status_extended_info: OperationStatusExtendedInfo) -> Self {
+    pub fn new() -> Self {
         Self {
-            operation_status_extended_info,
             job_ids: Vec::new(),
             failed_jobs_error: None,
         }
@@ -4127,25 +4085,18 @@ impl OperationStatusJobsExtendedInfo {
 #[doc = "Operation status extended info for ILR provision action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationStatusProvisionIlrExtendedInfo {
-    #[serde(flatten)]
-    pub operation_status_extended_info: OperationStatusExtendedInfo,
     #[doc = "Target details for file / folder restore."]
     #[serde(rename = "recoveryTarget", default, skip_serializing_if = "Option::is_none")]
     pub recovery_target: Option<InstantItemRecoveryTarget>,
 }
 impl OperationStatusProvisionIlrExtendedInfo {
-    pub fn new(operation_status_extended_info: OperationStatusExtendedInfo) -> Self {
-        Self {
-            operation_status_extended_info,
-            recovery_target: None,
-        }
+    pub fn new() -> Self {
+        Self { recovery_target: None }
     }
 }
 #[doc = "Operation status extended info for Updated Recovery Point."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationStatusRecoveryPointExtendedInfo {
-    #[serde(flatten)]
-    pub operation_status_extended_info: OperationStatusExtendedInfo,
     #[doc = "Base class for backup copies. Workload-specific backup copies are derived from this class."]
     #[serde(rename = "updatedRecoveryPoint", default, skip_serializing_if = "Option::is_none")]
     pub updated_recovery_point: Option<RecoveryPointUnion>,
@@ -4154,9 +4105,8 @@ pub struct OperationStatusRecoveryPointExtendedInfo {
     pub deleted_backup_item_version: Option<String>,
 }
 impl OperationStatusRecoveryPointExtendedInfo {
-    pub fn new(operation_status_extended_info: OperationStatusExtendedInfo) -> Self {
+    pub fn new() -> Self {
         Self {
-            operation_status_extended_info,
             updated_recovery_point: None,
             deleted_backup_item_version: None,
         }
@@ -4669,14 +4619,6 @@ impl ProtectedItemResourceList {
         Self::default()
     }
 }
-#[doc = "Base class for backup copies. Workload-specific backup copies are derived from this class."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryPoint {}
-impl RecoveryPoint {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
@@ -4907,14 +4849,6 @@ pub struct RestoreFileSpecs {
 impl RestoreFileSpecs {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Base class for restore request. Workload-specific restore requests are derived from this class."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestoreRequest {}
-impl RestoreRequest {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]

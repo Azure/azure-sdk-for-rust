@@ -6,8 +6,6 @@ use std::str::FromStr;
 #[doc = "A2A add disk(s) input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aAddDisksInput {
-    #[serde(flatten)]
-    pub add_disks_provider_specific_input: AddDisksProviderSpecificInput,
     #[doc = "The list of vm disk details."]
     #[serde(
         rename = "vmDisks",
@@ -26,9 +24,8 @@ pub struct A2aAddDisksInput {
     pub vm_managed_disks: Vec<A2aVmManagedDiskInputDetails>,
 }
 impl A2aAddDisksInput {
-    pub fn new(add_disks_provider_specific_input: AddDisksProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            add_disks_provider_specific_input,
             vm_disks: Vec::new(),
             vm_managed_disks: Vec::new(),
         }
@@ -36,35 +33,23 @@ impl A2aAddDisksInput {
 }
 #[doc = "ApplyRecoveryPoint input specific to A2A provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct A2aApplyRecoveryPointInput {
-    #[serde(flatten)]
-    pub apply_recovery_point_provider_specific_input: ApplyRecoveryPointProviderSpecificInput,
-}
+pub struct A2aApplyRecoveryPointInput {}
 impl A2aApplyRecoveryPointInput {
-    pub fn new(apply_recovery_point_provider_specific_input: ApplyRecoveryPointProviderSpecificInput) -> Self {
-        Self {
-            apply_recovery_point_provider_specific_input,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "A2A cloud creation input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct A2aContainerCreationInput {
-    #[serde(flatten)]
-    pub replication_provider_specific_container_creation_input: ReplicationProviderSpecificContainerCreationInput,
-}
+pub struct A2aContainerCreationInput {}
 impl A2aContainerCreationInput {
-    pub fn new(replication_provider_specific_container_creation_input: ReplicationProviderSpecificContainerCreationInput) -> Self {
-        Self {
-            replication_provider_specific_container_creation_input,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "A2A container mapping input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aContainerMappingInput {
-    #[serde(flatten)]
-    pub replication_provider_specific_container_mapping_input: ReplicationProviderSpecificContainerMappingInput,
     #[doc = "A value indicating whether the auto update is enabled."]
     #[serde(rename = "agentAutoUpdateStatus", default, skip_serializing_if = "Option::is_none")]
     pub agent_auto_update_status: Option<a2a_container_mapping_input::AgentAutoUpdateStatus>,
@@ -76,9 +61,8 @@ pub struct A2aContainerMappingInput {
     pub automation_account_authentication_type: Option<a2a_container_mapping_input::AutomationAccountAuthenticationType>,
 }
 impl A2aContainerMappingInput {
-    pub fn new(replication_provider_specific_container_mapping_input: ReplicationProviderSpecificContainerMappingInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            replication_provider_specific_container_mapping_input,
             agent_auto_update_status: None,
             automation_account_arm_id: None,
             automation_account_authentication_type: None,
@@ -172,8 +156,6 @@ pub mod a2a_container_mapping_input {
 #[doc = "A2A create protection intent input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aCreateProtectionIntentInput {
-    #[serde(flatten)]
-    pub create_protection_intent_provider_specific_details: CreateProtectionIntentProviderSpecificDetails,
     #[doc = "The fabric specific object Id of the virtual machine."]
     #[serde(rename = "fabricObjectId")]
     pub fabric_object_id: String,
@@ -261,7 +243,6 @@ pub struct A2aCreateProtectionIntentInput {
 }
 impl A2aCreateProtectionIntentInput {
     pub fn new(
-        create_protection_intent_provider_specific_details: CreateProtectionIntentProviderSpecificDetails,
         fabric_object_id: String,
         primary_location: String,
         recovery_location: String,
@@ -270,7 +251,6 @@ impl A2aCreateProtectionIntentInput {
         recovery_resource_group_id: String,
     ) -> Self {
         Self {
-            create_protection_intent_provider_specific_details,
             fabric_object_id,
             primary_location,
             recovery_location,
@@ -458,35 +438,23 @@ pub mod a2a_create_protection_intent_input {
 }
 #[doc = "ApplyRecoveryPoint input specific to A2ACrossClusterMigration provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct A2aCrossClusterMigrationApplyRecoveryPointInput {
-    #[serde(flatten)]
-    pub apply_recovery_point_provider_specific_input: ApplyRecoveryPointProviderSpecificInput,
-}
+pub struct A2aCrossClusterMigrationApplyRecoveryPointInput {}
 impl A2aCrossClusterMigrationApplyRecoveryPointInput {
-    pub fn new(apply_recovery_point_provider_specific_input: ApplyRecoveryPointProviderSpecificInput) -> Self {
-        Self {
-            apply_recovery_point_provider_specific_input,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "A2ACrossClusterMigration cloud creation input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct A2aCrossClusterMigrationContainerCreationInput {
-    #[serde(flatten)]
-    pub replication_provider_specific_container_creation_input: ReplicationProviderSpecificContainerCreationInput,
-}
+pub struct A2aCrossClusterMigrationContainerCreationInput {}
 impl A2aCrossClusterMigrationContainerCreationInput {
-    pub fn new(replication_provider_specific_container_creation_input: ReplicationProviderSpecificContainerCreationInput) -> Self {
-        Self {
-            replication_provider_specific_container_creation_input,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "A2A Cross-Cluster Migration enable protection input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aCrossClusterMigrationEnableProtectionInput {
-    #[serde(flatten)]
-    pub enable_protection_provider_specific_input: EnableProtectionProviderSpecificInput,
     #[doc = "The fabric specific object Id of the virtual machine."]
     #[serde(rename = "fabricObjectId", default, skip_serializing_if = "Option::is_none")]
     pub fabric_object_id: Option<String>,
@@ -495,9 +463,8 @@ pub struct A2aCrossClusterMigrationEnableProtectionInput {
     pub recovery_container_id: Option<String>,
 }
 impl A2aCrossClusterMigrationEnableProtectionInput {
-    pub fn new(enable_protection_provider_specific_input: EnableProtectionProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            enable_protection_provider_specific_input,
             fabric_object_id: None,
             recovery_container_id: None,
         }
@@ -505,22 +472,15 @@ impl A2aCrossClusterMigrationEnableProtectionInput {
 }
 #[doc = "A2A Cross-Cluster Migration Policy creation input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct A2aCrossClusterMigrationPolicyCreationInput {
-    #[serde(flatten)]
-    pub policy_provider_specific_input: PolicyProviderSpecificInput,
-}
+pub struct A2aCrossClusterMigrationPolicyCreationInput {}
 impl A2aCrossClusterMigrationPolicyCreationInput {
-    pub fn new(policy_provider_specific_input: PolicyProviderSpecificInput) -> Self {
-        Self {
-            policy_provider_specific_input,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "A2A provider specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aCrossClusterMigrationReplicationDetails {
-    #[serde(flatten)]
-    pub replication_provider_specific_settings: ReplicationProviderSpecificSettings,
     #[doc = "The fabric specific object Id of the virtual machine."]
     #[serde(rename = "fabricObjectId", default, skip_serializing_if = "Option::is_none")]
     pub fabric_object_id: Option<String>,
@@ -541,9 +501,8 @@ pub struct A2aCrossClusterMigrationReplicationDetails {
     pub lifecycle_id: Option<String>,
 }
 impl A2aCrossClusterMigrationReplicationDetails {
-    pub fn new(replication_provider_specific_settings: ReplicationProviderSpecificSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            replication_provider_specific_settings,
             fabric_object_id: None,
             primary_fabric_location: None,
             os_type: None,
@@ -556,8 +515,6 @@ impl A2aCrossClusterMigrationReplicationDetails {
 #[doc = "A2A enable protection input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aEnableProtectionInput {
-    #[serde(flatten)]
-    pub enable_protection_provider_specific_input: EnableProtectionProviderSpecificInput,
     #[doc = "The fabric specific object Id of the virtual machine."]
     #[serde(rename = "fabricObjectId")]
     pub fabric_object_id: String,
@@ -624,9 +581,8 @@ pub struct A2aEnableProtectionInput {
     pub recovery_capacity_reservation_group_id: Option<String>,
 }
 impl A2aEnableProtectionInput {
-    pub fn new(enable_protection_provider_specific_input: EnableProtectionProviderSpecificInput, fabric_object_id: String) -> Self {
+    pub fn new(fabric_object_id: String) -> Self {
         Self {
-            enable_protection_provider_specific_input,
             fabric_object_id,
             recovery_container_id: None,
             recovery_resource_group_id: None,
@@ -651,8 +607,6 @@ impl A2aEnableProtectionInput {
 #[doc = "Model class for event details of a A2A event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aEventDetails {
-    #[serde(flatten)]
-    pub event_provider_specific_details: EventProviderSpecificDetails,
     #[doc = "The protected item arm name."]
     #[serde(rename = "protectedItemName", default, skip_serializing_if = "Option::is_none")]
     pub protected_item_name: Option<String>,
@@ -673,9 +627,8 @@ pub struct A2aEventDetails {
     pub remote_fabric_location: Option<String>,
 }
 impl A2aEventDetails {
-    pub fn new(event_provider_specific_details: EventProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            event_provider_specific_details,
             protected_item_name: None,
             fabric_object_id: None,
             fabric_name: None,
@@ -748,8 +701,6 @@ impl A2aFabricSpecificLocationDetails {
 #[doc = "A2A Policy creation input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aPolicyCreationInput {
-    #[serde(flatten)]
-    pub policy_provider_specific_input: PolicyProviderSpecificInput,
     #[doc = "The duration in minutes until which the recovery points need to be stored."]
     #[serde(rename = "recoveryPointHistory", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_history: Option<i32>,
@@ -764,12 +715,8 @@ pub struct A2aPolicyCreationInput {
     pub multi_vm_sync_status: a2a_policy_creation_input::MultiVmSyncStatus,
 }
 impl A2aPolicyCreationInput {
-    pub fn new(
-        policy_provider_specific_input: PolicyProviderSpecificInput,
-        multi_vm_sync_status: a2a_policy_creation_input::MultiVmSyncStatus,
-    ) -> Self {
+    pub fn new(multi_vm_sync_status: a2a_policy_creation_input::MultiVmSyncStatus) -> Self {
         Self {
-            policy_provider_specific_input,
             recovery_point_history: None,
             crash_consistent_frequency_in_minutes: None,
             app_consistent_frequency_in_minutes: None,
@@ -820,8 +767,6 @@ pub mod a2a_policy_creation_input {
 #[doc = "A2A specific policy details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aPolicyDetails {
-    #[serde(flatten)]
-    pub policy_provider_specific_details: PolicyProviderSpecificDetails,
     #[doc = "The recovery point threshold in minutes."]
     #[serde(rename = "recoveryPointThresholdInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_threshold_in_minutes: Option<i32>,
@@ -839,9 +784,8 @@ pub struct A2aPolicyDetails {
     pub crash_consistent_frequency_in_minutes: Option<i32>,
 }
 impl A2aPolicyDetails {
-    pub fn new(policy_provider_specific_details: PolicyProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            policy_provider_specific_details,
             recovery_point_threshold_in_minutes: None,
             recovery_point_history: None,
             app_consistent_frequency_in_minutes: None,
@@ -1042,8 +986,6 @@ impl A2aProtectedManagedDiskDetails {
 #[doc = "A2A provider specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aProtectionContainerMappingDetails {
-    #[serde(flatten)]
-    pub protection_container_mapping_provider_specific_details: ProtectionContainerMappingProviderSpecificDetails,
     #[doc = "A value indicating whether the auto update is enabled."]
     #[serde(rename = "agentAutoUpdateStatus", default, skip_serializing_if = "Option::is_none")]
     pub agent_auto_update_status: Option<a2a_protection_container_mapping_details::AgentAutoUpdateStatus>,
@@ -1061,9 +1003,8 @@ pub struct A2aProtectionContainerMappingDetails {
     pub job_schedule_name: Option<String>,
 }
 impl A2aProtectionContainerMappingDetails {
-    pub fn new(protection_container_mapping_provider_specific_details: ProtectionContainerMappingProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            protection_container_mapping_provider_specific_details,
             agent_auto_update_status: None,
             automation_account_arm_id: None,
             automation_account_authentication_type: None,
@@ -1231,8 +1172,6 @@ impl A2aProtectionIntentManagedDiskInputDetails {
 #[doc = "A2A provider specific recovery point details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aRecoveryPointDetails {
-    #[serde(flatten)]
-    pub provider_specific_recovery_point_details: ProviderSpecificRecoveryPointDetails,
     #[doc = "A value indicating whether the recovery point is multi VM consistent."]
     #[serde(rename = "recoveryPointSyncType", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_sync_type: Option<a2a_recovery_point_details::RecoveryPointSyncType>,
@@ -1245,9 +1184,8 @@ pub struct A2aRecoveryPointDetails {
     pub disks: Vec<String>,
 }
 impl A2aRecoveryPointDetails {
-    pub fn new(provider_specific_recovery_point_details: ProviderSpecificRecoveryPointDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            provider_specific_recovery_point_details,
             recovery_point_sync_type: None,
             disks: Vec::new(),
         }
@@ -1298,8 +1236,6 @@ pub mod a2a_recovery_point_details {
 #[doc = "A2A remove disk(s) input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aRemoveDisksInput {
-    #[serde(flatten)]
-    pub remove_disks_provider_specific_input: RemoveDisksProviderSpecificInput,
     #[doc = "The list of vm disk vhd URIs."]
     #[serde(
         rename = "vmDisksUris",
@@ -1318,9 +1254,8 @@ pub struct A2aRemoveDisksInput {
     pub vm_managed_disks_ids: Vec<String>,
 }
 impl A2aRemoveDisksInput {
-    pub fn new(remove_disks_provider_specific_input: RemoveDisksProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            remove_disks_provider_specific_input,
             vm_disks_uris: Vec::new(),
             vm_managed_disks_ids: Vec::new(),
         }
@@ -1329,8 +1264,6 @@ impl A2aRemoveDisksInput {
 #[doc = "A2A provider specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aReplicationDetails {
-    #[serde(flatten)]
-    pub replication_provider_specific_settings: ReplicationProviderSpecificSettings,
     #[doc = "The fabric specific object Id of the virtual machine."]
     #[serde(rename = "fabricObjectId", default, skip_serializing_if = "Option::is_none")]
     pub fabric_object_id: Option<String>,
@@ -1519,9 +1452,8 @@ pub struct A2aReplicationDetails {
     pub churn_option_selected: Option<a2a_replication_details::ChurnOptionSelected>,
 }
 impl A2aReplicationDetails {
-    pub fn new(replication_provider_specific_settings: ReplicationProviderSpecificSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            replication_provider_specific_settings,
             fabric_object_id: None,
             initial_primary_zone: None,
             initial_primary_fabric_location: None,
@@ -1735,8 +1667,6 @@ pub mod a2a_replication_details {
 #[doc = "A2A provider specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aReplicationIntentDetails {
-    #[serde(flatten)]
-    pub replication_protection_intent_provider_specific_settings: ReplicationProtectionIntentProviderSpecificSettings,
     #[doc = "The fabric specific object Id of the virtual machine."]
     #[serde(rename = "fabricObjectId", default, skip_serializing_if = "Option::is_none")]
     pub fabric_object_id: Option<String>,
@@ -1815,12 +1745,8 @@ pub struct A2aReplicationIntentDetails {
     pub automation_account_authentication_type: Option<a2a_replication_intent_details::AutomationAccountAuthenticationType>,
 }
 impl A2aReplicationIntentDetails {
-    pub fn new(
-        replication_protection_intent_provider_specific_settings: ReplicationProtectionIntentProviderSpecificSettings,
-        recovery_availability_type: String,
-    ) -> Self {
+    pub fn new(recovery_availability_type: String) -> Self {
         Self {
-            replication_protection_intent_provider_specific_settings,
             fabric_object_id: None,
             primary_location: None,
             recovery_location: None,
@@ -1970,8 +1896,6 @@ pub mod a2a_replication_intent_details {
 #[doc = "Azure specific reprotect input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aReprotectInput {
-    #[serde(flatten)]
-    pub reverse_replication_provider_specific_input: ReverseReplicationProviderSpecificInput,
     #[doc = "The recovery container Id."]
     #[serde(rename = "recoveryContainerId", default, skip_serializing_if = "Option::is_none")]
     pub recovery_container_id: Option<String>,
@@ -1997,9 +1921,8 @@ pub struct A2aReprotectInput {
     pub policy_id: Option<String>,
 }
 impl A2aReprotectInput {
-    pub fn new(reverse_replication_provider_specific_input: ReverseReplicationProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            reverse_replication_provider_specific_input,
             recovery_container_id: None,
             vm_disks: Vec::new(),
             recovery_resource_group_id: None,
@@ -2012,8 +1935,6 @@ impl A2aReprotectInput {
 #[doc = "A2A specific switch protection input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aSwitchProtectionInput {
-    #[serde(flatten)]
-    pub switch_protection_provider_specific_input: SwitchProtectionProviderSpecificInput,
     #[doc = "The recovery container Id."]
     #[serde(rename = "recoveryContainerId", default, skip_serializing_if = "Option::is_none")]
     pub recovery_container_id: Option<String>,
@@ -2065,9 +1986,8 @@ pub struct A2aSwitchProtectionInput {
     pub disk_encryption_info: Option<DiskEncryptionInfo>,
 }
 impl A2aSwitchProtectionInput {
-    pub fn new(switch_protection_provider_specific_input: SwitchProtectionProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            switch_protection_provider_specific_input,
             recovery_container_id: None,
             vm_disks: Vec::new(),
             vm_managed_disks: Vec::new(),
@@ -2087,8 +2007,6 @@ impl A2aSwitchProtectionInput {
 #[doc = "A2A provider specific input for test failover."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aTestFailoverInput {
-    #[serde(flatten)]
-    pub test_failover_provider_specific_input: TestFailoverProviderSpecificInput,
     #[doc = "The recovery point id to be passed to test failover to a particular recovery point. In case of latest recovery point, null should be passed."]
     #[serde(rename = "recoveryPointId", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_id: Option<String>,
@@ -2097,9 +2015,8 @@ pub struct A2aTestFailoverInput {
     pub cloud_service_creation_option: Option<String>,
 }
 impl A2aTestFailoverInput {
-    pub fn new(test_failover_provider_specific_input: TestFailoverProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            test_failover_provider_specific_input,
             recovery_point_id: None,
             cloud_service_creation_option: None,
         }
@@ -2108,8 +2025,6 @@ impl A2aTestFailoverInput {
 #[doc = "A2A provider specific input for unplanned failover."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aUnplannedFailoverInput {
-    #[serde(flatten)]
-    pub unplanned_failover_provider_specific_input: UnplannedFailoverProviderSpecificInput,
     #[doc = "The recovery point id to be passed to failover to a particular recovery point. In case of latest recovery point, null should be passed."]
     #[serde(rename = "recoveryPointId", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_id: Option<String>,
@@ -2118,9 +2033,8 @@ pub struct A2aUnplannedFailoverInput {
     pub cloud_service_creation_option: Option<String>,
 }
 impl A2aUnplannedFailoverInput {
-    pub fn new(unplanned_failover_provider_specific_input: UnplannedFailoverProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            unplanned_failover_provider_specific_input,
             recovery_point_id: None,
             cloud_service_creation_option: None,
         }
@@ -2184,8 +2098,6 @@ pub mod a2a_unprotected_disk_details {
 #[doc = "A2A update protection container mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aUpdateContainerMappingInput {
-    #[serde(flatten)]
-    pub replication_provider_specific_update_container_mapping_input: ReplicationProviderSpecificUpdateContainerMappingInput,
     #[doc = "A value indicating whether the auto update is enabled."]
     #[serde(rename = "agentAutoUpdateStatus", default, skip_serializing_if = "Option::is_none")]
     pub agent_auto_update_status: Option<a2a_update_container_mapping_input::AgentAutoUpdateStatus>,
@@ -2197,11 +2109,8 @@ pub struct A2aUpdateContainerMappingInput {
     pub automation_account_authentication_type: Option<a2a_update_container_mapping_input::AutomationAccountAuthenticationType>,
 }
 impl A2aUpdateContainerMappingInput {
-    pub fn new(
-        replication_provider_specific_update_container_mapping_input: ReplicationProviderSpecificUpdateContainerMappingInput,
-    ) -> Self {
+    pub fn new() -> Self {
         Self {
-            replication_provider_specific_update_container_mapping_input,
             agent_auto_update_status: None,
             automation_account_arm_id: None,
             automation_account_authentication_type: None,
@@ -2295,8 +2204,6 @@ pub mod a2a_update_container_mapping_input {
 #[doc = "InMage Azure V2 input to update replication protected item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct A2aUpdateReplicationProtectedItemInput {
-    #[serde(flatten)]
-    pub update_replication_protected_item_provider_input: UpdateReplicationProtectedItemProviderInput,
     #[doc = "The target cloud service ARM Id (for V1)."]
     #[serde(rename = "recoveryCloudServiceId", default, skip_serializing_if = "Option::is_none")]
     pub recovery_cloud_service_id: Option<String>,
@@ -2331,9 +2238,8 @@ pub struct A2aUpdateReplicationProtectedItemInput {
     pub recovery_capacity_reservation_group_id: Option<String>,
 }
 impl A2aUpdateReplicationProtectedItemInput {
-    pub fn new(update_replication_protected_item_provider_input: UpdateReplicationProtectedItemProviderInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            update_replication_protected_item_provider_input,
             recovery_cloud_service_id: None,
             recovery_resource_group_id: None,
             managed_disk_update_details: Vec::new(),
@@ -2524,14 +2430,6 @@ pub struct AddDisksInputProperties {
 impl AddDisksInputProperties {
     pub fn new(provider_specific_details: AddDisksProviderSpecificInputUnion) -> Self {
         Self { provider_specific_details }
-    }
-}
-#[doc = "Add Disks provider specific input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AddDisksProviderSpecificInput {}
-impl AddDisksProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The class type."]
@@ -2830,14 +2728,6 @@ impl ApplianceResourceDetails {
         Self::default()
     }
 }
-#[doc = "Appliance specific details."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplianceSpecificDetails {}
-impl ApplianceSpecificDetails {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Gets the class type. Overridden in derived classes."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -2873,14 +2763,6 @@ impl ApplyRecoveryPointInputProperties {
         }
     }
 }
-#[doc = "Provider specific input for apply recovery point."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplyRecoveryPointProviderSpecificInput {}
-impl ApplyRecoveryPointProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -2907,8 +2789,6 @@ impl AsrJobDetails {
 #[doc = "This class represents the task details for an automation runbook."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationRunbookTaskDetails {
-    #[serde(flatten)]
-    pub task_type_details: TaskTypeDetails,
     #[doc = "The recovery plan task name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -2938,9 +2818,8 @@ pub struct AutomationRunbookTaskDetails {
     pub is_primary_side_script: Option<bool>,
 }
 impl AutomationRunbookTaskDetails {
-    pub fn new(task_type_details: TaskTypeDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            task_type_details,
             name: None,
             cloud_service_name: None,
             subscription_id: None,
@@ -2956,25 +2835,18 @@ impl AutomationRunbookTaskDetails {
 #[doc = "Fabric provider specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFabricCreationInput {
-    #[serde(flatten)]
-    pub fabric_specific_creation_input: FabricSpecificCreationInput,
     #[doc = "The Location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
 impl AzureFabricCreationInput {
-    pub fn new(fabric_specific_creation_input: FabricSpecificCreationInput) -> Self {
-        Self {
-            fabric_specific_creation_input,
-            location: None,
-        }
+    pub fn new() -> Self {
+        Self { location: None }
     }
 }
 #[doc = "Azure Fabric Specific Details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFabricSpecificDetails {
-    #[serde(flatten)]
-    pub fabric_specific_details: FabricSpecificDetails,
     #[doc = "The Location for the Azure fabric."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -3011,9 +2883,8 @@ pub struct AzureFabricSpecificDetails {
     pub location_details: Vec<A2aFabricSpecificLocationDetails>,
 }
 impl AzureFabricSpecificDetails {
-    pub fn new(fabric_specific_details: FabricSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            fabric_specific_details,
             location: None,
             container_ids: Vec::new(),
             zones: Vec::new(),
@@ -3025,25 +2896,18 @@ impl AzureFabricSpecificDetails {
 #[doc = "Create network mappings input properties/behavior specific to Azure to Azure Network mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureToAzureCreateNetworkMappingInput {
-    #[serde(flatten)]
-    pub fabric_specific_create_network_mapping_input: FabricSpecificCreateNetworkMappingInput,
     #[doc = "The primary azure vnet Id."]
     #[serde(rename = "primaryNetworkId")]
     pub primary_network_id: String,
 }
 impl AzureToAzureCreateNetworkMappingInput {
-    pub fn new(fabric_specific_create_network_mapping_input: FabricSpecificCreateNetworkMappingInput, primary_network_id: String) -> Self {
-        Self {
-            fabric_specific_create_network_mapping_input,
-            primary_network_id,
-        }
+    pub fn new(primary_network_id: String) -> Self {
+        Self { primary_network_id }
     }
 }
 #[doc = "A2A Network Mapping fabric specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureToAzureNetworkMappingSettings {
-    #[serde(flatten)]
-    pub network_mapping_fabric_specific_settings: NetworkMappingFabricSpecificSettings,
     #[doc = "The primary fabric location."]
     #[serde(rename = "primaryFabricLocation", default, skip_serializing_if = "Option::is_none")]
     pub primary_fabric_location: Option<String>,
@@ -3052,9 +2916,8 @@ pub struct AzureToAzureNetworkMappingSettings {
     pub recovery_fabric_location: Option<String>,
 }
 impl AzureToAzureNetworkMappingSettings {
-    pub fn new(network_mapping_fabric_specific_settings: NetworkMappingFabricSpecificSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            network_mapping_fabric_specific_settings,
             primary_fabric_location: None,
             recovery_fabric_location: None,
         }
@@ -3063,18 +2926,13 @@ impl AzureToAzureNetworkMappingSettings {
 #[doc = "Updates network mappings input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureToAzureUpdateNetworkMappingInput {
-    #[serde(flatten)]
-    pub fabric_specific_update_network_mapping_input: FabricSpecificUpdateNetworkMappingInput,
     #[doc = "The primary azure vnet Id."]
     #[serde(rename = "primaryNetworkId", default, skip_serializing_if = "Option::is_none")]
     pub primary_network_id: Option<String>,
 }
 impl AzureToAzureUpdateNetworkMappingInput {
-    pub fn new(fabric_specific_update_network_mapping_input: FabricSpecificUpdateNetworkMappingInput) -> Self {
-        Self {
-            fabric_specific_update_network_mapping_input,
-            primary_network_id: None,
-        }
+    pub fn new() -> Self {
+        Self { primary_network_id: None }
     }
 }
 #[doc = "Azure to Azure VM synced configuration details."]
@@ -3151,14 +3009,6 @@ impl ComputeSizeErrorDetails {
         Self::default()
     }
 }
-#[doc = "Replication provider specific settings."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConfigurationSettings {}
-impl ConfigurationSettings {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Gets the class type. Overridden in derived classes."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -3205,8 +3055,6 @@ impl ConfigureAlertRequestProperties {
 #[doc = "This class contains monitoring details of all the inconsistent Protected Entities in Vmm."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsistencyCheckTaskDetails {
-    #[serde(flatten)]
-    pub task_type_details: TaskTypeDetails,
     #[doc = "The list of inconsistent Vm details."]
     #[serde(
         rename = "vmDetails",
@@ -3217,11 +3065,8 @@ pub struct ConsistencyCheckTaskDetails {
     pub vm_details: Vec<InconsistentVmDetails>,
 }
 impl ConsistencyCheckTaskDetails {
-    pub fn new(task_type_details: TaskTypeDetails) -> Self {
-        Self {
-            task_type_details,
-            vm_details: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { vm_details: Vec::new() }
     }
 }
 #[doc = "Create network mappings input."]
@@ -3362,14 +3207,6 @@ pub struct CreateProtectionIntentProperties {
 impl CreateProtectionIntentProperties {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Create protection intent provider specific input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreateProtectionIntentProviderSpecificDetails {}
-impl CreateProtectionIntentProviderSpecificDetails {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The class type."]
@@ -3631,14 +3468,6 @@ pub mod disable_protection_input_properties {
         }
     }
 }
-#[doc = "Disable protection provider specific input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DisableProtectionProviderSpecificInput {}
-impl DisableProtectionProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -3876,14 +3705,6 @@ impl EnableMigrationInputProperties {
         }
     }
 }
-#[doc = "Enable migration provider specific input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EnableMigrationProviderSpecificInput {}
-impl EnableMigrationProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -3918,14 +3739,6 @@ pub struct EnableProtectionInputProperties {
 impl EnableProtectionInputProperties {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Enable protection provider specific input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EnableProtectionProviderSpecificInput {}
-impl EnableProtectionProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The class type."]
@@ -4045,14 +3858,6 @@ impl EventProperties {
         Self::default()
     }
 }
-#[doc = "Model class for provider specific details for an event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventProviderSpecificDetails {}
-impl EventProviderSpecificDetails {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Gets the class type. Overridden in derived classes."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -4101,14 +3906,6 @@ impl EventQueryParameter {
         Self::default()
     }
 }
-#[doc = "Model class for event specific details for an event."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventSpecificDetails {}
-impl EventSpecificDetails {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Gets the class type. Overridden in derived classes."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -4118,33 +3915,25 @@ pub enum EventSpecificDetailsUnion {
 #[doc = "Existing storage account input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExistingProtectionProfile {
-    #[serde(flatten)]
-    pub protection_profile_custom_details: ProtectionProfileCustomDetails,
     #[doc = "The protection profile Arm Id. Throw error, if resource does not exists."]
     #[serde(rename = "protectionProfileId")]
     pub protection_profile_id: String,
 }
 impl ExistingProtectionProfile {
-    pub fn new(protection_profile_custom_details: ProtectionProfileCustomDetails, protection_profile_id: String) -> Self {
-        Self {
-            protection_profile_custom_details,
-            protection_profile_id,
-        }
+    pub fn new(protection_profile_id: String) -> Self {
+        Self { protection_profile_id }
     }
 }
 #[doc = "Existing recovery availability set input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExistingRecoveryAvailabilitySet {
-    #[serde(flatten)]
-    pub recovery_availability_set_custom_details: RecoveryAvailabilitySetCustomDetails,
     #[doc = "The recovery availability set Id. Will throw error, if resource does not exist."]
     #[serde(rename = "recoveryAvailabilitySetId", default, skip_serializing_if = "Option::is_none")]
     pub recovery_availability_set_id: Option<String>,
 }
 impl ExistingRecoveryAvailabilitySet {
-    pub fn new(recovery_availability_set_custom_details: RecoveryAvailabilitySetCustomDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            recovery_availability_set_custom_details,
             recovery_availability_set_id: None,
         }
     }
@@ -4152,16 +3941,13 @@ impl ExistingRecoveryAvailabilitySet {
 #[doc = "Existing recovery proximity placement group input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExistingRecoveryProximityPlacementGroup {
-    #[serde(flatten)]
-    pub recovery_proximity_placement_group_custom_details: RecoveryProximityPlacementGroupCustomDetails,
     #[doc = "The recovery proximity placement group Id. Will throw error, if resource does not exist."]
     #[serde(rename = "recoveryProximityPlacementGroupId", default, skip_serializing_if = "Option::is_none")]
     pub recovery_proximity_placement_group_id: Option<String>,
 }
 impl ExistingRecoveryProximityPlacementGroup {
-    pub fn new(recovery_proximity_placement_group_custom_details: RecoveryProximityPlacementGroupCustomDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            recovery_proximity_placement_group_custom_details,
             recovery_proximity_placement_group_id: None,
         }
     }
@@ -4169,16 +3955,13 @@ impl ExistingRecoveryProximityPlacementGroup {
 #[doc = "Existing recovery resource group input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExistingRecoveryRecoveryResourceGroup {
-    #[serde(flatten)]
-    pub recovery_resource_group_custom_details: RecoveryResourceGroupCustomDetails,
     #[doc = "The recovery resource group Id. Valid for V2 scenarios."]
     #[serde(rename = "recoveryResourceGroupId", default, skip_serializing_if = "Option::is_none")]
     pub recovery_resource_group_id: Option<String>,
 }
 impl ExistingRecoveryRecoveryResourceGroup {
-    pub fn new(recovery_resource_group_custom_details: RecoveryResourceGroupCustomDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            recovery_resource_group_custom_details,
             recovery_resource_group_id: None,
         }
     }
@@ -4186,8 +3969,6 @@ impl ExistingRecoveryRecoveryResourceGroup {
 #[doc = "Existing recovery virtual network input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExistingRecoveryVirtualNetwork {
-    #[serde(flatten)]
-    pub recovery_virtual_network_custom_details: RecoveryVirtualNetworkCustomDetails,
     #[doc = "The recovery virtual network Id. Will throw error, if resource does not exist."]
     #[serde(rename = "recoveryVirtualNetworkId")]
     pub recovery_virtual_network_id: String,
@@ -4196,9 +3977,8 @@ pub struct ExistingRecoveryVirtualNetwork {
     pub recovery_subnet_name: Option<String>,
 }
 impl ExistingRecoveryVirtualNetwork {
-    pub fn new(recovery_virtual_network_custom_details: RecoveryVirtualNetworkCustomDetails, recovery_virtual_network_id: String) -> Self {
+    pub fn new(recovery_virtual_network_id: String) -> Self {
         Self {
-            recovery_virtual_network_custom_details,
             recovery_virtual_network_id,
             recovery_subnet_name: None,
         }
@@ -4207,18 +3987,13 @@ impl ExistingRecoveryVirtualNetwork {
 #[doc = "Existing storage account input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExistingStorageAccount {
-    #[serde(flatten)]
-    pub storage_account_custom_details: StorageAccountCustomDetails,
     #[doc = "The storage account Arm Id. Throw error, if resource does not exists."]
     #[serde(rename = "azureStorageAccountId")]
     pub azure_storage_account_id: String,
 }
 impl ExistingStorageAccount {
-    pub fn new(storage_account_custom_details: StorageAccountCustomDetails, azure_storage_account_id: String) -> Self {
-        Self {
-            storage_account_custom_details,
-            azure_storage_account_id,
-        }
+    pub fn new(azure_storage_account_id: String) -> Self {
+        Self { azure_storage_account_id }
     }
 }
 #[doc = "This class represents details for export jobs workflow."]
@@ -4431,8 +4206,6 @@ impl FabricQueryParameter {
 #[doc = "This class represents the fabric replication group task details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FabricReplicationGroupTaskDetails {
-    #[serde(flatten)]
-    pub job_task_details: JobTaskDetails,
     #[doc = "The skipped reason."]
     #[serde(rename = "skippedReason", default, skip_serializing_if = "Option::is_none")]
     pub skipped_reason: Option<String>,
@@ -4441,20 +4214,11 @@ pub struct FabricReplicationGroupTaskDetails {
     pub skipped_reason_string: Option<String>,
 }
 impl FabricReplicationGroupTaskDetails {
-    pub fn new(job_task_details: JobTaskDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            job_task_details,
             skipped_reason: None,
             skipped_reason_string: None,
         }
-    }
-}
-#[doc = "Input details specific to fabrics during Network Mapping."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FabricSpecificCreateNetworkMappingInput {}
-impl FabricSpecificCreateNetworkMappingInput {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The instance type."]
@@ -4465,14 +4229,6 @@ pub enum FabricSpecificCreateNetworkMappingInputUnion {
     VmmToAzure(VmmToAzureCreateNetworkMappingInput),
     VmmToVmm(VmmToVmmCreateNetworkMappingInput),
 }
-#[doc = "Fabric provider specific settings."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FabricSpecificCreationInput {}
-impl FabricSpecificCreationInput {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Gets the class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -4480,14 +4236,6 @@ pub enum FabricSpecificCreationInputUnion {
     Azure(AzureFabricCreationInput),
     InMageRcm(InMageRcmFabricCreationInput),
     VMwareV2(VMwareV2FabricCreationInput),
-}
-#[doc = "Fabric specific details."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FabricSpecificDetails {}
-impl FabricSpecificDetails {
-    pub fn new() -> Self {
-        Self {}
-    }
 }
 #[doc = "Gets the class type. Overridden in derived classes."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -4500,14 +4248,6 @@ pub enum FabricSpecificDetailsUnion {
     VMwareV2(VMwareV2FabricSpecificDetails),
     #[serde(rename = "VMM")]
     Vmm(VmmDetails),
-}
-#[doc = "Input details specific to fabrics during Network Mapping."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FabricSpecificUpdateNetworkMappingInput {}
-impl FabricSpecificUpdateNetworkMappingInput {
-    pub fn new() -> Self {
-        Self {}
-    }
 }
 #[doc = "The instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -4939,8 +4679,6 @@ impl HyperVHostDetails {
 #[doc = "Model class for event details of a HyperVReplica E2E event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplica2012EventDetails {
-    #[serde(flatten)]
-    pub event_provider_specific_details: EventProviderSpecificDetails,
     #[doc = "The container friendly name."]
     #[serde(rename = "containerName", default, skip_serializing_if = "Option::is_none")]
     pub container_name: Option<String>,
@@ -4955,9 +4693,8 @@ pub struct HyperVReplica2012EventDetails {
     pub remote_fabric_name: Option<String>,
 }
 impl HyperVReplica2012EventDetails {
-    pub fn new(event_provider_specific_details: EventProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            event_provider_specific_details,
             container_name: None,
             fabric_name: None,
             remote_container_name: None,
@@ -4968,8 +4705,6 @@ impl HyperVReplica2012EventDetails {
 #[doc = "Model class for event details of a HyperVReplica blue E2E event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplica2012R2EventDetails {
-    #[serde(flatten)]
-    pub event_provider_specific_details: EventProviderSpecificDetails,
     #[doc = "The container friendly name."]
     #[serde(rename = "containerName", default, skip_serializing_if = "Option::is_none")]
     pub container_name: Option<String>,
@@ -4984,9 +4719,8 @@ pub struct HyperVReplica2012R2EventDetails {
     pub remote_fabric_name: Option<String>,
 }
 impl HyperVReplica2012R2EventDetails {
-    pub fn new(event_provider_specific_details: EventProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            event_provider_specific_details,
             container_name: None,
             fabric_name: None,
             remote_container_name: None,
@@ -4997,8 +4731,6 @@ impl HyperVReplica2012R2EventDetails {
 #[doc = "ApplyRecoveryPoint input specific to HyperVReplicaAzure provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaAzureApplyRecoveryPointInput {
-    #[serde(flatten)]
-    pub apply_recovery_point_provider_specific_input: ApplyRecoveryPointProviderSpecificInput,
     #[doc = "The primary kek certificate pfx."]
     #[serde(rename = "primaryKekCertificatePfx", default, skip_serializing_if = "Option::is_none")]
     pub primary_kek_certificate_pfx: Option<String>,
@@ -5007,9 +4739,8 @@ pub struct HyperVReplicaAzureApplyRecoveryPointInput {
     pub secondary_kek_certificate_pfx: Option<String>,
 }
 impl HyperVReplicaAzureApplyRecoveryPointInput {
-    pub fn new(apply_recovery_point_provider_specific_input: ApplyRecoveryPointProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            apply_recovery_point_provider_specific_input,
             primary_kek_certificate_pfx: None,
             secondary_kek_certificate_pfx: None,
         }
@@ -5084,8 +4815,6 @@ pub mod hyper_v_replica_azure_disk_input_details {
 #[doc = "HyperVReplicaAzure specific enable protection input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaAzureEnableProtectionInput {
-    #[serde(flatten)]
-    pub enable_protection_provider_specific_input: EnableProtectionProviderSpecificInput,
     #[doc = "The Hyper-V host VM Id."]
     #[serde(rename = "hvHostVmId", default, skip_serializing_if = "Option::is_none")]
     pub hv_host_vm_id: Option<String>,
@@ -5182,9 +4911,8 @@ pub struct HyperVReplicaAzureEnableProtectionInput {
     pub target_nic_tags: Option<serde_json::Value>,
 }
 impl HyperVReplicaAzureEnableProtectionInput {
-    pub fn new(enable_protection_provider_specific_input: EnableProtectionProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            enable_protection_provider_specific_input,
             hv_host_vm_id: None,
             vm_name: None,
             os_type: None,
@@ -5346,8 +5074,6 @@ pub mod hyper_v_replica_azure_enable_protection_input {
 #[doc = "Model class for event details of a HyperVReplica E2A event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaAzureEventDetails {
-    #[serde(flatten)]
-    pub event_provider_specific_details: EventProviderSpecificDetails,
     #[doc = "The container friendly name."]
     #[serde(rename = "containerName", default, skip_serializing_if = "Option::is_none")]
     pub container_name: Option<String>,
@@ -5359,9 +5085,8 @@ pub struct HyperVReplicaAzureEventDetails {
     pub remote_container_name: Option<String>,
 }
 impl HyperVReplicaAzureEventDetails {
-    pub fn new(event_provider_specific_details: EventProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            event_provider_specific_details,
             container_name: None,
             fabric_name: None,
             remote_container_name: None,
@@ -5371,8 +5096,6 @@ impl HyperVReplicaAzureEventDetails {
 #[doc = "HyperVReplicaAzureFailback specific planned failover input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaAzureFailbackProviderInput {
-    #[serde(flatten)]
-    pub planned_failover_provider_specific_failover_input: PlannedFailoverProviderSpecificFailoverInput,
     #[doc = "Data sync option."]
     #[serde(rename = "dataSyncOption", default, skip_serializing_if = "Option::is_none")]
     pub data_sync_option: Option<String>,
@@ -5384,9 +5107,8 @@ pub struct HyperVReplicaAzureFailbackProviderInput {
     pub provider_id_for_alternate_recovery: Option<String>,
 }
 impl HyperVReplicaAzureFailbackProviderInput {
-    pub fn new(planned_failover_provider_specific_failover_input: PlannedFailoverProviderSpecificFailoverInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            planned_failover_provider_specific_failover_input,
             data_sync_option: None,
             recovery_vm_creation_option: None,
             provider_id_for_alternate_recovery: None,
@@ -5417,8 +5139,6 @@ impl HyperVReplicaAzureManagedDiskDetails {
 #[doc = "HyperVReplicaAzure specific planned failover input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaAzurePlannedFailoverProviderInput {
-    #[serde(flatten)]
-    pub planned_failover_provider_specific_failover_input: PlannedFailoverProviderSpecificFailoverInput,
     #[doc = "Primary kek certificate pfx."]
     #[serde(rename = "primaryKekCertificatePfx", default, skip_serializing_if = "Option::is_none")]
     pub primary_kek_certificate_pfx: Option<String>,
@@ -5433,9 +5153,8 @@ pub struct HyperVReplicaAzurePlannedFailoverProviderInput {
     pub os_upgrade_version: Option<String>,
 }
 impl HyperVReplicaAzurePlannedFailoverProviderInput {
-    pub fn new(planned_failover_provider_specific_failover_input: PlannedFailoverProviderSpecificFailoverInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            planned_failover_provider_specific_failover_input,
             primary_kek_certificate_pfx: None,
             secondary_kek_certificate_pfx: None,
             recovery_point_id: None,
@@ -5446,8 +5165,6 @@ impl HyperVReplicaAzurePlannedFailoverProviderInput {
 #[doc = "Hyper-V Replica Azure specific protection profile details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaAzurePolicyDetails {
-    #[serde(flatten)]
-    pub policy_provider_specific_details: PolicyProviderSpecificDetails,
     #[doc = "The duration (in hours) to which point the recovery history needs to be maintained."]
     #[serde(rename = "recoveryPointHistoryDurationInHours", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_history_duration_in_hours: Option<i32>,
@@ -5472,9 +5189,8 @@ pub struct HyperVReplicaAzurePolicyDetails {
     pub active_storage_account_id: Option<String>,
 }
 impl HyperVReplicaAzurePolicyDetails {
-    pub fn new(policy_provider_specific_details: PolicyProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            policy_provider_specific_details,
             recovery_point_history_duration_in_hours: None,
             application_consistent_snapshot_frequency_in_hours: None,
             replication_interval: None,
@@ -5487,8 +5203,6 @@ impl HyperVReplicaAzurePolicyDetails {
 #[doc = "Hyper-V Replica Azure specific input for creating a protection profile."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaAzurePolicyInput {
-    #[serde(flatten)]
-    pub policy_provider_specific_input: PolicyProviderSpecificInput,
     #[doc = "The duration (in hours) to which point the recovery history needs to be maintained."]
     #[serde(rename = "recoveryPointHistoryDuration", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_history_duration: Option<i32>,
@@ -5515,9 +5229,8 @@ pub struct HyperVReplicaAzurePolicyInput {
     pub storage_accounts: Vec<String>,
 }
 impl HyperVReplicaAzurePolicyInput {
-    pub fn new(policy_provider_specific_input: PolicyProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            policy_provider_specific_input,
             recovery_point_history_duration: None,
             application_consistent_snapshot_frequency_in_hours: None,
             replication_interval: None,
@@ -5529,8 +5242,6 @@ impl HyperVReplicaAzurePolicyInput {
 #[doc = "Hyper V Replica Azure provider specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaAzureReplicationDetails {
-    #[serde(flatten)]
-    pub replication_provider_specific_settings: ReplicationProviderSpecificSettings,
     #[doc = "Azure VM Disk details."]
     #[serde(
         rename = "azureVmDiskDetails",
@@ -5655,9 +5366,8 @@ pub struct HyperVReplicaAzureReplicationDetails {
     pub all_available_os_upgrade_configurations: Vec<OsUpgradeSupportedVersions>,
 }
 impl HyperVReplicaAzureReplicationDetails {
-    pub fn new(replication_provider_specific_settings: ReplicationProviderSpecificSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            replication_provider_specific_settings,
             azure_vm_disk_details: Vec::new(),
             recovery_azure_vm_name: None,
             recovery_azure_vm_size: None,
@@ -5698,8 +5408,6 @@ impl HyperVReplicaAzureReplicationDetails {
 #[doc = "Azure specific reprotect input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaAzureReprotectInput {
-    #[serde(flatten)]
-    pub reverse_replication_provider_specific_input: ReverseReplicationProviderSpecificInput,
     #[doc = "The Hyper-V host Vm Id."]
     #[serde(rename = "hvHostVmId", default, skip_serializing_if = "Option::is_none")]
     pub hv_host_vm_id: Option<String>,
@@ -5720,9 +5428,8 @@ pub struct HyperVReplicaAzureReprotectInput {
     pub log_storage_account_id: Option<String>,
 }
 impl HyperVReplicaAzureReprotectInput {
-    pub fn new(reverse_replication_provider_specific_input: ReverseReplicationProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            reverse_replication_provider_specific_input,
             hv_host_vm_id: None,
             vm_name: None,
             os_type: None,
@@ -5735,8 +5442,6 @@ impl HyperVReplicaAzureReprotectInput {
 #[doc = "HvrA provider specific input for test failover."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaAzureTestFailoverInput {
-    #[serde(flatten)]
-    pub test_failover_provider_specific_input: TestFailoverProviderSpecificInput,
     #[doc = "Primary kek certificate pfx."]
     #[serde(rename = "primaryKekCertificatePfx", default, skip_serializing_if = "Option::is_none")]
     pub primary_kek_certificate_pfx: Option<String>,
@@ -5751,9 +5456,8 @@ pub struct HyperVReplicaAzureTestFailoverInput {
     pub os_upgrade_version: Option<String>,
 }
 impl HyperVReplicaAzureTestFailoverInput {
-    pub fn new(test_failover_provider_specific_input: TestFailoverProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            test_failover_provider_specific_input,
             primary_kek_certificate_pfx: None,
             secondary_kek_certificate_pfx: None,
             recovery_point_id: None,
@@ -5764,8 +5468,6 @@ impl HyperVReplicaAzureTestFailoverInput {
 #[doc = "HvrA provider specific input for unplanned failover."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaAzureUnplannedFailoverInput {
-    #[serde(flatten)]
-    pub unplanned_failover_provider_specific_input: UnplannedFailoverProviderSpecificInput,
     #[doc = "Primary kek certificate pfx."]
     #[serde(rename = "primaryKekCertificatePfx", default, skip_serializing_if = "Option::is_none")]
     pub primary_kek_certificate_pfx: Option<String>,
@@ -5777,9 +5479,8 @@ pub struct HyperVReplicaAzureUnplannedFailoverInput {
     pub recovery_point_id: Option<String>,
 }
 impl HyperVReplicaAzureUnplannedFailoverInput {
-    pub fn new(unplanned_failover_provider_specific_input: UnplannedFailoverProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            unplanned_failover_provider_specific_input,
             primary_kek_certificate_pfx: None,
             secondary_kek_certificate_pfx: None,
             recovery_point_id: None,
@@ -5789,8 +5490,6 @@ impl HyperVReplicaAzureUnplannedFailoverInput {
 #[doc = "HyperV replica Azure input to update replication protected item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaAzureUpdateReplicationProtectedItemInput {
-    #[serde(flatten)]
-    pub update_replication_protected_item_provider_input: UpdateReplicationProtectedItemProviderInput,
     #[doc = "The recovery Azure resource group Id for classic deployment."]
     #[serde(rename = "recoveryAzureV1ResourceGroupId", default, skip_serializing_if = "Option::is_none")]
     pub recovery_azure_v1_resource_group_id: Option<String>,
@@ -5831,9 +5530,8 @@ pub struct HyperVReplicaAzureUpdateReplicationProtectedItemInput {
     pub vm_disks: Vec<UpdateDiskInput>,
 }
 impl HyperVReplicaAzureUpdateReplicationProtectedItemInput {
-    pub fn new(update_replication_protected_item_provider_input: UpdateReplicationProtectedItemProviderInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            update_replication_protected_item_provider_input,
             recovery_azure_v1_resource_group_id: None,
             recovery_azure_v2_resource_group_id: None,
             use_managed_disks: None,
@@ -5897,8 +5595,6 @@ pub mod hyper_v_replica_azure_update_replication_protected_item_input {
 #[doc = "Abstract model class for event details of a HyperVReplica E2E event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaBaseEventDetails {
-    #[serde(flatten)]
-    pub event_provider_specific_details: EventProviderSpecificDetails,
     #[doc = "The container friendly name."]
     #[serde(rename = "containerName", default, skip_serializing_if = "Option::is_none")]
     pub container_name: Option<String>,
@@ -5913,9 +5609,8 @@ pub struct HyperVReplicaBaseEventDetails {
     pub remote_fabric_name: Option<String>,
 }
 impl HyperVReplicaBaseEventDetails {
-    pub fn new(event_provider_specific_details: EventProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            event_provider_specific_details,
             container_name: None,
             fabric_name: None,
             remote_container_name: None,
@@ -5926,8 +5621,6 @@ impl HyperVReplicaBaseEventDetails {
 #[doc = "Base class for HyperVReplica policy details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaBasePolicyDetails {
-    #[serde(flatten)]
-    pub policy_provider_specific_details: PolicyProviderSpecificDetails,
     #[doc = "A value indicating the number of recovery points."]
     #[serde(rename = "recoveryPoints", default, skip_serializing_if = "Option::is_none")]
     pub recovery_points: Option<i32>,
@@ -5964,9 +5657,8 @@ pub struct HyperVReplicaBasePolicyDetails {
     pub replica_deletion_option: Option<String>,
 }
 impl HyperVReplicaBasePolicyDetails {
-    pub fn new(policy_provider_specific_details: PolicyProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            policy_provider_specific_details,
             recovery_points: None,
             application_consistent_snapshot_frequency_in_hours: None,
             compression: None,
@@ -5983,8 +5675,6 @@ impl HyperVReplicaBasePolicyDetails {
 #[doc = "Hyper V replica provider specific settings base class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaBaseReplicationDetails {
-    #[serde(flatten)]
-    pub replication_provider_specific_settings: ReplicationProviderSpecificSettings,
     #[doc = "The Last replication time."]
     #[serde(rename = "lastReplicatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_replicated_time: Option<time::OffsetDateTime>,
@@ -6018,9 +5708,8 @@ pub struct HyperVReplicaBaseReplicationDetails {
     pub v_m_disk_details: Vec<DiskDetails>,
 }
 impl HyperVReplicaBaseReplicationDetails {
-    pub fn new(replication_provider_specific_settings: ReplicationProviderSpecificSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            replication_provider_specific_settings,
             last_replicated_time: None,
             vm_nics: Vec::new(),
             vm_id: None,
@@ -6034,8 +5723,6 @@ impl HyperVReplicaBaseReplicationDetails {
 #[doc = "Hyper-V Replica Blue specific protection profile details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaBluePolicyDetails {
-    #[serde(flatten)]
-    pub policy_provider_specific_details: PolicyProviderSpecificDetails,
     #[doc = "A value indicating the replication interval."]
     #[serde(rename = "replicationFrequencyInSeconds", default, skip_serializing_if = "Option::is_none")]
     pub replication_frequency_in_seconds: Option<i32>,
@@ -6075,9 +5762,8 @@ pub struct HyperVReplicaBluePolicyDetails {
     pub replica_deletion_option: Option<String>,
 }
 impl HyperVReplicaBluePolicyDetails {
-    pub fn new(policy_provider_specific_details: PolicyProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            policy_provider_specific_details,
             replication_frequency_in_seconds: None,
             recovery_points: None,
             application_consistent_snapshot_frequency_in_hours: None,
@@ -6112,8 +5798,6 @@ impl HyperVReplicaBluePolicyInput {
 #[doc = "HyperV replica 2012 R2 (Blue) replication details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaBlueReplicationDetails {
-    #[serde(flatten)]
-    pub replication_provider_specific_settings: ReplicationProviderSpecificSettings,
     #[doc = "The Last replication time."]
     #[serde(rename = "lastReplicatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_replicated_time: Option<time::OffsetDateTime>,
@@ -6147,9 +5831,8 @@ pub struct HyperVReplicaBlueReplicationDetails {
     pub v_m_disk_details: Vec<DiskDetails>,
 }
 impl HyperVReplicaBlueReplicationDetails {
-    pub fn new(replication_provider_specific_settings: ReplicationProviderSpecificSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            replication_provider_specific_settings,
             last_replicated_time: None,
             vm_nics: Vec::new(),
             vm_id: None,
@@ -6163,8 +5846,6 @@ impl HyperVReplicaBlueReplicationDetails {
 #[doc = "Hyper-V Replica Blue specific protection profile details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaPolicyDetails {
-    #[serde(flatten)]
-    pub policy_provider_specific_details: PolicyProviderSpecificDetails,
     #[doc = "A value indicating the number of recovery points."]
     #[serde(rename = "recoveryPoints", default, skip_serializing_if = "Option::is_none")]
     pub recovery_points: Option<i32>,
@@ -6201,9 +5882,8 @@ pub struct HyperVReplicaPolicyDetails {
     pub replica_deletion_option: Option<String>,
 }
 impl HyperVReplicaPolicyDetails {
-    pub fn new(policy_provider_specific_details: PolicyProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            policy_provider_specific_details,
             recovery_points: None,
             application_consistent_snapshot_frequency_in_hours: None,
             compression: None,
@@ -6220,8 +5900,6 @@ impl HyperVReplicaPolicyDetails {
 #[doc = "Hyper-V Replica specific policy Input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaPolicyInput {
-    #[serde(flatten)]
-    pub policy_provider_specific_input: PolicyProviderSpecificInput,
     #[doc = "A value indicating the number of recovery points."]
     #[serde(rename = "recoveryPoints", default, skip_serializing_if = "Option::is_none")]
     pub recovery_points: Option<i32>,
@@ -6258,9 +5936,8 @@ pub struct HyperVReplicaPolicyInput {
     pub replica_deletion: Option<String>,
 }
 impl HyperVReplicaPolicyInput {
-    pub fn new(policy_provider_specific_input: PolicyProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            policy_provider_specific_input,
             recovery_points: None,
             application_consistent_snapshot_frequency_in_hours: None,
             compression: None,
@@ -6282,8 +5959,6 @@ pub enum HyperVReplicaPolicyInputUnion {
 #[doc = "HyperV replica 2012 replication details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVReplicaReplicationDetails {
-    #[serde(flatten)]
-    pub replication_provider_specific_settings: ReplicationProviderSpecificSettings,
     #[doc = "The Last replication time."]
     #[serde(rename = "lastReplicatedTime", default, with = "azure_core::date::rfc3339::option")]
     pub last_replicated_time: Option<time::OffsetDateTime>,
@@ -6317,9 +5992,8 @@ pub struct HyperVReplicaReplicationDetails {
     pub v_m_disk_details: Vec<DiskDetails>,
 }
 impl HyperVReplicaReplicationDetails {
-    pub fn new(replication_provider_specific_settings: ReplicationProviderSpecificSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            replication_provider_specific_settings,
             last_replicated_time: None,
             vm_nics: Vec::new(),
             vm_id: None,
@@ -6333,8 +6007,6 @@ impl HyperVReplicaReplicationDetails {
 #[doc = "HyperVSite fabric specific details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVSiteDetails {
-    #[serde(flatten)]
-    pub fabric_specific_details: FabricSpecificDetails,
     #[doc = "The list of Hyper-V hosts associated with the fabric."]
     #[serde(
         rename = "hyperVHosts",
@@ -6345,18 +6017,13 @@ pub struct HyperVSiteDetails {
     pub hyper_v_hosts: Vec<HyperVHostDetails>,
 }
 impl HyperVSiteDetails {
-    pub fn new(fabric_specific_details: FabricSpecificDetails) -> Self {
-        Self {
-            fabric_specific_details,
-            hyper_v_hosts: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { hyper_v_hosts: Vec::new() }
     }
 }
 #[doc = "Single Host fabric provider specific VM settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperVVirtualMachineDetails {
-    #[serde(flatten)]
-    pub configuration_settings: ConfigurationSettings,
     #[doc = "The source id of the object."]
     #[serde(rename = "sourceItemId", default, skip_serializing_if = "Option::is_none")]
     pub source_item_id: Option<String>,
@@ -6388,9 +6055,8 @@ pub struct HyperVVirtualMachineDetails {
     pub hyper_v_host_id: Option<String>,
 }
 impl HyperVVirtualMachineDetails {
-    pub fn new(configuration_settings: ConfigurationSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            configuration_settings,
             source_item_id: None,
             generation: None,
             os_details: None,
@@ -6691,15 +6357,10 @@ impl InMageAgentDetails {
 }
 #[doc = "ApplyRecoveryPoint input specific to InMageAzureV2 provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InMageAzureV2ApplyRecoveryPointInput {
-    #[serde(flatten)]
-    pub apply_recovery_point_provider_specific_input: ApplyRecoveryPointProviderSpecificInput,
-}
+pub struct InMageAzureV2ApplyRecoveryPointInput {}
 impl InMageAzureV2ApplyRecoveryPointInput {
-    pub fn new(apply_recovery_point_provider_specific_input: ApplyRecoveryPointProviderSpecificInput) -> Self {
-        Self {
-            apply_recovery_point_provider_specific_input,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Disk input details."]
@@ -6771,8 +6432,6 @@ pub mod in_mage_azure_v2_disk_input_details {
 #[doc = "VMware Azure specific enable protection input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageAzureV2EnableProtectionInput {
-    #[serde(flatten)]
-    pub enable_protection_provider_specific_input: EnableProtectionProviderSpecificInput,
     #[doc = "The Master target Id."]
     #[serde(rename = "masterTargetId", default, skip_serializing_if = "Option::is_none")]
     pub master_target_id: Option<String>,
@@ -6858,9 +6517,8 @@ pub struct InMageAzureV2EnableProtectionInput {
     pub target_nic_tags: Option<serde_json::Value>,
 }
 impl InMageAzureV2EnableProtectionInput {
-    pub fn new(enable_protection_provider_specific_input: EnableProtectionProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            enable_protection_provider_specific_input,
             master_target_id: None,
             process_server_id: None,
             storage_account_id: None,
@@ -7020,8 +6678,6 @@ pub mod in_mage_azure_v2_enable_protection_input {
 #[doc = "Model class for event details of a VMwareAzureV2 event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageAzureV2EventDetails {
-    #[serde(flatten)]
-    pub event_provider_specific_details: EventProviderSpecificDetails,
     #[doc = "InMage Event type. Takes one of the values of InMageDataContract.InMageMonitoringEventType."]
     #[serde(rename = "eventType", default, skip_serializing_if = "Option::is_none")]
     pub event_type: Option<String>,
@@ -7045,9 +6701,8 @@ pub struct InMageAzureV2EventDetails {
     pub site_name: Option<String>,
 }
 impl InMageAzureV2EventDetails {
-    pub fn new(event_provider_specific_details: EventProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            event_provider_specific_details,
             event_type: None,
             category: None,
             component: None,
@@ -7085,8 +6740,6 @@ impl InMageAzureV2ManagedDiskDetails {
 #[doc = "InMage Azure v2 specific protection profile details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageAzureV2PolicyDetails {
-    #[serde(flatten)]
-    pub policy_provider_specific_details: PolicyProviderSpecificDetails,
     #[doc = "The crash consistent snapshot frequency in minutes."]
     #[serde(rename = "crashConsistentFrequencyInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub crash_consistent_frequency_in_minutes: Option<i32>,
@@ -7104,9 +6757,8 @@ pub struct InMageAzureV2PolicyDetails {
     pub multi_vm_sync_status: Option<String>,
 }
 impl InMageAzureV2PolicyDetails {
-    pub fn new(policy_provider_specific_details: PolicyProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            policy_provider_specific_details,
             crash_consistent_frequency_in_minutes: None,
             recovery_point_threshold_in_minutes: None,
             recovery_point_history: None,
@@ -7118,8 +6770,6 @@ impl InMageAzureV2PolicyDetails {
 #[doc = "VMWare Azure specific policy Input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageAzureV2PolicyInput {
-    #[serde(flatten)]
-    pub policy_provider_specific_input: PolicyProviderSpecificInput,
     #[doc = "The recovery point threshold in minutes."]
     #[serde(rename = "recoveryPointThresholdInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_threshold_in_minutes: Option<i32>,
@@ -7137,12 +6787,8 @@ pub struct InMageAzureV2PolicyInput {
     pub multi_vm_sync_status: in_mage_azure_v2_policy_input::MultiVmSyncStatus,
 }
 impl InMageAzureV2PolicyInput {
-    pub fn new(
-        policy_provider_specific_input: PolicyProviderSpecificInput,
-        multi_vm_sync_status: in_mage_azure_v2_policy_input::MultiVmSyncStatus,
-    ) -> Self {
+    pub fn new(multi_vm_sync_status: in_mage_azure_v2_policy_input::MultiVmSyncStatus) -> Self {
         Self {
-            policy_provider_specific_input,
             recovery_point_threshold_in_minutes: None,
             recovery_point_history: None,
             crash_consistent_frequency_in_minutes: None,
@@ -7272,16 +6918,13 @@ impl InMageAzureV2ProtectedDiskDetails {
 #[doc = "InMage Azure V2 provider specific recovery point details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageAzureV2RecoveryPointDetails {
-    #[serde(flatten)]
-    pub provider_specific_recovery_point_details: ProviderSpecificRecoveryPointDetails,
     #[doc = "A value indicating whether the recovery point is multi VM consistent."]
     #[serde(rename = "isMultiVmSyncPoint", default, skip_serializing_if = "Option::is_none")]
     pub is_multi_vm_sync_point: Option<String>,
 }
 impl InMageAzureV2RecoveryPointDetails {
-    pub fn new(provider_specific_recovery_point_details: ProviderSpecificRecoveryPointDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            provider_specific_recovery_point_details,
             is_multi_vm_sync_point: None,
         }
     }
@@ -7289,8 +6932,6 @@ impl InMageAzureV2RecoveryPointDetails {
 #[doc = "InMageAzureV2 provider specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageAzureV2ReplicationDetails {
-    #[serde(flatten)]
-    pub replication_provider_specific_settings: ReplicationProviderSpecificSettings,
     #[doc = "The infrastructure VM Id."]
     #[serde(rename = "infrastructureVmId", default, skip_serializing_if = "Option::is_none")]
     pub infrastructure_vm_id: Option<String>,
@@ -7547,9 +7188,8 @@ pub struct InMageAzureV2ReplicationDetails {
     pub os_name: Option<String>,
 }
 impl InMageAzureV2ReplicationDetails {
-    pub fn new(replication_provider_specific_settings: ReplicationProviderSpecificSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            replication_provider_specific_settings,
             infrastructure_vm_id: None,
             v_center_infrastructure_id: None,
             protection_stage: None,
@@ -7626,8 +7266,6 @@ impl InMageAzureV2ReplicationDetails {
 #[doc = "InMageAzureV2 specific provider input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageAzureV2ReprotectInput {
-    #[serde(flatten)]
-    pub reverse_replication_provider_specific_input: ReverseReplicationProviderSpecificInput,
     #[doc = "The Master target Id."]
     #[serde(rename = "masterTargetId", default, skip_serializing_if = "Option::is_none")]
     pub master_target_id: Option<String>,
@@ -7656,9 +7294,8 @@ pub struct InMageAzureV2ReprotectInput {
     pub disks_to_include: Vec<String>,
 }
 impl InMageAzureV2ReprotectInput {
-    pub fn new(reverse_replication_provider_specific_input: ReverseReplicationProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            reverse_replication_provider_specific_input,
             master_target_id: None,
             process_server_id: None,
             storage_account_id: None,
@@ -7720,8 +7357,6 @@ impl InMageAzureV2SwitchProviderDetails {
 #[doc = "Provider specific input for InMageAzureV2 switch provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageAzureV2SwitchProviderProviderInput {
-    #[serde(flatten)]
-    pub switch_provider_provider_specific_input: SwitchProviderProviderSpecificInput,
     #[doc = "The target vault Id."]
     #[serde(rename = "targetVaultID")]
     pub target_vault_id: String,
@@ -7733,14 +7368,8 @@ pub struct InMageAzureV2SwitchProviderProviderInput {
     pub target_appliance_id: String,
 }
 impl InMageAzureV2SwitchProviderProviderInput {
-    pub fn new(
-        switch_provider_provider_specific_input: SwitchProviderProviderSpecificInput,
-        target_vault_id: String,
-        target_fabric_id: String,
-        target_appliance_id: String,
-    ) -> Self {
+    pub fn new(target_vault_id: String, target_fabric_id: String, target_appliance_id: String) -> Self {
         Self {
-            switch_provider_provider_specific_input,
             target_vault_id,
             target_fabric_id,
             target_appliance_id,
@@ -7750,8 +7379,6 @@ impl InMageAzureV2SwitchProviderProviderInput {
 #[doc = "InMageAzureV2 provider specific input for test failover."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageAzureV2TestFailoverInput {
-    #[serde(flatten)]
-    pub test_failover_provider_specific_input: TestFailoverProviderSpecificInput,
     #[doc = "The recovery point id to be passed to test failover to a particular recovery point. In case of latest recovery point, null should be passed."]
     #[serde(rename = "recoveryPointId", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_id: Option<String>,
@@ -7760,9 +7387,8 @@ pub struct InMageAzureV2TestFailoverInput {
     pub os_upgrade_version: Option<String>,
 }
 impl InMageAzureV2TestFailoverInput {
-    pub fn new(test_failover_provider_specific_input: TestFailoverProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            test_failover_provider_specific_input,
             recovery_point_id: None,
             os_upgrade_version: None,
         }
@@ -7771,8 +7397,6 @@ impl InMageAzureV2TestFailoverInput {
 #[doc = "InMageAzureV2 provider specific input for unplanned failover."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageAzureV2UnplannedFailoverInput {
-    #[serde(flatten)]
-    pub unplanned_failover_provider_specific_input: UnplannedFailoverProviderSpecificInput,
     #[doc = "The recovery point id to be passed to failover to a particular recovery point. In case of latest recovery point, null should be passed."]
     #[serde(rename = "recoveryPointId", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_id: Option<String>,
@@ -7781,9 +7405,8 @@ pub struct InMageAzureV2UnplannedFailoverInput {
     pub os_upgrade_version: Option<String>,
 }
 impl InMageAzureV2UnplannedFailoverInput {
-    pub fn new(unplanned_failover_provider_specific_input: UnplannedFailoverProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            unplanned_failover_provider_specific_input,
             recovery_point_id: None,
             os_upgrade_version: None,
         }
@@ -7792,8 +7415,6 @@ impl InMageAzureV2UnplannedFailoverInput {
 #[doc = "InMage Azure V2 input to update replication protected item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageAzureV2UpdateReplicationProtectedItemInput {
-    #[serde(flatten)]
-    pub update_replication_protected_item_provider_input: UpdateReplicationProtectedItemProviderInput,
     #[doc = "The recovery Azure resource group Id for classic deployment."]
     #[serde(rename = "recoveryAzureV1ResourceGroupId", default, skip_serializing_if = "Option::is_none")]
     pub recovery_azure_v1_resource_group_id: Option<String>,
@@ -7831,9 +7452,8 @@ pub struct InMageAzureV2UpdateReplicationProtectedItemInput {
     pub vm_disks: Vec<UpdateDiskInput>,
 }
 impl InMageAzureV2UpdateReplicationProtectedItemInput {
-    pub fn new(update_replication_protected_item_provider_input: UpdateReplicationProtectedItemProviderInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            update_replication_protected_item_provider_input,
             recovery_azure_v1_resource_group_id: None,
             recovery_azure_v2_resource_group_id: None,
             use_managed_disks: None,
@@ -7896,8 +7516,6 @@ pub mod in_mage_azure_v2_update_replication_protected_item_input {
 #[doc = "Base class for the policies of providers using InMage replication."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageBasePolicyDetails {
-    #[serde(flatten)]
-    pub policy_provider_specific_details: PolicyProviderSpecificDetails,
     #[doc = "The recovery point threshold in minutes."]
     #[serde(rename = "recoveryPointThresholdInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_threshold_in_minutes: Option<i32>,
@@ -7912,9 +7530,8 @@ pub struct InMageBasePolicyDetails {
     pub multi_vm_sync_status: Option<String>,
 }
 impl InMageBasePolicyDetails {
-    pub fn new(policy_provider_specific_details: PolicyProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            policy_provider_specific_details,
             recovery_point_threshold_in_minutes: None,
             recovery_point_history: None,
             app_consistent_frequency_in_minutes: None,
@@ -7925,16 +7542,13 @@ impl InMageBasePolicyDetails {
 #[doc = "InMage disable protection provider specific input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageDisableProtectionProviderSpecificInput {
-    #[serde(flatten)]
-    pub disable_protection_provider_specific_input: DisableProtectionProviderSpecificInput,
     #[doc = "A value indicating whether the replica VM should be destroyed or retained. Values from Delete and Retain."]
     #[serde(rename = "replicaVmDeletionStatus", default, skip_serializing_if = "Option::is_none")]
     pub replica_vm_deletion_status: Option<String>,
 }
 impl InMageDisableProtectionProviderSpecificInput {
-    pub fn new(disable_protection_provider_specific_input: DisableProtectionProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            disable_protection_provider_specific_input,
             replica_vm_deletion_status: None,
         }
     }
@@ -8011,8 +7625,6 @@ impl InMageDiskSignatureExclusionOptions {
 #[doc = "VMware Azure specific enable protection input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageEnableProtectionInput {
-    #[serde(flatten)]
-    pub enable_protection_provider_specific_input: EnableProtectionProviderSpecificInput,
     #[doc = "The VM Name."]
     #[serde(rename = "vmFriendlyName", default, skip_serializing_if = "Option::is_none")]
     pub vm_friendly_name: Option<String>,
@@ -8051,7 +7663,6 @@ pub struct InMageEnableProtectionInput {
 }
 impl InMageEnableProtectionInput {
     pub fn new(
-        enable_protection_provider_specific_input: EnableProtectionProviderSpecificInput,
         master_target_id: String,
         process_server_id: String,
         retention_drive: String,
@@ -8059,7 +7670,6 @@ impl InMageEnableProtectionInput {
         multi_vm_group_name: String,
     ) -> Self {
         Self {
-            enable_protection_provider_specific_input,
             vm_friendly_name: None,
             master_target_id,
             process_server_id,
@@ -8103,8 +7713,6 @@ impl InMageFabricSwitchProviderBlockingErrorDetails {
 #[doc = "InMage specific protection profile details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMagePolicyDetails {
-    #[serde(flatten)]
-    pub policy_provider_specific_details: PolicyProviderSpecificDetails,
     #[doc = "The recovery point threshold in minutes."]
     #[serde(rename = "recoveryPointThresholdInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_threshold_in_minutes: Option<i32>,
@@ -8119,9 +7727,8 @@ pub struct InMagePolicyDetails {
     pub multi_vm_sync_status: Option<String>,
 }
 impl InMagePolicyDetails {
-    pub fn new(policy_provider_specific_details: PolicyProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            policy_provider_specific_details,
             recovery_point_threshold_in_minutes: None,
             recovery_point_history: None,
             app_consistent_frequency_in_minutes: None,
@@ -8132,8 +7739,6 @@ impl InMagePolicyDetails {
 #[doc = "VMWare Azure specific protection profile Input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMagePolicyInput {
-    #[serde(flatten)]
-    pub policy_provider_specific_input: PolicyProviderSpecificInput,
     #[doc = "The recovery point threshold in minutes."]
     #[serde(rename = "recoveryPointThresholdInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_threshold_in_minutes: Option<i32>,
@@ -8148,12 +7753,8 @@ pub struct InMagePolicyInput {
     pub multi_vm_sync_status: in_mage_policy_input::MultiVmSyncStatus,
 }
 impl InMagePolicyInput {
-    pub fn new(
-        policy_provider_specific_input: PolicyProviderSpecificInput,
-        multi_vm_sync_status: in_mage_policy_input::MultiVmSyncStatus,
-    ) -> Self {
+    pub fn new(multi_vm_sync_status: in_mage_policy_input::MultiVmSyncStatus) -> Self {
         Self {
-            policy_provider_specific_input,
             recovery_point_threshold_in_minutes: None,
             recovery_point_history: None,
             app_consistent_frequency_in_minutes: None,
@@ -8353,8 +7954,6 @@ impl InMageRcmApplianceDetails {
 #[doc = "InMageRcm appliance specific details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmApplianceSpecificDetails {
-    #[serde(flatten)]
-    pub appliance_specific_details: ApplianceSpecificDetails,
     #[doc = "The list of appliances."]
     #[serde(
         default,
@@ -8364,28 +7963,20 @@ pub struct InMageRcmApplianceSpecificDetails {
     pub appliances: Vec<InMageRcmApplianceDetails>,
 }
 impl InMageRcmApplianceSpecificDetails {
-    pub fn new(appliance_specific_details: ApplianceSpecificDetails) -> Self {
-        Self {
-            appliance_specific_details,
-            appliances: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { appliances: Vec::new() }
     }
 }
 #[doc = "ApplyRecoveryPoint input specific to InMageRcm provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmApplyRecoveryPointInput {
-    #[serde(flatten)]
-    pub apply_recovery_point_provider_specific_input: ApplyRecoveryPointProviderSpecificInput,
     #[doc = "The recovery point Id."]
     #[serde(rename = "recoveryPointId")]
     pub recovery_point_id: String,
 }
 impl InMageRcmApplyRecoveryPointInput {
-    pub fn new(apply_recovery_point_provider_specific_input: ApplyRecoveryPointProviderSpecificInput, recovery_point_id: String) -> Self {
-        Self {
-            apply_recovery_point_provider_specific_input,
-            recovery_point_id,
-        }
+    pub fn new(recovery_point_id: String) -> Self {
+        Self { recovery_point_id }
     }
 }
 #[doc = "InMageRcm discovered protected VM details."]
@@ -8583,8 +8174,6 @@ pub mod in_mage_rcm_disks_default_input {
 #[doc = "InMageRcm specific enable protection input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmEnableProtectionInput {
-    #[serde(flatten)]
-    pub enable_protection_provider_specific_input: EnableProtectionProviderSpecificInput,
     #[doc = "The ARM Id of discovered machine."]
     #[serde(rename = "fabricDiscoveryMachineId")]
     pub fabric_discovery_machine_id: String,
@@ -8646,14 +8235,8 @@ pub struct InMageRcmEnableProtectionInput {
     pub multi_vm_group_name: Option<String>,
 }
 impl InMageRcmEnableProtectionInput {
-    pub fn new(
-        enable_protection_provider_specific_input: EnableProtectionProviderSpecificInput,
-        fabric_discovery_machine_id: String,
-        target_resource_group_id: String,
-        process_server_id: String,
-    ) -> Self {
+    pub fn new(fabric_discovery_machine_id: String, target_resource_group_id: String, process_server_id: String) -> Self {
         Self {
-            enable_protection_provider_specific_input,
             fabric_discovery_machine_id,
             disks_to_include: Vec::new(),
             disks_default: None,
@@ -8720,8 +8303,6 @@ pub mod in_mage_rcm_enable_protection_input {
 #[doc = "Event details for InMageRcm provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmEventDetails {
-    #[serde(flatten)]
-    pub event_provider_specific_details: EventProviderSpecificDetails,
     #[doc = "The protected item name."]
     #[serde(rename = "protectedItemName", default, skip_serializing_if = "Option::is_none")]
     pub protected_item_name: Option<String>,
@@ -8748,9 +8329,8 @@ pub struct InMageRcmEventDetails {
     pub component_display_name: Option<String>,
 }
 impl InMageRcmEventDetails {
-    pub fn new(event_provider_specific_details: EventProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            event_provider_specific_details,
             protected_item_name: None,
             vm_name: None,
             latest_agent_version: None,
@@ -8765,8 +8345,6 @@ impl InMageRcmEventDetails {
 #[doc = "InMageRcm fabric provider specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmFabricCreationInput {
-    #[serde(flatten)]
-    pub fabric_specific_creation_input: FabricSpecificCreationInput,
     #[doc = "The ARM Id of the VMware site."]
     #[serde(rename = "vmwareSiteId")]
     pub vmware_site_id: String,
@@ -8778,14 +8356,8 @@ pub struct InMageRcmFabricCreationInput {
     pub source_agent_identity: IdentityProviderInput,
 }
 impl InMageRcmFabricCreationInput {
-    pub fn new(
-        fabric_specific_creation_input: FabricSpecificCreationInput,
-        vmware_site_id: String,
-        physical_site_id: String,
-        source_agent_identity: IdentityProviderInput,
-    ) -> Self {
+    pub fn new(vmware_site_id: String, physical_site_id: String, source_agent_identity: IdentityProviderInput) -> Self {
         Self {
-            fabric_specific_creation_input,
             vmware_site_id,
             physical_site_id,
             source_agent_identity,
@@ -8795,8 +8367,6 @@ impl InMageRcmFabricCreationInput {
 #[doc = "InMageRcm fabric specific details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmFabricSpecificDetails {
-    #[serde(flatten)]
-    pub fabric_specific_details: FabricSpecificDetails,
     #[doc = "The ARM Id of the VMware site."]
     #[serde(rename = "vmwareSiteId", default, skip_serializing_if = "Option::is_none")]
     pub vmware_site_id: Option<String>,
@@ -8886,9 +8456,8 @@ pub struct InMageRcmFabricSpecificDetails {
     pub agent_details: Vec<AgentDetails>,
 }
 impl InMageRcmFabricSpecificDetails {
-    pub fn new(fabric_specific_details: FabricSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            fabric_specific_details,
             vmware_site_id: None,
             physical_site_id: None,
             service_endpoint: None,
@@ -8992,8 +8561,6 @@ impl InMageRcmFailbackDiscoveredProtectedVmDetails {
 #[doc = "Event details for InMageRcmFailback provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmFailbackEventDetails {
-    #[serde(flatten)]
-    pub event_provider_specific_details: EventProviderSpecificDetails,
     #[doc = "The protected item name."]
     #[serde(rename = "protectedItemName", default, skip_serializing_if = "Option::is_none")]
     pub protected_item_name: Option<String>,
@@ -9011,9 +8578,8 @@ pub struct InMageRcmFailbackEventDetails {
     pub component_display_name: Option<String>,
 }
 impl InMageRcmFailbackEventDetails {
-    pub fn new(event_provider_specific_details: EventProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            event_provider_specific_details,
             protected_item_name: None,
             vm_name: None,
             appliance_name: None,
@@ -9087,21 +8653,13 @@ impl InMageRcmFailbackNicDetails {
 #[doc = "Provider specific input for InMageRcmFailback failover."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmFailbackPlannedFailoverProviderInput {
-    #[serde(flatten)]
-    pub planned_failover_provider_specific_failover_input: PlannedFailoverProviderSpecificFailoverInput,
     #[doc = "The recovery point type."]
     #[serde(rename = "recoveryPointType")]
     pub recovery_point_type: in_mage_rcm_failback_planned_failover_provider_input::RecoveryPointType,
 }
 impl InMageRcmFailbackPlannedFailoverProviderInput {
-    pub fn new(
-        planned_failover_provider_specific_failover_input: PlannedFailoverProviderSpecificFailoverInput,
-        recovery_point_type: in_mage_rcm_failback_planned_failover_provider_input::RecoveryPointType,
-    ) -> Self {
-        Self {
-            planned_failover_provider_specific_failover_input,
-            recovery_point_type,
-        }
+    pub fn new(recovery_point_type: in_mage_rcm_failback_planned_failover_provider_input::RecoveryPointType) -> Self {
+        Self { recovery_point_type }
     }
 }
 pub mod in_mage_rcm_failback_planned_failover_provider_input {
@@ -9147,8 +8705,6 @@ pub mod in_mage_rcm_failback_planned_failover_provider_input {
 #[doc = "InMageRcmFailback policy creation input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmFailbackPolicyCreationInput {
-    #[serde(flatten)]
-    pub policy_provider_specific_input: PolicyProviderSpecificInput,
     #[doc = "The crash consistent snapshot frequency (in minutes)."]
     #[serde(rename = "crashConsistentFrequencyInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub crash_consistent_frequency_in_minutes: Option<i32>,
@@ -9157,9 +8713,8 @@ pub struct InMageRcmFailbackPolicyCreationInput {
     pub app_consistent_frequency_in_minutes: Option<i32>,
 }
 impl InMageRcmFailbackPolicyCreationInput {
-    pub fn new(policy_provider_specific_input: PolicyProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            policy_provider_specific_input,
             crash_consistent_frequency_in_minutes: None,
             app_consistent_frequency_in_minutes: None,
         }
@@ -9168,8 +8723,6 @@ impl InMageRcmFailbackPolicyCreationInput {
 #[doc = "InMageRcm failback specific policy details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmFailbackPolicyDetails {
-    #[serde(flatten)]
-    pub policy_provider_specific_details: PolicyProviderSpecificDetails,
     #[doc = "The app consistent snapshot frequency in minutes."]
     #[serde(rename = "appConsistentFrequencyInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub app_consistent_frequency_in_minutes: Option<i32>,
@@ -9178,9 +8731,8 @@ pub struct InMageRcmFailbackPolicyDetails {
     pub crash_consistent_frequency_in_minutes: Option<i32>,
 }
 impl InMageRcmFailbackPolicyDetails {
-    pub fn new(policy_provider_specific_details: PolicyProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            policy_provider_specific_details,
             app_consistent_frequency_in_minutes: None,
             crash_consistent_frequency_in_minutes: None,
         }
@@ -9231,8 +8783,6 @@ impl InMageRcmFailbackProtectedDiskDetails {
 #[doc = "InMageRcmFailback provider specific details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmFailbackReplicationDetails {
-    #[serde(flatten)]
-    pub replication_provider_specific_settings: ReplicationProviderSpecificSettings,
     #[doc = "The virtual machine internal identifier."]
     #[serde(rename = "internalIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub internal_identifier: Option<String>,
@@ -9336,9 +8886,8 @@ pub struct InMageRcmFailbackReplicationDetails {
     pub is_agent_registration_successful_after_failover: Option<bool>,
 }
 impl InMageRcmFailbackReplicationDetails {
-    pub fn new(replication_provider_specific_settings: ReplicationProviderSpecificSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            replication_provider_specific_settings,
             internal_identifier: None,
             azure_virtual_machine_id: None,
             multi_vm_group_name: None,
@@ -9541,8 +9090,6 @@ pub mod in_mage_rcm_failback_replication_details {
 #[doc = "InMageRcmFailback specific provider input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmFailbackReprotectInput {
-    #[serde(flatten)]
-    pub reverse_replication_provider_specific_input: ReverseReplicationProviderSpecificInput,
     #[doc = "The process server Id."]
     #[serde(rename = "processServerId")]
     pub process_server_id: String,
@@ -9554,13 +9101,8 @@ pub struct InMageRcmFailbackReprotectInput {
     pub policy_id: String,
 }
 impl InMageRcmFailbackReprotectInput {
-    pub fn new(
-        reverse_replication_provider_specific_input: ReverseReplicationProviderSpecificInput,
-        process_server_id: String,
-        policy_id: String,
-    ) -> Self {
+    pub fn new(process_server_id: String, policy_id: String) -> Self {
         Self {
-            reverse_replication_provider_specific_input,
             process_server_id,
             run_as_account_id: None,
             policy_id,
@@ -9920,8 +9462,6 @@ impl InMageRcmNicInput {
 #[doc = "InMageRcm policy creation input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmPolicyCreationInput {
-    #[serde(flatten)]
-    pub policy_provider_specific_input: PolicyProviderSpecificInput,
     #[doc = "The duration in minutes until which the recovery points need to be stored."]
     #[serde(rename = "recoveryPointHistoryInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_history_in_minutes: Option<i32>,
@@ -9936,9 +9476,8 @@ pub struct InMageRcmPolicyCreationInput {
     pub enable_multi_vm_sync: Option<String>,
 }
 impl InMageRcmPolicyCreationInput {
-    pub fn new(policy_provider_specific_input: PolicyProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            policy_provider_specific_input,
             recovery_point_history_in_minutes: None,
             crash_consistent_frequency_in_minutes: None,
             app_consistent_frequency_in_minutes: None,
@@ -9949,8 +9488,6 @@ impl InMageRcmPolicyCreationInput {
 #[doc = "InMageRcm specific policy details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmPolicyDetails {
-    #[serde(flatten)]
-    pub policy_provider_specific_details: PolicyProviderSpecificDetails,
     #[doc = "The duration in minutes until which the recovery points need to be stored."]
     #[serde(rename = "recoveryPointHistoryInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_history_in_minutes: Option<i32>,
@@ -9965,9 +9502,8 @@ pub struct InMageRcmPolicyDetails {
     pub enable_multi_vm_sync: Option<String>,
 }
 impl InMageRcmPolicyDetails {
-    pub fn new(policy_provider_specific_details: PolicyProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            policy_provider_specific_details,
             recovery_point_history_in_minutes: None,
             app_consistent_frequency_in_minutes: None,
             crash_consistent_frequency_in_minutes: None,
@@ -10077,16 +9613,13 @@ pub mod in_mage_rcm_protected_disk_details {
 #[doc = "InMageRcm provider specific container mapping details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmProtectionContainerMappingDetails {
-    #[serde(flatten)]
-    pub protection_container_mapping_provider_specific_details: ProtectionContainerMappingProviderSpecificDetails,
     #[doc = "A value indicating whether the flag for enable agent auto upgrade."]
     #[serde(rename = "enableAgentAutoUpgrade", default, skip_serializing_if = "Option::is_none")]
     pub enable_agent_auto_upgrade: Option<String>,
 }
 impl InMageRcmProtectionContainerMappingDetails {
-    pub fn new(protection_container_mapping_provider_specific_details: ProtectionContainerMappingProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            protection_container_mapping_provider_specific_details,
             enable_agent_auto_upgrade: None,
         }
     }
@@ -10094,16 +9627,13 @@ impl InMageRcmProtectionContainerMappingDetails {
 #[doc = "InMageRcm provider specific recovery point details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmRecoveryPointDetails {
-    #[serde(flatten)]
-    pub provider_specific_recovery_point_details: ProviderSpecificRecoveryPointDetails,
     #[doc = "A value indicating whether the recovery point is multi VM consistent."]
     #[serde(rename = "isMultiVmSyncPoint", default, skip_serializing_if = "Option::is_none")]
     pub is_multi_vm_sync_point: Option<String>,
 }
 impl InMageRcmRecoveryPointDetails {
-    pub fn new(provider_specific_recovery_point_details: ProviderSpecificRecoveryPointDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            provider_specific_recovery_point_details,
             is_multi_vm_sync_point: None,
         }
     }
@@ -10111,8 +9641,6 @@ impl InMageRcmRecoveryPointDetails {
 #[doc = "InMageRcm provider specific details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmReplicationDetails {
-    #[serde(flatten)]
-    pub replication_provider_specific_settings: ReplicationProviderSpecificSettings,
     #[doc = "The virtual machine internal identifier."]
     #[serde(rename = "internalIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub internal_identifier: Option<String>,
@@ -10295,9 +9823,8 @@ pub struct InMageRcmReplicationDetails {
     pub discovered_vm_details: Option<InMageRcmDiscoveredProtectedVmDetails>,
 }
 impl InMageRcmReplicationDetails {
-    pub fn new(replication_provider_specific_settings: ReplicationProviderSpecificSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            replication_provider_specific_settings,
             internal_identifier: None,
             fabric_discovery_machine_id: None,
             multi_vm_group_name: None,
@@ -10523,8 +10050,6 @@ pub mod in_mage_rcm_replication_details {
 #[doc = "InMageRcm specific provider input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmReprotectInput {
-    #[serde(flatten)]
-    pub reverse_replication_provider_specific_input: ReverseReplicationProviderSpecificInput,
     #[doc = "The reprotect agent Id."]
     #[serde(rename = "reprotectAgentId")]
     pub reprotect_agent_id: String,
@@ -10539,14 +10064,8 @@ pub struct InMageRcmReprotectInput {
     pub policy_id: Option<String>,
 }
 impl InMageRcmReprotectInput {
-    pub fn new(
-        reverse_replication_provider_specific_input: ReverseReplicationProviderSpecificInput,
-        reprotect_agent_id: String,
-        datastore_name: String,
-        log_storage_account_id: String,
-    ) -> Self {
+    pub fn new(reprotect_agent_id: String, datastore_name: String, log_storage_account_id: String) -> Self {
         Self {
-            reverse_replication_provider_specific_input,
             reprotect_agent_id,
             datastore_name,
             log_storage_account_id,
@@ -10636,8 +10155,6 @@ pub mod in_mage_rcm_sync_details {
 #[doc = "InMageRcm provider specific input for test failover."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmTestFailoverInput {
-    #[serde(flatten)]
-    pub test_failover_provider_specific_input: TestFailoverProviderSpecificInput,
     #[doc = "The test network Id."]
     #[serde(rename = "networkId", default, skip_serializing_if = "Option::is_none")]
     pub network_id: Option<String>,
@@ -10646,9 +10163,8 @@ pub struct InMageRcmTestFailoverInput {
     pub recovery_point_id: Option<String>,
 }
 impl InMageRcmTestFailoverInput {
-    pub fn new(test_failover_provider_specific_input: TestFailoverProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            test_failover_provider_specific_input,
             network_id: None,
             recovery_point_id: None,
         }
@@ -10657,8 +10173,6 @@ impl InMageRcmTestFailoverInput {
 #[doc = "InMageRcm provider specific input for unplanned failover."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmUnplannedFailoverInput {
-    #[serde(flatten)]
-    pub unplanned_failover_provider_specific_input: UnplannedFailoverProviderSpecificInput,
     #[doc = "A value indicating whether VM is to be shutdown."]
     #[serde(rename = "performShutdown")]
     pub perform_shutdown: String,
@@ -10667,9 +10181,8 @@ pub struct InMageRcmUnplannedFailoverInput {
     pub recovery_point_id: Option<String>,
 }
 impl InMageRcmUnplannedFailoverInput {
-    pub fn new(unplanned_failover_provider_specific_input: UnplannedFailoverProviderSpecificInput, perform_shutdown: String) -> Self {
+    pub fn new(perform_shutdown: String) -> Self {
         Self {
-            unplanned_failover_provider_specific_input,
             perform_shutdown,
             recovery_point_id: None,
         }
@@ -10678,48 +10191,30 @@ impl InMageRcmUnplannedFailoverInput {
 #[doc = "InMageRcm provider specific input to update appliance for replication protected item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmUpdateApplianceForReplicationProtectedItemInput {
-    #[serde(flatten)]
-    pub update_appliance_for_replication_protected_item_provider_specific_input:
-        UpdateApplianceForReplicationProtectedItemProviderSpecificInput,
     #[doc = "The run as account Id."]
     #[serde(rename = "runAsAccountId", default, skip_serializing_if = "Option::is_none")]
     pub run_as_account_id: Option<String>,
 }
 impl InMageRcmUpdateApplianceForReplicationProtectedItemInput {
-    pub fn new(
-        update_appliance_for_replication_protected_item_provider_specific_input : UpdateApplianceForReplicationProtectedItemProviderSpecificInput,
-    ) -> Self {
-        Self {
-            update_appliance_for_replication_protected_item_provider_specific_input,
-            run_as_account_id: None,
-        }
+    pub fn new() -> Self {
+        Self { run_as_account_id: None }
     }
 }
 #[doc = "InMageRcm update protection container mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmUpdateContainerMappingInput {
-    #[serde(flatten)]
-    pub replication_provider_specific_update_container_mapping_input: ReplicationProviderSpecificUpdateContainerMappingInput,
     #[doc = "A value indicating whether agent auto upgrade has to be enabled."]
     #[serde(rename = "enableAgentAutoUpgrade")]
     pub enable_agent_auto_upgrade: String,
 }
 impl InMageRcmUpdateContainerMappingInput {
-    pub fn new(
-        replication_provider_specific_update_container_mapping_input: ReplicationProviderSpecificUpdateContainerMappingInput,
-        enable_agent_auto_upgrade: String,
-    ) -> Self {
-        Self {
-            replication_provider_specific_update_container_mapping_input,
-            enable_agent_auto_upgrade,
-        }
+    pub fn new(enable_agent_auto_upgrade: String) -> Self {
+        Self { enable_agent_auto_upgrade }
     }
 }
 #[doc = "InMageRcm provider specific input to update replication protected item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageRcmUpdateReplicationProtectedItemInput {
-    #[serde(flatten)]
-    pub update_replication_protected_item_provider_input: UpdateReplicationProtectedItemProviderInput,
     #[doc = "The target VM name."]
     #[serde(rename = "targetVmName", default, skip_serializing_if = "Option::is_none")]
     pub target_vm_name: Option<String>,
@@ -10760,9 +10255,8 @@ pub struct InMageRcmUpdateReplicationProtectedItemInput {
     pub license_type: Option<in_mage_rcm_update_replication_protected_item_input::LicenseType>,
 }
 impl InMageRcmUpdateReplicationProtectedItemInput {
-    pub fn new(update_replication_protected_item_provider_input: UpdateReplicationProtectedItemProviderInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            update_replication_protected_item_provider_input,
             target_vm_name: None,
             target_vm_size: None,
             target_resource_group_id: None,
@@ -10822,8 +10316,6 @@ pub mod in_mage_rcm_update_replication_protected_item_input {
 #[doc = "InMage provider specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageReplicationDetails {
-    #[serde(flatten)]
-    pub replication_provider_specific_settings: ReplicationProviderSpecificSettings,
     #[doc = "The active location of the VM. If the VM is being protected from Azure, this field will take values from { Azure, OnPrem }. If the VM is being protected between two data-centers, this field will be OnPrem always."]
     #[serde(rename = "activeSiteType", default, skip_serializing_if = "Option::is_none")]
     pub active_site_type: Option<String>,
@@ -10965,9 +10457,8 @@ pub struct InMageReplicationDetails {
     pub total_progress_health: Option<String>,
 }
 impl InMageReplicationDetails {
-    pub fn new(replication_provider_specific_settings: ReplicationProviderSpecificSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            replication_provider_specific_settings,
             active_site_type: None,
             source_vm_cpu_count: None,
             source_vm_ram_size_in_mb: None,
@@ -11014,8 +10505,6 @@ impl InMageReplicationDetails {
 #[doc = "InMageAzureV2 specific provider input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageReprotectInput {
-    #[serde(flatten)]
-    pub reverse_replication_provider_specific_input: ReverseReplicationProviderSpecificInput,
     #[doc = "The Master Target Id."]
     #[serde(rename = "masterTargetId")]
     pub master_target_id: String,
@@ -11047,15 +10536,8 @@ pub struct InMageReprotectInput {
     pub disks_to_include: Vec<String>,
 }
 impl InMageReprotectInput {
-    pub fn new(
-        reverse_replication_provider_specific_input: ReverseReplicationProviderSpecificInput,
-        master_target_id: String,
-        process_server_id: String,
-        retention_drive: String,
-        profile_id: String,
-    ) -> Self {
+    pub fn new(master_target_id: String, process_server_id: String, retention_drive: String, profile_id: String) -> Self {
         Self {
-            reverse_replication_provider_specific_input,
             master_target_id,
             process_server_id,
             retention_drive,
@@ -11070,8 +10552,6 @@ impl InMageReprotectInput {
 #[doc = "Provider specific input for InMage test failover."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageTestFailoverInput {
-    #[serde(flatten)]
-    pub test_failover_provider_specific_input: TestFailoverProviderSpecificInput,
     #[doc = "The recovery point type. Values from LatestTime, LatestTag or Custom. In the case of custom, the recovery point provided by RecoveryPointId will be used. In the other two cases, recovery point id will be ignored."]
     #[serde(rename = "recoveryPointType", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_type: Option<in_mage_test_failover_input::RecoveryPointType>,
@@ -11080,9 +10560,8 @@ pub struct InMageTestFailoverInput {
     pub recovery_point_id: Option<String>,
 }
 impl InMageTestFailoverInput {
-    pub fn new(test_failover_provider_specific_input: TestFailoverProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            test_failover_provider_specific_input,
             recovery_point_type: None,
             recovery_point_id: None,
         }
@@ -11133,8 +10612,6 @@ pub mod in_mage_test_failover_input {
 #[doc = "Provider specific input for InMage unplanned failover."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InMageUnplannedFailoverInput {
-    #[serde(flatten)]
-    pub unplanned_failover_provider_specific_input: UnplannedFailoverProviderSpecificInput,
     #[doc = "The recovery point type. Values from LatestTime, LatestTag or Custom. In the case of custom, the recovery point provided by RecoveryPointId will be used. In the other two cases, recovery point id will be ignored."]
     #[serde(rename = "recoveryPointType", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_type: Option<in_mage_unplanned_failover_input::RecoveryPointType>,
@@ -11143,9 +10620,8 @@ pub struct InMageUnplannedFailoverInput {
     pub recovery_point_id: Option<String>,
 }
 impl InMageUnplannedFailoverInput {
-    pub fn new(unplanned_failover_provider_specific_input: UnplannedFailoverProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            unplanned_failover_provider_specific_input,
             recovery_point_type: None,
             recovery_point_id: None,
         }
@@ -11638,8 +11114,6 @@ pub mod job_query_parameter {
 #[doc = "Model class for event details of a job status event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobStatusEventDetails {
-    #[serde(flatten)]
-    pub event_specific_details: EventSpecificDetails,
     #[doc = "Job arm id for the event."]
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
@@ -11654,9 +11128,8 @@ pub struct JobStatusEventDetails {
     pub affected_object_type: Option<String>,
 }
 impl JobStatusEventDetails {
-    pub fn new(event_specific_details: EventSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            event_specific_details,
             job_id: None,
             job_friendly_name: None,
             job_status: None,
@@ -11667,18 +11140,13 @@ impl JobStatusEventDetails {
 #[doc = "This class represents a task which is actually a workflow so that one can navigate to its individual drill down."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobTaskDetails {
-    #[serde(flatten)]
-    pub task_type_details: TaskTypeDetails,
     #[doc = "This class contains the minimal job details required to navigate to the desired drill down."]
     #[serde(rename = "jobTask", default, skip_serializing_if = "Option::is_none")]
     pub job_task: Option<JobEntity>,
 }
 impl JobTaskDetails {
-    pub fn new(task_type_details: TaskTypeDetails) -> Self {
-        Self {
-            task_type_details,
-            job_task: None,
-        }
+    pub fn new() -> Self {
+        Self { job_task: None }
     }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -11765,8 +11233,6 @@ impl LogicalNetworkProperties {
 #[doc = "This class represents the manual action task details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManualActionTaskDetails {
-    #[serde(flatten)]
-    pub task_type_details: TaskTypeDetails,
     #[doc = "The name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -11778,9 +11244,8 @@ pub struct ManualActionTaskDetails {
     pub observation: Option<String>,
 }
 impl ManualActionTaskDetails {
-    pub fn new(task_type_details: TaskTypeDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            task_type_details,
             name: None,
             instructions: None,
             observation: None,
@@ -11976,14 +11441,6 @@ pub struct MigrateInputProperties {
 impl MigrateInputProperties {
     pub fn new(provider_specific_details: MigrateProviderSpecificInputUnion) -> Self {
         Self { provider_specific_details }
-    }
-}
-#[doc = "Migrate provider specific input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MigrateProviderSpecificInput {}
-impl MigrateProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The class type."]
@@ -12301,14 +11758,6 @@ impl MigrationItemsQueryParameter {
         Self::default()
     }
 }
-#[doc = "Migration provider specific settings."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MigrationProviderSpecificSettings {}
-impl MigrationProviderSpecificSettings {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Gets the instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -12507,14 +11956,6 @@ impl NetworkMappingCollection {
         Self::default()
     }
 }
-#[doc = "Network Mapping fabric specific settings."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkMappingFabricSpecificSettings {}
-impl NetworkMappingFabricSpecificSettings {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Gets the Instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -12587,8 +12028,6 @@ impl NetworkProperties {
 #[doc = "New Protection profile input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NewProtectionProfile {
-    #[serde(flatten)]
-    pub protection_profile_custom_details: ProtectionProfileCustomDetails,
     #[doc = "The protection profile input."]
     #[serde(rename = "policyName")]
     pub policy_name: String,
@@ -12606,13 +12045,8 @@ pub struct NewProtectionProfile {
     pub multi_vm_sync_status: new_protection_profile::MultiVmSyncStatus,
 }
 impl NewProtectionProfile {
-    pub fn new(
-        protection_profile_custom_details: ProtectionProfileCustomDetails,
-        policy_name: String,
-        multi_vm_sync_status: new_protection_profile::MultiVmSyncStatus,
-    ) -> Self {
+    pub fn new(policy_name: String, multi_vm_sync_status: new_protection_profile::MultiVmSyncStatus) -> Self {
         Self {
-            protection_profile_custom_details,
             policy_name,
             recovery_point_history: None,
             crash_consistent_frequency_in_minutes: None,
@@ -12664,8 +12098,6 @@ pub mod new_protection_profile {
 #[doc = "Recovery virtual network input to create new virtual network from given source network."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NewRecoveryVirtualNetwork {
-    #[serde(flatten)]
-    pub recovery_virtual_network_custom_details: RecoveryVirtualNetworkCustomDetails,
     #[doc = "The name of the resource group to be used to create the recovery virtual network. If absent, target network would be created in the same resource group as target VM."]
     #[serde(
         rename = "recoveryVirtualNetworkResourceGroupName",
@@ -12678,9 +12110,8 @@ pub struct NewRecoveryVirtualNetwork {
     pub recovery_virtual_network_name: Option<String>,
 }
 impl NewRecoveryVirtualNetwork {
-    pub fn new(recovery_virtual_network_custom_details: RecoveryVirtualNetworkCustomDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            recovery_virtual_network_custom_details,
             recovery_virtual_network_resource_group_name: None,
             recovery_virtual_network_name: None,
         }
@@ -12870,14 +12301,6 @@ impl PlannedFailoverInputProperties {
         Self::default()
     }
 }
-#[doc = "Provider specific failover input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PlannedFailoverProviderSpecificFailoverInput {}
-impl PlannedFailoverProviderSpecificFailoverInput {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -12940,14 +12363,6 @@ impl PolicyProperties {
         Self::default()
     }
 }
-#[doc = "Base class for Provider specific details for policies."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PolicyProviderSpecificDetails {}
-impl PolicyProviderSpecificDetails {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Gets the class type. Overridden in derived classes."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -12964,14 +12379,6 @@ pub enum PolicyProviderSpecificDetailsUnion {
     InMageRcmFailback(InMageRcmFailbackPolicyDetails),
     InMageRcm(InMageRcmPolicyDetails),
     VMwareCbt(VmwareCbtPolicyDetails),
-}
-#[doc = "Base class for provider specific input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PolicyProviderSpecificInput {}
-impl PolicyProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
-    }
 }
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -13857,14 +13264,6 @@ impl ProtectionContainerMappingProperties {
         Self::default()
     }
 }
-#[doc = "Container mapping provider specific details."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProtectionContainerMappingProviderSpecificDetails {}
-impl ProtectionContainerMappingProviderSpecificDetails {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Gets the class type. Overridden in derived classes."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -13904,14 +13303,6 @@ impl ProtectionContainerProperties {
         Self::default()
     }
 }
-#[doc = "Protection Profile custom input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProtectionProfileCustomDetails {}
-impl ProtectionProfileCustomDetails {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resourceType")]
@@ -13941,14 +13332,6 @@ pub struct ProviderError {
 impl ProviderError {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Replication provider specific recovery point details."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProviderSpecificRecoveryPointDetails {}
-impl ProviderSpecificRecoveryPointDetails {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Gets the provider type."]
@@ -14133,14 +13516,6 @@ pub mod rcm_proxy_details {
         }
     }
 }
-#[doc = "Recovery Availability Set custom input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryAvailabilitySetCustomDetails {}
-impl RecoveryAvailabilitySetCustomDetails {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resourceType")]
@@ -14164,8 +13539,6 @@ impl RecoveryPlan {
 #[doc = "Recovery plan A2A specific details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPlanA2aDetails {
-    #[serde(flatten)]
-    pub recovery_plan_provider_specific_details: RecoveryPlanProviderSpecificDetails,
     #[doc = "The primary zone."]
     #[serde(rename = "primaryZone", default, skip_serializing_if = "Option::is_none")]
     pub primary_zone: Option<String>,
@@ -14180,9 +13553,8 @@ pub struct RecoveryPlanA2aDetails {
     pub recovery_extended_location: Option<ExtendedLocation>,
 }
 impl RecoveryPlanA2aDetails {
-    pub fn new(recovery_plan_provider_specific_details: RecoveryPlanProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            recovery_plan_provider_specific_details,
             primary_zone: None,
             recovery_zone: None,
             primary_extended_location: None,
@@ -14193,8 +13565,6 @@ impl RecoveryPlanA2aDetails {
 #[doc = "Recovery plan A2A failover input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPlanA2aFailoverInput {
-    #[serde(flatten)]
-    pub recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
     #[doc = "The recovery point type."]
     #[serde(rename = "recoveryPointType")]
     pub recovery_point_type: recovery_plan_a2a_failover_input::RecoveryPointType,
@@ -14206,12 +13576,8 @@ pub struct RecoveryPlanA2aFailoverInput {
     pub multi_vm_sync_point_option: Option<recovery_plan_a2a_failover_input::MultiVmSyncPointOption>,
 }
 impl RecoveryPlanA2aFailoverInput {
-    pub fn new(
-        recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
-        recovery_point_type: recovery_plan_a2a_failover_input::RecoveryPointType,
-    ) -> Self {
+    pub fn new(recovery_point_type: recovery_plan_a2a_failover_input::RecoveryPointType) -> Self {
         Self {
-            recovery_plan_provider_specific_failover_input,
             recovery_point_type,
             cloud_service_creation_option: None,
             multi_vm_sync_point_option: None,
@@ -14306,8 +13672,6 @@ pub mod recovery_plan_a2a_failover_input {
 #[doc = "Recovery plan A2A input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPlanA2aInput {
-    #[serde(flatten)]
-    pub recovery_plan_provider_specific_input: RecoveryPlanProviderSpecificInput,
     #[doc = "The primary zone."]
     #[serde(rename = "primaryZone", default, skip_serializing_if = "Option::is_none")]
     pub primary_zone: Option<String>,
@@ -14322,9 +13686,8 @@ pub struct RecoveryPlanA2aInput {
     pub recovery_extended_location: Option<ExtendedLocation>,
 }
 impl RecoveryPlanA2aInput {
-    pub fn new(recovery_plan_provider_specific_input: RecoveryPlanProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            recovery_plan_provider_specific_input,
             primary_zone: None,
             recovery_zone: None,
             primary_extended_location: None,
@@ -14363,14 +13726,6 @@ impl RecoveryPlanAction {
         }
     }
 }
-#[doc = "Recovery plan action custom details."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryPlanActionDetails {}
-impl RecoveryPlanActionDetails {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Gets the type of action details (see RecoveryPlanActionDetailsTypes enum for possible values)."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -14382,8 +13737,6 @@ pub enum RecoveryPlanActionDetailsUnion {
 #[doc = "Recovery plan Automation runbook action details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPlanAutomationRunbookActionDetails {
-    #[serde(flatten)]
-    pub recovery_plan_action_details: RecoveryPlanActionDetails,
     #[doc = "The runbook ARM Id."]
     #[serde(rename = "runbookId", default, skip_serializing_if = "Option::is_none")]
     pub runbook_id: Option<String>,
@@ -14395,12 +13748,8 @@ pub struct RecoveryPlanAutomationRunbookActionDetails {
     pub fabric_location: recovery_plan_automation_runbook_action_details::FabricLocation,
 }
 impl RecoveryPlanAutomationRunbookActionDetails {
-    pub fn new(
-        recovery_plan_action_details: RecoveryPlanActionDetails,
-        fabric_location: recovery_plan_automation_runbook_action_details::FabricLocation,
-    ) -> Self {
+    pub fn new(fabric_location: recovery_plan_automation_runbook_action_details::FabricLocation) -> Self {
         Self {
-            recovery_plan_action_details,
             runbook_id: None,
             timeout: None,
             fabric_location,
@@ -14588,8 +13937,6 @@ pub enum RecoveryPlanGroupTaskDetailsUnion {
 #[doc = "Recovery plan HVR Azure failback input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPlanHyperVReplicaAzureFailbackInput {
-    #[serde(flatten)]
-    pub recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
     #[doc = "The data sync option."]
     #[serde(rename = "dataSyncOption")]
     pub data_sync_option: recovery_plan_hyper_v_replica_azure_failback_input::DataSyncOption,
@@ -14599,12 +13946,10 @@ pub struct RecoveryPlanHyperVReplicaAzureFailbackInput {
 }
 impl RecoveryPlanHyperVReplicaAzureFailbackInput {
     pub fn new(
-        recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
         data_sync_option: recovery_plan_hyper_v_replica_azure_failback_input::DataSyncOption,
         recovery_vm_creation_option: recovery_plan_hyper_v_replica_azure_failback_input::RecoveryVmCreationOption,
     ) -> Self {
         Self {
-            recovery_plan_provider_specific_failover_input,
             data_sync_option,
             recovery_vm_creation_option,
         }
@@ -14690,8 +14035,6 @@ pub mod recovery_plan_hyper_v_replica_azure_failback_input {
 #[doc = "Recovery plan HVR Azure failover input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPlanHyperVReplicaAzureFailoverInput {
-    #[serde(flatten)]
-    pub recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
     #[doc = "The primary KEK certificate PFX."]
     #[serde(rename = "primaryKekCertificatePfx", default, skip_serializing_if = "Option::is_none")]
     pub primary_kek_certificate_pfx: Option<String>,
@@ -14703,9 +14046,8 @@ pub struct RecoveryPlanHyperVReplicaAzureFailoverInput {
     pub recovery_point_type: Option<recovery_plan_hyper_v_replica_azure_failover_input::RecoveryPointType>,
 }
 impl RecoveryPlanHyperVReplicaAzureFailoverInput {
-    pub fn new(recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            recovery_plan_provider_specific_failover_input,
             primary_kek_certificate_pfx: None,
             secondary_kek_certificate_pfx: None,
             recovery_point_type: None,
@@ -14759,8 +14101,6 @@ pub mod recovery_plan_hyper_v_replica_azure_failover_input {
 #[doc = "Recovery plan InMageAzureV2 failover input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPlanInMageAzureV2FailoverInput {
-    #[serde(flatten)]
-    pub recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
     #[doc = "The recovery point type."]
     #[serde(rename = "recoveryPointType")]
     pub recovery_point_type: recovery_plan_in_mage_azure_v2_failover_input::RecoveryPointType,
@@ -14769,12 +14109,8 @@ pub struct RecoveryPlanInMageAzureV2FailoverInput {
     pub use_multi_vm_sync_point: Option<String>,
 }
 impl RecoveryPlanInMageAzureV2FailoverInput {
-    pub fn new(
-        recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
-        recovery_point_type: recovery_plan_in_mage_azure_v2_failover_input::RecoveryPointType,
-    ) -> Self {
+    pub fn new(recovery_point_type: recovery_plan_in_mage_azure_v2_failover_input::RecoveryPointType) -> Self {
         Self {
-            recovery_plan_provider_specific_failover_input,
             recovery_point_type,
             use_multi_vm_sync_point: None,
         }
@@ -14829,21 +14165,13 @@ pub mod recovery_plan_in_mage_azure_v2_failover_input {
 #[doc = "Recovery plan InMage failover input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPlanInMageFailoverInput {
-    #[serde(flatten)]
-    pub recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
     #[doc = "The recovery point type."]
     #[serde(rename = "recoveryPointType")]
     pub recovery_point_type: recovery_plan_in_mage_failover_input::RecoveryPointType,
 }
 impl RecoveryPlanInMageFailoverInput {
-    pub fn new(
-        recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
-        recovery_point_type: recovery_plan_in_mage_failover_input::RecoveryPointType,
-    ) -> Self {
-        Self {
-            recovery_plan_provider_specific_failover_input,
-            recovery_point_type,
-        }
+    pub fn new(recovery_point_type: recovery_plan_in_mage_failover_input::RecoveryPointType) -> Self {
+        Self { recovery_point_type }
     }
 }
 pub mod recovery_plan_in_mage_failover_input {
@@ -14891,8 +14219,6 @@ pub mod recovery_plan_in_mage_failover_input {
 #[doc = "Recovery plan InMageRcmFailback failover input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPlanInMageRcmFailbackFailoverInput {
-    #[serde(flatten)]
-    pub recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
     #[doc = "The recovery point type."]
     #[serde(rename = "recoveryPointType")]
     pub recovery_point_type: recovery_plan_in_mage_rcm_failback_failover_input::RecoveryPointType,
@@ -14901,12 +14227,8 @@ pub struct RecoveryPlanInMageRcmFailbackFailoverInput {
     pub use_multi_vm_sync_point: Option<String>,
 }
 impl RecoveryPlanInMageRcmFailbackFailoverInput {
-    pub fn new(
-        recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
-        recovery_point_type: recovery_plan_in_mage_rcm_failback_failover_input::RecoveryPointType,
-    ) -> Self {
+    pub fn new(recovery_point_type: recovery_plan_in_mage_rcm_failback_failover_input::RecoveryPointType) -> Self {
         Self {
-            recovery_plan_provider_specific_failover_input,
             recovery_point_type,
             use_multi_vm_sync_point: None,
         }
@@ -14955,8 +14277,6 @@ pub mod recovery_plan_in_mage_rcm_failback_failover_input {
 #[doc = "Recovery plan InMageRcm failover input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPlanInMageRcmFailoverInput {
-    #[serde(flatten)]
-    pub recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
     #[doc = "The recovery point type."]
     #[serde(rename = "recoveryPointType")]
     pub recovery_point_type: recovery_plan_in_mage_rcm_failover_input::RecoveryPointType,
@@ -14965,12 +14285,8 @@ pub struct RecoveryPlanInMageRcmFailoverInput {
     pub use_multi_vm_sync_point: Option<String>,
 }
 impl RecoveryPlanInMageRcmFailoverInput {
-    pub fn new(
-        recovery_plan_provider_specific_failover_input: RecoveryPlanProviderSpecificFailoverInput,
-        recovery_point_type: recovery_plan_in_mage_rcm_failover_input::RecoveryPointType,
-    ) -> Self {
+    pub fn new(recovery_point_type: recovery_plan_in_mage_rcm_failover_input::RecoveryPointType) -> Self {
         Self {
-            recovery_plan_provider_specific_failover_input,
             recovery_point_type,
             use_multi_vm_sync_point: None,
         }
@@ -15025,18 +14341,13 @@ pub mod recovery_plan_in_mage_rcm_failover_input {
 #[doc = "Recovery plan manual action details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPlanManualActionDetails {
-    #[serde(flatten)]
-    pub recovery_plan_action_details: RecoveryPlanActionDetails,
     #[doc = "The manual action description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 impl RecoveryPlanManualActionDetails {
-    pub fn new(recovery_plan_action_details: RecoveryPlanActionDetails) -> Self {
-        Self {
-            recovery_plan_action_details,
-            description: None,
-        }
+    pub fn new() -> Self {
+        Self { description: None }
     }
 }
 #[doc = "Recovery plan planned failover input."]
@@ -15204,28 +14515,12 @@ impl RecoveryPlanProtectedItem {
         Self::default()
     }
 }
-#[doc = "Recovery plan provider specific details."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryPlanProviderSpecificDetails {}
-impl RecoveryPlanProviderSpecificDetails {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Gets the Instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum RecoveryPlanProviderSpecificDetailsUnion {
     #[serde(rename = "A2A")]
     A2a(RecoveryPlanA2aDetails),
-}
-#[doc = "Recovery plan provider specific failover input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryPlanProviderSpecificFailoverInput {}
-impl RecoveryPlanProviderSpecificFailoverInput {
-    pub fn new() -> Self {
-        Self {}
-    }
 }
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -15240,14 +14535,6 @@ pub enum RecoveryPlanProviderSpecificFailoverInputUnion {
     InMageRcmFailback(RecoveryPlanInMageRcmFailbackFailoverInput),
     InMageRcm(RecoveryPlanInMageRcmFailoverInput),
 }
-#[doc = "Recovery plan provider specific input base class."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryPlanProviderSpecificInput {}
-impl RecoveryPlanProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Gets the Instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -15258,8 +14545,6 @@ pub enum RecoveryPlanProviderSpecificInputUnion {
 #[doc = "Recovery plan script action details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecoveryPlanScriptActionDetails {
-    #[serde(flatten)]
-    pub recovery_plan_action_details: RecoveryPlanActionDetails,
     #[doc = "The script path."]
     pub path: String,
     #[doc = "The script timeout."]
@@ -15270,13 +14555,8 @@ pub struct RecoveryPlanScriptActionDetails {
     pub fabric_location: recovery_plan_script_action_details::FabricLocation,
 }
 impl RecoveryPlanScriptActionDetails {
-    pub fn new(
-        recovery_plan_action_details: RecoveryPlanActionDetails,
-        path: String,
-        fabric_location: recovery_plan_script_action_details::FabricLocation,
-    ) -> Self {
+    pub fn new(path: String, fabric_location: recovery_plan_script_action_details::FabricLocation) -> Self {
         Self {
-            recovery_plan_action_details,
             path,
             timeout: None,
             fabric_location,
@@ -15616,27 +14896,11 @@ impl RecoveryPointProperties {
         Self::default()
     }
 }
-#[doc = "Recovery Proximity placement group custom input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryProximityPlacementGroupCustomDetails {}
-impl RecoveryProximityPlacementGroupCustomDetails {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resourceType")]
 pub enum RecoveryProximityPlacementGroupCustomDetailsUnion {
     Existing(ExistingRecoveryProximityPlacementGroup),
-}
-#[doc = "Recovery Resource Group custom input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryResourceGroupCustomDetails {}
-impl RecoveryResourceGroupCustomDetails {
-    pub fn new() -> Self {
-        Self {}
-    }
 }
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -15766,14 +15030,6 @@ impl RecoveryServicesProviderProperties {
         Self::default()
     }
 }
-#[doc = "Recovery Virtual network custom input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryVirtualNetworkCustomDetails {}
-impl RecoveryVirtualNetworkCustomDetails {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resourceType")]
@@ -15803,14 +15059,6 @@ pub struct RemoveDisksInputProperties {
 impl RemoveDisksInputProperties {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Remove Disk provider specific input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RemoveDisksProviderSpecificInput {}
-impl RemoveDisksProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The class type."]
@@ -16059,13 +15307,10 @@ impl ReplicationEligibilityResultsProperties {
 }
 #[doc = "Replication group details. This will be used in case of San."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplicationGroupDetails {
-    #[serde(flatten)]
-    pub configuration_settings: ConfigurationSettings,
-}
+pub struct ReplicationGroupDetails {}
 impl ReplicationGroupDetails {
-    pub fn new(configuration_settings: ConfigurationSettings) -> Self {
-        Self { configuration_settings }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Replication protected item."]
@@ -16290,14 +15535,6 @@ impl ReplicationProtectionIntentProperties {
         Self::default()
     }
 }
-#[doc = "Replication provider specific settings."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplicationProtectionIntentProviderSpecificSettings {}
-impl ReplicationProtectionIntentProviderSpecificSettings {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Gets the Instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -16317,14 +15554,6 @@ impl ReplicationProviderContainerUnmappingInput {
         Self::default()
     }
 }
-#[doc = "Provider specific input for container creation operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplicationProviderSpecificContainerCreationInput {}
-impl ReplicationProviderSpecificContainerCreationInput {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -16335,14 +15564,6 @@ pub enum ReplicationProviderSpecificContainerCreationInputUnion {
     A2aCrossClusterMigration(A2aCrossClusterMigrationContainerCreationInput),
     VMwareCbt(VMwareCbtContainerCreationInput),
 }
-#[doc = "Provider specific input for pairing operations."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplicationProviderSpecificContainerMappingInput {}
-impl ReplicationProviderSpecificContainerMappingInput {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -16350,14 +15571,6 @@ pub enum ReplicationProviderSpecificContainerMappingInputUnion {
     #[serde(rename = "A2A")]
     A2a(A2aContainerMappingInput),
     VMwareCbt(VMwareCbtContainerMappingInput),
-}
-#[doc = "Replication provider specific settings."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplicationProviderSpecificSettings {}
-impl ReplicationProviderSpecificSettings {
-    pub fn new() -> Self {
-        Self {}
-    }
 }
 #[doc = "Gets the Instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -16375,14 +15588,6 @@ pub enum ReplicationProviderSpecificSettingsUnion {
     InMageRcmFailback(InMageRcmFailbackReplicationDetails),
     InMageRcm(InMageRcmReplicationDetails),
     InMage(InMageReplicationDetails),
-}
-#[doc = "Provider specific input for update pairing operations."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplicationProviderSpecificUpdateContainerMappingInput {}
-impl ReplicationProviderSpecificUpdateContainerMappingInput {
-    pub fn new() -> Self {
-        Self {}
-    }
 }
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -16625,14 +15830,6 @@ impl ResumeReplicationInputProperties {
         Self { provider_specific_details }
     }
 }
-#[doc = "Resume replication provider specific input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResumeReplicationProviderSpecificInput {}
-impl ResumeReplicationProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -16660,14 +15857,6 @@ pub struct ResyncInputProperties {
 impl ResyncInputProperties {
     pub fn new(provider_specific_details: ResyncProviderSpecificInputUnion) -> Self {
         Self { provider_specific_details }
-    }
-}
-#[doc = "Resync provider specific input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResyncProviderSpecificInput {}
-impl ResyncProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The class type."]
@@ -16724,14 +15913,6 @@ impl ReverseReplicationInputProperties {
         Self::default()
     }
 }
-#[doc = "Provider specific reverse replication input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReverseReplicationProviderSpecificInput {}
-impl ReverseReplicationProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -16786,8 +15967,6 @@ impl RunAsAccount {
 #[doc = "This class represents the script action task details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScriptActionTaskDetails {
-    #[serde(flatten)]
-    pub task_type_details: TaskTypeDetails,
     #[doc = "The name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -16802,9 +15981,8 @@ pub struct ScriptActionTaskDetails {
     pub is_primary_side_script: Option<bool>,
 }
 impl ScriptActionTaskDetails {
-    pub fn new(task_type_details: TaskTypeDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            task_type_details,
             name: None,
             path: None,
             output: None,
@@ -16834,14 +16012,6 @@ pub struct ServiceError {
 impl ServiceError {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Storage account custom input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageAccountCustomDetails {}
-impl StorageAccountCustomDetails {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The class type."]
@@ -17117,14 +16287,6 @@ impl SwitchProtectionJobDetails {
         }
     }
 }
-#[doc = "Provider specific switch protection input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SwitchProtectionProviderSpecificInput {}
-impl SwitchProtectionProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Gets the Instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -17157,14 +16319,6 @@ pub struct SwitchProviderInputProperties {
 impl SwitchProviderInputProperties {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Provider specific switch provider input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SwitchProviderProviderSpecificInput {}
-impl SwitchProviderProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The class type."]
@@ -17265,14 +16419,6 @@ pub struct TargetComputeSizeProperties {
 impl TargetComputeSizeProperties {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Task details based on specific task type."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TaskTypeDetails {}
-impl TaskTypeDetails {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The type of task details."]
@@ -17383,14 +16529,6 @@ impl TestFailoverJobDetails {
         }
     }
 }
-#[doc = "Provider specific test failover input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TestFailoverProviderSpecificInput {}
-impl TestFailoverProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -17448,14 +16586,6 @@ impl TestMigrateInputProperties {
         Self { provider_specific_details }
     }
 }
-#[doc = "Test migrate provider specific input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TestMigrateProviderSpecificInput {}
-impl TestMigrateProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
@@ -17489,14 +16619,6 @@ pub struct UnplannedFailoverInputProperties {
 impl UnplannedFailoverInputProperties {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Provider specific unplanned failover input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UnplannedFailoverProviderSpecificInput {}
-impl UnplannedFailoverProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The class type."]
@@ -17540,14 +16662,6 @@ impl UpdateApplianceForReplicationProtectedItemInputProperties {
             target_appliance_id,
             provider_specific_details,
         }
-    }
-}
-#[doc = "Update replication protected item provider specific input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateApplianceForReplicationProtectedItemProviderSpecificInput {}
-impl UpdateApplianceForReplicationProtectedItemProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The class type."]
@@ -17596,14 +16710,6 @@ pub struct UpdateMigrationItemInputProperties {
 impl UpdateMigrationItemInputProperties {
     pub fn new(provider_specific_details: UpdateMigrationItemProviderSpecificInputUnion) -> Self {
         Self { provider_specific_details }
-    }
-}
-#[doc = "Update migration item provider specific input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateMigrationItemProviderSpecificInput {}
-impl UpdateMigrationItemProviderSpecificInput {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The class type."]
@@ -17838,14 +16944,6 @@ pub mod update_replication_protected_item_input_properties {
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
-    }
-}
-#[doc = "Update replication protected item provider specific input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateReplicationProtectedItemProviderInput {}
-impl UpdateReplicationProtectedItemProviderInput {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The class type."]
@@ -18109,22 +17207,15 @@ impl VmNicInputDetails {
 }
 #[doc = "VMwareCbt container creation input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VMwareCbtContainerCreationInput {
-    #[serde(flatten)]
-    pub replication_provider_specific_container_creation_input: ReplicationProviderSpecificContainerCreationInput,
-}
+pub struct VMwareCbtContainerCreationInput {}
 impl VMwareCbtContainerCreationInput {
-    pub fn new(replication_provider_specific_container_creation_input: ReplicationProviderSpecificContainerCreationInput) -> Self {
-        Self {
-            replication_provider_specific_container_creation_input,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "VMwareCbt container mapping input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VMwareCbtContainerMappingInput {
-    #[serde(flatten)]
-    pub replication_provider_specific_container_mapping_input: ReplicationProviderSpecificContainerMappingInput,
     #[doc = "The target key vault ARM Id."]
     #[serde(rename = "keyVaultId", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_id: Option<String>,
@@ -18145,13 +17236,8 @@ pub struct VMwareCbtContainerMappingInput {
     pub target_location: String,
 }
 impl VMwareCbtContainerMappingInput {
-    pub fn new(
-        replication_provider_specific_container_mapping_input: ReplicationProviderSpecificContainerMappingInput,
-        storage_account_id: String,
-        target_location: String,
-    ) -> Self {
+    pub fn new(storage_account_id: String, target_location: String) -> Self {
         Self {
-            replication_provider_specific_container_mapping_input,
             key_vault_id: None,
             key_vault_uri: None,
             storage_account_id,
@@ -18243,8 +17329,6 @@ pub mod v_mware_cbt_disk_input {
 #[doc = "VMwareCbt specific enable migration input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VMwareCbtEnableMigrationInput {
-    #[serde(flatten)]
-    pub enable_migration_provider_specific_input: EnableMigrationProviderSpecificInput,
     #[doc = "The ARM Id of the VM discovered in VMware."]
     #[serde(rename = "vmwareMachineId")]
     pub vmware_machine_id: String,
@@ -18323,7 +17407,6 @@ pub struct VMwareCbtEnableMigrationInput {
 }
 impl VMwareCbtEnableMigrationInput {
     pub fn new(
-        enable_migration_provider_specific_input: EnableMigrationProviderSpecificInput,
         vmware_machine_id: String,
         disks_to_include: Vec<VMwareCbtDiskInput>,
         data_mover_run_as_account_id: String,
@@ -18332,7 +17415,6 @@ impl VMwareCbtEnableMigrationInput {
         target_network_id: String,
     ) -> Self {
         Self {
-            enable_migration_provider_specific_input,
             vmware_machine_id,
             disks_to_include,
             license_type: None,
@@ -18449,25 +17531,18 @@ pub mod v_mware_cbt_enable_migration_input {
 #[doc = "Event details for VMwareCbt provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VMwareCbtEventDetails {
-    #[serde(flatten)]
-    pub event_provider_specific_details: EventProviderSpecificDetails,
     #[doc = "The migration item name."]
     #[serde(rename = "migrationItemName", default, skip_serializing_if = "Option::is_none")]
     pub migration_item_name: Option<String>,
 }
 impl VMwareCbtEventDetails {
-    pub fn new(event_provider_specific_details: EventProviderSpecificDetails) -> Self {
-        Self {
-            event_provider_specific_details,
-            migration_item_name: None,
-        }
+    pub fn new() -> Self {
+        Self { migration_item_name: None }
     }
 }
 #[doc = "VMwareCbt specific migrate input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VMwareCbtMigrateInput {
-    #[serde(flatten)]
-    pub migrate_provider_specific_input: MigrateProviderSpecificInput,
     #[doc = "A value indicating whether VM is to be shutdown."]
     #[serde(rename = "performShutdown")]
     pub perform_shutdown: String,
@@ -18476,9 +17551,8 @@ pub struct VMwareCbtMigrateInput {
     pub os_upgrade_version: Option<String>,
 }
 impl VMwareCbtMigrateInput {
-    pub fn new(migrate_provider_specific_input: MigrateProviderSpecificInput, perform_shutdown: String) -> Self {
+    pub fn new(perform_shutdown: String) -> Self {
         Self {
-            migrate_provider_specific_input,
             perform_shutdown,
             os_upgrade_version: None,
         }
@@ -18487,8 +17561,6 @@ impl VMwareCbtMigrateInput {
 #[doc = "VMwareCbt provider specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VMwareCbtMigrationDetails {
-    #[serde(flatten)]
-    pub migration_provider_specific_settings: MigrationProviderSpecificSettings,
     #[doc = "The ARM Id of the VM discovered in VMware."]
     #[serde(rename = "vmwareMachineId", default, skip_serializing_if = "Option::is_none")]
     pub vmware_machine_id: Option<String>,
@@ -18650,9 +17722,8 @@ pub struct VMwareCbtMigrationDetails {
     pub operation_name: Option<String>,
 }
 impl VMwareCbtMigrationDetails {
-    pub fn new(migration_provider_specific_settings: MigrationProviderSpecificSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            migration_provider_specific_settings,
             vmware_machine_id: None,
             os_type: None,
             os_name: None,
@@ -18958,8 +18029,6 @@ impl VMwareCbtNicInput {
 #[doc = "VMware Cbt policy creation input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VMwareCbtPolicyCreationInput {
-    #[serde(flatten)]
-    pub policy_provider_specific_input: PolicyProviderSpecificInput,
     #[doc = "The duration in minutes until which the recovery points need to be stored."]
     #[serde(rename = "recoveryPointHistoryInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_history_in_minutes: Option<i32>,
@@ -18971,9 +18040,8 @@ pub struct VMwareCbtPolicyCreationInput {
     pub app_consistent_frequency_in_minutes: Option<i32>,
 }
 impl VMwareCbtPolicyCreationInput {
-    pub fn new(policy_provider_specific_input: PolicyProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            policy_provider_specific_input,
             recovery_point_history_in_minutes: None,
             crash_consistent_frequency_in_minutes: None,
             app_consistent_frequency_in_minutes: None,
@@ -19082,8 +18150,6 @@ pub mod v_mware_cbt_protected_disk_details {
 #[doc = "VMwareCbt provider specific container mapping details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VMwareCbtProtectionContainerMappingDetails {
-    #[serde(flatten)]
-    pub protection_container_mapping_provider_specific_details: ProtectionContainerMappingProviderSpecificDetails,
     #[doc = "The target key vault ARM Id."]
     #[serde(rename = "keyVaultId", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_id: Option<String>,
@@ -19115,9 +18181,8 @@ pub struct VMwareCbtProtectionContainerMappingDetails {
     pub excluded_skus: Vec<String>,
 }
 impl VMwareCbtProtectionContainerMappingDetails {
-    pub fn new(protection_container_mapping_provider_specific_details: ProtectionContainerMappingProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            protection_container_mapping_provider_specific_details,
             key_vault_id: None,
             key_vault_uri: None,
             storage_account_id: None,
@@ -19132,16 +18197,13 @@ impl VMwareCbtProtectionContainerMappingDetails {
 #[doc = "VMwareCbt specific resume replication input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VMwareCbtResumeReplicationInput {
-    #[serde(flatten)]
-    pub resume_replication_provider_specific_input: ResumeReplicationProviderSpecificInput,
     #[doc = "A value indicating whether Migration resources to be deleted."]
     #[serde(rename = "deleteMigrationResources", default, skip_serializing_if = "Option::is_none")]
     pub delete_migration_resources: Option<String>,
 }
 impl VMwareCbtResumeReplicationInput {
-    pub fn new(resume_replication_provider_specific_input: ResumeReplicationProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            resume_replication_provider_specific_input,
             delete_migration_resources: None,
         }
     }
@@ -19149,18 +18211,13 @@ impl VMwareCbtResumeReplicationInput {
 #[doc = "VMwareCbt specific resync input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VMwareCbtResyncInput {
-    #[serde(flatten)]
-    pub resync_provider_specific_input: ResyncProviderSpecificInput,
     #[doc = "A value indicating whether CBT is to be reset."]
     #[serde(rename = "skipCbtReset")]
     pub skip_cbt_reset: String,
 }
 impl VMwareCbtResyncInput {
-    pub fn new(resync_provider_specific_input: ResyncProviderSpecificInput, skip_cbt_reset: String) -> Self {
-        Self {
-            resync_provider_specific_input,
-            skip_cbt_reset,
-        }
+    pub fn new(skip_cbt_reset: String) -> Self {
+        Self { skip_cbt_reset }
     }
 }
 #[doc = "VMwareCbt security profile input."]
@@ -19237,8 +18294,6 @@ pub mod v_mware_cbt_security_profile_properties {
 #[doc = "VMwareCbt specific test migrate input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VMwareCbtTestMigrateInput {
-    #[serde(flatten)]
-    pub test_migrate_provider_specific_input: TestMigrateProviderSpecificInput,
     #[doc = "The recovery point Id."]
     #[serde(rename = "recoveryPointId")]
     pub recovery_point_id: String,
@@ -19258,13 +18313,8 @@ pub struct VMwareCbtTestMigrateInput {
     pub os_upgrade_version: Option<String>,
 }
 impl VMwareCbtTestMigrateInput {
-    pub fn new(
-        test_migrate_provider_specific_input: TestMigrateProviderSpecificInput,
-        recovery_point_id: String,
-        network_id: String,
-    ) -> Self {
+    pub fn new(recovery_point_id: String, network_id: String) -> Self {
         Self {
-            test_migrate_provider_specific_input,
             recovery_point_id,
             network_id,
             vm_nics: Vec::new(),
@@ -19297,8 +18347,6 @@ impl VMwareCbtUpdateDiskInput {
 #[doc = "VMwareCbt specific update migration item input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VMwareCbtUpdateMigrationItemInput {
-    #[serde(flatten)]
-    pub update_migration_item_provider_specific_input: UpdateMigrationItemProviderSpecificInput,
     #[doc = "The target VM name."]
     #[serde(rename = "targetVmName", default, skip_serializing_if = "Option::is_none")]
     pub target_vm_name: Option<String>,
@@ -19362,9 +18410,8 @@ pub struct VMwareCbtUpdateMigrationItemInput {
     pub target_nic_tags: Option<serde_json::Value>,
 }
 impl VMwareCbtUpdateMigrationItemInput {
-    pub fn new(update_migration_item_provider_specific_input: UpdateMigrationItemProviderSpecificInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            update_migration_item_provider_specific_input,
             target_vm_name: None,
             target_vm_size: None,
             target_resource_group_id: None,
@@ -19473,8 +18520,6 @@ pub mod v_mware_cbt_update_migration_item_input {
 #[doc = "Store the fabric details specific to the VMware fabric."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VMwareDetails {
-    #[serde(flatten)]
-    pub fabric_specific_details: FabricSpecificDetails,
     #[doc = "The list of Process Servers associated with the fabric."]
     #[serde(
         rename = "processServers",
@@ -19596,9 +18641,8 @@ pub struct VMwareDetails {
     pub switch_provider_blocking_error_details: Vec<InMageFabricSwitchProviderBlockingErrorDetails>,
 }
 impl VMwareDetails {
-    pub fn new(fabric_specific_details: FabricSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            fabric_specific_details,
             process_servers: Vec::new(),
             master_target_servers: Vec::new(),
             run_as_accounts: Vec::new(),
@@ -19638,8 +18682,6 @@ impl VMwareDetails {
 #[doc = "VMwareV2 fabric provider specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VMwareV2FabricCreationInput {
-    #[serde(flatten)]
-    pub fabric_specific_creation_input: FabricSpecificCreationInput,
     #[doc = "The ARM Id of the VMware site."]
     #[serde(rename = "vmwareSiteId", default, skip_serializing_if = "Option::is_none")]
     pub vmware_site_id: Option<String>,
@@ -19651,9 +18693,8 @@ pub struct VMwareV2FabricCreationInput {
     pub migration_solution_id: String,
 }
 impl VMwareV2FabricCreationInput {
-    pub fn new(fabric_specific_creation_input: FabricSpecificCreationInput, migration_solution_id: String) -> Self {
+    pub fn new(migration_solution_id: String) -> Self {
         Self {
-            fabric_specific_creation_input,
             vmware_site_id: None,
             physical_site_id: None,
             migration_solution_id,
@@ -19663,8 +18704,6 @@ impl VMwareV2FabricCreationInput {
 #[doc = "VMwareV2 fabric specific details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VMwareV2FabricSpecificDetails {
-    #[serde(flatten)]
-    pub fabric_specific_details: FabricSpecificDetails,
     #[doc = "The ARM Id of the VMware site."]
     #[serde(rename = "vmwareSiteId", default, skip_serializing_if = "Option::is_none")]
     pub vmware_site_id: Option<String>,
@@ -19693,9 +18732,8 @@ pub struct VMwareV2FabricSpecificDetails {
     pub process_servers: Vec<ProcessServerDetails>,
 }
 impl VMwareV2FabricSpecificDetails {
-    pub fn new(fabric_specific_details: FabricSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            fabric_specific_details,
             vmware_site_id: None,
             physical_site_id: None,
             migration_solution_id: None,
@@ -19709,8 +18747,6 @@ impl VMwareV2FabricSpecificDetails {
 #[doc = "VMware provider specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VMwareVirtualMachineDetails {
-    #[serde(flatten)]
-    pub configuration_settings: ConfigurationSettings,
     #[doc = "The ID generated by the InMage agent after it gets installed on guest. This is the ID to be used during InMage CreateProtection."]
     #[serde(rename = "agentGeneratedId", default, skip_serializing_if = "Option::is_none")]
     pub agent_generated_id: Option<String>,
@@ -19753,9 +18789,8 @@ pub struct VMwareVirtualMachineDetails {
     pub validation_errors: Vec<HealthError>,
 }
 impl VMwareVirtualMachineDetails {
-    pub fn new(configuration_settings: ConfigurationSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            configuration_settings,
             agent_generated_id: None,
             agent_installed: None,
             os_type: None,
@@ -19956,8 +18991,6 @@ pub mod version_details {
 #[doc = "This class represents the virtual machine task details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineTaskDetails {
-    #[serde(flatten)]
-    pub job_task_details: JobTaskDetails,
     #[doc = "The skipped reason."]
     #[serde(rename = "skippedReason", default, skip_serializing_if = "Option::is_none")]
     pub skipped_reason: Option<String>,
@@ -19966,9 +18999,8 @@ pub struct VirtualMachineTaskDetails {
     pub skipped_reason_string: Option<String>,
 }
 impl VirtualMachineTaskDetails {
-    pub fn new(job_task_details: JobTaskDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            job_task_details,
             skipped_reason: None,
             skipped_reason_string: None,
         }
@@ -19977,8 +19009,6 @@ impl VirtualMachineTaskDetails {
 #[doc = "This class represents the vm NicUpdates task details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VmNicUpdatesTaskDetails {
-    #[serde(flatten)]
-    pub task_type_details: TaskTypeDetails,
     #[doc = "Virtual machine Id."]
     #[serde(rename = "vmId", default, skip_serializing_if = "Option::is_none")]
     pub vm_id: Option<String>,
@@ -19990,9 +19020,8 @@ pub struct VmNicUpdatesTaskDetails {
     pub name: Option<String>,
 }
 impl VmNicUpdatesTaskDetails {
-    pub fn new(task_type_details: TaskTypeDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            task_type_details,
             vm_id: None,
             nic_id: None,
             name: None,
@@ -20001,91 +19030,58 @@ impl VmNicUpdatesTaskDetails {
 }
 #[doc = "VMM fabric specific details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VmmDetails {
-    #[serde(flatten)]
-    pub fabric_specific_details: FabricSpecificDetails,
-}
+pub struct VmmDetails {}
 impl VmmDetails {
-    pub fn new(fabric_specific_details: FabricSpecificDetails) -> Self {
-        Self { fabric_specific_details }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Create network mappings input properties/behavior specific to Vmm to Azure Network mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VmmToAzureCreateNetworkMappingInput {
-    #[serde(flatten)]
-    pub fabric_specific_create_network_mapping_input: FabricSpecificCreateNetworkMappingInput,
-}
+pub struct VmmToAzureCreateNetworkMappingInput {}
 impl VmmToAzureCreateNetworkMappingInput {
-    pub fn new(fabric_specific_create_network_mapping_input: FabricSpecificCreateNetworkMappingInput) -> Self {
-        Self {
-            fabric_specific_create_network_mapping_input,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "E2A Network Mapping fabric specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VmmToAzureNetworkMappingSettings {
-    #[serde(flatten)]
-    pub network_mapping_fabric_specific_settings: NetworkMappingFabricSpecificSettings,
-}
+pub struct VmmToAzureNetworkMappingSettings {}
 impl VmmToAzureNetworkMappingSettings {
-    pub fn new(network_mapping_fabric_specific_settings: NetworkMappingFabricSpecificSettings) -> Self {
-        Self {
-            network_mapping_fabric_specific_settings,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Update network mappings input properties/behavior specific to vmm to azure."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VmmToAzureUpdateNetworkMappingInput {
-    #[serde(flatten)]
-    pub fabric_specific_update_network_mapping_input: FabricSpecificUpdateNetworkMappingInput,
-}
+pub struct VmmToAzureUpdateNetworkMappingInput {}
 impl VmmToAzureUpdateNetworkMappingInput {
-    pub fn new(fabric_specific_update_network_mapping_input: FabricSpecificUpdateNetworkMappingInput) -> Self {
-        Self {
-            fabric_specific_update_network_mapping_input,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Create network mappings input properties/behavior specific to vmm to vmm Network mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VmmToVmmCreateNetworkMappingInput {
-    #[serde(flatten)]
-    pub fabric_specific_create_network_mapping_input: FabricSpecificCreateNetworkMappingInput,
-}
+pub struct VmmToVmmCreateNetworkMappingInput {}
 impl VmmToVmmCreateNetworkMappingInput {
-    pub fn new(fabric_specific_create_network_mapping_input: FabricSpecificCreateNetworkMappingInput) -> Self {
-        Self {
-            fabric_specific_create_network_mapping_input,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "E2E Network Mapping fabric specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VmmToVmmNetworkMappingSettings {
-    #[serde(flatten)]
-    pub network_mapping_fabric_specific_settings: NetworkMappingFabricSpecificSettings,
-}
+pub struct VmmToVmmNetworkMappingSettings {}
 impl VmmToVmmNetworkMappingSettings {
-    pub fn new(network_mapping_fabric_specific_settings: NetworkMappingFabricSpecificSettings) -> Self {
-        Self {
-            network_mapping_fabric_specific_settings,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Update network mappings input properties/behavior specific to vmm to vmm."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VmmToVmmUpdateNetworkMappingInput {
-    #[serde(flatten)]
-    pub fabric_specific_update_network_mapping_input: FabricSpecificUpdateNetworkMappingInput,
-}
+pub struct VmmToVmmUpdateNetworkMappingInput {}
 impl VmmToVmmUpdateNetworkMappingInput {
-    pub fn new(fabric_specific_update_network_mapping_input: FabricSpecificUpdateNetworkMappingInput) -> Self {
-        Self {
-            fabric_specific_update_network_mapping_input,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "VMM fabric provider specific VM settings."]
@@ -20104,8 +19100,6 @@ impl VmmVirtualMachineDetails {
 #[doc = "VMware Cbt specific policy details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VmwareCbtPolicyDetails {
-    #[serde(flatten)]
-    pub policy_provider_specific_details: PolicyProviderSpecificDetails,
     #[doc = "The duration in minutes until which the recovery points need to be stored."]
     #[serde(rename = "recoveryPointHistoryInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_history_in_minutes: Option<i32>,
@@ -20117,9 +19111,8 @@ pub struct VmwareCbtPolicyDetails {
     pub crash_consistent_frequency_in_minutes: Option<i32>,
 }
 impl VmwareCbtPolicyDetails {
-    pub fn new(policy_provider_specific_details: PolicyProviderSpecificDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            policy_provider_specific_details,
             recovery_point_history_in_minutes: None,
             app_consistent_frequency_in_minutes: None,
             crash_consistent_frequency_in_minutes: None,

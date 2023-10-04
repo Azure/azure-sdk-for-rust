@@ -48,8 +48,6 @@ impl AadMetadataObject {
 #[doc = "Represents a scaling mechanism for adding or removing named partitions of a stateless service. Partition names are in the format '0','1''N-1'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddRemoveIncrementalNamedPartitionScalingMechanism {
-    #[serde(flatten)]
-    pub scaling_mechanism_description: ScalingMechanismDescription,
     #[doc = "Minimum number of named partitions of the service."]
     #[serde(rename = "MinPartitionCount")]
     pub min_partition_count: i64,
@@ -61,14 +59,8 @@ pub struct AddRemoveIncrementalNamedPartitionScalingMechanism {
     pub scale_increment: i64,
 }
 impl AddRemoveIncrementalNamedPartitionScalingMechanism {
-    pub fn new(
-        scaling_mechanism_description: ScalingMechanismDescription,
-        min_partition_count: i64,
-        max_partition_count: i64,
-        scale_increment: i64,
-    ) -> Self {
+    pub fn new(min_partition_count: i64, max_partition_count: i64, scale_increment: i64) -> Self {
         Self {
-            scaling_mechanism_description,
             min_partition_count,
             max_partition_count,
             scale_increment,
@@ -78,8 +70,6 @@ impl AddRemoveIncrementalNamedPartitionScalingMechanism {
 #[doc = "Describes the horizontal auto scaling mechanism that adds or removes replicas (containers or container groups)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddRemoveReplicaScalingMechanism {
-    #[serde(flatten)]
-    pub auto_scaling_mechanism: AutoScalingMechanism,
     #[doc = "Minimum number of containers (scale down won't be performed below this number)."]
     #[serde(rename = "minCount")]
     pub min_count: i64,
@@ -91,9 +81,8 @@ pub struct AddRemoveReplicaScalingMechanism {
     pub scale_increment: i64,
 }
 impl AddRemoveReplicaScalingMechanism {
-    pub fn new(auto_scaling_mechanism: AutoScalingMechanism, min_count: i64, max_count: i64, scale_increment: i64) -> Self {
+    pub fn new(min_count: i64, max_count: i64, scale_increment: i64) -> Self {
         Self {
-            auto_scaling_mechanism,
             min_count,
             max_count,
             scale_increment,
@@ -135,18 +124,13 @@ impl ApplicationBackupConfigurationInfo {
 #[doc = "Identifies the Service Fabric application which is being backed up."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationBackupEntity {
-    #[serde(flatten)]
-    pub backup_entity: BackupEntity,
     #[doc = "The name of the application, including the 'fabric:' URI scheme."]
     #[serde(rename = "ApplicationName", default, skip_serializing_if = "Option::is_none")]
     pub application_name: Option<ApplicationName>,
 }
 impl ApplicationBackupEntity {
-    pub fn new(backup_entity: BackupEntity) -> Self {
-        Self {
-            backup_entity,
-            application_name: None,
-        }
+    pub fn new() -> Self {
+        Self { application_name: None }
     }
 }
 #[doc = "Describes capacity information for services of this application. This description can be used for describing the following.\n- Reserving the capacity for the services on the nodes\n- Limiting the total number of nodes that services of this application can run on\n- Limiting the custom capacity metrics to limit the total consumption of this metric by the services of this application"]
@@ -1864,14 +1848,6 @@ impl ApplicationsHealthEvaluation {
         }
     }
 }
-#[doc = "Describes the mechanism for performing auto scaling operation. Derived classes will describe the actual mechanism."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScalingMechanism {}
-impl AutoScalingMechanism {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Enumerates the mechanisms for auto scaling."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
@@ -1911,14 +1887,6 @@ impl Serialize for AutoScalingMechanismKind {
             Self::AddRemoveReplica => serializer.serialize_unit_variant("AutoScalingMechanismKind", 0u32, "AddRemoveReplica"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
-    }
-}
-#[doc = "Describes the metric that is used for triggering auto scaling operation. Derived classes will describe resources or metrics."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScalingMetric {}
-impl AutoScalingMetric {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Enumerates the metrics that are used for triggering auto scaling."]
@@ -1980,14 +1948,12 @@ impl AutoScalingPolicy {
 #[doc = "Describes the resource that is used for triggering auto scaling."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScalingResourceMetric {
-    #[serde(flatten)]
-    pub auto_scaling_metric: AutoScalingMetric,
     #[doc = "Enumerates the resources that are used for triggering auto scaling."]
     pub name: AutoScalingResourceMetricName,
 }
 impl AutoScalingResourceMetric {
-    pub fn new(auto_scaling_metric: AutoScalingMetric, name: AutoScalingResourceMetricName) -> Self {
-        Self { auto_scaling_metric, name }
+    pub fn new(name: AutoScalingResourceMetricName) -> Self {
+        Self { name }
     }
 }
 #[doc = "Enumerates the resources that are used for triggering auto scaling."]
@@ -2027,14 +1993,6 @@ impl Serialize for AutoScalingResourceMetricName {
             Self::MemoryInGb => serializer.serialize_unit_variant("AutoScalingResourceMetricName", 1u32, "memoryInGB"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
-    }
-}
-#[doc = "Describes the trigger for performing auto scaling operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScalingTrigger {}
-impl AutoScalingTrigger {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Enumerates the triggers for auto scaling."]
@@ -2081,8 +2039,6 @@ impl Serialize for AutoScalingTriggerKind {
 #[doc = "Describes the average load trigger used for auto scaling."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AverageLoadScalingTrigger {
-    #[serde(flatten)]
-    pub auto_scaling_trigger: AutoScalingTrigger,
     #[doc = "Describes the metric that is used for triggering auto scaling operation. Derived classes will describe resources or metrics."]
     pub metric: AutoScalingMetricUnion,
     #[doc = "Lower load threshold (if average load is below this threshold, service will scale down)."]
@@ -2097,14 +2053,12 @@ pub struct AverageLoadScalingTrigger {
 }
 impl AverageLoadScalingTrigger {
     pub fn new(
-        auto_scaling_trigger: AutoScalingTrigger,
         metric: AutoScalingMetricUnion,
         lower_load_threshold: f64,
         upper_load_threshold: f64,
         scale_interval_in_seconds: i64,
     ) -> Self {
         Self {
-            auto_scaling_trigger,
             metric,
             lower_load_threshold,
             upper_load_threshold,
@@ -2115,8 +2069,6 @@ impl AverageLoadScalingTrigger {
 #[doc = "Represents a scaling trigger related to an average load of a metric/resource of a partition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AveragePartitionLoadScalingTrigger {
-    #[serde(flatten)]
-    pub scaling_trigger_description: ScalingTriggerDescription,
     #[doc = "The name of the metric for which usage should be tracked."]
     #[serde(rename = "MetricName")]
     pub metric_name: String,
@@ -2131,15 +2083,8 @@ pub struct AveragePartitionLoadScalingTrigger {
     pub scale_interval_in_seconds: i64,
 }
 impl AveragePartitionLoadScalingTrigger {
-    pub fn new(
-        scaling_trigger_description: ScalingTriggerDescription,
-        metric_name: String,
-        lower_load_threshold: String,
-        upper_load_threshold: String,
-        scale_interval_in_seconds: i64,
-    ) -> Self {
+    pub fn new(metric_name: String, lower_load_threshold: String, upper_load_threshold: String, scale_interval_in_seconds: i64) -> Self {
         Self {
-            scaling_trigger_description,
             metric_name,
             lower_load_threshold,
             upper_load_threshold,
@@ -2150,8 +2095,6 @@ impl AveragePartitionLoadScalingTrigger {
 #[doc = "Represents a scaling policy related to an average load of a metric/resource of a service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AverageServiceLoadScalingTrigger {
-    #[serde(flatten)]
-    pub scaling_trigger_description: ScalingTriggerDescription,
     #[doc = "The name of the metric for which usage should be tracked."]
     #[serde(rename = "MetricName")]
     pub metric_name: String,
@@ -2166,15 +2109,8 @@ pub struct AverageServiceLoadScalingTrigger {
     pub scale_interval_in_seconds: i64,
 }
 impl AverageServiceLoadScalingTrigger {
-    pub fn new(
-        scaling_trigger_description: ScalingTriggerDescription,
-        metric_name: String,
-        lower_load_threshold: String,
-        upper_load_threshold: String,
-        scale_interval_in_seconds: i64,
-    ) -> Self {
+    pub fn new(metric_name: String, lower_load_threshold: String, upper_load_threshold: String, scale_interval_in_seconds: i64) -> Self {
         Self {
-            scaling_trigger_description,
             metric_name,
             lower_load_threshold,
             upper_load_threshold,
@@ -2265,14 +2201,6 @@ pub enum BackupConfigurationInfoUnion {
     Application(ApplicationBackupConfigurationInfo),
     Partition(PartitionBackupConfigurationInfo),
     Service(ServiceBackupConfigurationInfo),
-}
-#[doc = "Describes the Service Fabric entity that is configured for backup."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupEntity {}
-impl BackupEntity {
-    pub fn new() -> Self {
-        Self {}
-    }
 }
 #[doc = "The entity type of a Service Fabric entity such as Application, Service or a Partition where periodic backups can be enabled."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2489,14 +2417,6 @@ pub struct BackupProgressInfo {
 impl BackupProgressInfo {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Describes the backup schedule parameters."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupScheduleDescription {}
-impl BackupScheduleDescription {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The kind of backup schedule, time based or frequency based."]
@@ -2788,8 +2708,6 @@ impl Serialize for BackupType {
 #[doc = "Describes basic retention policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BasicRetentionPolicyDescription {
-    #[serde(flatten)]
-    pub retention_policy_description: RetentionPolicyDescription,
     #[doc = "It is the minimum duration for which a backup created, will remain stored in the storage and might get deleted after that span of time. It should be specified in ISO8601 format."]
     #[serde(rename = "RetentionDuration")]
     pub retention_duration: String,
@@ -2798,9 +2716,8 @@ pub struct BasicRetentionPolicyDescription {
     pub minimum_number_of_backups: Option<i64>,
 }
 impl BasicRetentionPolicyDescription {
-    pub fn new(retention_policy_description: RetentionPolicyDescription, retention_duration: String) -> Self {
+    pub fn new(retention_duration: String) -> Self {
         Self {
-            retention_policy_description,
             retention_duration,
             minimum_number_of_backups: None,
         }
@@ -2809,15 +2726,13 @@ impl BasicRetentionPolicyDescription {
 #[doc = "Describes a Service Fabric property value of type Binary."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BinaryPropertyValue {
-    #[serde(flatten)]
-    pub property_value: PropertyValue,
     #[doc = "Array of bytes to be sent as an integer array. Each element of array is a number between 0 and 255."]
     #[serde(rename = "Data")]
     pub data: ByteArray,
 }
 impl BinaryPropertyValue {
-    pub fn new(property_value: PropertyValue, data: ByteArray) -> Self {
-        Self { property_value, data }
+    pub fn new(data: ByteArray) -> Self {
+        Self { data }
     }
 }
 pub type ByteArray = Vec<i64>;
@@ -3362,8 +3277,6 @@ impl Serialize for ChaosScheduleStatus {
 #[doc = "Chaos Started event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChaosStartedEvent {
-    #[serde(flatten)]
-    pub cluster_event: ClusterEvent,
     #[doc = "Maximum number of concurrent faults."]
     #[serde(rename = "MaxConcurrentFaults")]
     pub max_concurrent_faults: i64,
@@ -3397,7 +3310,6 @@ pub struct ChaosStartedEvent {
 }
 impl ChaosStartedEvent {
     pub fn new(
-        cluster_event: ClusterEvent,
         max_concurrent_faults: i64,
         time_to_run_in_seconds: f64,
         max_cluster_stabilization_timeout_in_seconds: f64,
@@ -3410,7 +3322,6 @@ impl ChaosStartedEvent {
         chaos_context: String,
     ) -> Self {
         Self {
-            cluster_event,
             max_concurrent_faults,
             time_to_run_in_seconds,
             max_cluster_stabilization_timeout_in_seconds,
@@ -3466,15 +3377,13 @@ impl Serialize for ChaosStatus {
 #[doc = "Chaos Stopped event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChaosStoppedEvent {
-    #[serde(flatten)]
-    pub cluster_event: ClusterEvent,
     #[doc = "Describes reason."]
     #[serde(rename = "Reason")]
     pub reason: String,
 }
 impl ChaosStoppedEvent {
-    pub fn new(cluster_event: ClusterEvent, reason: String) -> Self {
-        Self { cluster_event, reason }
+    pub fn new(reason: String) -> Self {
+        Self { reason }
     }
 }
 #[doc = "Defines all filters for targeted Chaos faults, for example, faulting only certain node types or faulting only certain applications.\nIf ChaosTargetFilter is not used, Chaos faults all cluster entities. If ChaosTargetFilter is used, Chaos faults only the entities that meet the ChaosTargetFilter\nspecification. NodeTypeInclusionList and ApplicationInclusionList allow a union semantics only. It is not possible to specify an intersection\nof NodeTypeInclusionList and ApplicationInclusionList. For example, it is not possible to specify \"fault this application only when it is on that node type.\"\nOnce an entity is included in either NodeTypeInclusionList or ApplicationInclusionList, that entity cannot be excluded using ChaosTargetFilter. Even if\napplicationX does not appear in ApplicationInclusionList, in some Chaos iteration applicationX can be faulted because it happens to be on a node of nodeTypeY that is included\nin NodeTypeInclusionList. If both NodeTypeInclusionList and ApplicationInclusionList are null or empty, an ArgumentException is thrown."]
@@ -3773,8 +3682,6 @@ impl ClusterHealthPolicy {
 #[doc = "Cluster Health Report Expired event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterHealthReportExpiredEvent {
-    #[serde(flatten)]
-    pub cluster_event: ClusterEvent,
     #[doc = "Id of report source."]
     #[serde(rename = "SourceId")]
     pub source_id: String,
@@ -3802,7 +3709,6 @@ pub struct ClusterHealthReportExpiredEvent {
 }
 impl ClusterHealthReportExpiredEvent {
     pub fn new(
-        cluster_event: ClusterEvent,
         source_id: String,
         property: String,
         health_state: String,
@@ -3813,7 +3719,6 @@ impl ClusterHealthReportExpiredEvent {
         source_utc_timestamp: time::OffsetDateTime,
     ) -> Self {
         Self {
-            cluster_event,
             source_id,
             property,
             health_state,
@@ -3863,8 +3768,6 @@ impl ClusterManifest {
 #[doc = "Cluster Health Report Created event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterNewHealthReportEvent {
-    #[serde(flatten)]
-    pub cluster_event: ClusterEvent,
     #[doc = "Id of report source."]
     #[serde(rename = "SourceId")]
     pub source_id: String,
@@ -3892,7 +3795,6 @@ pub struct ClusterNewHealthReportEvent {
 }
 impl ClusterNewHealthReportEvent {
     pub fn new(
-        cluster_event: ClusterEvent,
         source_id: String,
         property: String,
         health_state: String,
@@ -3903,7 +3805,6 @@ impl ClusterNewHealthReportEvent {
         source_utc_timestamp: time::OffsetDateTime,
     ) -> Self {
         Self {
-            cluster_event,
             source_id,
             property,
             health_state,
@@ -3918,8 +3819,6 @@ impl ClusterNewHealthReportEvent {
 #[doc = "Cluster Upgrade Completed event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpgradeCompletedEvent {
-    #[serde(flatten)]
-    pub cluster_event: ClusterEvent,
     #[doc = "Target Cluster version."]
     #[serde(rename = "TargetClusterVersion")]
     pub target_cluster_version: String,
@@ -3928,9 +3827,8 @@ pub struct ClusterUpgradeCompletedEvent {
     pub overall_upgrade_elapsed_time_in_ms: f64,
 }
 impl ClusterUpgradeCompletedEvent {
-    pub fn new(cluster_event: ClusterEvent, target_cluster_version: String, overall_upgrade_elapsed_time_in_ms: f64) -> Self {
+    pub fn new(target_cluster_version: String, overall_upgrade_elapsed_time_in_ms: f64) -> Self {
         Self {
-            cluster_event,
             target_cluster_version,
             overall_upgrade_elapsed_time_in_ms,
         }
@@ -3988,8 +3886,6 @@ impl ClusterUpgradeDescriptionObject {
 #[doc = "Cluster Upgrade Domain Completed event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpgradeDomainCompletedEvent {
-    #[serde(flatten)]
-    pub cluster_event: ClusterEvent,
     #[doc = "Target Cluster version."]
     #[serde(rename = "TargetClusterVersion")]
     pub target_cluster_version: String,
@@ -4005,14 +3901,12 @@ pub struct ClusterUpgradeDomainCompletedEvent {
 }
 impl ClusterUpgradeDomainCompletedEvent {
     pub fn new(
-        cluster_event: ClusterEvent,
         target_cluster_version: String,
         upgrade_state: String,
         upgrade_domains: String,
         upgrade_domain_elapsed_time_in_ms: f64,
     ) -> Self {
         Self {
-            cluster_event,
             target_cluster_version,
             upgrade_state,
             upgrade_domains,
@@ -4096,8 +3990,6 @@ impl ClusterUpgradeProgressObject {
 #[doc = "Cluster Upgrade Rollback Completed event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpgradeRollbackCompletedEvent {
-    #[serde(flatten)]
-    pub cluster_event: ClusterEvent,
     #[doc = "Target Cluster version."]
     #[serde(rename = "TargetClusterVersion")]
     pub target_cluster_version: String,
@@ -4109,14 +4001,8 @@ pub struct ClusterUpgradeRollbackCompletedEvent {
     pub overall_upgrade_elapsed_time_in_ms: f64,
 }
 impl ClusterUpgradeRollbackCompletedEvent {
-    pub fn new(
-        cluster_event: ClusterEvent,
-        target_cluster_version: String,
-        failure_reason: String,
-        overall_upgrade_elapsed_time_in_ms: f64,
-    ) -> Self {
+    pub fn new(target_cluster_version: String, failure_reason: String, overall_upgrade_elapsed_time_in_ms: f64) -> Self {
         Self {
-            cluster_event,
             target_cluster_version,
             failure_reason,
             overall_upgrade_elapsed_time_in_ms,
@@ -4126,8 +4012,6 @@ impl ClusterUpgradeRollbackCompletedEvent {
 #[doc = "Cluster Upgrade Rollback Started event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpgradeRollbackStartedEvent {
-    #[serde(flatten)]
-    pub cluster_event: ClusterEvent,
     #[doc = "Target Cluster version."]
     #[serde(rename = "TargetClusterVersion")]
     pub target_cluster_version: String,
@@ -4139,14 +4023,8 @@ pub struct ClusterUpgradeRollbackStartedEvent {
     pub overall_upgrade_elapsed_time_in_ms: f64,
 }
 impl ClusterUpgradeRollbackStartedEvent {
-    pub fn new(
-        cluster_event: ClusterEvent,
-        target_cluster_version: String,
-        failure_reason: String,
-        overall_upgrade_elapsed_time_in_ms: f64,
-    ) -> Self {
+    pub fn new(target_cluster_version: String, failure_reason: String, overall_upgrade_elapsed_time_in_ms: f64) -> Self {
         Self {
-            cluster_event,
             target_cluster_version,
             failure_reason,
             overall_upgrade_elapsed_time_in_ms,
@@ -4156,8 +4034,6 @@ impl ClusterUpgradeRollbackStartedEvent {
 #[doc = "Cluster Upgrade Started event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpgradeStartedEvent {
-    #[serde(flatten)]
-    pub cluster_event: ClusterEvent,
     #[doc = "Current Cluster version."]
     #[serde(rename = "CurrentClusterVersion")]
     pub current_cluster_version: String,
@@ -4176,7 +4052,6 @@ pub struct ClusterUpgradeStartedEvent {
 }
 impl ClusterUpgradeStartedEvent {
     pub fn new(
-        cluster_event: ClusterEvent,
         current_cluster_version: String,
         target_cluster_version: String,
         upgrade_type: String,
@@ -4184,7 +4059,6 @@ impl ClusterUpgradeStartedEvent {
         failure_action: String,
     ) -> Self {
         Self {
-            cluster_event,
             current_cluster_version,
             target_cluster_version,
             upgrade_type,
@@ -5007,13 +4881,10 @@ pub mod deactivation_intent_description {
 }
 #[doc = "The default execution policy. Always restart the service if an exit occurs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DefaultExecutionPolicy {
-    #[serde(flatten)]
-    pub execution_policy: ExecutionPolicy,
-}
+pub struct DefaultExecutionPolicy {}
 impl DefaultExecutionPolicy {
-    pub fn new(execution_policy: ExecutionPolicy) -> Self {
-        Self { execution_policy }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Represents a PropertyBatchOperation that deletes a specified property if it exists.\nNote that if one PropertyBatchOperation in a PropertyBatch fails,\nthe entire batch fails and cannot be committed in a transactional manner."]
@@ -6229,15 +6100,13 @@ impl DiskInfo {
 #[doc = "Describes a Service Fabric property value of type Double."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DoublePropertyValue {
-    #[serde(flatten)]
-    pub property_value: PropertyValue,
     #[doc = "The data of the property value."]
     #[serde(rename = "Data")]
     pub data: f64,
 }
 impl DoublePropertyValue {
-    pub fn new(property_value: PropertyValue, data: f64) -> Self {
-        Self { property_value, data }
+    pub fn new(data: f64) -> Self {
+        Self { data }
     }
 }
 #[doc = "Describes the parameters for Dsms Azure blob store used for storing and enumerating backups."]
@@ -6617,14 +6486,6 @@ impl ExecutingFaultsChaosEvent {
             chaos_event,
             faults: Vec::new(),
         }
-    }
-}
-#[doc = "The execution policy of the service"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExecutionPolicy {}
-impl ExecutionPolicy {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Enumerates the execution policy types for services."]
@@ -7426,8 +7287,6 @@ impl Serialize for FabricReplicaStatus {
 #[doc = "Derived from PropertyBatchInfo. Represents the property batch failing. Contains information about the specific batch failure."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FailedPropertyBatchInfo {
-    #[serde(flatten)]
-    pub property_batch_info: PropertyBatchInfo,
     #[doc = "The error message of the failed operation. Describes the exception thrown due to the first unsuccessful operation in the property batch."]
     #[serde(rename = "ErrorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
@@ -7436,9 +7295,8 @@ pub struct FailedPropertyBatchInfo {
     pub operation_index: Option<i64>,
 }
 impl FailedPropertyBatchInfo {
-    pub fn new(property_batch_info: PropertyBatchInfo) -> Self {
+    pub fn new() -> Self {
         Self {
-            property_batch_info,
             error_message: None,
             operation_index: None,
         }
@@ -7662,18 +7520,13 @@ pub type ForceRestart = bool;
 #[doc = "Describes the frequency based backup schedule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FrequencyBasedBackupScheduleDescription {
-    #[serde(flatten)]
-    pub backup_schedule_description: BackupScheduleDescription,
     #[doc = "Defines the interval with which backups are periodically taken. It should be specified in ISO8601 format. Timespan in seconds is not supported and will be ignored while creating the policy."]
     #[serde(rename = "Interval")]
     pub interval: String,
 }
 impl FrequencyBasedBackupScheduleDescription {
-    pub fn new(backup_schedule_description: BackupScheduleDescription, interval: String) -> Self {
-        Self {
-            backup_schedule_description,
-            interval,
-        }
+    pub fn new(interval: String) -> Self {
+        Self { interval }
     }
 }
 #[doc = "Describes destination endpoint for routing traffic."]
@@ -7812,15 +7665,13 @@ impl GetPropertyBatchOperation {
 #[doc = "Describes a Service Fabric property value of type Guid."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuidPropertyValue {
-    #[serde(flatten)]
-    pub property_value: PropertyValue,
     #[doc = "The data of the property value."]
     #[serde(rename = "Data")]
     pub data: String,
 }
 impl GuidPropertyValue {
-    pub fn new(property_value: PropertyValue, data: String) -> Self {
-        Self { property_value, data }
+    pub fn new(data: String) -> Self {
+        Self { data }
     }
 }
 pub type HealthCheckRetryTimeout = String;
@@ -8594,15 +8445,13 @@ pub type InstanceId = String;
 #[doc = "Describes a Service Fabric property value of type Int64."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Int64PropertyValue {
-    #[serde(flatten)]
-    pub property_value: PropertyValue,
     #[doc = "The data of the property value."]
     #[serde(rename = "Data")]
     pub data: String,
 }
 impl Int64PropertyValue {
-    pub fn new(property_value: PropertyValue, data: String) -> Self {
-        Self { property_value, data }
+    pub fn new(data: String) -> Self {
+        Self { data }
     }
 }
 #[doc = "Describes the partition information for the integer range that is based on partition schemes."]
@@ -8659,8 +8508,6 @@ impl InvokeQuorumLossResult {
 #[doc = "Key value store related information for the replica."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyValueStoreReplicaStatus {
-    #[serde(flatten)]
-    pub replica_status_base: ReplicaStatusBase,
     #[doc = "Value indicating the estimated number of rows in the underlying database."]
     #[serde(rename = "DatabaseRowCountEstimate", default, skip_serializing_if = "Option::is_none")]
     pub database_row_count_estimate: Option<String>,
@@ -8678,9 +8525,8 @@ pub struct KeyValueStoreReplicaStatus {
     pub status_details: Option<String>,
 }
 impl KeyValueStoreReplicaStatus {
-    pub fn new(replica_status_base: ReplicaStatusBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            replica_status_base,
             database_row_count_estimate: None,
             database_logical_size_estimate: None,
             copy_notification_current_key_filter: None,
@@ -8990,8 +8836,6 @@ impl NamedPartitionInformation {
 #[doc = "Describes the named partition scheme of the service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NamedPartitionSchemeDescription {
-    #[serde(flatten)]
-    pub partition_scheme_description: PartitionSchemeDescription,
     #[doc = "The number of partitions."]
     #[serde(rename = "Count")]
     pub count: i64,
@@ -9000,12 +8844,8 @@ pub struct NamedPartitionSchemeDescription {
     pub names: Vec<String>,
 }
 impl NamedPartitionSchemeDescription {
-    pub fn new(partition_scheme_description: PartitionSchemeDescription, count: i64, names: Vec<String>) -> Self {
-        Self {
-            partition_scheme_description,
-            count,
-            names,
-        }
+    pub fn new(count: i64, names: Vec<String>) -> Self {
+        Self { count, names }
     }
 }
 pub type NetworkAddressPrefix = String;
@@ -9081,8 +8921,6 @@ pub type NetworkResourceName = String;
 #[doc = "Describes properties of a network resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkResourceProperties {
-    #[serde(flatten)]
-    pub network_resource_properties_base: NetworkResourcePropertiesBase,
     #[doc = "User readable description of the network."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -9094,21 +8932,12 @@ pub struct NetworkResourceProperties {
     pub status_details: Option<String>,
 }
 impl NetworkResourceProperties {
-    pub fn new(network_resource_properties_base: NetworkResourcePropertiesBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            network_resource_properties_base,
             description: None,
             status: None,
             status_details: None,
         }
-    }
-}
-#[doc = "This type describes the properties of a network resource, including its kind."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkResourcePropertiesBase {}
-impl NetworkResourcePropertiesBase {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The type of a Service Fabric container network."]
@@ -10100,8 +9929,6 @@ impl NodeRemovedFromClusterEvent {
 #[doc = "Describes the expected impact of a repair on a set of nodes.\n\nThis type supports the Service Fabric platform; it is not meant to be used directly from your code."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeRepairImpactDescription {
-    #[serde(flatten)]
-    pub repair_impact_description_base: RepairImpactDescriptionBase,
     #[doc = "The list of nodes impacted by a repair action and their respective expected impact."]
     #[serde(
         rename = "NodeImpactList",
@@ -10112,9 +9939,8 @@ pub struct NodeRepairImpactDescription {
     pub node_impact_list: Vec<NodeImpact>,
 }
 impl NodeRepairImpactDescription {
-    pub fn new(repair_impact_description_base: RepairImpactDescriptionBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            repair_impact_description_base,
             node_impact_list: Vec::new(),
         }
     }
@@ -10122,8 +9948,6 @@ impl NodeRepairImpactDescription {
 #[doc = "Describes the list of nodes targeted by a repair action.\n\nThis type supports the Service Fabric platform; it is not meant to be used directly from your code."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeRepairTargetDescription {
-    #[serde(flatten)]
-    pub repair_target_description_base: RepairTargetDescriptionBase,
     #[doc = "The list of nodes targeted by a repair action."]
     #[serde(
         rename = "NodeNames",
@@ -10134,11 +9958,8 @@ pub struct NodeRepairTargetDescription {
     pub node_names: Vec<String>,
 }
 impl NodeRepairTargetDescription {
-    pub fn new(repair_target_description_base: RepairTargetDescriptionBase) -> Self {
-        Self {
-            repair_target_description_base,
-            node_names: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { node_names: Vec::new() }
     }
 }
 #[doc = "Contains information about a node that was targeted by a user-induced operation."]
@@ -11095,8 +10916,6 @@ impl PartitionBackupConfigurationInfo {
 #[doc = "Identifies the Service Fabric stateful partition which is being backed up."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionBackupEntity {
-    #[serde(flatten)]
-    pub backup_entity: BackupEntity,
     #[doc = "The full name of the service with 'fabric:' URI scheme."]
     #[serde(rename = "ServiceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<ServiceName>,
@@ -11105,9 +10924,8 @@ pub struct PartitionBackupEntity {
     pub partition_id: Option<PartitionId>,
 }
 impl PartitionBackupEntity {
-    pub fn new(backup_entity: BackupEntity) -> Self {
+    pub fn new() -> Self {
         Self {
-            backup_entity,
             service_name: None,
             partition_id: None,
         }
@@ -11339,8 +11157,6 @@ pub enum PartitionInformationUnion {
 #[doc = "Represents a scaling mechanism for adding or removing instances of stateless service partition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionInstanceCountScaleMechanism {
-    #[serde(flatten)]
-    pub scaling_mechanism_description: ScalingMechanismDescription,
     #[doc = "Minimum number of instances of the partition."]
     #[serde(rename = "MinInstanceCount")]
     pub min_instance_count: i64,
@@ -11352,14 +11168,8 @@ pub struct PartitionInstanceCountScaleMechanism {
     pub scale_increment: i64,
 }
 impl PartitionInstanceCountScaleMechanism {
-    pub fn new(
-        scaling_mechanism_description: ScalingMechanismDescription,
-        min_instance_count: i64,
-        max_instance_count: i64,
-        scale_increment: i64,
-    ) -> Self {
+    pub fn new(min_instance_count: i64, max_instance_count: i64, scale_increment: i64) -> Self {
         Self {
-            scaling_mechanism_description,
             min_instance_count,
             max_instance_count,
             scale_increment,
@@ -11639,18 +11449,13 @@ impl PartitionRestartProgress {
 #[doc = "Represents a safety check for the service partition being performed by service fabric before continuing with operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionSafetyCheck {
-    #[serde(flatten)]
-    pub safety_check: SafetyCheck,
     #[doc = "An internal ID used by Service Fabric to uniquely identify a partition. This is a randomly generated GUID when the service was created. The partition ID is unique and does not change for the lifetime of the service. If the same service was deleted and recreated the IDs of its partitions would be different."]
     #[serde(rename = "PartitionId", default, skip_serializing_if = "Option::is_none")]
     pub partition_id: Option<PartitionId>,
 }
 impl PartitionSafetyCheck {
-    pub fn new(safety_check: SafetyCheck) -> Self {
-        Self {
-            safety_check,
-            partition_id: None,
-        }
+    pub fn new() -> Self {
+        Self { partition_id: None }
     }
 }
 #[doc = "Enumerates the ways that a service can be partitioned."]
@@ -11694,14 +11499,6 @@ impl Serialize for PartitionScheme {
         }
     }
 }
-#[doc = "Describes how the service is partitioned."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PartitionSchemeDescription {}
-impl PartitionSchemeDescription {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Enumerates the ways that a service can be partitioned."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "PartitionScheme")]
@@ -11742,8 +11539,6 @@ impl PartitionsHealthEvaluation {
 #[doc = "Provides statistics about the Service Fabric Replicator, when it is functioning in a Primary role."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrimaryReplicatorStatus {
-    #[serde(flatten)]
-    pub replicator_status: ReplicatorStatus,
     #[doc = "Provides various statistics of the queue used in the service fabric replicator.\nContains information about the service fabric replicator like the replication/copy queue utilization, last acknowledgement received timestamp, etc.\nDepending on the role of the replicator, the properties in this type imply different meanings."]
     #[serde(rename = "ReplicationQueueStatus", default, skip_serializing_if = "Option::is_none")]
     pub replication_queue_status: Option<ReplicatorQueueStatus>,
@@ -11752,9 +11547,8 @@ pub struct PrimaryReplicatorStatus {
     pub remote_replicators: Option<RemoteReplicatorStatusList>,
 }
 impl PrimaryReplicatorStatus {
-    pub fn new(replicator_status: ReplicatorStatus) -> Self {
+    pub fn new() -> Self {
         Self {
-            replicator_status,
             replication_queue_status: None,
             remote_replicators: None,
         }
@@ -11919,14 +11713,6 @@ pub struct PropertyBatchDescriptionList {
 impl PropertyBatchDescriptionList {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Information about the results of a property batch."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PropertyBatchInfo {}
-impl PropertyBatchInfo {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The kind of property batch info, determined by the results of a property batch. The following are the possible values."]
@@ -12118,14 +11904,6 @@ impl PropertyMetadata {
     }
 }
 pub type PropertyName = String;
-#[doc = "Describes a Service Fabric property value."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PropertyValue {}
-impl PropertyValue {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The kind of property, determined by the type of data. Following are the possible values."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "Kind")]
@@ -12523,14 +12301,6 @@ impl RemoteReplicatorStatus {
     }
 }
 pub type RemoteReplicatorStatusList = Vec<RemoteReplicatorStatus>;
-#[doc = "Describes the expected impact of executing a repair task.\n\nThis type supports the Service Fabric platform; it is not meant to be used directly from your code."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RepairImpactDescriptionBase {}
-impl RepairImpactDescriptionBase {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Specifies the kind of the impact. This type supports the Service Fabric platform; it is not meant to be used directly from your code.'"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "Kind")]
@@ -12572,14 +12342,6 @@ impl Serialize for RepairImpactKind {
             Self::Node => serializer.serialize_unit_variant("RepairImpactKind", 1u32, "Node"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
-    }
-}
-#[doc = "Describes the entities targeted by a repair action.\n\nThis type supports the Service Fabric platform; it is not meant to be used directly from your code."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RepairTargetDescriptionBase {}
-impl RepairTargetDescriptionBase {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Specifies the kind of the repair target. This type supports the Service Fabric platform; it is not meant to be used directly from your code.'"]
@@ -13322,14 +13084,6 @@ impl Serialize for ReplicaStatus {
         }
     }
 }
-#[doc = "Information about the replica."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplicaStatusBase {}
-impl ReplicaStatusBase {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The role of a replica of a stateful service."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "Kind")]
@@ -13443,14 +13197,6 @@ pub struct ReplicatorQueueStatus {
 impl ReplicatorQueueStatus {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Represents a base class for primary or secondary replicator status.\nContains information about the service fabric replicator like the replication/copy queue utilization, last acknowledgement received timestamp, etc."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplicatorStatus {}
-impl ReplicatorStatus {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The role of a replica of a stateful service."]
@@ -13854,14 +13600,6 @@ impl ResumeClusterUpgradeDescription {
         Self { upgrade_domain }
     }
 }
-#[doc = "Describes the retention policy configured."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RetentionPolicyDescription {}
-impl RetentionPolicyDescription {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The type of retention policy. Currently only \"Basic\" retention policy is supported."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "RetentionPolicyType")]
@@ -14008,22 +13746,12 @@ impl RollingUpgradeUpdateDescription {
 #[doc = "The run to completion execution policy, the service will perform its desired operation and complete successfully. If the service encounters failure, it will restarted based on restart policy specified. If the service completes its operation successfully, it will not be restarted again."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunToCompletionExecutionPolicy {
-    #[serde(flatten)]
-    pub execution_policy: ExecutionPolicy,
     #[doc = "Enumerates the restart policy for RunToCompletionExecutionPolicy"]
     pub restart: RestartPolicy,
 }
 impl RunToCompletionExecutionPolicy {
-    pub fn new(execution_policy: ExecutionPolicy, restart: RestartPolicy) -> Self {
-        Self { execution_policy, restart }
-    }
-}
-#[doc = "Represents a safety check performed by service fabric before continuing with the operations. These checks ensure the availability of the service and the reliability of the state."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SafetyCheck {}
-impl SafetyCheck {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(restart: RestartPolicy) -> Self {
+        Self { restart }
     }
 }
 #[doc = "The kind of safety check performed by service fabric before continuing with the operations. These checks ensure the availability of the service and the reliability of the state. Following are the kinds of safety checks."]
@@ -14094,14 +13822,6 @@ impl SafetyCheckWrapper {
         Self::default()
     }
 }
-#[doc = "Describes the mechanism for performing a scaling operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScalingMechanismDescription {}
-impl ScalingMechanismDescription {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Enumerates the ways that a service can be scaled."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "Kind")]
@@ -14169,14 +13889,6 @@ impl ScalingPolicyDescription {
     }
 }
 pub type ScalingPolicyDescriptionList = Vec<ScalingPolicyDescription>;
-#[doc = "Describes the trigger for performing a scaling operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScalingTriggerDescription {}
-impl ScalingTriggerDescription {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Enumerates the ways that a service can be scaled."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "Kind")]
@@ -14252,8 +13964,6 @@ impl SecondaryIdleReplicatorStatus {
 #[doc = "Provides statistics about the Service Fabric Replicator, when it is functioning in a ActiveSecondary role."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecondaryReplicatorStatus {
-    #[serde(flatten)]
-    pub replicator_status: ReplicatorStatus,
     #[doc = "Provides various statistics of the queue used in the service fabric replicator.\nContains information about the service fabric replicator like the replication/copy queue utilization, last acknowledgement received timestamp, etc.\nDepending on the role of the replicator, the properties in this type imply different meanings."]
     #[serde(rename = "ReplicationQueueStatus", default, skip_serializing_if = "Option::is_none")]
     pub replication_queue_status: Option<ReplicatorQueueStatus>,
@@ -14278,9 +13988,8 @@ pub struct SecondaryReplicatorStatus {
     pub last_acknowledgement_sent_time_utc: Option<time::OffsetDateTime>,
 }
 impl SecondaryReplicatorStatus {
-    pub fn new(replicator_status: ReplicatorStatus) -> Self {
+    pub fn new() -> Self {
         Self {
-            replicator_status,
             replication_queue_status: None,
             last_replication_operation_received_time_utc: None,
             is_in_build: None,
@@ -14346,8 +14055,6 @@ pub type SecretResourceName = String;
 #[doc = "Describes the properties of a secret resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretResourceProperties {
-    #[serde(flatten)]
-    pub secret_resource_properties_base: SecretResourcePropertiesBase,
     #[doc = "User readable description of the secret."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -14362,22 +14069,13 @@ pub struct SecretResourceProperties {
     pub content_type: Option<String>,
 }
 impl SecretResourceProperties {
-    pub fn new(secret_resource_properties_base: SecretResourcePropertiesBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            secret_resource_properties_base,
             description: None,
             status: None,
             status_details: None,
             content_type: None,
         }
-    }
-}
-#[doc = "This type describes the properties of a secret resource, including its kind."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretResourcePropertiesBase {}
-impl SecretResourcePropertiesBase {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Describes the kind of secret."]
@@ -14434,13 +14132,10 @@ impl SecretValueResourceProperties {
 }
 #[doc = "Represents a safety check for the seed nodes being performed by service fabric before continuing with node level operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SeedNodeSafetyCheck {
-    #[serde(flatten)]
-    pub safety_check: SafetyCheck,
-}
+pub struct SeedNodeSafetyCheck {}
 impl SeedNodeSafetyCheck {
-    pub fn new(safety_check: SafetyCheck) -> Self {
-        Self { safety_check }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "This class returns information about the partition that the user-induced operation acted upon."]
@@ -14478,18 +14173,13 @@ impl ServiceBackupConfigurationInfo {
 #[doc = "Identifies the Service Fabric stateful service which is being backed up."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBackupEntity {
-    #[serde(flatten)]
-    pub backup_entity: BackupEntity,
     #[doc = "The full name of the service with 'fabric:' URI scheme."]
     #[serde(rename = "ServiceName", default, skip_serializing_if = "Option::is_none")]
     pub service_name: Option<ServiceName>,
 }
 impl ServiceBackupEntity {
-    pub fn new(backup_entity: BackupEntity) -> Self {
-        Self {
-            backup_entity,
-            service_name: None,
-        }
+    pub fn new() -> Self {
+        Self { service_name: None }
     }
 }
 #[doc = "Creates a particular correlation between services."]
@@ -15464,42 +15154,24 @@ impl Serialize for ServicePartitionStatus {
 #[doc = "Describes the policy to be used for placement of a Service Fabric service where a particular fault or upgrade domain should not be used for placement of the instances or replicas of that service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePlacementInvalidDomainPolicyDescription {
-    #[serde(flatten)]
-    pub service_placement_policy_description: ServicePlacementPolicyDescription,
     #[doc = "The name of the domain that should not be used for placement."]
     #[serde(rename = "DomainName", default, skip_serializing_if = "Option::is_none")]
     pub domain_name: Option<String>,
 }
 impl ServicePlacementInvalidDomainPolicyDescription {
-    pub fn new(service_placement_policy_description: ServicePlacementPolicyDescription) -> Self {
-        Self {
-            service_placement_policy_description,
-            domain_name: None,
-        }
+    pub fn new() -> Self {
+        Self { domain_name: None }
     }
 }
 #[doc = "Describes the policy to be used for placement of a Service Fabric service where all replicas must be able to be placed in order for any replicas to be created."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServicePlacementNonPartiallyPlaceServicePolicyDescription {
-    #[serde(flatten)]
-    pub service_placement_policy_description: ServicePlacementPolicyDescription,
-}
+pub struct ServicePlacementNonPartiallyPlaceServicePolicyDescription {}
 impl ServicePlacementNonPartiallyPlaceServicePolicyDescription {
-    pub fn new(service_placement_policy_description: ServicePlacementPolicyDescription) -> Self {
-        Self {
-            service_placement_policy_description,
-        }
-    }
-}
-pub type ServicePlacementPoliciesList = Vec<ServicePlacementPolicyDescription>;
-#[doc = "Describes the policy to be used for placement of a Service Fabric service."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServicePlacementPolicyDescription {}
-impl ServicePlacementPolicyDescription {
     pub fn new() -> Self {
         Self {}
     }
 }
+pub type ServicePlacementPoliciesList = Vec<ServicePlacementPolicyDescription>;
 #[doc = "The type of placement policy for a service fabric service. Following are the possible values."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "Type")]
@@ -15567,52 +15239,37 @@ impl Serialize for ServicePlacementPolicyType {
 #[doc = "Describes the policy to be used for placement of a Service Fabric service where the service's Primary replicas should optimally be placed in a particular domain.\n\nThis placement policy is usually used with fault domains in scenarios where the Service Fabric cluster is geographically distributed in order to indicate that a service's primary replica should be located in a particular fault domain, which in geo-distributed scenarios usually aligns with regional or datacenter boundaries. Note that since this is an optimization it is possible that the Primary replica may not end up located in this domain due to failures, capacity limits, or other constraints."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePlacementPreferPrimaryDomainPolicyDescription {
-    #[serde(flatten)]
-    pub service_placement_policy_description: ServicePlacementPolicyDescription,
     #[doc = "The name of the domain that should used for placement as per this policy."]
     #[serde(rename = "DomainName", default, skip_serializing_if = "Option::is_none")]
     pub domain_name: Option<String>,
 }
 impl ServicePlacementPreferPrimaryDomainPolicyDescription {
-    pub fn new(service_placement_policy_description: ServicePlacementPolicyDescription) -> Self {
-        Self {
-            service_placement_policy_description,
-            domain_name: None,
-        }
+    pub fn new() -> Self {
+        Self { domain_name: None }
     }
 }
 #[doc = "Describes the policy to be used for placement of a Service Fabric service where two replicas from the same partition should never be placed in the same fault or upgrade domain.\n\nWhile this is not common it can expose the service to an increased risk of concurrent failures due to unplanned outages or other cases of subsequent/concurrent failures. As an example, consider a case where replicas are deployed across different data center, with one replica per location. In the event that one of the datacenters goes offline, normally the replica that was placed in that datacenter will be packed into one of the remaining datacenters. If this is not desirable then this policy should be set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePlacementRequireDomainDistributionPolicyDescription {
-    #[serde(flatten)]
-    pub service_placement_policy_description: ServicePlacementPolicyDescription,
     #[doc = "The name of the domain that should used for placement as per this policy."]
     #[serde(rename = "DomainName", default, skip_serializing_if = "Option::is_none")]
     pub domain_name: Option<String>,
 }
 impl ServicePlacementRequireDomainDistributionPolicyDescription {
-    pub fn new(service_placement_policy_description: ServicePlacementPolicyDescription) -> Self {
-        Self {
-            service_placement_policy_description,
-            domain_name: None,
-        }
+    pub fn new() -> Self {
+        Self { domain_name: None }
     }
 }
 #[doc = "Describes the policy to be used for placement of a Service Fabric service where the instances or replicas of that service must be placed in a particular domain"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePlacementRequiredDomainPolicyDescription {
-    #[serde(flatten)]
-    pub service_placement_policy_description: ServicePlacementPolicyDescription,
     #[doc = "The name of the domain that should used for placement as per this policy."]
     #[serde(rename = "DomainName", default, skip_serializing_if = "Option::is_none")]
     pub domain_name: Option<String>,
 }
 impl ServicePlacementRequiredDomainPolicyDescription {
-    pub fn new(service_placement_policy_description: ServicePlacementPolicyDescription) -> Self {
-        Self {
-            service_placement_policy_description,
-            domain_name: None,
-        }
+    pub fn new() -> Self {
+        Self { domain_name: None }
     }
 }
 #[doc = "Describes properties of a service resource."]
@@ -16130,15 +15787,10 @@ impl SingletonPartitionInformation {
 }
 #[doc = "Describes the partition scheme of a singleton-partitioned, or non-partitioned service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SingletonPartitionSchemeDescription {
-    #[serde(flatten)]
-    pub partition_scheme_description: PartitionSchemeDescription,
-}
+pub struct SingletonPartitionSchemeDescription {}
 impl SingletonPartitionSchemeDescription {
-    pub fn new(partition_scheme_description: PartitionSchemeDescription) -> Self {
-        Self {
-            partition_scheme_description,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Describes the parameters for starting a cluster upgrade."]
@@ -16836,32 +16488,25 @@ impl StoppedChaosEvent {
 #[doc = "Describes a Service Fabric property value of type String."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StringPropertyValue {
-    #[serde(flatten)]
-    pub property_value: PropertyValue,
     #[doc = "The data of the property value."]
     #[serde(rename = "Data")]
     pub data: String,
 }
 impl StringPropertyValue {
-    pub fn new(property_value: PropertyValue, data: String) -> Self {
-        Self { property_value, data }
+    pub fn new(data: String) -> Self {
+        Self { data }
     }
 }
 #[doc = "Derived from PropertyBatchInfo. Represents the property batch succeeding. Contains the results of any \"Get\" operations in the batch."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SuccessfulPropertyBatchInfo {
-    #[serde(flatten)]
-    pub property_batch_info: PropertyBatchInfo,
     #[doc = "A map containing the properties that were requested through any \"Get\" property batch operations. The key represents the index of the \"Get\" operation in the original request, in string form. The value is the property. If a property is not found, it will not be in the map."]
     #[serde(rename = "Properties", default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
 impl SuccessfulPropertyBatchInfo {
-    pub fn new(property_batch_info: PropertyBatchInfo) -> Self {
-        Self {
-            property_batch_info,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "Represents health evaluation for the fabric:/System application, containing information about the data and the algorithm used by health store to evaluate health. The evaluation is returned only when the aggregated health state of the cluster is either Error or Warning."]
@@ -16916,8 +16561,6 @@ impl TestErrorChaosEvent {
 #[doc = "Describes the time based backup schedule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimeBasedBackupScheduleDescription {
-    #[serde(flatten)]
-    pub backup_schedule_description: BackupScheduleDescription,
     #[doc = "Describes the frequency with which to run the time based backup schedule."]
     #[serde(rename = "ScheduleFrequencyType")]
     pub schedule_frequency_type: BackupScheduleFrequencyType,
@@ -16929,13 +16572,8 @@ pub struct TimeBasedBackupScheduleDescription {
     pub run_times: TimeList,
 }
 impl TimeBasedBackupScheduleDescription {
-    pub fn new(
-        backup_schedule_description: BackupScheduleDescription,
-        schedule_frequency_type: BackupScheduleFrequencyType,
-        run_times: TimeList,
-    ) -> Self {
+    pub fn new(schedule_frequency_type: BackupScheduleFrequencyType, run_times: TimeList) -> Self {
         Self {
-            backup_schedule_description,
             schedule_frequency_type,
             run_days: None,
             run_times,
@@ -16977,8 +16615,6 @@ pub type UnhealthyEvaluations = Vec<HealthEvaluationWrapper>;
 #[doc = "Describes a partitioning scheme where an integer range is allocated evenly across a number of partitions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UniformInt64RangePartitionSchemeDescription {
-    #[serde(flatten)]
-    pub partition_scheme_description: PartitionSchemeDescription,
     #[doc = "The number of partitions."]
     #[serde(rename = "Count")]
     pub count: i64,
@@ -16990,13 +16626,8 @@ pub struct UniformInt64RangePartitionSchemeDescription {
     pub high_key: String,
 }
 impl UniformInt64RangePartitionSchemeDescription {
-    pub fn new(partition_scheme_description: PartitionSchemeDescription, count: i64, low_key: String, high_key: String) -> Self {
-        Self {
-            partition_scheme_description,
-            count,
-            low_key,
-            high_key,
-        }
+    pub fn new(count: i64, low_key: String, high_key: String) -> Self {
+        Self { count, low_key, high_key }
     }
 }
 #[doc = "Contains information for an unplaced replica."]

@@ -103,8 +103,6 @@ impl CloudErrorBody {
 #[doc = "Represents a server group firewall rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirewallRule {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -114,7 +112,6 @@ pub struct FirewallRule {
 impl FirewallRule {
     pub fn new(properties: FirewallRuleProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             system_data: None,
             properties,
         }
@@ -411,8 +408,6 @@ impl Resource {
 #[doc = "Represents a server group role."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Role {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -461,8 +456,6 @@ impl RoleProperties {
 #[doc = "Represents a configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerConfiguration {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -601,8 +594,6 @@ impl ServerGroup {
 #[doc = "Represents the configuration list of server role groups in a server group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerGroupConfiguration {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -984,8 +975,6 @@ impl ServerGroupPropertiesForUpdate {
 #[doc = "Represents a server in a server group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerGroupServer {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,

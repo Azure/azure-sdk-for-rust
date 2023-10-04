@@ -299,17 +299,14 @@ impl AutoscaleSettingsResource {
 #[doc = "An Azure Blob Storage data source/sink"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBlobDataTransferDataSourceSink {
-    #[serde(flatten)]
-    pub data_transfer_data_source_sink: DataTransferDataSourceSink,
     #[serde(rename = "containerName")]
     pub container_name: String,
     #[serde(rename = "endpointUrl", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_url: Option<String>,
 }
 impl AzureBlobDataTransferDataSourceSink {
-    pub fn new(data_transfer_data_source_sink: DataTransferDataSourceSink, container_name: String) -> Self {
+    pub fn new(container_name: String) -> Self {
         Self {
-            data_transfer_data_source_sink,
             container_name,
             endpoint_url: None,
         }
@@ -1972,8 +1969,6 @@ impl CorsPolicy {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CosmosCassandraDataTransferDataSourceSink {
     #[serde(flatten)]
-    pub data_transfer_data_source_sink: DataTransferDataSourceSink,
-    #[serde(flatten)]
     pub base_cosmos_data_transfer_data_source_sink: BaseCosmosDataTransferDataSourceSink,
     #[serde(rename = "keyspaceName")]
     pub keyspace_name: String,
@@ -1981,9 +1976,8 @@ pub struct CosmosCassandraDataTransferDataSourceSink {
     pub table_name: String,
 }
 impl CosmosCassandraDataTransferDataSourceSink {
-    pub fn new(data_transfer_data_source_sink: DataTransferDataSourceSink, keyspace_name: String, table_name: String) -> Self {
+    pub fn new(keyspace_name: String, table_name: String) -> Self {
         Self {
-            data_transfer_data_source_sink,
             base_cosmos_data_transfer_data_source_sink: BaseCosmosDataTransferDataSourceSink::default(),
             keyspace_name,
             table_name,
@@ -1994,8 +1988,6 @@ impl CosmosCassandraDataTransferDataSourceSink {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CosmosMongoDataTransferDataSourceSink {
     #[serde(flatten)]
-    pub data_transfer_data_source_sink: DataTransferDataSourceSink,
-    #[serde(flatten)]
     pub base_cosmos_data_transfer_data_source_sink: BaseCosmosDataTransferDataSourceSink,
     #[serde(rename = "databaseName")]
     pub database_name: String,
@@ -2003,9 +1995,8 @@ pub struct CosmosMongoDataTransferDataSourceSink {
     pub collection_name: String,
 }
 impl CosmosMongoDataTransferDataSourceSink {
-    pub fn new(data_transfer_data_source_sink: DataTransferDataSourceSink, database_name: String, collection_name: String) -> Self {
+    pub fn new(database_name: String, collection_name: String) -> Self {
         Self {
-            data_transfer_data_source_sink,
             base_cosmos_data_transfer_data_source_sink: BaseCosmosDataTransferDataSourceSink::default(),
             database_name,
             collection_name,
@@ -2016,8 +2007,6 @@ impl CosmosMongoDataTransferDataSourceSink {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CosmosSqlDataTransferDataSourceSink {
     #[serde(flatten)]
-    pub data_transfer_data_source_sink: DataTransferDataSourceSink,
-    #[serde(flatten)]
     pub base_cosmos_data_transfer_data_source_sink: BaseCosmosDataTransferDataSourceSink,
     #[serde(rename = "databaseName")]
     pub database_name: String,
@@ -2025,9 +2014,8 @@ pub struct CosmosSqlDataTransferDataSourceSink {
     pub container_name: String,
 }
 impl CosmosSqlDataTransferDataSourceSink {
-    pub fn new(data_transfer_data_source_sink: DataTransferDataSourceSink, database_name: String, container_name: String) -> Self {
+    pub fn new(database_name: String, container_name: String) -> Self {
         Self {
-            data_transfer_data_source_sink,
             base_cosmos_data_transfer_data_source_sink: BaseCosmosDataTransferDataSourceSink::default(),
             database_name,
             container_name,
@@ -2252,14 +2240,6 @@ pub mod data_center_resource {
         pub fn new() -> Self {
             Self::default()
         }
-    }
-}
-#[doc = "Base class for all DataTransfer source/sink"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataTransferDataSourceSink {}
-impl DataTransferDataSourceSink {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -3528,17 +3508,12 @@ impl FailoverPolicy {
 #[doc = "Represents a mongo cluster firewall rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirewallRule {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a mongo cluster firewall rule."]
     pub properties: FirewallRuleProperties,
 }
 impl FirewallRule {
     pub fn new(properties: FirewallRuleProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "A list of firewall rules."]
@@ -6276,8 +6251,6 @@ impl PhysicalPartitionThroughputInfoResultProperties {
 #[doc = "A private endpoint connection"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a private endpoint connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,

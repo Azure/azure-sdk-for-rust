@@ -400,17 +400,12 @@ impl EventHubEventSourceMutableProperties {
 #[doc = "An event source that receives its data from an Azure EventHub."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubEventSourceResource {
-    #[serde(flatten)]
-    pub event_source_resource: EventSourceResource,
     #[doc = "Properties of the EventHub event source resource."]
     pub properties: EventHubEventSourceResourceProperties,
 }
 impl EventHubEventSourceResource {
-    pub fn new(event_source_resource: EventSourceResource, properties: EventHubEventSourceResourceProperties) -> Self {
-        Self {
-            event_source_resource,
-            properties,
-        }
+    pub fn new(properties: EventHubEventSourceResourceProperties) -> Self {
+        Self { properties }
     }
 }
 #[doc = "Properties of the EventHub event source resource."]
@@ -515,17 +510,6 @@ pub struct EventSourceMutableProperties {
 impl EventSourceMutableProperties {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "An environment receives data from one or more event sources. Each event source has associated connection info that allows the Time Series Insights ingress pipeline to connect to and pull data from the event source"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventSourceResource {
-    #[serde(flatten)]
-    pub tracked_resource: TrackedResource,
-}
-impl EventSourceResource {
-    pub fn new(tracked_resource: TrackedResource) -> Self {
-        Self { tracked_resource }
     }
 }
 #[doc = "The kind of the event source."]
@@ -1109,17 +1093,12 @@ impl IoTHubEventSourceMutableProperties {
 #[doc = "An event source that receives its data from an Azure IoTHub."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTHubEventSourceResource {
-    #[serde(flatten)]
-    pub event_source_resource: EventSourceResource,
     #[doc = "Properties of the IoTHub event source resource."]
     pub properties: IoTHubEventSourceResourceProperties,
 }
 impl IoTHubEventSourceResource {
-    pub fn new(event_source_resource: EventSourceResource, properties: IoTHubEventSourceResourceProperties) -> Self {
-        Self {
-            event_source_resource,
-            properties,
-        }
+    pub fn new(properties: IoTHubEventSourceResourceProperties) -> Self {
+        Self { properties }
     }
 }
 #[doc = "Properties of the IoTHub event source resource."]

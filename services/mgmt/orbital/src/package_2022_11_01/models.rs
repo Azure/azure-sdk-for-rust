@@ -226,17 +226,12 @@ impl Serialize for Capability {
 #[doc = "Customer creates a contact resource for a spacecraft resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Contact {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of the Contact Resource."]
     pub properties: ContactsProperties,
 }
 impl Contact {
     pub fn new(properties: ContactsProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "Contact Instance Properties."]

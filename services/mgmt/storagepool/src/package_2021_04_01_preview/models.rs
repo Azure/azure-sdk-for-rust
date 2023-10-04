@@ -490,8 +490,6 @@ impl IscsiLun {
 #[doc = "Response for iSCSI Target requests."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTarget {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Response properties for iSCSI Target operations."]
     pub properties: IscsiTargetProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -501,7 +499,6 @@ pub struct IscsiTarget {
 impl IscsiTarget {
     pub fn new(properties: IscsiTargetProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -510,17 +507,12 @@ impl IscsiTarget {
 #[doc = "Payload for iSCSI Target create or update requests."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetCreate {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties for iSCSI Target create or update request."]
     pub properties: IscsiTargetCreateProperties,
 }
 impl IscsiTargetCreate {
     pub fn new(properties: IscsiTargetCreateProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "Properties for iSCSI Target create or update request."]
@@ -635,17 +627,12 @@ impl IscsiTargetProperties {
 #[doc = "Payload for iSCSI Target update requests."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetUpdate {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties for iSCSI Target update request."]
     pub properties: IscsiTargetUpdateProperties,
 }
 impl IscsiTargetUpdate {
     pub fn new(properties: IscsiTargetUpdateProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "Properties for iSCSI Target update request."]

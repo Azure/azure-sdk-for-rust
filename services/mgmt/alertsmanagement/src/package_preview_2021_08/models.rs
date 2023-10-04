@@ -3,14 +3,6 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "Action to be applied."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Action {}
-impl Action {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Action that should be applied."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "actionType")]
@@ -21,15 +13,13 @@ pub enum ActionUnion {
 #[doc = "Add action groups to alert processing rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddActionGroups {
-    #[serde(flatten)]
-    pub action: Action,
     #[doc = "List of action group Ids to add to alert processing rule."]
     #[serde(rename = "actionGroupIds")]
     pub action_group_ids: Vec<String>,
 }
 impl AddActionGroups {
-    pub fn new(action: Action, action_group_ids: Vec<String>) -> Self {
-        Self { action, action_group_ids }
+    pub fn new(action_group_ids: Vec<String>) -> Self {
+        Self { action_group_ids }
     }
 }
 #[doc = "Alert processing rule object containing target scopes, conditions and scheduling logic."]
@@ -328,17 +318,12 @@ impl MonitorServiceDetails {
 #[doc = "Monitor service details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorServiceList {
-    #[serde(flatten)]
-    pub alerts_meta_data_properties: AlertsMetaDataProperties,
     #[doc = "Array of operations"]
     pub data: Vec<MonitorServiceDetails>,
 }
 impl MonitorServiceList {
-    pub fn new(alerts_meta_data_properties: AlertsMetaDataProperties, data: Vec<MonitorServiceDetails>) -> Self {
-        Self {
-            alerts_meta_data_properties,
-            data,
-        }
+    pub fn new(data: Vec<MonitorServiceDetails>) -> Self {
+        Self { data }
     }
 }
 #[doc = "Monthly recurrence object."]
@@ -410,13 +395,10 @@ pub enum RecurrenceUnion {
 }
 #[doc = "Indicates if all action groups should be removed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RemoveAllActionGroups {
-    #[serde(flatten)]
-    pub action: Action,
-}
+pub struct RemoveAllActionGroups {}
 impl RemoveAllActionGroups {
-    pub fn new(action: Action) -> Self {
-        Self { action }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "An azure resource object"]
@@ -643,14 +625,6 @@ pub struct AlertsMetaData {
 impl AlertsMetaData {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "alert meta data property bag"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertsMetaDataProperties {}
-impl AlertsMetaDataProperties {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Identification of the information to be retrieved by API call"]

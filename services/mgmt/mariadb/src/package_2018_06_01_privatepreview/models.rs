@@ -6,8 +6,6 @@ use std::str::FromStr;
 #[doc = "Represents a recommendation action advisor."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Advisor {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a recommendation action advisor."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AdvisorProperties>,
@@ -96,8 +94,6 @@ impl CloudErrorBody {
 #[doc = "Represents a Configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Configuration {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProperties>,
@@ -159,8 +155,6 @@ impl ConfigurationProperties {
 #[doc = "Represents a Database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Database {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseProperties>,
@@ -210,17 +204,12 @@ impl DatabaseProperties {
 #[doc = "Represents a server firewall rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirewallRule {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a server firewall rule."]
     pub properties: FirewallRuleProperties,
 }
 impl FirewallRule {
     pub fn new(properties: FirewallRuleProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "A list of firewall rules."]
@@ -266,8 +255,6 @@ impl FirewallRuleProperties {
 #[doc = "Represents a log file."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogFile {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The name of the log file."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -583,8 +570,6 @@ impl PerformanceTierServiceLevelObjectives {
 #[doc = "A private endpoint connection"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a private endpoint connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
@@ -649,8 +634,6 @@ impl PrivateEndpointProperty {
 #[doc = "A private link resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a private link resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
@@ -738,8 +721,6 @@ impl ProxyResource {
 #[doc = "Represents a Query Statistic."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryStatistic {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a query statistic."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<QueryStatisticProperties>,
@@ -796,8 +777,6 @@ impl QueryStatisticProperties {
 #[doc = "Represents a Query Text."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryText {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a query text."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<QueryTextProperties>,
@@ -850,8 +829,6 @@ impl QueryTextsResultList {
 #[doc = "Represents a Recommendation Action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendationAction {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a recommendation action."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RecommendationActionProperties>,
@@ -1344,8 +1321,6 @@ impl ServerPropertiesForRestore {
 #[doc = "A server security alert policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerSecurityAlertPolicy {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a security alert policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityAlertPolicyProperties>,
@@ -1729,8 +1704,6 @@ impl TrackedResource {
 #[doc = "A virtual network rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkRule {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a virtual network rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualNetworkRuleProperties>,
@@ -1836,8 +1809,6 @@ pub mod virtual_network_rule_properties {
 #[doc = "Represents a Wait Statistic."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WaitStatistic {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a wait statistic."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WaitStatisticProperties>,

@@ -3,14 +3,6 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "Base class for certificate sources."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CertificateSource {}
-impl CertificateSource {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Type discriminator for the derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
@@ -43,14 +35,6 @@ impl CognitiveServicesVisionProcessor {
             sampling_options: None,
             operation,
         }
-    }
-}
-#[doc = "Base class for credential objects."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CredentialsBase {}
-impl CredentialsBase {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Type discriminator for the derived types."]
@@ -227,8 +211,6 @@ impl HttpExtension {
 #[doc = "HTTP header credentials."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpHeaderCredentials {
-    #[serde(flatten)]
-    pub credentials_base: CredentialsBase,
     #[doc = "HTTP header name."]
     #[serde(rename = "headerName")]
     pub header_name: String,
@@ -237,57 +219,34 @@ pub struct HttpHeaderCredentials {
     pub header_value: String,
 }
 impl HttpHeaderCredentials {
-    pub fn new(credentials_base: CredentialsBase, header_name: String, header_value: String) -> Self {
-        Self {
-            credentials_base,
-            header_name,
-            header_value,
-        }
+    pub fn new(header_name: String, header_value: String) -> Self {
+        Self { header_name, header_value }
     }
 }
 #[doc = "BMP image encoding."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageFormatBmp {
-    #[serde(flatten)]
-    pub image_format_properties: ImageFormatProperties,
-}
+pub struct ImageFormatBmp {}
 impl ImageFormatBmp {
-    pub fn new(image_format_properties: ImageFormatProperties) -> Self {
-        Self { image_format_properties }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "JPEG image encoding."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageFormatJpeg {
-    #[serde(flatten)]
-    pub image_format_properties: ImageFormatProperties,
     #[doc = "Image quality value between 0 to 100 (best quality)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quality: Option<String>,
 }
 impl ImageFormatJpeg {
-    pub fn new(image_format_properties: ImageFormatProperties) -> Self {
-        Self {
-            image_format_properties,
-            quality: None,
-        }
+    pub fn new() -> Self {
+        Self { quality: None }
     }
 }
 #[doc = "PNG image encoding."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageFormatPng {
-    #[serde(flatten)]
-    pub image_format_properties: ImageFormatProperties,
-}
+pub struct ImageFormatPng {}
 impl ImageFormatPng {
-    pub fn new(image_format_properties: ImageFormatProperties) -> Self {
-        Self { image_format_properties }
-    }
-}
-#[doc = "Base class for image formatting properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageFormatProperties {}
-impl ImageFormatProperties {
     pub fn new() -> Self {
         Self {}
     }
@@ -308,18 +267,13 @@ pub enum ImageFormatPropertiesUnion {
 #[doc = "Raw image formatting."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageFormatRaw {
-    #[serde(flatten)]
-    pub image_format_properties: ImageFormatProperties,
     #[doc = "Pixel format to be applied to the raw image."]
     #[serde(rename = "pixelFormat")]
     pub pixel_format: image_format_raw::PixelFormat,
 }
 impl ImageFormatRaw {
-    pub fn new(image_format_properties: ImageFormatProperties, pixel_format: image_format_raw::PixelFormat) -> Self {
-        Self {
-            image_format_properties,
-            pixel_format,
-        }
+    pub fn new(pixel_format: image_format_raw::PixelFormat) -> Self {
+        Self { pixel_format }
     }
 }
 pub mod image_format_raw {
@@ -1183,17 +1137,12 @@ impl ParameterDefinition {
 #[doc = "A list of PEM formatted certificates."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PemCertificateList {
-    #[serde(flatten)]
-    pub certificate_source: CertificateSource,
     #[doc = "PEM formatted public certificates. One certificate per entry."]
     pub certificates: Vec<String>,
 }
 impl PemCertificateList {
-    pub fn new(certificate_source: CertificateSource, certificates: Vec<String>) -> Self {
-        Self {
-            certificate_source,
-            certificates,
-        }
+    pub fn new(certificates: Vec<String>) -> Self {
+        Self { certificates }
     }
 }
 #[doc = "Pipeline topology describes the processing steps to be applied when processing media for a particular outcome. The topology should be defined according to the scenario to be achieved and can be reused across many pipeline instances which share the same processing characteristics. For instance, a pipeline topology which acquires data from a RTSP camera, process it with an specific AI model and stored the data on the cloud can be reused across many different cameras, as long as the same processing should be applied across all the cameras. Individual instance properties can be defined through the use of user-defined parameters, which allow for a topology to be parameterized, thus allowing individual pipelines to refer to different values, such as individual cameras RTSP endpoints and credentials. Overall a topology is composed of the following:\r\n\r\n  - Parameters: list of user defined parameters that can be references across the topology nodes.\r\n  - Sources: list of one or more data sources nodes such as an RTSP source which allows for media to be ingested from cameras.\r\n  - Processors: list of nodes which perform data analysis or transformations.\r\n  -Sinks: list of one or more data sinks which allow for data to be stored or exported to other destinations."]
@@ -1529,26 +1478,13 @@ pub enum SourceNodeBaseUnion {
 #[doc = "Defines a Spatial Analysis custom operation. This requires the Azure Cognitive Services Spatial analysis module to be deployed alongside the Video Analyzer module, please see https://aka.ms/ava-spatial-analysis for more information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SpatialAnalysisCustomOperation {
-    #[serde(flatten)]
-    pub spatial_analysis_operation_base: SpatialAnalysisOperationBase,
     #[doc = "Custom configuration to pass to the Azure Cognitive Services Spatial Analysis module."]
     #[serde(rename = "extensionConfiguration")]
     pub extension_configuration: String,
 }
 impl SpatialAnalysisCustomOperation {
-    pub fn new(spatial_analysis_operation_base: SpatialAnalysisOperationBase, extension_configuration: String) -> Self {
-        Self {
-            spatial_analysis_operation_base,
-            extension_configuration,
-        }
-    }
-}
-#[doc = "Base class for Azure Cognitive Services Spatial Analysis operations."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SpatialAnalysisOperationBase {}
-impl SpatialAnalysisOperationBase {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(extension_configuration: String) -> Self {
+        Self { extension_configuration }
     }
 }
 #[doc = "The Type discriminator for the derived types."]
@@ -1956,8 +1892,6 @@ impl SpatialAnalysisPersonZoneCrossingZoneEvents {
 #[doc = "Base class for Azure Cognitive Services Spatial Analysis typed operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SpatialAnalysisTypedOperationBase {
-    #[serde(flatten)]
-    pub spatial_analysis_operation_base: SpatialAnalysisOperationBase,
     #[doc = "If set to 'true', enables debugging mode for this operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub debug: Option<String>,
@@ -1972,9 +1906,8 @@ pub struct SpatialAnalysisTypedOperationBase {
     pub enable_face_mask_classifier: Option<String>,
 }
 impl SpatialAnalysisTypedOperationBase {
-    pub fn new(spatial_analysis_operation_base: SpatialAnalysisOperationBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            spatial_analysis_operation_base,
             debug: None,
             camera_configuration: None,
             detector_node_configuration: None,
@@ -2047,20 +1980,14 @@ impl UnsecuredEndpoint {
 #[doc = "Username and password credentials."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsernamePasswordCredentials {
-    #[serde(flatten)]
-    pub credentials_base: CredentialsBase,
     #[doc = "Username to be presented as part of the credentials."]
     pub username: String,
     #[doc = "Password to be presented as part of the credentials. It is recommended that this value is parameterized as a secret string in order to prevent this value to be returned as part of the resource on API requests."]
     pub password: String,
 }
 impl UsernamePasswordCredentials {
-    pub fn new(credentials_base: CredentialsBase, username: String, password: String) -> Self {
-        Self {
-            credentials_base,
-            username,
-            password,
-        }
+    pub fn new(username: String, password: String) -> Self {
+        Self { username, password }
     }
 }
 #[doc = "Optional video properties to be used in case a new video resource needs to be created on the service. These will not take effect if the video already exists."]

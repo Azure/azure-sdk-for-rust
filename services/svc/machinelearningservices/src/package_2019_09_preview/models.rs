@@ -1818,18 +1818,13 @@ impl HistoryConfiguration {
 #[doc = "Bandit Policy configuration. Please refer https://docs.microsoft.com/en-us/python/api/azureml-train-core/azureml.train.hyperdrive.banditpolicy?view=azure-ml-py for more information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperDriveBanditPolicy {
-    #[serde(flatten)]
-    pub hyper_drive_policy_config_base: HyperDrivePolicyConfigBase,
     #[doc = "Policy configuration properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<hyper_drive_bandit_policy::Properties>,
 }
 impl HyperDriveBanditPolicy {
-    pub fn new(hyper_drive_policy_config_base: HyperDrivePolicyConfigBase) -> Self {
-        Self {
-            hyper_drive_policy_config_base,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 pub mod hyper_drive_bandit_policy {
@@ -1888,15 +1883,10 @@ impl HyperDriveCreateExperiment {
 }
 #[doc = "No early termination is applied in the case of DefaultPolicy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HyperDriveDefaultPolicy {
-    #[serde(flatten)]
-    pub hyper_drive_policy_config_base: HyperDrivePolicyConfigBase,
-}
+pub struct HyperDriveDefaultPolicy {}
 impl HyperDriveDefaultPolicy {
-    pub fn new(hyper_drive_policy_config_base: HyperDrivePolicyConfigBase) -> Self {
-        Self {
-            hyper_drive_policy_config_base,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Response in case of an error."]
@@ -2188,18 +2178,13 @@ impl HyperDriveExperimentResponse {
 #[doc = "Median stopping policy configuration. Please refer https://docs.microsoft.com/en-us/python/api/azureml-train-core/azureml.train.hyperdrive.medianstoppingpolicy?view=azure-ml-py for more information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperDriveMedianStoppingPolicy {
-    #[serde(flatten)]
-    pub hyper_drive_policy_config_base: HyperDrivePolicyConfigBase,
     #[doc = "Policy configuration properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<hyper_drive_median_stopping_policy::Properties>,
 }
 impl HyperDriveMedianStoppingPolicy {
-    pub fn new(hyper_drive_policy_config_base: HyperDrivePolicyConfigBase) -> Self {
-        Self {
-            hyper_drive_policy_config_base,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 pub mod hyper_drive_median_stopping_policy {
@@ -2220,14 +2205,6 @@ pub mod hyper_drive_median_stopping_policy {
         }
     }
 }
-#[doc = "Early termination policy configuration."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HyperDrivePolicyConfigBase {}
-impl HyperDrivePolicyConfigBase {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Type of early termination policy."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "name")]
@@ -2240,18 +2217,13 @@ pub enum HyperDrivePolicyConfigBaseUnion {
 #[doc = "Truncation selection policy configuration. Please refer https://docs.microsoft.com/en-us/python/api/azureml-train-core/azureml.train.hyperdrive.truncationselectionpolicy?view=azure-ml-py for more information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperDriveTruncationSelectionPolicy {
-    #[serde(flatten)]
-    pub hyper_drive_policy_config_base: HyperDrivePolicyConfigBase,
     #[doc = "Policy configuration properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<hyper_drive_truncation_selection_policy::Properties>,
 }
 impl HyperDriveTruncationSelectionPolicy {
-    pub fn new(hyper_drive_policy_config_base: HyperDrivePolicyConfigBase) -> Self {
-        Self {
-            hyper_drive_policy_config_base,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 pub mod hyper_drive_truncation_selection_policy {

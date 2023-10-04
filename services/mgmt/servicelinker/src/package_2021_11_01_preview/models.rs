@@ -3,14 +3,6 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "The authentication info"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthInfoBase {}
-impl AuthInfoBase {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The authentication type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "authType")]
@@ -273,8 +265,6 @@ pub mod linker_properties {
 #[doc = "Linker of source and target resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkerResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of the linker."]
     pub properties: LinkerProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -284,7 +274,6 @@ pub struct LinkerResource {
 impl LinkerResource {
     pub fn new(properties: LinkerProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -472,8 +461,6 @@ impl Resource {
 #[doc = "The authentication info when authType is secret"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretAuthInfo {
-    #[serde(flatten)]
-    pub auth_info_base: AuthInfoBase,
     #[doc = "Username or account name for secret auth."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -482,12 +469,8 @@ pub struct SecretAuthInfo {
     pub secret: Option<String>,
 }
 impl SecretAuthInfo {
-    pub fn new(auth_info_base: AuthInfoBase) -> Self {
-        Self {
-            auth_info_base,
-            name: None,
-            secret: None,
-        }
+    pub fn new() -> Self {
+        Self { name: None, secret: None }
     }
 }
 #[doc = "An option to store secret value in secure place"]
@@ -505,8 +488,6 @@ impl SecretStore {
 #[doc = "The authentication info when authType is servicePrincipal certificate"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalCertificateAuthInfo {
-    #[serde(flatten)]
-    pub auth_info_base: AuthInfoBase,
     #[doc = "Application clientId for servicePrincipal auth."]
     #[serde(rename = "clientId")]
     pub client_id: String,
@@ -517,9 +498,8 @@ pub struct ServicePrincipalCertificateAuthInfo {
     pub certificate: String,
 }
 impl ServicePrincipalCertificateAuthInfo {
-    pub fn new(auth_info_base: AuthInfoBase, client_id: String, principal_id: String, certificate: String) -> Self {
+    pub fn new(client_id: String, principal_id: String, certificate: String) -> Self {
         Self {
-            auth_info_base,
             client_id,
             principal_id,
             certificate,
@@ -529,8 +509,6 @@ impl ServicePrincipalCertificateAuthInfo {
 #[doc = "The authentication info when authType is servicePrincipal secret"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalSecretAuthInfo {
-    #[serde(flatten)]
-    pub auth_info_base: AuthInfoBase,
     #[doc = "ServicePrincipal application clientId for servicePrincipal auth."]
     #[serde(rename = "clientId")]
     pub client_id: String,
@@ -541,9 +519,8 @@ pub struct ServicePrincipalSecretAuthInfo {
     pub secret: String,
 }
 impl ServicePrincipalSecretAuthInfo {
-    pub fn new(auth_info_base: AuthInfoBase, client_id: String, principal_id: String, secret: String) -> Self {
+    pub fn new(client_id: String, principal_id: String, secret: String) -> Self {
         Self {
-            auth_info_base,
             client_id,
             principal_id,
             secret,
@@ -583,20 +560,15 @@ impl SourceConfigurationResult {
 }
 #[doc = "The authentication info when authType is systemAssignedIdentity"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemAssignedIdentityAuthInfo {
-    #[serde(flatten)]
-    pub auth_info_base: AuthInfoBase,
-}
+pub struct SystemAssignedIdentityAuthInfo {}
 impl SystemAssignedIdentityAuthInfo {
-    pub fn new(auth_info_base: AuthInfoBase) -> Self {
-        Self { auth_info_base }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "The authentication info when authType is userAssignedIdentity"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserAssignedIdentityAuthInfo {
-    #[serde(flatten)]
-    pub auth_info_base: AuthInfoBase,
     #[doc = "Client Id for userAssignedIdentity."]
     #[serde(rename = "clientId")]
     pub client_id: String,
@@ -605,9 +577,8 @@ pub struct UserAssignedIdentityAuthInfo {
     pub subscription_id: String,
 }
 impl UserAssignedIdentityAuthInfo {
-    pub fn new(auth_info_base: AuthInfoBase, client_id: String, subscription_id: String) -> Self {
+    pub fn new(client_id: String, subscription_id: String) -> Self {
         Self {
-            auth_info_base,
             client_id,
             subscription_id,
         }

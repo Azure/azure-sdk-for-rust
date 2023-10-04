@@ -1911,14 +1911,6 @@ impl AlertIncidentListResult {
         Self::default()
     }
 }
-#[doc = "Alert incident properties"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertIncidentProperties {}
-impl AlertIncidentProperties {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The alert incident type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "alertIncidentType")]
@@ -2144,8 +2136,6 @@ impl AzureRolesAssignedOutsidePimAlertConfigurationProperties {
 #[doc = "Azure roles assigned outside PIM alert incident properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureRolesAssignedOutsidePimAlertIncidentProperties {
-    #[serde(flatten)]
-    pub alert_incident_properties: AlertIncidentProperties,
     #[doc = "The assignee display name."]
     #[serde(rename = "assigneeDisplayName", default, skip_serializing_if = "Option::is_none")]
     pub assignee_display_name: Option<String>,
@@ -2178,9 +2168,8 @@ pub struct AzureRolesAssignedOutsidePimAlertIncidentProperties {
     pub requestor_user_principal_name: Option<String>,
 }
 impl AzureRolesAssignedOutsidePimAlertIncidentProperties {
-    pub fn new(alert_incident_properties: AlertIncidentProperties) -> Self {
+    pub fn new() -> Self {
         Self {
-            alert_incident_properties,
             assignee_display_name: None,
             assignee_user_principal_name: None,
             assignee_id: None,
@@ -2478,8 +2467,6 @@ impl DuplicateRoleCreatedAlertConfigurationProperties {
 #[doc = "Duplicate role created alert incident properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DuplicateRoleCreatedAlertIncidentProperties {
-    #[serde(flatten)]
-    pub alert_incident_properties: AlertIncidentProperties,
     #[doc = "The role name."]
     #[serde(rename = "roleName", default, skip_serializing_if = "Option::is_none")]
     pub role_name: Option<String>,
@@ -2491,9 +2478,8 @@ pub struct DuplicateRoleCreatedAlertIncidentProperties {
     pub reason: Option<String>,
 }
 impl DuplicateRoleCreatedAlertIncidentProperties {
-    pub fn new(alert_incident_properties: AlertIncidentProperties) -> Self {
+    pub fn new() -> Self {
         Self {
-            alert_incident_properties,
             role_name: None,
             duplicate_roles: None,
             reason: None,
@@ -6022,8 +6008,6 @@ impl TooManyOwnersAssignedToResourceAlertConfigurationProperties {
 #[doc = "Too many owners assigned to resource alert incident properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TooManyOwnersAssignedToResourceAlertIncidentProperties {
-    #[serde(flatten)]
-    pub alert_incident_properties: AlertIncidentProperties,
     #[doc = "The assignee name."]
     #[serde(rename = "assigneeName", default, skip_serializing_if = "Option::is_none")]
     pub assignee_name: Option<String>,
@@ -6032,9 +6016,8 @@ pub struct TooManyOwnersAssignedToResourceAlertIncidentProperties {
     pub assignee_type: Option<String>,
 }
 impl TooManyOwnersAssignedToResourceAlertIncidentProperties {
-    pub fn new(alert_incident_properties: AlertIncidentProperties) -> Self {
+    pub fn new() -> Self {
         Self {
-            alert_incident_properties,
             assignee_name: None,
             assignee_type: None,
         }
@@ -6068,8 +6051,6 @@ impl TooManyPermanentOwnersAssignedToResourceAlertConfigurationProperties {
 #[doc = "Too many permanent owners assigned to resource alert incident properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TooManyPermanentOwnersAssignedToResourceAlertIncidentProperties {
-    #[serde(flatten)]
-    pub alert_incident_properties: AlertIncidentProperties,
     #[doc = "The assignee name."]
     #[serde(rename = "assigneeName", default, skip_serializing_if = "Option::is_none")]
     pub assignee_name: Option<String>,
@@ -6078,9 +6059,8 @@ pub struct TooManyPermanentOwnersAssignedToResourceAlertIncidentProperties {
     pub assignee_type: Option<String>,
 }
 impl TooManyPermanentOwnersAssignedToResourceAlertIncidentProperties {
-    pub fn new(alert_incident_properties: AlertIncidentProperties) -> Self {
+    pub fn new() -> Self {
         Self {
-            alert_incident_properties,
             assignee_name: None,
             assignee_type: None,
         }

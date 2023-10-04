@@ -329,8 +329,6 @@ impl Serialize for JobState {
 #[doc = "Complete information about the private endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpoint {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties associated with a private endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointProperties>,

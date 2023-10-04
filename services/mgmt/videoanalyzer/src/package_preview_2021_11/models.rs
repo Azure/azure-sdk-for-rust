@@ -6,8 +6,6 @@ use std::str::FromStr;
 #[doc = "Access policies help define the authentication rules, and control access to specific video resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicyEntity {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Application level properties for the access policy resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccessPolicyProperties>,
@@ -191,28 +189,12 @@ pub enum AudioEncoderBaseUnion {
     #[serde(rename = "#Microsoft.VideoAnalyzer.AudioEncoderAac")]
     MicrosoftVideoAnalyzerAudioEncoderAac(AudioEncoderAac),
 }
-#[doc = "Base class for access policies authentication methods."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthenticationBase {}
-impl AuthenticationBase {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum AuthenticationBaseUnion {
     #[serde(rename = "#Microsoft.VideoAnalyzer.JwtAuthentication")]
     MicrosoftVideoAnalyzerJwtAuthentication(JwtAuthentication),
-}
-#[doc = "Base class for certificate sources."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CertificateSource {}
-impl CertificateSource {
-    pub fn new() -> Self {
-        Self {}
-    }
 }
 #[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -294,14 +276,6 @@ pub mod check_name_availability_response {
         }
     }
 }
-#[doc = "Base class for credential objects."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CredentialsBase {}
-impl CredentialsBase {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
@@ -374,8 +348,6 @@ pub mod ecc_token_key {
 #[doc = "The representation of an edge module."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgeModuleEntity {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Application level properties for the edge module resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EdgeModuleProperties>,
@@ -440,8 +412,6 @@ impl EdgeModuleProvisioningToken {
 #[doc = "Describes a custom preset for encoding the input content using the encoder processor."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncoderCustomPreset {
-    #[serde(flatten)]
-    pub encoder_preset_base: EncoderPresetBase,
     #[doc = "Base type for all audio encoder presets, which define the recipe or instructions on how audio should be processed."]
     #[serde(rename = "audioEncoder", default, skip_serializing_if = "Option::is_none")]
     pub audio_encoder: Option<AudioEncoderBaseUnion>,
@@ -450,20 +420,11 @@ pub struct EncoderCustomPreset {
     pub video_encoder: Option<VideoEncoderBaseUnion>,
 }
 impl EncoderCustomPreset {
-    pub fn new(encoder_preset_base: EncoderPresetBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            encoder_preset_base,
             audio_encoder: None,
             video_encoder: None,
         }
-    }
-}
-#[doc = "Base type for all encoder presets, which define the recipe or instructions on how the input content should be processed."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EncoderPresetBase {}
-impl EncoderPresetBase {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The discriminator for derived types."]
@@ -494,14 +455,12 @@ impl EncoderProcessor {
 #[doc = "Describes a built-in preset for encoding the input content using the encoder processor."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EncoderSystemPreset {
-    #[serde(flatten)]
-    pub encoder_preset_base: EncoderPresetBase,
     #[doc = "Name of the built-in encoding preset."]
     pub name: encoder_system_preset::Name,
 }
 impl EncoderSystemPreset {
-    pub fn new(encoder_preset_base: EncoderPresetBase, name: encoder_system_preset::Name) -> Self {
-        Self { encoder_preset_base, name }
+    pub fn new(name: encoder_system_preset::Name) -> Self {
+        Self { name }
     }
 }
 pub mod encoder_system_preset {
@@ -775,8 +734,6 @@ impl IotHub {
 #[doc = "Properties for access validation based on JSON Web Tokens (JWT)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JwtAuthentication {
-    #[serde(flatten)]
-    pub authentication_base: AuthenticationBase,
     #[doc = "List of expected token issuers. Token issuer is valid if it matches at least one of the given values."]
     #[serde(
         default,
@@ -807,9 +764,8 @@ pub struct JwtAuthentication {
     pub keys: Vec<TokenKeyUnion>,
 }
 impl JwtAuthentication {
-    pub fn new(authentication_base: AuthenticationBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            authentication_base,
             issuers: Vec::new(),
             audiences: Vec::new(),
             claims: Vec::new(),
@@ -850,8 +806,6 @@ impl ListProvisioningTokenInput {
 #[doc = "Live pipeline represents a unique instance of a live topology, used for real-time ingestion, archiving and publishing of content for a unique RTSP camera."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LivePipeline {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Live pipeline properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LivePipelineProperties>,
@@ -1057,8 +1011,6 @@ pub mod live_pipeline_properties_update {
 #[doc = "Live pipeline represents a unique instance of a live topology, used for real-time ingestion, archiving and publishing of content for a unique RTSP camera."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LivePipelineUpdate {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Live pipeline properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LivePipelinePropertiesUpdate>,
@@ -1531,24 +1483,17 @@ impl ParameterDefinition {
 #[doc = "A list of PEM formatted certificates."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PemCertificateList {
-    #[serde(flatten)]
-    pub certificate_source: CertificateSource,
     #[doc = "PEM formatted public certificates. One certificate per entry."]
     pub certificates: Vec<String>,
 }
 impl PemCertificateList {
-    pub fn new(certificate_source: CertificateSource, certificates: Vec<String>) -> Self {
-        Self {
-            certificate_source,
-            certificates,
-        }
+    pub fn new(certificates: Vec<String>) -> Self {
+        Self { certificates }
     }
 }
 #[doc = "Pipeline job represents a unique instance of a batch topology, used for offline processing of selected portions of archived content."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineJob {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Pipeline job properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PipelineJobProperties>,
@@ -1776,8 +1721,6 @@ pub mod pipeline_job_properties_update {
 #[doc = "Pipeline job represents a unique instance of a batch topology, used for offline processing of selected portions of archived content."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineJobUpdate {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Pipeline job properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PipelineJobPropertiesUpdate>,
@@ -1790,8 +1733,6 @@ impl PipelineJobUpdate {
 #[doc = "Pipeline topology describes the processing steps to be applied when processing content for a particular outcome. The topology should be defined according to the scenario to be achieved and can be reused across many pipeline instances which share the same processing characteristics. For instance, a pipeline topology which captures content from a RTSP camera and archives the content can be reused across many different cameras, as long as the same processing is to be applied across all the cameras. Individual instance properties can be defined through the use of user-defined parameters, which allow for a topology to be parameterized. This allows  individual pipelines refer to different values, such as individual cameras' RTSP endpoints and credentials. Overall a topology is composed of the following:\r\n\r\n  - Parameters: list of user defined parameters that can be references across the topology nodes.\r\n  - Sources: list of one or more data sources nodes such as an RTSP source which allows for content to be ingested from cameras.\r\n  - Processors: list of nodes which perform data analysis or transformations.\r\n  - Sinks: list of one or more data sinks which allow for data to be stored or exported to other destinations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineTopology {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Describes the properties of a pipeline topology."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PipelineTopologyProperties>,
@@ -1803,7 +1744,6 @@ pub struct PipelineTopology {
 impl PipelineTopology {
     pub fn new(kind: pipeline_topology::Kind, sku: Sku) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties: None,
             kind,
             sku,
@@ -1954,8 +1894,6 @@ impl PipelineTopologyPropertiesUpdate {
 #[doc = "Pipeline topology describes the processing steps to be applied when processing content for a particular outcome. The topology should be defined according to the scenario to be achieved and can be reused across many pipeline instances which share the same processing characteristics. For instance, a pipeline topology which captures content from a RTSP camera and archives the content can be reused across many different cameras, as long as the same processing is to be applied across all the cameras. Individual instance properties can be defined through the use of user-defined parameters, which allow for a topology to be parameterized. This allows  individual pipelines refer to different values, such as individual cameras' RTSP endpoints and credentials. Overall a topology is composed of the following:\r\n\r\n  - Parameters: list of user defined parameters that can be references across the topology nodes.\r\n  - Sources: list of one or more data sources nodes such as an RTSP source which allows for content to be ingested from cameras.\r\n  - Processors: list of nodes which perform data analysis or transformations.\r\n  - Sinks: list of one or more data sinks which allow for data to be stored or exported to other destinations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineTopologyUpdate {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Describes the properties of a pipeline topology."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PipelineTopologyPropertiesUpdate>,
@@ -2372,8 +2310,6 @@ pub mod rsa_token_key {
 #[doc = "RTSP source allows for media from an RTSP camera or generic RTSP server to be ingested into a pipeline."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RtspSource {
-    #[serde(flatten)]
-    pub source_node_base: SourceNodeBase,
     #[doc = "Network transport utilized by the RTSP and RTP exchange: TCP or HTTP. When using TCP, the RTP packets are interleaved on the TCP RTSP connection. When using HTTP, the RTSP messages are exchanged through long lived HTTP connections, and the RTP packages are interleaved in the HTTP connections alongside the RTSP messages."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub transport: Option<rtsp_source::Transport>,
@@ -2381,12 +2317,8 @@ pub struct RtspSource {
     pub endpoint: EndpointBaseUnion,
 }
 impl RtspSource {
-    pub fn new(source_node_base: SourceNodeBase, endpoint: EndpointBaseUnion) -> Self {
-        Self {
-            source_node_base,
-            transport: None,
-            endpoint,
-        }
+    pub fn new(endpoint: EndpointBaseUnion) -> Self {
+        Self { transport: None, endpoint }
     }
 }
 pub mod rtsp_source {
@@ -2432,8 +2364,6 @@ pub mod rtsp_source {
 #[doc = "A remote tunnel securely established using IoT Hub device information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecureIotDeviceRemoteTunnel {
-    #[serde(flatten)]
-    pub tunnel_base: TunnelBase,
     #[doc = "Name of the IoT Hub."]
     #[serde(rename = "iotHubName")]
     pub iot_hub_name: String,
@@ -2442,12 +2372,8 @@ pub struct SecureIotDeviceRemoteTunnel {
     pub device_id: String,
 }
 impl SecureIotDeviceRemoteTunnel {
-    pub fn new(tunnel_base: TunnelBase, iot_hub_name: String, device_id: String) -> Self {
-        Self {
-            tunnel_base,
-            iot_hub_name,
-            device_id,
-        }
+    pub fn new(iot_hub_name: String, device_id: String) -> Self {
+        Self { iot_hub_name, device_id }
     }
 }
 #[doc = "The service metric specifications."]
@@ -2586,17 +2512,6 @@ pub mod sku {
         }
     }
 }
-#[doc = "Base class for topology source nodes."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SourceNodeBase {
-    #[serde(flatten)]
-    pub node_base: NodeBase,
-}
-impl SourceNodeBase {
-    pub fn new(node_base: NodeBase) -> Self {
-        Self { node_base }
-    }
-}
 #[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
@@ -2625,14 +2540,6 @@ impl StorageAccount {
             identity: None,
             status: None,
         }
-    }
-}
-#[doc = "A sequence of datetime ranges as a string."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TimeSequenceBase {}
-impl TimeSequenceBase {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The discriminator for derived types."]
@@ -2731,14 +2638,6 @@ impl TrackedResource {
         }
     }
 }
-#[doc = "Base class for tunnel objects."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TunnelBase {}
-impl TunnelBase {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
@@ -2783,20 +2682,14 @@ impl UserAssignedManagedIdentity {
 #[doc = "Username and password credentials."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UsernamePasswordCredentials {
-    #[serde(flatten)]
-    pub credentials_base: CredentialsBase,
     #[doc = "Username to be presented as part of the credentials."]
     pub username: String,
     #[doc = "Password to be presented as part of the credentials. It is recommended that this value is parameterized as a secret string in order to prevent this value to be returned as part of the resource on API requests."]
     pub password: String,
 }
 impl UsernamePasswordCredentials {
-    pub fn new(credentials_base: CredentialsBase, username: String, password: String) -> Self {
-        Self {
-            credentials_base,
-            username,
-            password,
-        }
+    pub fn new(username: String, password: String) -> Self {
+        Self { username, password }
     }
 }
 #[doc = "The Video Analyzer account."]
@@ -3316,8 +3209,6 @@ impl VideoEncoderH264 {
 #[doc = "Represents a video resource within Azure Video Analyzer. Videos can be ingested from RTSP cameras through live pipelines or can be created by exporting sequences from existing captured video through a pipeline job. Videos ingested through live pipelines can be streamed through Azure Video Analyzer Player Widget or compatible players. Exported videos can be downloaded as MP4 files."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VideoEntity {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Application level properties for the video resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VideoProperties>,
@@ -3552,17 +3443,12 @@ pub mod video_scale {
 #[doc = "A sequence of absolute datetime ranges as a string. The datetime values should follow IS08601, and the sum of the ranges should add up to 24 hours or less. Currently, there can be only one range specified in the sequence."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VideoSequenceAbsoluteTimeMarkers {
-    #[serde(flatten)]
-    pub time_sequence_base: TimeSequenceBase,
     #[doc = "The sequence of datetime ranges. Example: '[[\"2021-10-05T03:30:00Z\", \"2021-10-05T03:40:00Z\"]]'."]
     pub ranges: String,
 }
 impl VideoSequenceAbsoluteTimeMarkers {
-    pub fn new(time_sequence_base: TimeSequenceBase, ranges: String) -> Self {
-        Self {
-            time_sequence_base,
-            ranges,
-        }
+    pub fn new(ranges: String) -> Self {
+        Self { ranges }
     }
 }
 #[doc = "Video sink in a live topology allows for video and audio to be captured, optionally archived, and published via a video resource. If archiving is enabled, this results in a video of type 'archive'. If used in a batch topology, this allows for video and audio to be stored as a file, and published via a video resource of type 'file'"]
@@ -3593,8 +3479,6 @@ impl VideoSink {
 #[doc = "Video source allows for content from a Video Analyzer video resource to be ingested into a pipeline. Currently supported only with batch pipelines."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VideoSource {
-    #[serde(flatten)]
-    pub source_node_base: SourceNodeBase,
     #[doc = "Name of the Video Analyzer video resource to be used as the source."]
     #[serde(rename = "videoName")]
     pub video_name: String,
@@ -3603,9 +3487,8 @@ pub struct VideoSource {
     pub time_sequences: TimeSequenceBaseUnion,
 }
 impl VideoSource {
-    pub fn new(source_node_base: SourceNodeBase, video_name: String, time_sequences: TimeSequenceBaseUnion) -> Self {
+    pub fn new(video_name: String, time_sequences: TimeSequenceBaseUnion) -> Self {
         Self {
-            source_node_base,
             video_name,
             time_sequences,
         }

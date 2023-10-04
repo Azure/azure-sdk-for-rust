@@ -34,8 +34,6 @@ impl AccessInformationCollection {
 #[doc = "Tenant Settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessInformationContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Tenant access information contract of the API Management service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccessInformationContractProperties>,
@@ -361,8 +359,6 @@ impl ApiContactInformation {
 #[doc = "API details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "API Entity Properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiContractProperties>,
@@ -1972,8 +1968,6 @@ impl ApiReleaseCollection {
 #[doc = "ApiRelease details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiReleaseContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "API Release details"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiReleaseContractProperties>,
@@ -2171,8 +2165,6 @@ impl ApiVersionSetCollection {
 #[doc = "API Version Set Contract details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiVersionSetContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of an API Version Set."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiVersionSetContractProperties>,
@@ -2438,8 +2430,6 @@ impl ArmIdWrapper {
 #[doc = "Association entity details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssociationContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Association entity contract properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<association_contract::Properties>,
@@ -2535,8 +2525,6 @@ impl AuthorizationAccessPolicyCollection {
 #[doc = "Authorization access policy contract."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationAccessPolicyContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Authorization Access Policy details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AuthorizationAccessPolicyContractProperties>,
@@ -2604,8 +2592,6 @@ impl AuthorizationConfirmConsentCodeRequestContract {
 #[doc = "Authorization contract."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Authorization details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AuthorizationContractProperties>,
@@ -2781,8 +2767,6 @@ impl AuthorizationProviderCollection {
 #[doc = "Authorization Provider contract."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationProviderContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Authorization Provider details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AuthorizationProviderContractProperties>,
@@ -2871,8 +2855,6 @@ impl AuthorizationServerCollection {
 #[doc = "External OAuth authorization server settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationServerContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "External OAuth authorization server settings Properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AuthorizationServerContractProperties>,
@@ -3013,8 +2995,6 @@ impl AuthorizationServerSecretsContract {
 #[doc = "External OAuth authorization server settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AuthorizationServerUpdateContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "External OAuth authorization server Update settings contract."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AuthorizationServerUpdateContractProperties>,
@@ -3157,8 +3137,6 @@ impl BackendCollection {
 #[doc = "Backend details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Parameters supplied to the Create Backend operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BackendContractProperties>,
@@ -3298,8 +3276,6 @@ impl BackendProxyContract {
 #[doc = "Reconnect request parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackendReconnectContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties to control reconnect requests."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BackendReconnectProperties>,
@@ -3535,8 +3511,6 @@ impl CacheCollection {
 #[doc = "Cache details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CacheContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of the Cache contract."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CacheContractProperties>,
@@ -3671,8 +3645,6 @@ pub mod certificate_configuration {
 #[doc = "Certificate details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of the Certificate contract."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CertificateContractProperties>,
@@ -4481,8 +4453,6 @@ impl ContentItemCollection {
 #[doc = "Content type contract details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentItemContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ContentItemContractProperties>,
 }
@@ -4526,8 +4496,6 @@ impl ContentTypeCollection {
 #[doc = "Content type contract details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentTypeContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ContentTypeContractProperties>,
 }
@@ -4639,8 +4607,6 @@ pub mod data_masking_entity {
 #[doc = "Deleted API Management Service information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeletedServiceContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DeletedServiceContractProperties>,
     #[doc = "API Management Service Master Location."]
@@ -4751,8 +4717,6 @@ impl DiagnosticCollection {
 #[doc = "Diagnostic details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Diagnostic Entity Properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiagnosticContractProperties>,
@@ -4998,8 +4962,6 @@ impl DocumentationCollection {
 #[doc = "Markdown documentation details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DocumentationContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Markdown documentation details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DocumentationContractProperties>,
@@ -5067,8 +5029,6 @@ impl EmailTemplateCollection {
 #[doc = "Email Template details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmailTemplateContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Email Template Contract properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EmailTemplateContractProperties>,
@@ -5308,8 +5268,6 @@ impl GatewayCertificateAuthorityCollection {
 #[doc = "Gateway certificate authority details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayCertificateAuthorityContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Gateway certificate authority details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GatewayCertificateAuthorityContractProperties>,
@@ -5362,8 +5320,6 @@ impl GatewayCollection {
 #[doc = "Gateway details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of the Gateway contract."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GatewayContractProperties>,
@@ -5428,8 +5384,6 @@ impl GatewayHostnameConfigurationCollection {
 #[doc = "Gateway hostname configuration details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayHostnameConfigurationContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Gateway hostname configuration details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GatewayHostnameConfigurationContractProperties>,
@@ -5631,8 +5585,6 @@ impl GlobalSchemaCollection {
 #[doc = "Global Schema Contract details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GlobalSchemaContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Schema create or update contract Properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GlobalSchemaContractProperties>,
@@ -5749,8 +5701,6 @@ impl GroupCollection {
 #[doc = "Contract details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Group contract Properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GroupContractProperties>,
@@ -6214,8 +6164,6 @@ pub mod identity_provider_base_parameters {
 #[doc = "Identity Provider details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityProviderContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The external Identity Providers like Facebook, Google, Microsoft, Twitter or Azure Active Directory which can be used to enable access to the API Management service developer portal for all users."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IdentityProviderContractProperties>,
@@ -6249,8 +6197,6 @@ impl IdentityProviderContractProperties {
 #[doc = "Identity Provider details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IdentityProviderCreateContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The external Identity Providers like Facebook, Google, Microsoft, Twitter or Azure Active Directory which can be used to enable access to the API Management service developer portal for all users."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IdentityProviderCreateContractProperties>,
@@ -6369,8 +6315,6 @@ impl IssueAttachmentCollection {
 #[doc = "Issue Attachment Contract details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IssueAttachmentContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Issue Attachment contract Properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IssueAttachmentContractProperties>,
@@ -6459,8 +6403,6 @@ impl IssueCommentCollection {
 #[doc = "Issue Comment Contract details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IssueCommentContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Issue Comment contract Properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IssueCommentContractProperties>,
@@ -6502,8 +6444,6 @@ impl IssueContext {
 #[doc = "Issue Contract details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IssueContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Issue contract Properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IssueContractProperties>,
@@ -6715,8 +6655,6 @@ impl LoggerCollection {
 #[doc = "Logger details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoggerContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The Logger entity in API Management represents an event sink that you can use to log API Management events. Currently the Logger entity supports logging API Management events to Azure Event Hubs."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LoggerContractProperties>,
@@ -6963,8 +6901,6 @@ impl NamedValueCollection {
 #[doc = "NamedValue details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamedValueContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "NamedValue Contract properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NamedValueContractProperties>,
@@ -7002,8 +6938,6 @@ impl NamedValueContractProperties {
 #[doc = "NamedValue details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NamedValueCreateContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "NamedValue Contract properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NamedValueCreateContractProperties>,
@@ -7165,8 +7099,6 @@ impl NotificationCollection {
 #[doc = "Notification details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Notification Contract properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NotificationContractProperties>,
@@ -7263,8 +7195,6 @@ impl OpenIdConnectProviderCollection {
 #[doc = "OpenId Connect Provider details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenidConnectProviderContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "OpenID Connect Providers Contract."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OpenidConnectProviderContractProperties>,
@@ -7430,8 +7360,6 @@ impl OperationCollection {
 #[doc = "API Operation details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Operation Contract Properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationContractProperties>,
@@ -7526,8 +7454,6 @@ impl OperationListResult {
 #[doc = "Long Running Git Operation Results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationResultContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Operation Result."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OperationResultContractProperties>,
@@ -7823,8 +7749,6 @@ impl PolicyCollection {
 #[doc = "Policy Contract details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Policy contract Properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PolicyContractProperties>,
@@ -7923,8 +7847,6 @@ impl PolicyDescriptionCollection {
 #[doc = "Policy description details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyDescriptionContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Policy description properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PolicyDescriptionContractProperties>,
@@ -7980,8 +7902,6 @@ impl PolicyFragmentCollection {
 #[doc = "Policy fragment contract details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PolicyFragmentContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Policy fragment contract properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PolicyFragmentContractProperties>,
@@ -8087,8 +8007,6 @@ impl PortalConfigCollection {
 #[doc = "The developer portal configuration contract."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalConfigContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The developer portal configuration contract properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PortalConfigProperties>,
@@ -8280,8 +8198,6 @@ impl PortalConfigTermsOfServiceProperties {
 #[doc = "Delegation settings for a developer portal."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalDelegationSettings {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Delegation settings contract properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PortalDelegationSettingsProperties>,
@@ -8340,8 +8256,6 @@ impl PortalRevisionCollection {
 #[doc = "Portal Revision's contract details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalRevisionContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PortalRevisionContractProperties>,
 }
@@ -8458,8 +8372,6 @@ impl PortalSettingsCollection {
 #[doc = "Portal Settings for the Developer Portal."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalSettingsContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Sign-in settings contract properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PortalSettingsContractProperties>,
@@ -8511,8 +8423,6 @@ impl PortalSigninSettingProperties {
 #[doc = "Sign-In settings for the Developer Portal."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalSigninSettings {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Sign-in settings contract properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PortalSigninSettingProperties>,
@@ -8525,8 +8435,6 @@ impl PortalSigninSettings {
 #[doc = "Sign-Up settings for a developer portal."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PortalSignupSettings {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Sign-up settings contract properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PortalSignupSettingsProperties>,
@@ -8869,8 +8777,6 @@ impl ProductApiLinkCollection {
 #[doc = "Product-API link details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductApiLinkContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Product-API link entity properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProductApiLinkContractProperties>,
@@ -8923,8 +8829,6 @@ impl ProductCollection {
 #[doc = "Product details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Product profile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProductContractProperties>,
@@ -9020,8 +8924,6 @@ impl ProductGroupLinkCollection {
 #[doc = "Product-group link details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProductGroupLinkContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Product-group link entity properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProductGroupLinkContractProperties>,
@@ -9221,8 +9123,6 @@ impl RecipientEmailCollection {
 #[doc = "Recipient Email details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecipientEmailContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Recipient Email Contract Properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RecipientEmailContractProperties>,
@@ -9269,8 +9169,6 @@ impl RecipientUserCollection {
 #[doc = "Recipient User details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecipientUserContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Recipient User Contract Properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RecipientUsersContractProperties>,
@@ -9697,8 +9595,6 @@ impl ResolverCollection {
 #[doc = "GraphQL API Resolver details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResolverContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "GraphQL API Resolver Entity Base Contract details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ResolverEntityBaseContract>,
@@ -9729,8 +9625,6 @@ impl ResolverEntityBaseContract {
 #[doc = "Long Running Git Resolver Results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResolverResultContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Resolver Result."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ResolverResultContractProperties>,
@@ -10208,8 +10102,6 @@ impl SchemaCollection {
 #[doc = "API Schema Contract details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SchemaContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "API Schema create or update contract Properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SchemaContractProperties>,
@@ -10282,8 +10174,6 @@ impl SubscriptionCollection {
 #[doc = "Subscription details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Subscription details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubscriptionContractProperties>,
@@ -10580,8 +10470,6 @@ impl TagApiLinkCollection {
 #[doc = "Tag-API link details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagApiLinkContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Tag-API link entity properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TagApiLinkContractProperties>,
@@ -10634,8 +10522,6 @@ impl TagCollection {
 #[doc = "Tag Contract details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Tag contract Properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TagContractProperties>,
@@ -10718,8 +10604,6 @@ impl TagDescriptionCollection {
 #[doc = "Contract details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagDescriptionContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "TagDescription contract Properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TagDescriptionContractProperties>,
@@ -10789,8 +10673,6 @@ impl TagOperationLinkCollection {
 #[doc = "Tag-operation link details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagOperationLinkContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Tag-operation link entity properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TagOperationLinkContractProperties>,
@@ -10843,8 +10725,6 @@ impl TagProductLinkCollection {
 #[doc = "Tag-product link details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TagProductLinkContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Tag-product link entity properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TagProductLinkContractProperties>,
@@ -10937,8 +10817,6 @@ impl TagTagResourceContractProperties {
 #[doc = "Result of Tenant Configuration Sync State."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TenantConfigurationSyncStateContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Tenant Configuration Synchronization State."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TenantConfigurationSyncStateContractProperties>,
@@ -11009,8 +10887,6 @@ impl TenantSettingsCollection {
 #[doc = "Tenant Settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TenantSettingsContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Tenant access information contract of the API Management service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TenantSettingsContractProperties>,
@@ -11094,8 +10970,6 @@ impl UserCollection {
 #[doc = "User details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "User profile."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UserContractProperties>,
@@ -11532,8 +11406,6 @@ impl WikiCollection {
 #[doc = "Wiki properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WikiContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Wiki contract details"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WikiContractProperties>,
@@ -11614,8 +11486,6 @@ impl WorkspaceCollection {
 #[doc = "Workspace details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkspaceContract {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Workspace entity properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkspaceContractProperties>,

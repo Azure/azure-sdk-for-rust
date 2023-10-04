@@ -6,8 +6,6 @@ use std::str::FromStr;
 #[doc = "The Agent resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Agent {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     pub properties: AgentProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
@@ -16,7 +14,6 @@ pub struct Agent {
 impl Agent {
     pub fn new(properties: AgentProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -254,8 +251,6 @@ impl AzureStorageBlobContainerEndpointUpdateProperties {
 #[doc = "The Endpoint resource, which contains information about file sources and targets."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Endpoint {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The resource specific properties for the Storage Mover resource."]
     pub properties: EndpointBasePropertiesUnion,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -265,7 +260,6 @@ pub struct Endpoint {
 impl Endpoint {
     pub fn new(properties: EndpointBasePropertiesUnion) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -451,8 +445,6 @@ impl ErrorResponse {
 #[doc = "The Job Definition resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobDefinition {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Job definition properties."]
     pub properties: JobDefinitionProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -462,7 +454,6 @@ pub struct JobDefinition {
 impl JobDefinition {
     pub fn new(properties: JobDefinitionProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -755,8 +746,6 @@ pub mod job_definition_update_properties {
 #[doc = "The Job Run resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobRun {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Job run properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobRunProperties>,
@@ -1272,8 +1261,6 @@ impl OperationListResult {
 #[doc = "The Project resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Project {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Project properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ProjectProperties>,

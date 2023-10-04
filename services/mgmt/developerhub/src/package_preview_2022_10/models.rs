@@ -432,8 +432,6 @@ impl GitHubOAuthProperties {
 #[doc = "Singleton response of GitHubOAuth containing "]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GitHubOAuthResponse {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The response from List GitHubOAuth operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GitHubOAuthProperties>,

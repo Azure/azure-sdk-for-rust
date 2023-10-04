@@ -124,8 +124,6 @@ impl ConfigurationProfile {
 #[doc = "Configuration profile assignment is an association between a VM and automanage profile configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfileAssignment {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Automanage configuration profile assignment properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProfileAssignmentProperties>,
@@ -471,8 +469,6 @@ impl ProxyResource {
 #[doc = "Definition of the report."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Report {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Data related to the report detail."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AssignmentReportProperties>,
@@ -552,8 +548,6 @@ impl Resource {
 #[doc = "The Service Principal Id for the subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServicePrincipal {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The Service Principal properties for the subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServicePrincipalProperties>,

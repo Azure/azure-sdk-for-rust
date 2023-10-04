@@ -92,8 +92,6 @@ impl ManagedNetwork {
 #[doc = "The Managed Network Group resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedNetworkGroup {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a Managed Network Group"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedNetworkGroupProperties>,
@@ -238,8 +236,6 @@ impl ManagedNetworkListResult {
 #[doc = "The Managed Network Peering Policy resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedNetworkPeeringPolicy {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a Managed Network Peering Policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedNetworkPeeringPolicyProperties>,
@@ -607,8 +603,6 @@ impl Scope {
 #[doc = "The Managed Network resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopeAssignment {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of Managed Network"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScopeAssignmentProperties>,

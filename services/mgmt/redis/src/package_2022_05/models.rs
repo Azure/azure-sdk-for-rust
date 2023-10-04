@@ -850,17 +850,12 @@ impl RedisCreateProperties {
 #[doc = "A firewall rule on a redis cache has a name, and describes a contiguous range of IP addresses permitted to connect"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisFirewallRule {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Specifies a range of IP addresses permitted to connect to the cache"]
     pub properties: RedisFirewallRuleProperties,
 }
 impl RedisFirewallRule {
     pub fn new(properties: RedisFirewallRuleProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "Parameters required for creating a firewall rule on redis cache. (Note, you can just use the FirewallRule type instead now.)"]
@@ -1031,8 +1026,6 @@ impl RedisLinkedServerProperties {
 #[doc = "Response to put/get linked server (with properties) for Redis cache."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RedisLinkedServerWithProperties {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a linked server to be returned in get/put response"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RedisLinkedServerProperties>,
@@ -1095,8 +1088,6 @@ impl RedisListResult {
 #[doc = "Response to put/get patch schedules for Redis cache."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedisPatchSchedule {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "List of patch schedules for a Redis cache."]
     pub properties: ScheduleEntries,
     #[doc = "The geo-location where the resource lives"]
@@ -1106,7 +1097,6 @@ pub struct RedisPatchSchedule {
 impl RedisPatchSchedule {
     pub fn new(properties: ScheduleEntries) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             location: None,
         }

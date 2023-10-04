@@ -280,14 +280,6 @@ pub mod access_review_decision_properties {
         }
     }
 }
-#[doc = "Target of the decision."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AccessReviewDecisionTarget {}
-impl AccessReviewDecisionTarget {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The type of decision target : User/ServicePrincipal"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -4694,8 +4686,6 @@ impl Serialize for RoleManagementPolicyRuleType {
 #[doc = "Service Principal Decision Target"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalDecisionTarget {
-    #[serde(flatten)]
-    pub access_review_decision_target: AccessReviewDecisionTarget,
     #[doc = "The id of service principal whose access is reviewed."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
@@ -4707,9 +4697,8 @@ pub struct ServicePrincipalDecisionTarget {
     pub app_id: Option<String>,
 }
 impl ServicePrincipalDecisionTarget {
-    pub fn new(access_review_decision_target: AccessReviewDecisionTarget) -> Self {
+    pub fn new() -> Self {
         Self {
-            access_review_decision_target,
             principal_id: None,
             principal_name: None,
             app_id: None,
@@ -4719,8 +4708,6 @@ impl ServicePrincipalDecisionTarget {
 #[doc = "User Decision Target"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserDecisionTarget {
-    #[serde(flatten)]
-    pub access_review_decision_target: AccessReviewDecisionTarget,
     #[doc = "The id of user whose access was reviewed."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
@@ -4732,9 +4719,8 @@ pub struct UserDecisionTarget {
     pub user_principal_name: Option<String>,
 }
 impl UserDecisionTarget {
-    pub fn new(access_review_decision_target: AccessReviewDecisionTarget) -> Self {
+    pub fn new() -> Self {
         Self {
-            access_review_decision_target,
             principal_id: None,
             principal_name: None,
             user_principal_name: None,

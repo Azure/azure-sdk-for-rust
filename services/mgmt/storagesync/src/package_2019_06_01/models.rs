@@ -68,8 +68,6 @@ pub mod check_name_availability_result {
 #[doc = "Cloud Endpoint object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudEndpoint {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "CloudEndpoint Properties object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CloudEndpointProperties>,
@@ -104,8 +102,6 @@ impl CloudEndpointArray {
 #[doc = "The parameters used when creating a cloud endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CloudEndpointCreateParameters {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "CloudEndpoint Properties object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CloudEndpointCreateParametersProperties>,
@@ -450,8 +446,6 @@ impl RecallActionParameters {
 #[doc = "Registered Server resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegisteredServer {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "RegisteredServer Properties object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegisteredServerProperties>,
@@ -486,8 +480,6 @@ impl RegisteredServerArray {
 #[doc = "The parameters used when creating a registered server."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RegisteredServerCreateParameters {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RegisteredServerCreateParametersProperties>,
 }
@@ -653,8 +645,6 @@ impl RestoreFileSpec {
 #[doc = "Server Endpoint object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerEndpoint {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "ServerEndpoint Properties object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerEndpointProperties>,
@@ -716,8 +706,6 @@ impl ServerEndpointCloudTieringStatus {
 #[doc = "The parameters used when creating a server endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerEndpointCreateParameters {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "ServerEndpoint Properties object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerEndpointCreateParametersProperties>,
@@ -1277,8 +1265,6 @@ impl SubscriptionStateProperties {
 #[doc = "Sync Group object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncGroup {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "SyncGroup Properties object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SyncGroupProperties>,
@@ -1313,8 +1299,6 @@ impl SyncGroupArray {
 #[doc = "The parameters used when creating a sync group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncGroupCreateParameters {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Sync Group Create Properties object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SyncGroupCreateParametersProperties>,
@@ -1452,8 +1436,6 @@ impl TriggerRolloverRequest {
 #[doc = "Workflow resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Workflow {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Workflow Properties object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkflowProperties>,

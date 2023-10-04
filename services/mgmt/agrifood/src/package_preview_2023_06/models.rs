@@ -6,15 +6,13 @@ use std::str::FromStr;
 #[doc = "ApiKeyAuthCredentials class for ApiKey based Auth."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiKeyAuthCredentials {
-    #[serde(flatten)]
-    pub auth_credentials: AuthCredentials,
     #[doc = "Properties of the key vault."]
     #[serde(rename = "apiKey")]
     pub api_key: KeyVaultProperties,
 }
 impl ApiKeyAuthCredentials {
-    pub fn new(auth_credentials: AuthCredentials, api_key: KeyVaultProperties) -> Self {
-        Self { auth_credentials, api_key }
+    pub fn new(api_key: KeyVaultProperties) -> Self {
+        Self { api_key }
     }
 }
 #[doc = "Api properties."]
@@ -57,14 +55,6 @@ pub struct ArmAsyncOperationError {
 impl ArmAsyncOperationError {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "AuthCredentials abstract base class for Auth Purpose."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthCredentials {}
-impl AuthCredentials {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Enum for different types of AuthCredentials supported."]
@@ -187,8 +177,6 @@ pub mod check_name_availability_response {
 #[doc = "DataConnector Model."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnector {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -201,7 +189,6 @@ pub struct DataConnector {
 impl DataConnector {
     pub fn new(properties: DataConnectorProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             system_data: None,
             properties,
             e_tag: None,
@@ -263,8 +250,6 @@ impl DataManagerForAgriculture {
 #[doc = "DataManagerForAgriculture extension resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataManagerForAgricultureExtension {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -455,8 +440,6 @@ pub mod data_manager_for_agriculture_properties {
 #[doc = "DataManagerForAgriculture solution resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataManagerForAgricultureSolution {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -705,8 +688,6 @@ impl ErrorResponse {
 #[doc = "Extension resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Extension {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -854,8 +835,6 @@ impl MarketplaceOfferDetails {
 #[doc = "OAuthClientCredentials for clientId clientSecret auth."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OAuthClientCredentials {
-    #[serde(flatten)]
-    pub auth_credentials: AuthCredentials,
     #[doc = "ClientId associated with the provider."]
     #[serde(rename = "clientId")]
     pub client_id: String,
@@ -864,12 +843,8 @@ pub struct OAuthClientCredentials {
     pub client_secret: KeyVaultProperties,
 }
 impl OAuthClientCredentials {
-    pub fn new(auth_credentials: AuthCredentials, client_id: String, client_secret: KeyVaultProperties) -> Self {
-        Self {
-            auth_credentials,
-            client_id,
-            client_secret,
-        }
+    pub fn new(client_id: String, client_secret: KeyVaultProperties) -> Self {
+        Self { client_id, client_secret }
     }
 }
 #[doc = "Details of a REST API operation, returned from the Resource Provider Operations API"]
@@ -1389,8 +1364,6 @@ pub mod sensor_integration {
 #[doc = "Solution resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Solution {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,

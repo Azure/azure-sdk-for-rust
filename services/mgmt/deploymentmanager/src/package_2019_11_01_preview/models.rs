@@ -6,8 +6,6 @@ use std::str::FromStr;
 #[doc = "ApiKey authentication gives a name and a value that can be included in either the request header or query parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiKeyAuthentication {
-    #[serde(flatten)]
-    pub rest_request_authentication: RestRequestAuthentication,
     #[doc = "The key name of the authentication key/value pair."]
     pub name: String,
     #[doc = "The location of the authentication key/value pair in the request."]
@@ -17,18 +15,8 @@ pub struct ApiKeyAuthentication {
     pub value: String,
 }
 impl ApiKeyAuthentication {
-    pub fn new(
-        rest_request_authentication: RestRequestAuthentication,
-        name: String,
-        in_: api_key_authentication::In,
-        value: String,
-    ) -> Self {
-        Self {
-            rest_request_authentication,
-            name,
-            in_,
-            value,
-        }
+    pub fn new(name: String, in_: api_key_authentication::In, value: String) -> Self {
+        Self { name, in_, value }
     }
 }
 pub mod api_key_authentication {
@@ -77,14 +65,6 @@ impl ArtifactSourceProperties {
             artifact_root: None,
             authentication,
         }
-    }
-}
-#[doc = "Defines the authentication method and properties to access the artifacts."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Authentication {}
-impl Authentication {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The authentication type"]
@@ -162,17 +142,12 @@ pub enum HealthCheckStepAttributesUnion {
 #[doc = "Defines the properties of a health check step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthCheckStepProperties {
-    #[serde(flatten)]
-    pub step_properties: StepProperties,
     #[doc = "The attributes for the health check step."]
     pub attributes: HealthCheckStepAttributesUnion,
 }
 impl HealthCheckStepProperties {
-    pub fn new(step_properties: StepProperties, attributes: HealthCheckStepAttributesUnion) -> Self {
-        Self {
-            step_properties,
-            attributes,
-        }
+    pub fn new(attributes: HealthCheckStepAttributesUnion) -> Self {
+        Self { attributes }
     }
 }
 #[doc = "Identity for the resource."]
@@ -395,14 +370,6 @@ pub mod rest_request {
         Post,
     }
 }
-#[doc = "The authentication information required in the REST health check request to the health provider."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestRequestAuthentication {}
-impl RestRequestAuthentication {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The authentication type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -484,15 +451,10 @@ impl Rollout {
 }
 #[doc = "RolloutIdentity uses the user-assigned managed identity authentication context specified in the Identity property during rollout creation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RolloutIdentityAuthentication {
-    #[serde(flatten)]
-    pub rest_request_authentication: RestRequestAuthentication,
-}
+pub struct RolloutIdentityAuthentication {}
 impl RolloutIdentityAuthentication {
-    pub fn new(rest_request_authentication: RestRequestAuthentication) -> Self {
-        Self {
-            rest_request_authentication,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 pub type RolloutListResult = Vec<Rollout>;
@@ -635,18 +597,13 @@ impl RolloutStep {
 #[doc = "Defines the properties to access the artifacts using an Azure Storage SAS URI."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SasAuthentication {
-    #[serde(flatten)]
-    pub authentication: Authentication,
     #[doc = "The properties that define SAS authentication."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SasProperties>,
 }
 impl SasAuthentication {
-    pub fn new(authentication: Authentication) -> Self {
-        Self {
-            authentication,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that define SAS authentication."]
@@ -916,14 +873,6 @@ impl StepOperationInfo {
         Self::default()
     }
 }
-#[doc = "The properties of a step resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StepProperties {}
-impl StepProperties {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The type of step."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "stepType")]
@@ -982,16 +931,11 @@ impl WaitStepAttributes {
 #[doc = "Defines the properties of a Wait step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WaitStepProperties {
-    #[serde(flatten)]
-    pub step_properties: StepProperties,
     #[doc = "The parameters for the wait step."]
     pub attributes: WaitStepAttributes,
 }
 impl WaitStepProperties {
-    pub fn new(step_properties: StepProperties, attributes: WaitStepAttributes) -> Self {
-        Self {
-            step_properties,
-            attributes,
-        }
+    pub fn new(attributes: WaitStepAttributes) -> Self {
+        Self { attributes }
     }
 }

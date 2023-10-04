@@ -6,18 +6,13 @@ use std::str::FromStr;
 #[doc = "A vulnerability assessments setting on Azure servers in the defined scope."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureServersSetting {
-    #[serde(flatten)]
-    pub server_vulnerability_assessments_setting: ServerVulnerabilityAssessmentsSetting,
     #[doc = "Describes the vulnerability assessments setting properties on Azure servers in the defined scope."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerVulnerabilityAssessmentsAzureSettingProperties>,
 }
 impl AzureServersSetting {
-    pub fn new(server_vulnerability_assessments_setting: ServerVulnerabilityAssessmentsSetting) -> Self {
-        Self {
-            server_vulnerability_assessments_setting,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The resource management error additional info."]
@@ -154,19 +149,6 @@ pub mod server_vulnerability_assessments_azure_setting_properties {
                 Self::MdeTvm => serializer.serialize_unit_variant("SelectedProvider", 0u32, "MdeTvm"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
-        }
-    }
-}
-#[doc = "A base vulnerability assessments setting on servers in the defined scope."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServerVulnerabilityAssessmentsSetting {
-    #[serde(flatten)]
-    pub resource: Resource,
-}
-impl ServerVulnerabilityAssessmentsSetting {
-    pub fn new() -> Self {
-        Self {
-            resource: Resource::default(),
         }
     }
 }

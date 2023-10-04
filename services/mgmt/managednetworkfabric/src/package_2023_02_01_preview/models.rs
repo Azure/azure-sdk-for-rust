@@ -872,17 +872,12 @@ impl ExtendedLocation {
 #[doc = "Defines the ExternalNetwork item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExternalNetwork {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "External Network Properties."]
     pub properties: ExternalNetworkProperties,
 }
 impl ExternalNetwork {
     pub fn new(properties: ExternalNetworkProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "The ExternalNetwork patch resource definition."]
@@ -1219,17 +1214,12 @@ impl InterfaceStatus {
 #[doc = "Defines the InternalNetwork item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InternalNetwork {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Internal Network Properties"]
     pub properties: InternalNetworkProperties,
 }
 impl InternalNetwork {
     pub fn new(properties: InternalNetworkProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "The InternalNetwork patch resource definition."]
@@ -2407,17 +2397,12 @@ impl Serialize for NetworkDeviceRoleTypes {
 #[doc = "The NetworkDeviceSku resource definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkDeviceSku {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "NetworkDeviceSkuProperties define the resource properties."]
     pub properties: NetworkDeviceSkuProperties,
 }
 impl NetworkDeviceSku {
     pub fn new(properties: NetworkDeviceSkuProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "NetworkDeviceSkuProperties define the resource properties."]
@@ -2870,17 +2855,12 @@ impl NetworkFabricProperties {
 #[doc = "The NetworkFabricSku resource definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkFabricSku {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "NetworkFabricSkuProperties define the resource properties."]
     pub properties: NetworkFabricSkuProperties,
 }
 impl NetworkFabricSku {
     pub fn new(properties: NetworkFabricSkuProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "NetworkFabricSkuProperties define the resource properties."]
@@ -2963,17 +2943,12 @@ impl NetworkFabricsListResult {
 #[doc = "Defines the NetworkInterface resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkInterface {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "NetworkInterfaceProperties define the resource properties."]
     pub properties: NetworkInterfaceProperties,
 }
 impl NetworkInterface {
     pub fn new(properties: NetworkInterfaceProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "The NetworkInterfacePatch resource definition."]
@@ -3161,17 +3136,12 @@ impl NetworkRackProperties {
 #[doc = "The NetworkRackSku resource definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkRackSku {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "NetworkRackSkuProperties define the resource properties."]
     pub properties: NetworkRackSkuProperties,
 }
 impl NetworkRackSku {
     pub fn new(properties: NetworkRackSkuProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "NetworkRackSkuProperties define the resource properties."]
@@ -3306,8 +3276,6 @@ impl NetworkRacksListResult {
 #[doc = "The NetworkToNetworkInterconnect resource definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkToNetworkInterconnect {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Configuration used to setup CE-PE connectivity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NetworkToNetworkInterconnectProperties>,

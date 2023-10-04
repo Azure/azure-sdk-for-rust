@@ -78,8 +78,6 @@ impl Resource {
 #[doc = "A MariaDB Server key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerKey {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Kind of encryption protector. This is metadata used for the Azure portal experience."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,

@@ -543,8 +543,6 @@ pub mod aks_variant_response {
 #[doc = "Secrets related to a Machine Learning compute based on AKS."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AksComputeSecrets {
-    #[serde(flatten)]
-    pub compute_secrets: ComputeSecrets,
     #[doc = "Content of kubeconfig file that can be used to connect to the Kubernetes cluster."]
     #[serde(rename = "userKubeConfig", default, skip_serializing_if = "Option::is_none")]
     pub user_kube_config: Option<String>,
@@ -556,9 +554,8 @@ pub struct AksComputeSecrets {
     pub image_pull_secret_name: Option<String>,
 }
 impl AksComputeSecrets {
-    pub fn new(compute_secrets: ComputeSecrets) -> Self {
+    pub fn new() -> Self {
         Self {
-            compute_secrets,
             user_kube_config: None,
             admin_kube_config: None,
             image_pull_secret_name: None,
@@ -1662,14 +1659,6 @@ impl ComputeResource {
         Self::default()
     }
 }
-#[doc = "Secrets related to a Machine Learning compute. Might differ for every type of compute."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ComputeSecrets {}
-impl ComputeSecrets {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The type of compute"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "computeType")]
@@ -1972,16 +1961,13 @@ pub mod databricks {
 #[doc = "Secrets related to a Machine Learning compute based on Databricks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabricksComputeSecrets {
-    #[serde(flatten)]
-    pub compute_secrets: ComputeSecrets,
     #[doc = "access token for databricks account."]
     #[serde(rename = "databricksAccessToken", default, skip_serializing_if = "Option::is_none")]
     pub databricks_access_token: Option<String>,
 }
 impl DatabricksComputeSecrets {
-    pub fn new(compute_secrets: ComputeSecrets) -> Self {
+    pub fn new() -> Self {
         Self {
-            compute_secrets,
             databricks_access_token: None,
         }
     }
@@ -4727,16 +4713,13 @@ impl VirtualMachineImage {
 #[doc = "Secrets related to a Machine Learning compute based on AKS."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineSecrets {
-    #[serde(flatten)]
-    pub compute_secrets: ComputeSecrets,
     #[doc = "Admin credentials for virtual machine"]
     #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
     pub administrator_account: Option<VirtualMachineSshCredentials>,
 }
 impl VirtualMachineSecrets {
-    pub fn new(compute_secrets: ComputeSecrets) -> Self {
+    pub fn new() -> Self {
         Self {
-            compute_secrets,
             administrator_account: None,
         }
     }

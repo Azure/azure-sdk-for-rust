@@ -1091,24 +1091,17 @@ pub mod virtual_network_rule {
 #[doc = "Response for Volume request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Volume {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Volume response properties."]
     pub properties: VolumeProperties,
 }
 impl Volume {
     pub fn new(properties: VolumeProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "Response for Volume Group request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VolumeGroup {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "VolumeGroup response properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VolumeGroupProperties>,

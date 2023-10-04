@@ -54,26 +54,13 @@ impl AdhocBasedTaggingCriteria {
 #[doc = "Adhoc trigger context"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdhocBasedTriggerContext {
-    #[serde(flatten)]
-    pub trigger_context: TriggerContext,
     #[doc = "Adhoc backup tagging criteria"]
     #[serde(rename = "taggingCriteria")]
     pub tagging_criteria: AdhocBasedTaggingCriteria,
 }
 impl AdhocBasedTriggerContext {
-    pub fn new(trigger_context: TriggerContext, tagging_criteria: AdhocBasedTaggingCriteria) -> Self {
-        Self {
-            trigger_context,
-            tagging_criteria,
-        }
-    }
-}
-#[doc = "Base class for different types of authentication credentials."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthCredentials {}
-impl AuthCredentials {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(tagging_criteria: AdhocBasedTaggingCriteria) -> Self {
+        Self { tagging_criteria }
     }
 }
 #[doc = "Type of the specific object - used for deserializing"]
@@ -85,8 +72,6 @@ pub enum AuthCredentialsUnion {
 #[doc = "Azure backup discrete RecoveryPoint"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBackupDiscreteRecoveryPoint {
-    #[serde(flatten)]
-    pub azure_backup_recovery_point: AzureBackupRecoveryPoint,
     #[serde(rename = "friendlyName", default, skip_serializing_if = "Option::is_none")]
     pub friendly_name: Option<String>,
     #[serde(
@@ -112,9 +97,8 @@ pub struct AzureBackupDiscreteRecoveryPoint {
     pub retention_tag_version: Option<String>,
 }
 impl AzureBackupDiscreteRecoveryPoint {
-    pub fn new(azure_backup_recovery_point: AzureBackupRecoveryPoint, recovery_point_time: time::OffsetDateTime) -> Self {
+    pub fn new(recovery_point_time: time::OffsetDateTime) -> Self {
         Self {
-            azure_backup_recovery_point,
             friendly_name: None,
             recovery_point_data_stores_details: Vec::new(),
             recovery_point_time,
@@ -427,26 +411,13 @@ impl AzureBackupJobResourceList {
 #[doc = "Azure backup parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBackupParams {
-    #[serde(flatten)]
-    pub backup_parameters: BackupParameters,
     #[doc = "BackupType ; Full/Incremental etc"]
     #[serde(rename = "backupType")]
     pub backup_type: String,
 }
 impl AzureBackupParams {
-    pub fn new(backup_parameters: BackupParameters, backup_type: String) -> Self {
-        Self {
-            backup_parameters,
-            backup_type,
-        }
-    }
-}
-#[doc = "Azure backup recoveryPoint"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureBackupRecoveryPoint {}
-impl AzureBackupRecoveryPoint {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(backup_type: String) -> Self {
+        Self { backup_type }
     }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -754,14 +725,6 @@ impl AzureRetentionRule {
         }
     }
 }
-#[doc = "BackupCriteria base class"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupCriteria {}
-impl BackupCriteria {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Type of the specific object - used for deserializing"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
@@ -960,14 +923,6 @@ impl azure_core::Continuable for BackupInstanceResourceList {
 impl BackupInstanceResourceList {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "BackupParameters base"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupParameters {}
-impl BackupParameters {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Type of the specific object - used for deserializing"]
@@ -1425,19 +1380,8 @@ impl CloudError {
 }
 #[doc = "Copy on Expiry Option"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CopyOnExpiryOption {
-    #[serde(flatten)]
-    pub copy_option: CopyOption,
-}
+pub struct CopyOnExpiryOption {}
 impl CopyOnExpiryOption {
-    pub fn new(copy_option: CopyOption) -> Self {
-        Self { copy_option }
-    }
-}
-#[doc = "Options to copy"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CopyOption {}
-impl CopyOption {
     pub fn new() -> Self {
         Self {}
     }
@@ -1453,18 +1397,13 @@ pub enum CopyOptionUnion {
 #[doc = "Duration based custom options to copy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomCopyOption {
-    #[serde(flatten)]
-    pub copy_option: CopyOption,
     #[doc = "Data copied after given timespan"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration: Option<String>,
 }
 impl CustomCopyOption {
-    pub fn new(copy_option: CopyOption) -> Self {
-        Self {
-            copy_option,
-            duration: None,
-        }
+    pub fn new() -> Self {
+        Self { duration: None }
     }
 }
 #[doc = "DataStoreInfo base"]
@@ -1954,8 +1893,6 @@ impl ExportJobsResult {
 #[doc = "Base class for feature object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FeatureValidationRequest {
-    #[serde(flatten)]
-    pub feature_validation_request_base: FeatureValidationRequestBase,
     #[doc = "backup support feature type."]
     #[serde(rename = "featureType", default, skip_serializing_if = "Option::is_none")]
     pub feature_type: Option<feature_validation_request::FeatureType>,
@@ -1964,9 +1901,8 @@ pub struct FeatureValidationRequest {
     pub feature_name: Option<String>,
 }
 impl FeatureValidationRequest {
-    pub fn new(feature_validation_request_base: FeatureValidationRequestBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            feature_validation_request_base,
             feature_type: None,
             feature_name: None,
         }
@@ -2012,14 +1948,6 @@ pub mod feature_validation_request {
         }
     }
 }
-#[doc = "Base class for Backup Feature support"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FeatureValidationRequestBase {}
-impl FeatureValidationRequestBase {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Type of the specific object - used for deserializing"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
@@ -2029,8 +1957,6 @@ pub enum FeatureValidationRequestBaseUnion {
 #[doc = "Feature Validation Response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FeatureValidationResponse {
-    #[serde(flatten)]
-    pub feature_validation_response_base: FeatureValidationResponseBase,
     #[doc = "backup support feature type."]
     #[serde(rename = "featureType", default, skip_serializing_if = "Option::is_none")]
     pub feature_type: Option<feature_validation_response::FeatureType>,
@@ -2043,9 +1969,8 @@ pub struct FeatureValidationResponse {
     pub features: Vec<SupportedFeature>,
 }
 impl FeatureValidationResponse {
-    pub fn new(feature_validation_response_base: FeatureValidationResponseBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            feature_validation_response_base,
             feature_type: None,
             features: Vec::new(),
         }
@@ -2091,14 +2016,6 @@ pub mod feature_validation_response {
         }
     }
 }
-#[doc = "Base class for Backup Feature support"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FeatureValidationResponseBase {}
-impl FeatureValidationResponseBase {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Type of the specific object - used for deserializing"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
@@ -2107,13 +2024,10 @@ pub enum FeatureValidationResponseBaseUnion {
 }
 #[doc = "Immediate copy Option"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImmediateCopyOption {
-    #[serde(flatten)]
-    pub copy_option: CopyOption,
-}
+pub struct ImmediateCopyOption {}
 impl ImmediateCopyOption {
-    pub fn new(copy_option: CopyOption) -> Self {
-        Self { copy_option }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Inner Error"]
@@ -2132,14 +2046,6 @@ pub struct InnerError {
 impl InnerError {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Class to contain criteria for item level restore"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ItemLevelRestoreCriteria {}
-impl ItemLevelRestoreCriteria {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Type of the specific object - used for deserializing"]
@@ -2250,8 +2156,6 @@ impl JobSubTask {
 #[doc = "Item Level kubernetes persistent volume target info for restore operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KubernetesPvRestoreCriteria {
-    #[serde(flatten)]
-    pub item_level_restore_criteria: ItemLevelRestoreCriteria,
     #[doc = "Selected persistent volume claim name"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -2260,9 +2164,8 @@ pub struct KubernetesPvRestoreCriteria {
     pub storage_class_name: Option<String>,
 }
 impl KubernetesPvRestoreCriteria {
-    pub fn new(item_level_restore_criteria: ItemLevelRestoreCriteria) -> Self {
+    pub fn new() -> Self {
         Self {
-            item_level_restore_criteria,
             name: None,
             storage_class_name: None,
         }
@@ -2271,8 +2174,6 @@ impl KubernetesPvRestoreCriteria {
 #[doc = "Item Level kubernetes storage class target info for restore operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KubernetesStorageClassRestoreCriteria {
-    #[serde(flatten)]
-    pub item_level_restore_criteria: ItemLevelRestoreCriteria,
     #[doc = "Selected storage class name"]
     #[serde(rename = "selectedStorageClassName", default, skip_serializing_if = "Option::is_none")]
     pub selected_storage_class_name: Option<String>,
@@ -2281,9 +2182,8 @@ pub struct KubernetesStorageClassRestoreCriteria {
     pub provisioner: Option<String>,
 }
 impl KubernetesStorageClassRestoreCriteria {
-    pub fn new(item_level_restore_criteria: ItemLevelRestoreCriteria) -> Self {
+    pub fn new() -> Self {
         Self {
-            item_level_restore_criteria,
             selected_storage_class_name: None,
             provisioner: None,
         }
@@ -2301,14 +2201,6 @@ impl MonitoringSettings {
         Self::default()
     }
 }
-#[doc = "Operation Extended Info"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationExtendedInfo {}
-impl OperationExtendedInfo {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
@@ -2318,18 +2210,13 @@ pub enum OperationExtendedInfoUnion {
 #[doc = "Operation Job Extended Info"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OperationJobExtendedInfo {
-    #[serde(flatten)]
-    pub operation_extended_info: OperationExtendedInfo,
     #[doc = "Arm Id of the job created for this operation."]
     #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
     pub job_id: Option<String>,
 }
 impl OperationJobExtendedInfo {
-    pub fn new(operation_extended_info: OperationExtendedInfo) -> Self {
-        Self {
-            operation_extended_info,
-            job_id: None,
-        }
+    pub fn new() -> Self {
+        Self { job_id: None }
     }
 }
 #[doc = "Operation Resource"]
@@ -2494,8 +2381,6 @@ pub mod protection_status_details {
 #[doc = "Item Level target info for restore operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RangeBasedItemLevelRestoreCriteria {
-    #[serde(flatten)]
-    pub item_level_restore_criteria: ItemLevelRestoreCriteria,
     #[doc = "minimum value for range prefix match"]
     #[serde(rename = "minMatchingValue", default, skip_serializing_if = "Option::is_none")]
     pub min_matching_value: Option<String>,
@@ -2504,9 +2389,8 @@ pub struct RangeBasedItemLevelRestoreCriteria {
     pub max_matching_value: Option<String>,
 }
 impl RangeBasedItemLevelRestoreCriteria {
-    pub fn new(item_level_restore_criteria: ItemLevelRestoreCriteria) -> Self {
+    pub fn new() -> Self {
         Self {
-            item_level_restore_criteria,
             min_matching_value: None,
             max_matching_value: None,
         }
@@ -2965,8 +2849,6 @@ impl RetentionTag {
 #[doc = "Schedule based backup criteria"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduleBasedBackupCriteria {
-    #[serde(flatten)]
-    pub backup_criteria: BackupCriteria,
     #[doc = "it contains absolute values like \"AllBackup\" / \"FirstOfDay\" / \"FirstOfWeek\" / \"FirstOfMonth\"\r\nand should be part of AbsoluteMarker enum"]
     #[serde(
         rename = "absoluteCriteria",
@@ -3017,9 +2899,8 @@ pub struct ScheduleBasedBackupCriteria {
     pub weeks_of_the_month: Vec<String>,
 }
 impl ScheduleBasedBackupCriteria {
-    pub fn new(backup_criteria: BackupCriteria) -> Self {
+    pub fn new() -> Self {
         Self {
-            backup_criteria,
             absolute_criteria: Vec::new(),
             days_of_month: Vec::new(),
             days_of_the_week: Vec::new(),
@@ -3032,8 +2913,6 @@ impl ScheduleBasedBackupCriteria {
 #[doc = "Schedule based trigger context"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduleBasedTriggerContext {
-    #[serde(flatten)]
-    pub trigger_context: TriggerContext,
     #[doc = "Schedule for backup"]
     pub schedule: BackupSchedule,
     #[doc = "List of tags that can be applicable for given schedule."]
@@ -3041,9 +2920,8 @@ pub struct ScheduleBasedTriggerContext {
     pub tagging_criteria: Vec<TaggingCriteria>,
 }
 impl ScheduleBasedTriggerContext {
-    pub fn new(trigger_context: TriggerContext, schedule: BackupSchedule, tagging_criteria: Vec<TaggingCriteria>) -> Self {
+    pub fn new(schedule: BackupSchedule, tagging_criteria: Vec<TaggingCriteria>) -> Self {
         Self {
-            trigger_context,
             schedule,
             tagging_criteria,
         }
@@ -3052,16 +2930,13 @@ impl ScheduleBasedTriggerContext {
 #[doc = "Secret store based authentication credentials."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretStoreBasedAuthCredentials {
-    #[serde(flatten)]
-    pub auth_credentials: AuthCredentials,
     #[doc = "Class representing a secret store resource."]
     #[serde(rename = "secretStoreResource", default, skip_serializing_if = "Option::is_none")]
     pub secret_store_resource: Option<SecretStoreResource>,
 }
 impl SecretStoreBasedAuthCredentials {
-    pub fn new(auth_credentials: AuthCredentials) -> Self {
+    pub fn new() -> Self {
         Self {
-            auth_credentials,
             secret_store_resource: None,
         }
     }
@@ -3491,14 +3366,6 @@ pub struct TriggerBackupRequest {
 impl TriggerBackupRequest {
     pub fn new(backup_rule_options: AdHocBackupRuleOptions) -> Self {
         Self { backup_rule_options }
-    }
-}
-#[doc = "Trigger context"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TriggerContext {}
-impl TriggerContext {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Type of the specific object - used for deserializing"]

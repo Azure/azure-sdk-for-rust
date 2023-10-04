@@ -6,17 +6,12 @@ use std::str::FromStr;
 #[doc = "Cloud shell console"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudShellConsole {
-    #[serde(flatten)]
-    pub resource: Resource,
     #[doc = "Cloud shell console properties."]
     pub properties: ConsoleProperties,
 }
 impl CloudShellConsole {
     pub fn new(properties: ConsoleProperties) -> Self {
-        Self {
-            resource: Resource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "Cloud shell patch operation user settings."]
@@ -34,17 +29,12 @@ impl CloudShellPatchUserSettings {
 #[doc = "Cloud shell user settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudShellUserSettings {
-    #[serde(flatten)]
-    pub resource: Resource,
     #[doc = "The cloud shell user settings properties."]
     pub properties: UserProperties,
 }
 impl CloudShellUserSettings {
     pub fn new(properties: UserProperties) -> Self {
-        Self {
-            resource: Resource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "Cloud shell properties for creating a console."]
@@ -163,17 +153,12 @@ pub mod console_create_properties {
 #[doc = "Console definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConsoleDefinition {
-    #[serde(flatten)]
-    pub resource: Resource,
     #[doc = "Cloud shell properties for creating a console."]
     pub properties: ConsoleCreateProperties,
 }
 impl ConsoleDefinition {
     pub fn new(properties: ConsoleCreateProperties) -> Self {
-        Self {
-            resource: Resource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "Cloud shell console properties."]
@@ -555,16 +540,11 @@ pub mod user_properties {
 #[doc = "Response to get user settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserSettingsResponse {
-    #[serde(flatten)]
-    pub resource: Resource,
     #[doc = "The cloud shell user settings properties."]
     pub properties: UserProperties,
 }
 impl UserSettingsResponse {
     pub fn new(properties: UserProperties) -> Self {
-        Self {
-            resource: Resource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }

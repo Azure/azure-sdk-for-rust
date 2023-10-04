@@ -6,8 +6,6 @@ use std::str::FromStr;
 #[doc = "Class representing an attached database configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AttachedDatabaseConfiguration {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -757,18 +755,13 @@ impl ClusterUpdate {
 #[doc = "Class representing an data connection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnection {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
 }
 impl DataConnection {
     pub fn new() -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            location: None,
-        }
+        Self { location: None }
     }
 }
 #[doc = "Kind of the endpoint for the data connection"]
@@ -939,8 +932,6 @@ impl Serialize for DataFormat {
 #[doc = "Class representing a Kusto database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Database {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,

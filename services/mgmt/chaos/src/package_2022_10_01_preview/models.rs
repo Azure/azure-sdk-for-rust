@@ -800,14 +800,6 @@ impl ExperimentStatusProperties {
         Self::default()
     }
 }
-#[doc = "Model that represents available filter types that can be applied to a targets list."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Filter {}
-impl Filter {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Enum that discriminates between filter types. Currently only `Simple` type is supported."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]

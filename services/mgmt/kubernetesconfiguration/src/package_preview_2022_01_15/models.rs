@@ -275,8 +275,6 @@ impl ErrorResponse {
 #[doc = "The Extension object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Extension {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of an Extension resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<extension::Properties>,
@@ -450,8 +448,6 @@ pub mod extension_status {
 #[doc = "Represents an Extension Type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExtensionType {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of the connected cluster."]
     pub properties: ExtensionTypeProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -461,7 +457,6 @@ pub struct ExtensionType {
 impl ExtensionType {
     pub fn new(properties: ExtensionTypeProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -625,8 +620,6 @@ impl Default for FluxComplianceStateDefinition {
 #[doc = "The Flux Configuration object returned in Get & Put response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FluxConfiguration {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties to create a Flux Configuration resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<flux_configuration::Properties>,
@@ -1471,8 +1464,6 @@ impl ScopeNamespace {
 #[doc = "The SourceControl Configuration object returned in Get & Put response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceControlConfiguration {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties to create a Source Control Configuration resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<source_control_configuration::Properties>,

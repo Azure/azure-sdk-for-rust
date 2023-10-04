@@ -1033,17 +1033,12 @@ pub mod report_properties {
 #[doc = "A class represent an AppComplianceAutomation report resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ReportResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Report's properties."]
     pub properties: ReportProperties,
 }
 impl ReportResource {
     pub fn new(properties: ReportProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "Object that includes an array of resources and a possible link for next set."]
@@ -1298,8 +1293,6 @@ impl SnapshotProperties {
 #[doc = "A class represent a AppComplianceAutomation snapshot resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SnapshotResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Snapshot's properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SnapshotProperties>,

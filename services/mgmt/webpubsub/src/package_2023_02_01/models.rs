@@ -43,8 +43,6 @@ impl Serialize for AclAction {
 #[doc = "A custom certificate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomCertificate {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -54,7 +52,6 @@ pub struct CustomCertificate {
 impl CustomCertificate {
     pub fn new(properties: CustomCertificateProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             system_data: None,
             properties,
         }
@@ -114,8 +111,6 @@ impl CustomCertificateProperties {
 #[doc = "A custom domain"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomDomain {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -125,7 +120,6 @@ pub struct CustomDomain {
 impl CustomDomain {
     pub fn new(properties: CustomDomainProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             system_data: None,
             properties,
         }
@@ -299,8 +293,6 @@ impl EventHandler {
 #[doc = "An Event Hub endpoint. \r\nThe managed identity of Web PubSub service must be enabled, and the identity should have the \"Azure Event Hubs Data sender\" role to access Event Hub."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubEndpoint {
-    #[serde(flatten)]
-    pub event_listener_endpoint: EventListenerEndpoint,
     #[doc = "The fully qualified namespace name of the Event Hub resource. For example, \"example.servicebus.windows.net\"."]
     #[serde(rename = "fullyQualifiedNamespace")]
     pub fully_qualified_namespace: String,
@@ -309,9 +301,8 @@ pub struct EventHubEndpoint {
     pub event_hub_name: String,
 }
 impl EventHubEndpoint {
-    pub fn new(event_listener_endpoint: EventListenerEndpoint, fully_qualified_namespace: String, event_hub_name: String) -> Self {
+    pub fn new(fully_qualified_namespace: String, event_hub_name: String) -> Self {
         Self {
-            event_listener_endpoint,
             fully_qualified_namespace,
             event_hub_name,
         }
@@ -330,26 +321,10 @@ impl EventListener {
         Self { filter, endpoint }
     }
 }
-#[doc = "An endpoint specifying where Web PubSub should send events to."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventListenerEndpoint {}
-impl EventListenerEndpoint {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum EventListenerEndpointUnion {
     EventHub(EventHubEndpoint),
-}
-#[doc = "A base class for event filter which determines whether an event should be sent to an event listener."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventListenerFilter {}
-impl EventListenerFilter {
-    pub fn new() -> Self {
-        Self {}
-    }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -359,8 +334,6 @@ pub enum EventListenerFilterUnion {
 #[doc = "Filter events by their name."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventNameFilter {
-    #[serde(flatten)]
-    pub event_listener_filter: EventListenerFilter,
     #[doc = "Gets or sets a list of system events. Supported events: \"connected\" and \"disconnected\". Blocking event \"connect\" is not supported because it requires a response."]
     #[serde(
         rename = "systemEvents",
@@ -374,9 +347,8 @@ pub struct EventNameFilter {
     pub user_event_pattern: Option<String>,
 }
 impl EventNameFilter {
-    pub fn new(event_listener_filter: EventListenerFilter) -> Self {
+    pub fn new() -> Self {
         Self {
-            event_listener_filter,
             system_events: Vec::new(),
             user_event_pattern: None,
         }
@@ -747,8 +719,6 @@ impl PrivateEndpointAcl {
 #[doc = "A private endpoint connection to an azure resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -815,8 +785,6 @@ impl PrivateEndpointConnectionProperties {
 #[doc = "Private link resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Private link resource properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
@@ -1210,8 +1178,6 @@ impl ShareablePrivateLinkResourceType {
 #[doc = "Describes a Shared Private Link Resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedPrivateLinkResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -1539,8 +1505,6 @@ impl UserAssignedIdentityProperty {
 #[doc = "A hub setting"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebPubSubHub {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -1550,7 +1514,6 @@ pub struct WebPubSubHub {
 impl WebPubSubHub {
     pub fn new(properties: WebPubSubHubProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             system_data: None,
             properties,
         }

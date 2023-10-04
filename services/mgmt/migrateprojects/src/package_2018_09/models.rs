@@ -346,8 +346,6 @@ impl DatabaseProperties {
 #[doc = "Class representing the databases solution summary."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabasesSolutionSummary {
-    #[serde(flatten)]
-    pub solution_summary: SolutionSummary,
     #[doc = "Gets or sets the count of databases assessed."]
     #[serde(rename = "databasesAssessedCount", default, skip_serializing_if = "Option::is_none")]
     pub databases_assessed_count: Option<i32>,
@@ -1700,8 +1698,6 @@ impl ServersProjectSummary {
 #[doc = "Class representing the servers solution summary."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServersSolutionSummary {
-    #[serde(flatten)]
-    pub solution_summary: SolutionSummary,
     #[doc = "Gets or sets the count of servers discovered."]
     #[serde(rename = "discoveredCount", default, skip_serializing_if = "Option::is_none")]
     pub discovered_count: Option<i32>,
@@ -1905,14 +1901,6 @@ pub mod solution_properties {
         InProgress,
         Completed,
         Failed,
-    }
-}
-#[doc = "The solution summary class."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SolutionSummary {}
-impl SolutionSummary {
-    pub fn new() -> Self {
-        Self::default()
     }
 }
 #[doc = "Gets the Instance type."]

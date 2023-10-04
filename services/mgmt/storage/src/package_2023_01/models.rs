@@ -1411,8 +1411,6 @@ impl DeleteRetentionPolicy {
 #[doc = "Deleted storage account"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeletedAccount {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Attributes of a deleted storage account."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DeletedAccountProperties>,

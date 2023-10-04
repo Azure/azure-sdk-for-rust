@@ -97,8 +97,6 @@ pub mod endpoint_properties {
 #[doc = "The endpoint for the target resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -783,8 +781,6 @@ impl ServiceConfigurationPropertiesPatch {
 #[doc = "The service configuration details associated with the target resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceConfigurationResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,

@@ -1169,8 +1169,6 @@ impl Serialize for HibernateSupport {
 #[doc = "Represents an image."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Image {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of an image."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ImageProperties>,
@@ -1311,8 +1309,6 @@ impl Serialize for ImageValidationStatus {
 #[doc = "Represents an image version."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImageVersion {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of an image version."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ImageVersionProperties>,

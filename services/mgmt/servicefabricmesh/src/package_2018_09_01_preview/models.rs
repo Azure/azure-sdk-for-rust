@@ -6,8 +6,6 @@ use std::str::FromStr;
 #[doc = "Describes the horizontal auto scaling mechanism that adds or removes replicas (containers or container groups)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddRemoveReplicaScalingMechanism {
-    #[serde(flatten)]
-    pub auto_scaling_mechanism: AutoScalingMechanism,
     #[doc = "Minimum number of containers (scale down won't be performed below this number)."]
     #[serde(rename = "minCount")]
     pub min_count: i64,
@@ -19,9 +17,8 @@ pub struct AddRemoveReplicaScalingMechanism {
     pub scale_increment: i64,
 }
 impl AddRemoveReplicaScalingMechanism {
-    pub fn new(auto_scaling_mechanism: AutoScalingMechanism, min_count: i64, max_count: i64, scale_increment: i64) -> Self {
+    pub fn new(min_count: i64, max_count: i64, scale_increment: i64) -> Self {
         Self {
-            auto_scaling_mechanism,
             min_count,
             max_count,
             scale_increment,
@@ -261,14 +258,6 @@ impl Serialize for ApplicationScopedVolumeKind {
         }
     }
 }
-#[doc = "Describes the mechanism for performing auto scaling operation. Derived classes will describe the actual mechanism."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScalingMechanism {}
-impl AutoScalingMechanism {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Enumerates the mechanisms for auto scaling."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
@@ -308,14 +297,6 @@ impl Serialize for AutoScalingMechanismKind {
             Self::AddRemoveReplica => serializer.serialize_unit_variant("AutoScalingMechanismKind", 0u32, "AddRemoveReplica"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
-    }
-}
-#[doc = "Describes the metric that is used for triggering auto scaling operation. Derived classes will describe resources or metrics."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScalingMetric {}
-impl AutoScalingMetric {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Enumerates the metrics that are used for triggering auto scaling."]
@@ -377,14 +358,12 @@ impl AutoScalingPolicy {
 #[doc = "Describes the resource that is used for triggering auto scaling."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScalingResourceMetric {
-    #[serde(flatten)]
-    pub auto_scaling_metric: AutoScalingMetric,
     #[doc = "Enumerates the resources that are used for triggering auto scaling."]
     pub name: AutoScalingResourceMetricName,
 }
 impl AutoScalingResourceMetric {
-    pub fn new(auto_scaling_metric: AutoScalingMetric, name: AutoScalingResourceMetricName) -> Self {
-        Self { auto_scaling_metric, name }
+    pub fn new(name: AutoScalingResourceMetricName) -> Self {
+        Self { name }
     }
 }
 #[doc = "Enumerates the resources that are used for triggering auto scaling."]
@@ -424,14 +403,6 @@ impl Serialize for AutoScalingResourceMetricName {
             Self::MemoryInGb => serializer.serialize_unit_variant("AutoScalingResourceMetricName", 1u32, "memoryInGB"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
-    }
-}
-#[doc = "Describes the trigger for performing auto scaling operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScalingTrigger {}
-impl AutoScalingTrigger {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Enumerates the triggers for auto scaling."]
@@ -511,8 +482,6 @@ impl AvailableOperationDisplay {
 #[doc = "Describes the average load trigger used for auto scaling."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AverageLoadScalingTrigger {
-    #[serde(flatten)]
-    pub auto_scaling_trigger: AutoScalingTrigger,
     #[doc = "Describes the metric that is used for triggering auto scaling operation. Derived classes will describe resources or metrics."]
     pub metric: AutoScalingMetricUnion,
     #[doc = "Lower load threshold (if average load is below this threshold, service will scale down)."]
@@ -527,14 +496,12 @@ pub struct AverageLoadScalingTrigger {
 }
 impl AverageLoadScalingTrigger {
     pub fn new(
-        auto_scaling_trigger: AutoScalingTrigger,
         metric: AutoScalingMetricUnion,
         lower_load_threshold: f64,
         upper_load_threshold: f64,
         scale_interval_in_seconds: i64,
     ) -> Self {
         Self {
-            auto_scaling_trigger,
             metric,
             lower_load_threshold,
             upper_load_threshold,
@@ -1615,8 +1582,6 @@ impl NetworkResourceDescriptionList {
 #[doc = "Describes properties of a network resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkResourceProperties {
-    #[serde(flatten)]
-    pub network_resource_properties_base: NetworkResourcePropertiesBase,
     #[doc = "User readable description of the network."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -1628,25 +1593,11 @@ pub struct NetworkResourceProperties {
     pub status_details: Option<String>,
 }
 impl NetworkResourceProperties {
-    pub fn new(network_resource_properties_base: NetworkResourcePropertiesBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            network_resource_properties_base,
             description: None,
             status: None,
             status_details: None,
-        }
-    }
-}
-#[doc = "This type describes the properties of a network resource, including its kind."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkResourcePropertiesBase {
-    #[serde(flatten)]
-    pub provisioned_resource_properties: ProvisionedResourceProperties,
-}
-impl NetworkResourcePropertiesBase {
-    pub fn new() -> Self {
-        Self {
-            provisioned_resource_properties: ProvisionedResourceProperties::default(),
         }
     }
 }
@@ -1966,8 +1917,6 @@ impl SecretResourceDescriptionList {
 #[doc = "Describes the properties of a secret resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretResourceProperties {
-    #[serde(flatten)]
-    pub secret_resource_properties_base: SecretResourcePropertiesBase,
     #[doc = "User readable description of the secret."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -1982,26 +1931,12 @@ pub struct SecretResourceProperties {
     pub content_type: Option<String>,
 }
 impl SecretResourceProperties {
-    pub fn new(secret_resource_properties_base: SecretResourcePropertiesBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            secret_resource_properties_base,
             description: None,
             status: None,
             status_details: None,
             content_type: None,
-        }
-    }
-}
-#[doc = "This type describes the properties of a secret resource, including its kind."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretResourcePropertiesBase {
-    #[serde(flatten)]
-    pub provisioned_resource_properties: ProvisionedResourceProperties,
-}
-impl SecretResourcePropertiesBase {
-    pub fn new() -> Self {
-        Self {
-            provisioned_resource_properties: ProvisionedResourceProperties::default(),
         }
     }
 }

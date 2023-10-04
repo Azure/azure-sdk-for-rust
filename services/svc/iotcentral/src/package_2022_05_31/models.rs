@@ -77,14 +77,6 @@ impl ApiTokenCollection {
         Self { value, next_link: None }
     }
 }
-#[doc = "The attestation definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Attestation {}
-impl Attestation {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Type of the attestation."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -617,18 +609,13 @@ impl SymmetricKey {
 #[doc = "The symmetric key attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SymmetricKeyAttestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     #[doc = "The symmetric key definition."]
     #[serde(rename = "symmetricKey")]
     pub symmetric_key: SymmetricKey,
 }
 impl SymmetricKeyAttestation {
-    pub fn new(attestation: Attestation, symmetric_key: SymmetricKey) -> Self {
-        Self {
-            attestation,
-            symmetric_key,
-        }
+    pub fn new(symmetric_key: SymmetricKey) -> Self {
+        Self { symmetric_key }
     }
 }
 #[doc = "The trusted platform module definition."]
@@ -646,14 +633,12 @@ impl Tpm {
 #[doc = "The attestation of TPM."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TpmAttestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     #[doc = "The trusted platform module definition."]
     pub tpm: Tpm,
 }
 impl TpmAttestation {
-    pub fn new(attestation: Attestation, tpm: Tpm) -> Self {
-        Self { attestation, tpm }
+    pub fn new(tpm: Tpm) -> Self {
+        Self { tpm }
     }
 }
 #[doc = "The user definition."]
@@ -716,14 +701,12 @@ impl X509 {
 #[doc = "The X509 attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509Attestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     #[doc = "The X509 definition."]
     pub x509: X509,
 }
 impl X509Attestation {
-    pub fn new(attestation: Attestation, x509: X509) -> Self {
-        Self { attestation, x509 }
+    pub fn new(x509: X509) -> Self {
+        Self { x509 }
     }
 }
 #[doc = "The X509 certificate definition."]

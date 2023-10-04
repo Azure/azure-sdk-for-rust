@@ -5,8 +5,6 @@ use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BasicAuthentication {
-    #[serde(flatten)]
-    pub http_authentication: HttpAuthentication,
     #[doc = "Gets or sets the username."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub username: Option<String>,
@@ -15,9 +13,8 @@ pub struct BasicAuthentication {
     pub password: Option<String>,
 }
 impl BasicAuthentication {
-    pub fn new(http_authentication: HttpAuthentication) -> Self {
+    pub fn new() -> Self {
         Self {
-            http_authentication,
             username: None,
             password: None,
         }
@@ -25,8 +22,6 @@ impl BasicAuthentication {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClientCertAuthentication {
-    #[serde(flatten)]
-    pub http_authentication: HttpAuthentication,
     #[doc = "Gets or sets the certificate password, return value will always be empty."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<String>,
@@ -44,22 +39,14 @@ pub struct ClientCertAuthentication {
     pub certificate_subject_name: Option<String>,
 }
 impl ClientCertAuthentication {
-    pub fn new(http_authentication: HttpAuthentication) -> Self {
+    pub fn new() -> Self {
         Self {
-            http_authentication,
             password: None,
             pfx: None,
             certificate_thumbprint: None,
             certificate_expiration_date: None,
             certificate_subject_name: None,
         }
-    }
-}
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HttpAuthentication {}
-impl HttpAuthentication {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Gets or sets the HTTP authentication type."]
@@ -594,8 +581,6 @@ impl JobStatus {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OAuthAuthentication {
-    #[serde(flatten)]
-    pub http_authentication: HttpAuthentication,
     #[doc = "Gets or sets the secret, return value will always be empty."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secret: Option<String>,
@@ -610,9 +595,8 @@ pub struct OAuthAuthentication {
     pub client_id: Option<String>,
 }
 impl OAuthAuthentication {
-    pub fn new(http_authentication: HttpAuthentication) -> Self {
+    pub fn new() -> Self {
         Self {
-            http_authentication,
             secret: None,
             tenant: None,
             audience: None,

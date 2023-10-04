@@ -2515,8 +2515,6 @@ impl ResourceTags {
 #[doc = "A cmdlet available for script execution"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScriptCmdlet {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a pre-canned script"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScriptCmdletProperties>,
@@ -2576,8 +2574,6 @@ impl ScriptCmdletsList {
 #[doc = "An instance of a script executed by a user - custom or AVS"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScriptExecution {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a user-invoked script"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScriptExecutionProperties>,
@@ -2780,8 +2776,6 @@ impl ScriptExecutionsList {
 #[doc = "Script Package resources available for execution"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScriptPackage {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a Script Package subresource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScriptPackageProperties>,
@@ -3130,8 +3124,6 @@ pub mod trial {
 #[doc = "Virtual Machine"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachine {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Virtual Machine Properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualMachineProperties>,
@@ -3297,10 +3289,7 @@ impl VmVmPlacementPolicyProperties {
 }
 #[doc = "Workload Network"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct WorkloadNetwork {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-}
+pub struct WorkloadNetwork {}
 impl WorkloadNetwork {
     pub fn new() -> Self {
         Self::default()
@@ -3309,8 +3298,6 @@ impl WorkloadNetwork {
 #[doc = "NSX DHCP"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkDhcp {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Base class for WorkloadNetworkDhcpServer and WorkloadNetworkDhcpRelay to inherit from"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkloadNetworkDhcpEntityUnion>,
@@ -3478,8 +3465,6 @@ impl WorkloadNetworkDhcpServer {
 #[doc = "NSX DNS Service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkDnsService {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "NSX DNS Service Properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkloadNetworkDnsServiceProperties>,
@@ -3690,8 +3675,6 @@ impl WorkloadNetworkDnsServicesList {
 #[doc = "NSX DNS Zone"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkDnsZone {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "NSX DNS Zone Properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkloadNetworkDnsZoneProperties>,
@@ -3816,8 +3799,6 @@ impl WorkloadNetworkDnsZonesList {
 #[doc = "NSX Gateway."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkGateway {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a NSX Gateway."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkloadNetworkGatewayProperties>,
@@ -3895,8 +3876,6 @@ impl WorkloadNetworkList {
 #[doc = "NSX Port Mirroring"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkPortMirroring {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "NSX Port Mirroring Properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkloadNetworkPortMirroringProperties>,
@@ -4093,8 +4072,6 @@ pub mod workload_network_port_mirroring_properties {
 #[doc = "NSX Public IP Block"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkPublicIp {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "NSX Public IP Block Properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkloadNetworkPublicIpProperties>,
@@ -4201,8 +4178,6 @@ impl WorkloadNetworkPublicIPsList {
 #[doc = "NSX Segment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkSegment {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "NSX Segment Properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkloadNetworkSegmentProperties>,
@@ -4394,8 +4369,6 @@ impl WorkloadNetworkSegmentsList {
 #[doc = "NSX VM Group"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkVmGroup {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "NSX VM Group Properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkloadNetworkVmGroupProperties>,
@@ -4548,8 +4521,6 @@ impl WorkloadNetworkVmGroupsList {
 #[doc = "NSX Virtual Machine"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkVirtualMachine {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "NSX Virtual Machine Properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkloadNetworkVirtualMachineProperties>,

@@ -278,8 +278,6 @@ pub mod check_name_result {
 #[doc = "Class representing a cluster principal assignment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterPrincipalAssignment {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "A class representing cluster principal property."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ClusterPrincipalProperties>,
@@ -474,8 +472,6 @@ impl Serialize for Compression {
 #[doc = "Class representing a data connection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnection {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -486,7 +482,6 @@ pub struct DataConnection {
 impl DataConnection {
     pub fn new() -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             location: None,
             system_data: None,
         }
@@ -525,8 +520,6 @@ impl DataConnectionListResult {
 #[doc = "Class representing a Kusto database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Database {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -537,7 +530,6 @@ pub struct Database {
 impl Database {
     pub fn new() -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             location: None,
             system_data: None,
         }
@@ -574,8 +566,6 @@ impl DatabaseListResult {
 #[doc = "Class representing a database principal assignment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabasePrincipalAssignment {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "A class representing database principal property."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabasePrincipalProperties>,

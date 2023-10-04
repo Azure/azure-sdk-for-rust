@@ -158,17 +158,12 @@ impl ActiveDirectoryConnectorProperties {
 #[doc = "Active directory connector resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActiveDirectoryConnectorResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of an Active Directory connector resource"]
     pub properties: ActiveDirectoryConnectorProperties,
 }
 impl ActiveDirectoryConnectorResource {
     pub fn new(properties: ActiveDirectoryConnectorProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "The specifications of the AD Kubernetes resource."]

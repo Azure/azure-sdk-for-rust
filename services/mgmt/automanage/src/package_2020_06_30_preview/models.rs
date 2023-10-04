@@ -86,8 +86,6 @@ impl AccountUpdate {
 #[doc = "Configuration profile assignment is an association between a VM and automanage profile configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationProfileAssignment {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Automanage configuration profile assignment properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProfileAssignmentProperties>,

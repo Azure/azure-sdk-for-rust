@@ -14532,8 +14532,6 @@ pub mod virtual_machine_scale_set_public_ip_address_configuration_properties {
 #[doc = "Describes a Virtual Machine Scale Set VM Reimage Parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualMachineScaleSetReimageParameters {
-    #[serde(flatten)]
-    pub virtual_machine_scale_set_vm_reimage_parameters: VirtualMachineScaleSetVmReimageParameters,
     #[doc = "The virtual machine scale set instance ids. Omitting the virtual machine scale set instance ids will result in the operation being performed on all virtual machines in the virtual machine scale set."]
     #[serde(
         rename = "instanceIds",

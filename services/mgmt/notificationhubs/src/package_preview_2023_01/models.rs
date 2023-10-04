@@ -247,8 +247,6 @@ impl CheckAvailabilityParameters {
 #[doc = "Description of a CheckAvailability resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CheckAvailabilityResult {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Gets or sets true if the name is available and can be used to\r\ncreate new Namespace/NotificationHub. Otherwise false."]
     #[serde(rename = "isAvailiable", default, skip_serializing_if = "Option::is_none")]
     pub is_availiable: Option<bool>,
@@ -294,8 +292,6 @@ impl ConnectionDetails {
 #[doc = "Description of a NotificationHub Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DebugSendResponse {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Result of DebugSend operations."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DebugSendResult>,
@@ -1069,8 +1065,6 @@ impl PnsCredentials {
 #[doc = "Description of a NotificationHub PNS Credentials. This is a response of the POST requests that return namespace or hubs\r\nPNS credentials."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PnsCredentialsResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Collection of Notification Hub or Notification Hub Namespace PNS credentials."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PnsCredentials>,
@@ -1217,8 +1211,6 @@ impl Serialize for PrivateEndpointConnectionProvisioningState {
 #[doc = "Represents a Private Endpoint Connection ARM resource - a sub-resource of Notification Hubs namespace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Private Endpoint Connection properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
@@ -1297,8 +1289,6 @@ impl Serialize for PrivateLinkConnectionStatus {
 #[doc = "A Private Link Arm Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Represents properties of Private Link Resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
@@ -1691,8 +1681,6 @@ impl SharedAccessAuthorizationRuleProperties {
 #[doc = "Response for POST requests that return single SharedAccessAuthorizationRule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedAccessAuthorizationRuleResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "SharedAccessAuthorizationRule properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SharedAccessAuthorizationRuleProperties>,

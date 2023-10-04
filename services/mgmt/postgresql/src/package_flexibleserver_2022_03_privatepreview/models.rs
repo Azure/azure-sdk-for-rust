@@ -185,8 +185,6 @@ impl CloudError {
 #[doc = "Represents a Configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Configuration {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProperties>,
@@ -313,8 +311,6 @@ pub mod configuration_properties {
 #[doc = "Represents a Database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Database {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseProperties>,
@@ -433,8 +429,6 @@ impl ErrorResponse {
 #[doc = "Represents a server firewall rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirewallRule {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a server firewall rule."]
     pub properties: FirewallRuleProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -444,7 +438,6 @@ pub struct FirewallRule {
 impl FirewallRule {
     pub fn new(properties: FirewallRuleProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -1073,8 +1066,6 @@ impl Server {
 #[doc = "Server backup properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerBackup {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a server backup."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerBackupProperties>,

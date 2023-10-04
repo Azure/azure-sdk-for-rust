@@ -7,8 +7,6 @@ use std::str::FromStr;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AnalyticsConnector {
     #[serde(flatten)]
-    pub tagged_resource: TaggedResource,
-    #[serde(flatten)]
     pub service_managed_identity: ServiceManagedIdentity,
     #[doc = "Analytics Connector Properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -83,14 +81,6 @@ impl AnalyticsConnectorDataLakeDataDestination {
         }
     }
 }
-#[doc = "Data source for Analytics Connector. The target resource must be in the same workspace with the Analytics Connector."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AnalyticsConnectorDataSource {}
-impl AnalyticsConnectorDataSource {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Type of data source."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -101,24 +91,14 @@ pub enum AnalyticsConnectorDataSourceUnion {
 #[doc = "The FHIR service data source for Analytics Connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnalyticsConnectorFhirServiceDataSource {
-    #[serde(flatten)]
-    pub analytics_connector_data_source: AnalyticsConnectorDataSource,
     #[doc = "The URL of FHIR service."]
     pub url: String,
     #[doc = "The kind of FHIR Service."]
     pub kind: analytics_connector_fhir_service_data_source::Kind,
 }
 impl AnalyticsConnectorFhirServiceDataSource {
-    pub fn new(
-        analytics_connector_data_source: AnalyticsConnectorDataSource,
-        url: String,
-        kind: analytics_connector_fhir_service_data_source::Kind,
-    ) -> Self {
-        Self {
-            analytics_connector_data_source,
-            url,
-            kind,
-        }
+    pub fn new(url: String, kind: analytics_connector_fhir_service_data_source::Kind) -> Self {
+        Self { url, kind }
     }
 }
 pub mod analytics_connector_fhir_service_data_source {
@@ -165,8 +145,6 @@ pub mod analytics_connector_fhir_service_data_source {
 #[doc = "FHIR Service data mapping configuration for Analytics Connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnalyticsConnectorFhirToParquetMapping {
-    #[serde(flatten)]
-    pub analytics_connector_mapping: AnalyticsConnectorMapping,
     #[doc = "Artifact reference for filter configurations."]
     #[serde(rename = "filterConfigurationReference", default, skip_serializing_if = "Option::is_none")]
     pub filter_configuration_reference: Option<String>,
@@ -175,20 +153,11 @@ pub struct AnalyticsConnectorFhirToParquetMapping {
     pub extension_schema_reference: Option<String>,
 }
 impl AnalyticsConnectorFhirToParquetMapping {
-    pub fn new(analytics_connector_mapping: AnalyticsConnectorMapping) -> Self {
+    pub fn new() -> Self {
         Self {
-            analytics_connector_mapping,
             filter_configuration_reference: None,
             extension_schema_reference: None,
         }
-    }
-}
-#[doc = "Data mapping configuration for Analytics Connector."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AnalyticsConnectorMapping {}
-impl AnalyticsConnectorMapping {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "Type of data mapping."]
@@ -298,8 +267,6 @@ pub type DicomAudience = String;
 #[doc = "The description of Dicom Service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DicomService {
-    #[serde(flatten)]
-    pub tagged_resource: TaggedResource,
     #[serde(flatten)]
     pub service_managed_identity: ServiceManagedIdentity,
     #[doc = "Dicom Service properties."]
@@ -496,8 +463,6 @@ impl Serialize for FhirResourceVersionPolicy {
 #[doc = "The description of Fhir Service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FhirService {
-    #[serde(flatten)]
-    pub tagged_resource: TaggedResource,
     #[serde(flatten)]
     pub service_managed_identity: ServiceManagedIdentity,
     #[doc = "The kind of the service."]
@@ -767,8 +732,6 @@ impl FhirServiceProperties {
 #[doc = "IoT Connector definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotConnector {
-    #[serde(flatten)]
-    pub tagged_resource: TaggedResource,
     #[serde(flatten)]
     pub service_managed_identity: ServiceManagedIdentity,
     #[doc = "IoT Connector properties."]
@@ -2429,8 +2392,6 @@ impl UserAssignedIdentity {
 #[doc = "Workspace resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Workspace {
-    #[serde(flatten)]
-    pub tagged_resource: TaggedResource,
     #[doc = "Workspaces resource specific properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<workspace::Properties>,

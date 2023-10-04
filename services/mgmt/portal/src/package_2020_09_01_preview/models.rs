@@ -6,8 +6,6 @@ use std::str::FromStr;
 #[doc = "Tenant configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Configuration {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Tenant configuration properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProperties>,
@@ -132,14 +130,6 @@ impl DashboardListResult {
         Self::default()
     }
 }
-#[doc = "A dashboard part metadata."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DashboardPartMetadata {}
-impl DashboardPartMetadata {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The type of dashboard part."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -254,8 +244,6 @@ impl ErrorResponse {
 #[doc = "Markdown part metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MarkdownPartMetadata {
-    #[serde(flatten)]
-    pub dashboard_part_metadata: DashboardPartMetadata,
     #[doc = "Input to dashboard part."]
     #[serde(
         default,
@@ -268,9 +256,8 @@ pub struct MarkdownPartMetadata {
     pub settings: Option<markdown_part_metadata::Settings>,
 }
 impl MarkdownPartMetadata {
-    pub fn new(dashboard_part_metadata: DashboardPartMetadata) -> Self {
+    pub fn new() -> Self {
         Self {
-            dashboard_part_metadata,
             inputs: Vec::new(),
             settings: None,
         }

@@ -441,8 +441,6 @@ pub mod control_plane_endpoint_profile {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ControlPlaneProfile {
     #[serde(flatten)]
-    pub named_agent_pool_profile: NamedAgentPoolProfile,
-    #[serde(flatten)]
     pub control_plane_endpoint_profile: ControlPlaneEndpointProfile,
     #[serde(flatten)]
     pub linux_profile: LinuxProfile,
@@ -568,8 +566,6 @@ pub mod linux_profile_properties {
 #[doc = "LoadBalancerProfile - Profile of the cluster load balancer."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LoadBalancerProfile {
-    #[serde(flatten)]
-    pub named_agent_pool_profile: NamedAgentPoolProfile,
     #[serde(flatten)]
     pub linux_profile: LinuxProfile,
 }
@@ -887,17 +883,12 @@ impl ProvisionedClusterPoolUpgradeProfileProperties {
 #[doc = "The list of available upgrades for compute pools."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProvisionedClusterUpgradeProfile {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Control plane and agent pool upgrade profiles."]
     pub properties: ProvisionedClusterUpgradeProfileProperties,
 }
 impl ProvisionedClusterUpgradeProfile {
     pub fn new(properties: ProvisionedClusterUpgradeProfileProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "Control plane and agent pool upgrade profiles."]
@@ -1396,8 +1387,6 @@ impl HttpProxyConfigResponse {
 #[doc = "Defines the hybridIdentityMetadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HybridIdentityMetadata {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Defines the resource properties."]
     pub properties: HybridIdentityMetadataProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -1407,7 +1396,6 @@ pub struct HybridIdentityMetadata {
 impl HybridIdentityMetadata {
     pub fn new(properties: HybridIdentityMetadataProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }

@@ -1099,8 +1099,6 @@ impl ApplicationInsightsWebTestLocationsListResult {
 #[doc = "An Application Insights component linked storage accounts"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ComponentLinkedStorageAccounts {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "An Application Insights component linked storage account"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LinkedStorageAccountsProperties>,

@@ -121,8 +121,6 @@ impl ActivityRunsListResponse {
 #[doc = "Azure Key Vault secret reference."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureKeyVaultSecretReference {
-    #[serde(flatten)]
-    pub secret_base: SecretBase,
     #[doc = "Linked service reference type."]
     pub store: LinkedServiceReference,
     #[doc = "The name of the secret in Azure Key Vault. Type: string (or Expression with resultType string)."]
@@ -133,9 +131,8 @@ pub struct AzureKeyVaultSecretReference {
     pub secret_version: Option<serde_json::Value>,
 }
 impl AzureKeyVaultSecretReference {
-    pub fn new(secret_base: SecretBase, store: LinkedServiceReference, secret_name: serde_json::Value) -> Self {
+    pub fn new(store: LinkedServiceReference, secret_name: serde_json::Value) -> Self {
         Self {
-            secret_base,
             store,
             secret_name,
             secret_version: None,
@@ -1674,14 +1671,6 @@ impl Resource {
         Self::default()
     }
 }
-#[doc = "The base definition of a secret type."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretBase {}
-impl SecretBase {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Type of the secret."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -1692,14 +1681,12 @@ pub enum SecretBaseUnion {
 #[doc = "Azure Data Factory secure string definition. The string value will be masked with asterisks '*' during Get or List API calls."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecureString {
-    #[serde(flatten)]
-    pub secret_base: SecretBase,
     #[doc = "Value of secure string."]
     pub value: String,
 }
 impl SecureString {
-    pub fn new(secret_base: SecretBase, value: String) -> Self {
-        Self { secret_base, value }
+    pub fn new(value: String) -> Self {
+        Self { value }
     }
 }
 #[doc = "Properties of Self-hosted integration runtime node."]

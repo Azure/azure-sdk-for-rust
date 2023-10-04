@@ -406,8 +406,6 @@ pub mod sku {
 #[doc = "A SQL server."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlServer {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The SQL server properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SqlServerProperties>,

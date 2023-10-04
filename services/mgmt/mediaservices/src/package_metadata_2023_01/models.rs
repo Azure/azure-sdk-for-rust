@@ -62,14 +62,12 @@ pub mod aac_audio {
 #[doc = "Specifies the clip time as an absolute time position in the media file.  The absolute time can point to a different position depending on whether the media file starts from a timestamp of zero or not."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AbsoluteClipTime {
-    #[serde(flatten)]
-    pub clip_time: ClipTime,
     #[doc = "The time position on the timeline of the input media. It is usually specified as an ISO8601 period. e.g PT30S for 30 seconds."]
     pub time: String,
 }
 impl AbsoluteClipTime {
-    pub fn new(clip_time: ClipTime, time: String) -> Self {
-        Self { clip_time, time }
+    pub fn new(time: String) -> Self {
+        Self { time }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -197,8 +195,6 @@ pub mod account_encryption {
 #[doc = "An Account Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountFilter {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The Media Filter properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MediaFilterProperties>,
@@ -337,8 +333,6 @@ impl ArmStreamingEndpointSkuInfo {
 #[doc = "An Asset."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Asset {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The Asset properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AssetProperties>,
@@ -418,8 +412,6 @@ impl AssetFileEncryptionMetadata {
 #[doc = "An Asset Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetFilter {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The Media Filter properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MediaFilterProperties>,
@@ -571,8 +563,6 @@ impl AssetStreamingLocator {
 #[doc = "An Asset Track resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetTrack {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a video, audio or text track in the asset."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AssetTrackProperties>,
@@ -781,8 +771,6 @@ impl Audio {
 #[doc = "The Audio Analyzer preset applies a pre-defined set of AI-based analysis operations, including speech transcription. Currently, the preset supports processing of content with a single audio track."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AudioAnalyzerPreset {
-    #[serde(flatten)]
-    pub preset: Preset,
     #[doc = "The language for the audio payload in the input using the BCP-47 format of 'language tag-region' (e.g: 'en-US').  If you know the language of your content, it is recommended that you specify it. The language must be specified explicitly for AudioAnalysisMode::Basic, since automatic language detection is not included in basic mode. If the language isn't specified or set to null, automatic language detection will choose the first language detected and process with the selected language for the duration of the file. It does not currently support dynamically switching between languages after the first language is detected. The automatic detection works best with audio recordings with clearly discernable speech. If automatic detection fails to find the language, transcription would fallback to 'en-US'.\" The list of supported languages is available here: https://go.microsoft.com/fwlink/?linkid=2109463"]
     #[serde(rename = "audioLanguage", default, skip_serializing_if = "Option::is_none")]
     pub audio_language: Option<String>,
@@ -794,9 +782,8 @@ pub struct AudioAnalyzerPreset {
     pub experimental_options: Option<serde_json::Value>,
 }
 impl AudioAnalyzerPreset {
-    pub fn new(preset: Preset) -> Self {
+    pub fn new() -> Self {
         Self {
-            preset,
             audio_language: None,
             mode: None,
             experimental_options: None,
@@ -857,8 +844,6 @@ impl AudioOverlay {
 #[doc = "Represents an audio track in the asset."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AudioTrack {
-    #[serde(flatten)]
-    pub track_base: TrackBase,
     #[doc = "The file name to the source file. This file is located in the storage container of the asset."]
     #[serde(rename = "fileName", default, skip_serializing_if = "Option::is_none")]
     pub file_name: Option<String>,
@@ -882,9 +867,8 @@ pub struct AudioTrack {
     pub bit_rate: Option<i32>,
 }
 impl AudioTrack {
-    pub fn new(track_base: TrackBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            track_base,
             file_name: None,
             display_name: None,
             language_code: None,
@@ -898,18 +882,13 @@ impl AudioTrack {
 #[doc = "A TrackSelection to select audio tracks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AudioTrackDescriptor {
-    #[serde(flatten)]
-    pub track_descriptor: TrackDescriptor,
     #[doc = "Optional designation for single channel audio tracks.  Can be used to combine the tracks into stereo or multi-channel audio tracks."]
     #[serde(rename = "channelMapping", default, skip_serializing_if = "Option::is_none")]
     pub channel_mapping: Option<audio_track_descriptor::ChannelMapping>,
 }
 impl AudioTrackDescriptor {
-    pub fn new(track_descriptor: TrackDescriptor) -> Self {
-        Self {
-            track_descriptor,
-            channel_mapping: None,
-        }
+    pub fn new() -> Self {
+        Self { channel_mapping: None }
     }
 }
 pub mod audio_track_descriptor {
@@ -967,8 +946,6 @@ pub mod audio_track_descriptor {
 #[doc = "Describes a built-in preset for encoding the input video with the Standard Encoder."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BuiltInStandardEncoderPreset {
-    #[serde(flatten)]
-    pub preset: Preset,
     #[doc = "An object of optional configuration settings for encoder."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub configurations: Option<PresetConfigurations>,
@@ -977,9 +954,8 @@ pub struct BuiltInStandardEncoderPreset {
     pub preset_name: built_in_standard_encoder_preset::PresetName,
 }
 impl BuiltInStandardEncoderPreset {
-    pub fn new(preset: Preset, preset_name: built_in_standard_encoder_preset::PresetName) -> Self {
+    pub fn new(preset_name: built_in_standard_encoder_preset::PresetName) -> Self {
         Self {
-            preset,
             configurations: None,
             preset_name,
         }
@@ -1121,14 +1097,6 @@ impl ClearKeyEncryptionConfiguration {
         Self::default()
     }
 }
-#[doc = "Base class for specifying a clip time. Use sub classes of this class to specify the time position in the media."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClipTime {}
-impl ClipTime {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
@@ -1224,8 +1192,6 @@ impl CommonEncryptionCenc {
 #[doc = "A Content Key Policy resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentKeyPolicy {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of the Content Key Policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ContentKeyPolicyProperties>,
@@ -1240,15 +1206,10 @@ impl ContentKeyPolicy {
 }
 #[doc = "Represents a configuration for non-DRM keys."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContentKeyPolicyClearKeyConfiguration {
-    #[serde(flatten)]
-    pub content_key_policy_configuration: ContentKeyPolicyConfiguration,
-}
+pub struct ContentKeyPolicyClearKeyConfiguration {}
 impl ContentKeyPolicyClearKeyConfiguration {
-    pub fn new(content_key_policy_configuration: ContentKeyPolicyConfiguration) -> Self {
-        Self {
-            content_key_policy_configuration,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "A collection of ContentKeyPolicy items."]
@@ -1276,14 +1237,6 @@ impl ContentKeyPolicyCollection {
         Self::default()
     }
 }
-#[doc = "Base class for Content Key Policy configuration. A derived class must be used to create a configuration."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContentKeyPolicyConfiguration {}
-impl ContentKeyPolicyConfiguration {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
@@ -1302,8 +1255,6 @@ pub enum ContentKeyPolicyConfigurationUnion {
 #[doc = "Specifies a configuration for FairPlay licenses."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyFairPlayConfiguration {
-    #[serde(flatten)]
-    pub content_key_policy_configuration: ContentKeyPolicyConfiguration,
     #[doc = "The key that must be used as FairPlay Application Secret key. This needs to be base64 encoded."]
     pub ask: String,
     #[doc = "The password encrypting FairPlay certificate in PKCS 12 (pfx) format."]
@@ -1323,7 +1274,6 @@ pub struct ContentKeyPolicyFairPlayConfiguration {
 }
 impl ContentKeyPolicyFairPlayConfiguration {
     pub fn new(
-        content_key_policy_configuration: ContentKeyPolicyConfiguration,
         ask: String,
         fair_play_pfx_password: String,
         fair_play_pfx: String,
@@ -1331,7 +1281,6 @@ impl ContentKeyPolicyFairPlayConfiguration {
         rental_duration: i64,
     ) -> Self {
         Self {
-            content_key_policy_configuration,
             ask,
             fair_play_pfx_password,
             fair_play_pfx,
@@ -1406,15 +1355,10 @@ impl ContentKeyPolicyFairPlayOfflineRentalConfiguration {
 }
 #[doc = "Represents an open restriction. License or key will be delivered on every request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContentKeyPolicyOpenRestriction {
-    #[serde(flatten)]
-    pub content_key_policy_restriction: ContentKeyPolicyRestriction,
-}
+pub struct ContentKeyPolicyOpenRestriction {}
 impl ContentKeyPolicyOpenRestriction {
-    pub fn new(content_key_policy_restriction: ContentKeyPolicyRestriction) -> Self {
-        Self {
-            content_key_policy_restriction,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Represents a policy option."]
@@ -1444,8 +1388,6 @@ impl ContentKeyPolicyOption {
 #[doc = "Specifies a configuration for PlayReady licenses."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyPlayReadyConfiguration {
-    #[serde(flatten)]
-    pub content_key_policy_configuration: ContentKeyPolicyConfiguration,
     #[doc = "The PlayReady licenses."]
     pub licenses: Vec<ContentKeyPolicyPlayReadyLicense>,
     #[doc = "The custom response data."]
@@ -1453,9 +1395,8 @@ pub struct ContentKeyPolicyPlayReadyConfiguration {
     pub response_custom_data: Option<String>,
 }
 impl ContentKeyPolicyPlayReadyConfiguration {
-    pub fn new(content_key_policy_configuration: ContentKeyPolicyConfiguration, licenses: Vec<ContentKeyPolicyPlayReadyLicense>) -> Self {
+    pub fn new(licenses: Vec<ContentKeyPolicyPlayReadyLicense>) -> Self {
         Self {
-            content_key_policy_configuration,
             licenses,
             response_custom_data: None,
         }
@@ -1463,40 +1404,22 @@ impl ContentKeyPolicyPlayReadyConfiguration {
 }
 #[doc = "Specifies that the content key ID is in the PlayReady header."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContentKeyPolicyPlayReadyContentEncryptionKeyFromHeader {
-    #[serde(flatten)]
-    pub content_key_policy_play_ready_content_key_location: ContentKeyPolicyPlayReadyContentKeyLocation,
-}
+pub struct ContentKeyPolicyPlayReadyContentEncryptionKeyFromHeader {}
 impl ContentKeyPolicyPlayReadyContentEncryptionKeyFromHeader {
-    pub fn new(content_key_policy_play_ready_content_key_location: ContentKeyPolicyPlayReadyContentKeyLocation) -> Self {
-        Self {
-            content_key_policy_play_ready_content_key_location,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Specifies that the content key ID is specified in the PlayReady configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyPlayReadyContentEncryptionKeyFromKeyIdentifier {
-    #[serde(flatten)]
-    pub content_key_policy_play_ready_content_key_location: ContentKeyPolicyPlayReadyContentKeyLocation,
     #[doc = "The content key ID."]
     #[serde(rename = "keyId")]
     pub key_id: String,
 }
 impl ContentKeyPolicyPlayReadyContentEncryptionKeyFromKeyIdentifier {
-    pub fn new(content_key_policy_play_ready_content_key_location: ContentKeyPolicyPlayReadyContentKeyLocation, key_id: String) -> Self {
-        Self {
-            content_key_policy_play_ready_content_key_location,
-            key_id,
-        }
-    }
-}
-#[doc = "Base class for content key ID location. A derived class must be used to represent the location."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContentKeyPolicyPlayReadyContentKeyLocation {}
-impl ContentKeyPolicyPlayReadyContentKeyLocation {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(key_id: String) -> Self {
+        Self { key_id }
     }
 }
 #[doc = "The discriminator for derived types."]
@@ -1860,14 +1783,6 @@ impl ContentKeyPolicyProperties {
         }
     }
 }
-#[doc = "Base class for Content Key Policy restrictions. A derived class must be used to create a restriction."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContentKeyPolicyRestriction {}
-impl ContentKeyPolicyRestriction {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
@@ -1878,14 +1793,6 @@ pub enum ContentKeyPolicyRestrictionUnion {
     MicrosoftMediaContentKeyPolicyTokenRestriction(ContentKeyPolicyTokenRestriction),
     #[serde(rename = "#Microsoft.Media.ContentKeyPolicyUnknownRestriction")]
     MicrosoftMediaContentKeyPolicyUnknownRestriction(ContentKeyPolicyUnknownRestriction),
-}
-#[doc = "Base class for Content Key Policy key for token validation. A derived class must be used to create a token key."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContentKeyPolicyRestrictionTokenKey {}
-impl ContentKeyPolicyRestrictionTokenKey {
-    pub fn new() -> Self {
-        Self {}
-    }
 }
 #[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1901,37 +1808,26 @@ pub enum ContentKeyPolicyRestrictionTokenKeyUnion {
 #[doc = "Specifies a RSA key for token validation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyRsaTokenKey {
-    #[serde(flatten)]
-    pub content_key_policy_restriction_token_key: ContentKeyPolicyRestrictionTokenKey,
     #[doc = "The RSA Parameter exponent"]
     pub exponent: String,
     #[doc = "The RSA Parameter modulus"]
     pub modulus: String,
 }
 impl ContentKeyPolicyRsaTokenKey {
-    pub fn new(content_key_policy_restriction_token_key: ContentKeyPolicyRestrictionTokenKey, exponent: String, modulus: String) -> Self {
-        Self {
-            content_key_policy_restriction_token_key,
-            exponent,
-            modulus,
-        }
+    pub fn new(exponent: String, modulus: String) -> Self {
+        Self { exponent, modulus }
     }
 }
 #[doc = "Specifies a symmetric key for token validation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicySymmetricTokenKey {
-    #[serde(flatten)]
-    pub content_key_policy_restriction_token_key: ContentKeyPolicyRestrictionTokenKey,
     #[doc = "The key value of the key"]
     #[serde(rename = "keyValue")]
     pub key_value: String,
 }
 impl ContentKeyPolicySymmetricTokenKey {
-    pub fn new(content_key_policy_restriction_token_key: ContentKeyPolicyRestrictionTokenKey, key_value: String) -> Self {
-        Self {
-            content_key_policy_restriction_token_key,
-            key_value,
-        }
+    pub fn new(key_value: String) -> Self {
+        Self { key_value }
     }
 }
 #[doc = "Represents a token claim."]
@@ -1952,8 +1848,6 @@ impl ContentKeyPolicyTokenClaim {
 #[doc = "Represents a token restriction. Provided token must match these requirements for successful license or key delivery."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyTokenRestriction {
-    #[serde(flatten)]
-    pub content_key_policy_restriction: ContentKeyPolicyRestriction,
     #[doc = "The token issuer."]
     pub issuer: String,
     #[doc = "The audience for the token."]
@@ -1986,14 +1880,12 @@ pub struct ContentKeyPolicyTokenRestriction {
 }
 impl ContentKeyPolicyTokenRestriction {
     pub fn new(
-        content_key_policy_restriction: ContentKeyPolicyRestriction,
         issuer: String,
         audience: String,
         primary_verification_key: ContentKeyPolicyRestrictionTokenKeyUnion,
         restriction_token_type: content_key_policy_token_restriction::RestrictionTokenType,
     ) -> Self {
         Self {
-            content_key_policy_restriction,
             issuer,
             audience,
             primary_verification_key,
@@ -2048,62 +1940,42 @@ pub mod content_key_policy_token_restriction {
 }
 #[doc = "Represents a ContentKeyPolicyConfiguration that is unavailable in the current API version."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContentKeyPolicyUnknownConfiguration {
-    #[serde(flatten)]
-    pub content_key_policy_configuration: ContentKeyPolicyConfiguration,
-}
+pub struct ContentKeyPolicyUnknownConfiguration {}
 impl ContentKeyPolicyUnknownConfiguration {
-    pub fn new(content_key_policy_configuration: ContentKeyPolicyConfiguration) -> Self {
-        Self {
-            content_key_policy_configuration,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Represents a ContentKeyPolicyRestriction that is unavailable in the current API version."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContentKeyPolicyUnknownRestriction {
-    #[serde(flatten)]
-    pub content_key_policy_restriction: ContentKeyPolicyRestriction,
-}
+pub struct ContentKeyPolicyUnknownRestriction {}
 impl ContentKeyPolicyUnknownRestriction {
-    pub fn new(content_key_policy_restriction: ContentKeyPolicyRestriction) -> Self {
-        Self {
-            content_key_policy_restriction,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Specifies a configuration for Widevine licenses."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyWidevineConfiguration {
-    #[serde(flatten)]
-    pub content_key_policy_configuration: ContentKeyPolicyConfiguration,
     #[doc = "The Widevine template."]
     #[serde(rename = "widevineTemplate")]
     pub widevine_template: String,
 }
 impl ContentKeyPolicyWidevineConfiguration {
-    pub fn new(content_key_policy_configuration: ContentKeyPolicyConfiguration, widevine_template: String) -> Self {
-        Self {
-            content_key_policy_configuration,
-            widevine_template,
-        }
+    pub fn new(widevine_template: String) -> Self {
+        Self { widevine_template }
     }
 }
 #[doc = "Specifies a certificate for token validation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContentKeyPolicyX509CertificateTokenKey {
-    #[serde(flatten)]
-    pub content_key_policy_restriction_token_key: ContentKeyPolicyRestrictionTokenKey,
     #[doc = "The raw data field of a certificate in PKCS 12 format (X509Certificate2 in .NET)"]
     #[serde(rename = "rawBody")]
     pub raw_body: String,
 }
 impl ContentKeyPolicyX509CertificateTokenKey {
-    pub fn new(content_key_policy_restriction_token_key: ContentKeyPolicyRestrictionTokenKey, raw_body: String) -> Self {
-        Self {
-            content_key_policy_restriction_token_key,
-            raw_body,
-        }
+    pub fn new(raw_body: String) -> Self {
+        Self { raw_body }
     }
 }
 #[doc = "A codec flag, which tells the encoder to copy the input audio bitstream."]
@@ -2461,8 +2333,6 @@ impl ErrorResponse {
 #[doc = "Describes all the settings to be used when analyzing a video in order to detect (and optionally redact) all the faces present."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FaceDetectorPreset {
-    #[serde(flatten)]
-    pub preset: Preset,
     #[doc = "Specifies the maximum resolution at which your video is analyzed. The default behavior is \"SourceResolution,\" which will keep the input video at its original resolution when analyzed. Using \"StandardDefinition\" will resize input videos to standard definition while preserving the appropriate aspect ratio. It will only resize if the video is of higher resolution. For example, a 1920x1080 input would be scaled to 640x360 before processing. Switching to \"StandardDefinition\" will reduce the time it takes to process high resolution video. It may also reduce the cost of using this component (see https://azure.microsoft.com/en-us/pricing/details/media-services/#analytics for details). However, faces that end up being too small in the resized video may not be detected."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resolution: Option<face_detector_preset::Resolution>,
@@ -2477,9 +2347,8 @@ pub struct FaceDetectorPreset {
     pub experimental_options: Option<serde_json::Value>,
 }
 impl FaceDetectorPreset {
-    pub fn new(preset: Preset) -> Self {
+    pub fn new() -> Self {
         Self {
-            preset,
             resolution: None,
             mode: None,
             blur_type: None,
@@ -3454,8 +3323,6 @@ impl InputFile {
 #[doc = "A Job resource type. The progress and state can be obtained by polling a Job or subscribing to events using EventGrid."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Job {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of the Job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobProperties>,
@@ -3674,14 +3541,6 @@ impl JobErrorDetail {
         Self::default()
     }
 }
-#[doc = "Base class for inputs to a Job."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobInput {}
-impl JobInput {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
@@ -3713,8 +3572,6 @@ impl JobInputAsset {
 #[doc = "Represents input files for a Job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInputClip {
-    #[serde(flatten)]
-    pub job_input: JobInput,
     #[doc = "List of files. Required for JobInputHttp. Maximum of 4000 characters each. Query strings will not be returned in service responses to prevent sensitive data exposure."]
     #[serde(
         default,
@@ -3741,9 +3598,8 @@ pub struct JobInputClip {
     pub input_definitions: Vec<InputDefinitionUnion>,
 }
 impl JobInputClip {
-    pub fn new(job_input: JobInput) -> Self {
+    pub fn new() -> Self {
         Self {
-            job_input,
             files: Vec::new(),
             start: None,
             end: None,
@@ -3772,8 +3628,6 @@ impl JobInputHttp {
 #[doc = "A Sequence contains an ordered list of Clips where each clip is a JobInput.  The Sequence will be treated as a single input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInputSequence {
-    #[serde(flatten)]
-    pub job_input: JobInput,
     #[doc = "JobInputs that make up the timeline."]
     #[serde(
         default,
@@ -3783,18 +3637,13 @@ pub struct JobInputSequence {
     pub inputs: Vec<JobInputClip>,
 }
 impl JobInputSequence {
-    pub fn new(job_input: JobInput) -> Self {
-        Self {
-            job_input,
-            inputs: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { inputs: Vec::new() }
     }
 }
 #[doc = "Describes a list of inputs to a Job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobInputs {
-    #[serde(flatten)]
-    pub job_input: JobInput,
     #[doc = "List of inputs to a Job."]
     #[serde(
         default,
@@ -3804,11 +3653,8 @@ pub struct JobInputs {
     pub inputs: Vec<JobInputUnion>,
 }
 impl JobInputs {
-    pub fn new(job_input: JobInput) -> Self {
-        Self {
-            job_input,
-            inputs: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { inputs: Vec::new() }
     }
 }
 #[doc = "Describes all the properties of a JobOutput."]
@@ -4059,13 +3905,10 @@ pub mod job_properties {
 }
 #[doc = "Describes the settings for producing JPEG thumbnails."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JpgFormat {
-    #[serde(flatten)]
-    pub image_format: ImageFormat,
-}
+pub struct JpgFormat {}
 impl JpgFormat {
-    pub fn new(image_format: ImageFormat) -> Self {
-        Self { image_format }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Describes the properties for producing a series of JPEG images from the input video."]
@@ -5538,8 +5381,6 @@ impl LiveEventTranscription {
 #[doc = "The Live Output."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveOutput {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The JSON object that contains the properties required to create a live output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LiveOutputProperties>,
@@ -6449,13 +6290,10 @@ pub enum OverlayUnion {
 }
 #[doc = "Describes the settings for producing PNG thumbnails."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PngFormat {
-    #[serde(flatten)]
-    pub image_format: ImageFormat,
-}
+pub struct PngFormat {}
 impl PngFormat {
-    pub fn new(image_format: ImageFormat) -> Self {
-        Self { image_format }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Describes the properties for producing a series of PNG images from the input video."]
@@ -6512,14 +6350,6 @@ pub struct PresentationTimeRange {
 impl PresentationTimeRange {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Base type for all Presets, which define the recipe or instructions on how the input media files should be processed."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Preset {}
-impl Preset {
-    pub fn new() -> Self {
-        Self {}
     }
 }
 #[doc = "The discriminator for derived types."]
@@ -7074,8 +6904,6 @@ impl SelectAudioTrackById {
 #[doc = "Select video tracks from the input by specifying an attribute and an attribute filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SelectVideoTrackByAttribute {
-    #[serde(flatten)]
-    pub video_track_descriptor: VideoTrackDescriptor,
     #[doc = "The TrackAttribute to filter the tracks by."]
     pub attribute: select_video_track_by_attribute::Attribute,
     #[doc = "The type of AttributeFilter to apply to the TrackAttribute in order to select the tracks."]
@@ -7085,13 +6913,8 @@ pub struct SelectVideoTrackByAttribute {
     pub filter_value: Option<String>,
 }
 impl SelectVideoTrackByAttribute {
-    pub fn new(
-        video_track_descriptor: VideoTrackDescriptor,
-        attribute: select_video_track_by_attribute::Attribute,
-        filter: select_video_track_by_attribute::Filter,
-    ) -> Self {
+    pub fn new(attribute: select_video_track_by_attribute::Attribute, filter: select_video_track_by_attribute::Filter) -> Self {
         Self {
-            video_track_descriptor,
             attribute,
             filter,
             filter_value: None,
@@ -7182,18 +7005,13 @@ pub mod select_video_track_by_attribute {
 #[doc = "Select video tracks from the input by specifying a track identifier."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SelectVideoTrackById {
-    #[serde(flatten)]
-    pub video_track_descriptor: VideoTrackDescriptor,
     #[doc = "Track identifier to select"]
     #[serde(rename = "trackId")]
     pub track_id: i64,
 }
 impl SelectVideoTrackById {
-    pub fn new(video_track_descriptor: VideoTrackDescriptor, track_id: i64) -> Self {
-        Self {
-            video_track_descriptor,
-            track_id,
-        }
+    pub fn new(track_id: i64) -> Self {
+        Self { track_id }
     }
 }
 #[doc = "The service metric specifications."]
@@ -7224,8 +7042,6 @@ impl ServiceSpecification {
 #[doc = "Describes all the settings to be used when encoding the input video with the Standard Encoder."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StandardEncoderPreset {
-    #[serde(flatten)]
-    pub preset: Preset,
     #[doc = "Dictionary containing key value pairs for parameters not exposed in the preset itself"]
     #[serde(rename = "experimentalOptions", default, skip_serializing_if = "Option::is_none")]
     pub experimental_options: Option<serde_json::Value>,
@@ -7238,9 +7054,8 @@ pub struct StandardEncoderPreset {
     pub formats: Vec<FormatUnion>,
 }
 impl StandardEncoderPreset {
-    pub fn new(preset: Preset, codecs: Vec<CodecUnion>, formats: Vec<FormatUnion>) -> Self {
+    pub fn new(codecs: Vec<CodecUnion>, formats: Vec<FormatUnion>) -> Self {
         Self {
-            preset,
             experimental_options: None,
             filters: None,
             codecs,
@@ -7558,8 +7373,6 @@ impl StreamingEntityScaleUnit {
 #[doc = "A Streaming Locator resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingLocator {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of the Streaming Locator."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StreamingLocatorProperties>,
@@ -7849,8 +7662,6 @@ pub mod streaming_path {
 #[doc = "A Streaming Policy resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicy {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Class to specify properties of Streaming Policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StreamingPolicyProperties>,
@@ -8017,8 +7828,6 @@ impl SyncStorageKeysInput {
 #[doc = "Represents a text track in an asset. A text track is usually used for sparse data related to the audio or video tracks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TextTrack {
-    #[serde(flatten)]
-    pub track_base: TrackBase,
     #[doc = "The file name to the source file. This file is located in the storage container of the asset."]
     #[serde(rename = "fileName", default, skip_serializing_if = "Option::is_none")]
     pub file_name: Option<String>,
@@ -8036,9 +7845,8 @@ pub struct TextTrack {
     pub hls_settings: Option<HlsSettings>,
 }
 impl TextTrack {
-    pub fn new(track_base: TrackBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            track_base,
             file_name: None,
             display_name: None,
             language_code: None,
@@ -8087,14 +7895,6 @@ pub mod text_track {
         }
     }
 }
-#[doc = "Base type for concrete track types. A derived type must be used to represent the Track."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TrackBase {}
-impl TrackBase {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
@@ -8105,14 +7905,6 @@ pub enum TrackBaseUnion {
     MicrosoftMediaTextTrack(TextTrack),
     #[serde(rename = "#Microsoft.Media.VideoTrack")]
     MicrosoftMediaVideoTrack(VideoTrack),
-}
-#[doc = "Base type for all TrackDescriptor types, which define the metadata and selection for tracks that should be processed by a Job"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TrackDescriptor {}
-impl TrackDescriptor {
-    pub fn new() -> Self {
-        Self {}
-    }
 }
 #[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -8261,8 +8053,6 @@ impl TrackedResource {
 #[doc = "A Transform encapsulates the rules or instructions for generating desired outputs from input media, such as by transcoding or by extracting insights. After the Transform is created, it can be applied to input media by creating Jobs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Transform {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "A Transform."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TransformProperties>,
@@ -8461,15 +8251,13 @@ impl UserAssignedManagedIdentity {
 #[doc = "Specifies the clip time as a Utc time position in the media file.  The Utc time can point to a different position depending on whether the media file starts from a timestamp of zero or not."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UtcClipTime {
-    #[serde(flatten)]
-    pub clip_time: ClipTime,
     #[doc = "The time position on the timeline of the input media based on Utc time."]
     #[serde(with = "azure_core::date::rfc3339")]
     pub time: time::OffsetDateTime,
 }
 impl UtcClipTime {
-    pub fn new(clip_time: ClipTime, time: time::OffsetDateTime) -> Self {
-        Self { clip_time, time }
+    pub fn new(time: time::OffsetDateTime) -> Self {
+        Self { time }
     }
 }
 #[doc = "Describes the basic properties for encoding the input video."]
@@ -8702,24 +8490,18 @@ impl VideoOverlay {
 }
 #[doc = "Represents a video track in the asset."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VideoTrack {
-    #[serde(flatten)]
-    pub track_base: TrackBase,
-}
+pub struct VideoTrack {}
 impl VideoTrack {
-    pub fn new(track_base: TrackBase) -> Self {
-        Self { track_base }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "A TrackSelection to select video tracks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct VideoTrackDescriptor {
-    #[serde(flatten)]
-    pub track_descriptor: TrackDescriptor,
-}
+pub struct VideoTrackDescriptor {}
 impl VideoTrackDescriptor {
-    pub fn new(track_descriptor: TrackDescriptor) -> Self {
-        Self { track_descriptor }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Metadata pertaining to creation and last modification of the resource."]

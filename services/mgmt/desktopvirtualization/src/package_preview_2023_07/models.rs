@@ -2485,8 +2485,6 @@ impl ScalingPlanPatchProperties {
 #[doc = "Represents a ScalingPlanPersonalSchedule definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScalingPlanPersonalSchedule {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -2496,7 +2494,6 @@ pub struct ScalingPlanPersonalSchedule {
 impl ScalingPlanPersonalSchedule {
     pub fn new(properties: ScalingPlanPersonalScheduleProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             system_data: None,
             properties,
         }

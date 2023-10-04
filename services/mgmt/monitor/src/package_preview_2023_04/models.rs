@@ -3792,14 +3792,6 @@ impl MetricAlertAction {
         Self::default()
     }
 }
-#[doc = "The rule criteria that defines the conditions of the alert rule."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricAlertCriteria {}
-impl MetricAlertCriteria {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "specifies the type of the alert criteria."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "odata.type")]
@@ -3814,8 +3806,6 @@ pub enum MetricAlertCriteriaUnion {
 #[doc = "Specifies the metric alert criteria for multiple resource that has multiple metric criteria."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertMultipleResourceMultipleMetricCriteria {
-    #[serde(flatten)]
-    pub metric_alert_criteria: MetricAlertCriteria,
     #[doc = "the list of multiple metric criteria for this 'all of' operation. "]
     #[serde(
         rename = "allOf",
@@ -3826,11 +3816,8 @@ pub struct MetricAlertMultipleResourceMultipleMetricCriteria {
     pub all_of: Vec<MultiMetricCriteriaUnion>,
 }
 impl MetricAlertMultipleResourceMultipleMetricCriteria {
-    pub fn new(metric_alert_criteria: MetricAlertCriteria) -> Self {
-        Self {
-            metric_alert_criteria,
-            all_of: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { all_of: Vec::new() }
     }
 }
 #[doc = "An alert rule."]
@@ -4011,8 +3998,6 @@ impl MetricAlertResourcePatch {
 #[doc = "Specifies the metric alert criteria for a single resource that has multiple metric criteria."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertSingleResourceMultipleMetricCriteria {
-    #[serde(flatten)]
-    pub metric_alert_criteria: MetricAlertCriteria,
     #[doc = "The list of metric criteria for this 'all of' operation. "]
     #[serde(
         rename = "allOf",
@@ -4023,11 +4008,8 @@ pub struct MetricAlertSingleResourceMultipleMetricCriteria {
     pub all_of: Vec<MetricCriteria>,
 }
 impl MetricAlertSingleResourceMultipleMetricCriteria {
-    pub fn new(metric_alert_criteria: MetricAlertCriteria) -> Self {
-        Self {
-            metric_alert_criteria,
-            all_of: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { all_of: Vec::new() }
     }
 }
 #[doc = "An alert status."]
@@ -5610,14 +5592,6 @@ impl RetentionPolicy {
         Self { enabled, days }
     }
 }
-#[doc = "The action that is performed when the alert rule becomes active, and when an alert condition is resolved."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RuleAction {}
-impl RuleAction {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "specifies the type of the action. There are two types of actions: RuleEmailAction and RuleWebhookAction."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "odata.type")]
@@ -5688,8 +5662,6 @@ pub enum RuleDataSourceUnion {
 #[doc = "Specifies the action to send email when the rule condition is evaluated. The discriminator is always RuleEmailAction in this case."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleEmailAction {
-    #[serde(flatten)]
-    pub rule_action: RuleAction,
     #[doc = "Whether the administrators (service and co-administrators) of the service should be notified when the alert is activated."]
     #[serde(rename = "sendToServiceOwners", default, skip_serializing_if = "Option::is_none")]
     pub send_to_service_owners: Option<bool>,
@@ -5703,9 +5675,8 @@ pub struct RuleEmailAction {
     pub custom_emails: Vec<String>,
 }
 impl RuleEmailAction {
-    pub fn new(rule_action: RuleAction) -> Self {
+    pub fn new() -> Self {
         Self {
-            rule_action,
             send_to_service_owners: None,
             custom_emails: Vec::new(),
         }
@@ -5807,8 +5778,6 @@ impl RuleResolveConfiguration {
 #[doc = "Specifies the action to post to service when the rule condition is evaluated. The discriminator is always RuleWebhookAction in this case."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleWebhookAction {
-    #[serde(flatten)]
-    pub rule_action: RuleAction,
     #[doc = "the service uri to Post the notification when the alert activates or resolves."]
     #[serde(rename = "serviceUri", default, skip_serializing_if = "Option::is_none")]
     pub service_uri: Option<String>,
@@ -5817,9 +5786,8 @@ pub struct RuleWebhookAction {
     pub properties: Option<serde_json::Value>,
 }
 impl RuleWebhookAction {
-    pub fn new(rule_action: RuleAction) -> Self {
+    pub fn new() -> Self {
         Self {
-            rule_action,
             service_uri: None,
             properties: None,
         }
@@ -6224,8 +6192,6 @@ impl ScheduledQueryRuleResourcePatch {
 #[doc = "A private link scoped resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopedResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a private link scoped resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScopedResourceProperties>,
@@ -7275,8 +7241,6 @@ impl WebhookReceiver {
 #[doc = "Specifies the metric alert rule criteria for a web test resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebtestLocationAvailabilityCriteria {
-    #[serde(flatten)]
-    pub metric_alert_criteria: MetricAlertCriteria,
     #[doc = "The Application Insights web test Id."]
     #[serde(rename = "webTestId")]
     pub web_test_id: String,
@@ -7288,9 +7252,8 @@ pub struct WebtestLocationAvailabilityCriteria {
     pub failed_location_count: f64,
 }
 impl WebtestLocationAvailabilityCriteria {
-    pub fn new(metric_alert_criteria: MetricAlertCriteria, web_test_id: String, component_id: String, failed_location_count: f64) -> Self {
+    pub fn new(web_test_id: String, component_id: String, failed_location_count: f64) -> Self {
         Self {
-            metric_alert_criteria,
             web_test_id,
             component_id,
             failed_location_count,

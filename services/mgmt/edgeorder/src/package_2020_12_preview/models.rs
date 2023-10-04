@@ -1769,8 +1769,6 @@ impl OrderProperties {
 #[doc = "Specifies the properties or parameters for an order. Order is a grouping of one or more order items."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrderResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "Represents order details."]
     pub properties: OrderProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -1780,7 +1778,6 @@ pub struct OrderResource {
 impl OrderResource {
     pub fn new(properties: OrderProperties) -> Self {
         Self {
-            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }

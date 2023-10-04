@@ -495,17 +495,12 @@ impl GroupConnectivityInformation {
 #[doc = "The group information for creating a private endpoint on an Account"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GroupInformation {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties for a group information object"]
     pub properties: GroupInformationProperties,
 }
 impl GroupInformation {
     pub fn new(properties: GroupInformationProperties) -> Self {
-        Self {
-            proxy_resource: ProxyResource::default(),
-            properties,
-        }
+        Self { properties }
     }
 }
 #[doc = "The properties for a group information object"]
@@ -1100,8 +1095,6 @@ impl Serialize for PrivateEndpointConnectionProvisioningState {
 #[doc = "Private endpoint connection proxy details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionProxy {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[serde(flatten)]
     pub private_endpoint_connection_proxy_properties: PrivateEndpointConnectionProxyProperties,
     #[doc = "Private endpoint connection proxy object property bag."]

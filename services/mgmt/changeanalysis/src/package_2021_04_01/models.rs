@@ -6,8 +6,6 @@ use std::str::FromStr;
 #[doc = "The detected change."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Change {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a change."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ChangeProperties>,

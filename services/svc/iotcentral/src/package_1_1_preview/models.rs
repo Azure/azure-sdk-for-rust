@@ -66,13 +66,6 @@ impl ApiTokenCollection {
         Self { value, next_link: None }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Attestation {}
-impl Attestation {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "Type of the attestation."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -98,13 +91,6 @@ impl BlobStorageV1Destination {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobStorageV1DestinationAuth {}
-impl BlobStorageV1DestinationAuth {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -116,8 +102,6 @@ pub enum BlobStorageV1DestinationAuthUnion {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobStorageV1DestinationConnectionStringAuth {
-    #[serde(flatten)]
-    pub blob_storage_v1_destination_auth: BlobStorageV1DestinationAuth,
     #[doc = "The connection string for accessing the blob storage account."]
     #[serde(rename = "connectionString")]
     pub connection_string: String,
@@ -126,9 +110,8 @@ pub struct BlobStorageV1DestinationConnectionStringAuth {
     pub container_name: String,
 }
 impl BlobStorageV1DestinationConnectionStringAuth {
-    pub fn new(blob_storage_v1_destination_auth: BlobStorageV1DestinationAuth, connection_string: String, container_name: String) -> Self {
+    pub fn new(connection_string: String, container_name: String) -> Self {
         Self {
-            blob_storage_v1_destination_auth,
             connection_string,
             container_name,
         }
@@ -136,8 +119,6 @@ impl BlobStorageV1DestinationConnectionStringAuth {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobStorageV1DestinationSystemAssignedManagedIdentityAuth {
-    #[serde(flatten)]
-    pub blob_storage_v1_destination_auth: BlobStorageV1DestinationAuth,
     #[doc = "The storage account's blob service endpoint URL."]
     #[serde(rename = "endpointUri")]
     pub endpoint_uri: String,
@@ -146,9 +127,8 @@ pub struct BlobStorageV1DestinationSystemAssignedManagedIdentityAuth {
     pub container_name: String,
 }
 impl BlobStorageV1DestinationSystemAssignedManagedIdentityAuth {
-    pub fn new(blob_storage_v1_destination_auth: BlobStorageV1DestinationAuth, endpoint_uri: String, container_name: String) -> Self {
+    pub fn new(endpoint_uri: String, container_name: String) -> Self {
         Self {
-            blob_storage_v1_destination_auth,
             endpoint_uri,
             container_name,
         }
@@ -217,13 +197,6 @@ impl DataExplorerV1Destination {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataExplorerV1DestinationAuth {}
-impl DataExplorerV1DestinationAuth {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -233,8 +206,6 @@ pub enum DataExplorerV1DestinationAuthUnion {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataExplorerV1DestinationServicePrincipalAuth {
-    #[serde(flatten)]
-    pub data_explorer_v1_destination_auth: DataExplorerV1DestinationAuth,
     #[doc = "Service Principal client ID."]
     #[serde(rename = "clientId")]
     pub client_id: String,
@@ -246,14 +217,8 @@ pub struct DataExplorerV1DestinationServicePrincipalAuth {
     pub client_secret: String,
 }
 impl DataExplorerV1DestinationServicePrincipalAuth {
-    pub fn new(
-        data_explorer_v1_destination_auth: DataExplorerV1DestinationAuth,
-        client_id: String,
-        tenant_id: String,
-        client_secret: String,
-    ) -> Self {
+    pub fn new(client_id: String, tenant_id: String, client_secret: String) -> Self {
         Self {
-            data_explorer_v1_destination_auth,
             client_id,
             tenant_id,
             client_secret,
@@ -681,13 +646,6 @@ impl EventHubsV1Destination {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventHubsV1DestinationAuth {}
-impl EventHubsV1DestinationAuth {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -699,24 +657,17 @@ pub enum EventHubsV1DestinationAuthUnion {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubsV1DestinationConnectionStringAuth {
-    #[serde(flatten)]
-    pub event_hubs_v1_destination_auth: EventHubsV1DestinationAuth,
     #[doc = "The connection string for accessing the Event Hubs namespace, including the `EntityPath` of the event hub."]
     #[serde(rename = "connectionString")]
     pub connection_string: String,
 }
 impl EventHubsV1DestinationConnectionStringAuth {
-    pub fn new(event_hubs_v1_destination_auth: EventHubsV1DestinationAuth, connection_string: String) -> Self {
-        Self {
-            event_hubs_v1_destination_auth,
-            connection_string,
-        }
+    pub fn new(connection_string: String) -> Self {
+        Self { connection_string }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubsV1DestinationSystemAssignedManagedIdentityAuth {
-    #[serde(flatten)]
-    pub event_hubs_v1_destination_auth: EventHubsV1DestinationAuth,
     #[doc = "The host name of the Event Hubs namespace."]
     #[serde(rename = "hostName")]
     pub host_name: String,
@@ -725,12 +676,8 @@ pub struct EventHubsV1DestinationSystemAssignedManagedIdentityAuth {
     pub event_hub_name: String,
 }
 impl EventHubsV1DestinationSystemAssignedManagedIdentityAuth {
-    pub fn new(event_hubs_v1_destination_auth: EventHubsV1DestinationAuth, host_name: String, event_hub_name: String) -> Self {
-        Self {
-            event_hubs_v1_destination_auth,
-            host_name,
-            event_hub_name,
-        }
+    pub fn new(host_name: String, event_hub_name: String) -> Self {
+        Self { host_name, event_hub_name }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1158,13 +1105,6 @@ impl ServiceBusQueueV1Destination {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceBusQueueV1DestinationAuth {}
-impl ServiceBusQueueV1DestinationAuth {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -1176,24 +1116,17 @@ pub enum ServiceBusQueueV1DestinationAuthUnion {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusQueueV1DestinationConnectionStringAuth {
-    #[serde(flatten)]
-    pub service_bus_queue_v1_destination_auth: ServiceBusQueueV1DestinationAuth,
     #[doc = "The connection string for accessing the Service Bus namespace, including the `EntityPath` of the queue."]
     #[serde(rename = "connectionString")]
     pub connection_string: String,
 }
 impl ServiceBusQueueV1DestinationConnectionStringAuth {
-    pub fn new(service_bus_queue_v1_destination_auth: ServiceBusQueueV1DestinationAuth, connection_string: String) -> Self {
-        Self {
-            service_bus_queue_v1_destination_auth,
-            connection_string,
-        }
+    pub fn new(connection_string: String) -> Self {
+        Self { connection_string }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusQueueV1DestinationSystemAssignedManagedIdentityAuth {
-    #[serde(flatten)]
-    pub service_bus_queue_v1_destination_auth: ServiceBusQueueV1DestinationAuth,
     #[doc = "The host name of the Service Bus namespace."]
     #[serde(rename = "hostName")]
     pub host_name: String,
@@ -1202,12 +1135,8 @@ pub struct ServiceBusQueueV1DestinationSystemAssignedManagedIdentityAuth {
     pub queue_name: String,
 }
 impl ServiceBusQueueV1DestinationSystemAssignedManagedIdentityAuth {
-    pub fn new(service_bus_queue_v1_destination_auth: ServiceBusQueueV1DestinationAuth, host_name: String, queue_name: String) -> Self {
-        Self {
-            service_bus_queue_v1_destination_auth,
-            host_name,
-            queue_name,
-        }
+    pub fn new(host_name: String, queue_name: String) -> Self {
+        Self { host_name, queue_name }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1224,13 +1153,6 @@ impl ServiceBusTopicV1Destination {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceBusTopicV1DestinationAuth {}
-impl ServiceBusTopicV1DestinationAuth {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -1242,24 +1164,17 @@ pub enum ServiceBusTopicV1DestinationAuthUnion {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusTopicV1DestinationConnectionStringAuth {
-    #[serde(flatten)]
-    pub service_bus_topic_v1_destination_auth: ServiceBusTopicV1DestinationAuth,
     #[doc = "The connection string for accessing the Service Bus namespace, including the `EntityPath` of the topic."]
     #[serde(rename = "connectionString")]
     pub connection_string: String,
 }
 impl ServiceBusTopicV1DestinationConnectionStringAuth {
-    pub fn new(service_bus_topic_v1_destination_auth: ServiceBusTopicV1DestinationAuth, connection_string: String) -> Self {
-        Self {
-            service_bus_topic_v1_destination_auth,
-            connection_string,
-        }
+    pub fn new(connection_string: String) -> Self {
+        Self { connection_string }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusTopicV1DestinationSystemAssignedManagedIdentityAuth {
-    #[serde(flatten)]
-    pub service_bus_topic_v1_destination_auth: ServiceBusTopicV1DestinationAuth,
     #[doc = "The host name of the Service Bus namespace."]
     #[serde(rename = "hostName")]
     pub host_name: String,
@@ -1268,12 +1183,8 @@ pub struct ServiceBusTopicV1DestinationSystemAssignedManagedIdentityAuth {
     pub topic_name: String,
 }
 impl ServiceBusTopicV1DestinationSystemAssignedManagedIdentityAuth {
-    pub fn new(service_bus_topic_v1_destination_auth: ServiceBusTopicV1DestinationAuth, host_name: String, topic_name: String) -> Self {
-        Self {
-            service_bus_topic_v1_destination_auth,
-            host_name,
-            topic_name,
-        }
+    pub fn new(host_name: String, topic_name: String) -> Self {
+        Self { host_name, topic_name }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1315,17 +1226,12 @@ impl SymmetricKey {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SymmetricKeyAttestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     #[serde(rename = "symmetricKey")]
     pub symmetric_key: SymmetricKey,
 }
 impl SymmetricKeyAttestation {
-    pub fn new(attestation: Attestation, symmetric_key: SymmetricKey) -> Self {
-        Self {
-            attestation,
-            symmetric_key,
-        }
+    pub fn new(symmetric_key: SymmetricKey) -> Self {
+        Self { symmetric_key }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1341,13 +1247,11 @@ impl Tpm {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TpmAttestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     pub tpm: Tpm,
 }
 impl TpmAttestation {
-    pub fn new(attestation: Attestation, tpm: Tpm) -> Self {
-        Self { attestation, tpm }
+    pub fn new(tpm: Tpm) -> Self {
+        Self { tpm }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1419,13 +1323,6 @@ impl WebhookV1Destination {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WebhookV1DestinationAuth {}
-impl WebhookV1DestinationAuth {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 #[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -1450,23 +1347,16 @@ impl WebhookV1DestinationCustomization {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebhookV1DestinationHeaderAuth {
-    #[serde(flatten)]
-    pub webhook_v1_destination_auth: WebhookV1DestinationAuth,
     #[doc = "Value to use for the Authorization header when making requests."]
     pub value: String,
 }
 impl WebhookV1DestinationHeaderAuth {
-    pub fn new(webhook_v1_destination_auth: WebhookV1DestinationAuth, value: String) -> Self {
-        Self {
-            webhook_v1_destination_auth,
-            value,
-        }
+    pub fn new(value: String) -> Self {
+        Self { value }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebhookV1DestinationOAuthAuth {
-    #[serde(flatten)]
-    pub webhook_v1_destination_auth: WebhookV1DestinationAuth,
     #[doc = "URL where an access token can be retrieved."]
     #[serde(rename = "tokenUrl")]
     pub token_url: String,
@@ -1487,9 +1377,8 @@ pub struct WebhookV1DestinationOAuthAuth {
     pub request_type: Option<webhook_v1_destination_o_auth_auth::RequestType>,
 }
 impl WebhookV1DestinationOAuthAuth {
-    pub fn new(webhook_v1_destination_auth: WebhookV1DestinationAuth, token_url: String, client_id: String, client_secret: String) -> Self {
+    pub fn new(token_url: String, client_id: String, client_secret: String) -> Self {
         Self {
-            webhook_v1_destination_auth,
             token_url,
             client_id,
             client_secret,
@@ -1524,13 +1413,11 @@ impl X509 {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509Attestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     pub x509: X509,
 }
 impl X509Attestation {
-    pub fn new(attestation: Attestation, x509: X509) -> Self {
-        Self { attestation, x509 }
+    pub fn new(x509: X509) -> Self {
+        Self { x509 }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
