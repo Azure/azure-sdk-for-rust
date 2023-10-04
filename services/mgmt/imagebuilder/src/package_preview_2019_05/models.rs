@@ -79,18 +79,16 @@ impl ImageTemplate {
 #[doc = "Describes a unit of image customization"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateCustomizer {
-    #[doc = "The type of customization tool you want to use on the Image. For example, \"Shell\" can be shell customizer"]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Friendly Name to provide context on what this customization step does"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 impl ImageTemplateCustomizer {
-    pub fn new(type_: String) -> Self {
-        Self { type_, name: None }
+    pub fn new() -> Self {
+        Self { name: None }
     }
 }
+#[doc = "The type of customization tool you want to use on the Image. For example, \"Shell\" can be shell customizer"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ImageTemplateCustomizerUnion {
@@ -102,9 +100,6 @@ pub enum ImageTemplateCustomizerUnion {
 #[doc = "Generic distribution object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateDistributor {
-    #[doc = "Type of distribution."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The name to be used for the associated RunOutput."]
     #[serde(rename = "runOutputName")]
     pub run_output_name: String,
@@ -113,14 +108,14 @@ pub struct ImageTemplateDistributor {
     pub artifact_tags: Option<serde_json::Value>,
 }
 impl ImageTemplateDistributor {
-    pub fn new(type_: String, run_output_name: String) -> Self {
+    pub fn new(run_output_name: String) -> Self {
         Self {
-            type_,
             run_output_name,
             artifact_tags: None,
         }
     }
 }
+#[doc = "Type of distribution."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ImageTemplateDistributorUnion {
@@ -513,16 +508,13 @@ impl ImageTemplateShellCustomizer {
 }
 #[doc = "Describes a virtual machine image source for building, customizing and distributing"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageTemplateSource {
-    #[doc = "Specifies the type of source image you want to start with."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct ImageTemplateSource {}
 impl ImageTemplateSource {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Specifies the type of source image you want to start with."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ImageTemplateSourceUnion {

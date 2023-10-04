@@ -56,27 +56,13 @@ impl ClientCertAuthentication {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HttpAuthentication {
-    #[doc = "Gets or sets the HTTP authentication type."]
-    #[serde(rename = "type")]
-    pub type_: http_authentication::Type,
-}
+pub struct HttpAuthentication {}
 impl HttpAuthentication {
-    pub fn new(type_: http_authentication::Type) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
-pub mod http_authentication {
-    use super::*;
-    #[doc = "Gets or sets the HTTP authentication type."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        NotSpecified,
-        ClientCertificate,
-        ActiveDirectoryOAuth,
-        Basic,
-    }
-}
+#[doc = "Gets or sets the HTTP authentication type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum HttpAuthenticationUnion {

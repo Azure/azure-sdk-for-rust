@@ -324,50 +324,10 @@ impl EventListener {
 }
 #[doc = "An endpoint specifying where Web PubSub should send events to."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventListenerEndpoint {
-    #[serde(rename = "type")]
-    pub type_: event_listener_endpoint::Type,
-}
+pub struct EventListenerEndpoint {}
 impl EventListenerEndpoint {
-    pub fn new(type_: event_listener_endpoint::Type) -> Self {
-        Self { type_ }
-    }
-}
-pub mod event_listener_endpoint {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        EventHub,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::EventHub => serializer.serialize_unit_variant("Type", 0u32, "EventHub"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -377,50 +337,10 @@ pub enum EventListenerEndpointUnion {
 }
 #[doc = "A base class for event filter which determines whether an event should be sent to an event listener."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventListenerFilter {
-    #[serde(rename = "type")]
-    pub type_: event_listener_filter::Type,
-}
+pub struct EventListenerFilter {}
 impl EventListenerFilter {
-    pub fn new(type_: event_listener_filter::Type) -> Self {
-        Self { type_ }
-    }
-}
-pub mod event_listener_filter {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        EventName,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::EventName => serializer.serialize_unit_variant("Type", 0u32, "EventName"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

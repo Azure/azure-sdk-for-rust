@@ -2217,16 +2217,13 @@ impl Serialize for OsType {
 }
 #[doc = "Describes how the service is partitioned."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Partition {
-    #[doc = "Enumerates the ways that a service can be partitioned."]
-    #[serde(rename = "partitionScheme")]
-    pub partition_scheme: PartitionScheme,
-}
+pub struct Partition {}
 impl Partition {
-    pub fn new(partition_scheme: PartitionScheme) -> Self {
-        Self { partition_scheme }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Enumerates the ways that a service can be partitioned."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "partitionScheme")]
 pub enum PartitionUnion {
@@ -2500,15 +2497,13 @@ pub mod rolling_upgrade_monitoring_policy {
 }
 #[doc = "Describes the mechanism for performing a scaling operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScalingMechanism {
-    #[doc = "Enumerates the ways that a service can be partitioned."]
-    pub kind: ServiceScalingMechanismKind,
-}
+pub struct ScalingMechanism {}
 impl ScalingMechanism {
-    pub fn new(kind: ServiceScalingMechanismKind) -> Self {
-        Self { kind }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Enumerates the ways that a service can be partitioned."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum ScalingMechanismUnion {
@@ -2536,15 +2531,13 @@ impl ScalingPolicy {
 pub type ScalingPolicyList = Vec<ScalingPolicy>;
 #[doc = "Describes the trigger for performing a scaling operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScalingTrigger {
-    #[doc = "Enumerates the ways that a service can be partitioned."]
-    pub kind: ServiceScalingTriggerKind,
-}
+pub struct ScalingTrigger {}
 impl ScalingTrigger {
-    pub fn new(kind: ServiceScalingTriggerKind) -> Self {
-        Self { kind }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Enumerates the ways that a service can be partitioned."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum ScalingTriggerUnion {
@@ -2763,16 +2756,13 @@ impl ServicePlacementNonPartiallyPlaceServicePolicy {
 pub type ServicePlacementPoliciesList = Vec<ServicePlacementPolicy>;
 #[doc = "Describes the policy to be used for placement of a Service Fabric service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServicePlacementPolicy {
-    #[doc = "The type of placement policy for a service fabric service. Following are the possible values."]
-    #[serde(rename = "type")]
-    pub type_: ServicePlacementPolicyType,
-}
+pub struct ServicePlacementPolicy {}
 impl ServicePlacementPolicy {
-    pub fn new(type_: ServicePlacementPolicyType) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The type of placement policy for a service fabric service. Following are the possible values."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ServicePlacementPolicyUnion {
@@ -2926,9 +2916,6 @@ pub struct ServiceResourceProperties {
     #[doc = "The current deployment or provisioning state, which only appears in the response"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
-    #[doc = "The kind of service (Stateless or Stateful)."]
-    #[serde(rename = "serviceKind")]
-    pub service_kind: ServiceKind,
     #[doc = "The name of the service type"]
     #[serde(rename = "serviceTypeName")]
     pub service_type_name: String,
@@ -2940,11 +2927,10 @@ pub struct ServiceResourceProperties {
     pub service_package_activation_mode: Option<service_resource_properties::ServicePackageActivationMode>,
 }
 impl ServiceResourceProperties {
-    pub fn new(service_kind: ServiceKind, service_type_name: String, partition_description: PartitionUnion) -> Self {
+    pub fn new(service_type_name: String, partition_description: PartitionUnion) -> Self {
         Self {
             service_resource_properties_base: ServiceResourcePropertiesBase::default(),
             provisioning_state: None,
-            service_kind,
             service_type_name,
             partition_description,
             service_package_activation_mode: None,
@@ -2991,6 +2977,7 @@ pub mod service_resource_properties {
         }
     }
 }
+#[doc = "The kind of service (Stateless or Stateful)."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "serviceKind")]
 pub enum ServiceResourcePropertiesUnion {

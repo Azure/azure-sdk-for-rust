@@ -364,19 +364,16 @@ pub struct JobProperties {
     pub runtime_version: Option<String>,
     #[doc = "the script to run"]
     pub script: String,
-    #[doc = "the job type of the current job (i.e. Hive or U-SQL)."]
-    #[serde(rename = "type")]
-    pub type_: String,
 }
 impl JobProperties {
-    pub fn new(script: String, type_: String) -> Self {
+    pub fn new(script: String) -> Self {
         Self {
             runtime_version: None,
             script,
-            type_,
         }
     }
 }
+#[doc = "the job type of the current job (i.e. Hive or U-SQL)."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum JobPropertiesUnion {

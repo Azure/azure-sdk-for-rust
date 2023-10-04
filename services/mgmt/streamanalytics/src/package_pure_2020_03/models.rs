@@ -1419,16 +1419,13 @@ impl Function {
 }
 #[doc = "The physical binding of the function. For example, in the Azure Machine Learning web service’s case, this describes the endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FunctionBinding {
-    #[doc = "Indicates the function binding type."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct FunctionBinding {}
 impl FunctionBinding {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Indicates the function binding type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum FunctionBindingUnion {
@@ -1512,9 +1509,6 @@ impl FunctionOutput {
 #[doc = "The properties that are associated with a function."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FunctionProperties {
-    #[doc = "Indicates the type of function."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The current entity tag for the function. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -1522,14 +1516,14 @@ pub struct FunctionProperties {
     pub properties: Option<FunctionConfiguration>,
 }
 impl FunctionProperties {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             etag: None,
             properties: None,
         }
     }
 }
+#[doc = "Indicates the type of function."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum FunctionPropertiesUnion {
@@ -1538,16 +1532,13 @@ pub enum FunctionPropertiesUnion {
 }
 #[doc = "Parameters used to specify the type of function to retrieve the default definition for."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FunctionRetrieveDefaultDefinitionParameters {
-    #[doc = "Indicates the function binding type."]
-    #[serde(rename = "bindingType")]
-    pub binding_type: String,
-}
+pub struct FunctionRetrieveDefaultDefinitionParameters {}
 impl FunctionRetrieveDefaultDefinitionParameters {
-    pub fn new(binding_type: String) -> Self {
-        Self { binding_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Indicates the function binding type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "bindingType")]
 pub enum FunctionRetrieveDefaultDefinitionParametersUnion {
@@ -1684,9 +1675,6 @@ impl InputListResult {
 #[doc = "The properties that are associated with an input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InputProperties {
-    #[doc = "Indicates whether the input is a source of reference data or stream data. Required on PUT (CreateOrReplace) requests."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Describes how data from an input is serialized or how data is serialized when written to an output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub serialization: Option<SerializationUnion>,
@@ -1704,9 +1692,8 @@ pub struct InputProperties {
     pub partition_key: Option<String>,
 }
 impl InputProperties {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             serialization: None,
             diagnostics: None,
             etag: None,
@@ -1715,6 +1702,7 @@ impl InputProperties {
         }
     }
 }
+#[doc = "Indicates whether the input is a source of reference data or stream data. Required on PUT (CreateOrReplace) requests."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum InputPropertiesUnion {
@@ -2060,16 +2048,13 @@ impl Output {
 }
 #[doc = "Describes the data source that output will be written to."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OutputDataSource {
-    #[doc = "Indicates the type of data source output will be written to. Required on PUT (CreateOrReplace) requests."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct OutputDataSource {}
 impl OutputDataSource {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Indicates the type of data source output will be written to. Required on PUT (CreateOrReplace) requests."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum OutputDataSourceUnion {
@@ -2426,16 +2411,13 @@ impl ProxyResource {
 }
 #[doc = "Describes an input data source that contains reference data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReferenceInputDataSource {
-    #[doc = "Indicates the type of input data source containing reference data. Required on PUT (CreateOrReplace) requests."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct ReferenceInputDataSource {}
 impl ReferenceInputDataSource {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Indicates the type of input data source containing reference data. Required on PUT (CreateOrReplace) requests."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ReferenceInputDataSourceUnion {
@@ -2559,16 +2541,13 @@ impl ScaleStreamingJobParameters {
 }
 #[doc = "Describes how data from an input is serialized or how data is serialized when written to an output."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Serialization {
-    #[doc = "Indicates the type of serialization that the input or output uses. Required on PUT (CreateOrReplace) requests."]
-    #[serde(rename = "type")]
-    pub type_: EventSerializationType,
-}
+pub struct Serialization {}
 impl Serialization {
-    pub fn new(type_: EventSerializationType) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Indicates the type of serialization that the input or output uses. Required on PUT (CreateOrReplace) requests."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum SerializationUnion {
@@ -2764,16 +2743,13 @@ impl StorageAccount {
 }
 #[doc = "Describes an input data source that contains stream data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StreamInputDataSource {
-    #[doc = "Indicates the type of input data source containing stream data. Required on PUT (CreateOrReplace) requests."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct StreamInputDataSource {}
 impl StreamInputDataSource {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Indicates the type of input data source containing stream data. Required on PUT (CreateOrReplace) requests."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum StreamInputDataSourceUnion {

@@ -175,18 +175,16 @@ impl AudioEncoderAac {
 #[doc = "Base type for all audio encoder presets, which define the recipe or instructions on how audio should be processed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AudioEncoderBase {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
     #[doc = "Bitrate, in kilobits per second or Kbps, at which audio should be encoded (2-channel stereo audio at a sampling rate of 48 kHz). Allowed values are 96, 112, 128, 160, 192, 224, and 256. If omitted, the bitrate of the input audio is used."]
     #[serde(rename = "bitrateKbps", default, skip_serializing_if = "Option::is_none")]
     pub bitrate_kbps: Option<String>,
 }
 impl AudioEncoderBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_, bitrate_kbps: None }
+    pub fn new() -> Self {
+        Self { bitrate_kbps: None }
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum AudioEncoderBaseUnion {
@@ -195,16 +193,13 @@ pub enum AudioEncoderBaseUnion {
 }
 #[doc = "Base class for access policies authentication methods."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthenticationBase {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
-}
+pub struct AuthenticationBase {}
 impl AuthenticationBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum AuthenticationBaseUnion {
@@ -213,16 +208,13 @@ pub enum AuthenticationBaseUnion {
 }
 #[doc = "Base class for certificate sources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CertificateSource {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
-}
+pub struct CertificateSource {}
 impl CertificateSource {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum CertificateSourceUnion {
@@ -304,16 +296,13 @@ pub mod check_name_availability_response {
 }
 #[doc = "Base class for credential objects."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CredentialsBase {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
-}
+pub struct CredentialsBase {}
 impl CredentialsBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum CredentialsBaseUnion {
@@ -471,16 +460,13 @@ impl EncoderCustomPreset {
 }
 #[doc = "Base type for all encoder presets, which define the recipe or instructions on how the input content should be processed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EncoderPresetBase {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
-}
+pub struct EncoderPresetBase {}
 impl EncoderPresetBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum EncoderPresetBaseUnion {
@@ -622,9 +608,6 @@ pub mod endpoint {
 #[doc = "Base class for endpoints."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EndpointBase {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
     #[doc = "Base class for credential objects."]
     pub credentials: CredentialsBaseUnion,
     #[doc = "The endpoint URL for Video Analyzer to connect to."]
@@ -634,15 +617,15 @@ pub struct EndpointBase {
     pub tunnel: Option<TunnelBaseUnion>,
 }
 impl EndpointBase {
-    pub fn new(type_: String, credentials: CredentialsBaseUnion, url: String) -> Self {
+    pub fn new(credentials: CredentialsBaseUnion, url: String) -> Self {
         Self {
-            type_,
             credentials,
             url,
             tunnel: None,
         }
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum EndpointBaseUnion {
@@ -1321,17 +1304,15 @@ impl NetworkAccessControl {
 #[doc = "Base class for nodes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NodeBase {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
     #[doc = "Node name. Must be unique within the topology."]
     pub name: String,
 }
 impl NodeBase {
-    pub fn new(type_: String, name: String) -> Self {
-        Self { type_, name }
+    pub fn new(name: String) -> Self {
+        Self { name }
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum NodeBaseUnion {
@@ -2255,17 +2236,15 @@ impl PrivateLinkServiceConnectionState {
 pub struct ProcessorNodeBase {
     #[serde(flatten)]
     pub node_base: NodeBase,
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
     #[doc = "An array of upstream node references within the topology to be used as inputs for this node."]
     pub inputs: Vec<NodeInput>,
 }
 impl ProcessorNodeBase {
-    pub fn new(node_base: NodeBase, type_: String, inputs: Vec<NodeInput>) -> Self {
-        Self { node_base, type_, inputs }
+    pub fn new(node_base: NodeBase, inputs: Vec<NodeInput>) -> Self {
+        Self { node_base, inputs }
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum ProcessorNodeBaseUnion {
@@ -2501,17 +2480,15 @@ impl ServiceSpecification {
 pub struct SinkNodeBase {
     #[serde(flatten)]
     pub node_base: NodeBase,
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
     #[doc = "An array of upstream node references within the topology to be used as inputs for this node."]
     pub inputs: Vec<NodeInput>,
 }
 impl SinkNodeBase {
-    pub fn new(node_base: NodeBase, type_: String, inputs: Vec<NodeInput>) -> Self {
-        Self { node_base, type_, inputs }
+    pub fn new(node_base: NodeBase, inputs: Vec<NodeInput>) -> Self {
+        Self { node_base, inputs }
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum SinkNodeBaseUnion {
@@ -2614,15 +2591,13 @@ pub mod sku {
 pub struct SourceNodeBase {
     #[serde(flatten)]
     pub node_base: NodeBase,
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
 }
 impl SourceNodeBase {
-    pub fn new(node_base: NodeBase, type_: String) -> Self {
-        Self { node_base, type_ }
+    pub fn new(node_base: NodeBase) -> Self {
+        Self { node_base }
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum SourceNodeBaseUnion {
@@ -2654,16 +2629,13 @@ impl StorageAccount {
 }
 #[doc = "A sequence of datetime ranges as a string."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TimeSequenceBase {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
-}
+pub struct TimeSequenceBase {}
 impl TimeSequenceBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum TimeSequenceBaseUnion {
@@ -2722,17 +2694,15 @@ impl TokenClaim {
 #[doc = "Key properties for JWT token validation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TokenKey {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
     #[doc = "JWT token key id. Validation keys are looked up based on the key id present on the JWT token header."]
     pub kid: String,
 }
 impl TokenKey {
-    pub fn new(type_: String, kid: String) -> Self {
-        Self { type_, kid }
+    pub fn new(kid: String) -> Self {
+        Self { kid }
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum TokenKeyUnion {
@@ -2763,16 +2733,13 @@ impl TrackedResource {
 }
 #[doc = "Base class for tunnel objects."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TunnelBase {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
-}
+pub struct TunnelBase {}
 impl TunnelBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum TunnelBaseUnion {
@@ -3309,9 +3276,6 @@ impl VideoCreationProperties {
 #[doc = "Base type for all video encoding presets, which define the recipe or instructions on how the input video should be processed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VideoEncoderBase {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
     #[doc = "The maximum bitrate, in kilobits per second or Kbps, at which video should be encoded. If omitted, encoder sets it automatically to try and match the quality of the input video."]
     #[serde(rename = "bitrateKbps", default, skip_serializing_if = "Option::is_none")]
     pub bitrate_kbps: Option<String>,
@@ -3323,15 +3287,15 @@ pub struct VideoEncoderBase {
     pub scale: Option<VideoScale>,
 }
 impl VideoEncoderBase {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             bitrate_kbps: None,
             frame_rate: None,
             scale: None,
         }
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum VideoEncoderBaseUnion {

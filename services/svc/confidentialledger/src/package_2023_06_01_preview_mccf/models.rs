@@ -750,15 +750,13 @@ impl Serialize for ServiceStateNodeStatus {
 }
 #[doc = "Common type for attestation information, describing the cryptographically-endorsed claim of what code is executing, and what platform it is executing on. Derived types contain platform-specific details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceStateQuoteInfo {
-    #[doc = "Discriminator property for QuoteInfo."]
-    pub format: String,
-}
+pub struct ServiceStateQuoteInfo {}
 impl ServiceStateQuoteInfo {
-    pub fn new(format: String) -> Self {
-        Self { format }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Discriminator property for QuoteInfo."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "format")]
 pub enum ServiceStateQuoteInfoUnion {

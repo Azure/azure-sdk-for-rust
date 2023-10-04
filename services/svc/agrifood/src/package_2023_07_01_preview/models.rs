@@ -355,15 +355,13 @@ impl AttachmentListResponse {
 }
 #[doc = "AuthCredentials abstract base class for Auth Purpose."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthCredentials {
-    #[doc = "CredentialTypeEnum."]
-    pub kind: AuthCredentialsKind,
-}
+pub struct AuthCredentials {}
 impl AuthCredentials {
-    pub fn new(kind: AuthCredentialsKind) -> Self {
-        Self { kind }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "CredentialTypeEnum."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum AuthCredentialsUnion {
@@ -1667,16 +1665,13 @@ impl FieldMetaDataListResponse {
 }
 #[doc = "GeoJSON (For more details: https://geojson.org/). Note: Coordinates are expected in [Longitude, Latitude] format."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GeoJsonObject {
-    #[doc = "GeoJSON object type."]
-    #[serde(rename = "type")]
-    pub type_: GeoJsonObjectType,
-}
+pub struct GeoJsonObject {}
 impl GeoJsonObject {
-    pub fn new(type_: GeoJsonObjectType) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "GeoJSON object type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum GeoJsonObjectUnion {

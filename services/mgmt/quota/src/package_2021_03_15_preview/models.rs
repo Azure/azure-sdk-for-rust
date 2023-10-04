@@ -99,16 +99,13 @@ impl ExceptionResponse {
 }
 #[doc = "LimitJson abstract class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LimitJsonObject {
-    #[doc = "The limit object type."]
-    #[serde(rename = "limitObjectType")]
-    pub limit_object_type: LimitObjectTypes,
-}
+pub struct LimitJsonObject {}
 impl LimitJsonObject {
-    pub fn new(limit_object_type: LimitObjectTypes) -> Self {
-        Self { limit_object_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The limit object type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "limitObjectType")]
 pub enum LimitJsonObjectUnion {

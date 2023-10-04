@@ -5,16 +5,13 @@ use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
 #[doc = "The authentication info"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthInfoBase {
-    #[doc = "The authentication type."]
-    #[serde(rename = "authType")]
-    pub auth_type: AuthType,
-}
+pub struct AuthInfoBase {}
 impl AuthInfoBase {
-    pub fn new(auth_type: AuthType) -> Self {
-        Self { auth_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The authentication type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "authType")]
 pub enum AuthInfoBaseUnion {

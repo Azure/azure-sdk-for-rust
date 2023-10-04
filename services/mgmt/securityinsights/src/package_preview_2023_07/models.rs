@@ -692,17 +692,15 @@ impl AlertPropertyMapping {
 pub struct AlertRule {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
-    #[doc = "The kind of the alert rule"]
-    pub kind: AlertRuleKindEnum,
 }
 impl AlertRule {
-    pub fn new(kind: AlertRuleKindEnum) -> Self {
+    pub fn new() -> Self {
         Self {
             resource_with_etag: ResourceWithEtag::default(),
-            kind,
         }
     }
 }
+#[doc = "The kind of the alert rule"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum AlertRuleUnion {
@@ -769,17 +767,15 @@ impl Serialize for AlertRuleKindEnum {
 pub struct AlertRuleTemplate {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "The kind of the alert rule"]
-    pub kind: AlertRuleKindEnum,
 }
 impl AlertRuleTemplate {
-    pub fn new(kind: AlertRuleKindEnum) -> Self {
+    pub fn new() -> Self {
         Self {
             resource: Resource::default(),
-            kind,
         }
     }
 }
+#[doc = "The kind of the alert rule"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum AlertRuleTemplateUnion {
@@ -1374,15 +1370,13 @@ impl AutomationRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationRuleAction {
     pub order: i32,
-    #[doc = "The type of the automation rule action."]
-    #[serde(rename = "actionType")]
-    pub action_type: ActionType,
 }
 impl AutomationRuleAction {
-    pub fn new(order: i32, action_type: ActionType) -> Self {
-        Self { order, action_type }
+    pub fn new(order: i32) -> Self {
+        Self { order }
     }
 }
+#[doc = "The type of the automation rule action."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "actionType")]
 pub enum AutomationRuleActionUnion {
@@ -1461,13 +1455,10 @@ impl Serialize for AutomationRuleBooleanConditionSupportedOperator {
 }
 #[doc = "Describes an automation rule condition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutomationRuleCondition {
-    #[serde(rename = "conditionType")]
-    pub condition_type: ConditionType,
-}
+pub struct AutomationRuleCondition {}
 impl AutomationRuleCondition {
-    pub fn new(condition_type: ConditionType) -> Self {
-        Self { condition_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -2435,17 +2426,15 @@ impl AzureEntityResource {
 pub struct BillingStatistic {
     #[serde(flatten)]
     pub azure_entity_resource: AzureEntityResource,
-    #[doc = "The kind of the billing statistic"]
-    pub kind: BillingStatisticKindEnum,
 }
 impl BillingStatistic {
-    pub fn new(kind: BillingStatisticKindEnum) -> Self {
+    pub fn new() -> Self {
         Self {
             azure_entity_resource: AzureEntityResource::default(),
-            kind,
         }
     }
 }
+#[doc = "The kind of the billing statistic"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum BillingStatisticUnion {
@@ -3516,17 +3505,15 @@ impl Serialize for ContentType {
 pub struct CustomEntityQuery {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
-    #[doc = "The kind of the entity query that supports put request."]
-    pub kind: CustomEntityQueryKind,
 }
 impl CustomEntityQuery {
-    pub fn new(kind: CustomEntityQueryKind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource_with_etag: ResourceWithEtag::default(),
-            kind,
         }
     }
 }
+#[doc = "The kind of the entity query that supports put request."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum CustomEntityQueryUnion {
@@ -3767,17 +3754,15 @@ impl DcrConfiguration {
 pub struct DataConnector {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
-    #[doc = "The kind of the data connector"]
-    pub kind: DataConnectorKind,
 }
 impl DataConnector {
-    pub fn new(kind: DataConnectorKind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource_with_etag: ResourceWithEtag::default(),
-            kind,
         }
     }
 }
+#[doc = "The kind of the data connector"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum DataConnectorUnion {
@@ -3994,17 +3979,15 @@ pub mod data_connector_data_type_common {
 pub struct DataConnectorDefinition {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
-    #[doc = "The kind of the data connector definitions"]
-    pub kind: DataConnectorDefinitionKind,
 }
 impl DataConnectorDefinition {
-    pub fn new(kind: DataConnectorDefinitionKind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource_with_etag: ResourceWithEtag::default(),
-            kind,
         }
     }
 }
+#[doc = "The kind of the data connector definitions"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum DataConnectorDefinitionUnion {
@@ -4262,15 +4245,13 @@ impl DataConnectorWithAlertsProperties {
 }
 #[doc = "Data connector requirements properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataConnectorsCheckRequirements {
-    #[doc = "The kind of the data connector"]
-    pub kind: DataConnectorKind,
-}
+pub struct DataConnectorsCheckRequirements {}
 impl DataConnectorsCheckRequirements {
-    pub fn new(kind: DataConnectorKind) -> Self {
-        Self { kind }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The kind of the data connector"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum DataConnectorsCheckRequirementsUnion {
@@ -4760,17 +4741,15 @@ impl EnrichmentIpGeodata {
 pub struct Entity {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "The kind of the entity"]
-    pub kind: EntityInnerKind,
 }
 impl Entity {
-    pub fn new(kind: EntityInnerKind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource: Resource::default(),
-            kind,
         }
     }
 }
+#[doc = "The kind of the entity"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum EntityUnion {
@@ -5344,17 +5323,15 @@ impl Serialize for EntityProviders {
 pub struct EntityQuery {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
-    #[doc = "The kind of the entity query"]
-    pub kind: EntityQueryKind,
 }
 impl EntityQuery {
-    pub fn new(kind: EntityQueryKind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource_with_etag: ResourceWithEtag::default(),
-            kind,
         }
     }
 }
+#[doc = "The kind of the entity query"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum EntityQueryUnion {
@@ -5373,19 +5350,17 @@ pub struct EntityQueryItem {
     #[doc = "ARM Type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[doc = "The kind of the entity query"]
-    pub kind: EntityQueryKind,
 }
 impl EntityQueryItem {
-    pub fn new(kind: EntityQueryKind) -> Self {
+    pub fn new() -> Self {
         Self {
             id: None,
             name: None,
             type_: None,
-            kind,
         }
     }
 }
+#[doc = "The kind of the entity query"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum EntityQueryItemUnion {
@@ -5486,17 +5461,15 @@ impl EntityQueryList {
 pub struct EntityQueryTemplate {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "The kind of the entity query template."]
-    pub kind: EntityQueryTemplateKind,
 }
 impl EntityQueryTemplate {
-    pub fn new(kind: EntityQueryTemplateKind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource: Resource::default(),
-            kind,
         }
     }
 }
+#[doc = "The kind of the entity query template."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum EntityQueryTemplateUnion {
@@ -5559,15 +5532,13 @@ impl EntityQueryTemplateList {
 }
 #[doc = "Entity timeline Item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityTimelineItem {
-    #[doc = "The entity query kind"]
-    pub kind: EntityTimelineKind,
-}
+pub struct EntityTimelineItem {}
 impl EntityTimelineItem {
-    pub fn new(kind: EntityTimelineKind) -> Self {
-        Self { kind }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The entity query kind"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum EntityTimelineItemUnion {
@@ -11665,17 +11636,15 @@ pub mod security_alert_timeline_item {
 pub struct SecurityMlAnalyticsSetting {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
-    #[doc = "The kind of security ML analytics settings"]
-    pub kind: SecurityMlAnalyticsSettingsKindEnum,
 }
 impl SecurityMlAnalyticsSetting {
-    pub fn new(kind: SecurityMlAnalyticsSettingsKindEnum) -> Self {
+    pub fn new() -> Self {
         Self {
             resource_with_etag: ResourceWithEtag::default(),
-            kind,
         }
     }
 }
+#[doc = "The kind of security ML analytics settings"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum SecurityMlAnalyticsSettingUnion {
@@ -11840,61 +11809,15 @@ impl SettingList {
 pub struct Settings {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
-    #[doc = "The kind of the setting"]
-    pub kind: settings::Kind,
 }
 impl Settings {
-    pub fn new(kind: settings::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource_with_etag: ResourceWithEtag::default(),
-            kind,
         }
     }
 }
-pub mod settings {
-    use super::*;
-    #[doc = "The kind of the setting"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        Anomalies,
-        EyesOn,
-        EntityAnalytics,
-        Ueba,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Anomalies => serializer.serialize_unit_variant("Kind", 0u32, "Anomalies"),
-                Self::EyesOn => serializer.serialize_unit_variant("Kind", 1u32, "EyesOn"),
-                Self::EntityAnalytics => serializer.serialize_unit_variant("Kind", 2u32, "EntityAnalytics"),
-                Self::Ueba => serializer.serialize_unit_variant("Kind", 3u32, "Ueba"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The kind of the setting"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum SettingsUnion {
@@ -12532,17 +12455,15 @@ impl ThreatIntelligenceIndicatorProperties {
 pub struct ThreatIntelligenceInformation {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
-    #[doc = "The kind of the threat intelligence entity"]
-    pub kind: ThreatIntelligenceResourceInnerKind,
 }
 impl ThreatIntelligenceInformation {
-    pub fn new(kind: ThreatIntelligenceResourceInnerKind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource_with_etag: ResourceWithEtag::default(),
-            kind,
         }
     }
 }
+#[doc = "The kind of the threat intelligence entity"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum ThreatIntelligenceInformationUnion {

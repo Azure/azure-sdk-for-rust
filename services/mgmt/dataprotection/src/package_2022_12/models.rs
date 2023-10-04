@@ -70,16 +70,13 @@ impl AdhocBasedTriggerContext {
 }
 #[doc = "Base class for different types of authentication credentials."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthCredentials {
-    #[doc = "Type of the specific object - used for deserializing"]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
+pub struct AuthCredentials {}
 impl AuthCredentials {
-    pub fn new(object_type: String) -> Self {
-        Self { object_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the specific object - used for deserializing"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum AuthCredentialsUnion {
@@ -449,13 +446,10 @@ impl AzureBackupParams {
 }
 #[doc = "Azure backup recoveryPoint"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureBackupRecoveryPoint {
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
+pub struct AzureBackupRecoveryPoint {}
 impl AzureBackupRecoveryPoint {
-    pub fn new(object_type: String) -> Self {
-        Self { object_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -559,8 +553,6 @@ impl AzureBackupRehydrationRequest {
 #[doc = "Azure backup restore request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBackupRestoreRequest {
-    #[serde(rename = "objectType")]
-    pub object_type: String,
     #[doc = "Base class common to RestoreTargetInfo and RestoreFilesTargetInfo"]
     #[serde(rename = "restoreTargetInfo")]
     pub restore_target_info: RestoreTargetInfoBaseUnion,
@@ -573,12 +565,10 @@ pub struct AzureBackupRestoreRequest {
 }
 impl AzureBackupRestoreRequest {
     pub fn new(
-        object_type: String,
         restore_target_info: RestoreTargetInfoBaseUnion,
         source_data_store_type: azure_backup_restore_request::SourceDataStoreType,
     ) -> Self {
         Self {
-            object_type,
             restore_target_info,
             source_data_store_type,
             source_resource_id: None,
@@ -771,16 +761,13 @@ impl AzureRetentionRule {
 }
 #[doc = "BackupCriteria base class"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupCriteria {
-    #[doc = "Type of the specific object - used for deserializing"]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
+pub struct BackupCriteria {}
 impl BackupCriteria {
-    pub fn new(object_type: String) -> Self {
-        Self { object_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the specific object - used for deserializing"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum BackupCriteriaUnion {
@@ -982,16 +969,13 @@ impl BackupInstanceResourceList {
 }
 #[doc = "BackupParameters base"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupParameters {
-    #[doc = "Type of the specific object - used for deserializing"]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
+pub struct BackupParameters {}
 impl BackupParameters {
-    pub fn new(object_type: String) -> Self {
-        Self { object_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the specific object - used for deserializing"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum BackupParametersUnion {
@@ -1219,15 +1203,10 @@ pub struct BaseBackupPolicy {
     #[doc = "Type of datasource for the backup management"]
     #[serde(rename = "datasourceTypes")]
     pub datasource_types: Vec<String>,
-    #[serde(rename = "objectType")]
-    pub object_type: String,
 }
 impl BaseBackupPolicy {
-    pub fn new(datasource_types: Vec<String>, object_type: String) -> Self {
-        Self {
-            datasource_types,
-            object_type,
-        }
+    pub fn new(datasource_types: Vec<String>) -> Self {
+        Self { datasource_types }
     }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1277,12 +1256,10 @@ impl BaseBackupPolicyResourceList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BasePolicyRule {
     pub name: String,
-    #[serde(rename = "objectType")]
-    pub object_type: String,
 }
 impl BasePolicyRule {
-    pub fn new(name: String, object_type: String) -> Self {
-        Self { name, object_type }
+    pub fn new(name: String) -> Self {
+        Self { name }
     }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -1472,16 +1449,13 @@ impl CopyOnExpiryOption {
 }
 #[doc = "Options to copy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CopyOption {
-    #[doc = "Type of the specific object - used for deserializing"]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
+pub struct CopyOption {}
 impl CopyOption {
-    pub fn new(object_type: String) -> Self {
-        Self { object_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the specific object - used for deserializing"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum CopyOptionUnion {
@@ -1623,19 +1597,13 @@ pub mod data_store_info_base {
 #[doc = "Parameters for DataStore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataStoreParameters {
-    #[doc = "Type of the specific object - used for deserializing"]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
     #[doc = "type of datastore; Operational/Vault/Archive"]
     #[serde(rename = "dataStoreType")]
     pub data_store_type: data_store_parameters::DataStoreType,
 }
 impl DataStoreParameters {
-    pub fn new(object_type: String, data_store_type: data_store_parameters::DataStoreType) -> Self {
-        Self {
-            object_type,
-            data_store_type,
-        }
+    pub fn new(data_store_type: data_store_parameters::DataStoreType) -> Self {
+        Self { data_store_type }
     }
 }
 pub mod data_store_parameters {
@@ -1680,6 +1648,7 @@ pub mod data_store_parameters {
         }
     }
 }
+#[doc = "Type of the specific object - used for deserializing"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum DataStoreParametersUnion {
@@ -1781,15 +1750,13 @@ impl Day {
 pub struct DeleteOption {
     #[doc = "Duration of deletion after given timespan"]
     pub duration: String,
-    #[doc = "Type of the specific object - used for deserializing"]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
 }
 impl DeleteOption {
-    pub fn new(duration: String, object_type: String) -> Self {
-        Self { duration, object_type }
+    pub fn new(duration: String) -> Self {
+        Self { duration }
     }
 }
+#[doc = "Type of the specific object - used for deserializing"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum DeleteOptionUnion {
@@ -2212,16 +2179,13 @@ pub mod feature_validation_request {
 }
 #[doc = "Base class for Backup Feature support"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FeatureValidationRequestBase {
-    #[doc = "Type of the specific object - used for deserializing"]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
+pub struct FeatureValidationRequestBase {}
 impl FeatureValidationRequestBase {
-    pub fn new(object_type: String) -> Self {
-        Self { object_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the specific object - used for deserializing"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum FeatureValidationRequestBaseUnion {
@@ -2294,16 +2258,13 @@ pub mod feature_validation_response {
 }
 #[doc = "Base class for Backup Feature support"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FeatureValidationResponseBase {
-    #[doc = "Type of the specific object - used for deserializing"]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
+pub struct FeatureValidationResponseBase {}
 impl FeatureValidationResponseBase {
-    pub fn new(object_type: String) -> Self {
-        Self { object_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the specific object - used for deserializing"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum FeatureValidationResponseBaseUnion {
@@ -2394,16 +2355,13 @@ impl InnerError {
 }
 #[doc = "Class to contain criteria for item level restore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ItemLevelRestoreCriteria {
-    #[doc = "Type of the specific object - used for deserializing"]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
+pub struct ItemLevelRestoreCriteria {}
 impl ItemLevelRestoreCriteria {
-    pub fn new(object_type: String) -> Self {
-        Self { object_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the specific object - used for deserializing"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum ItemLevelRestoreCriteriaUnion {
@@ -2564,16 +2522,13 @@ impl MonitoringSettings {
 }
 #[doc = "Operation Extended Info"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationExtendedInfo {
-    #[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
+pub struct OperationExtendedInfo {}
 impl OperationExtendedInfo {
-    pub fn new(object_type: String) -> Self {
-        Self { object_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum OperationExtendedInfoUnion {
@@ -3161,9 +3116,6 @@ impl RestoreTargetInfo {
 #[doc = "Base class common to RestoreTargetInfo and RestoreFilesTargetInfo"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RestoreTargetInfoBase {
-    #[doc = "Type of Datasource object, used to initialize the right inherited type"]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
     #[doc = "Recovery Option"]
     #[serde(rename = "recoveryOption")]
     pub recovery_option: restore_target_info_base::RecoveryOption,
@@ -3172,9 +3124,8 @@ pub struct RestoreTargetInfoBase {
     pub restore_location: Option<String>,
 }
 impl RestoreTargetInfoBase {
-    pub fn new(object_type: String, recovery_option: restore_target_info_base::RecoveryOption) -> Self {
+    pub fn new(recovery_option: restore_target_info_base::RecoveryOption) -> Self {
         Self {
-            object_type,
             recovery_option,
             restore_location: None,
         }
@@ -3218,6 +3169,7 @@ pub mod restore_target_info_base {
         }
     }
 }
+#[doc = "Type of Datasource object, used to initialize the right inherited type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum RestoreTargetInfoBaseUnion {
@@ -3856,16 +3808,13 @@ impl TriggerBackupRequest {
 }
 #[doc = "Trigger context"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TriggerContext {
-    #[doc = "Type of the specific object - used for deserializing"]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
+pub struct TriggerContext {}
 impl TriggerContext {
-    pub fn new(object_type: String) -> Self {
-        Self { object_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the specific object - used for deserializing"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum TriggerContextUnion {

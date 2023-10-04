@@ -2244,9 +2244,6 @@ impl CrossRegionRestoreRequestResource {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CrrAccessToken {
-    #[doc = "Type of the specific object - used for deserializing"]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
     #[doc = "Access token used for authentication"]
     #[serde(rename = "accessTokenString", default, skip_serializing_if = "Option::is_none")]
     pub access_token_string: Option<String>,
@@ -2324,9 +2321,8 @@ pub struct CrrAccessToken {
     pub b_ms_active_region: Option<String>,
 }
 impl CrrAccessToken {
-    pub fn new(object_type: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            object_type,
             access_token_string: None,
             subscription_id: None,
             resource_group_name: None,
@@ -2355,6 +2351,7 @@ impl CrrAccessToken {
         }
     }
 }
+#[doc = "Type of the specific object - used for deserializing"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum CrrAccessTokenUnion {
@@ -3179,12 +3176,9 @@ pub struct Job {
     #[doc = "ActivityId of job."]
     #[serde(rename = "activityId", default, skip_serializing_if = "Option::is_none")]
     pub activity_id: Option<String>,
-    #[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
-    #[serde(rename = "jobType")]
-    pub job_type: String,
 }
 impl Job {
-    pub fn new(job_type: String) -> Self {
+    pub fn new() -> Self {
         Self {
             entity_friendly_name: None,
             backup_management_type: None,
@@ -3193,7 +3187,6 @@ impl Job {
             start_time: None,
             end_time: None,
             activity_id: None,
-            job_type,
         }
     }
 }
@@ -3254,6 +3247,7 @@ pub mod job {
         }
     }
 }
+#[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "jobType")]
 pub enum JobUnion {
@@ -4071,16 +4065,13 @@ impl OperationStatusError {
 }
 #[doc = "Base class for additional information of operation status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OperationStatusExtendedInfo {
-    #[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
+pub struct OperationStatusExtendedInfo {}
 impl OperationStatusExtendedInfo {
-    pub fn new(object_type: String) -> Self {
-        Self { object_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum OperationStatusExtendedInfoUnion {
@@ -4189,9 +4180,6 @@ impl PointInTimeRange {
 #[doc = "Base class for backup items."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProtectedItem {
-    #[doc = "backup item type."]
-    #[serde(rename = "protectedItemType")]
-    pub protected_item_type: String,
     #[doc = "Type of backup management for the backed up item."]
     #[serde(rename = "backupManagementType", default, skip_serializing_if = "Option::is_none")]
     pub backup_management_type: Option<protected_item::BackupManagementType>,
@@ -4241,9 +4229,8 @@ pub struct ProtectedItem {
     pub resource_guard_operation_requests: Vec<String>,
 }
 impl ProtectedItem {
-    pub fn new(protected_item_type: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            protected_item_type,
             backup_management_type: None,
             workload_type: None,
             container_name: None,
@@ -4426,6 +4413,7 @@ pub mod protected_item {
         }
     }
 }
+#[doc = "backup item type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "protectedItemType")]
 pub enum ProtectedItemUnion {
@@ -4683,16 +4671,13 @@ impl ProtectedItemResourceList {
 }
 #[doc = "Base class for backup copies. Workload-specific backup copies are derived from this class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryPoint {
-    #[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
+pub struct RecoveryPoint {}
 impl RecoveryPoint {
-    pub fn new(object_type: String) -> Self {
-        Self { object_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum RecoveryPointUnion {
@@ -4926,16 +4911,13 @@ impl RestoreFileSpecs {
 }
 #[doc = "Base class for restore request. Workload-specific restore requests are derived from this class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestoreRequest {
-    #[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
+pub struct RestoreRequest {}
 impl RestoreRequest {
-    pub fn new(object_type: String) -> Self {
-        Self { object_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum RestoreRequestUnion {

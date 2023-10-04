@@ -152,11 +152,9 @@ pub struct ActiveBaseSecurityAdminRule {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub rule_groups: Vec<ConfigurationGroup>,
-    #[doc = "Whether the rule is custom or default."]
-    pub kind: active_base_security_admin_rule::Kind,
 }
 impl ActiveBaseSecurityAdminRule {
-    pub fn new(kind: active_base_security_admin_rule::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             id: None,
             commit_time: None,
@@ -165,50 +163,10 @@ impl ActiveBaseSecurityAdminRule {
             rule_collection_description: None,
             rule_collection_applies_to_groups: Vec::new(),
             rule_groups: Vec::new(),
-            kind,
         }
     }
 }
-pub mod active_base_security_admin_rule {
-    use super::*;
-    #[doc = "Whether the rule is custom or default."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        Custom,
-        Default,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Custom => serializer.serialize_unit_variant("Kind", 0u32, "Custom"),
-                Self::Default => serializer.serialize_unit_variant("Kind", 1u32, "Default"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Whether the rule is custom or default."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum ActiveBaseSecurityAdminRuleUnion {
@@ -5820,61 +5778,19 @@ pub mod backend_address_pool_properties_format {
 pub struct BaseAdminRule {
     #[serde(flatten)]
     pub child_resource: ChildResource,
-    #[doc = "Whether the rule is custom or default."]
-    pub kind: base_admin_rule::Kind,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 impl BaseAdminRule {
-    pub fn new(kind: base_admin_rule::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             child_resource: ChildResource::default(),
-            kind,
             system_data: None,
         }
     }
 }
-pub mod base_admin_rule {
-    use super::*;
-    #[doc = "Whether the rule is custom or default."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        Custom,
-        Default,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Custom => serializer.serialize_unit_variant("Kind", 0u32, "Custom"),
-                Self::Default => serializer.serialize_unit_variant("Kind", 1u32, "Default"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Whether the rule is custom or default."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum BaseAdminRuleUnion {
@@ -9825,61 +9741,19 @@ pub struct EffectiveBaseSecurityAdminRule {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub rule_groups: Vec<ConfigurationGroup>,
-    #[doc = "Whether the rule is custom or default."]
-    pub kind: effective_base_security_admin_rule::Kind,
 }
 impl EffectiveBaseSecurityAdminRule {
-    pub fn new(kind: effective_base_security_admin_rule::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             id: None,
             configuration_description: None,
             rule_collection_description: None,
             rule_collection_applies_to_groups: Vec::new(),
             rule_groups: Vec::new(),
-            kind,
         }
     }
 }
-pub mod effective_base_security_admin_rule {
-    use super::*;
-    #[doc = "Whether the rule is custom or default."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        Custom,
-        Default,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Custom => serializer.serialize_unit_variant("Kind", 0u32, "Custom"),
-                Self::Default => serializer.serialize_unit_variant("Kind", 1u32, "Default"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Whether the rule is custom or default."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum EffectiveBaseSecurityAdminRuleUnion {
@@ -13208,61 +13082,16 @@ pub struct FirewallPolicyRule {
     #[doc = "Description of the rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[doc = "Rule Type."]
-    #[serde(rename = "ruleType")]
-    pub rule_type: firewall_policy_rule::RuleType,
 }
 impl FirewallPolicyRule {
-    pub fn new(rule_type: firewall_policy_rule::RuleType) -> Self {
+    pub fn new() -> Self {
         Self {
             name: None,
             description: None,
-            rule_type,
         }
     }
 }
-pub mod firewall_policy_rule {
-    use super::*;
-    #[doc = "Rule Type."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "RuleType")]
-    pub enum RuleType {
-        ApplicationRule,
-        NetworkRule,
-        NatRule,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for RuleType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for RuleType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for RuleType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::ApplicationRule => serializer.serialize_unit_variant("RuleType", 0u32, "ApplicationRule"),
-                Self::NetworkRule => serializer.serialize_unit_variant("RuleType", 1u32, "NetworkRule"),
-                Self::NatRule => serializer.serialize_unit_variant("RuleType", 2u32, "NatRule"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Rule Type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "ruleType")]
 pub enum FirewallPolicyRuleUnion {
@@ -13325,9 +13154,6 @@ impl Serialize for FirewallPolicyRuleApplicationProtocolType {
 #[doc = "Properties of the rule collection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirewallPolicyRuleCollection {
-    #[doc = "The type of the rule collection."]
-    #[serde(rename = "ruleCollectionType")]
-    pub rule_collection_type: firewall_policy_rule_collection::RuleCollectionType,
     #[doc = "The name of the rule collection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -13336,58 +13162,14 @@ pub struct FirewallPolicyRuleCollection {
     pub priority: Option<i32>,
 }
 impl FirewallPolicyRuleCollection {
-    pub fn new(rule_collection_type: firewall_policy_rule_collection::RuleCollectionType) -> Self {
+    pub fn new() -> Self {
         Self {
-            rule_collection_type,
             name: None,
             priority: None,
         }
     }
 }
-pub mod firewall_policy_rule_collection {
-    use super::*;
-    #[doc = "The type of the rule collection."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "RuleCollectionType")]
-    pub enum RuleCollectionType {
-        FirewallPolicyNatRuleCollection,
-        FirewallPolicyFilterRuleCollection,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for RuleCollectionType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for RuleCollectionType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for RuleCollectionType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::FirewallPolicyNatRuleCollection => {
-                    serializer.serialize_unit_variant("RuleCollectionType", 0u32, "FirewallPolicyNatRuleCollection")
-                }
-                Self::FirewallPolicyFilterRuleCollection => {
-                    serializer.serialize_unit_variant("RuleCollectionType", 1u32, "FirewallPolicyFilterRuleCollection")
-                }
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The type of the rule collection."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "ruleCollectionType")]
 pub enum FirewallPolicyRuleCollectionUnion {

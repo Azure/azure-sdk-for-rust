@@ -3329,13 +3329,10 @@ pub enum ResourceType {
 }
 #[doc = "Base class for all types of Route."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RouteConfiguration {
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
-}
+pub struct RouteConfiguration {}
 impl RouteConfiguration {
-    pub fn new(odata_type: String) -> Self {
-        Self { odata_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

@@ -3978,9 +3978,6 @@ impl MediaJobFinishedEventData {
 #[doc = "The event data for a Job output."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MediaJobOutput {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@odata.type", default, skip_serializing_if = "Option::is_none")]
-    pub odata_type: Option<String>,
     #[doc = "Details of JobOutput errors."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<MediaJobError>,
@@ -3995,7 +3992,6 @@ pub struct MediaJobOutput {
 impl MediaJobOutput {
     pub fn new(progress: i64, state: media_job_output::State) -> Self {
         Self {
-            odata_type: None,
             error: None,
             label: None,
             progress,
@@ -4017,6 +4013,7 @@ pub mod media_job_output {
         Scheduled,
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
 pub enum MediaJobOutputUnion {

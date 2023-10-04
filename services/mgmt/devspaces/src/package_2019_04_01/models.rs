@@ -258,16 +258,13 @@ impl ListConnectionDetailsParameters {
 }
 #[doc = "Base class for types that supply values used to connect to container orchestrators"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct OrchestratorSpecificConnectionDetails {
-    #[doc = "Gets the Instance type."]
-    #[serde(rename = "instanceType", default, skip_serializing_if = "Option::is_none")]
-    pub instance_type: Option<String>,
-}
+pub struct OrchestratorSpecificConnectionDetails {}
 impl OrchestratorSpecificConnectionDetails {
     pub fn new() -> Self {
         Self::default()
     }
 }
+#[doc = "Gets the Instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum OrchestratorSpecificConnectionDetailsUnion {

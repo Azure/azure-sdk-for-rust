@@ -260,17 +260,15 @@ impl TrackedResource {
 #[doc = "Model that represents the base action model."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Action {
-    #[doc = "Enum that discriminates between action models."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "String that represents a URN."]
     pub name: Urn,
 }
 impl Action {
-    pub fn new(type_: String, name: Urn) -> Self {
-        Self { type_, name }
+    pub fn new(name: Urn) -> Self {
+        Self { name }
     }
 }
+#[doc = "Enum that discriminates between action models."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ActionUnion {}

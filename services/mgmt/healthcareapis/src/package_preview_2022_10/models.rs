@@ -50,57 +50,16 @@ impl AnalyticsConnectorCollection {
 #[doc = "Data destination configuration for Analytics Connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnalyticsConnectorDataDestination {
-    #[doc = "Type of data destination."]
-    #[serde(rename = "type")]
-    pub type_: analytics_connector_data_destination::Type,
     #[doc = "Name of data destination."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 impl AnalyticsConnectorDataDestination {
-    pub fn new(type_: analytics_connector_data_destination::Type) -> Self {
-        Self { type_, name: None }
+    pub fn new() -> Self {
+        Self { name: None }
     }
 }
-pub mod analytics_connector_data_destination {
-    use super::*;
-    #[doc = "Type of data destination."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        #[serde(rename = "datalake")]
-        Datalake,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Datalake => serializer.serialize_unit_variant("Type", 0u32, "datalake"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Type of data destination."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum AnalyticsConnectorDataDestinationUnion {
@@ -126,55 +85,13 @@ impl AnalyticsConnectorDataLakeDataDestination {
 }
 #[doc = "Data source for Analytics Connector. The target resource must be in the same workspace with the Analytics Connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AnalyticsConnectorDataSource {
-    #[doc = "Type of data source."]
-    #[serde(rename = "type")]
-    pub type_: analytics_connector_data_source::Type,
-}
+pub struct AnalyticsConnectorDataSource {}
 impl AnalyticsConnectorDataSource {
-    pub fn new(type_: analytics_connector_data_source::Type) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
-pub mod analytics_connector_data_source {
-    use super::*;
-    #[doc = "Type of data source."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        #[serde(rename = "fhirservice")]
-        Fhirservice,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Fhirservice => serializer.serialize_unit_variant("Type", 0u32, "fhirservice"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Type of data source."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum AnalyticsConnectorDataSourceUnion {
@@ -268,55 +185,13 @@ impl AnalyticsConnectorFhirToParquetMapping {
 }
 #[doc = "Data mapping configuration for Analytics Connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AnalyticsConnectorMapping {
-    #[doc = "Type of data mapping."]
-    #[serde(rename = "type")]
-    pub type_: analytics_connector_mapping::Type,
-}
+pub struct AnalyticsConnectorMapping {}
 impl AnalyticsConnectorMapping {
-    pub fn new(type_: analytics_connector_mapping::Type) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
-pub mod analytics_connector_mapping {
-    use super::*;
-    #[doc = "Type of data mapping."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        #[serde(rename = "fhirToParquet")]
-        FhirToParquet,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::FhirToParquet => serializer.serialize_unit_variant("Type", 0u32, "fhirToParquet"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Type of data mapping."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum AnalyticsConnectorMappingUnion {

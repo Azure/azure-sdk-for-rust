@@ -2487,16 +2487,13 @@ impl AddDisksInputProperties {
 }
 #[doc = "Add Disks provider specific input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AddDisksProviderSpecificInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct AddDisksProviderSpecificInput {}
 impl AddDisksProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum AddDisksProviderSpecificInputUnion {
@@ -2741,16 +2738,13 @@ impl ApplianceQueryParameter {
 }
 #[doc = "Appliance specific details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplianceSpecificDetails {
-    #[doc = "Gets the class type. Overridden in derived classes."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct ApplianceSpecificDetails {}
 impl ApplianceSpecificDetails {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets the class type. Overridden in derived classes."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum ApplianceSpecificDetailsUnion {
@@ -2787,16 +2781,13 @@ impl ApplyRecoveryPointInputProperties {
 }
 #[doc = "Provider specific input for apply recovery point."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ApplyRecoveryPointProviderSpecificInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct ApplyRecoveryPointProviderSpecificInput {}
 impl ApplyRecoveryPointProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum ApplyRecoveryPointProviderSpecificInputUnion {
@@ -3068,16 +3059,13 @@ impl ComputeSizeErrorDetails {
 }
 #[doc = "Replication provider specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConfigurationSettings {
-    #[doc = "Gets the class type. Overridden in derived classes."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct ConfigurationSettings {}
 impl ConfigurationSettings {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets the class type. Overridden in derived classes."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum ConfigurationSettingsUnion {
@@ -3284,16 +3272,13 @@ impl CreateProtectionIntentProperties {
 }
 #[doc = "Create protection intent provider specific input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CreateProtectionIntentProviderSpecificDetails {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct CreateProtectionIntentProviderSpecificDetails {}
 impl CreateProtectionIntentProviderSpecificDetails {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum CreateProtectionIntentProviderSpecificDetailsUnion {
@@ -3536,16 +3521,13 @@ pub mod disable_protection_input_properties {
 }
 #[doc = "Disable protection provider specific input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DisableProtectionProviderSpecificInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct DisableProtectionProviderSpecificInput {}
 impl DisableProtectionProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum DisableProtectionProviderSpecificInputUnion {
@@ -3784,16 +3766,13 @@ impl EnableMigrationInputProperties {
 }
 #[doc = "Enable migration provider specific input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EnableMigrationProviderSpecificInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct EnableMigrationProviderSpecificInput {}
 impl EnableMigrationProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum EnableMigrationProviderSpecificInputUnion {
@@ -3831,16 +3810,13 @@ impl EnableProtectionInputProperties {
 }
 #[doc = "Enable protection provider specific input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EnableProtectionProviderSpecificInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct EnableProtectionProviderSpecificInput {}
 impl EnableProtectionProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum EnableProtectionProviderSpecificInputUnion {
@@ -3959,16 +3935,13 @@ impl EventProperties {
 }
 #[doc = "Model class for provider specific details for an event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventProviderSpecificDetails {
-    #[doc = "Gets the class type. Overridden in derived classes."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct EventProviderSpecificDetails {}
 impl EventProviderSpecificDetails {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets the class type. Overridden in derived classes."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum EventProviderSpecificDetailsUnion {
@@ -4018,16 +3991,13 @@ impl EventQueryParameter {
 }
 #[doc = "Model class for event specific details for an event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventSpecificDetails {
-    #[doc = "Gets the class type. Overridden in derived classes."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct EventSpecificDetails {}
 impl EventSpecificDetails {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets the class type. Overridden in derived classes."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum EventSpecificDetailsUnion {
@@ -4369,16 +4339,13 @@ impl FabricReplicationGroupTaskDetails {
 }
 #[doc = "Input details specific to fabrics during Network Mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FabricSpecificCreateNetworkMappingInput {
-    #[doc = "The instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct FabricSpecificCreateNetworkMappingInput {}
 impl FabricSpecificCreateNetworkMappingInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum FabricSpecificCreateNetworkMappingInputUnion {
@@ -4388,16 +4355,13 @@ pub enum FabricSpecificCreateNetworkMappingInputUnion {
 }
 #[doc = "Fabric provider specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FabricSpecificCreationInput {
-    #[doc = "Gets the class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct FabricSpecificCreationInput {}
 impl FabricSpecificCreationInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets the class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum FabricSpecificCreationInputUnion {
@@ -4407,16 +4371,13 @@ pub enum FabricSpecificCreationInputUnion {
 }
 #[doc = "Fabric specific details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FabricSpecificDetails {
-    #[doc = "Gets the class type. Overridden in derived classes."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct FabricSpecificDetails {}
 impl FabricSpecificDetails {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets the class type. Overridden in derived classes."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum FabricSpecificDetailsUnion {
@@ -4430,16 +4391,13 @@ pub enum FabricSpecificDetailsUnion {
 }
 #[doc = "Input details specific to fabrics during Network Mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FabricSpecificUpdateNetworkMappingInput {
-    #[doc = "The instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct FabricSpecificUpdateNetworkMappingInput {}
 impl FabricSpecificUpdateNetworkMappingInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum FabricSpecificUpdateNetworkMappingInputUnion {
@@ -4549,9 +4507,6 @@ impl FailoverReplicationProtectedItemDetails {
 #[doc = "This class represents the group task details when parent child relationship exists in the drill down."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GroupTaskDetails {
-    #[doc = "The type of task details."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
     #[doc = "The child tasks."]
     #[serde(
         rename = "childTasks",
@@ -4562,13 +4517,11 @@ pub struct GroupTaskDetails {
     pub child_tasks: Vec<AsrTask>,
 }
 impl GroupTaskDetails {
-    pub fn new(instance_type: String) -> Self {
-        Self {
-            instance_type,
-            child_tasks: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { child_tasks: Vec::new() }
     }
 }
+#[doc = "The type of task details."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum GroupTaskDetailsUnion {
@@ -11274,21 +11227,18 @@ impl JobCollection {
 #[doc = "Job details based on specific job type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobDetails {
-    #[doc = "Gets the type of job details (see JobDetailsTypes enum for possible values)."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
     #[doc = "The affected object properties like source server, source cloud, target server, target cloud etc. based on the workflow object details."]
     #[serde(rename = "affectedObjectDetails", default, skip_serializing_if = "Option::is_none")]
     pub affected_object_details: Option<serde_json::Value>,
 }
 impl JobDetails {
-    pub fn new(instance_type: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            instance_type,
             affected_object_details: None,
         }
     }
 }
+#[doc = "Gets the type of job details (see JobDetailsTypes enum for possible values)."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum JobDetailsUnion {
@@ -11833,16 +11783,13 @@ impl MigrateInputProperties {
 }
 #[doc = "Migrate provider specific input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MigrateProviderSpecificInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct MigrateProviderSpecificInput {}
 impl MigrateProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum MigrateProviderSpecificInputUnion {
@@ -12159,16 +12106,13 @@ impl MigrationItemsQueryParameter {
 }
 #[doc = "Migration provider specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MigrationProviderSpecificSettings {
-    #[doc = "Gets the instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct MigrationProviderSpecificSettings {}
 impl MigrationProviderSpecificSettings {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets the instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum MigrationProviderSpecificSettingsUnion {
@@ -12368,16 +12312,13 @@ impl NetworkMappingCollection {
 }
 #[doc = "Network Mapping fabric specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct NetworkMappingFabricSpecificSettings {
-    #[doc = "Gets the Instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct NetworkMappingFabricSpecificSettings {}
 impl NetworkMappingFabricSpecificSettings {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets the Instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum NetworkMappingFabricSpecificSettingsUnion {
@@ -12714,16 +12655,13 @@ impl PlannedFailoverInputProperties {
 }
 #[doc = "Provider specific failover input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PlannedFailoverProviderSpecificFailoverInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct PlannedFailoverProviderSpecificFailoverInput {}
 impl PlannedFailoverProviderSpecificFailoverInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum PlannedFailoverProviderSpecificFailoverInputUnion {
@@ -12787,16 +12725,13 @@ impl PolicyProperties {
 }
 #[doc = "Base class for Provider specific details for policies."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PolicyProviderSpecificDetails {
-    #[doc = "Gets the class type. Overridden in derived classes."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct PolicyProviderSpecificDetails {}
 impl PolicyProviderSpecificDetails {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets the class type. Overridden in derived classes."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum PolicyProviderSpecificDetailsUnion {
@@ -12815,16 +12750,13 @@ pub enum PolicyProviderSpecificDetailsUnion {
 }
 #[doc = "Base class for provider specific input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PolicyProviderSpecificInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct PolicyProviderSpecificInput {}
 impl PolicyProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum PolicyProviderSpecificInputUnion {
@@ -13710,16 +13642,13 @@ impl ProtectionContainerMappingProperties {
 }
 #[doc = "Container mapping provider specific details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProtectionContainerMappingProviderSpecificDetails {
-    #[doc = "Gets the class type. Overridden in derived classes."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct ProtectionContainerMappingProviderSpecificDetails {}
 impl ProtectionContainerMappingProviderSpecificDetails {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets the class type. Overridden in derived classes."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum ProtectionContainerMappingProviderSpecificDetailsUnion {
@@ -13760,16 +13689,13 @@ impl ProtectionContainerProperties {
 }
 #[doc = "Protection Profile custom input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProtectionProfileCustomDetails {
-    #[doc = "The class type."]
-    #[serde(rename = "resourceType")]
-    pub resource_type: String,
-}
+pub struct ProtectionProfileCustomDetails {}
 impl ProtectionProfileCustomDetails {
-    pub fn new(resource_type: String) -> Self {
-        Self { resource_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resourceType")]
 pub enum ProtectionProfileCustomDetailsUnion {
@@ -13802,16 +13728,13 @@ impl ProviderError {
 }
 #[doc = "Replication provider specific recovery point details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProviderSpecificRecoveryPointDetails {
-    #[doc = "Gets the provider type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct ProviderSpecificRecoveryPointDetails {}
 impl ProviderSpecificRecoveryPointDetails {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets the provider type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum ProviderSpecificRecoveryPointDetailsUnion {
@@ -13995,16 +13918,13 @@ pub mod rcm_proxy_details {
 }
 #[doc = "Recovery Availability Set custom input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryAvailabilitySetCustomDetails {
-    #[doc = "The class type."]
-    #[serde(rename = "resourceType")]
-    pub resource_type: String,
-}
+pub struct RecoveryAvailabilitySetCustomDetails {}
 impl RecoveryAvailabilitySetCustomDetails {
-    pub fn new(resource_type: String) -> Self {
-        Self { resource_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resourceType")]
 pub enum RecoveryAvailabilitySetCustomDetailsUnion {
@@ -14228,16 +14148,13 @@ impl RecoveryPlanAction {
 }
 #[doc = "Recovery plan action custom details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryPlanActionDetails {
-    #[doc = "Gets the type of action details (see RecoveryPlanActionDetailsTypes enum for possible values)."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct RecoveryPlanActionDetails {}
 impl RecoveryPlanActionDetails {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets the type of action details (see RecoveryPlanActionDetailsTypes enum for possible values)."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum RecoveryPlanActionDetailsUnion {
@@ -15072,16 +14989,13 @@ impl RecoveryPlanProtectedItem {
 }
 #[doc = "Recovery plan provider specific details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryPlanProviderSpecificDetails {
-    #[doc = "Gets the Instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct RecoveryPlanProviderSpecificDetails {}
 impl RecoveryPlanProviderSpecificDetails {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets the Instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum RecoveryPlanProviderSpecificDetailsUnion {
@@ -15090,16 +15004,13 @@ pub enum RecoveryPlanProviderSpecificDetailsUnion {
 }
 #[doc = "Recovery plan provider specific failover input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryPlanProviderSpecificFailoverInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct RecoveryPlanProviderSpecificFailoverInput {}
 impl RecoveryPlanProviderSpecificFailoverInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum RecoveryPlanProviderSpecificFailoverInputUnion {
@@ -15114,16 +15025,13 @@ pub enum RecoveryPlanProviderSpecificFailoverInputUnion {
 }
 #[doc = "Recovery plan provider specific input base class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryPlanProviderSpecificInput {
-    #[doc = "Gets the Instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct RecoveryPlanProviderSpecificInput {}
 impl RecoveryPlanProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets the Instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum RecoveryPlanProviderSpecificInputUnion {
@@ -15493,16 +15401,13 @@ impl RecoveryPointProperties {
 }
 #[doc = "Recovery Proximity placement group custom input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryProximityPlacementGroupCustomDetails {
-    #[doc = "The class type."]
-    #[serde(rename = "resourceType")]
-    pub resource_type: String,
-}
+pub struct RecoveryProximityPlacementGroupCustomDetails {}
 impl RecoveryProximityPlacementGroupCustomDetails {
-    pub fn new(resource_type: String) -> Self {
-        Self { resource_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resourceType")]
 pub enum RecoveryProximityPlacementGroupCustomDetailsUnion {
@@ -15510,16 +15415,13 @@ pub enum RecoveryProximityPlacementGroupCustomDetailsUnion {
 }
 #[doc = "Recovery Resource Group custom input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryResourceGroupCustomDetails {
-    #[doc = "The class type."]
-    #[serde(rename = "resourceType")]
-    pub resource_type: String,
-}
+pub struct RecoveryResourceGroupCustomDetails {}
 impl RecoveryResourceGroupCustomDetails {
-    pub fn new(resource_type: String) -> Self {
-        Self { resource_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resourceType")]
 pub enum RecoveryResourceGroupCustomDetailsUnion {
@@ -15649,16 +15551,13 @@ impl RecoveryServicesProviderProperties {
 }
 #[doc = "Recovery Virtual network custom input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryVirtualNetworkCustomDetails {
-    #[doc = "The class type."]
-    #[serde(rename = "resourceType")]
-    pub resource_type: String,
-}
+pub struct RecoveryVirtualNetworkCustomDetails {}
 impl RecoveryVirtualNetworkCustomDetails {
-    pub fn new(resource_type: String) -> Self {
-        Self { resource_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resourceType")]
 pub enum RecoveryVirtualNetworkCustomDetailsUnion {
@@ -15691,16 +15590,13 @@ impl RemoveDisksInputProperties {
 }
 #[doc = "Remove Disk provider specific input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RemoveDisksProviderSpecificInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct RemoveDisksProviderSpecificInput {}
 impl RemoveDisksProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum RemoveDisksProviderSpecificInputUnion {
@@ -16179,16 +16075,13 @@ impl ReplicationProtectionIntentProperties {
 }
 #[doc = "Replication provider specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplicationProtectionIntentProviderSpecificSettings {
-    #[doc = "Gets the Instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct ReplicationProtectionIntentProviderSpecificSettings {}
 impl ReplicationProtectionIntentProviderSpecificSettings {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets the Instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum ReplicationProtectionIntentProviderSpecificSettingsUnion {
@@ -16209,16 +16102,13 @@ impl ReplicationProviderContainerUnmappingInput {
 }
 #[doc = "Provider specific input for container creation operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplicationProviderSpecificContainerCreationInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct ReplicationProviderSpecificContainerCreationInput {}
 impl ReplicationProviderSpecificContainerCreationInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum ReplicationProviderSpecificContainerCreationInputUnion {
@@ -16230,16 +16120,13 @@ pub enum ReplicationProviderSpecificContainerCreationInputUnion {
 }
 #[doc = "Provider specific input for pairing operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplicationProviderSpecificContainerMappingInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct ReplicationProviderSpecificContainerMappingInput {}
 impl ReplicationProviderSpecificContainerMappingInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum ReplicationProviderSpecificContainerMappingInputUnion {
@@ -16249,16 +16136,13 @@ pub enum ReplicationProviderSpecificContainerMappingInputUnion {
 }
 #[doc = "Replication provider specific settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplicationProviderSpecificSettings {
-    #[doc = "Gets the Instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct ReplicationProviderSpecificSettings {}
 impl ReplicationProviderSpecificSettings {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets the Instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum ReplicationProviderSpecificSettingsUnion {
@@ -16277,16 +16161,13 @@ pub enum ReplicationProviderSpecificSettingsUnion {
 }
 #[doc = "Provider specific input for update pairing operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplicationProviderSpecificUpdateContainerMappingInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct ReplicationProviderSpecificUpdateContainerMappingInput {}
 impl ReplicationProviderSpecificUpdateContainerMappingInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum ReplicationProviderSpecificUpdateContainerMappingInputUnion {
@@ -16529,16 +16410,13 @@ impl ResumeReplicationInputProperties {
 }
 #[doc = "Resume replication provider specific input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResumeReplicationProviderSpecificInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct ResumeReplicationProviderSpecificInput {}
 impl ResumeReplicationProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum ResumeReplicationProviderSpecificInputUnion {
@@ -16569,16 +16447,13 @@ impl ResyncInputProperties {
 }
 #[doc = "Resync provider specific input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResyncProviderSpecificInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct ResyncProviderSpecificInput {}
 impl ResyncProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum ResyncProviderSpecificInputUnion {
@@ -16634,16 +16509,13 @@ impl ReverseReplicationInputProperties {
 }
 #[doc = "Provider specific reverse replication input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReverseReplicationProviderSpecificInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct ReverseReplicationProviderSpecificInput {}
 impl ReverseReplicationProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum ReverseReplicationProviderSpecificInputUnion {
@@ -16749,16 +16621,13 @@ impl ServiceError {
 }
 #[doc = "Storage account custom input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageAccountCustomDetails {
-    #[doc = "The class type."]
-    #[serde(rename = "resourceType")]
-    pub resource_type: String,
-}
+pub struct StorageAccountCustomDetails {}
 impl StorageAccountCustomDetails {
-    pub fn new(resource_type: String) -> Self {
-        Self { resource_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resourceType")]
 pub enum StorageAccountCustomDetailsUnion {
@@ -17033,16 +16902,13 @@ impl SwitchProtectionJobDetails {
 }
 #[doc = "Provider specific switch protection input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SwitchProtectionProviderSpecificInput {
-    #[doc = "Gets the Instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct SwitchProtectionProviderSpecificInput {}
 impl SwitchProtectionProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets the Instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum SwitchProtectionProviderSpecificInputUnion {
@@ -17078,16 +16944,13 @@ impl SwitchProviderInputProperties {
 }
 #[doc = "Provider specific switch provider input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SwitchProviderProviderSpecificInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct SwitchProviderProviderSpecificInput {}
 impl SwitchProviderProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum SwitchProviderProviderSpecificInputUnion {
@@ -17189,16 +17052,13 @@ impl TargetComputeSizeProperties {
 }
 #[doc = "Task details based on specific task type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TaskTypeDetails {
-    #[doc = "The type of task details."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct TaskTypeDetails {}
 impl TaskTypeDetails {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The type of task details."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum TaskTypeDetailsUnion {
@@ -17308,16 +17168,13 @@ impl TestFailoverJobDetails {
 }
 #[doc = "Provider specific test failover input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TestFailoverProviderSpecificInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct TestFailoverProviderSpecificInput {}
 impl TestFailoverProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum TestFailoverProviderSpecificInputUnion {
@@ -17376,16 +17233,13 @@ impl TestMigrateInputProperties {
 }
 #[doc = "Test migrate provider specific input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TestMigrateProviderSpecificInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct TestMigrateProviderSpecificInput {}
 impl TestMigrateProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum TestMigrateProviderSpecificInputUnion {
@@ -17422,16 +17276,13 @@ impl UnplannedFailoverInputProperties {
 }
 #[doc = "Provider specific unplanned failover input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UnplannedFailoverProviderSpecificInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct UnplannedFailoverProviderSpecificInput {}
 impl UnplannedFailoverProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum UnplannedFailoverProviderSpecificInputUnion {
@@ -17476,16 +17327,13 @@ impl UpdateApplianceForReplicationProtectedItemInputProperties {
 }
 #[doc = "Update replication protected item provider specific input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateApplianceForReplicationProtectedItemProviderSpecificInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct UpdateApplianceForReplicationProtectedItemProviderSpecificInput {}
 impl UpdateApplianceForReplicationProtectedItemProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum UpdateApplianceForReplicationProtectedItemProviderSpecificInputUnion {
@@ -17535,16 +17383,13 @@ impl UpdateMigrationItemInputProperties {
 }
 #[doc = "Update migration item provider specific input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateMigrationItemProviderSpecificInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct UpdateMigrationItemProviderSpecificInput {}
 impl UpdateMigrationItemProviderSpecificInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum UpdateMigrationItemProviderSpecificInputUnion {
@@ -17780,16 +17625,13 @@ pub mod update_replication_protected_item_input_properties {
 }
 #[doc = "Update replication protected item provider specific input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct UpdateReplicationProtectedItemProviderInput {
-    #[doc = "The class type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct UpdateReplicationProtectedItemProviderInput {}
 impl UpdateReplicationProtectedItemProviderInput {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The class type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum UpdateReplicationProtectedItemProviderInputUnion {

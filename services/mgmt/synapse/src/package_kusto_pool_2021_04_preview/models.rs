@@ -479,64 +479,20 @@ pub struct DataConnection {
     #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[doc = "Kind of the endpoint for the data connection"]
-    pub kind: data_connection::Kind,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 impl DataConnection {
-    pub fn new(kind: data_connection::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             proxy_resource: ProxyResource::default(),
             location: None,
-            kind,
             system_data: None,
         }
     }
 }
-pub mod data_connection {
-    use super::*;
-    #[doc = "Kind of the endpoint for the data connection"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        EventHub,
-        EventGrid,
-        IotHub,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::EventHub => serializer.serialize_unit_variant("Kind", 0u32, "EventHub"),
-                Self::EventGrid => serializer.serialize_unit_variant("Kind", 1u32, "EventGrid"),
-                Self::IotHub => serializer.serialize_unit_variant("Kind", 2u32, "IotHub"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Kind of the endpoint for the data connection"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum DataConnectionUnion {
@@ -574,62 +530,20 @@ pub struct Database {
     #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[doc = "Kind of the database"]
-    pub kind: database::Kind,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 impl Database {
-    pub fn new(kind: database::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             proxy_resource: ProxyResource::default(),
             location: None,
-            kind,
             system_data: None,
         }
     }
 }
-pub mod database {
-    use super::*;
-    #[doc = "Kind of the database"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        ReadWrite,
-        ReadOnlyFollowing,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::ReadWrite => serializer.serialize_unit_variant("Kind", 0u32, "ReadWrite"),
-                Self::ReadOnlyFollowing => serializer.serialize_unit_variant("Kind", 1u32, "ReadOnlyFollowing"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Kind of the database"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum DatabaseUnion {

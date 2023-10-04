@@ -162,17 +162,15 @@ pub mod server_vulnerability_assessments_azure_setting_properties {
 pub struct ServerVulnerabilityAssessmentsSetting {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "The kind of the server vulnerability assessments setting"]
-    pub kind: ServerVulnerabilityAssessmentsSettingKind,
 }
 impl ServerVulnerabilityAssessmentsSetting {
-    pub fn new(kind: ServerVulnerabilityAssessmentsSettingKind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource: Resource::default(),
-            kind,
         }
     }
 }
+#[doc = "The kind of the server vulnerability assessments setting"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum ServerVulnerabilityAssessmentsSettingUnion {

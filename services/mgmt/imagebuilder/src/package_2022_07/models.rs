@@ -48,15 +48,13 @@ impl CloudErrorBody {
 }
 #[doc = "Describes how to generate new x.y.z version number for distribution."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DistributeVersioner {
-    #[doc = "Version numbering scheme to be used."]
-    pub scheme: String,
-}
+pub struct DistributeVersioner {}
 impl DistributeVersioner {
-    pub fn new(scheme: String) -> Self {
-        Self { scheme }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Version numbering scheme to be used."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "scheme")]
 pub enum DistributeVersionerUnion {
@@ -114,18 +112,16 @@ impl ImageTemplate {
 #[doc = "Describes a unit of image customization"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateCustomizer {
-    #[doc = "The type of customization tool you want to use on the Image. For example, \"Shell\" can be shell customizer"]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Friendly Name to provide context on what this customization step does"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 impl ImageTemplateCustomizer {
-    pub fn new(type_: String) -> Self {
-        Self { type_, name: None }
+    pub fn new() -> Self {
+        Self { name: None }
     }
 }
+#[doc = "The type of customization tool you want to use on the Image. For example, \"Shell\" can be shell customizer"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ImageTemplateCustomizerUnion {
@@ -138,9 +134,6 @@ pub enum ImageTemplateCustomizerUnion {
 #[doc = "Generic distribution object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateDistributor {
-    #[doc = "Type of distribution."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The name to be used for the associated RunOutput."]
     #[serde(rename = "runOutputName")]
     pub run_output_name: String,
@@ -149,14 +142,14 @@ pub struct ImageTemplateDistributor {
     pub artifact_tags: Option<serde_json::Value>,
 }
 impl ImageTemplateDistributor {
-    pub fn new(type_: String, run_output_name: String) -> Self {
+    pub fn new(run_output_name: String) -> Self {
         Self {
-            type_,
             run_output_name,
             artifact_tags: None,
         }
     }
 }
+#[doc = "Type of distribution."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ImageTemplateDistributorUnion {
@@ -242,18 +235,16 @@ pub mod image_template_identity {
 #[doc = "Describes a unit of in-VM validation of image"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateInVmValidator {
-    #[doc = "The type of validation you want to use on the Image. For example, \"Shell\" can be shell validation"]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Friendly Name to provide context on what this validation step does"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 impl ImageTemplateInVmValidator {
-    pub fn new(type_: String) -> Self {
-        Self { type_, name: None }
+    pub fn new() -> Self {
+        Self { name: None }
     }
 }
+#[doc = "The type of validation you want to use on the Image. For example, \"Shell\" can be shell validation"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ImageTemplateInVmValidatorUnion {
@@ -774,16 +765,13 @@ impl ImageTemplateShellValidator {
 }
 #[doc = "Describes a virtual machine image source for building, customizing and distributing"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageTemplateSource {
-    #[doc = "Specifies the type of source image you want to start with."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct ImageTemplateSource {}
 impl ImageTemplateSource {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Specifies the type of source image you want to start with."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ImageTemplateSourceUnion {
@@ -1283,8 +1271,6 @@ impl TriggerCollection {
 #[doc = "Describes the properties of a trigger"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TriggerProperties {
-    #[doc = "The kind of trigger."]
-    pub kind: String,
     #[doc = "Describes the status of a trigger"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<TriggerStatus>,
@@ -1293,14 +1279,14 @@ pub struct TriggerProperties {
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl TriggerProperties {
-    pub fn new(kind: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            kind,
             status: None,
             provisioning_state: None,
         }
     }
 }
+#[doc = "The kind of trigger."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum TriggerPropertiesUnion {

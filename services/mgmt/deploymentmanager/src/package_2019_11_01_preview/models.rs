@@ -81,16 +81,13 @@ impl ArtifactSourceProperties {
 }
 #[doc = "Defines the authentication method and properties to access the artifacts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Authentication {
-    #[doc = "The authentication type"]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct Authentication {}
 impl Authentication {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The authentication type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum AuthenticationUnion {
@@ -136,9 +133,6 @@ impl CloudErrorBody {
 #[doc = "The attributes for the health check step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthCheckStepAttributes {
-    #[doc = "The type of health check."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The duration in ISO 8601 format for which health check waits idly without any checks."]
     #[serde(rename = "waitDuration", default, skip_serializing_if = "Option::is_none")]
     pub wait_duration: Option<String>,
@@ -150,15 +144,15 @@ pub struct HealthCheckStepAttributes {
     pub healthy_state_duration: String,
 }
 impl HealthCheckStepAttributes {
-    pub fn new(type_: String, healthy_state_duration: String) -> Self {
+    pub fn new(healthy_state_duration: String) -> Self {
         Self {
-            type_,
             wait_duration: None,
             max_elastic_duration: None,
             healthy_state_duration,
         }
     }
 }
+#[doc = "The type of health check."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum HealthCheckStepAttributesUnion {
@@ -403,25 +397,13 @@ pub mod rest_request {
 }
 #[doc = "The authentication information required in the REST health check request to the health provider."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestRequestAuthentication {
-    #[doc = "The authentication type."]
-    #[serde(rename = "type")]
-    pub type_: rest_request_authentication::Type,
-}
+pub struct RestRequestAuthentication {}
 impl RestRequestAuthentication {
-    pub fn new(type_: rest_request_authentication::Type) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
-pub mod rest_request_authentication {
-    use super::*;
-    #[doc = "The authentication type."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        ApiKey,
-        RolloutIdentity,
-    }
-}
+#[doc = "The authentication type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum RestRequestAuthenticationUnion {
@@ -936,25 +918,13 @@ impl StepOperationInfo {
 }
 #[doc = "The properties of a step resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StepProperties {
-    #[doc = "The type of step."]
-    #[serde(rename = "stepType")]
-    pub step_type: step_properties::StepType,
-}
+pub struct StepProperties {}
 impl StepProperties {
-    pub fn new(step_type: step_properties::StepType) -> Self {
-        Self { step_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
-pub mod step_properties {
-    use super::*;
-    #[doc = "The type of step."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StepType {
-        Wait,
-        HealthCheck,
-    }
-}
+#[doc = "The type of step."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "stepType")]
 pub enum StepPropertiesUnion {

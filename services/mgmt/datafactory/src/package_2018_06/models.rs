@@ -26,9 +26,6 @@ impl AccessPolicyResponse {
 pub struct Activity {
     #[doc = "Activity name."]
     pub name: String,
-    #[doc = "Type of activity."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Activity description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -56,10 +53,9 @@ pub struct Activity {
     pub user_properties: Vec<UserProperty>,
 }
 impl Activity {
-    pub fn new(name: String, type_: String) -> Self {
+    pub fn new(name: String) -> Self {
         Self {
             name,
-            type_,
             description: None,
             state: None,
             on_inactive_mark_as: None,
@@ -147,6 +143,7 @@ pub mod activity {
         }
     }
 }
+#[doc = "Type of activity."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ActivityUnion {
@@ -5181,16 +5178,13 @@ impl Serialize for CompressionLevel {
 }
 #[doc = "Compression read settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CompressionReadSettings {
-    #[doc = "The Compression setting type."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct CompressionReadSettings {}
 impl CompressionReadSettings {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The Compression setting type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CompressionReadSettingsUnion {}
@@ -5497,9 +5491,6 @@ impl CopyComputeScaleProperties {
 #[doc = "A copy activity sink."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CopySink {
-    #[doc = "Copy sink type."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Write batch size. Type: integer (or Expression with resultType integer), minimum: 0."]
     #[serde(rename = "writeBatchSize", default, skip_serializing_if = "Option::is_none")]
     pub write_batch_size: Option<serde_json::Value>,
@@ -5520,9 +5511,8 @@ pub struct CopySink {
     pub disable_metrics_collection: Option<serde_json::Value>,
 }
 impl CopySink {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             write_batch_size: None,
             write_batch_timeout: None,
             sink_retry_count: None,
@@ -5532,15 +5522,13 @@ impl CopySink {
         }
     }
 }
+#[doc = "Copy sink type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CopySinkUnion {}
 #[doc = "A copy activity source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CopySource {
-    #[doc = "Copy source type."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Source retry count. Type: integer (or Expression with resultType integer)."]
     #[serde(rename = "sourceRetryCount", default, skip_serializing_if = "Option::is_none")]
     pub source_retry_count: Option<serde_json::Value>,
@@ -5555,9 +5543,8 @@ pub struct CopySource {
     pub disable_metrics_collection: Option<serde_json::Value>,
 }
 impl CopySource {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             source_retry_count: None,
             source_retry_wait: None,
             max_concurrent_connections: None,
@@ -5565,21 +5552,19 @@ impl CopySource {
         }
     }
 }
+#[doc = "Copy source type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CopySourceUnion {}
 #[doc = "A copy activity translator."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CopyTranslator {
-    #[doc = "Copy translator type."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct CopyTranslator {}
 impl CopyTranslator {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Copy translator type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CopyTranslatorUnion {}
@@ -6015,9 +6000,6 @@ impl CreateRunResponse {
 #[doc = "The Azure Data Factory nested object which contains the information and credential which can be used to connect with related store or compute resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Credential {
-    #[doc = "Type of credential."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Credential description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -6030,14 +6012,14 @@ pub struct Credential {
     pub annotations: Vec<serde_json::Value>,
 }
 impl Credential {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             description: None,
             annotations: Vec::new(),
         }
     }
 }
+#[doc = "Type of credential."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CredentialUnion {
@@ -6290,16 +6272,13 @@ pub mod custom_events_trigger {
 }
 #[doc = "The base definition of the custom setup."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CustomSetupBase {
-    #[doc = "The type of custom setup."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct CustomSetupBase {}
 impl CustomSetupBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The type of custom setup."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CustomSetupBaseUnion {}
@@ -6341,9 +6320,6 @@ impl DwCopyCommandSettings {
 #[doc = "Azure Data Factory nested object which contains a flow with data movements and transformations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataFlow {
-    #[doc = "Type of data flow."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The description of the data flow."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -6359,9 +6335,8 @@ pub struct DataFlow {
     pub folder: Option<data_flow::Folder>,
 }
 impl DataFlow {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             description: None,
             annotations: Vec::new(),
             folder: None,
@@ -6383,6 +6358,7 @@ pub mod data_flow {
         }
     }
 }
+#[doc = "Type of data flow."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DataFlowUnion {
@@ -7031,9 +7007,6 @@ impl DatabricksSparkPythonActivityTypeProperties {
 #[doc = "The Azure Data Factory nested object which identifies data within different data stores, such as tables, files, folders, and documents."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dataset {
-    #[doc = "Type of dataset."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Dataset description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -7061,9 +7034,8 @@ pub struct Dataset {
     pub folder: Option<dataset::Folder>,
 }
 impl Dataset {
-    pub fn new(type_: String, linked_service_name: LinkedServiceReference) -> Self {
+    pub fn new(linked_service_name: LinkedServiceReference) -> Self {
         Self {
-            type_,
             description: None,
             structure: None,
             schema: None,
@@ -7089,6 +7061,7 @@ pub mod dataset {
         }
     }
 }
+#[doc = "Type of dataset."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DatasetUnion {
@@ -7264,9 +7237,6 @@ impl DatasetListResponse {
 #[doc = "Dataset location."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetLocation {
-    #[doc = "Type of dataset storage location."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Specify the folder path of dataset. Type: string (or Expression with resultType string)"]
     #[serde(rename = "folderPath", default, skip_serializing_if = "Option::is_none")]
     pub folder_path: Option<serde_json::Value>,
@@ -7275,14 +7245,14 @@ pub struct DatasetLocation {
     pub file_name: Option<serde_json::Value>,
 }
 impl DatasetLocation {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             folder_path: None,
             file_name: None,
         }
     }
 }
+#[doc = "Type of dataset storage location."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DatasetLocationUnion {}
@@ -7350,9 +7320,6 @@ impl DatasetSchemaDataElement {
 #[doc = "The format definition of a storage."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetStorageFormat {
-    #[doc = "Type of dataset storage format."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Serializer. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub serializer: Option<serde_json::Value>,
@@ -7361,14 +7328,14 @@ pub struct DatasetStorageFormat {
     pub deserializer: Option<serde_json::Value>,
 }
 impl DatasetStorageFormat {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             serializer: None,
             deserializer: None,
         }
     }
 }
+#[doc = "Type of dataset storage format."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DatasetStorageFormatUnion {}
@@ -7787,16 +7754,13 @@ impl DelimitedTextWriteSettings {
 }
 #[doc = "Referenced dependency."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DependencyReference {
-    #[doc = "The type of dependency reference."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct DependencyReference {}
 impl DependencyReference {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The type of dependency reference."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DependencyReferenceUnion {}
@@ -9055,16 +9019,13 @@ impl ExecutionActivity {
 }
 #[doc = "Export command settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExportSettings {
-    #[doc = "The export setting type."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct ExportSettings {}
 impl ExportSettings {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The export setting type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ExportSettingsUnion {}
@@ -9353,9 +9314,6 @@ pub mod factory_properties {
 #[doc = "Factory's git repo information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FactoryRepoConfiguration {
-    #[doc = "Type of repo configuration."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Account name."]
     #[serde(rename = "accountName")]
     pub account_name: String,
@@ -9376,9 +9334,8 @@ pub struct FactoryRepoConfiguration {
     pub disable_publish: Option<bool>,
 }
 impl FactoryRepoConfiguration {
-    pub fn new(type_: String, account_name: String, repository_name: String, collaboration_branch: String, root_folder: String) -> Self {
+    pub fn new(account_name: String, repository_name: String, collaboration_branch: String, root_folder: String) -> Self {
         Self {
-            type_,
             account_name,
             repository_name,
             collaboration_branch,
@@ -9388,6 +9345,7 @@ impl FactoryRepoConfiguration {
         }
     }
 }
+#[doc = "Type of repo configuration."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum FactoryRepoConfigurationUnion {
@@ -9865,31 +9823,25 @@ impl ForEachActivityTypeProperties {
 }
 #[doc = "Format read settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FormatReadSettings {
-    #[doc = "The read setting type."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct FormatReadSettings {}
 impl FormatReadSettings {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The read setting type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum FormatReadSettingsUnion {}
 #[doc = "Format write settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FormatWriteSettings {
-    #[doc = "The write setting type."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct FormatWriteSettings {}
 impl FormatWriteSettings {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The write setting type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum FormatWriteSettingsUnion {}
@@ -12566,16 +12518,13 @@ impl ImpalaSource {
 }
 #[doc = "Import command settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImportSettings {
-    #[doc = "The import setting type."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct ImportSettings {}
 impl ImportSettings {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The import setting type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ImportSettingsUnion {}
@@ -12696,18 +12645,16 @@ impl InformixTableDatasetTypeProperties {
 #[doc = "Azure Data Factory nested object which serves as a compute resource for activities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntime {
-    #[doc = "The type of integration runtime."]
-    #[serde(rename = "type")]
-    pub type_: IntegrationRuntimeType,
     #[doc = "Integration runtime description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 impl IntegrationRuntime {
-    pub fn new(type_: IntegrationRuntimeType) -> Self {
-        Self { type_, description: None }
+    pub fn new() -> Self {
+        Self { description: None }
     }
 }
+#[doc = "The type of integration runtime."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum IntegrationRuntimeUnion {
@@ -13458,9 +13405,6 @@ impl Serialize for IntegrationRuntimeState {
 #[doc = "Integration runtime status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeStatus {
-    #[doc = "The type of integration runtime."]
-    #[serde(rename = "type")]
-    pub type_: IntegrationRuntimeType,
     #[doc = "The data factory name which the integration runtime belong to."]
     #[serde(rename = "dataFactoryName", default, skip_serializing_if = "Option::is_none")]
     pub data_factory_name: Option<String>,
@@ -13469,14 +13413,14 @@ pub struct IntegrationRuntimeStatus {
     pub state: Option<IntegrationRuntimeState>,
 }
 impl IntegrationRuntimeStatus {
-    pub fn new(type_: IntegrationRuntimeType) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             data_factory_name: None,
             state: None,
         }
     }
 }
+#[doc = "The type of integration runtime."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum IntegrationRuntimeStatusUnion {
@@ -13987,16 +13931,13 @@ impl LinkedIntegrationRuntimeRequest {
 }
 #[doc = "The base definition of a linked integration runtime."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LinkedIntegrationRuntimeType {
-    #[doc = "The authorization type for integration runtime sharing."]
-    #[serde(rename = "authorizationType")]
-    pub authorization_type: String,
-}
+pub struct LinkedIntegrationRuntimeType {}
 impl LinkedIntegrationRuntimeType {
-    pub fn new(authorization_type: String) -> Self {
-        Self { authorization_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The authorization type for integration runtime sharing."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "authorizationType")]
 pub enum LinkedIntegrationRuntimeTypeUnion {
@@ -14007,9 +13948,6 @@ pub enum LinkedIntegrationRuntimeTypeUnion {
 #[doc = "The nested object which contains the information and credential which can be used to connect with related store or compute resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedService {
-    #[doc = "Type of linked service."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Integration runtime reference type."]
     #[serde(rename = "connectVia", default, skip_serializing_if = "Option::is_none")]
     pub connect_via: Option<IntegrationRuntimeReference>,
@@ -14028,9 +13966,8 @@ pub struct LinkedService {
     pub annotations: Vec<serde_json::Value>,
 }
 impl LinkedService {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             connect_via: None,
             description: None,
             parameters: None,
@@ -14038,6 +13975,7 @@ impl LinkedService {
         }
     }
 }
+#[doc = "Type of linked service."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum LinkedServiceUnion {
@@ -22019,16 +21957,13 @@ pub mod script_activity_type_properties {
 }
 #[doc = "The base definition of a secret type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretBase {
-    #[doc = "Type of the secret."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct SecretBase {}
 impl SecretBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the secret."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum SecretBaseUnion {
@@ -24380,9 +24315,6 @@ impl SsisFolder {
 #[doc = "SSIS object metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SsisObjectMetadata {
-    #[doc = "The type of SSIS object metadata."]
-    #[serde(rename = "type")]
-    pub type_: SsisObjectMetadataType,
     #[doc = "Metadata id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<i64>,
@@ -24394,15 +24326,15 @@ pub struct SsisObjectMetadata {
     pub description: Option<String>,
 }
 impl SsisObjectMetadata {
-    pub fn new(type_: SsisObjectMetadataType) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             id: None,
             name: None,
             description: None,
         }
     }
 }
+#[doc = "The type of SSIS object metadata."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum SsisObjectMetadataUnion {
@@ -24663,9 +24595,6 @@ impl StagingSettings {
 #[doc = "Connector read setting."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StoreReadSettings {
-    #[doc = "The read setting type."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The maximum concurrent connection count for the source data store. Type: integer (or Expression with resultType integer)."]
     #[serde(rename = "maxConcurrentConnections", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_connections: Option<serde_json::Value>,
@@ -24674,23 +24603,20 @@ pub struct StoreReadSettings {
     pub disable_metrics_collection: Option<serde_json::Value>,
 }
 impl StoreReadSettings {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             max_concurrent_connections: None,
             disable_metrics_collection: None,
         }
     }
 }
+#[doc = "The read setting type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum StoreReadSettingsUnion {}
 #[doc = "Connector write settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StoreWriteSettings {
-    #[doc = "The write setting type."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The maximum concurrent connection count for the source data store. Type: integer (or Expression with resultType integer)."]
     #[serde(rename = "maxConcurrentConnections", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_connections: Option<serde_json::Value>,
@@ -24702,15 +24628,15 @@ pub struct StoreWriteSettings {
     pub copy_behavior: Option<serde_json::Value>,
 }
 impl StoreWriteSettings {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             max_concurrent_connections: None,
             disable_metrics_collection: None,
             copy_behavior: None,
         }
     }
 }
+#[doc = "The write setting type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum StoreWriteSettingsUnion {}
@@ -25844,9 +25770,6 @@ impl Transformation {
 #[doc = "Azure data factory nested object which contains information about creating pipeline run"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Trigger {
-    #[doc = "Trigger type."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Trigger description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -25862,15 +25785,15 @@ pub struct Trigger {
     pub annotations: Vec<serde_json::Value>,
 }
 impl Trigger {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             description: None,
             runtime_state: None,
             annotations: Vec::new(),
         }
     }
 }
+#[doc = "Trigger type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum TriggerUnion {
@@ -27075,57 +26998,13 @@ impl WebLinkedService {
 pub struct WebLinkedServiceTypeProperties {
     #[doc = "The URL of the web service endpoint, e.g. https://www.microsoft.com . Type: string (or Expression with resultType string)."]
     pub url: serde_json::Value,
-    #[doc = "Type of authentication used to connect to the web table source."]
-    #[serde(rename = "authenticationType")]
-    pub authentication_type: web_linked_service_type_properties::AuthenticationType,
 }
 impl WebLinkedServiceTypeProperties {
-    pub fn new(url: serde_json::Value, authentication_type: web_linked_service_type_properties::AuthenticationType) -> Self {
-        Self { url, authentication_type }
+    pub fn new(url: serde_json::Value) -> Self {
+        Self { url }
     }
 }
-pub mod web_linked_service_type_properties {
-    use super::*;
-    #[doc = "Type of authentication used to connect to the web table source."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "AuthenticationType")]
-    pub enum AuthenticationType {
-        Basic,
-        Anonymous,
-        ClientCertificate,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for AuthenticationType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for AuthenticationType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for AuthenticationType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Basic => serializer.serialize_unit_variant("AuthenticationType", 0u32, "Basic"),
-                Self::Anonymous => serializer.serialize_unit_variant("AuthenticationType", 1u32, "Anonymous"),
-                Self::ClientCertificate => serializer.serialize_unit_variant("AuthenticationType", 2u32, "ClientCertificate"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Type of authentication used to connect to the web table source."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "authenticationType")]
 pub enum WebLinkedServiceTypePropertiesUnion {

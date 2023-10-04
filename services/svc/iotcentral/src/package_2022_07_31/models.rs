@@ -79,16 +79,13 @@ impl ApiTokenCollection {
 }
 #[doc = "The attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Attestation {
-    #[doc = "Type of the attestation."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct Attestation {}
 impl Attestation {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the attestation."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum AttestationUnion {
@@ -679,16 +676,13 @@ pub mod file_upload {
 }
 #[doc = "The attestation definition for an enrollment group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GroupAttestation {
-    #[doc = "Type of the attestation."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct GroupAttestation {}
 impl GroupAttestation {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the attestation."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum GroupAttestationUnion {
@@ -870,16 +864,13 @@ impl JobCollection {
 }
 #[doc = "The job data definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobData {
-    #[doc = "Type of the job data."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct JobData {}
 impl JobData {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the job data."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum JobDataUnion {
@@ -985,16 +976,13 @@ pub mod job_schedule {
 }
 #[doc = "The end definition of job schedule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobScheduleEnd {
-    #[doc = "Type of the job schedule end."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct JobScheduleEnd {}
 impl JobScheduleEnd {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the job schedule end."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum JobScheduleEndUnion {
@@ -1349,19 +1337,13 @@ pub struct User {
     #[doc = "Unique ID of the user."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Type of the user."]
-    #[serde(rename = "type")]
-    pub type_: String,
 }
 impl User {
-    pub fn new(permission: Permission, type_: String) -> Self {
-        Self {
-            permission,
-            id: None,
-            type_,
-        }
+    pub fn new(permission: Permission) -> Self {
+        Self { permission, id: None }
     }
 }
+#[doc = "Type of the user."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum UserUnion {

@@ -93,19 +93,16 @@ pub struct CreateJobProperties {
     pub runtime_version: Option<String>,
     #[doc = "The script to run. Please note that the maximum script size is 3 MB."]
     pub script: String,
-    #[doc = "The job type of the current job (Hive, USql, or Scope (for internal use only))."]
-    #[serde(rename = "type")]
-    pub type_: String,
 }
 impl CreateJobProperties {
-    pub fn new(script: String, type_: String) -> Self {
+    pub fn new(script: String) -> Self {
         Self {
             runtime_version: None,
             script,
-            type_,
         }
     }
 }
+#[doc = "The job type of the current job (Hive, USql, or Scope (for internal use only))."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CreateJobPropertiesUnion {
@@ -670,19 +667,16 @@ pub struct JobProperties {
     pub runtime_version: Option<String>,
     #[doc = "The script to run. Please note that the maximum script size is 3 MB."]
     pub script: String,
-    #[doc = "The job type of the current job (Hive, USql, or Scope (for internal use only))."]
-    #[serde(rename = "type")]
-    pub type_: String,
 }
 impl JobProperties {
-    pub fn new(script: String, type_: String) -> Self {
+    pub fn new(script: String) -> Self {
         Self {
             runtime_version: None,
             script,
-            type_,
         }
     }
 }
+#[doc = "The job type of the current job (Hive, USql, or Scope (for internal use only))."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum JobPropertiesUnion {

@@ -166,16 +166,13 @@ pub mod account_encryption {
 }
 #[doc = "Base class for access policies authentication methods."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthenticationBase {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
-}
+pub struct AuthenticationBase {}
 impl AuthenticationBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum AuthenticationBaseUnion {
@@ -1089,17 +1086,15 @@ impl TokenClaim {
 #[doc = "Key properties for JWT token validation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TokenKey {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
     #[doc = "JWT token key id. Validation keys are looked up based on the key id present on the JWT token header."]
     pub kid: String,
 }
 impl TokenKey {
-    pub fn new(type_: String, kid: String) -> Self {
-        Self { type_, kid }
+    pub fn new(kid: String) -> Self {
+        Self { kid }
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum TokenKeyUnion {

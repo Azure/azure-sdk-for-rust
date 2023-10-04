@@ -2093,9 +2093,6 @@ impl CustomDomain {
 #[doc = "The JSON object that contains the properties to secure a custom domain."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomDomainHttpsParameters {
-    #[doc = "Defines the source of the SSL certificate."]
-    #[serde(rename = "certificateSource")]
-    pub certificate_source: custom_domain_https_parameters::CertificateSource,
     #[doc = "Defines the TLS extension protocol that is used for secure delivery."]
     #[serde(rename = "protocolType")]
     pub protocol_type: custom_domain_https_parameters::ProtocolType,
@@ -2104,12 +2101,8 @@ pub struct CustomDomainHttpsParameters {
     pub minimum_tls_version: Option<custom_domain_https_parameters::MinimumTlsVersion>,
 }
 impl CustomDomainHttpsParameters {
-    pub fn new(
-        certificate_source: custom_domain_https_parameters::CertificateSource,
-        protocol_type: custom_domain_https_parameters::ProtocolType,
-    ) -> Self {
+    pub fn new(protocol_type: custom_domain_https_parameters::ProtocolType) -> Self {
         Self {
-            certificate_source,
             protocol_type,
             minimum_tls_version: None,
         }
@@ -2117,43 +2110,6 @@ impl CustomDomainHttpsParameters {
 }
 pub mod custom_domain_https_parameters {
     use super::*;
-    #[doc = "Defines the source of the SSL certificate."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "CertificateSource")]
-    pub enum CertificateSource {
-        AzureKeyVault,
-        Cdn,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for CertificateSource {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for CertificateSource {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for CertificateSource {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::AzureKeyVault => serializer.serialize_unit_variant("CertificateSource", 0u32, "AzureKeyVault"),
-                Self::Cdn => serializer.serialize_unit_variant("CertificateSource", 1u32, "Cdn"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
     #[doc = "Defines the TLS extension protocol that is used for secure delivery."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ProtocolType")]
@@ -2202,6 +2158,7 @@ pub mod custom_domain_https_parameters {
         Tls12,
     }
 }
+#[doc = "Defines the source of the SSL certificate."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "certificateSource")]
 pub enum CustomDomainHttpsParametersUnion {
@@ -2846,69 +2803,13 @@ impl DeliveryRule {
 }
 #[doc = "An action for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeliveryRuleAction {
-    #[doc = "The name of the action for the delivery rule."]
-    pub name: delivery_rule_action::Name,
-}
+pub struct DeliveryRuleAction {}
 impl DeliveryRuleAction {
-    pub fn new(name: delivery_rule_action::Name) -> Self {
-        Self { name }
+    pub fn new() -> Self {
+        Self {}
     }
 }
-pub mod delivery_rule_action {
-    use super::*;
-    #[doc = "The name of the action for the delivery rule."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Name")]
-    pub enum Name {
-        CacheExpiration,
-        CacheKeyQueryString,
-        ModifyRequestHeader,
-        ModifyResponseHeader,
-        UrlRedirect,
-        UrlRewrite,
-        UrlSigning,
-        OriginGroupOverride,
-        RouteConfigurationOverride,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Name {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Name {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Name {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::CacheExpiration => serializer.serialize_unit_variant("Name", 0u32, "CacheExpiration"),
-                Self::CacheKeyQueryString => serializer.serialize_unit_variant("Name", 1u32, "CacheKeyQueryString"),
-                Self::ModifyRequestHeader => serializer.serialize_unit_variant("Name", 2u32, "ModifyRequestHeader"),
-                Self::ModifyResponseHeader => serializer.serialize_unit_variant("Name", 3u32, "ModifyResponseHeader"),
-                Self::UrlRedirect => serializer.serialize_unit_variant("Name", 4u32, "UrlRedirect"),
-                Self::UrlRewrite => serializer.serialize_unit_variant("Name", 5u32, "UrlRewrite"),
-                Self::UrlSigning => serializer.serialize_unit_variant("Name", 6u32, "UrlSigning"),
-                Self::OriginGroupOverride => serializer.serialize_unit_variant("Name", 7u32, "OriginGroupOverride"),
-                Self::RouteConfigurationOverride => serializer.serialize_unit_variant("Name", 8u32, "RouteConfigurationOverride"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The name of the action for the delivery rule."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "name")]
 pub enum DeliveryRuleActionUnion {
@@ -2972,89 +2873,13 @@ impl DeliveryRuleClientPortCondition {
 }
 #[doc = "A condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeliveryRuleCondition {
-    #[doc = "The name of the condition for the delivery rule."]
-    pub name: delivery_rule_condition::Name,
-}
+pub struct DeliveryRuleCondition {}
 impl DeliveryRuleCondition {
-    pub fn new(name: delivery_rule_condition::Name) -> Self {
-        Self { name }
+    pub fn new() -> Self {
+        Self {}
     }
 }
-pub mod delivery_rule_condition {
-    use super::*;
-    #[doc = "The name of the condition for the delivery rule."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Name")]
-    pub enum Name {
-        RemoteAddress,
-        RequestMethod,
-        QueryString,
-        PostArgs,
-        RequestUri,
-        RequestHeader,
-        RequestBody,
-        RequestScheme,
-        UrlPath,
-        UrlFileExtension,
-        UrlFileName,
-        HttpVersion,
-        Cookies,
-        IsDevice,
-        SocketAddr,
-        ClientPort,
-        ServerPort,
-        HostName,
-        SslProtocol,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Name {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Name {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Name {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::RemoteAddress => serializer.serialize_unit_variant("Name", 0u32, "RemoteAddress"),
-                Self::RequestMethod => serializer.serialize_unit_variant("Name", 1u32, "RequestMethod"),
-                Self::QueryString => serializer.serialize_unit_variant("Name", 2u32, "QueryString"),
-                Self::PostArgs => serializer.serialize_unit_variant("Name", 3u32, "PostArgs"),
-                Self::RequestUri => serializer.serialize_unit_variant("Name", 4u32, "RequestUri"),
-                Self::RequestHeader => serializer.serialize_unit_variant("Name", 5u32, "RequestHeader"),
-                Self::RequestBody => serializer.serialize_unit_variant("Name", 6u32, "RequestBody"),
-                Self::RequestScheme => serializer.serialize_unit_variant("Name", 7u32, "RequestScheme"),
-                Self::UrlPath => serializer.serialize_unit_variant("Name", 8u32, "UrlPath"),
-                Self::UrlFileExtension => serializer.serialize_unit_variant("Name", 9u32, "UrlFileExtension"),
-                Self::UrlFileName => serializer.serialize_unit_variant("Name", 10u32, "UrlFileName"),
-                Self::HttpVersion => serializer.serialize_unit_variant("Name", 11u32, "HttpVersion"),
-                Self::Cookies => serializer.serialize_unit_variant("Name", 12u32, "Cookies"),
-                Self::IsDevice => serializer.serialize_unit_variant("Name", 13u32, "IsDevice"),
-                Self::SocketAddr => serializer.serialize_unit_variant("Name", 14u32, "SocketAddr"),
-                Self::ClientPort => serializer.serialize_unit_variant("Name", 15u32, "ClientPort"),
-                Self::ServerPort => serializer.serialize_unit_variant("Name", 16u32, "ServerPort"),
-                Self::HostName => serializer.serialize_unit_variant("Name", 17u32, "HostName"),
-                Self::SslProtocol => serializer.serialize_unit_variant("Name", 18u32, "SslProtocol"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The name of the condition for the delivery rule."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "name")]
 pub enum DeliveryRuleConditionUnion {
@@ -7634,16 +7459,13 @@ impl SecretListResult {
 }
 #[doc = "The json object containing secret parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretParameters {
-    #[doc = "The type of the secret resource."]
-    #[serde(rename = "type")]
-    pub type_: SecretType,
-}
+pub struct SecretParameters {}
 impl SecretParameters {
-    pub fn new(type_: SecretType) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The type of the secret resource."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum SecretParametersUnion {
@@ -7770,54 +7592,13 @@ impl SecurityPolicyProperties {
 }
 #[doc = "The json object containing security policy parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecurityPolicyPropertiesParameters {
-    #[doc = "The type of the Security policy to create."]
-    #[serde(rename = "type")]
-    pub type_: security_policy_properties_parameters::Type,
-}
+pub struct SecurityPolicyPropertiesParameters {}
 impl SecurityPolicyPropertiesParameters {
-    pub fn new(type_: security_policy_properties_parameters::Type) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
-pub mod security_policy_properties_parameters {
-    use super::*;
-    #[doc = "The type of the Security policy to create."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        WebApplicationFirewall,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::WebApplicationFirewall => serializer.serialize_unit_variant("Type", 0u32, "WebApplicationFirewall"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The type of the Security policy to create."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum SecurityPolicyPropertiesParametersUnion {

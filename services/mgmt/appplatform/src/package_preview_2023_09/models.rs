@@ -5,16 +5,13 @@ use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
 #[doc = "Auth setting payload."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AcceleratorAuthSetting {
-    #[doc = "The type of the auth setting."]
-    #[serde(rename = "authType")]
-    pub auth_type: String,
-}
+pub struct AcceleratorAuthSetting {}
 impl AcceleratorAuthSetting {
-    pub fn new(auth_type: String) -> Self {
-        Self { auth_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The type of the auth setting."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "authType")]
 pub enum AcceleratorAuthSettingUnion {
@@ -1962,9 +1959,6 @@ impl BuildpacksGroupProperties {
 #[doc = "Certificate resource payload."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateProperties {
-    #[doc = "The type of the certificate source."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The thumbprint of certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
@@ -1996,9 +1990,8 @@ pub struct CertificateProperties {
     pub provisioning_state: Option<certificate_properties::ProvisioningState>,
 }
 impl CertificateProperties {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             thumbprint: None,
             issuer: None,
             issued_date: None,
@@ -2056,6 +2049,7 @@ pub mod certificate_properties {
         }
     }
 }
+#[doc = "The type of the certificate source."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CertificatePropertiesUnion {
@@ -2869,16 +2863,13 @@ impl ContainerRegistryBasicCredentials {
 }
 #[doc = "The credential for the container registry resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContainerRegistryCredentials {
-    #[doc = "The credential type of the container registry credentials."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct ContainerRegistryCredentials {}
 impl ContainerRegistryCredentials {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The credential type of the container registry credentials."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ContainerRegistryCredentialsUnion {
@@ -3208,9 +3199,6 @@ pub type CustomPersistentDiskCollection = Vec<CustomPersistentDiskResource>;
 #[doc = "Custom persistent disk resource payload."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomPersistentDiskProperties {
-    #[doc = "The type of the underlying resource to mount as a persistent disk."]
-    #[serde(rename = "type")]
-    pub type_: custom_persistent_disk_properties::Type,
     #[doc = "The mount path of the persistent disk."]
     #[serde(rename = "mountPath")]
     pub mount_path: String,
@@ -3230,9 +3218,8 @@ pub struct CustomPersistentDiskProperties {
     pub mount_options: Vec<String>,
 }
 impl CustomPersistentDiskProperties {
-    pub fn new(type_: custom_persistent_disk_properties::Type, mount_path: String) -> Self {
+    pub fn new(mount_path: String) -> Self {
         Self {
-            type_,
             mount_path,
             read_only: None,
             enable_sub_path: None,
@@ -3240,44 +3227,7 @@ impl CustomPersistentDiskProperties {
         }
     }
 }
-pub mod custom_persistent_disk_properties {
-    use super::*;
-    #[doc = "The type of the underlying resource to mount as a persistent disk."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        AzureFileVolume,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::AzureFileVolume => serializer.serialize_unit_variant("Type", 0u32, "AzureFileVolume"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The type of the underlying resource to mount as a persistent disk."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CustomPersistentDiskPropertiesUnion {
@@ -5408,53 +5358,13 @@ impl LogSpecification {
 }
 #[doc = "Configuration for the planned maintenance"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MaintenanceScheduleConfiguration {
-    #[doc = "The frequency to run the maintenance job"]
-    pub frequency: maintenance_schedule_configuration::Frequency,
-}
+pub struct MaintenanceScheduleConfiguration {}
 impl MaintenanceScheduleConfiguration {
-    pub fn new(frequency: maintenance_schedule_configuration::Frequency) -> Self {
-        Self { frequency }
+    pub fn new() -> Self {
+        Self {}
     }
 }
-pub mod maintenance_schedule_configuration {
-    use super::*;
-    #[doc = "The frequency to run the maintenance job"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Frequency")]
-    pub enum Frequency {
-        Weekly,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Frequency {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Frequency {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Frequency {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Weekly => serializer.serialize_unit_variant("Frequency", 0u32, "Weekly"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The frequency to run the maintenance job"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "frequency")]
 pub enum MaintenanceScheduleConfigurationUnion {
@@ -6126,60 +6036,13 @@ impl Probe {
 }
 #[doc = "The action of the probe."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProbeAction {
-    #[doc = "The type of the action to take to perform the health check."]
-    #[serde(rename = "type")]
-    pub type_: probe_action::Type,
-}
+pub struct ProbeAction {}
 impl ProbeAction {
-    pub fn new(type_: probe_action::Type) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
-pub mod probe_action {
-    use super::*;
-    #[doc = "The type of the action to take to perform the health check."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        #[serde(rename = "HTTPGetAction")]
-        HttpGetAction,
-        #[serde(rename = "TCPSocketAction")]
-        TcpSocketAction,
-        ExecAction,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::HttpGetAction => serializer.serialize_unit_variant("Type", 0u32, "HTTPGetAction"),
-                Self::TcpSocketAction => serializer.serialize_unit_variant("Type", 1u32, "TCPSocketAction"),
-                Self::ExecAction => serializer.serialize_unit_variant("Type", 2u32, "ExecAction"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The type of the action to take to perform the health check."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ProbeActionUnion {
@@ -7160,54 +7023,13 @@ impl StorageAccount {
 }
 #[doc = "Storage resource payload."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageProperties {
-    #[doc = "The type of the storage."]
-    #[serde(rename = "storageType")]
-    pub storage_type: storage_properties::StorageType,
-}
+pub struct StorageProperties {}
 impl StorageProperties {
-    pub fn new(storage_type: storage_properties::StorageType) -> Self {
-        Self { storage_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
-pub mod storage_properties {
-    use super::*;
-    #[doc = "The type of the storage."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "StorageType")]
-    pub enum StorageType {
-        StorageAccount,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for StorageType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for StorageType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for StorageType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::StorageAccount => serializer.serialize_unit_variant("StorageType", 0u32, "StorageAccount"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The type of the storage."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "storageType")]
 pub enum StoragePropertiesUnion {
@@ -7782,18 +7604,16 @@ impl UserAssignedManagedIdentity {
 #[doc = "Source information for a deployment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserSourceInfo {
-    #[doc = "Type of the source uploaded"]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Version of the source"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
 impl UserSourceInfo {
-    pub fn new(type_: String) -> Self {
-        Self { type_, version: None }
+    pub fn new() -> Self {
+        Self { version: None }
     }
 }
+#[doc = "Type of the source uploaded"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum UserSourceInfoUnion {

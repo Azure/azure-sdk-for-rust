@@ -975,16 +975,13 @@ impl ExternalInstallationSoftwareConfiguration {
 }
 #[doc = "File Share configuration details, populated with information on storage configuration mounted on the VIS. The createAndMount option is selected in case of missing input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FileShareConfiguration {
-    #[doc = "The type of file share config."]
-    #[serde(rename = "configurationType")]
-    pub configuration_type: FileShareConfigurationType,
-}
+pub struct FileShareConfiguration {}
 impl FileShareConfiguration {
-    pub fn new(configuration_type: FileShareConfigurationType) -> Self {
-        Self { configuration_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The type of file share config."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "configurationType")]
 pub enum FileShareConfigurationUnion {
@@ -1235,21 +1232,16 @@ impl ImageReference {
 #[doc = "Deploy SAP Infrastructure Details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InfrastructureConfiguration {
-    #[doc = "The type of SAP deployment, single server or Three tier."]
-    #[serde(rename = "deploymentType")]
-    pub deployment_type: DeploymentType,
     #[doc = "The application resource group where SAP system resources will be deployed."]
     #[serde(rename = "appResourceGroup")]
     pub app_resource_group: String,
 }
 impl InfrastructureConfiguration {
-    pub fn new(deployment_type: DeploymentType, app_resource_group: String) -> Self {
-        Self {
-            deployment_type,
-            app_resource_group,
-        }
+    pub fn new(app_resource_group: String) -> Self {
+        Self { app_resource_group }
     }
 }
+#[doc = "The type of SAP deployment, single server or Three tier."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "deploymentType")]
 pub enum InfrastructureConfigurationUnion {
@@ -1705,56 +1697,13 @@ impl NetworkInterfaceResourceNames {
 }
 #[doc = "Defines the OS configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OsConfiguration {
-    #[doc = "The OS Type"]
-    #[serde(rename = "osType")]
-    pub os_type: os_configuration::OsType,
-}
+pub struct OsConfiguration {}
 impl OsConfiguration {
-    pub fn new(os_type: os_configuration::OsType) -> Self {
-        Self { os_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
-pub mod os_configuration {
-    use super::*;
-    #[doc = "The OS Type"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "OsType")]
-    pub enum OsType {
-        Linux,
-        Windows,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for OsType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for OsType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for OsType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Linux => serializer.serialize_unit_variant("OsType", 0u32, "Linux"),
-                Self::Windows => serializer.serialize_unit_variant("OsType", 1u32, "Windows"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The OS Type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "osType")]
 pub enum OsConfigurationUnion {
@@ -2333,16 +2282,13 @@ pub mod provider_instance_properties {
 }
 #[doc = "Gets or sets the provider specific properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProviderSpecificProperties {
-    #[doc = "The provider type. For example, the value can be SapHana."]
-    #[serde(rename = "providerType")]
-    pub provider_type: String,
-}
+pub struct ProviderSpecificProperties {}
 impl ProviderSpecificProperties {
-    pub fn new(provider_type: String) -> Self {
-        Self { provider_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The provider type. For example, the value can be SapHana."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "providerType")]
 pub enum ProviderSpecificPropertiesUnion {
@@ -2684,16 +2630,13 @@ impl SapCentralServerProperties {
 }
 #[doc = "The SAP Configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SapConfiguration {
-    #[doc = "The configuration Type."]
-    #[serde(rename = "configurationType")]
-    pub configuration_type: ConfigurationType,
-}
+pub struct SapConfiguration {}
 impl SapConfiguration {
-    pub fn new(configuration_type: ConfigurationType) -> Self {
-        Self { configuration_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The configuration Type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "configurationType")]
 pub enum SapConfigurationUnion {
@@ -3025,16 +2968,13 @@ impl SapSizingRecommendationRequest {
 }
 #[doc = "The SAP sizing recommendation result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SapSizingRecommendationResult {
-    #[doc = "The type of SAP deployment, single server or Three tier."]
-    #[serde(rename = "deploymentType")]
-    pub deployment_type: DeploymentType,
-}
+pub struct SapSizingRecommendationResult {}
 impl SapSizingRecommendationResult {
-    pub fn new(deployment_type: DeploymentType) -> Self {
-        Self { deployment_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The type of SAP deployment, single server or Three tier."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "deploymentType")]
 pub enum SapSizingRecommendationResultUnion {
@@ -3692,16 +3632,13 @@ impl SingleServerConfiguration {
 }
 #[doc = "The resource-names input to specify custom names for underlying azure resources that are part of a single server SAP system."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SingleServerCustomResourceNames {
-    #[doc = "The pattern type to be used for resource naming."]
-    #[serde(rename = "namingPatternType")]
-    pub naming_pattern_type: NamingPatternType,
-}
+pub struct SingleServerCustomResourceNames {}
 impl SingleServerCustomResourceNames {
-    pub fn new(naming_pattern_type: NamingPatternType) -> Self {
-        Self { naming_pattern_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The pattern type to be used for resource naming."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "namingPatternType")]
 pub enum SingleServerCustomResourceNamesUnion {
@@ -3754,18 +3691,13 @@ impl SkipFileShareConfiguration {
 }
 #[doc = "The SAP Software configuration Input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SoftwareConfiguration {
-    #[doc = "The SAP software installation Type."]
-    #[serde(rename = "softwareInstallationType")]
-    pub software_installation_type: SapSoftwareInstallationType,
-}
+pub struct SoftwareConfiguration {}
 impl SoftwareConfiguration {
-    pub fn new(software_installation_type: SapSoftwareInstallationType) -> Self {
-        Self {
-            software_installation_type,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The SAP software installation Type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "softwareInstallationType")]
 pub enum SoftwareConfigurationUnion {
@@ -3952,16 +3884,13 @@ impl ThreeTierConfiguration {
 }
 #[doc = "The resource-names input to specify custom names for underlying azure resources that are part of a three tier SAP system."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThreeTierCustomResourceNames {
-    #[doc = "The pattern type to be used for resource naming."]
-    #[serde(rename = "namingPatternType")]
-    pub naming_pattern_type: NamingPatternType,
-}
+pub struct ThreeTierCustomResourceNames {}
 impl ThreeTierCustomResourceNames {
-    pub fn new(naming_pattern_type: NamingPatternType) -> Self {
-        Self { naming_pattern_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The pattern type to be used for resource naming."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "namingPatternType")]
 pub enum ThreeTierCustomResourceNamesUnion {

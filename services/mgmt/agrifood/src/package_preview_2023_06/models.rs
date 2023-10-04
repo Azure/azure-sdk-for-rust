@@ -61,15 +61,13 @@ impl ArmAsyncOperationError {
 }
 #[doc = "AuthCredentials abstract base class for Auth Purpose."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthCredentials {
-    #[doc = "Enum for different types of AuthCredentials supported."]
-    pub kind: AuthCredentialsKind,
-}
+pub struct AuthCredentials {}
 impl AuthCredentials {
-    pub fn new(kind: AuthCredentialsKind) -> Self {
-        Self { kind }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Enum for different types of AuthCredentials supported."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum AuthCredentialsUnion {

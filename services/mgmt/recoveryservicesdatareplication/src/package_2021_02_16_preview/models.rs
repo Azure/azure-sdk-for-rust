@@ -209,16 +209,13 @@ impl DraModelCollection {
 }
 #[doc = "Dra model custom properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DraModelCustomProperties {
-    #[doc = "Gets or sets the instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct DraModelCustomProperties {}
 impl DraModelCustomProperties {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets or sets the instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum DraModelCustomPropertiesUnion {
@@ -570,16 +567,13 @@ impl EventModelCollection {
 }
 #[doc = "Event model custom properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventModelCustomProperties {
-    #[doc = "Gets or sets the instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct EventModelCustomProperties {}
 impl EventModelCustomProperties {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets or sets the instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum EventModelCustomPropertiesUnion {
@@ -703,16 +697,13 @@ impl FabricModelCollection {
 }
 #[doc = "Fabric model custom properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FabricModelCustomProperties {
-    #[doc = "Gets or sets the instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct FabricModelCustomProperties {}
 impl FabricModelCustomProperties {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets or sets the instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum FabricModelCustomPropertiesUnion {
@@ -1990,16 +1981,13 @@ impl PlannedFailoverModel {
 }
 #[doc = "Planned failover model custom properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PlannedFailoverModelCustomProperties {
-    #[doc = "Gets or sets the instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct PlannedFailoverModelCustomProperties {}
 impl PlannedFailoverModelCustomProperties {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets or sets the instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum PlannedFailoverModelCustomPropertiesUnion {
@@ -2075,16 +2063,13 @@ impl PolicyModelCollection {
 }
 #[doc = "Policy model custom properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PolicyModelCustomProperties {
-    #[doc = "Gets or sets the instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct PolicyModelCustomProperties {}
 impl PolicyModelCustomProperties {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets or sets the instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum PolicyModelCustomPropertiesUnion {
@@ -2268,16 +2253,13 @@ impl ProtectedItemModelCollection {
 }
 #[doc = "Protected item model custom properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProtectedItemModelCustomProperties {
-    #[doc = "Gets or sets the instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct ProtectedItemModelCustomProperties {}
 impl ProtectedItemModelCustomProperties {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets or sets the instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum ProtectedItemModelCustomPropertiesUnion {
@@ -2863,16 +2845,13 @@ impl RecoveryPointModelCollection {
 }
 #[doc = "Recovery point model custom properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RecoveryPointModelCustomProperties {
-    #[doc = "Gets or sets the instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct RecoveryPointModelCustomProperties {}
 impl RecoveryPointModelCustomProperties {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets or sets the instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum RecoveryPointModelCustomPropertiesUnion {
@@ -3000,16 +2979,13 @@ impl ReplicationExtensionModelCollection {
 }
 #[doc = "Replication extension model custom properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReplicationExtensionModelCustomProperties {
-    #[doc = "Gets or sets the instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
-}
+pub struct ReplicationExtensionModelCustomProperties {}
 impl ReplicationExtensionModelCustomProperties {
-    pub fn new(instance_type: String) -> Self {
-        Self { instance_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Gets or sets the instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum ReplicationExtensionModelCustomPropertiesUnion {
@@ -4225,21 +4201,18 @@ impl WorkflowModelCollection {
 #[doc = "Workflow model custom properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkflowModelCustomProperties {
-    #[doc = "Gets or sets the instance type."]
-    #[serde(rename = "instanceType")]
-    pub instance_type: String,
     #[doc = "Gets or sets any custom properties of the affected object."]
     #[serde(rename = "affectedObjectDetails", default, skip_serializing_if = "Option::is_none")]
     pub affected_object_details: Option<serde_json::Value>,
 }
 impl WorkflowModelCustomProperties {
-    pub fn new(instance_type: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            instance_type,
             affected_object_details: None,
         }
     }
 }
+#[doc = "Gets or sets the instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum WorkflowModelCustomPropertiesUnion {

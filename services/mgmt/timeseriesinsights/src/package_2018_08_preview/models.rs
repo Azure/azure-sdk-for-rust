@@ -165,64 +165,18 @@ impl CreateOrUpdateTrackedResourceProperties {
 pub struct EnvironmentCreateOrUpdateParameters {
     #[serde(flatten)]
     pub create_or_update_tracked_resource_properties: CreateOrUpdateTrackedResourceProperties,
-    #[doc = "The kind of the environment."]
-    pub kind: environment_create_or_update_parameters::Kind,
     #[doc = "The sku determines the type of environment, either standard (S1 or S2) or long-term (L1). For standard environments the sku determines the capacity of the environment, the ingress rate, and the billing rate."]
     pub sku: Sku,
 }
 impl EnvironmentCreateOrUpdateParameters {
-    pub fn new(
-        create_or_update_tracked_resource_properties: CreateOrUpdateTrackedResourceProperties,
-        kind: environment_create_or_update_parameters::Kind,
-        sku: Sku,
-    ) -> Self {
+    pub fn new(create_or_update_tracked_resource_properties: CreateOrUpdateTrackedResourceProperties, sku: Sku) -> Self {
         Self {
             create_or_update_tracked_resource_properties,
-            kind,
             sku,
         }
     }
 }
-pub mod environment_create_or_update_parameters {
-    use super::*;
-    #[doc = "The kind of the environment."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        Standard,
-        LongTerm,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Standard => serializer.serialize_unit_variant("Kind", 0u32, "Standard"),
-                Self::LongTerm => serializer.serialize_unit_variant("Kind", 1u32, "LongTerm"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The kind of the environment."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum EnvironmentCreateOrUpdateParametersUnion {
@@ -252,27 +206,13 @@ pub struct EnvironmentResource {
     pub tracked_resource: TrackedResource,
     #[doc = "The sku determines the type of environment, either standard (S1 or S2) or long-term (L1). For standard environments the sku determines the capacity of the environment, the ingress rate, and the billing rate."]
     pub sku: Sku,
-    #[doc = "The kind of the environment."]
-    pub kind: environment_resource::Kind,
 }
 impl EnvironmentResource {
-    pub fn new(tracked_resource: TrackedResource, sku: Sku, kind: environment_resource::Kind) -> Self {
-        Self {
-            tracked_resource,
-            sku,
-            kind,
-        }
+    pub fn new(tracked_resource: TrackedResource, sku: Sku) -> Self {
+        Self { tracked_resource, sku }
     }
 }
-pub mod environment_resource {
-    use super::*;
-    #[doc = "The kind of the environment."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        Standard,
-        LongTerm,
-    }
-}
+#[doc = "The kind of the environment."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum EnvironmentResourceUnion {
@@ -488,66 +428,19 @@ impl EventSourceCommonProperties {
 pub struct EventSourceCreateOrUpdateParameters {
     #[serde(flatten)]
     pub create_or_update_tracked_resource_properties: CreateOrUpdateTrackedResourceProperties,
-    #[doc = "The kind of the event source."]
-    pub kind: event_source_create_or_update_parameters::Kind,
     #[doc = "An object that represents the local timestamp property. It contains the format of local timestamp that needs to be used and the corresponding timezone offset information. If a value isn't specified for localTimestamp, or if null, then the local timestamp will not be ingressed with the events."]
     #[serde(rename = "localTimestamp", default, skip_serializing_if = "Option::is_none")]
     pub local_timestamp: Option<LocalTimestamp>,
 }
 impl EventSourceCreateOrUpdateParameters {
-    pub fn new(
-        create_or_update_tracked_resource_properties: CreateOrUpdateTrackedResourceProperties,
-        kind: event_source_create_or_update_parameters::Kind,
-    ) -> Self {
+    pub fn new(create_or_update_tracked_resource_properties: CreateOrUpdateTrackedResourceProperties) -> Self {
         Self {
             create_or_update_tracked_resource_properties,
-            kind,
             local_timestamp: None,
         }
     }
 }
-pub mod event_source_create_or_update_parameters {
-    use super::*;
-    #[doc = "The kind of the event source."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        #[serde(rename = "Microsoft.EventHub")]
-        MicrosoftEventHub,
-        #[serde(rename = "Microsoft.IoTHub")]
-        MicrosoftIoTHub,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::MicrosoftEventHub => serializer.serialize_unit_variant("Kind", 0u32, "Microsoft.EventHub"),
-                Self::MicrosoftIoTHub => serializer.serialize_unit_variant("Kind", 1u32, "Microsoft.IoTHub"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The kind of the event source."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum EventSourceCreateOrUpdateParametersUnion {
@@ -592,25 +485,13 @@ impl EventSourceMutableProperties {
 pub struct EventSourceResource {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[doc = "The kind of the event source."]
-    pub kind: event_source_resource::Kind,
 }
 impl EventSourceResource {
-    pub fn new(tracked_resource: TrackedResource, kind: event_source_resource::Kind) -> Self {
-        Self { tracked_resource, kind }
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self { tracked_resource }
     }
 }
-pub mod event_source_resource {
-    use super::*;
-    #[doc = "The kind of the event source."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "Microsoft.EventHub")]
-        MicrosoftEventHub,
-        #[serde(rename = "Microsoft.IoTHub")]
-        MicrosoftIoTHub,
-    }
-}
+#[doc = "The kind of the event source."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum EventSourceResourceUnion {

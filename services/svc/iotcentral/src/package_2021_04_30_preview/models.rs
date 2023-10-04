@@ -67,16 +67,13 @@ impl ApiTokenCollection {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Attestation {
-    #[doc = "Type of the attestation."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct Attestation {}
 impl Attestation {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the attestation."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum AttestationUnion {}
@@ -412,9 +409,6 @@ impl EmailUser {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Endpoint {
-    #[doc = "Type of the endpoint."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Information for connecting to the endpoint."]
     #[serde(rename = "connectionString")]
     pub connection_string: String,
@@ -422,14 +416,11 @@ pub struct Endpoint {
     pub name: String,
 }
 impl Endpoint {
-    pub fn new(type_: String, connection_string: String, name: String) -> Self {
-        Self {
-            type_,
-            connection_string,
-            name,
-        }
+    pub fn new(connection_string: String, name: String) -> Self {
+        Self { connection_string, name }
     }
 }
+#[doc = "Type of the endpoint."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum EndpointUnion {}
@@ -552,9 +543,6 @@ impl JobCollection {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobData {
-    #[doc = "Type of the job data."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The device template which defines the target capability for the job."]
     pub target: String,
     #[doc = "The path to the target capability within the device template."]
@@ -564,15 +552,11 @@ pub struct JobData {
     pub value: Option<serde_json::Value>,
 }
 impl JobData {
-    pub fn new(type_: String, target: String, path: String) -> Self {
-        Self {
-            type_,
-            target,
-            path,
-            value: None,
-        }
+    pub fn new(target: String, path: String) -> Self {
+        Self { target, path, value: None }
     }
 }
+#[doc = "Type of the job data."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum JobDataUnion {}
@@ -777,19 +761,13 @@ pub struct User {
     #[doc = "Unique ID of the user."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Type of the user."]
-    #[serde(rename = "type")]
-    pub type_: String,
 }
 impl User {
-    pub fn new(permission: Permission, type_: String) -> Self {
-        Self {
-            permission,
-            id: None,
-            type_,
-        }
+    pub fn new(permission: Permission) -> Self {
+        Self { permission, id: None }
     }
 }
+#[doc = "Type of the user."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum UserUnion {}

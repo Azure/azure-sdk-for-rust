@@ -588,22 +588,19 @@ pub struct DirectoryObject {
     #[doc = "The object ID."]
     #[serde(rename = "objectId", default, skip_serializing_if = "Option::is_none")]
     pub object_id: Option<String>,
-    #[doc = "The object type."]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
     #[doc = "The time at which the directory object was deleted."]
     #[serde(rename = "deletionTimestamp", default, with = "azure_core::date::rfc3339::option")]
     pub deletion_timestamp: Option<time::OffsetDateTime>,
 }
 impl DirectoryObject {
-    pub fn new(object_type: String) -> Self {
+    pub fn new() -> Self {
         Self {
             object_id: None,
-            object_type,
             deletion_timestamp: None,
         }
     }
 }
+#[doc = "The object type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum DirectoryObjectUnion {

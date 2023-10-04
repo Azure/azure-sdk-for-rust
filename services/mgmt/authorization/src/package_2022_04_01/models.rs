@@ -3605,22 +3605,16 @@ pub struct RoleManagementPolicyRule {
     #[doc = "The id of the rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "The type of rule"]
-    #[serde(rename = "ruleType")]
-    pub rule_type: RoleManagementPolicyRuleType,
     #[doc = "The role management policy rule target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<RoleManagementPolicyRuleTarget>,
 }
 impl RoleManagementPolicyRule {
-    pub fn new(rule_type: RoleManagementPolicyRuleType) -> Self {
-        Self {
-            id: None,
-            rule_type,
-            target: None,
-        }
+    pub fn new() -> Self {
+        Self { id: None, target: None }
     }
 }
+#[doc = "The type of rule"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "ruleType")]
 pub enum RoleManagementPolicyRuleUnion {}

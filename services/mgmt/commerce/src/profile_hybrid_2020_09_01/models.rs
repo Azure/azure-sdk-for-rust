@@ -143,34 +143,16 @@ impl MonetaryCredit {
 #[doc = "Describes the offer term."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfferTermInfo {
-    #[doc = "Name of the offer term"]
-    #[serde(rename = "Name")]
-    pub name: offer_term_info::Name,
     #[doc = "Indicates the date from which the offer term is effective."]
     #[serde(rename = "EffectiveDate", default, with = "azure_core::date::rfc3339::option")]
     pub effective_date: Option<time::OffsetDateTime>,
 }
 impl OfferTermInfo {
-    pub fn new(name: offer_term_info::Name) -> Self {
-        Self {
-            name,
-            effective_date: None,
-        }
+    pub fn new() -> Self {
+        Self { effective_date: None }
     }
 }
-pub mod offer_term_info {
-    use super::*;
-    #[doc = "Name of the offer term"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Name {
-        #[serde(rename = "Recurring Charge")]
-        RecurringCharge,
-        #[serde(rename = "Monetary Commitment")]
-        MonetaryCommitment,
-        #[serde(rename = "Monetary Credit")]
-        MonetaryCredit,
-    }
-}
+#[doc = "Name of the offer term"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "Name")]
 pub enum OfferTermInfoUnion {

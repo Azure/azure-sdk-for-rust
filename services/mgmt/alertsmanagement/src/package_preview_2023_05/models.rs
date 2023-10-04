@@ -5,58 +5,13 @@ use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
 #[doc = "Action to be applied."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Action {
-    #[doc = "Action that should be applied."]
-    #[serde(rename = "actionType")]
-    pub action_type: action::ActionType,
-}
+pub struct Action {}
 impl Action {
-    pub fn new(action_type: action::ActionType) -> Self {
-        Self { action_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
-pub mod action {
-    use super::*;
-    #[doc = "Action that should be applied."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ActionType")]
-    pub enum ActionType {
-        AddActionGroups,
-        RemoveAllActionGroups,
-        CorrelateAlerts,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ActionType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ActionType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ActionType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::AddActionGroups => serializer.serialize_unit_variant("ActionType", 0u32, "AddActionGroups"),
-                Self::RemoveAllActionGroups => serializer.serialize_unit_variant("ActionType", 1u32, "RemoveAllActionGroups"),
-                Self::CorrelateAlerts => serializer.serialize_unit_variant("ActionType", 2u32, "CorrelateAlerts"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Action that should be applied."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "actionType")]
 pub enum ActionUnion {
@@ -485,9 +440,6 @@ impl PatchProperties {
 #[doc = "Recurrence object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Recurrence {
-    #[doc = "Specifies when the recurrence should be applied."]
-    #[serde(rename = "recurrenceType")]
-    pub recurrence_type: recurrence::RecurrenceType,
     #[doc = "Start time for recurrence."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
@@ -496,56 +448,14 @@ pub struct Recurrence {
     pub end_time: Option<String>,
 }
 impl Recurrence {
-    pub fn new(recurrence_type: recurrence::RecurrenceType) -> Self {
+    pub fn new() -> Self {
         Self {
-            recurrence_type,
             start_time: None,
             end_time: None,
         }
     }
 }
-pub mod recurrence {
-    use super::*;
-    #[doc = "Specifies when the recurrence should be applied."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "RecurrenceType")]
-    pub enum RecurrenceType {
-        Daily,
-        Weekly,
-        Monthly,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for RecurrenceType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for RecurrenceType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for RecurrenceType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Daily => serializer.serialize_unit_variant("RecurrenceType", 0u32, "Daily"),
-                Self::Weekly => serializer.serialize_unit_variant("RecurrenceType", 1u32, "Weekly"),
-                Self::Monthly => serializer.serialize_unit_variant("RecurrenceType", 2u32, "Monthly"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Specifies when the recurrence should be applied."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "recurrenceType")]
 pub enum RecurrenceUnion {

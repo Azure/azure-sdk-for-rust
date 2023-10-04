@@ -588,16 +588,13 @@ impl CspWorkspaceAdminProperties {
 }
 #[doc = "The base definition of the custom setup."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CustomSetupBase {
-    #[doc = "The type of custom setup."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct CustomSetupBase {}
 impl CustomSetupBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The type of custom setup."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CustomSetupBaseUnion {}
@@ -1740,18 +1737,16 @@ impl GetSsisObjectMetadataRequest {
 #[doc = "Azure Synapse nested object which serves as a compute resource for activities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntime {
-    #[doc = "The type of integration runtime."]
-    #[serde(rename = "type")]
-    pub type_: IntegrationRuntimeType,
     #[doc = "Integration runtime description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 impl IntegrationRuntime {
-    pub fn new(type_: IntegrationRuntimeType) -> Self {
-        Self { type_, description: None }
+    pub fn new() -> Self {
+        Self { description: None }
     }
 }
+#[doc = "The type of integration runtime."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum IntegrationRuntimeUnion {
@@ -2538,9 +2533,6 @@ impl Serialize for IntegrationRuntimeState {
 #[doc = "Integration runtime status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeStatus {
-    #[doc = "The type of integration runtime."]
-    #[serde(rename = "type")]
-    pub type_: IntegrationRuntimeType,
     #[doc = "The workspace name which the integration runtime belong to."]
     #[serde(rename = "dataFactoryName", default, skip_serializing_if = "Option::is_none")]
     pub data_factory_name: Option<String>,
@@ -2549,14 +2541,14 @@ pub struct IntegrationRuntimeStatus {
     pub state: Option<IntegrationRuntimeState>,
 }
 impl IntegrationRuntimeStatus {
-    pub fn new(type_: IntegrationRuntimeType) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             data_factory_name: None,
             state: None,
         }
     }
 }
+#[doc = "The type of integration runtime."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum IntegrationRuntimeStatusUnion {
@@ -3036,16 +3028,13 @@ impl LinkedIntegrationRuntimeRbacAuthorization {
 }
 #[doc = "The base definition of a linked integration runtime."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LinkedIntegrationRuntimeType {
-    #[doc = "The authorization type for integration runtime sharing."]
-    #[serde(rename = "authorizationType")]
-    pub authorization_type: String,
-}
+pub struct LinkedIntegrationRuntimeType {}
 impl LinkedIntegrationRuntimeType {
-    pub fn new(authorization_type: String) -> Self {
-        Self { authorization_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The authorization type for integration runtime sharing."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "authorizationType")]
 pub enum LinkedIntegrationRuntimeTypeUnion {
@@ -4842,16 +4831,13 @@ impl ScopePoolsListResult {
 }
 #[doc = "The base definition of a secret type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretBase {
-    #[doc = "Type of the secret."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct SecretBase {}
 impl SecretBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the secret."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum SecretBaseUnion {
@@ -6879,9 +6865,6 @@ impl SsisFolder {
 #[doc = "SSIS object metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SsisObjectMetadata {
-    #[doc = "The type of SSIS object metadata."]
-    #[serde(rename = "type")]
-    pub type_: SsisObjectMetadataType,
     #[doc = "Metadata id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<i64>,
@@ -6893,15 +6876,15 @@ pub struct SsisObjectMetadata {
     pub description: Option<String>,
 }
 impl SsisObjectMetadata {
-    pub fn new(type_: SsisObjectMetadataType) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             id: None,
             name: None,
             description: None,
         }
     }
 }
+#[doc = "The type of SSIS object metadata."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum SsisObjectMetadataUnion {

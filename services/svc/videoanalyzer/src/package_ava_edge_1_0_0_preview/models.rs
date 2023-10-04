@@ -5,16 +5,13 @@ use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
 #[doc = "Base class for certificate sources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CertificateSource {
-    #[doc = "Type discriminator for the derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
-}
+pub struct CertificateSource {}
 impl CertificateSource {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type discriminator for the derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum CertificateSourceUnion {
@@ -50,16 +47,13 @@ impl CognitiveServicesVisionProcessor {
 }
 #[doc = "Base class for credential objects."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CredentialsBase {
-    #[doc = "Type discriminator for the derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
-}
+pub struct CredentialsBase {}
 impl CredentialsBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type discriminator for the derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum CredentialsBaseUnion {
@@ -71,9 +65,6 @@ pub enum CredentialsBaseUnion {
 #[doc = "Base class for endpoints."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EndpointBase {
-    #[doc = "Type discriminator for the derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
     #[doc = "Base class for credential objects."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credentials: Option<CredentialsBaseUnion>,
@@ -81,14 +72,11 @@ pub struct EndpointBase {
     pub url: String,
 }
 impl EndpointBase {
-    pub fn new(type_: String, url: String) -> Self {
-        Self {
-            type_,
-            credentials: None,
-            url,
-        }
+    pub fn new(url: String) -> Self {
+        Self { credentials: None, url }
     }
 }
+#[doc = "Type discriminator for the derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum EndpointBaseUnion {
@@ -298,16 +286,13 @@ impl ImageFormatPng {
 }
 #[doc = "Base class for image formatting properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageFormatProperties {
-    #[doc = "Type discriminator for the derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
-}
+pub struct ImageFormatProperties {}
 impl ImageFormatProperties {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type discriminator for the derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum ImageFormatPropertiesUnion {
@@ -746,19 +731,13 @@ impl LivePipelineSetRequestBody {
 #[doc = "Base class for direct method calls."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MethodRequest {
-    #[doc = "Direct method method name."]
-    #[serde(rename = "methodName")]
-    pub method_name: String,
     #[doc = "Video Analyzer API version."]
     #[serde(rename = "@apiVersion", default, skip_serializing_if = "Option::is_none")]
     pub api_version: Option<method_request::ApiVersion>,
 }
 impl MethodRequest {
-    pub fn new(method_name: String) -> Self {
-        Self {
-            method_name,
-            api_version: None,
-        }
+    pub fn new() -> Self {
+        Self { api_version: None }
     }
 }
 pub mod method_request {
@@ -770,6 +749,7 @@ pub mod method_request {
         N1_0,
     }
 }
+#[doc = "Direct method method name."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "methodName")]
 pub enum MethodRequestUnion {
@@ -867,17 +847,15 @@ pub mod motion_detection_processor {
 #[doc = "Base class for named lines."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NamedLineBase {
-    #[doc = "The Type discriminator for the derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
     #[doc = "Line name. Must be unique within the node."]
     pub name: String,
 }
 impl NamedLineBase {
-    pub fn new(type_: String, name: String) -> Self {
-        Self { type_, name }
+    pub fn new(name: String) -> Self {
+        Self { name }
     }
 }
+#[doc = "The Type discriminator for the derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum NamedLineBaseUnion {
@@ -900,17 +878,15 @@ impl NamedLineString {
 #[doc = "Describes the named polygon."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NamedPolygonBase {
-    #[doc = "The Type discriminator for the derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
     #[doc = "Polygon name. Must be unique within the node."]
     pub name: String,
 }
 impl NamedPolygonBase {
-    pub fn new(type_: String, name: String) -> Self {
-        Self { type_, name }
+    pub fn new(name: String) -> Self {
+        Self { name }
     }
 }
+#[doc = "The Type discriminator for the derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum NamedPolygonBaseUnion {
@@ -1373,19 +1349,17 @@ impl PipelineTopologySetRequestBody {
 #[doc = "Base class for topology processor nodes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProcessorNodeBase {
-    #[doc = "Type discriminator for the derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
     #[doc = "Node name. Must be unique within the topology."]
     pub name: String,
     #[doc = "An array of upstream node references within the topology to be used as inputs for this node."]
     pub inputs: Vec<NodeInput>,
 }
 impl ProcessorNodeBase {
-    pub fn new(type_: String, name: String, inputs: Vec<NodeInput>) -> Self {
-        Self { type_, name, inputs }
+    pub fn new(name: String, inputs: Vec<NodeInput>) -> Self {
+        Self { name, inputs }
     }
 }
+#[doc = "Type discriminator for the derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum ProcessorNodeBaseUnion {
@@ -1511,19 +1485,17 @@ impl SignalGateProcessor {
 #[doc = "Base class for topology sink nodes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SinkNodeBase {
-    #[doc = "Type discriminator for the derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
     #[doc = "Node name. Must be unique within the topology."]
     pub name: String,
     #[doc = "An array of upstream node references within the topology to be used as inputs for this node."]
     pub inputs: Vec<NodeInput>,
 }
 impl SinkNodeBase {
-    pub fn new(type_: String, name: String, inputs: Vec<NodeInput>) -> Self {
-        Self { type_, name, inputs }
+    pub fn new(name: String, inputs: Vec<NodeInput>) -> Self {
+        Self { name, inputs }
     }
 }
+#[doc = "Type discriminator for the derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum SinkNodeBaseUnion {
@@ -1537,17 +1509,15 @@ pub enum SinkNodeBaseUnion {
 #[doc = "Base class for topology source nodes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceNodeBase {
-    #[doc = "Type discriminator for the derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
     #[doc = "Node name. Must be unique within the topology."]
     pub name: String,
 }
 impl SourceNodeBase {
-    pub fn new(type_: String, name: String) -> Self {
-        Self { type_, name }
+    pub fn new(name: String) -> Self {
+        Self { name }
     }
 }
+#[doc = "Type discriminator for the derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum SourceNodeBaseUnion {
@@ -1575,16 +1545,13 @@ impl SpatialAnalysisCustomOperation {
 }
 #[doc = "Base class for Azure Cognitive Services Spatial Analysis operations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SpatialAnalysisOperationBase {
-    #[doc = "The Type discriminator for the derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
-}
+pub struct SpatialAnalysisOperationBase {}
 impl SpatialAnalysisOperationBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The Type discriminator for the derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum SpatialAnalysisOperationBaseUnion {

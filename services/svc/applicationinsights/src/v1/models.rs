@@ -806,9 +806,6 @@ pub struct EventsResultData {
     #[doc = "The unique ID for this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "The type of events to query; either a standard event type (`traces`, `customEvents`, `pageViews`, `requests`, `dependencies`, `exceptions`, `availabilityResults`) or `$all` to query across all event types."]
-    #[serde(rename = "type")]
-    pub type_: EventType,
     #[doc = "Count of the event"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
@@ -844,10 +841,9 @@ pub struct EventsResultData {
     pub client: Option<EventsClientInfo>,
 }
 impl EventsResultData {
-    pub fn new(type_: EventType) -> Self {
+    pub fn new() -> Self {
         Self {
             id: None,
-            type_,
             count: None,
             timestamp: None,
             custom_dimensions: None,
@@ -887,6 +883,7 @@ pub mod events_result_data {
         }
     }
 }
+#[doc = "The type of events to query; either a standard event type (`traces`, `customEvents`, `pageViews`, `requests`, `dependencies`, `exceptions`, `availabilityResults`) or `$all` to query across all event types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum EventsResultDataUnion {

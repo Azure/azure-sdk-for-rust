@@ -79,16 +79,13 @@ impl ApiTokenCollection {
 }
 #[doc = "The attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Attestation {
-    #[doc = "Type of the attestation."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct Attestation {}
 impl Attestation {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the attestation."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum AttestationUnion {
@@ -667,19 +664,13 @@ pub struct User {
     #[doc = "Unique ID of the user."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Type of the user."]
-    #[serde(rename = "type")]
-    pub type_: String,
 }
 impl User {
-    pub fn new(permission: Permission, type_: String) -> Self {
-        Self {
-            permission,
-            id: None,
-            type_,
-        }
+    pub fn new(permission: Permission) -> Self {
+        Self { permission, id: None }
     }
 }
+#[doc = "Type of the user."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum UserUnion {

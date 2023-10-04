@@ -271,16 +271,13 @@ pub mod backup_settings {
 }
 #[doc = "Details about the target where the backup content will be stored."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupStoreDetails {
-    #[doc = "Type of the specific object - used for deserializing"]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
+pub struct BackupStoreDetails {}
 impl BackupStoreDetails {
-    pub fn new(object_type: String) -> Self {
-        Self { object_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the specific object - used for deserializing"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum BackupStoreDetailsUnion {}

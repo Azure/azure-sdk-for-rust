@@ -771,16 +771,13 @@ impl AssetJobOutput {
 }
 #[doc = "Base definition for asset references."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AssetReferenceBase {
-    #[doc = "Enum to determine which reference method to use for an asset."]
-    #[serde(rename = "referenceType")]
-    pub reference_type: ReferenceType,
-}
+pub struct AssetReferenceBase {}
 impl AssetReferenceBase {
-    pub fn new(reference_type: ReferenceType) -> Self {
-        Self { reference_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Enum to determine which reference method to use for an asset."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "referenceType")]
 pub enum AssetReferenceBaseUnion {
@@ -1646,9 +1643,6 @@ impl ComponentVersionResourceArmPaginatedResult {
 #[doc = "Machine Learning compute object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Compute {
-    #[doc = "The type of compute"]
-    #[serde(rename = "computeType")]
-    pub compute_type: ComputeType,
     #[doc = "Location for the underlying compute"]
     #[serde(rename = "computeLocation", default, skip_serializing_if = "Option::is_none")]
     pub compute_location: Option<String>,
@@ -1683,9 +1677,8 @@ pub struct Compute {
     pub disable_local_auth: Option<bool>,
 }
 impl Compute {
-    pub fn new(compute_type: ComputeType) -> Self {
+    pub fn new() -> Self {
         Self {
-            compute_type,
             compute_location: None,
             provisioning_state: None,
             description: None,
@@ -1748,6 +1741,7 @@ pub mod compute {
         }
     }
 }
+#[doc = "The type of compute"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "computeType")]
 pub enum ComputeUnion {
@@ -2797,16 +2791,13 @@ impl ComputeSchedules {
 }
 #[doc = "Secrets related to a Machine Learning compute. Might differ for every type of compute."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ComputeSecrets {
-    #[doc = "The type of compute"]
-    #[serde(rename = "computeType")]
-    pub compute_type: ComputeType,
-}
+pub struct ComputeSecrets {}
 impl ComputeSecrets {
-    pub fn new(compute_type: ComputeType) -> Self {
-        Self { compute_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The type of compute"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "computeType")]
 pub enum ComputeSecretsUnion {
@@ -3343,22 +3334,19 @@ impl Serialize for DataType {
 pub struct DataVersionBase {
     #[serde(flatten)]
     pub asset_base: AssetBase,
-    #[doc = "Enum to determine the type of data."]
-    #[serde(rename = "dataType")]
-    pub data_type: DataType,
     #[doc = "[Required] Uri of the data. Usage/meaning depends on Microsoft.MachineLearning.ManagementFrontEnd.Contracts.V20220501.Assets.DataVersionBase.DataType"]
     #[serde(rename = "dataUri")]
     pub data_uri: String,
 }
 impl DataVersionBase {
-    pub fn new(data_type: DataType, data_uri: String) -> Self {
+    pub fn new(data_uri: String) -> Self {
         Self {
             asset_base: AssetBase::default(),
-            data_type,
             data_uri,
         }
     }
 }
+#[doc = "Enum to determine the type of data."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "dataType")]
 pub enum DataVersionBaseUnion {
@@ -3487,23 +3475,20 @@ pub struct Datastore {
     pub resource_base: ResourceBase,
     #[doc = "Base definition for datastore credentials."]
     pub credentials: DatastoreCredentialsUnion,
-    #[doc = "Enum to determine the datastore contents type."]
-    #[serde(rename = "datastoreType")]
-    pub datastore_type: DatastoreType,
     #[doc = "Readonly property to indicate if datastore is the workspace default datastore"]
     #[serde(rename = "isDefault", default, skip_serializing_if = "Option::is_none")]
     pub is_default: Option<bool>,
 }
 impl Datastore {
-    pub fn new(credentials: DatastoreCredentialsUnion, datastore_type: DatastoreType) -> Self {
+    pub fn new(credentials: DatastoreCredentialsUnion) -> Self {
         Self {
             resource_base: ResourceBase::default(),
             credentials,
-            datastore_type,
             is_default: None,
         }
     }
 }
+#[doc = "Enum to determine the datastore contents type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "datastoreType")]
 pub enum DatastoreUnion {
@@ -3514,16 +3499,13 @@ pub enum DatastoreUnion {
 }
 #[doc = "Base definition for datastore credentials."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatastoreCredentials {
-    #[doc = "Enum to determine the datastore credentials type."]
-    #[serde(rename = "credentialsType")]
-    pub credentials_type: CredentialsType,
-}
+pub struct DatastoreCredentials {}
 impl DatastoreCredentials {
-    pub fn new(credentials_type: CredentialsType) -> Self {
-        Self { credentials_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Enum to determine the datastore credentials type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "credentialsType")]
 pub enum DatastoreCredentialsUnion {
@@ -3576,16 +3558,13 @@ impl DatastoreResourceArmPaginatedResult {
 }
 #[doc = "Base definition for datastore secrets."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DatastoreSecrets {
-    #[doc = "Enum to determine the datastore secrets type."]
-    #[serde(rename = "secretsType")]
-    pub secrets_type: SecretsType,
-}
+pub struct DatastoreSecrets {}
 impl DatastoreSecrets {
-    pub fn new(secrets_type: SecretsType) -> Self {
-        Self { secrets_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Enum to determine the datastore secrets type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "secretsType")]
 pub enum DatastoreSecretsUnion {
@@ -3908,16 +3887,13 @@ impl DiagnoseWorkspaceParameters {
 }
 #[doc = "Base definition for job distribution configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DistributionConfiguration {
-    #[doc = "Enum to determine the job distribution type."]
-    #[serde(rename = "distributionType")]
-    pub distribution_type: DistributionType,
-}
+pub struct DistributionConfiguration {}
 impl DistributionConfiguration {
-    pub fn new(distribution_type: DistributionType) -> Self {
-        Self { distribution_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Enum to determine the job distribution type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "distributionType")]
 pub enum DistributionConfigurationUnion {
@@ -3973,15 +3949,12 @@ pub struct EarlyTerminationPolicy {
     #[doc = "Interval (number of runs) between policy evaluations."]
     #[serde(rename = "evaluationInterval", default, skip_serializing_if = "Option::is_none")]
     pub evaluation_interval: Option<i32>,
-    #[serde(rename = "policyType")]
-    pub policy_type: EarlyTerminationPolicyType,
 }
 impl EarlyTerminationPolicy {
-    pub fn new(policy_type: EarlyTerminationPolicyType) -> Self {
+    pub fn new() -> Self {
         Self {
             delay_evaluation: None,
             evaluation_interval: None,
-            policy_type,
         }
     }
 }
@@ -4944,16 +4917,13 @@ impl IdAssetReference {
 }
 #[doc = "Base definition for identity configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IdentityConfiguration {
-    #[doc = "Enum to determine identity framework."]
-    #[serde(rename = "identityType")]
-    pub identity_type: IdentityConfigurationType,
-}
+pub struct IdentityConfiguration {}
 impl IdentityConfiguration {
-    pub fn new(identity_type: IdentityConfigurationType) -> Self {
-        Self { identity_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Enum to determine identity framework."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "identityType")]
 pub enum IdentityConfigurationUnion {
@@ -5134,9 +5104,6 @@ pub struct JobBase {
     #[doc = "Is the asset archived?"]
     #[serde(rename = "isArchived", default, skip_serializing_if = "Option::is_none")]
     pub is_archived: Option<bool>,
-    #[doc = "Enum to determine the type of job."]
-    #[serde(rename = "jobType")]
-    pub job_type: JobType,
     #[doc = "List of JobEndpoints.\r\nFor local jobs, a job endpoint will have an endpoint value of FileStreamObject."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub services: Option<serde_json::Value>,
@@ -5145,7 +5112,7 @@ pub struct JobBase {
     pub status: Option<JobStatus>,
 }
 impl JobBase {
-    pub fn new(job_type: JobType) -> Self {
+    pub fn new() -> Self {
         Self {
             resource_base: ResourceBase::default(),
             compute_id: None,
@@ -5153,12 +5120,12 @@ impl JobBase {
             experiment_name: None,
             identity: None,
             is_archived: None,
-            job_type,
             services: None,
             status: None,
         }
     }
 }
+#[doc = "Enum to determine the type of job."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "jobType")]
 pub enum JobBaseUnion {
@@ -5213,18 +5180,13 @@ pub struct JobInput {
     #[doc = "Description for the input."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[doc = "Enum to determine the Job Input Type."]
-    #[serde(rename = "jobInputType")]
-    pub job_input_type: JobInputType,
 }
 impl JobInput {
-    pub fn new(job_input_type: JobInputType) -> Self {
-        Self {
-            description: None,
-            job_input_type,
-        }
+    pub fn new() -> Self {
+        Self { description: None }
     }
 }
+#[doc = "Enum to determine the Job Input Type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "jobInputType")]
 pub enum JobInputUnion {
@@ -5299,18 +5261,13 @@ impl Serialize for JobInputType {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobLimits {
-    #[serde(rename = "jobLimitsType")]
-    pub job_limits_type: JobLimitsType,
     #[doc = "The max run duration in ISO 8601 format, after which the job will be cancelled. Only supports duration with precision as low as Seconds."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<String>,
 }
 impl JobLimits {
-    pub fn new(job_limits_type: JobLimitsType) -> Self {
-        Self {
-            job_limits_type,
-            timeout: None,
-        }
+    pub fn new() -> Self {
+        Self { timeout: None }
     }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -5361,18 +5318,13 @@ pub struct JobOutput {
     #[doc = "Description for the output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[doc = "Enum to determine the Job Output Type."]
-    #[serde(rename = "jobOutputType")]
-    pub job_output_type: JobOutputType,
 }
 impl JobOutput {
-    pub fn new(job_output_type: JobOutputType) -> Self {
-        Self {
-            description: None,
-            job_output_type,
-        }
+    pub fn new() -> Self {
+        Self { description: None }
     }
 }
+#[doc = "Enum to determine the Job Output Type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "jobOutputType")]
 pub enum JobOutputUnion {
@@ -6314,9 +6266,6 @@ pub struct OnlineDeployment {
     #[doc = "If true, enables Application Insights logging."]
     #[serde(rename = "appInsightsEnabled", default, skip_serializing_if = "Option::is_none")]
     pub app_insights_enabled: Option<bool>,
-    #[doc = "Enum to determine endpoint compute type."]
-    #[serde(rename = "endpointComputeType")]
-    pub endpoint_compute_type: EndpointComputeType,
     #[doc = "Compute instance type."]
     #[serde(rename = "instanceType", default, skip_serializing_if = "Option::is_none")]
     pub instance_type: Option<String>,
@@ -6343,11 +6292,10 @@ pub struct OnlineDeployment {
     pub scale_settings: Option<OnlineScaleSettingsUnion>,
 }
 impl OnlineDeployment {
-    pub fn new(endpoint_compute_type: EndpointComputeType) -> Self {
+    pub fn new() -> Self {
         Self {
             endpoint_deployment_properties_base: EndpointDeploymentPropertiesBase::default(),
             app_insights_enabled: None,
-            endpoint_compute_type,
             instance_type: None,
             liveness_probe: None,
             model: None,
@@ -6359,6 +6307,7 @@ impl OnlineDeployment {
         }
     }
 }
+#[doc = "Enum to determine endpoint compute type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "endpointComputeType")]
 pub enum OnlineDeploymentUnion {
@@ -6513,13 +6462,10 @@ impl OnlineRequestSettings {
 }
 #[doc = "Online deployment scaling configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OnlineScaleSettings {
-    #[serde(rename = "scaleType")]
-    pub scale_type: ScaleType,
-}
+pub struct OnlineScaleSettings {}
 impl OnlineScaleSettings {
-    pub fn new(scale_type: ScaleType) -> Self {
-        Self { scale_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -7548,13 +7494,10 @@ impl SasAuthTypeWorkspaceConnectionProperties {
 }
 #[doc = "The Sampling Algorithm used to generate hyperparameter values, along with properties to\r\nconfigure the algorithm"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SamplingAlgorithm {
-    #[serde(rename = "samplingAlgorithmType")]
-    pub sampling_algorithm_type: SamplingAlgorithmType,
-}
+pub struct SamplingAlgorithm {}
 impl SamplingAlgorithm {
-    pub fn new(sampling_algorithm_type: SamplingAlgorithmType) -> Self {
-        Self { sampling_algorithm_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -9138,9 +9081,6 @@ impl WorkspaceConnectionPersonalAccessToken {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceConnectionPropertiesV2 {
-    #[doc = "Authentication type of the connection target"]
-    #[serde(rename = "authType")]
-    pub auth_type: ConnectionAuthType,
     #[doc = "Category of the connection"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub category: Option<ConnectionCategory>,
@@ -9154,9 +9094,8 @@ pub struct WorkspaceConnectionPropertiesV2 {
     pub value_format: Option<workspace_connection_properties_v2::ValueFormat>,
 }
 impl WorkspaceConnectionPropertiesV2 {
-    pub fn new(auth_type: ConnectionAuthType) -> Self {
+    pub fn new() -> Self {
         Self {
-            auth_type,
             category: None,
             target: None,
             value: None,
@@ -9203,6 +9142,7 @@ pub mod workspace_connection_properties_v2 {
         }
     }
 }
+#[doc = "Authentication type of the connection target"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "authType")]
 pub enum WorkspaceConnectionPropertiesV2Union {

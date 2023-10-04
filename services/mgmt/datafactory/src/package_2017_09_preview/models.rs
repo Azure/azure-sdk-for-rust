@@ -8,9 +8,6 @@ use std::str::FromStr;
 pub struct Activity {
     #[doc = "Activity name."]
     pub name: String,
-    #[doc = "Type of activity."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Activity description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -24,15 +21,15 @@ pub struct Activity {
     pub depends_on: Vec<ActivityDependency>,
 }
 impl Activity {
-    pub fn new(name: String, type_: String) -> Self {
+    pub fn new(name: String) -> Self {
         Self {
             name,
-            type_,
             description: None,
             depends_on: Vec::new(),
         }
     }
 }
+#[doc = "Type of activity."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ActivityUnion {}
@@ -160,9 +157,6 @@ impl CreateRunResponse {
 #[doc = "The Azure Data Factory nested object which identifies data within different data stores, such as tables, files, folders, and documents."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dataset {
-    #[doc = "Type of dataset."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Dataset description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -184,9 +178,8 @@ pub struct Dataset {
     pub annotations: Vec<serde_json::Value>,
 }
 impl Dataset {
-    pub fn new(type_: String, linked_service_name: LinkedServiceReference) -> Self {
+    pub fn new(linked_service_name: LinkedServiceReference) -> Self {
         Self {
-            type_,
             description: None,
             structure: None,
             linked_service_name,
@@ -195,6 +188,7 @@ impl Dataset {
         }
     }
 }
+#[doc = "Type of dataset."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DatasetUnion {}
@@ -474,18 +468,16 @@ impl FactoryVstsConfiguration {
 #[doc = "Azure Data Factory nested object which serves as a compute resource for activities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntime {
-    #[doc = "The type of integration runtime."]
-    #[serde(rename = "type")]
-    pub type_: IntegrationRuntimeType,
     #[doc = "Integration runtime description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 impl IntegrationRuntime {
-    pub fn new(type_: IntegrationRuntimeType) -> Self {
-        Self { type_, description: None }
+    pub fn new() -> Self {
+        Self { description: None }
     }
 }
+#[doc = "The type of integration runtime."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum IntegrationRuntimeUnion {}
@@ -818,9 +810,6 @@ impl Serialize for IntegrationRuntimeState {
 #[doc = "Integration runtime status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeStatus {
-    #[doc = "The type of integration runtime."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<IntegrationRuntimeType>,
     #[doc = "The data factory name which the integration runtime belong to."]
     #[serde(rename = "dataFactoryName", default, skip_serializing_if = "Option::is_none")]
     pub data_factory_name: Option<String>,
@@ -833,6 +822,7 @@ impl IntegrationRuntimeStatus {
         Self::default()
     }
 }
+#[doc = "The type of integration runtime."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum IntegrationRuntimeStatusUnion {}
@@ -904,9 +894,6 @@ impl Serialize for IntegrationRuntimeType {
 #[doc = "The Azure Data Factory nested object which contains the information and credential which can be used to connect with related store or compute resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedService {
-    #[doc = "Type of linked service."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Integration runtime reference type."]
     #[serde(rename = "connectVia", default, skip_serializing_if = "Option::is_none")]
     pub connect_via: Option<IntegrationRuntimeReference>,
@@ -925,9 +912,8 @@ pub struct LinkedService {
     pub annotations: Vec<serde_json::Value>,
 }
 impl LinkedService {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             connect_via: None,
             description: None,
             parameters: None,
@@ -935,6 +921,7 @@ impl LinkedService {
         }
     }
 }
+#[doc = "Type of linked service."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum LinkedServiceUnion {}
@@ -1689,16 +1676,13 @@ impl Resource {
 }
 #[doc = "The base definition of a secret type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretBase {
-    #[doc = "Type of the secret."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct SecretBase {}
 impl SecretBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the secret."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum SecretBaseUnion {
@@ -1892,9 +1876,6 @@ impl SubResource {
 #[doc = "Azure data factory nested object which contains information about creating pipeline run"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Trigger {
-    #[doc = "Trigger type."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Trigger description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -1903,14 +1884,14 @@ pub struct Trigger {
     pub runtime_state: Option<TriggerRuntimeState>,
 }
 impl Trigger {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             description: None,
             runtime_state: None,
         }
     }
 }
+#[doc = "Trigger type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum TriggerUnion {}

@@ -1540,66 +1540,19 @@ pub struct ServerPropertiesForCreate {
     #[doc = "Storage Profile properties of a server"]
     #[serde(rename = "storageProfile", default, skip_serializing_if = "Option::is_none")]
     pub storage_profile: Option<StorageProfile>,
-    #[doc = "The mode to create a new server."]
-    #[serde(rename = "createMode")]
-    pub create_mode: server_properties_for_create::CreateMode,
 }
 impl ServerPropertiesForCreate {
-    pub fn new(create_mode: server_properties_for_create::CreateMode) -> Self {
+    pub fn new() -> Self {
         Self {
             version: None,
             ssl_enforcement: None,
             minimal_tls_version: None,
             public_network_access: None,
             storage_profile: None,
-            create_mode,
         }
     }
 }
-pub mod server_properties_for_create {
-    use super::*;
-    #[doc = "The mode to create a new server."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "CreateMode")]
-    pub enum CreateMode {
-        Default,
-        PointInTimeRestore,
-        GeoRestore,
-        Replica,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for CreateMode {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for CreateMode {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for CreateMode {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Default => serializer.serialize_unit_variant("CreateMode", 0u32, "Default"),
-                Self::PointInTimeRestore => serializer.serialize_unit_variant("CreateMode", 1u32, "PointInTimeRestore"),
-                Self::GeoRestore => serializer.serialize_unit_variant("CreateMode", 2u32, "GeoRestore"),
-                Self::Replica => serializer.serialize_unit_variant("CreateMode", 3u32, "Replica"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The mode to create a new server."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "createMode")]
 pub enum ServerPropertiesForCreateUnion {

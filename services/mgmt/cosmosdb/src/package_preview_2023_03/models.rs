@@ -327,21 +327,16 @@ impl BackupInformation {
 #[doc = "The object representing the policy for taking backups on an account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupPolicy {
-    #[doc = "Describes the mode of backups."]
-    #[serde(rename = "type")]
-    pub type_: BackupPolicyType,
     #[doc = "The object representing the state of the migration between the backup policies."]
     #[serde(rename = "migrationState", default, skip_serializing_if = "Option::is_none")]
     pub migration_state: Option<BackupPolicyMigrationState>,
 }
 impl BackupPolicy {
-    pub fn new(type_: BackupPolicyType) -> Self {
-        Self {
-            type_,
-            migration_state: None,
-        }
+    pub fn new() -> Self {
+        Self { migration_state: None }
     }
 }
+#[doc = "Describes the mode of backups."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum BackupPolicyUnion {
@@ -2018,63 +2013,10 @@ pub mod data_center_resource {
 }
 #[doc = "Base class for all DataTransfer source/sink"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataTransferDataSourceSink {
-    pub component: data_transfer_data_source_sink::Component,
-}
+pub struct DataTransferDataSourceSink {}
 impl DataTransferDataSourceSink {
-    pub fn new(component: data_transfer_data_source_sink::Component) -> Self {
-        Self { component }
-    }
-}
-pub mod data_transfer_data_source_sink {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Component")]
-    pub enum Component {
-        #[serde(rename = "CosmosDBCassandra")]
-        CosmosDbCassandra,
-        #[serde(rename = "CosmosDBMongo")]
-        CosmosDbMongo,
-        #[serde(rename = "CosmosDBSql")]
-        CosmosDbSql,
-        AzureBlobStorage,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Component {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Component {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Component {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::CosmosDbCassandra => serializer.serialize_unit_variant("Component", 0u32, "CosmosDBCassandra"),
-                Self::CosmosDbMongo => serializer.serialize_unit_variant("Component", 1u32, "CosmosDBMongo"),
-                Self::CosmosDbSql => serializer.serialize_unit_variant("Component", 2u32, "CosmosDBSql"),
-                Self::AzureBlobStorage => serializer.serialize_unit_variant("Component", 3u32, "AzureBlobStorage"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    impl Default for Component {
-        fn default() -> Self {
-            Self::CosmosDbCassandra
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -7439,24 +7381,21 @@ pub struct ServiceResourceProperties {
     #[doc = "Instance count for the service."]
     #[serde(rename = "instanceCount", default, skip_serializing_if = "Option::is_none")]
     pub instance_count: Option<i32>,
-    #[doc = "ServiceType for the service."]
-    #[serde(rename = "serviceType")]
-    pub service_type: ServiceType,
     #[doc = "Describes the status of a service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ServiceResourceStatus>,
 }
 impl ServiceResourceProperties {
-    pub fn new(service_type: ServiceType) -> Self {
+    pub fn new() -> Self {
         Self {
             creation_time: None,
             instance_size: None,
             instance_count: None,
-            service_type,
             status: None,
         }
     }
 }
+#[doc = "ServiceType for the service."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "serviceType")]
 pub enum ServiceResourcePropertiesUnion {

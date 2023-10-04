@@ -51,70 +51,13 @@ pub struct AnalysisResultSingletonResourceProperties {
     #[doc = "The grade of a test."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub grade: Option<TestGrade>,
-    #[doc = "Type of the Analysis Result."]
-    #[serde(rename = "analysisResultType")]
-    pub analysis_result_type: analysis_result_singleton_resource_properties::AnalysisResultType,
 }
 impl AnalysisResultSingletonResourceProperties {
-    pub fn new(analysis_result_type: analysis_result_singleton_resource_properties::AnalysisResultType) -> Self {
-        Self {
-            grade: None,
-            analysis_result_type,
-        }
+    pub fn new() -> Self {
+        Self { grade: None }
     }
 }
-pub mod analysis_result_singleton_resource_properties {
-    use super::*;
-    #[doc = "Type of the Analysis Result."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "AnalysisResultType")]
-    pub enum AnalysisResultType {
-        ScriptExecution,
-        Reliability,
-        #[serde(rename = "CPUUtilization")]
-        CpuUtilization,
-        MemoryUtilization,
-        #[serde(rename = "CPURegression")]
-        CpuRegression,
-        MemoryRegression,
-        TestAnalysis,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for AnalysisResultType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for AnalysisResultType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for AnalysisResultType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::ScriptExecution => serializer.serialize_unit_variant("AnalysisResultType", 0u32, "ScriptExecution"),
-                Self::Reliability => serializer.serialize_unit_variant("AnalysisResultType", 1u32, "Reliability"),
-                Self::CpuUtilization => serializer.serialize_unit_variant("AnalysisResultType", 2u32, "CPUUtilization"),
-                Self::MemoryUtilization => serializer.serialize_unit_variant("AnalysisResultType", 3u32, "MemoryUtilization"),
-                Self::CpuRegression => serializer.serialize_unit_variant("AnalysisResultType", 4u32, "CPURegression"),
-                Self::MemoryRegression => serializer.serialize_unit_variant("AnalysisResultType", 5u32, "MemoryRegression"),
-                Self::TestAnalysis => serializer.serialize_unit_variant("AnalysisResultType", 6u32, "TestAnalysis"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Type of the Analysis Result."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "analysisResultType")]
 pub enum AnalysisResultSingletonResourcePropertiesUnion {

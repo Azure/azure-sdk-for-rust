@@ -67,16 +67,13 @@ impl ApiTokenCollection {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Attestation {
-    #[doc = "Type of the attestation."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct Attestation {}
 impl Attestation {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the attestation."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum AttestationUnion {
@@ -102,16 +99,13 @@ impl BlobStorageV1Destination {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobStorageV1DestinationAuth {
-    #[doc = "The kind of authentication to use."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct BlobStorageV1DestinationAuth {}
 impl BlobStorageV1DestinationAuth {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum BlobStorageV1DestinationAuthUnion {
@@ -224,16 +218,13 @@ impl DataExplorerV1Destination {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataExplorerV1DestinationAuth {
-    #[doc = "The kind of authentication to use."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct DataExplorerV1DestinationAuth {}
 impl DataExplorerV1DestinationAuth {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DataExplorerV1DestinationAuthUnion {
@@ -314,20 +305,17 @@ pub struct Destination {
     #[doc = "Display name of the destination."]
     #[serde(rename = "displayName")]
     pub display_name: String,
-    #[doc = "The type of destination configuration."]
-    #[serde(rename = "type")]
-    pub type_: String,
 }
 impl Destination {
-    pub fn new(display_name: String, type_: String) -> Self {
+    pub fn new(display_name: String) -> Self {
         Self {
             data_export_status: DataExportStatus::default(),
             id: None,
             display_name,
-            type_,
         }
     }
 }
+#[doc = "The type of destination configuration."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DestinationUnion {
@@ -694,16 +682,13 @@ impl EventHubsV1Destination {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventHubsV1DestinationAuth {
-    #[doc = "The kind of authentication to use."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct EventHubsV1DestinationAuth {}
 impl EventHubsV1DestinationAuth {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum EventHubsV1DestinationAuthUnion {
@@ -987,9 +972,6 @@ impl JobCollection {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobData {
-    #[doc = "Type of the job data."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The device template which defines the target capability for the job."]
     pub target: String,
     #[doc = "The path to the target capability within the device template."]
@@ -999,15 +981,11 @@ pub struct JobData {
     pub value: Option<serde_json::Value>,
 }
 impl JobData {
-    pub fn new(type_: String, target: String, path: String) -> Self {
-        Self {
-            type_,
-            target,
-            path,
-            value: None,
-        }
+    pub fn new(target: String, path: String) -> Self {
+        Self { target, path, value: None }
     }
 }
+#[doc = "Type of the job data."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum JobDataUnion {
@@ -1181,16 +1159,13 @@ impl ServiceBusQueueV1Destination {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceBusQueueV1DestinationAuth {
-    #[doc = "The kind of authentication to use."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct ServiceBusQueueV1DestinationAuth {}
 impl ServiceBusQueueV1DestinationAuth {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ServiceBusQueueV1DestinationAuthUnion {
@@ -1250,16 +1225,13 @@ impl ServiceBusTopicV1Destination {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceBusTopicV1DestinationAuth {
-    #[doc = "The kind of authentication to use."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct ServiceBusTopicV1DestinationAuth {}
 impl ServiceBusTopicV1DestinationAuth {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ServiceBusTopicV1DestinationAuthUnion {
@@ -1385,19 +1357,13 @@ pub struct User {
     #[doc = "Unique ID of the user."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Type of the user."]
-    #[serde(rename = "type")]
-    pub type_: String,
 }
 impl User {
-    pub fn new(permission: Permission, type_: String) -> Self {
-        Self {
-            permission,
-            id: None,
-            type_,
-        }
+    pub fn new(permission: Permission) -> Self {
+        Self { permission, id: None }
     }
 }
+#[doc = "Type of the user."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum UserUnion {
@@ -1454,16 +1420,13 @@ impl WebhookV1Destination {
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WebhookV1DestinationAuth {
-    #[doc = "The kind of authentication to use."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct WebhookV1DestinationAuth {}
 impl WebhookV1DestinationAuth {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum WebhookV1DestinationAuthUnion {

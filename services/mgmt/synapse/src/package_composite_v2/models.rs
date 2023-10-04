@@ -1200,16 +1200,13 @@ impl CspWorkspaceAdminProperties {
 }
 #[doc = "The base definition of the custom setup."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CustomSetupBase {
-    #[doc = "The type of custom setup."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct CustomSetupBase {}
 impl CustomSetupBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The type of custom setup."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CustomSetupBaseUnion {}
@@ -1239,64 +1236,20 @@ pub struct DataConnection {
     #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[doc = "Kind of the endpoint for the data connection"]
-    pub kind: data_connection::Kind,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 impl DataConnection {
-    pub fn new(kind: data_connection::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             proxy_resource: ProxyResource::default(),
             location: None,
-            kind,
             system_data: None,
         }
     }
 }
-pub mod data_connection {
-    use super::*;
-    #[doc = "Kind of the endpoint for the data connection"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        EventHub,
-        EventGrid,
-        IotHub,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::EventHub => serializer.serialize_unit_variant("Kind", 0u32, "EventHub"),
-                Self::EventGrid => serializer.serialize_unit_variant("Kind", 1u32, "EventGrid"),
-                Self::IotHub => serializer.serialize_unit_variant("Kind", 2u32, "IotHub"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Kind of the endpoint for the data connection"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum DataConnectionUnion {
@@ -1630,62 +1583,20 @@ pub struct Database {
     #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[doc = "Kind of the database"]
-    pub kind: database::Kind,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 impl Database {
-    pub fn new(kind: database::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             proxy_resource: ProxyResource::default(),
             location: None,
-            kind,
             system_data: None,
         }
     }
 }
-pub mod database {
-    use super::*;
-    #[doc = "Kind of the database"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        ReadWrite,
-        ReadOnlyFollowing,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::ReadWrite => serializer.serialize_unit_variant("Kind", 0u32, "ReadWrite"),
-                Self::ReadOnlyFollowing => serializer.serialize_unit_variant("Kind", 1u32, "ReadOnlyFollowing"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Kind of the database"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum DatabaseUnion {
@@ -2944,18 +2855,16 @@ impl GetSsisObjectMetadataRequest {
 #[doc = "Azure Synapse nested object which serves as a compute resource for activities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntime {
-    #[doc = "The type of integration runtime."]
-    #[serde(rename = "type")]
-    pub type_: IntegrationRuntimeType,
     #[doc = "Integration runtime description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 impl IntegrationRuntime {
-    pub fn new(type_: IntegrationRuntimeType) -> Self {
-        Self { type_, description: None }
+    pub fn new() -> Self {
+        Self { description: None }
     }
 }
+#[doc = "The type of integration runtime."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum IntegrationRuntimeUnion {
@@ -3742,9 +3651,6 @@ impl Serialize for IntegrationRuntimeState {
 #[doc = "Integration runtime status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeStatus {
-    #[doc = "The type of integration runtime."]
-    #[serde(rename = "type")]
-    pub type_: IntegrationRuntimeType,
     #[doc = "The workspace name which the integration runtime belong to."]
     #[serde(rename = "dataFactoryName", default, skip_serializing_if = "Option::is_none")]
     pub data_factory_name: Option<String>,
@@ -3753,14 +3659,14 @@ pub struct IntegrationRuntimeStatus {
     pub state: Option<IntegrationRuntimeState>,
 }
 impl IntegrationRuntimeStatus {
-    pub fn new(type_: IntegrationRuntimeType) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             data_factory_name: None,
             state: None,
         }
     }
 }
+#[doc = "The type of integration runtime."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum IntegrationRuntimeStatusUnion {
@@ -4654,16 +4560,13 @@ impl LinkedIntegrationRuntimeRbacAuthorization {
 }
 #[doc = "The base definition of a linked integration runtime."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LinkedIntegrationRuntimeType {
-    #[doc = "The authorization type for integration runtime sharing."]
-    #[serde(rename = "authorizationType")]
-    pub authorization_type: String,
-}
+pub struct LinkedIntegrationRuntimeType {}
 impl LinkedIntegrationRuntimeType {
-    pub fn new(authorization_type: String) -> Self {
-        Self { authorization_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The authorization type for integration runtime sharing."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "authorizationType")]
 pub enum LinkedIntegrationRuntimeTypeUnion {
@@ -6586,16 +6489,13 @@ pub mod restore_point_properties {
 }
 #[doc = "The base definition of a secret type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretBase {
-    #[doc = "Type of the secret."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct SecretBase {}
 impl SecretBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "Type of the secret."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum SecretBaseUnion {
@@ -8711,9 +8611,6 @@ impl SsisFolder {
 #[doc = "SSIS object metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SsisObjectMetadata {
-    #[doc = "The type of SSIS object metadata."]
-    #[serde(rename = "type")]
-    pub type_: SsisObjectMetadataType,
     #[doc = "Metadata id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<i64>,
@@ -8725,15 +8622,15 @@ pub struct SsisObjectMetadata {
     pub description: Option<String>,
 }
 impl SsisObjectMetadata {
-    pub fn new(type_: SsisObjectMetadataType) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             id: None,
             name: None,
             description: None,
         }
     }
 }
+#[doc = "The type of SSIS object metadata."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum SsisObjectMetadataUnion {

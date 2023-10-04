@@ -5,16 +5,13 @@ use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
 #[doc = "The authentication info"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthInfoBase {
-    #[doc = "The authentication type."]
-    #[serde(rename = "authType")]
-    pub auth_type: AuthType,
-}
+pub struct AuthInfoBase {}
 impl AuthInfoBase {
-    pub fn new(auth_type: AuthType) -> Self {
-        Self { auth_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The authentication type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "authType")]
 pub enum AuthInfoBaseUnion {
@@ -117,16 +114,13 @@ impl AzureResource {
 }
 #[doc = "The azure resource properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureResourcePropertiesBase {
-    #[doc = "The azure resource type."]
-    #[serde(rename = "type")]
-    pub type_: AzureResourceType,
-}
+pub struct AzureResourcePropertiesBase {}
 impl AzureResourcePropertiesBase {
-    pub fn new(type_: AzureResourceType) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The azure resource type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum AzureResourcePropertiesBaseUnion {
@@ -663,16 +657,13 @@ impl SecretAuthInfo {
 }
 #[doc = "The secret info"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretInfoBase {
-    #[doc = "The secret type."]
-    #[serde(rename = "secretType")]
-    pub secret_type: SecretType,
-}
+pub struct SecretInfoBase {}
 impl SecretInfoBase {
-    pub fn new(secret_type: SecretType) -> Self {
-        Self { secret_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The secret type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "secretType")]
 pub enum SecretInfoBaseUnion {
@@ -829,16 +820,13 @@ impl SystemAssignedIdentityAuthInfo {
 }
 #[doc = "The target service properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TargetServiceBase {
-    #[doc = "The target service type."]
-    #[serde(rename = "type")]
-    pub type_: TargetServiceType,
-}
+pub struct TargetServiceBase {}
 impl TargetServiceBase {
-    pub fn new(type_: TargetServiceType) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The target service type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum TargetServiceBaseUnion {

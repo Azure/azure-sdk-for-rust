@@ -104,16 +104,13 @@ impl Serialize for AllowType {
 }
 #[doc = "The authentication info"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthInfoBase {
-    #[doc = "The authentication type."]
-    #[serde(rename = "authType")]
-    pub auth_type: AuthType,
-}
+pub struct AuthInfoBase {}
 impl AuthInfoBase {
-    pub fn new(auth_type: AuthType) -> Self {
-        Self { auth_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The authentication type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "authType")]
 pub enum AuthInfoBaseUnion {
@@ -226,16 +223,13 @@ impl AzureResource {
 }
 #[doc = "The azure resource properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureResourcePropertiesBase {
-    #[doc = "The azure resource type."]
-    #[serde(rename = "type")]
-    pub type_: AzureResourceType,
-}
+pub struct AzureResourcePropertiesBase {}
 impl AzureResourcePropertiesBase {
-    pub fn new(type_: AzureResourceType) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The azure resource type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum AzureResourcePropertiesBaseUnion {
@@ -768,16 +762,13 @@ pub mod dryrun_operation_preview {
 }
 #[doc = "The parameters of the dryrun"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DryrunParameters {
-    #[doc = "The name of action for you dryrun job."]
-    #[serde(rename = "actionName")]
-    pub action_name: DryrunActionName,
-}
+pub struct DryrunParameters {}
 impl DryrunParameters {
-    pub fn new(action_name: DryrunActionName) -> Self {
-        Self { action_name }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The name of action for you dryrun job."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "actionName")]
 pub enum DryrunParametersUnion {
@@ -798,16 +789,13 @@ impl DryrunPatch {
 }
 #[doc = "A result of dryrun"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DryrunPrerequisiteResult {
-    #[doc = "The type of dryrun result."]
-    #[serde(rename = "type")]
-    pub type_: DryrunPrerequisiteResultType,
-}
+pub struct DryrunPrerequisiteResult {}
 impl DryrunPrerequisiteResult {
-    pub fn new(type_: DryrunPrerequisiteResultType) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The type of dryrun result."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DryrunPrerequisiteResultUnion {
@@ -1372,16 +1360,13 @@ impl SecretAuthInfo {
 }
 #[doc = "The secret info"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretInfoBase {
-    #[doc = "The secret type."]
-    #[serde(rename = "secretType")]
-    pub secret_type: SecretType,
-}
+pub struct SecretInfoBase {}
 impl SecretInfoBase {
-    pub fn new(secret_type: SecretType) -> Self {
-        Self { secret_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The secret type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "secretType")]
 pub enum SecretInfoBaseUnion {
@@ -1586,16 +1571,13 @@ impl SystemAssignedIdentityAuthInfo {
 }
 #[doc = "The target service properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TargetServiceBase {
-    #[doc = "The target service type."]
-    #[serde(rename = "type")]
-    pub type_: TargetServiceType,
-}
+pub struct TargetServiceBase {}
 impl TargetServiceBase {
-    pub fn new(type_: TargetServiceType) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The target service type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum TargetServiceBaseUnion {

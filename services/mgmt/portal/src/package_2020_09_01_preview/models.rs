@@ -134,16 +134,13 @@ impl DashboardListResult {
 }
 #[doc = "A dashboard part metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DashboardPartMetadata {
-    #[doc = "The type of dashboard part."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
+pub struct DashboardPartMetadata {}
 impl DashboardPartMetadata {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The type of dashboard part."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DashboardPartMetadataUnion {

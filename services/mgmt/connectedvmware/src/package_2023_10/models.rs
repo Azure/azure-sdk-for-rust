@@ -915,9 +915,6 @@ impl InventoryItemDetails {
 #[doc = "Describes the properties of an Inventory Item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InventoryItemProperties {
-    #[doc = "The inventory type."]
-    #[serde(rename = "inventoryType")]
-    pub inventory_type: InventoryType,
     #[doc = "Gets or sets the tracked resource id corresponding to the inventory resource."]
     #[serde(rename = "managedResourceId", default, skip_serializing_if = "Option::is_none")]
     pub managed_resource_id: Option<String>,
@@ -932,9 +929,8 @@ pub struct InventoryItemProperties {
     pub provisioning_state: Option<ResourceProvisioningState>,
 }
 impl InventoryItemProperties {
-    pub fn new(inventory_type: InventoryType) -> Self {
+    pub fn new() -> Self {
         Self {
-            inventory_type,
             managed_resource_id: None,
             mo_ref_id: None,
             mo_name: None,
@@ -942,6 +938,7 @@ impl InventoryItemProperties {
         }
     }
 }
+#[doc = "The inventory type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "inventoryType")]
 pub enum InventoryItemPropertiesUnion {

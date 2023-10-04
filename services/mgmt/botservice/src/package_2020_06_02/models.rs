@@ -182,16 +182,13 @@ impl BotResponseList {
 }
 #[doc = "Channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Channel {
-    #[doc = "The channel name"]
-    #[serde(rename = "channelName")]
-    pub channel_name: String,
-}
+pub struct Channel {}
 impl Channel {
-    pub fn new(channel_name: String) -> Self {
-        Self { channel_name }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The channel name"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "channelName")]
 pub enum ChannelUnion {

@@ -423,59 +423,15 @@ impl BudgetsListResult {
 pub struct ChargeSummary {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[doc = "Specifies the kind of charge summary."]
-    pub kind: charge_summary::Kind,
 }
 impl ChargeSummary {
-    pub fn new(kind: charge_summary::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             proxy_resource: ProxyResource::default(),
-            kind,
         }
     }
 }
-pub mod charge_summary {
-    use super::*;
-    #[doc = "Specifies the kind of charge summary."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        #[serde(rename = "legacy")]
-        Legacy,
-        #[serde(rename = "modern")]
-        Modern,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Legacy => serializer.serialize_unit_variant("Kind", 0u32, "legacy"),
-                Self::Modern => serializer.serialize_unit_variant("Kind", 1u32, "modern"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Specifies the kind of charge summary."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum ChargeSummaryUnion {
@@ -997,8 +953,6 @@ pub struct LegacyReservationRecommendationProperties {
     #[doc = "The usage date for looking back."]
     #[serde(rename = "firstUsageDate", default, with = "azure_core::date::rfc3339::option")]
     pub first_usage_date: Option<time::OffsetDateTime>,
-    #[doc = "Shared or single recommendation."]
-    pub scope: String,
     #[doc = "List of sku properties"]
     #[serde(
         rename = "skuProperties",
@@ -1009,7 +963,7 @@ pub struct LegacyReservationRecommendationProperties {
     pub sku_properties: Vec<SkuProperty>,
 }
 impl LegacyReservationRecommendationProperties {
-    pub fn new(scope: String) -> Self {
+    pub fn new() -> Self {
         Self {
             look_back_period: None,
             instance_flexibility_ratio: None,
@@ -1024,11 +978,11 @@ impl LegacyReservationRecommendationProperties {
             total_cost_with_reserved_instances: None,
             net_savings: None,
             first_usage_date: None,
-            scope,
             sku_properties: Vec::new(),
         }
     }
 }
+#[doc = "Shared or single recommendation."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "scope")]
 pub enum LegacyReservationRecommendationPropertiesUnion {
@@ -1917,8 +1871,6 @@ pub struct ModernReservationRecommendationProperties {
     #[doc = "The usage date for looking back."]
     #[serde(rename = "firstUsageDate", default, with = "azure_core::date::rfc3339::option")]
     pub first_usage_date: Option<time::OffsetDateTime>,
-    #[doc = "Shared or single recommendation."]
-    pub scope: String,
     #[doc = "List of sku properties"]
     #[serde(
         rename = "skuProperties",
@@ -1932,7 +1884,7 @@ pub struct ModernReservationRecommendationProperties {
     pub sku_name: Option<String>,
 }
 impl ModernReservationRecommendationProperties {
-    pub fn new(scope: String) -> Self {
+    pub fn new() -> Self {
         Self {
             location: None,
             look_back_period: None,
@@ -1948,12 +1900,12 @@ impl ModernReservationRecommendationProperties {
             total_cost_with_reserved_instances: None,
             net_savings: None,
             first_usage_date: None,
-            scope,
             sku_properties: Vec::new(),
             sku_name: None,
         }
     }
 }
+#[doc = "Shared or single recommendation."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "scope")]
 pub enum ModernReservationRecommendationPropertiesUnion {
@@ -2948,60 +2900,16 @@ pub struct ReservationRecommendation {
     pub resource: Resource,
     #[serde(flatten)]
     pub resource_attributes: ResourceAttributes,
-    #[doc = "Specifies the kind of reservation recommendation."]
-    pub kind: reservation_recommendation::Kind,
 }
 impl ReservationRecommendation {
-    pub fn new(kind: reservation_recommendation::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource: Resource::default(),
             resource_attributes: ResourceAttributes::default(),
-            kind,
         }
     }
 }
-pub mod reservation_recommendation {
-    use super::*;
-    #[doc = "Specifies the kind of reservation recommendation."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        #[serde(rename = "legacy")]
-        Legacy,
-        #[serde(rename = "modern")]
-        Modern,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Legacy => serializer.serialize_unit_variant("Kind", 0u32, "legacy"),
-                Self::Modern => serializer.serialize_unit_variant("Kind", 1u32, "modern"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Specifies the kind of reservation recommendation."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum ReservationRecommendationUnion {
@@ -3497,59 +3405,15 @@ impl TagsResult {
 pub struct UsageDetail {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "Specifies the kind of usage details."]
-    pub kind: usage_detail::Kind,
 }
 impl UsageDetail {
-    pub fn new(kind: usage_detail::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource: Resource::default(),
-            kind,
         }
     }
 }
-pub mod usage_detail {
-    use super::*;
-    #[doc = "Specifies the kind of usage details."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        #[serde(rename = "legacy")]
-        Legacy,
-        #[serde(rename = "modern")]
-        Modern,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Legacy => serializer.serialize_unit_variant("Kind", 0u32, "legacy"),
-                Self::Modern => serializer.serialize_unit_variant("Kind", 1u32, "modern"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Specifies the kind of usage details."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum UsageDetailUnion {

@@ -1117,16 +1117,13 @@ impl ClearKeyEncryptionConfiguration {
 }
 #[doc = "Base class for specifying a clip time. Use sub classes of this class to specify the time position in the media."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ClipTime {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
-}
+pub struct ClipTime {}
 impl ClipTime {
-    pub fn new(odata_type: String) -> Self {
-        Self { odata_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
 pub enum ClipTimeUnion {
@@ -1138,18 +1135,16 @@ pub enum ClipTimeUnion {
 #[doc = "Describes the basic properties of all codecs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Codec {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
     #[doc = "An optional label for the codec. The label can be used to control muxing behavior."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
 impl Codec {
-    pub fn new(odata_type: String) -> Self {
-        Self { odata_type, label: None }
+    pub fn new() -> Self {
+        Self { label: None }
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
 pub enum CodecUnion {
@@ -1277,16 +1272,13 @@ impl ContentKeyPolicyCollection {
 }
 #[doc = "Base class for Content Key Policy configuration. A derived class must be used to create a configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContentKeyPolicyConfiguration {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
-}
+pub struct ContentKeyPolicyConfiguration {}
 impl ContentKeyPolicyConfiguration {
-    pub fn new(odata_type: String) -> Self {
-        Self { odata_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
 pub enum ContentKeyPolicyConfigurationUnion {
@@ -1495,16 +1487,13 @@ impl ContentKeyPolicyPlayReadyContentEncryptionKeyFromKeyIdentifier {
 }
 #[doc = "Base class for content key ID location. A derived class must be used to represent the location."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContentKeyPolicyPlayReadyContentKeyLocation {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
-}
+pub struct ContentKeyPolicyPlayReadyContentKeyLocation {}
 impl ContentKeyPolicyPlayReadyContentKeyLocation {
-    pub fn new(odata_type: String) -> Self {
-        Self { odata_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
 pub enum ContentKeyPolicyPlayReadyContentKeyLocationUnion {
@@ -1867,16 +1856,13 @@ impl ContentKeyPolicyProperties {
 }
 #[doc = "Base class for Content Key Policy restrictions. A derived class must be used to create a restriction."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContentKeyPolicyRestriction {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
-}
+pub struct ContentKeyPolicyRestriction {}
 impl ContentKeyPolicyRestriction {
-    pub fn new(odata_type: String) -> Self {
-        Self { odata_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
 pub enum ContentKeyPolicyRestrictionUnion {
@@ -1889,16 +1875,13 @@ pub enum ContentKeyPolicyRestrictionUnion {
 }
 #[doc = "Base class for Content Key Policy key for token validation. A derived class must be used to create a token key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ContentKeyPolicyRestrictionTokenKey {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
-}
+pub struct ContentKeyPolicyRestrictionTokenKey {}
 impl ContentKeyPolicyRestrictionTokenKey {
-    pub fn new(odata_type: String) -> Self {
-        Self { odata_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
 pub enum ContentKeyPolicyRestrictionTokenKeyUnion {
@@ -2817,21 +2800,16 @@ impl FirstQuality {
 #[doc = "Base class for output."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Format {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
     #[doc = "The pattern of the file names for the generated output files. The following macros are supported in the file name: {Basename} - An expansion macro that will use the name of the input video file. If the base name(the file suffix is not included) of the input video file is less than 32 characters long, the base name of input video files will be used. If the length of base name of the input video file exceeds 32 characters, the base name is truncated to the first 32 characters in total length. {Extension} - The appropriate extension for this format. {Label} - The label assigned to the codec/layer. {Index} - A unique index for thumbnails. Only applicable to thumbnails. {Bitrate} - The audio/video bitrate. Not applicable to thumbnails. {Codec} - The type of the audio/video codec. {Resolution} - The video resolution. Any unsubstituted macros will be collapsed and removed from the filename."]
     #[serde(rename = "filenamePattern")]
     pub filename_pattern: String,
 }
 impl Format {
-    pub fn new(odata_type: String, filename_pattern: String) -> Self {
-        Self {
-            odata_type,
-            filename_pattern,
-        }
+    pub fn new(filename_pattern: String) -> Self {
+        Self { filename_pattern }
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
 pub enum FormatUnion {
@@ -3385,9 +3363,6 @@ impl ImageFormat {
 #[doc = "Base class for defining an input. Use sub classes of this class to specify tracks selections and related metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InputDefinition {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
     #[doc = "The list of TrackDescriptors which define the metadata and selection of tracks in the input."]
     #[serde(
         rename = "includedTracks",
@@ -3398,13 +3373,13 @@ pub struct InputDefinition {
     pub included_tracks: Vec<TrackDescriptorUnion>,
 }
 impl InputDefinition {
-    pub fn new(odata_type: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            odata_type,
             included_tracks: Vec::new(),
         }
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
 pub enum InputDefinitionUnion {
@@ -3653,16 +3628,13 @@ impl JobErrorDetail {
 }
 #[doc = "Base class for inputs to a Job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobInput {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
-}
+pub struct JobInput {}
 impl JobInput {
-    pub fn new(odata_type: String) -> Self {
-        Self { odata_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
 pub enum JobInputUnion {
@@ -3794,9 +3766,6 @@ impl JobInputs {
 #[doc = "Describes all the properties of a JobOutput."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobOutput {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
     #[doc = "Details of JobOutput errors."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<JobError>,
@@ -3820,9 +3789,8 @@ pub struct JobOutput {
     pub end_time: Option<time::OffsetDateTime>,
 }
 impl JobOutput {
-    pub fn new(odata_type: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            odata_type,
             error: None,
             preset_override: None,
             state: None,
@@ -3883,6 +3851,7 @@ pub mod job_output {
         }
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
 pub enum JobOutputUnion {
@@ -5565,9 +5534,6 @@ impl OutputFile {
 #[doc = "Base type for all overlays - image, audio or video."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Overlay {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
     #[doc = "The label of the job input which is to be used as an overlay. The Input must specify exactly one file. You can specify an image file in JPG, PNG, GIF or BMP format, or an audio file (such as a WAV, MP3, WMA or M4A file), or a video file. See https://aka.ms/mesformats for the complete list of supported audio and video file formats."]
     #[serde(rename = "inputLabel")]
     pub input_label: String,
@@ -5588,9 +5554,8 @@ pub struct Overlay {
     pub audio_gain_level: Option<f64>,
 }
 impl Overlay {
-    pub fn new(odata_type: String, input_label: String) -> Self {
+    pub fn new(input_label: String) -> Self {
         Self {
-            odata_type,
             input_label,
             start: None,
             end: None,
@@ -5600,6 +5565,7 @@ impl Overlay {
         }
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
 pub enum OverlayUnion {
@@ -5677,16 +5643,13 @@ impl PresentationTimeRange {
 }
 #[doc = "Base type for all Presets, which define the recipe or instructions on how the input media files should be processed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Preset {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
-}
+pub struct Preset {}
 impl Preset {
-    pub fn new(odata_type: String) -> Self {
-        Self { odata_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
 pub enum PresetUnion {
@@ -7249,16 +7212,13 @@ pub mod text_track {
 }
 #[doc = "Base type for concrete track types. A derived type must be used to represent the Track."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TrackBase {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
-}
+pub struct TrackBase {}
 impl TrackBase {
-    pub fn new(odata_type: String) -> Self {
-        Self { odata_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
 pub enum TrackBaseUnion {
@@ -7271,16 +7231,13 @@ pub enum TrackBaseUnion {
 }
 #[doc = "Base type for all TrackDescriptor types, which define the metadata and selection for tracks that should be processed by a Job"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TrackDescriptor {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
-}
+pub struct TrackDescriptor {}
 impl TrackDescriptor {
-    pub fn new(odata_type: String) -> Self {
-        Self { odata_type }
+    pub fn new() -> Self {
+        Self {}
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
 pub enum TrackDescriptorUnion {
