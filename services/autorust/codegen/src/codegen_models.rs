@@ -161,6 +161,30 @@ impl SchemaGen {
         self.all_of.iter().collect()
     }
 
+    /// Get the number of fields in the struct.
+    fn len_fields(&self) -> usize {
+        self.all_of().len() + self.properties.len()
+    }
+
+    /// Get the number of fields in the struct, excluding the discriminator.
+    fn len_fields_without_descriminator(&self) -> usize {
+        let mut len = self.len_fields();
+        if self.discriminator().is_some() {
+            len = len.saturating_sub(1);
+        }
+        len
+    }
+
+    /// If the struct has any fields.
+    fn has_fields(&self) -> bool {
+        self.len_fields() > 0
+    }
+
+    /// // If the struct has any fields, excluding the discriminator.
+    fn has_fields_without_descriminator(&self) -> bool {
+        self.len_fields_without_descriminator() > 0
+    }
+
     fn array_items(&self) -> Result<&ReferenceOr<Schema>> {
         get_schema_array_items(&self.schema.common)
     }
@@ -490,7 +514,7 @@ pub fn create_models(cg: &mut CodeGen) -> Result<ModelsCode> {
                 let tag_property = schema.properties.iter().find(|property| property.name() == tag);
                 let tag_property_description = tag_property.and_then(|property| property.schema().schema.common.description.clone());
                 schema.properties.retain(|property| property.name() != tag);
-                if schema.all_of().len() > 1 || !schema.properties.is_empty() {
+                if schema.has_fields() {
                     models.push(ModelCode::Struct(create_struct(
                         cg,
                         &schema,
@@ -905,16 +929,12 @@ fn create_struct(
     // println!("struct: {} {:?}", struct_name_code, pageable);
     needs_boxing.insert(struct_name.to_camel_case_ident()?.to_string());
 
-    for schema in schema.all_of() {
+    for base_schema in schema.all_of() {
         // skip empty base types
-        let mut fields_len = schema.all_of.len() + schema.properties().len();
-        if schema.discriminator().is_some() {
-            fields_len = fields_len.saturating_sub(1);
-        }
-        if fields_len < 1 {
+        if !base_schema.has_fields_without_descriminator() {
             continue;
         }
-        let schema_name = schema.name()?;
+        let schema_name = base_schema.name()?;
         let mut type_name = TypeNameCode::from(schema_name.to_camel_case_ident()?);
         type_name.union(false);
         let field_name = schema_name.to_snake_case_ident()?;
@@ -924,7 +944,7 @@ fn create_struct(
             field_name: field_name.clone(),
             field_type: type_name.clone(),
         });
-        if schema.implement_default() {
+        if base_schema.implement_default() {
             new_fn_body.extend(quote! { #field_name: #type_name::default(), });
         } else {
             new_fn_params.push(quote! { #field_name: #type_name });
