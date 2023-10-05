@@ -473,7 +473,7 @@ pub fn create_models(cg: &mut CodeGen) -> Result<ModelsCode> {
             //     schema_name, _first_doc_file, doc_file
             // );
         } else if schema.is_array() {
-            models.push(ModelCode::VecAlias(create_vec_alias(schema)?));
+            models.push(ModelCode::VecAlias(create_vec_alias(cg, schema)?));
         } else if schema.is_local_enum() {
             let enum_code = create_enum(None, schema, schema_name, false)?;
             models.push(ModelCode::Enum(enum_code));
@@ -806,10 +806,11 @@ impl ToTokens for VecAliasCode {
     }
 }
 
-fn create_vec_alias(schema: &SchemaGen) -> Result<VecAliasCode> {
+fn create_vec_alias(cg: &CodeGen, schema: &SchemaGen) -> Result<VecAliasCode> {
     let items = schema.array_items()?;
     let id = schema.name()?.to_camel_case_ident()?;
-    let value = TypeNameCode::new(&get_type_name_for_schema_ref(items)?)?;
+    let mut value = TypeNameCode::new(&get_type_name_for_schema_ref(items)?)?;
+    cg.set_if_union_type(&mut value);
     Ok(VecAliasCode { id, value })
 }
 
