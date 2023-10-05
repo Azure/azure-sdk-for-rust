@@ -2769,7 +2769,7 @@ impl ServicePlacementNonPartiallyPlaceServicePolicy {
         Self {}
     }
 }
-pub type ServicePlacementPoliciesList = Vec<ServicePlacementPolicy>;
+pub type ServicePlacementPoliciesList = Vec<ServicePlacementPolicyUnion>;
 #[doc = "The type of placement policy for a service fabric service. Following are the possible values."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]

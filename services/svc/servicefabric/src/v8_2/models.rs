@@ -5866,7 +5866,7 @@ pub enum DeployedServiceReplicaInfoUnion {
     Stateful(DeployedStatefulServiceReplicaInfo),
     Stateless(DeployedStatelessServiceInstanceInfo),
 }
-pub type DeployedServiceReplicaInfoList = Vec<DeployedServiceReplicaInfo>;
+pub type DeployedServiceReplicaInfoList = Vec<DeployedServiceReplicaInfoUnion>;
 #[doc = "Information about service type deployed on a node, information such as the status of the service type registration on a node."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeployedServiceTypeInfo {
@@ -6551,7 +6551,7 @@ impl EventHealthEvaluation {
         }
     }
 }
-pub type EventList = Vec<FabricEvent>;
+pub type EventList = Vec<FabricEventUnion>;
 #[doc = "Describes a Chaos event that gets generated when Chaos has decided on the faults for an iteration. This Chaos event contains the details of the faults as a list of strings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExecutingFaultsChaosEvent {
@@ -15646,7 +15646,7 @@ impl ServicePlacementNonPartiallyPlaceServicePolicyDescription {
         Self {}
     }
 }
-pub type ServicePlacementPoliciesList = Vec<ServicePlacementPolicyDescription>;
+pub type ServicePlacementPoliciesList = Vec<ServicePlacementPolicyDescriptionUnion>;
 #[doc = "The type of placement policy for a service fabric service. Following are the possible values."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "Type")]
@@ -15658,7 +15658,7 @@ pub enum ServicePlacementPolicyDescriptionUnion {
     RequireDomainDistribution(ServicePlacementRequireDomainDistributionPolicyDescription),
     RequireDomain(ServicePlacementRequiredDomainPolicyDescription),
 }
-pub type ServicePlacementPolicyDescriptionList = Vec<ServicePlacementPolicyDescription>;
+pub type ServicePlacementPolicyDescriptionList = Vec<ServicePlacementPolicyDescriptionUnion>;
 #[doc = "The type of placement policy for a service fabric service. Following are the possible values."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "ServicePlacementPolicyType")]
