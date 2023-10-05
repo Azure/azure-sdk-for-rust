@@ -43,12 +43,17 @@ impl Serialize for AclAction {
 #[doc = "A custom certificate."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomCertificate {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Custom certificate properties."]
     pub properties: CustomCertificateProperties,
 }
 impl CustomCertificate {
     pub fn new(properties: CustomCertificateProperties) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "Custom certificates list."]
@@ -105,12 +110,17 @@ impl CustomCertificateProperties {
 #[doc = "A custom domain"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomDomain {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a custom domain."]
     pub properties: CustomDomainProperties,
 }
 impl CustomDomain {
     pub fn new(properties: CustomDomainProperties) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "Custom domains list"]
@@ -668,6 +678,8 @@ impl PrivateEndpointAcl {
 #[doc = "A private endpoint connection to an azure resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Private endpoint connection properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
@@ -731,6 +743,8 @@ impl PrivateEndpointConnectionProperties {
 #[doc = "Private link resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Private link resource properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
@@ -1253,6 +1267,8 @@ impl ShareablePrivateLinkResourceType {
 #[doc = "Describes a Shared Private Link Resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedPrivateLinkResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Describes the properties of an existing Shared Private Link Resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SharedPrivateLinkResourceProperties>,

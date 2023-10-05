@@ -496,6 +496,8 @@ impl CommitmentPeriod {
 #[doc = "Cognitive Services account commitment plan."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CommitmentPlan {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -639,6 +641,8 @@ impl CommitmentTierListResult {
 #[doc = "Cognitive Services account deployment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Deployment {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,

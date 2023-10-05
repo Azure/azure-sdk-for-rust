@@ -124,6 +124,8 @@ pub mod advanced_threat_protection_properties {
 #[doc = "Database, Server or Elastic Pool Advisor."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Advisor {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Resource kind."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
@@ -440,6 +442,8 @@ impl AzureAdOnlyAuthProperties {
 #[doc = "A short term retention policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BackupShortTermRetentionPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a short term retention policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BackupShortTermRetentionPolicyProperties>,
@@ -820,6 +824,8 @@ impl CreateDatabaseRestorePointDefinition {
 #[doc = "A database data masking policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataMaskingPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The location of the data masking policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -873,6 +879,8 @@ pub mod data_masking_policy_properties {
 #[doc = "A database data masking rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataMaskingRule {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The location of the data masking rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -1000,6 +1008,8 @@ pub mod data_masking_rule_properties {
 #[doc = "User activities of a data warehouse"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataWarehouseUserActivities {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "User activities of a data warehouse. This currently includes the count of running or suspended queries. For more information, please view the sys.dm_pdw_exec_requests dynamic management view (DMV)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataWarehouseUserActivitiesProperties>,
@@ -1082,6 +1092,8 @@ impl Database {
 #[doc = "A database Advanced Threat Protection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseAdvancedThreatProtection {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -1122,6 +1134,8 @@ impl DatabaseAdvancedThreatProtectionListResult {
 #[doc = "Database-level Automatic Tuning."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseAutomaticTuning {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Database-level Automatic Tuning properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseAutomaticTuningProperties>,
@@ -1171,6 +1185,8 @@ pub mod database_automatic_tuning_properties {
 #[doc = "A database blob auditing policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseBlobAuditingPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Resource kind."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
@@ -1274,6 +1290,8 @@ pub mod database_blob_auditing_policy_properties {
 #[doc = "A database column resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseColumn {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Database column properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseColumnProperties>,
@@ -1511,6 +1529,8 @@ pub mod database_column_properties {
 #[doc = "An Import, Export, or PolybaseImport resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseExtensions {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Contains the database information after a successful Import, Export, or PolybaseImport"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseExtensionsProperties>,
@@ -1803,6 +1823,8 @@ impl DatabaseListResult {
 #[doc = "A database operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseOperation {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a database operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseOperationProperties>,
@@ -2585,7 +2607,10 @@ pub mod database_properties {
 }
 #[doc = "A database schema resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct DatabaseSchema {}
+pub struct DatabaseSchema {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+}
 impl DatabaseSchema {
     pub fn new() -> Self {
         Self::default()
@@ -2644,6 +2669,8 @@ impl DatabaseSecurityAlertListResult {
 #[doc = "A database security alert policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseSecurityAlertPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -2659,6 +2686,8 @@ impl DatabaseSecurityAlertPolicy {
 #[doc = "A database sql vulnerability assessment baseline set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseSqlVulnerabilityAssessmentBaselineSet {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -2710,6 +2739,8 @@ impl DatabaseSqlVulnerabilityAssessmentBaselineSetProperties {
 #[doc = "A database sql vulnerability assessment rule baseline."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseSqlVulnerabilityAssessmentRuleBaseline {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -2725,6 +2756,8 @@ impl DatabaseSqlVulnerabilityAssessmentRuleBaseline {
 #[doc = "A database sql vulnerability assessment rule baseline input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseSqlVulnerabilityAssessmentRuleBaselineInput {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -2754,6 +2787,8 @@ impl DatabaseSqlVulnerabilityAssessmentRuleBaselineInputProperties {
 #[doc = "A database sql vulnerability assessment rule baseline list input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseSqlVulnerabilityAssessmentRuleBaselineListInput {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -2819,6 +2854,8 @@ impl DatabaseSqlVulnerabilityAssessmentRuleBaselineProperties {
 #[doc = "A database table resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseTable {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Database table properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseTableProperties>,
@@ -3533,6 +3570,8 @@ pub mod database_update_properties {
 #[doc = "Usage metric of a database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseUsage {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a database usage."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseUsageProperties>,
@@ -3606,6 +3645,8 @@ impl DatabaseUserIdentity {
 #[doc = "A database vulnerability assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseVulnerabilityAssessment {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a database Vulnerability Assessment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseVulnerabilityAssessmentProperties>,
@@ -3664,6 +3705,8 @@ impl DatabaseVulnerabilityAssessmentProperties {
 #[doc = "A database vulnerability assessment rule baseline."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseVulnerabilityAssessmentRuleBaseline {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a database Vulnerability Assessment rule baseline."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseVulnerabilityAssessmentRuleBaselineProperties>,
@@ -3711,6 +3754,8 @@ impl DatabaseVulnerabilityAssessmentScanExportProperties {
 #[doc = "A database Vulnerability Assessment scan export resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabaseVulnerabilityAssessmentScansExport {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of the export operation's result."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DatabaseVulnerabilityAssessmentScanExportProperties>,
@@ -3723,6 +3768,8 @@ impl DatabaseVulnerabilityAssessmentScansExport {
 #[doc = "A deleted server."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeletedServer {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a deleted server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DeletedServerProperties>,
@@ -3781,6 +3828,8 @@ impl DeletedServerProperties {
 #[doc = "Distributed availability group between box and Sql Managed Instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DistributedAvailabilityGroup {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a distributed availability group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DistributedAvailabilityGroupProperties>,
@@ -4145,6 +4194,8 @@ impl ElasticPoolListResult {
 #[doc = "A elastic pool operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ElasticPoolOperation {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a elastic pool operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ElasticPoolOperationProperties>,
@@ -4856,6 +4907,8 @@ pub mod elastic_pool_update_properties {
 #[doc = "The server encryption protector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionProtector {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Kind of encryption protector. This is metadata used for the Azure portal experience."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
@@ -4973,6 +5026,8 @@ pub mod encryption_protector_properties {
 #[doc = "Certificate used on an endpoint on the Managed Instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointCertificate {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of an endpoint certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EndpointCertificateProperties>,
@@ -5138,6 +5193,8 @@ pub mod export_database_definition {
 #[doc = "An extended database blob auditing policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedDatabaseBlobAuditingPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of an extended database blob auditing policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExtendedDatabaseBlobAuditingPolicyProperties>,
@@ -5242,6 +5299,8 @@ pub mod extended_database_blob_auditing_policy_properties {
 #[doc = "An extended server blob auditing policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedServerBlobAuditingPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of an extended server blob auditing policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExtendedServerBlobAuditingPolicyProperties>,
@@ -5350,6 +5409,8 @@ pub mod extended_server_blob_auditing_policy_properties {
 #[doc = "A failover group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FailoverGroup {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -5622,6 +5683,8 @@ impl FailoverGroupUpdateProperties {
 #[doc = "A server firewall rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FirewallRule {
+    #[serde(flatten)]
+    pub proxy_resource_with_writable_name: ProxyResourceWithWritableName,
     #[doc = "The properties of a server firewall rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerFirewallRuleProperties>,
@@ -5674,6 +5737,8 @@ impl FirewallRuleListResult {
 #[doc = "A Geo backup policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GeoBackupPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Backup policy location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -5740,6 +5805,8 @@ pub mod geo_backup_policy_properties {
 #[doc = "An IPv6 server firewall rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IPv6FirewallRule {
+    #[serde(flatten)]
+    pub proxy_resource_with_writable_name: ProxyResourceWithWritableName,
     #[doc = "The properties of an IPv6 server firewall rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IPv6ServerFirewallRuleProperties>,
@@ -5901,6 +5968,8 @@ impl ImportExportExtensionsOperationListResult {
 #[doc = "An Extension operation result resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImportExportExtensionsOperationResult {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Contains the operation result properties for import/export operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ImportExportExtensionsOperationResultProperties>,
@@ -5957,6 +6026,8 @@ impl ImportExportExtensionsOperationResultProperties {
 #[doc = "An ImportExport operation result resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImportExportOperationResult {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Contains the operation result properties for import/export operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ImportExportOperationResultProperties>,
@@ -6113,6 +6184,8 @@ pub mod import_new_database_definition {
 #[doc = "An instance failover group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InstanceFailoverGroup {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a instance failover group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<InstanceFailoverGroupProperties>,
@@ -6620,6 +6693,8 @@ pub mod instance_pool_vcores_capability {
 #[doc = "A job."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Job {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobProperties>,
@@ -6751,6 +6826,8 @@ impl JobAgentUpdate {
 #[doc = "A stored credential that can be used by a job to connect to target databases."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobCredential {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a job credential."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobCredentialProperties>,
@@ -6801,6 +6878,8 @@ impl JobCredentialProperties {
 #[doc = "An execution of a job"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobExecution {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties for an Azure SQL Database Elastic job execution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobExecutionProperties>,
@@ -7130,6 +7209,8 @@ pub mod job_schedule {
 #[doc = "A job step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobStep {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a job step."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobStepProperties>,
@@ -7506,6 +7587,8 @@ pub mod job_target {
 #[doc = "A group of job targets."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobTargetGroup {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of job target group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobTargetGroupProperties>,
@@ -7553,7 +7636,10 @@ impl JobTargetGroupProperties {
 }
 #[doc = "A job version."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct JobVersion {}
+pub struct JobVersion {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+}
 impl JobVersion {
     pub fn new() -> Self {
         Self::default()
@@ -7587,6 +7673,8 @@ impl JobVersionListResult {
 #[doc = "Azure SQL Database ledger digest upload settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LedgerDigestUploads {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a database ledger digest upload settings."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LedgerDigestUploadsProperties>,
@@ -7783,6 +7871,8 @@ pub mod log_size_capability {
 #[doc = "A logical database transparent data encryption state."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LogicalDatabaseTransparentDataEncryption {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a transparent data encryption."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TransparentDataEncryptionProperties>,
@@ -7870,6 +7960,8 @@ impl LogicalServerSecurityAlertPolicyListResult {
 #[doc = "A long term retention backup."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LongTermRetentionBackup {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a long term retention backup"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LongTermRetentionBackupProperties>,
@@ -7907,6 +7999,8 @@ impl LongTermRetentionBackupListResult {
 #[doc = "A LongTermRetentionBackup operation result resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LongTermRetentionBackupOperationResult {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Contains the operation result properties for long term retention backup operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LongTermRetentionOperationResultProperties>,
@@ -8111,6 +8205,8 @@ pub mod long_term_retention_operation_result_properties {
 #[doc = "A long term retention policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LongTermRetentionPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a long term retention policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BaseLongTermRetentionPolicyProperties>,
@@ -8180,6 +8276,8 @@ pub mod maintenance_configuration_capability {
 #[doc = "Maintenance window options."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MaintenanceWindowOptions {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Maintenance window options properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MaintenanceWindowOptionsProperties>,
@@ -8299,6 +8397,8 @@ pub mod maintenance_window_time_range {
 #[doc = "Maintenance windows."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MaintenanceWindows {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Maintenance windows resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MaintenanceWindowsProperties>,
@@ -8327,6 +8427,8 @@ impl MaintenanceWindowsProperties {
 #[doc = "A short term retention policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedBackupShortTermRetentionPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a short term retention policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedBackupShortTermRetentionPolicyProperties>,
@@ -8393,6 +8495,8 @@ impl ManagedDatabase {
 #[doc = "A managed database Advanced Threat Protection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedDatabaseAdvancedThreatProtection {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -8497,6 +8601,8 @@ impl ManagedDatabaseMoveOperationListResult {
 #[doc = "A managed database move operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedDatabaseMoveOperationResult {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Contains the operation result properties for managed database move operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedDatabaseMoveOperationResultProperties>,
@@ -9002,6 +9108,8 @@ impl ManagedDatabaseRestoreDetailsProperties {
 #[doc = "A managed database restore details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedDatabaseRestoreDetailsResult {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The managed database's restore details properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedDatabaseRestoreDetailsProperties>,
@@ -9026,6 +9134,8 @@ impl ManagedDatabaseRestoreDetailsUnrestorableFileProperties {
 #[doc = "A managed database security alert policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedDatabaseSecurityAlertPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a security alert policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityAlertPolicyProperties>,
@@ -9166,6 +9276,8 @@ impl ManagedInstance {
 #[doc = "An Azure SQL managed instance administrator."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceAdministrator {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a managed instance administrator."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstanceAdministratorProperties>,
@@ -9265,6 +9377,8 @@ pub mod managed_instance_administrator_properties {
 #[doc = "A managed instance Advanced Threat Protection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceAdvancedThreatProtection {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -9344,6 +9458,8 @@ impl ManagedInstanceAzureAdOnlyAuthProperties {
 #[doc = "Azure Active Directory only authentication."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceAzureAdOnlyAuthentication {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a active directory only authentication for Managed Instance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstanceAzureAdOnlyAuthProperties>,
@@ -9356,6 +9472,8 @@ impl ManagedInstanceAzureAdOnlyAuthentication {
 #[doc = "SQL Managed Instance DTC"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceDtc {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of managed instance DTC."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstanceDtcProperties>,
@@ -9562,6 +9680,8 @@ pub mod managed_instance_edition_capability {
 #[doc = "The managed instance encryption protector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceEncryptionProtector {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Kind of encryption protector. This is metadata used for the Azure portal experience."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
@@ -9824,6 +9944,8 @@ pub mod managed_instance_family_capability {
 #[doc = "A managed instance key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceKey {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Kind of encryption protector. This is metadata used for the Azure portal experience."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
@@ -9959,6 +10081,8 @@ impl ManagedInstanceListResult {
 #[doc = "A long term retention backup for a managed database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceLongTermRetentionBackup {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a long term retention backup"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstanceLongTermRetentionBackupProperties>,
@@ -10070,6 +10194,8 @@ pub mod managed_instance_long_term_retention_backup_properties {
 #[doc = "A long term retention policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceLongTermRetentionPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a long term retention policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BaseLongTermRetentionPolicyProperties>,
@@ -10136,6 +10262,8 @@ pub mod managed_instance_maintenance_configuration_capability {
 #[doc = "A managed instance operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceOperation {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a managed instance operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstanceOperationProperties>,
@@ -10341,6 +10469,8 @@ impl ManagedInstancePecProperty {
 #[doc = "A private endpoint connection"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstancePrivateEndpointConnection {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a private endpoint connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstancePrivateEndpointConnectionProperties>,
@@ -10405,6 +10535,8 @@ impl ManagedInstancePrivateEndpointProperty {
 #[doc = "A private link resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstancePrivateLink {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a private link resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstancePrivateLinkProperties>,
@@ -10805,6 +10937,8 @@ pub mod managed_instance_properties {
 #[doc = "Database query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceQuery {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a database query."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<QueryProperties>,
@@ -10965,6 +11099,8 @@ pub mod managed_instance_version_capability {
 #[doc = "A managed instance vulnerability assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedInstanceVulnerabilityAssessment {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a managed instance vulnerability assessment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedInstanceVulnerabilityAssessmentProperties>,
@@ -11028,6 +11164,8 @@ impl ManagedInstanceVulnerabilityAssessmentProperties {
 #[doc = "Azure SQL Database ledger digest upload settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedLedgerDigestUploads {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a database ledger digest upload settings."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedLedgerDigestUploadsProperties>,
@@ -11120,6 +11258,8 @@ pub mod managed_ledger_digest_uploads_properties {
 #[doc = "A managed server DNS alias."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedServerDnsAlias {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a managed server DNS alias."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedServerDnsAliasProperties>,
@@ -11198,6 +11338,8 @@ impl ManagedServerDnsAliasProperties {
 #[doc = "A managed server security alert policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedServerSecurityAlertPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -11238,6 +11380,8 @@ impl ManagedServerSecurityAlertPolicyListResult {
 #[doc = "A managed database transparent data encryption state."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedTransparentDataEncryption {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a transparent data encryption."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ManagedTransparentDataEncryptionProperties>,
@@ -11604,6 +11748,8 @@ impl OutboundEnvironmentEndpointCollection {
 #[doc = "An Azure SQL DB Server Outbound Firewall Rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OutboundFirewallRule {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of an outbound firewall rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OutboundFirewallRuleProperties>,
@@ -11825,6 +11971,8 @@ pub mod performance_level_capability {
 #[doc = "A private endpoint connection"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a private endpoint connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
@@ -11961,6 +12109,8 @@ impl PrivateEndpointProperty {
 #[doc = "A private link resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a private link resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
@@ -12336,6 +12486,8 @@ impl QueryProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryStatistics {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a query execution statistics."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<QueryStatisticsProperties>,
@@ -12405,6 +12557,8 @@ pub mod read_scale_capability {
 #[doc = "Database, Server or Elastic Pool Recommended Action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedAction {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Resource kind."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
@@ -12747,6 +12901,8 @@ pub mod recommended_action_state_info {
 #[doc = "A recommended sensitivity label update operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecommendedSensitivityLabelUpdate {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of an operation executed on a recommended sensitivity label."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RecommendedSensitivityLabelUpdateProperties>,
@@ -12800,6 +12956,8 @@ pub mod recommended_sensitivity_label_update_properties {
 #[doc = "A recoverable database resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoverableDatabase {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The recoverable database's properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RecoverableDatabaseProperties>,
@@ -12861,6 +13019,8 @@ impl RecoverableDatabaseProperties {
 #[doc = "A recoverable managed database resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecoverableManagedDatabase {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The recoverable managed database's properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RecoverableManagedDatabaseProperties>,
@@ -12910,6 +13070,8 @@ impl RecoverableManagedDatabaseProperties {
 #[doc = "An RefreshExternalGovernanceStatus operation result resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RefreshExternalGovernanceStatusOperationResult {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Contains the operation result properties for refresh external governance status operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RefreshExternalGovernanceStatusOperationResultProperties>,
@@ -12974,6 +13136,8 @@ impl Remediation {
 #[doc = "A replication link."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplicationLink {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a replication link."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ReplicationLinkProperties>,
@@ -13277,6 +13441,8 @@ impl ResourceWithWritableName {
 #[doc = "A restorable dropped database resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorableDroppedDatabase {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "An ARM Resource SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
@@ -13460,6 +13626,8 @@ impl RestorableDroppedManagedDatabaseProperties {
 #[doc = "Database restore points."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorePoint {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -13801,6 +13969,8 @@ pub mod security_alerts_policy_properties {
 #[doc = "A security event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityEvent {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a security event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityEventProperties>,
@@ -13933,6 +14103,8 @@ impl SecurityEventsFilterParameters {
 #[doc = "A sensitivity label."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SensitivityLabel {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Resource that manages the sensitivity label."]
     #[serde(rename = "managedBy", default, skip_serializing_if = "Option::is_none")]
     pub managed_by: Option<String>,
@@ -14019,6 +14191,8 @@ pub mod sensitivity_label_properties {
 #[doc = "A sensitivity label update operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SensitivityLabelUpdate {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of an operation executed on a sensitivity label."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SensitivityLabelUpdateProperties>,
@@ -14106,6 +14280,8 @@ impl Server {
 #[doc = "A server Advanced Threat Protection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerAdvancedThreatProtection {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -14121,6 +14297,8 @@ impl ServerAdvancedThreatProtection {
 #[doc = "Server-level Automatic Tuning."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerAutomaticTuning {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Server-level Automatic Tuning properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AutomaticTuningServerProperties>,
@@ -14133,6 +14311,8 @@ impl ServerAutomaticTuning {
 #[doc = "Azure Active Directory administrator."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerAzureAdAdministrator {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a active directory administrator."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AdministratorProperties>,
@@ -14145,6 +14325,8 @@ impl ServerAzureAdAdministrator {
 #[doc = "Azure Active Directory only authentication."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerAzureAdOnlyAuthentication {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a active directory only authentication."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureAdOnlyAuthProperties>,
@@ -14157,6 +14339,8 @@ impl ServerAzureAdOnlyAuthentication {
 #[doc = "A server blob auditing policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerBlobAuditingPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a server blob auditing policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerBlobAuditingPolicyProperties>,
@@ -14261,6 +14445,8 @@ pub mod server_blob_auditing_policy_properties {
 #[doc = "A server configuration option"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerConfigurationOption {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of server configuration option."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerConfigurationOptionProperties>,
@@ -14362,6 +14548,8 @@ pub mod server_configuration_option_properties {
 #[doc = "A server connection policy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerConnectionPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -14526,6 +14714,8 @@ pub mod server_dev_ops_audit_settings_properties {
 #[doc = "A server DevOps auditing settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerDevOpsAuditingSettings {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -14541,6 +14731,8 @@ impl ServerDevOpsAuditingSettings {
 #[doc = "A server DNS alias."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerDnsAlias {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a server DNS alias."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerDnsAliasProperties>,
@@ -14733,6 +14925,8 @@ impl ServerInfo {
 #[doc = "A server key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerKey {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Kind of encryption protector. This is metadata used for the Azure portal experience."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
@@ -14875,6 +15069,8 @@ impl ServerListResult {
 #[doc = "A server operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerOperation {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a server operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerOperationProperties>,
@@ -15235,6 +15431,8 @@ pub mod server_properties {
 #[doc = "A server security alert policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerSecurityAlertPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -15250,6 +15448,8 @@ impl ServerSecurityAlertPolicy {
 #[doc = "Server trust certificate imported from box to enable connection between box and Sql Managed Instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerTrustCertificate {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a server trust certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerTrustCertificateProperties>,
@@ -15305,6 +15505,8 @@ impl ServerTrustCertificatesListResult {
 #[doc = "A server trust group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerTrustGroup {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a server trust group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerTrustGroupProperties>,
@@ -15378,6 +15580,8 @@ impl ServerUpdate {
 #[doc = "Usage metric of a server."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerUsage {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a server usage."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerUsageProperties>,
@@ -15481,6 +15685,8 @@ pub mod server_version_capability {
 #[doc = "A server vulnerability assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerVulnerabilityAssessment {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a server Vulnerability Assessment."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerVulnerabilityAssessmentProperties>,
@@ -15719,6 +15925,8 @@ impl Sku {
 #[doc = "A recoverable managed database resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlAgentConfiguration {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Sql agent configuration properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SqlAgentConfigurationProperties>,
@@ -15752,6 +15960,8 @@ pub mod sql_agent_configuration_properties {
 #[doc = "A SQL Vulnerability Assessment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlVulnerabilityAssessment {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -15826,6 +16036,8 @@ impl SqlVulnerabilityAssessmentScanError {
 #[doc = "A vulnerability assessment scan record."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlVulnerabilityAssessmentScanRecord {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -16087,6 +16299,8 @@ pub mod sql_vulnerability_assessment_scan_result_properties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SqlVulnerabilityAssessmentScanResults {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -16102,6 +16316,8 @@ impl SqlVulnerabilityAssessmentScanResults {
 #[doc = "Managed instance's Start/Stop schedule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StartStopManagedInstanceSchedule {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -16213,6 +16429,8 @@ pub mod storage_capability {
 #[doc = "Usage Metric of a Subscription in a Location."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionUsage {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a subscription usage."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubscriptionUsageProperties>,
@@ -16271,6 +16489,8 @@ impl SubscriptionUsageProperties {
 #[doc = "Synapse link workspace resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SynapseLinkWorkspace {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a Synapse link workspaces"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SynapseLinkWorkspaceProperties>,
@@ -16339,6 +16559,8 @@ impl SynapseLinkWorkspaceProperties {
 #[doc = "An Azure SQL Database sync agent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncAgent {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of an Azure SQL Database sync agent."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SyncAgentProperties>,
@@ -16363,6 +16585,8 @@ impl SyncAgentKeyProperties {
 #[doc = "An Azure SQL Database sync agent linked database."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncAgentLinkedDatabase {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of an Azure SQL Database sync agent linked database."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SyncAgentLinkedDatabaseProperties>,
@@ -16703,6 +16927,8 @@ impl SyncFullSchemaTableColumn {
 #[doc = "An Azure SQL Database sync group."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncGroup {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "An ARM Resource SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
@@ -17023,6 +17249,8 @@ impl SyncGroupSchemaTableColumn {
 #[doc = "An Azure SQL Database sync member."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncMember {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a sync member."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SyncMemberProperties>,
@@ -17253,6 +17481,8 @@ pub mod sync_member_properties {
 #[doc = "A TDE certificate that can be uploaded into a server."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TdeCertificate {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a TDE certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TdeCertificateProperties>,
@@ -17283,6 +17513,8 @@ impl TdeCertificateProperties {
 #[doc = "Time Zone property."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeZone {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a time zone."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TimeZoneProperties>,
@@ -17544,6 +17776,8 @@ pub mod update_long_term_retention_backup_parameters_properties {
 #[doc = "A refresh DNS servers operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UpdateVirtualClusterDnsServersOperation {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of dns servers on virtual cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualClusterDnsServersProperties>,
@@ -17971,6 +18205,8 @@ impl VirtualClusterUpdate {
 #[doc = "A virtual network rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VirtualNetworkRule {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a virtual network rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VirtualNetworkRuleProperties>,
@@ -18115,6 +18351,8 @@ impl VulnerabilityAssessmentScanError {
 #[doc = "A vulnerability assessment scan record."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VulnerabilityAssessmentScanRecord {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a vulnerability assessment scan record."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VulnerabilityAssessmentScanRecordProperties>,
@@ -18270,6 +18508,8 @@ pub mod vulnerability_assessment_scan_record_properties {
 #[doc = "Workload classifier operations for a data warehouse"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadClassifier {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Workload classifier definition. For more information look at sys.workload_management_workload_classifiers (DMV)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkloadClassifierProperties>,
@@ -18341,6 +18581,8 @@ impl WorkloadClassifierProperties {
 #[doc = "Workload group operations for a data warehouse"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadGroup {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Workload group definition. For more information look at sys.workload_management_workload_groups (DMV)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WorkloadGroupProperties>,

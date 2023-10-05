@@ -177,6 +177,8 @@ pub mod check_name_availability_response {
 #[doc = "DataConnector Model."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataConnector {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -189,6 +191,7 @@ pub struct DataConnector {
 impl DataConnector {
     pub fn new(properties: DataConnectorProperties) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             system_data: None,
             properties,
             e_tag: None,
@@ -250,6 +253,8 @@ impl DataManagerForAgriculture {
 #[doc = "DataManagerForAgriculture extension resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataManagerForAgricultureExtension {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -440,6 +445,8 @@ pub mod data_manager_for_agriculture_properties {
 #[doc = "DataManagerForAgriculture solution resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataManagerForAgricultureSolution {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -688,6 +695,8 @@ impl ErrorResponse {
 #[doc = "Extension resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Extension {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -1364,6 +1373,8 @@ pub mod sensor_integration {
 #[doc = "Solution resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Solution {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,

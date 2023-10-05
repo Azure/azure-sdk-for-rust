@@ -799,6 +799,8 @@ impl DatabaseUpdate {
 #[doc = "Class representing an event hub connection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubConnection {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
@@ -911,6 +913,8 @@ pub mod event_hub_connection_properties {
 #[doc = "Class representing an update to event hub connection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventHubConnectionUpdate {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Resource location."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,

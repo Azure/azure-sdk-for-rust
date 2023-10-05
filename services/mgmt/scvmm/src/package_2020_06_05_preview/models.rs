@@ -544,6 +544,8 @@ pub mod hardware_profile_update {
 #[doc = "Defines the inventory item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InventoryItem {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Defines the resource properties."]
     pub properties: InventoryItemPropertiesUnion,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -556,6 +558,7 @@ pub struct InventoryItem {
 impl InventoryItem {
     pub fn new(properties: InventoryItemPropertiesUnion) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
             kind: None,

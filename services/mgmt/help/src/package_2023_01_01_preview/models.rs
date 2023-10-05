@@ -79,6 +79,8 @@ impl DiagnosticInvocation {
 #[doc = "Diagnostic resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Diagnostic resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiagnosticResourceProperties>,
@@ -597,6 +599,8 @@ impl SolutionMetadataProperties {
 #[doc = "Solution Metadata resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SolutionMetadataResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Diagnostic solution metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SolutionMetadataProperties>,

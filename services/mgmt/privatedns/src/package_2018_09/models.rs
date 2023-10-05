@@ -251,6 +251,8 @@ impl PtrRecord {
 #[doc = "Describes a DNS record set (a collection of DNS records with the same name and type) in a Private DNS zone."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RecordSet {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The ID of the record set."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,

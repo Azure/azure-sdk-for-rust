@@ -1183,6 +1183,8 @@ impl CostManagementOperation {
 #[doc = "The Resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CostManagementProxyResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "eTag of the resource. To handle concurrent update scenario, this field will be used to determine whether the user is updating the latest version or not."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
@@ -2768,13 +2770,18 @@ impl Serialize for GranularityType {
 #[doc = "Included Quantity utilization summary resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IncludedQuantityUtilizationSummary {
+    #[serde(flatten)]
+    pub benefit_utilization_summary: BenefitUtilizationSummary,
     #[doc = "Included Quantity utilization summary properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IncludedQuantityUtilizationSummaryProperties>,
 }
 impl IncludedQuantityUtilizationSummary {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(benefit_utilization_summary: BenefitUtilizationSummary) -> Self {
+        Self {
+            benefit_utilization_summary,
+            properties: None,
+        }
     }
 }
 #[doc = "Included Quantity utilization summary properties."]
@@ -4586,13 +4593,18 @@ impl Resource {
 #[doc = "Savings plan utilization summary resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SavingsPlanUtilizationSummary {
+    #[serde(flatten)]
+    pub benefit_utilization_summary: BenefitUtilizationSummary,
     #[doc = "Savings plan utilization summary properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SavingsPlanUtilizationSummaryProperties>,
 }
 impl SavingsPlanUtilizationSummary {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(benefit_utilization_summary: BenefitUtilizationSummary) -> Self {
+        Self {
+            benefit_utilization_summary,
+            properties: None,
+        }
     }
 }
 #[doc = "Savings plan utilization summary properties."]
@@ -4825,6 +4837,8 @@ impl ScheduledActionProperties {
 #[doc = "The Resource model definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScheduledActionProxyResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Resource Etag. For update calls, eTag is mandatory. Fetch the resource's eTag by doing a 'GET' call first and then including the latest eTag as part of the request body or 'If-Match' header while performing the update. For create calls, eTag is not required."]
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,

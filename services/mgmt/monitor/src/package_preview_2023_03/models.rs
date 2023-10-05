@@ -5789,6 +5789,8 @@ impl ScheduledQueryRuleResourcePatch {
 #[doc = "A private link scoped resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ScopedResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a private link scoped resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScopedResourceProperties>,

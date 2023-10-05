@@ -58,12 +58,17 @@ pub mod aad_connectivity_state {
 #[doc = "Represents an AAD identity protection solution which sends logs to an OMS workspace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AadExternalSecuritySolution {
+    #[serde(flatten)]
+    pub external_security_solution: ExternalSecuritySolution,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AadSolutionProperties>,
 }
 impl AadExternalSecuritySolution {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(external_security_solution: ExternalSecuritySolution) -> Self {
+        Self {
+            external_security_solution,
+            properties: None,
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -757,13 +762,15 @@ impl AlertSyncSettingProperties {
 #[doc = "Represents an alert sync setting"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertSyncSettings {
+    #[serde(flatten)]
+    pub setting: Setting,
     #[doc = "The alert sync setting properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlertSyncSettingProperties>,
 }
 impl AlertSyncSettings {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(setting: Setting) -> Self {
+        Self { setting, properties: None }
     }
 }
 #[doc = "Describes the suppression rule"]
@@ -1277,12 +1284,17 @@ impl AssessmentStatusResponse {
 #[doc = "Represents an ATA security solution which sends logs to an OMS workspace"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AtaExternalSecuritySolution {
+    #[serde(flatten)]
+    pub external_security_solution: ExternalSecuritySolution,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AtaSolutionProperties>,
 }
 impl AtaExternalSecuritySolution {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(external_security_solution: ExternalSecuritySolution) -> Self {
+        Self {
+            external_security_solution,
+            properties: None,
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1469,6 +1481,8 @@ pub mod auto_provisioning_setting_properties {
 #[doc = "The security automation resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Automation {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
     #[doc = "A set of properties that defines the behavior of the automation configuration. To learn more about the supported security events data models schemas - please visit https://aka.ms/ASCAutomationSchemas."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AutomationProperties>,
@@ -2144,12 +2158,17 @@ impl Cvss {
 #[doc = "Represents a security solution which sends CEF logs to an OMS workspace"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CefExternalSecuritySolution {
+    #[serde(flatten)]
+    pub external_security_solution: ExternalSecuritySolution,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CefSolutionProperties>,
 }
 impl CefExternalSecuritySolution {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(external_security_solution: ExternalSecuritySolution) -> Self {
+        Self {
+            external_security_solution,
+            properties: None,
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -2773,13 +2792,15 @@ impl DataExportSettingProperties {
 #[doc = "Represents a data export setting"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataExportSettings {
+    #[serde(flatten)]
+    pub setting: Setting,
     #[doc = "The data export setting properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataExportSettingProperties>,
 }
 impl DataExportSettings {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(setting: Setting) -> Self {
+        Self { setting, properties: None }
     }
 }
 #[doc = "A custom alert rule that checks if a value (depends on the custom alert type) is denied."]
@@ -3147,6 +3168,25 @@ pub mod extension {
                 Self::False => serializer.serialize_unit_variant("IsEnabled", 1u32, "False"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+}
+#[doc = "Represents a security solution external to Microsoft Defender for Cloud which sends information to an OMS workspace and whose data is displayed by Microsoft Defender for Cloud."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ExternalSecuritySolution {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(flatten)]
+    pub external_security_solution_kind: ExternalSecuritySolutionKind,
+    #[serde(flatten)]
+    pub location: Location,
+}
+impl ExternalSecuritySolution {
+    pub fn new() -> Self {
+        Self {
+            resource: Resource::default(),
+            external_security_solution_kind: ExternalSecuritySolutionKind::default(),
+            location: Location::default(),
         }
     }
 }
@@ -7762,6 +7802,8 @@ impl SecurityAssessmentResponse {
 #[doc = "The security connector resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityConnector {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,

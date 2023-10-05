@@ -195,6 +195,8 @@ pub mod account_encryption {
 #[doc = "An Account Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccountFilter {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The Media Filter properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MediaFilterProperties>,
@@ -333,6 +335,8 @@ impl ArmStreamingEndpointSkuInfo {
 #[doc = "An Asset."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Asset {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The Asset properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AssetProperties>,
@@ -412,6 +416,8 @@ impl AssetFileEncryptionMetadata {
 #[doc = "An Asset Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetFilter {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The Media Filter properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MediaFilterProperties>,
@@ -563,6 +569,8 @@ impl AssetStreamingLocator {
 #[doc = "An Asset Track resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssetTrack {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a video, audio or text track in the asset."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AssetTrackProperties>,
@@ -1192,6 +1200,8 @@ impl CommonEncryptionCenc {
 #[doc = "A Content Key Policy resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContentKeyPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of the Content Key Policy."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ContentKeyPolicyProperties>,
@@ -3323,6 +3333,8 @@ impl InputFile {
 #[doc = "A Job resource type. The progress and state can be obtained by polling a Job or subscribing to events using EventGrid."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Job {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of the Job."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JobProperties>,
@@ -3905,10 +3917,13 @@ pub mod job_properties {
 }
 #[doc = "Describes the settings for producing JPEG thumbnails."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JpgFormat {}
+pub struct JpgFormat {
+    #[serde(flatten)]
+    pub image_format: ImageFormat,
+}
 impl JpgFormat {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(image_format: ImageFormat) -> Self {
+        Self { image_format }
     }
 }
 #[doc = "Describes the properties for producing a series of JPEG images from the input video."]
@@ -5381,6 +5396,8 @@ impl LiveEventTranscription {
 #[doc = "The Live Output."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LiveOutput {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The JSON object that contains the properties required to create a live output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LiveOutputProperties>,
@@ -6290,10 +6307,13 @@ pub enum OverlayUnion {
 }
 #[doc = "Describes the settings for producing PNG thumbnails."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PngFormat {}
+pub struct PngFormat {
+    #[serde(flatten)]
+    pub image_format: ImageFormat,
+}
 impl PngFormat {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(image_format: ImageFormat) -> Self {
+        Self { image_format }
     }
 }
 #[doc = "Describes the properties for producing a series of PNG images from the input video."]
@@ -6904,6 +6924,8 @@ impl SelectAudioTrackById {
 #[doc = "Select video tracks from the input by specifying an attribute and an attribute filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SelectVideoTrackByAttribute {
+    #[serde(flatten)]
+    pub video_track_descriptor: VideoTrackDescriptor,
     #[doc = "The TrackAttribute to filter the tracks by."]
     pub attribute: select_video_track_by_attribute::Attribute,
     #[doc = "The type of AttributeFilter to apply to the TrackAttribute in order to select the tracks."]
@@ -6913,8 +6935,13 @@ pub struct SelectVideoTrackByAttribute {
     pub filter_value: Option<String>,
 }
 impl SelectVideoTrackByAttribute {
-    pub fn new(attribute: select_video_track_by_attribute::Attribute, filter: select_video_track_by_attribute::Filter) -> Self {
+    pub fn new(
+        video_track_descriptor: VideoTrackDescriptor,
+        attribute: select_video_track_by_attribute::Attribute,
+        filter: select_video_track_by_attribute::Filter,
+    ) -> Self {
         Self {
+            video_track_descriptor,
             attribute,
             filter,
             filter_value: None,
@@ -7005,13 +7032,18 @@ pub mod select_video_track_by_attribute {
 #[doc = "Select video tracks from the input by specifying a track identifier."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SelectVideoTrackById {
+    #[serde(flatten)]
+    pub video_track_descriptor: VideoTrackDescriptor,
     #[doc = "Track identifier to select"]
     #[serde(rename = "trackId")]
     pub track_id: i64,
 }
 impl SelectVideoTrackById {
-    pub fn new(track_id: i64) -> Self {
-        Self { track_id }
+    pub fn new(video_track_descriptor: VideoTrackDescriptor, track_id: i64) -> Self {
+        Self {
+            video_track_descriptor,
+            track_id,
+        }
     }
 }
 #[doc = "The service metric specifications."]
@@ -7373,6 +7405,8 @@ impl StreamingEntityScaleUnit {
 #[doc = "A Streaming Locator resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingLocator {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of the Streaming Locator."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StreamingLocatorProperties>,
@@ -7662,6 +7696,8 @@ pub mod streaming_path {
 #[doc = "A Streaming Policy resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StreamingPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Class to specify properties of Streaming Policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StreamingPolicyProperties>,
@@ -8053,6 +8089,8 @@ impl TrackedResource {
 #[doc = "A Transform encapsulates the rules or instructions for generating desired outputs from input media, such as by transcoding or by extracting insights. After the Transform is created, it can be applied to input media by creating Jobs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Transform {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "A Transform."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TransformProperties>,

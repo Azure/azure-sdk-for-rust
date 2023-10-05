@@ -2124,6 +2124,8 @@ impl PrometheusOsProviderInstanceProperties {
 #[doc = "A provider instance associated with SAP monitor."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderInstance {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Managed service identity (user assigned identities)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<UserAssignedServiceIdentity>,
@@ -3236,6 +3238,8 @@ impl Serialize for SapVirtualInstanceStatus {
 #[doc = "configuration associated with SAP Landscape Monitor Dashboard."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SapLandscapeMonitor {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Gets or sets the properties for Sap Landscape Monitor Dashboard."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SapLandscapeMonitorProperties>,

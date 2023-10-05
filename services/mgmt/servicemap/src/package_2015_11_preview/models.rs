@@ -6,13 +6,18 @@ use std::str::FromStr;
 #[doc = "A process accepting on a port."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Acceptor {
+    #[serde(flatten)]
+    pub relationship: Relationship,
     #[doc = "Properties for an acceptor relationship."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AcceptorProperties>,
 }
 impl Acceptor {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(relationship: Relationship) -> Self {
+        Self {
+            relationship,
+            properties: None,
+        }
     }
 }
 #[doc = "Properties for an acceptor relationship."]
@@ -382,13 +387,18 @@ impl ClientGroupReference {
 #[doc = "A network connection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Connection {
+    #[serde(flatten)]
+    pub relationship: Relationship,
     #[doc = "Properties for a connection resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConnectionProperties>,
 }
 impl Connection {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(relationship: Relationship) -> Self {
+        Self {
+            relationship,
+            properties: None,
+        }
     }
 }
 #[doc = "Collection of Connection resources."]
@@ -989,6 +999,8 @@ impl MachineResourcesConfiguration {
 #[doc = "A summary of the machines in the workspace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachinesSummary {
+    #[serde(flatten)]
+    pub summary: Summary,
     #[doc = "Summarizes machines in the workspace."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MachinesSummaryProperties>,

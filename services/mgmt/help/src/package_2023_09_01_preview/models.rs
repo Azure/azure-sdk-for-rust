@@ -156,6 +156,8 @@ impl DiagnosticInvocation {
 #[doc = "Diagnostic resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Diagnostic resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DiagnosticResourceProperties>,
@@ -1013,6 +1015,8 @@ impl SolutionMetadataProperties {
 #[doc = "Metadata resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SolutionMetadataResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "List of solutions"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<Solutions>,
@@ -1638,6 +1642,8 @@ pub mod troubleshooter_instance_properties {
 #[doc = "Troubleshooter response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TroubleshooterResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Troubleshooter Instance properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TroubleshooterInstanceProperties>,

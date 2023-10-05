@@ -511,12 +511,17 @@ impl Serialize for FirmwareType {
 #[doc = "Defines the GuestAgent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestAgent {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Describes the properties of a Virtual Machine Guest Agent."]
     pub properties: GuestAgentProperties,
 }
 impl GuestAgent {
     pub fn new(properties: GuestAgentProperties) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "List of GuestAgent."]
@@ -872,6 +877,8 @@ impl InfrastructureProfile {
 #[doc = "Defines the inventory item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InventoryItem {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Describes the properties of an Inventory Item."]
     pub properties: InventoryItemPropertiesUnion,
     #[doc = "Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value."]
@@ -880,7 +887,11 @@ pub struct InventoryItem {
 }
 impl InventoryItem {
     pub fn new(properties: InventoryItemPropertiesUnion) -> Self {
-        Self { properties, kind: None }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+            kind: None,
+        }
     }
 }
 #[doc = "Describes the properties of an Inventory Item reference."]
@@ -2016,6 +2027,8 @@ impl VirtualDiskUpdate {
 #[doc = "Define the virtualMachineInstance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineInstance {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Describes the properties of a Virtual Machine Instance."]
     pub properties: VirtualMachineInstanceProperties,
     #[doc = "The extended location."]
@@ -2025,6 +2038,7 @@ pub struct VirtualMachineInstance {
 impl VirtualMachineInstance {
     pub fn new(properties: VirtualMachineInstanceProperties) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             properties,
             extended_location: None,
         }
@@ -2565,12 +2579,17 @@ impl Serialize for VirtualScsiSharing {
 #[doc = "Defines the HybridIdentityMetadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VmInstanceHybridIdentityMetadata {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Describes the properties of Hybrid Identity Metadata for a Virtual Machine."]
     pub properties: VmInstanceHybridIdentityMetadataProperties,
 }
 impl VmInstanceHybridIdentityMetadata {
     pub fn new(properties: VmInstanceHybridIdentityMetadataProperties) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "List of HybridIdentityMetadata."]

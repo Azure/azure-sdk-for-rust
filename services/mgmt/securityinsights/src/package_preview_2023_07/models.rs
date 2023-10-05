@@ -29,13 +29,18 @@ impl AadCheckRequirementsProperties {
 #[doc = "Represents AADIP (Azure Active Directory Identity Protection) data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AadDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "AADIP (Azure Active Directory Identity Protection) data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AadDataConnectorProperties>,
 }
 impl AadDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "AADIP (Azure Active Directory Identity Protection) data connector properties."]
@@ -80,13 +85,18 @@ impl AatpCheckRequirementsProperties {
 #[doc = "Represents AATP (Azure Advanced Threat Protection) data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AatpDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "AATP (Azure Advanced Threat Protection) data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AatpDataConnectorProperties>,
 }
 impl AatpDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "AATP (Azure Advanced Threat Protection) data connector properties."]
@@ -132,13 +142,18 @@ impl AscCheckRequirementsProperties {
 #[doc = "Represents ASC (Azure Security Center) data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AscDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "ASC (Azure Security Center) data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AscDataConnectorProperties>,
 }
 impl AscDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "ASC (Azure Security Center) data connector properties."]
@@ -330,13 +345,18 @@ impl ActionsList {
 #[doc = "Represents Activity entity query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityCustomEntityQuery {
+    #[serde(flatten)]
+    pub custom_entity_query: CustomEntityQuery,
     #[doc = "Describes activity entity query properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActivityEntityQueriesProperties>,
 }
 impl ActivityCustomEntityQuery {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(custom_entity_query: CustomEntityQuery) -> Self {
+        Self {
+            custom_entity_query,
+            properties: None,
+        }
     }
 }
 #[doc = "Describes activity entity query properties"]
@@ -404,25 +424,35 @@ pub mod activity_entity_queries_properties {
 #[doc = "Represents Activity entity query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityEntityQuery {
+    #[serde(flatten)]
+    pub entity_query: EntityQuery,
     #[doc = "Describes activity entity query properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActivityEntityQueriesProperties>,
 }
 impl ActivityEntityQuery {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(entity_query: EntityQuery) -> Self {
+        Self {
+            entity_query,
+            properties: None,
+        }
     }
 }
 #[doc = "Represents Activity entity query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityEntityQueryTemplate {
+    #[serde(flatten)]
+    pub entity_query_template: EntityQueryTemplate,
     #[doc = "Describes activity entity query properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ActivityEntityQueryTemplateProperties>,
 }
 impl ActivityEntityQueryTemplate {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(entity_query_template: EntityQueryTemplate) -> Self {
+        Self {
+            entity_query_template,
+            properties: None,
+        }
     }
 }
 #[doc = "Describes activity entity query properties"]
@@ -957,13 +987,18 @@ impl AnalyticsRuleRunTriggerProperties {
 #[doc = "Settings with single toggle."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Anomalies {
+    #[serde(flatten)]
+    pub settings: Settings,
     #[doc = "Anomalies property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AnomaliesSettingsProperties>,
 }
 impl Anomalies {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(settings: Settings) -> Self {
+        Self {
+            settings,
+            properties: None,
+        }
     }
 }
 #[doc = "Anomalies property bag."]
@@ -981,13 +1016,18 @@ impl AnomaliesSettingsProperties {
 #[doc = "Represents Anomaly Security ML Analytics Settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnomalySecurityMlAnalyticsSettings {
+    #[serde(flatten)]
+    pub security_ml_analytics_setting: SecurityMlAnalyticsSetting,
     #[doc = "AnomalySecurityMLAnalytics settings base property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AnomalySecurityMlAnalyticsSettingsProperties>,
 }
 impl AnomalySecurityMlAnalyticsSettings {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(security_ml_analytics_setting: SecurityMlAnalyticsSetting) -> Self {
+        Self {
+            security_ml_analytics_setting,
+            properties: None,
+        }
     }
 }
 #[doc = "AnomalySecurityMLAnalytics settings base property bag."]
@@ -2180,13 +2220,18 @@ impl AwsCloudTrailCheckRequirements {
 #[doc = "Represents Amazon Web Services CloudTrail data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AwsCloudTrailDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "Amazon Web Services CloudTrail data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AwsCloudTrailDataConnectorProperties>,
 }
 impl AwsCloudTrailDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "The available data types for Amazon Web Services CloudTrail data connector."]
@@ -2229,13 +2274,18 @@ impl AwsS3CheckRequirements {
 #[doc = "Represents Amazon Web Services S3 data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AwsS3DataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "Amazon Web Services S3 data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AwsS3DataConnectorProperties>,
 }
 impl AwsS3DataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "The available data types for Amazon Web Services S3 data connector."]
@@ -2679,13 +2729,18 @@ impl CloudErrorBody {
 #[doc = "Represents Codeless API Polling data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CodelessApiPollingDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "Represents Codeless API Polling data connector"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiPollingParameters>,
 }
 impl CodelessApiPollingDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "Describe the authentication properties needed to successfully authenticate with the server"]
@@ -2993,13 +3048,18 @@ impl CodelessUiConnectorConfigProperties {
 #[doc = "Represents Codeless UI data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CodelessUiDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "Represents Codeless UI data connector"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CodelessParameters>,
 }
 impl CodelessUiDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3429,13 +3489,18 @@ impl CustomizableConnectionsConfig {
 #[doc = "Connector definition for kind 'Customizable'."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomizableConnectorDefinition {
+    #[serde(flatten)]
+    pub data_connector_definition: DataConnectorDefinition,
     #[doc = "The UiConfig for 'Customizable' connector definition kind."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomizableConnectorDefinitionProperties>,
 }
 impl CustomizableConnectorDefinition {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector_definition: DataConnectorDefinition) -> Self {
+        Self {
+            data_connector_definition,
+            properties: None,
+        }
     }
 }
 #[doc = "The UiConfig for 'Customizable' connector definition kind."]
@@ -4280,13 +4345,18 @@ impl Dynamics365CheckRequirementsProperties {
 #[doc = "Represents Dynamics365 data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dynamics365DataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "Dynamics365 data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<Dynamics365DataConnectorProperties>,
 }
 impl Dynamics365DataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "The available data types for Dynamics365 data connector."]
@@ -4538,13 +4608,18 @@ pub enum EntityUnion {
 #[doc = "Settings with single toggle."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EntityAnalytics {
+    #[serde(flatten)]
+    pub settings: Settings,
     #[doc = "EntityAnalytics property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EntityAnalyticsProperties>,
 }
 impl EntityAnalytics {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(settings: Settings) -> Self {
+        Self {
+            settings,
+            properties: None,
+        }
     }
 }
 #[doc = "EntityAnalytics property bag."]
@@ -5537,13 +5612,18 @@ impl ExpansionEntityQueriesProperties {
 #[doc = "Represents Expansion entity query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExpansionEntityQuery {
+    #[serde(flatten)]
+    pub entity_query: EntityQuery,
     #[doc = "Describes expansion entity query properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExpansionEntityQueriesProperties>,
 }
 impl ExpansionEntityQuery {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(entity_query: EntityQuery) -> Self {
+        Self {
+            entity_query,
+            properties: None,
+        }
     }
 }
 #[doc = "Information of a specific aggregation in the expansion result."]
@@ -5590,13 +5670,18 @@ impl ExpansionResultsMetadata {
 #[doc = "Settings with single toggle."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EyesOn {
+    #[serde(flatten)]
+    pub settings: Settings,
     #[doc = "EyesOn property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EyesOnSettingsProperties>,
 }
 impl EyesOn {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(settings: Settings) -> Self {
+        Self {
+            settings,
+            properties: None,
+        }
     }
 }
 #[doc = "EyesOn property bag."]
@@ -5969,13 +6054,18 @@ pub mod file_metadata {
 #[doc = "Represents Fusion alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FusionAlertRule {
+    #[serde(flatten)]
+    pub alert_rule: AlertRule,
     #[doc = "Fusion alert rule base property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FusionAlertRuleProperties>,
 }
 impl FusionAlertRule {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(alert_rule: AlertRule) -> Self {
+        Self {
+            alert_rule,
+            properties: None,
+        }
     }
 }
 #[doc = "Fusion alert rule base property bag."]
@@ -6048,13 +6138,18 @@ impl FusionAlertRuleProperties {
 #[doc = "Represents Fusion alert rule template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FusionAlertRuleTemplate {
+    #[serde(flatten)]
+    pub alert_rule_template: AlertRuleTemplate,
     #[doc = "Fusion alert rule template properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FusionAlertRuleTemplateProperties>,
 }
 impl FusionAlertRuleTemplate {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(alert_rule_template: AlertRuleTemplate) -> Self {
+        Self {
+            alert_rule_template,
+            properties: None,
+        }
     }
 }
 #[doc = "Fusion alert rule template properties"]
@@ -6311,13 +6406,18 @@ impl GcpAuthProperties {
 #[doc = "Represents Google Cloud Platform data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GcpDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "Google Cloud Platform data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GcpDataConnectorProperties>,
 }
 impl GcpDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "Google Cloud Platform data connector properties."]
@@ -6975,13 +7075,15 @@ impl HuntRelationProperties {
 #[doc = "Represents a Hunting bookmark entity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HuntingBookmark {
+    #[serde(flatten)]
+    pub entity: Entity,
     #[doc = "Describes bookmark properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HuntingBookmarkProperties>,
 }
 impl HuntingBookmark {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
     }
 }
 #[doc = "Describes bookmark properties"]
@@ -8052,13 +8154,18 @@ impl IoTCheckRequirementsProperties {
 #[doc = "Represents IoT data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "IoT data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IoTDataConnectorProperties>,
 }
 impl IoTDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "IoT data connector properties."]
@@ -8223,13 +8330,18 @@ impl McasCheckRequirementsProperties {
 #[doc = "Represents MCAS (Microsoft Cloud App Security) data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct McasDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "MCAS (Microsoft Cloud App Security) data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<McasDataConnectorProperties>,
 }
 impl McasDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "The available data types for MCAS (Microsoft Cloud App Security) data connector."]
@@ -8292,13 +8404,18 @@ impl MdatpCheckRequirementsProperties {
 #[doc = "Represents MDATP (Microsoft Defender Advanced Threat Protection) data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MdatpDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "MDATP (Microsoft Defender Advanced Threat Protection) data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MdatpDataConnectorProperties>,
 }
 impl MdatpDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "MDATP (Microsoft Defender Advanced Threat Protection) data connector properties."]
@@ -8320,13 +8437,18 @@ impl MdatpDataConnectorProperties {
 #[doc = "Represents MLBehaviorAnalytics alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MlBehaviorAnalyticsAlertRule {
+    #[serde(flatten)]
+    pub alert_rule: AlertRule,
     #[doc = "MLBehaviorAnalytics alert rule base property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MlBehaviorAnalyticsAlertRuleProperties>,
 }
 impl MlBehaviorAnalyticsAlertRule {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(alert_rule: AlertRule) -> Self {
+        Self {
+            alert_rule,
+            properties: None,
+        }
     }
 }
 #[doc = "MLBehaviorAnalytics alert rule base property bag."]
@@ -8381,13 +8503,18 @@ impl MlBehaviorAnalyticsAlertRuleProperties {
 #[doc = "Represents MLBehaviorAnalytics alert rule template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MlBehaviorAnalyticsAlertRuleTemplate {
+    #[serde(flatten)]
+    pub alert_rule_template: AlertRuleTemplate,
     #[doc = "MLBehaviorAnalytics alert rule template properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ml_behavior_analytics_alert_rule_template::Properties>,
 }
 impl MlBehaviorAnalyticsAlertRuleTemplate {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(alert_rule_template: AlertRuleTemplate) -> Self {
+        Self {
+            alert_rule_template,
+            properties: None,
+        }
     }
 }
 pub mod ml_behavior_analytics_alert_rule_template {
@@ -8435,13 +8562,18 @@ impl MstiCheckRequirementsProperties {
 #[doc = "Represents Microsoft Threat Intelligence data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MstiDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "Microsoft Threat Intelligence data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MstiDataConnectorProperties>,
 }
 impl MstiDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "The available data types for Microsoft Threat Intelligence Platforms data connector."]
@@ -8509,13 +8641,18 @@ impl MtpCheckRequirementsProperties {
 #[doc = "Represents MTP (Microsoft Threat Protection) data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MtpDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "MTP (Microsoft Threat Protection) data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MtpDataConnectorProperties>,
 }
 impl MtpDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "The available data types for Microsoft Threat Protection Platforms data connector."]
@@ -8639,13 +8776,18 @@ impl MicrosoftPurviewInformationProtectionConnectorDataTypes {
 #[doc = "Represents Microsoft Purview Information Protection data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MicrosoftPurviewInformationProtectionDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "Microsoft Purview Information Protection data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MicrosoftPurviewInformationProtectionDataConnectorProperties>,
 }
 impl MicrosoftPurviewInformationProtectionDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "Microsoft Purview Information Protection data connector properties."]
@@ -8671,13 +8813,18 @@ impl MicrosoftPurviewInformationProtectionDataConnectorProperties {
 #[doc = "Represents MicrosoftSecurityIncidentCreation rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MicrosoftSecurityIncidentCreationAlertRule {
+    #[serde(flatten)]
+    pub alert_rule: AlertRule,
     #[doc = "MicrosoftSecurityIncidentCreation rule property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MicrosoftSecurityIncidentCreationAlertRuleProperties>,
 }
 impl MicrosoftSecurityIncidentCreationAlertRule {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(alert_rule: AlertRule) -> Self {
+        Self {
+            alert_rule,
+            properties: None,
+        }
     }
 }
 #[doc = "MicrosoftSecurityIncidentCreation rule common property bag."]
@@ -8760,13 +8907,18 @@ impl MicrosoftSecurityIncidentCreationAlertRuleProperties {
 #[doc = "Represents MicrosoftSecurityIncidentCreation rule template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MicrosoftSecurityIncidentCreationAlertRuleTemplate {
+    #[serde(flatten)]
+    pub alert_rule_template: AlertRuleTemplate,
     #[doc = "MicrosoftSecurityIncidentCreation rule template properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MicrosoftSecurityIncidentCreationAlertRuleTemplateProperties>,
 }
 impl MicrosoftSecurityIncidentCreationAlertRuleTemplate {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(alert_rule_template: AlertRuleTemplate) -> Self {
+        Self {
+            alert_rule_template,
+            properties: None,
+        }
     }
 }
 #[doc = "MicrosoftSecurityIncidentCreation rule template properties"]
@@ -8940,13 +9092,18 @@ impl Serialize for MtpProvider {
 #[doc = "Represents NRT alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NrtAlertRule {
+    #[serde(flatten)]
+    pub alert_rule: AlertRule,
     #[doc = "Nrt alert rule base property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<NrtAlertRuleProperties>,
 }
 impl NrtAlertRule {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(alert_rule: AlertRule) -> Self {
+        Self {
+            alert_rule,
+            properties: None,
+        }
     }
 }
 #[doc = "Nrt alert rule base property bag."]
@@ -9046,13 +9203,18 @@ impl NrtAlertRuleProperties {
 #[doc = "Represents NRT alert rule template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NrtAlertRuleTemplate {
+    #[serde(flatten)]
+    pub alert_rule_template: AlertRuleTemplate,
     #[doc = "NRT alert rule template properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
 impl NrtAlertRuleTemplate {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(alert_rule_template: AlertRuleTemplate) -> Self {
+        Self {
+            alert_rule_template,
+            properties: None,
+        }
     }
 }
 #[doc = "Represents Office365 Project requirements check request."]
@@ -9092,13 +9254,18 @@ impl Office365ProjectConnectorDataTypes {
 #[doc = "Represents Office Microsoft Project data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Office365ProjectDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "Office Microsoft Project data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<Office365ProjectDataConnectorProperties>,
 }
 impl Office365ProjectDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "Office Microsoft Project data connector properties."]
@@ -9144,13 +9311,18 @@ impl OfficeAtpCheckRequirementsProperties {
 #[doc = "Represents OfficeATP (Office 365 Advanced Threat Protection) data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfficeAtpDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "OfficeATP (Office 365 Advanced Threat Protection) data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OfficeAtpDataConnectorProperties>,
 }
 impl OfficeAtpDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "OfficeATP (Office 365 Advanced Threat Protection) data connector properties."]
@@ -9221,13 +9393,18 @@ impl OfficeConsentProperties {
 #[doc = "Represents office data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfficeDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "Office data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OfficeDataConnectorProperties>,
 }
 impl OfficeDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "The available data types for office data connector."]
@@ -9293,13 +9470,18 @@ impl OfficeIrmCheckRequirementsProperties {
 #[doc = "Represents OfficeIRM (Microsoft Insider Risk Management) data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfficeIrmDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "OfficeIRM (Microsoft Insider Risk Management) data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OfficeIrmDataConnectorProperties>,
 }
 impl OfficeIrmDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "OfficeIRM (Microsoft Insider Risk Management) data connector properties."]
@@ -9355,13 +9537,18 @@ impl OfficePowerBiConnectorDataTypes {
 #[doc = "Represents Office Microsoft PowerBI data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfficePowerBiDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "Office Microsoft PowerBI data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OfficePowerBiDataConnectorProperties>,
 }
 impl OfficePowerBiDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "Office Microsoft PowerBI data connector properties."]
@@ -10507,13 +10694,18 @@ impl SampleQuery {
 #[doc = "Billing statistic about the Microsoft Sentinel solution for SAP Usage"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapSolutionUsageStatistic {
+    #[serde(flatten)]
+    pub billing_statistic: BillingStatistic,
     #[doc = "Properties of the billing statistic about the Microsoft Sentinel solution for SAP usage"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SapSolutionUsageStatisticProperties>,
 }
 impl SapSolutionUsageStatistic {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(billing_statistic: BillingStatistic) -> Self {
+        Self {
+            billing_statistic,
+            properties: None,
+        }
     }
 }
 #[doc = "Properties of the billing statistic about the Microsoft Sentinel solution for SAP usage"]
@@ -10531,13 +10723,18 @@ impl SapSolutionUsageStatisticProperties {
 #[doc = "Represents scheduled alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledAlertRule {
+    #[serde(flatten)]
+    pub alert_rule: AlertRule,
     #[doc = "Scheduled alert rule base property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScheduledAlertRuleProperties>,
 }
 impl ScheduledAlertRule {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(alert_rule: AlertRule) -> Self {
+        Self {
+            alert_rule,
+            properties: None,
+        }
     }
 }
 #[doc = "Scheduled alert rule template property bag."]
@@ -10649,13 +10846,18 @@ impl ScheduledAlertRuleProperties {
 #[doc = "Represents scheduled alert rule template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledAlertRuleTemplate {
+    #[serde(flatten)]
+    pub alert_rule_template: AlertRuleTemplate,
     #[doc = "Scheduled alert rule template properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScheduledAlertRuleTemplateProperties>,
 }
 impl ScheduledAlertRuleTemplate {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(alert_rule_template: AlertRuleTemplate) -> Self {
+        Self {
+            alert_rule_template,
+            properties: None,
+        }
     }
 }
 #[doc = "Scheduled alert rule template properties"]
@@ -10746,13 +10948,15 @@ impl ScheduledAlertRuleTemplateProperties {
 #[doc = "Represents a security alert entity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAlert {
+    #[serde(flatten)]
+    pub entity: Entity,
     #[doc = "SecurityAlert entity property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityAlertProperties>,
 }
 impl SecurityAlert {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(entity: Entity) -> Self {
+        Self { entity, properties: None }
     }
 }
 #[doc = "SecurityAlert entity property bag."]
@@ -11462,13 +11666,18 @@ impl TiCheckRequirementsProperties {
 #[doc = "Represents threat intelligence data connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TiDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "TI (Threat Intelligence) data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TiDataConnectorProperties>,
 }
 impl TiDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "The available data types for TI (Threat Intelligence) data connector."]
@@ -11566,13 +11775,18 @@ impl TeamProperties {
 #[doc = "Represents Threat Intelligence alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreatIntelligenceAlertRule {
+    #[serde(flatten)]
+    pub alert_rule: AlertRule,
     #[doc = "Threat Intelligence alert rule base property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ThreatIntelligenceAlertRuleProperties>,
 }
 impl ThreatIntelligenceAlertRule {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(alert_rule: AlertRule) -> Self {
+        Self {
+            alert_rule,
+            properties: None,
+        }
     }
 }
 #[doc = "Threat Intelligence alert rule base property bag."]
@@ -11627,13 +11841,18 @@ impl ThreatIntelligenceAlertRuleProperties {
 #[doc = "Represents Threat Intelligence alert rule template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreatIntelligenceAlertRuleTemplate {
+    #[serde(flatten)]
+    pub alert_rule_template: AlertRuleTemplate,
     #[doc = "Threat Intelligence alert rule template properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<threat_intelligence_alert_rule_template::Properties>,
 }
 impl ThreatIntelligenceAlertRuleTemplate {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(alert_rule_template: AlertRuleTemplate) -> Self {
+        Self {
+            alert_rule_template,
+            properties: None,
+        }
     }
 }
 pub mod threat_intelligence_alert_rule_template {
@@ -11796,13 +12015,18 @@ impl ThreatIntelligenceGranularMarkingModel {
 #[doc = "Threat intelligence indicator entity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreatIntelligenceIndicatorModel {
+    #[serde(flatten)]
+    pub threat_intelligence_information: ThreatIntelligenceInformation,
     #[doc = "Describes threat intelligence entity properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ThreatIntelligenceIndicatorProperties>,
 }
 impl ThreatIntelligenceIndicatorModel {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(threat_intelligence_information: ThreatIntelligenceInformation) -> Self {
+        Self {
+            threat_intelligence_information,
+            properties: None,
+        }
     }
 }
 #[doc = "Describes threat intelligence entity properties"]
@@ -12214,13 +12438,18 @@ impl TiTaxiiCheckRequirementsProperties {
 #[doc = "Data connector to pull Threat intelligence data from TAXII 2.0/2.1 server"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TiTaxiiDataConnector {
+    #[serde(flatten)]
+    pub data_connector: DataConnector,
     #[doc = "Threat Intelligence TAXII data connector properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TiTaxiiDataConnectorProperties>,
 }
 impl TiTaxiiDataConnector {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_connector: DataConnector) -> Self {
+        Self {
+            data_connector,
+            properties: None,
+        }
     }
 }
 #[doc = "The available data types for Threat Intelligence TAXII data connector."]
@@ -12457,13 +12686,18 @@ impl TriggeredAnalyticsRuleRuns {
 #[doc = "Settings with single toggle."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Ueba {
+    #[serde(flatten)]
+    pub settings: Settings,
     #[doc = "Ueba property bag."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UebaProperties>,
 }
 impl Ueba {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(settings: Settings) -> Self {
+        Self {
+            settings,
+            properties: None,
+        }
     }
 }
 #[doc = "The data source that enriched by ueba."]

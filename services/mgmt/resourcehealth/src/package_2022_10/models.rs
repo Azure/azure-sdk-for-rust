@@ -30,6 +30,8 @@ impl ErrorResponse {
 #[doc = "The metadata entity contract."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MetadataEntity {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The metadata entity properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MetadataEntityProperties>,
@@ -458,6 +460,8 @@ impl EmergingIssueListResult {
 #[doc = "The Get EmergingIssues operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EmergingIssuesGetResult {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "On-going emerging issue from azure status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EmergingIssue>,
@@ -470,6 +474,8 @@ impl EmergingIssuesGetResult {
 #[doc = "Service health event"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Event {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<event::Properties>,
@@ -843,6 +849,8 @@ pub mod event {
 #[doc = "Impacted resource for an event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventImpactedResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of impacted resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<event_impacted_resource::Properties>,
@@ -976,6 +984,8 @@ impl ImpactedRegion {
 #[doc = "impactedResource with health status"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ImpactedResourceStatus {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of impacted resource status."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<impacted_resource_status::Properties>,

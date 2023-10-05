@@ -3277,6 +3277,8 @@ impl Serialize for ChaosScheduleStatus {
 #[doc = "Chaos Started event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChaosStartedEvent {
+    #[serde(flatten)]
+    pub cluster_event: ClusterEvent,
     #[doc = "Maximum number of concurrent faults."]
     #[serde(rename = "MaxConcurrentFaults")]
     pub max_concurrent_faults: i64,
@@ -3310,6 +3312,7 @@ pub struct ChaosStartedEvent {
 }
 impl ChaosStartedEvent {
     pub fn new(
+        cluster_event: ClusterEvent,
         max_concurrent_faults: i64,
         time_to_run_in_seconds: f64,
         max_cluster_stabilization_timeout_in_seconds: f64,
@@ -3322,6 +3325,7 @@ impl ChaosStartedEvent {
         chaos_context: String,
     ) -> Self {
         Self {
+            cluster_event,
             max_concurrent_faults,
             time_to_run_in_seconds,
             max_cluster_stabilization_timeout_in_seconds,
@@ -3377,13 +3381,15 @@ impl Serialize for ChaosStatus {
 #[doc = "Chaos Stopped event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ChaosStoppedEvent {
+    #[serde(flatten)]
+    pub cluster_event: ClusterEvent,
     #[doc = "Describes reason."]
     #[serde(rename = "Reason")]
     pub reason: String,
 }
 impl ChaosStoppedEvent {
-    pub fn new(reason: String) -> Self {
-        Self { reason }
+    pub fn new(cluster_event: ClusterEvent, reason: String) -> Self {
+        Self { cluster_event, reason }
     }
 }
 #[doc = "Defines all filters for targeted Chaos faults, for example, faulting only certain node types or faulting only certain applications.\nIf ChaosTargetFilter is not used, Chaos faults all cluster entities. If ChaosTargetFilter is used, Chaos faults only the entities that meet the ChaosTargetFilter\nspecification. NodeTypeInclusionList and ApplicationInclusionList allow a union semantics only. It is not possible to specify an intersection\nof NodeTypeInclusionList and ApplicationInclusionList. For example, it is not possible to specify \"fault this application only when it is on that node type.\"\nOnce an entity is included in either NodeTypeInclusionList or ApplicationInclusionList, that entity cannot be excluded using ChaosTargetFilter. Even if\napplicationX does not appear in ApplicationInclusionList, in some Chaos iteration applicationX can be faulted because it happens to be on a node of nodeTypeY that is included\nin NodeTypeInclusionList. If both NodeTypeInclusionList and ApplicationInclusionList are null or empty, an ArgumentException is thrown."]
@@ -3682,6 +3688,8 @@ impl ClusterHealthPolicy {
 #[doc = "Cluster Health Report Expired event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterHealthReportExpiredEvent {
+    #[serde(flatten)]
+    pub cluster_event: ClusterEvent,
     #[doc = "Id of report source."]
     #[serde(rename = "SourceId")]
     pub source_id: String,
@@ -3709,6 +3717,7 @@ pub struct ClusterHealthReportExpiredEvent {
 }
 impl ClusterHealthReportExpiredEvent {
     pub fn new(
+        cluster_event: ClusterEvent,
         source_id: String,
         property: String,
         health_state: String,
@@ -3719,6 +3728,7 @@ impl ClusterHealthReportExpiredEvent {
         source_utc_timestamp: time::OffsetDateTime,
     ) -> Self {
         Self {
+            cluster_event,
             source_id,
             property,
             health_state,
@@ -3768,6 +3778,8 @@ impl ClusterManifest {
 #[doc = "Cluster Health Report Created event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterNewHealthReportEvent {
+    #[serde(flatten)]
+    pub cluster_event: ClusterEvent,
     #[doc = "Id of report source."]
     #[serde(rename = "SourceId")]
     pub source_id: String,
@@ -3795,6 +3807,7 @@ pub struct ClusterNewHealthReportEvent {
 }
 impl ClusterNewHealthReportEvent {
     pub fn new(
+        cluster_event: ClusterEvent,
         source_id: String,
         property: String,
         health_state: String,
@@ -3805,6 +3818,7 @@ impl ClusterNewHealthReportEvent {
         source_utc_timestamp: time::OffsetDateTime,
     ) -> Self {
         Self {
+            cluster_event,
             source_id,
             property,
             health_state,
@@ -3819,6 +3833,8 @@ impl ClusterNewHealthReportEvent {
 #[doc = "Cluster Upgrade Completed event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpgradeCompletedEvent {
+    #[serde(flatten)]
+    pub cluster_event: ClusterEvent,
     #[doc = "Target Cluster version."]
     #[serde(rename = "TargetClusterVersion")]
     pub target_cluster_version: String,
@@ -3827,8 +3843,9 @@ pub struct ClusterUpgradeCompletedEvent {
     pub overall_upgrade_elapsed_time_in_ms: f64,
 }
 impl ClusterUpgradeCompletedEvent {
-    pub fn new(target_cluster_version: String, overall_upgrade_elapsed_time_in_ms: f64) -> Self {
+    pub fn new(cluster_event: ClusterEvent, target_cluster_version: String, overall_upgrade_elapsed_time_in_ms: f64) -> Self {
         Self {
+            cluster_event,
             target_cluster_version,
             overall_upgrade_elapsed_time_in_ms,
         }
@@ -3886,6 +3903,8 @@ impl ClusterUpgradeDescriptionObject {
 #[doc = "Cluster Upgrade Domain Completed event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpgradeDomainCompletedEvent {
+    #[serde(flatten)]
+    pub cluster_event: ClusterEvent,
     #[doc = "Target Cluster version."]
     #[serde(rename = "TargetClusterVersion")]
     pub target_cluster_version: String,
@@ -3901,12 +3920,14 @@ pub struct ClusterUpgradeDomainCompletedEvent {
 }
 impl ClusterUpgradeDomainCompletedEvent {
     pub fn new(
+        cluster_event: ClusterEvent,
         target_cluster_version: String,
         upgrade_state: String,
         upgrade_domains: String,
         upgrade_domain_elapsed_time_in_ms: f64,
     ) -> Self {
         Self {
+            cluster_event,
             target_cluster_version,
             upgrade_state,
             upgrade_domains,
@@ -3990,6 +4011,8 @@ impl ClusterUpgradeProgressObject {
 #[doc = "Cluster Upgrade Rollback Completed event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpgradeRollbackCompletedEvent {
+    #[serde(flatten)]
+    pub cluster_event: ClusterEvent,
     #[doc = "Target Cluster version."]
     #[serde(rename = "TargetClusterVersion")]
     pub target_cluster_version: String,
@@ -4001,8 +4024,14 @@ pub struct ClusterUpgradeRollbackCompletedEvent {
     pub overall_upgrade_elapsed_time_in_ms: f64,
 }
 impl ClusterUpgradeRollbackCompletedEvent {
-    pub fn new(target_cluster_version: String, failure_reason: String, overall_upgrade_elapsed_time_in_ms: f64) -> Self {
+    pub fn new(
+        cluster_event: ClusterEvent,
+        target_cluster_version: String,
+        failure_reason: String,
+        overall_upgrade_elapsed_time_in_ms: f64,
+    ) -> Self {
         Self {
+            cluster_event,
             target_cluster_version,
             failure_reason,
             overall_upgrade_elapsed_time_in_ms,
@@ -4012,6 +4041,8 @@ impl ClusterUpgradeRollbackCompletedEvent {
 #[doc = "Cluster Upgrade Rollback Started event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpgradeRollbackStartedEvent {
+    #[serde(flatten)]
+    pub cluster_event: ClusterEvent,
     #[doc = "Target Cluster version."]
     #[serde(rename = "TargetClusterVersion")]
     pub target_cluster_version: String,
@@ -4023,8 +4054,14 @@ pub struct ClusterUpgradeRollbackStartedEvent {
     pub overall_upgrade_elapsed_time_in_ms: f64,
 }
 impl ClusterUpgradeRollbackStartedEvent {
-    pub fn new(target_cluster_version: String, failure_reason: String, overall_upgrade_elapsed_time_in_ms: f64) -> Self {
+    pub fn new(
+        cluster_event: ClusterEvent,
+        target_cluster_version: String,
+        failure_reason: String,
+        overall_upgrade_elapsed_time_in_ms: f64,
+    ) -> Self {
         Self {
+            cluster_event,
             target_cluster_version,
             failure_reason,
             overall_upgrade_elapsed_time_in_ms,
@@ -4034,6 +4071,8 @@ impl ClusterUpgradeRollbackStartedEvent {
 #[doc = "Cluster Upgrade Started event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ClusterUpgradeStartedEvent {
+    #[serde(flatten)]
+    pub cluster_event: ClusterEvent,
     #[doc = "Current Cluster version."]
     #[serde(rename = "CurrentClusterVersion")]
     pub current_cluster_version: String,
@@ -4052,6 +4091,7 @@ pub struct ClusterUpgradeStartedEvent {
 }
 impl ClusterUpgradeStartedEvent {
     pub fn new(
+        cluster_event: ClusterEvent,
         current_cluster_version: String,
         target_cluster_version: String,
         upgrade_type: String,
@@ -4059,6 +4099,7 @@ impl ClusterUpgradeStartedEvent {
         failure_action: String,
     ) -> Self {
         Self {
+            cluster_event,
             current_cluster_version,
             target_cluster_version,
             upgrade_type,

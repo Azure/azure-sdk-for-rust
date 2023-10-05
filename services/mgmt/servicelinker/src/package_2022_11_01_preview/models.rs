@@ -815,6 +815,8 @@ impl DryrunProperties {
 #[doc = "a dryrun job resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DryrunResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of the dryrun job"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DryrunProperties>,
@@ -991,6 +993,8 @@ impl LinkerProperties {
 #[doc = "Linker of source and target resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkerResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of the Linker."]
     pub properties: LinkerProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -1000,6 +1004,7 @@ pub struct LinkerResource {
 impl LinkerResource {
     pub fn new(properties: LinkerProperties) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }

@@ -392,6 +392,8 @@ pub mod linker_properties {
 #[doc = "Linker of source and target resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkerResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of the linker."]
     pub properties: LinkerProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -401,6 +403,7 @@ pub struct LinkerResource {
 impl LinkerResource {
     pub fn new(properties: LinkerProperties) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }

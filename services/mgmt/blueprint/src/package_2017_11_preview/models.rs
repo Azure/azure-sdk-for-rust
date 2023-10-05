@@ -603,12 +603,14 @@ impl ParameterValueCollection {
 #[doc = "Blueprint artifact applies Policy assignments."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PolicyAssignmentArtifact {
+    #[serde(flatten)]
+    pub artifact: Artifact,
     #[doc = "PolicyAssignment properties"]
     pub properties: PolicyAssignmentArtifactProperties,
 }
 impl PolicyAssignmentArtifact {
-    pub fn new(properties: PolicyAssignmentArtifactProperties) -> Self {
-        Self { properties }
+    pub fn new(artifact: Artifact, properties: PolicyAssignmentArtifactProperties) -> Self {
+        Self { artifact, properties }
     }
 }
 #[doc = "PolicyAssignment properties"]
@@ -811,12 +813,14 @@ impl ResourceProviderOperationList {
 #[doc = "Blueprint artifact applies Azure role assignment."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleAssignmentArtifact {
+    #[serde(flatten)]
+    pub artifact: Artifact,
     #[doc = "Properties of the Role assignment artifact."]
     pub properties: RoleAssignmentArtifactProperties,
 }
 impl RoleAssignmentArtifact {
-    pub fn new(properties: RoleAssignmentArtifactProperties) -> Self {
-        Self { properties }
+    pub fn new(artifact: Artifact, properties: RoleAssignmentArtifactProperties) -> Self {
+        Self { artifact, properties }
     }
 }
 #[doc = "Properties of the Role assignment artifact."]
@@ -953,12 +957,14 @@ pub mod shared_blueprint_properties {
 #[doc = "Blueprint artifact deploys Azure resource manager template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TemplateArtifact {
+    #[serde(flatten)]
+    pub artifact: Artifact,
     #[doc = "Properties of a Template Artifact."]
     pub properties: TemplateArtifactProperties,
 }
 impl TemplateArtifact {
-    pub fn new(properties: TemplateArtifactProperties) -> Self {
-        Self { properties }
+    pub fn new(artifact: Artifact, properties: TemplateArtifactProperties) -> Self {
+        Self { artifact, properties }
     }
 }
 #[doc = "Properties of a Template Artifact."]

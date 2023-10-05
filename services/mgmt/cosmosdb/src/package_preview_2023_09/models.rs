@@ -3508,12 +3508,17 @@ impl FailoverPolicy {
 #[doc = "Represents a mongo cluster firewall rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirewallRule {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a mongo cluster firewall rule."]
     pub properties: FirewallRuleProperties,
 }
 impl FirewallRule {
     pub fn new(properties: FirewallRuleProperties) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "A list of firewall rules."]
@@ -6251,6 +6256,8 @@ impl PhysicalPartitionThroughputInfoResultProperties {
 #[doc = "A private endpoint connection"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a private endpoint connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,

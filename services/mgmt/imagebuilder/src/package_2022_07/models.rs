@@ -1051,6 +1051,8 @@ impl Resource {
 #[doc = "Represents an output that was created by running an image template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RunOutput {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Describes the properties of a run output"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RunOutputProperties>,
@@ -1200,6 +1202,8 @@ impl TrackedResource {
 #[doc = "Represents a trigger that can invoke an image template build."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Trigger {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Describes the properties of a trigger"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TriggerPropertiesUnion>,

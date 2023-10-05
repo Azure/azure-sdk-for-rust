@@ -397,12 +397,17 @@ impl EventHubEventSourceMutableProperties {
 #[doc = "An event source that receives its data from an Azure EventHub."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubEventSourceResource {
+    #[serde(flatten)]
+    pub event_source_resource: EventSourceResource,
     #[doc = "Properties of the EventHub event source resource."]
     pub properties: EventHubEventSourceResourceProperties,
 }
 impl EventHubEventSourceResource {
-    pub fn new(properties: EventHubEventSourceResourceProperties) -> Self {
-        Self { properties }
+    pub fn new(event_source_resource: EventSourceResource, properties: EventHubEventSourceResourceProperties) -> Self {
+        Self {
+            event_source_resource,
+            properties,
+        }
     }
 }
 #[doc = "Properties of the EventHub event source resource."]
@@ -1090,12 +1095,17 @@ impl IoTHubEventSourceMutableProperties {
 #[doc = "An event source that receives its data from an Azure IoTHub."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTHubEventSourceResource {
+    #[serde(flatten)]
+    pub event_source_resource: EventSourceResource,
     #[doc = "Properties of the IoTHub event source resource."]
     pub properties: IoTHubEventSourceResourceProperties,
 }
 impl IoTHubEventSourceResource {
-    pub fn new(properties: IoTHubEventSourceResourceProperties) -> Self {
-        Self { properties }
+    pub fn new(event_source_resource: EventSourceResource, properties: IoTHubEventSourceResourceProperties) -> Self {
+        Self {
+            event_source_resource,
+            properties,
+        }
     }
 }
 #[doc = "Properties of the IoTHub event source resource."]

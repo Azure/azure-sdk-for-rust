@@ -1890,6 +1890,8 @@ impl PrometheusOsProviderInstanceProperties {
 #[doc = "A provider instance associated with SAP monitor."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderInstance {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Managed service identity (user assigned identities)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<UserAssignedServiceIdentity>,
@@ -5288,6 +5290,8 @@ impl VmssNodesProfile {
 #[doc = "WordPress instance resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WordpressInstanceResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "WordPress instance properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WordpressInstanceResourceProperties>,

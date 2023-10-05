@@ -1117,13 +1117,18 @@ impl AppFiguresLinkedServiceTypeProperties {
 #[doc = "Append value for a Variable of type Array."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppendVariableActivity {
+    #[serde(flatten)]
+    pub control_activity: ControlActivity,
     #[doc = "AppendVariable activity properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: AppendVariableActivityTypeProperties,
 }
 impl AppendVariableActivity {
-    pub fn new(type_properties: AppendVariableActivityTypeProperties) -> Self {
-        Self { type_properties }
+    pub fn new(control_activity: ControlActivity, type_properties: AppendVariableActivityTypeProperties) -> Self {
+        Self {
+            control_activity,
+            type_properties,
+        }
     }
 }
 #[doc = "AppendVariable activity properties."]
@@ -8746,6 +8751,8 @@ pub mod execute_data_flow_activity_type_properties {
 #[doc = "Execute pipeline activity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExecutePipelineActivity {
+    #[serde(flatten)]
+    pub control_activity: ControlActivity,
     #[doc = "Execution policy for an execute pipeline activity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub policy: Option<ExecutePipelineActivityPolicy>,
@@ -8754,8 +8761,9 @@ pub struct ExecutePipelineActivity {
     pub type_properties: ExecutePipelineActivityTypeProperties,
 }
 impl ExecutePipelineActivity {
-    pub fn new(type_properties: ExecutePipelineActivityTypeProperties) -> Self {
+    pub fn new(control_activity: ControlActivity, type_properties: ExecutePipelineActivityTypeProperties) -> Self {
         Self {
+            control_activity,
             policy: None,
             type_properties,
         }
@@ -9373,13 +9381,18 @@ impl FactoryVstsConfiguration {
 #[doc = "This activity will fail within its own scope and output a custom error message and error code. The error message and code can provided either as a string literal or as an expression that can be evaluated to a string at runtime. The activity scope can be the whole pipeline or a control activity (e.g. foreach, switch, until), if the fail activity is contained in it."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FailActivity {
+    #[serde(flatten)]
+    pub control_activity: ControlActivity,
     #[doc = "Fail activity properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: FailActivityTypeProperties,
 }
 impl FailActivity {
-    pub fn new(type_properties: FailActivityTypeProperties) -> Self {
-        Self { type_properties }
+    pub fn new(control_activity: ControlActivity, type_properties: FailActivityTypeProperties) -> Self {
+        Self {
+            control_activity,
+            type_properties,
+        }
     }
 }
 #[doc = "Fail activity properties."]
@@ -9601,13 +9614,18 @@ impl FileSystemSource {
 #[doc = "Filter and return results from input array based on the conditions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FilterActivity {
+    #[serde(flatten)]
+    pub control_activity: ControlActivity,
     #[doc = "Filter activity properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: FilterActivityTypeProperties,
 }
 impl FilterActivity {
-    pub fn new(type_properties: FilterActivityTypeProperties) -> Self {
-        Self { type_properties }
+    pub fn new(control_activity: ControlActivity, type_properties: FilterActivityTypeProperties) -> Self {
+        Self {
+            control_activity,
+            type_properties,
+        }
     }
 }
 #[doc = "Filter activity properties."]
@@ -9684,13 +9702,18 @@ impl FlowletTypeProperties {
 #[doc = "This activity is used for iterating over a collection and execute given activities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ForEachActivity {
+    #[serde(flatten)]
+    pub control_activity: ControlActivity,
     #[doc = "ForEach activity properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: ForEachActivityTypeProperties,
 }
 impl ForEachActivity {
-    pub fn new(type_properties: ForEachActivityTypeProperties) -> Self {
-        Self { type_properties }
+    pub fn new(control_activity: ControlActivity, type_properties: ForEachActivityTypeProperties) -> Self {
+        Self {
+            control_activity,
+            type_properties,
+        }
     }
 }
 #[doc = "ForEach activity properties."]
@@ -12186,13 +12209,18 @@ impl HubspotSource {
 #[doc = "This activity evaluates a boolean expression and executes either the activities under the ifTrueActivities property or the ifFalseActivities property depending on the result of the expression."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IfConditionActivity {
+    #[serde(flatten)]
+    pub control_activity: ControlActivity,
     #[doc = "IfCondition activity properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: IfConditionActivityTypeProperties,
 }
 impl IfConditionActivity {
-    pub fn new(type_properties: IfConditionActivityTypeProperties) -> Self {
-        Self { type_properties }
+    pub fn new(control_activity: ControlActivity, type_properties: IfConditionActivityTypeProperties) -> Self {
+        Self {
+            control_activity,
+            type_properties,
+        }
     }
 }
 #[doc = "IfCondition activity properties."]
@@ -22346,6 +22374,8 @@ impl Serialize for ServicePrincipalCredentialType {
 #[doc = "Set value for a Variable."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SetVariableActivity {
+    #[serde(flatten)]
+    pub control_activity: ControlActivity,
     #[doc = "SetVariable activity properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: SetVariableActivityTypeProperties,
@@ -22354,8 +22384,9 @@ pub struct SetVariableActivity {
     pub policy: Option<SecureInputOutputPolicy>,
 }
 impl SetVariableActivity {
-    pub fn new(type_properties: SetVariableActivityTypeProperties) -> Self {
+    pub fn new(control_activity: ControlActivity, type_properties: SetVariableActivityTypeProperties) -> Self {
         Self {
+            control_activity,
             type_properties,
             policy: None,
         }
@@ -24550,13 +24581,18 @@ impl SubResourceDebugResource {
 #[doc = "This activity evaluates an expression and executes activities under the cases property that correspond to the expression evaluation expected in the equals property."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SwitchActivity {
+    #[serde(flatten)]
+    pub control_activity: ControlActivity,
     #[doc = "Switch activity properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: SwitchActivityTypeProperties,
 }
 impl SwitchActivity {
-    pub fn new(type_properties: SwitchActivityTypeProperties) -> Self {
-        Self { type_properties }
+    pub fn new(control_activity: ControlActivity, type_properties: SwitchActivityTypeProperties) -> Self {
+        Self {
+            control_activity,
+            type_properties,
+        }
     }
 }
 #[doc = "Switch activity properties."]
@@ -26132,13 +26168,18 @@ impl TypeConversionSettings {
 #[doc = "This activity executes inner activities until the specified boolean expression results to true or timeout is reached, whichever is earlier."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UntilActivity {
+    #[serde(flatten)]
+    pub control_activity: ControlActivity,
     #[doc = "Until activity properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: UntilActivityTypeProperties,
 }
 impl UntilActivity {
-    pub fn new(type_properties: UntilActivityTypeProperties) -> Self {
-        Self { type_properties }
+    pub fn new(control_activity: ControlActivity, type_properties: UntilActivityTypeProperties) -> Self {
+        Self {
+            control_activity,
+            type_properties,
+        }
     }
 }
 #[doc = "Until activity properties."]
@@ -26244,13 +26285,18 @@ impl UserProperty {
 #[doc = "This activity verifies that an external resource exists."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidationActivity {
+    #[serde(flatten)]
+    pub control_activity: ControlActivity,
     #[doc = "Validation activity properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: ValidationActivityTypeProperties,
 }
 impl ValidationActivity {
-    pub fn new(type_properties: ValidationActivityTypeProperties) -> Self {
-        Self { type_properties }
+    pub fn new(control_activity: ControlActivity, type_properties: ValidationActivityTypeProperties) -> Self {
+        Self {
+            control_activity,
+            type_properties,
+        }
     }
 }
 #[doc = "Validation activity properties."]
@@ -26440,13 +26486,18 @@ impl VerticaTableDataset {
 #[doc = "This activity suspends pipeline execution for the specified interval."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WaitActivity {
+    #[serde(flatten)]
+    pub control_activity: ControlActivity,
     #[doc = "Wait activity properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: WaitActivityTypeProperties,
 }
 impl WaitActivity {
-    pub fn new(type_properties: WaitActivityTypeProperties) -> Self {
-        Self { type_properties }
+    pub fn new(control_activity: ControlActivity, type_properties: WaitActivityTypeProperties) -> Self {
+        Self {
+            control_activity,
+            type_properties,
+        }
     }
 }
 #[doc = "Wait activity properties."]
@@ -26668,13 +26719,18 @@ impl WebClientCertificateAuthentication {
 #[doc = "WebHook activity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebHookActivity {
+    #[serde(flatten)]
+    pub control_activity: ControlActivity,
     #[doc = "WebHook activity type properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: WebHookActivityTypeProperties,
 }
 impl WebHookActivity {
-    pub fn new(type_properties: WebHookActivityTypeProperties) -> Self {
-        Self { type_properties }
+    pub fn new(control_activity: ControlActivity, type_properties: WebHookActivityTypeProperties) -> Self {
+        Self {
+            control_activity,
+            type_properties,
+        }
     }
 }
 #[doc = "The list of HTTP methods supported by a WebHook activity."]

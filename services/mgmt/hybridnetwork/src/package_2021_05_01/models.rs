@@ -1581,6 +1581,8 @@ impl UserDataTemplate {
 #[doc = "Vendor resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Vendor {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Vendor properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VendorPropertiesFormat>,
@@ -1641,6 +1643,8 @@ impl VendorListResult {
 #[doc = "Vendor network function sub resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VendorNetworkFunction {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Vendor network function properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VendorNetworkFunctionPropertiesFormat>,
@@ -1776,6 +1780,8 @@ impl Serialize for VendorProvisioningState {
 #[doc = "Sku sub resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VendorSku {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Sku properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VendorSkuPropertiesFormat>,

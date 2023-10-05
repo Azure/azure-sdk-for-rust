@@ -2216,10 +2216,15 @@ impl AzureVmWorkloadSqlInstanceWorkloadItem {
 }
 #[doc = "Azure Recovery Services Vault specific protection intent item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureWorkloadAutoProtectionIntent {}
+pub struct AzureWorkloadAutoProtectionIntent {
+    #[serde(flatten)]
+    pub azure_recovery_service_vault_protection_intent: AzureRecoveryServiceVaultProtectionIntent,
+}
 impl AzureWorkloadAutoProtectionIntent {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(azure_recovery_service_vault_protection_intent: AzureRecoveryServiceVaultProtectionIntent) -> Self {
+        Self {
+            azure_recovery_service_vault_protection_intent,
+        }
     }
 }
 #[doc = "AzureWorkload workload-specific backup request."]
@@ -2845,13 +2850,18 @@ impl AzureWorkloadSapHanaPointInTimeRecoveryPoint {
 #[doc = "AzureWorkload SAP Hana -specific restore. Specifically for PointInTime/Log restore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadSapHanaPointInTimeRestoreRequest {
+    #[serde(flatten)]
+    pub azure_workload_sap_hana_restore_request: AzureWorkloadSapHanaRestoreRequest,
     #[doc = "PointInTime value"]
     #[serde(rename = "pointInTime", default, with = "azure_core::date::rfc3339::option")]
     pub point_in_time: Option<time::OffsetDateTime>,
 }
 impl AzureWorkloadSapHanaPointInTimeRestoreRequest {
-    pub fn new() -> Self {
-        Self { point_in_time: None }
+    pub fn new(azure_workload_sap_hana_restore_request: AzureWorkloadSapHanaRestoreRequest) -> Self {
+        Self {
+            azure_workload_sap_hana_restore_request,
+            point_in_time: None,
+        }
     }
 }
 #[doc = "AzureWorkload SAP Hana-specific restore with integrated rehydration of recovery point."]
@@ -2900,13 +2910,16 @@ impl AzureWorkloadSapHanaRestoreRequest {
 #[doc = "AzureWorkload SAP Hana-specific restore with integrated rehydration of recovery point."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadSapHanaRestoreWithRehydrateRequest {
+    #[serde(flatten)]
+    pub azure_workload_sap_hana_restore_request: AzureWorkloadSapHanaRestoreRequest,
     #[doc = "RP Rehydration Info"]
     #[serde(rename = "recoveryPointRehydrationInfo", default, skip_serializing_if = "Option::is_none")]
     pub recovery_point_rehydration_info: Option<RecoveryPointRehydrationInfo>,
 }
 impl AzureWorkloadSapHanaRestoreWithRehydrateRequest {
-    pub fn new() -> Self {
+    pub fn new(azure_workload_sap_hana_restore_request: AzureWorkloadSapHanaRestoreRequest) -> Self {
         Self {
+            azure_workload_sap_hana_restore_request,
             recovery_point_rehydration_info: None,
         }
     }
@@ -2914,13 +2927,18 @@ impl AzureWorkloadSapHanaRestoreWithRehydrateRequest {
 #[doc = "Azure Workload SQL Auto Protection intent item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadSqlAutoProtectionIntent {
+    #[serde(flatten)]
+    pub azure_workload_auto_protection_intent: AzureWorkloadAutoProtectionIntent,
     #[doc = "Workload item type of the item for which intent is to be set"]
     #[serde(rename = "workloadItemType", default, skip_serializing_if = "Option::is_none")]
     pub workload_item_type: Option<azure_workload_sql_auto_protection_intent::WorkloadItemType>,
 }
 impl AzureWorkloadSqlAutoProtectionIntent {
-    pub fn new() -> Self {
-        Self { workload_item_type: None }
+    pub fn new(azure_workload_auto_protection_intent: AzureWorkloadAutoProtectionIntent) -> Self {
+        Self {
+            azure_workload_auto_protection_intent,
+            workload_item_type: None,
+        }
     }
 }
 pub mod azure_workload_sql_auto_protection_intent {

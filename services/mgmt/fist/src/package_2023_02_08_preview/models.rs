@@ -1038,6 +1038,8 @@ impl ErrorResponse {
 #[doc = "Firmware definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Firmware {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Firmware properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FirmwareProperties>,

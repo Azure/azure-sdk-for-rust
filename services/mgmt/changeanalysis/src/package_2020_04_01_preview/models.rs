@@ -161,6 +161,8 @@ impl ErrorResponse {
 #[doc = "An Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtendedProxyResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Top level metadata https://github.com/Azure/azure-resource-manager-rpc/blob/master/v1.0/common-api-contracts.md#system-metadata-for-all-azure-resources"]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,

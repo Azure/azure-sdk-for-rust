@@ -6,12 +6,14 @@ use std::str::FromStr;
 #[doc = "An ADLS Gen 1 file data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen1FileDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
     #[doc = "Properties of the ADLS Gen1 file data set."]
     pub properties: AdlsGen1FileProperties,
 }
 impl AdlsGen1FileDataSet {
-    pub fn new(properties: AdlsGen1FileProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set: DataSet, properties: AdlsGen1FileProperties) -> Self {
+        Self { data_set, properties }
     }
 }
 #[doc = "Properties of the ADLS Gen1 file data set."]
@@ -51,12 +53,14 @@ impl AdlsGen1FileProperties {
 #[doc = "An ADLS Gen 1 folder data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen1FolderDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
     #[doc = "Properties of the ADLS Gen1 folder data set."]
     pub properties: AdlsGen1FolderProperties,
 }
 impl AdlsGen1FolderDataSet {
-    pub fn new(properties: AdlsGen1FolderProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set: DataSet, properties: AdlsGen1FolderProperties) -> Self {
+        Self { data_set, properties }
     }
 }
 #[doc = "Properties of the ADLS Gen1 folder data set."]
@@ -92,23 +96,30 @@ impl AdlsGen1FolderProperties {
 #[doc = "An ADLS Gen 2 file data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FileDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
     #[doc = "Properties of the ADLS Gen2 file data set."]
     pub properties: AdlsGen2FileProperties,
 }
 impl AdlsGen2FileDataSet {
-    pub fn new(properties: AdlsGen2FileProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set: DataSet, properties: AdlsGen2FileProperties) -> Self {
+        Self { data_set, properties }
     }
 }
 #[doc = "An ADLS Gen2 file data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FileDataSetMapping {
+    #[serde(flatten)]
+    pub data_set_mapping: DataSetMapping,
     #[doc = "ADLS Gen 2 file data set mapping property bag."]
     pub properties: AdlsGen2FileDataSetMappingProperties,
 }
 impl AdlsGen2FileDataSetMapping {
-    pub fn new(properties: AdlsGen2FileDataSetMappingProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set_mapping: DataSetMapping, properties: AdlsGen2FileDataSetMappingProperties) -> Self {
+        Self {
+            data_set_mapping,
+            properties,
+        }
     }
 }
 #[doc = "ADLS Gen 2 file data set mapping property bag."]
@@ -327,23 +338,30 @@ impl AdlsGen2FileProperties {
 #[doc = "An ADLS Gen 2 file system data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FileSystemDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
     #[doc = "Properties of the ADLS Gen2 file system data set."]
     pub properties: AdlsGen2FileSystemProperties,
 }
 impl AdlsGen2FileSystemDataSet {
-    pub fn new(properties: AdlsGen2FileSystemProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set: DataSet, properties: AdlsGen2FileSystemProperties) -> Self {
+        Self { data_set, properties }
     }
 }
 #[doc = "An ADLS Gen2 file system data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FileSystemDataSetMapping {
+    #[serde(flatten)]
+    pub data_set_mapping: DataSetMapping,
     #[doc = "ADLS Gen 2 file system data set mapping property bag."]
     pub properties: AdlsGen2FileSystemDataSetMappingProperties,
 }
 impl AdlsGen2FileSystemDataSetMapping {
-    pub fn new(properties: AdlsGen2FileSystemDataSetMappingProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set_mapping: DataSetMapping, properties: AdlsGen2FileSystemDataSetMappingProperties) -> Self {
+        Self {
+            data_set_mapping,
+            properties,
+        }
     }
 }
 #[doc = "ADLS Gen 2 file system data set mapping property bag."]
@@ -506,23 +524,30 @@ impl AdlsGen2FileSystemProperties {
 #[doc = "An ADLS Gen 2 folder data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FolderDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
     #[doc = "Properties of the ADLS Gen2 folder data set."]
     pub properties: AdlsGen2FolderProperties,
 }
 impl AdlsGen2FolderDataSet {
-    pub fn new(properties: AdlsGen2FolderProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set: DataSet, properties: AdlsGen2FolderProperties) -> Self {
+        Self { data_set, properties }
     }
 }
 #[doc = "An ADLS Gen2 folder data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdlsGen2FolderDataSetMapping {
+    #[serde(flatten)]
+    pub data_set_mapping: DataSetMapping,
     #[doc = "ADLS Gen 2 folder data set mapping property bag."]
     pub properties: AdlsGen2FolderDataSetMappingProperties,
 }
 impl AdlsGen2FolderDataSetMapping {
-    pub fn new(properties: AdlsGen2FolderDataSetMappingProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set_mapping: DataSetMapping, properties: AdlsGen2FolderDataSetMappingProperties) -> Self {
+        Self {
+            data_set_mapping,
+            properties,
+        }
     }
 }
 #[doc = "ADLS Gen 2 folder data set mapping property bag."]
@@ -819,23 +844,30 @@ impl AccountUpdateParameters {
 #[doc = "An Azure storage blob container data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobContainerDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
     #[doc = "Properties of the BLOB container data set."]
     pub properties: BlobContainerProperties,
 }
 impl BlobContainerDataSet {
-    pub fn new(properties: BlobContainerProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set: DataSet, properties: BlobContainerProperties) -> Self {
+        Self { data_set, properties }
     }
 }
 #[doc = "A Blob container data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobContainerDataSetMapping {
+    #[serde(flatten)]
+    pub data_set_mapping: DataSetMapping,
     #[doc = "Azure storage Blob container data set mapping property bag."]
     pub properties: BlobContainerMappingProperties,
 }
 impl BlobContainerDataSetMapping {
-    pub fn new(properties: BlobContainerMappingProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set_mapping: DataSetMapping, properties: BlobContainerMappingProperties) -> Self {
+        Self {
+            data_set_mapping,
+            properties,
+        }
     }
 }
 #[doc = "Azure storage Blob container data set mapping property bag."]
@@ -998,45 +1030,59 @@ impl BlobContainerProperties {
 #[doc = "An Azure storage blob data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
     #[doc = "Properties of the blob data set."]
     pub properties: BlobProperties,
 }
 impl BlobDataSet {
-    pub fn new(properties: BlobProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set: DataSet, properties: BlobProperties) -> Self {
+        Self { data_set, properties }
     }
 }
 #[doc = "A Blob data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobDataSetMapping {
+    #[serde(flatten)]
+    pub data_set_mapping: DataSetMapping,
     #[doc = "Azure storage Blob data set mapping property bag."]
     pub properties: BlobMappingProperties,
 }
 impl BlobDataSetMapping {
-    pub fn new(properties: BlobMappingProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set_mapping: DataSetMapping, properties: BlobMappingProperties) -> Self {
+        Self {
+            data_set_mapping,
+            properties,
+        }
     }
 }
 #[doc = "An Azure storage blob folder data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobFolderDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
     #[doc = "Properties of the blob folder data set."]
     pub properties: BlobFolderProperties,
 }
 impl BlobFolderDataSet {
-    pub fn new(properties: BlobFolderProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set: DataSet, properties: BlobFolderProperties) -> Self {
+        Self { data_set, properties }
     }
 }
 #[doc = "A Blob folder data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobFolderDataSetMapping {
+    #[serde(flatten)]
+    pub data_set_mapping: DataSetMapping,
     #[doc = "Azure storage Blob folder data set mapping property bag."]
     pub properties: BlobFolderMappingProperties,
 }
 impl BlobFolderDataSetMapping {
-    pub fn new(properties: BlobFolderMappingProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set_mapping: DataSetMapping, properties: BlobFolderMappingProperties) -> Self {
+        Self {
+            data_set_mapping,
+            properties,
+        }
     }
 }
 #[doc = "Azure storage Blob folder data set mapping property bag."]
@@ -2095,23 +2141,30 @@ pub mod invitation_properties {
 #[doc = "A kusto cluster data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoClusterDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
     #[doc = "Properties of the kusto cluster data set."]
     pub properties: KustoClusterDataSetProperties,
 }
 impl KustoClusterDataSet {
-    pub fn new(properties: KustoClusterDataSetProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set: DataSet, properties: KustoClusterDataSetProperties) -> Self {
+        Self { data_set, properties }
     }
 }
 #[doc = "A Kusto cluster data set mapping"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoClusterDataSetMapping {
+    #[serde(flatten)]
+    pub data_set_mapping: DataSetMapping,
     #[doc = "Properties of the Kusto cluster data set mapping"]
     pub properties: KustoClusterDataSetMappingProperties,
 }
 impl KustoClusterDataSetMapping {
-    pub fn new(properties: KustoClusterDataSetMappingProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set_mapping: DataSetMapping, properties: KustoClusterDataSetMappingProperties) -> Self {
+        Self {
+            data_set_mapping,
+            properties,
+        }
     }
 }
 #[doc = "Properties of the Kusto cluster data set mapping"]
@@ -2302,23 +2355,30 @@ pub mod kusto_cluster_data_set_properties {
 #[doc = "A kusto database data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoDatabaseDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
     #[doc = "Properties of the kusto database data set."]
     pub properties: KustoDatabaseDataSetProperties,
 }
 impl KustoDatabaseDataSet {
-    pub fn new(properties: KustoDatabaseDataSetProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set: DataSet, properties: KustoDatabaseDataSetProperties) -> Self {
+        Self { data_set, properties }
     }
 }
 #[doc = "A Kusto database data set mapping"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KustoDatabaseDataSetMapping {
+    #[serde(flatten)]
+    pub data_set_mapping: DataSetMapping,
     #[doc = "Properties of the Kusto database data set mapping"]
     pub properties: KustoDatabaseDataSetMappingProperties,
 }
 impl KustoDatabaseDataSetMapping {
-    pub fn new(properties: KustoDatabaseDataSetMappingProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set_mapping: DataSetMapping, properties: KustoDatabaseDataSetMappingProperties) -> Self {
+        Self {
+            data_set_mapping,
+            properties,
+        }
     }
 }
 #[doc = "Properties of the Kusto database data set mapping"]
@@ -2963,12 +3023,17 @@ impl ScheduledSourceSynchronizationSetting {
 #[doc = "A type of synchronization setting based on schedule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledSynchronizationSetting {
+    #[serde(flatten)]
+    pub synchronization_setting: SynchronizationSetting,
     #[doc = "A Scheduled synchronization setting data transfer object."]
     pub properties: ScheduledSynchronizationSettingProperties,
 }
 impl ScheduledSynchronizationSetting {
-    pub fn new(properties: ScheduledSynchronizationSettingProperties) -> Self {
-        Self { properties }
+    pub fn new(synchronization_setting: SynchronizationSetting, properties: ScheduledSynchronizationSettingProperties) -> Self {
+        Self {
+            synchronization_setting,
+            properties,
+        }
     }
 }
 #[doc = "A Scheduled synchronization setting data transfer object."]
@@ -3090,12 +3155,14 @@ pub mod scheduled_synchronization_setting_properties {
 #[doc = "A type of trigger based on schedule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledTrigger {
+    #[serde(flatten)]
+    pub trigger: Trigger,
     #[doc = "A Scheduled trigger data transfer object."]
     pub properties: ScheduledTriggerProperties,
 }
 impl ScheduledTrigger {
-    pub fn new(properties: ScheduledTriggerProperties) -> Self {
-        Self { properties }
+    pub fn new(trigger: Trigger, properties: ScheduledTriggerProperties) -> Self {
+        Self { trigger, properties }
     }
 }
 #[doc = "A Scheduled trigger data transfer object."]
@@ -3900,24 +3967,34 @@ impl SourceShareSynchronizationSettingList {
 #[doc = "A SQL DB table data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlDbTableDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
     #[doc = "Properties of the SQL DB table data set."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SqlDbTableProperties>,
 }
 impl SqlDbTableDataSet {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_set: DataSet) -> Self {
+        Self {
+            data_set,
+            properties: None,
+        }
     }
 }
 #[doc = "A SQL DB Table data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlDbTableDataSetMapping {
+    #[serde(flatten)]
+    pub data_set_mapping: DataSetMapping,
     #[doc = "Properties of the SQL DB table data set mapping."]
     pub properties: SqlDbTableDataSetMappingProperties,
 }
 impl SqlDbTableDataSetMapping {
-    pub fn new(properties: SqlDbTableDataSetMappingProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set_mapping: DataSetMapping, properties: SqlDbTableDataSetMappingProperties) -> Self {
+        Self {
+            data_set_mapping,
+            properties,
+        }
     }
 }
 #[doc = "Properties of the SQL DB table data set mapping."]
@@ -4080,24 +4157,34 @@ impl SqlDbTableProperties {
 #[doc = "A SQL DW table data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlDwTableDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
     #[doc = "Properties of the SQL DW table data set."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SqlDwTableProperties>,
 }
 impl SqlDwTableDataSet {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(data_set: DataSet) -> Self {
+        Self {
+            data_set,
+            properties: None,
+        }
     }
 }
 #[doc = "A SQL DW Table data set mapping."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlDwTableDataSetMapping {
+    #[serde(flatten)]
+    pub data_set_mapping: DataSetMapping,
     #[doc = "Properties of the SQL DW table data set mapping."]
     pub properties: SqlDwTableDataSetMappingProperties,
 }
 impl SqlDwTableDataSetMapping {
-    pub fn new(properties: SqlDwTableDataSetMappingProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set_mapping: DataSetMapping, properties: SqlDwTableDataSetMappingProperties) -> Self {
+        Self {
+            data_set_mapping,
+            properties,
+        }
     }
 }
 #[doc = "Properties of the SQL DW table data set mapping."]
@@ -4260,23 +4347,30 @@ impl SqlDwTableProperties {
 #[doc = "A Synapse Workspace Sql Pool Table data set."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SynapseWorkspaceSqlPoolTableDataSet {
+    #[serde(flatten)]
+    pub data_set: DataSet,
     #[doc = "Properties of the Synapse Workspace SQL Pool Table data set."]
     pub properties: SynapseWorkspaceSqlPoolTableDataSetProperties,
 }
 impl SynapseWorkspaceSqlPoolTableDataSet {
-    pub fn new(properties: SynapseWorkspaceSqlPoolTableDataSetProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set: DataSet, properties: SynapseWorkspaceSqlPoolTableDataSetProperties) -> Self {
+        Self { data_set, properties }
     }
 }
 #[doc = "A Synapse Workspace Sql Pool Table data set mapping"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SynapseWorkspaceSqlPoolTableDataSetMapping {
+    #[serde(flatten)]
+    pub data_set_mapping: DataSetMapping,
     #[doc = "Properties of the Synapse Workspace SQL Pool Table data set mapping"]
     pub properties: SynapseWorkspaceSqlPoolTableDataSetMappingProperties,
 }
 impl SynapseWorkspaceSqlPoolTableDataSetMapping {
-    pub fn new(properties: SynapseWorkspaceSqlPoolTableDataSetMappingProperties) -> Self {
-        Self { properties }
+    pub fn new(data_set_mapping: DataSetMapping, properties: SynapseWorkspaceSqlPoolTableDataSetMappingProperties) -> Self {
+        Self {
+            data_set_mapping,
+            properties,
+        }
     }
 }
 #[doc = "Properties of the Synapse Workspace SQL Pool Table data set mapping"]

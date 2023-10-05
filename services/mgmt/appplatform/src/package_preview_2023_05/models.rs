@@ -131,6 +131,8 @@ impl ApiPortalCustomDomainProperties {
 #[doc = "Custom domain of the API portal"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiPortalCustomDomainResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of custom domain for API portal"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiPortalCustomDomainProperties>,
@@ -279,6 +281,8 @@ pub mod api_portal_properties {
 #[doc = "API portal resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApiPortalResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "API portal properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApiPortalProperties>,
@@ -421,6 +425,8 @@ pub type ApmReferenceCollection = Vec<ApmReference>;
 #[doc = "APM Resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApmResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of an APM"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApmProperties>,
@@ -474,6 +480,8 @@ impl ApmSecretKeys {
 #[doc = "App resource payload"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AppResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "App resource properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AppResourceProperties>,
@@ -733,6 +741,8 @@ pub mod application_accelerator_properties {
 #[doc = "Application accelerator resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationAcceleratorResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Application accelerator properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationAcceleratorProperties>,
@@ -894,6 +904,8 @@ pub mod application_live_view_properties {
 #[doc = "Application Live View resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApplicationLiveViewResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Application Live View properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ApplicationLiveViewProperties>,
@@ -1006,6 +1018,8 @@ impl AzureFileVolume {
 #[doc = "Binding resource payload"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BindingResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Binding resource properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BindingResourceProperties>,
@@ -1076,6 +1090,8 @@ impl BindingResourceProperties {
 #[doc = "Build resource payload"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Build {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Build resource properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BuildProperties>,
@@ -1210,6 +1226,8 @@ impl BuildResourceRequests {
 #[doc = "Build result resource payload"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildResult {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Build result resource properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BuildResultProperties>,
@@ -1354,6 +1372,8 @@ impl BuildResultUserSourceInfo {
 #[doc = "Build service resource payload"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildService {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Build service resource properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BuildServiceProperties>,
@@ -1381,6 +1401,8 @@ impl BuildServiceAgentPoolProperties {
 #[doc = "The build service agent pool resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildServiceAgentPoolResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Build service agent pool properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BuildServiceAgentPoolProperties>,
@@ -1677,6 +1699,8 @@ pub mod builder_properties {
 #[doc = "KPack Builder resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuilderResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "KPack Builder properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BuilderProperties>,
@@ -1842,6 +1866,8 @@ pub mod buildpack_binding_properties {
 #[doc = "Buildpack Binding Resource object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct BuildpackBindingResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a buildpack binding"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BuildpackBindingProperties>,
@@ -2023,6 +2049,8 @@ pub type CertificateReferenceCollection = Vec<CertificateReference>;
 #[doc = "Certificate resource payload."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Certificate resource payload."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CertificatePropertiesUnion>,
@@ -2401,6 +2429,8 @@ pub mod config_server_properties {
 #[doc = "Config Server resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigServerResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Config server git properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigServerProperties>,
@@ -2693,6 +2723,8 @@ pub mod configuration_service_properties {
 #[doc = "Application Configuration Service resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ConfigurationServiceResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Application Configuration Service properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationServiceProperties>,
@@ -2874,6 +2906,8 @@ pub mod container_registry_properties {
 #[doc = "Container registry resource payload."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ContainerRegistryResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Container registry resource payload."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ContainerRegistryProperties>,
@@ -3062,6 +3096,8 @@ pub mod custom_domain_properties {
 #[doc = "Custom domain resource payload."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomDomainResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Custom domain of app resource payload."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomDomainProperties>,
@@ -3283,6 +3319,8 @@ pub mod customized_accelerator_properties {
 #[doc = "Customized accelerator resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomizedAcceleratorResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Customized accelerator properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomizedAcceleratorProperties>,
@@ -3423,6 +3461,8 @@ impl DeploymentList {
 #[doc = "Deployment resource payload"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DeploymentResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Deployment resource properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DeploymentResourceProperties>,
@@ -3803,6 +3843,8 @@ pub mod dev_tool_portal_properties {
 #[doc = "Dev Tool Portal resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DevToolPortalResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Dev Tool Portal properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DevToolPortalProperties>,
@@ -4015,6 +4057,8 @@ pub mod eureka_server_properties {
 #[doc = "Eureka server resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EurekaServerResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Eureka server properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EurekaServerProperties>,
@@ -4201,6 +4245,8 @@ impl GatewayCustomDomainProperties {
 #[doc = "Custom domain of the Spring Cloud Gateway"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayCustomDomainResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of custom domain for Spring Cloud Gateway"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GatewayCustomDomainProperties>,
@@ -4483,6 +4529,8 @@ pub mod gateway_properties {
 #[doc = "Spring Cloud Gateway resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Spring Cloud Gateway properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GatewayProperties>,
@@ -4685,6 +4733,8 @@ pub mod gateway_route_config_properties {
 #[doc = "Spring Cloud Gateway route config resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GatewayRouteConfigResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "API route config of the Spring Cloud Gateway"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GatewayRouteConfigProperties>,
@@ -5389,6 +5439,8 @@ pub mod monitoring_setting_properties {
 #[doc = "Monitoring Setting resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitoringSettingResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Monitoring Setting properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MonitoringSettingProperties>,
@@ -5745,6 +5797,8 @@ pub mod predefined_accelerator_properties {
 #[doc = "Predefined accelerator resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PredefinedAcceleratorResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Predefined accelerator properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PredefinedAcceleratorProperties>,
@@ -6481,6 +6535,8 @@ pub mod service_registry_properties {
 #[doc = "Service Registry resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServiceRegistryResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Service Registry properties payload"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceRegistryProperties>,
@@ -6797,6 +6853,8 @@ pub enum StoragePropertiesUnion {
 #[doc = "Storage resource payload."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Storage resource payload."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StoragePropertiesUnion>,
@@ -6871,6 +6929,8 @@ impl SupportedApmTypes {
 #[doc = "Supported buildpack resource payload"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SupportedBuildpackResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Supported buildpack resource properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SupportedBuildpackResourceProperties>,
@@ -7018,6 +7078,8 @@ pub mod supported_runtime_version {
 #[doc = "Supported stack resource payload"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SupportedStackResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Supported stack resource properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SupportedStackResourceProperties>,

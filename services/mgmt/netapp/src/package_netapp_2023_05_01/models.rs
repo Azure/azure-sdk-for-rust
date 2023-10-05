@@ -704,6 +704,8 @@ impl ServiceSpecification {
 #[doc = "Information regarding Subscription Quota Item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionQuotaItem {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "SubscriptionQuotaItem Properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubscriptionQuotaItemProperties>,
@@ -2752,6 +2754,8 @@ impl Serialize for SmbNonBrowsable {
 #[doc = "Snapshot of a Volume"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Snapshot {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Resource location"]
     pub location: String,
     #[doc = "Snapshot properties"]
@@ -2761,6 +2765,7 @@ pub struct Snapshot {
 impl Snapshot {
     pub fn new(location: String) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             location,
             properties: None,
         }
@@ -2975,6 +2980,8 @@ pub type SubnetId = String;
 #[doc = "Subvolume Information properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubvolumeInfo {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "This represents path associated with the subvolume"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SubvolumeProperties>,

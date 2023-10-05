@@ -1582,6 +1582,8 @@ impl NetworkResourceDescriptionList {
 #[doc = "Describes properties of a network resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkResourceProperties {
+    #[serde(flatten)]
+    pub network_resource_properties_base: NetworkResourcePropertiesBase,
     #[doc = "User readable description of the network."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -1593,8 +1595,9 @@ pub struct NetworkResourceProperties {
     pub status_details: Option<String>,
 }
 impl NetworkResourceProperties {
-    pub fn new() -> Self {
+    pub fn new(network_resource_properties_base: NetworkResourcePropertiesBase) -> Self {
         Self {
+            network_resource_properties_base,
             description: None,
             status: None,
             status_details: None,
@@ -1917,6 +1920,8 @@ impl SecretResourceDescriptionList {
 #[doc = "Describes the properties of a secret resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretResourceProperties {
+    #[serde(flatten)]
+    pub secret_resource_properties_base: SecretResourcePropertiesBase,
     #[doc = "User readable description of the secret."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -1931,8 +1936,9 @@ pub struct SecretResourceProperties {
     pub content_type: Option<String>,
 }
 impl SecretResourceProperties {
-    pub fn new() -> Self {
+    pub fn new(secret_resource_properties_base: SecretResourcePropertiesBase) -> Self {
         Self {
+            secret_resource_properties_base,
             description: None,
             status: None,
             status_details: None,

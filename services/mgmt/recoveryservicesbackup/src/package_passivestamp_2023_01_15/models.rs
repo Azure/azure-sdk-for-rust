@@ -1553,13 +1553,18 @@ impl AzureWorkloadSapHanaPointInTimeRecoveryPoint {
 #[doc = "AzureWorkload SAP Hana -specific restore. Specifically for PointInTime/Log restore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureWorkloadSapHanaPointInTimeRestoreRequest {
+    #[serde(flatten)]
+    pub azure_workload_sap_hana_restore_request: AzureWorkloadSapHanaRestoreRequest,
     #[doc = "PointInTime value"]
     #[serde(rename = "pointInTime", default, with = "azure_core::date::rfc3339::option")]
     pub point_in_time: Option<time::OffsetDateTime>,
 }
 impl AzureWorkloadSapHanaPointInTimeRestoreRequest {
-    pub fn new() -> Self {
-        Self { point_in_time: None }
+    pub fn new(azure_workload_sap_hana_restore_request: AzureWorkloadSapHanaRestoreRequest) -> Self {
+        Self {
+            azure_workload_sap_hana_restore_request,
+            point_in_time: None,
+        }
     }
 }
 #[doc = "SAPHana specific recoverypoint, specifically encapsulates full/diff recoverypoints"]

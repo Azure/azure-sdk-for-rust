@@ -521,6 +521,8 @@ impl IscsiLun {
 #[doc = "Response for iSCSI Target requests."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTarget {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Response properties for iSCSI Target operations."]
     pub properties: IscsiTargetProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -536,6 +538,7 @@ pub struct IscsiTarget {
 impl IscsiTarget {
     pub fn new(properties: IscsiTargetProperties) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
             managed_by: None,
@@ -546,6 +549,8 @@ impl IscsiTarget {
 #[doc = "Payload for iSCSI Target create or update requests."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetCreate {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties for iSCSI Target create or update request."]
     pub properties: IscsiTargetCreateProperties,
     #[doc = "Azure resource id. Indicates if this resource is managed by another Azure resource."]
@@ -558,6 +563,7 @@ pub struct IscsiTargetCreate {
 impl IscsiTargetCreate {
     pub fn new(properties: IscsiTargetCreateProperties) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             properties,
             managed_by: None,
             managed_by_extended: None,
@@ -684,6 +690,8 @@ impl IscsiTargetProperties {
 #[doc = "Payload for iSCSI Target update requests."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetUpdate {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties for iSCSI Target update request."]
     pub properties: IscsiTargetUpdateProperties,
     #[doc = "Azure resource id. Indicates if this resource is managed by another Azure resource."]
@@ -696,6 +704,7 @@ pub struct IscsiTargetUpdate {
 impl IscsiTargetUpdate {
     pub fn new(properties: IscsiTargetUpdateProperties) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             properties,
             managed_by: None,
             managed_by_extended: None,

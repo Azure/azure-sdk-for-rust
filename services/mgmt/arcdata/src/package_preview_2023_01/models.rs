@@ -158,12 +158,17 @@ impl ActiveDirectoryConnectorProperties {
 #[doc = "Active directory connector resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActiveDirectoryConnectorResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of an Active Directory connector resource"]
     pub properties: ActiveDirectoryConnectorProperties,
 }
 impl ActiveDirectoryConnectorResource {
     pub fn new(properties: ActiveDirectoryConnectorProperties) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "The specifications of the AD Kubernetes resource."]
@@ -603,12 +608,17 @@ pub mod failover_group_properties {
 #[doc = "A failover group resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FailoverGroupResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a failover group resource."]
     pub properties: FailoverGroupProperties,
 }
 impl FailoverGroupResource {
     pub fn new(properties: FailoverGroupProperties) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "The specifications of the failover group resource."]

@@ -176,6 +176,8 @@ impl AzureDevOpsConnectorProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureDevOpsConnectorStats {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureDevOpsConnectorStatsProperties>,
 }
@@ -224,6 +226,8 @@ impl AzureDevOpsConnectorStatsProperties {
 #[doc = "Azure DevOps Org Proxy Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureDevOpsOrg {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "AzureDevOps Org properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureDevOpsOrgProperties>,
@@ -293,6 +297,8 @@ impl AzureDevOpsOrgProperties {
 #[doc = "Azure DevOps Project Proxy Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureDevOpsProject {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "AzureDevOps Project properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureDevOpsProjectProperties>,
@@ -369,6 +375,8 @@ impl AzureDevOpsProjectProperties {
 #[doc = "Azure DevOps Repo Proxy Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureDevOpsRepo {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "AzureDevOps Repo properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureDevOpsRepoProperties>,
@@ -553,6 +561,8 @@ impl GitHubConnectorProperties {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GitHubConnectorStats {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GitHubConnectorStatsProperties>,
 }
@@ -598,6 +608,8 @@ impl GitHubConnectorStatsProperties {
 #[doc = "GitHub repo owner Proxy Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GitHubOwner {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "GitHub Repo Owner properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GitHubOwnerProperties>,
@@ -648,6 +660,8 @@ impl GitHubOwnerProperties {
 #[doc = "GitHub repo Proxy Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GitHubRepo {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "GitHub Repo properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GitHubRepoProperties>,

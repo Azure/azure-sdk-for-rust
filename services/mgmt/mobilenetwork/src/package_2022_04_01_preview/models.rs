@@ -957,12 +957,17 @@ impl PacketCoreControlPlanePropertiesFormat {
 #[doc = "Packet core control plane version resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PacketCoreControlPlaneVersion {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Packet core control plane version properties."]
     pub properties: PacketCoreControlPlaneVersionPropertiesFormat,
 }
 impl PacketCoreControlPlaneVersion {
     pub fn new(properties: PacketCoreControlPlaneVersionPropertiesFormat) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "Response for packet core control plane version API service call."]
@@ -1757,6 +1762,8 @@ impl ServiceResourceId {
 #[doc = "SIM resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sim {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "SIM properties."]
     pub properties: SimPropertiesFormat,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -1766,6 +1773,7 @@ pub struct Sim {
 impl Sim {
     pub fn new(properties: SimPropertiesFormat) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }

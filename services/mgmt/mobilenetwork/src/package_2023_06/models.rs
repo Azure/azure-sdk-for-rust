@@ -603,12 +603,17 @@ impl Serialize for DesiredInstallationState {
 #[doc = "Diagnostics package resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiagnosticsPackage {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Diagnostics package properties."]
     pub properties: DiagnosticsPackagePropertiesFormat,
 }
 impl DiagnosticsPackage {
     pub fn new(properties: DiagnosticsPackagePropertiesFormat) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "Response for diagnostics package API service call."]
@@ -1387,12 +1392,17 @@ impl OperationList {
 #[doc = "Packet capture session resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PacketCapture {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Packet capture session properties."]
     pub properties: PacketCapturePropertiesFormat,
 }
 impl PacketCapture {
     pub fn new(properties: PacketCapturePropertiesFormat) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "Response for packet capture API service call."]
@@ -1642,12 +1652,17 @@ impl PacketCoreControlPlaneResourceId {
 #[doc = "Packet core control plane version resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PacketCoreControlPlaneVersion {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Packet core control plane version properties."]
     pub properties: PacketCoreControlPlaneVersionPropertiesFormat,
 }
 impl PacketCoreControlPlaneVersion {
     pub fn new(properties: PacketCoreControlPlaneVersionPropertiesFormat) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "Response for packet core control plane version API service call."]
@@ -2464,12 +2479,17 @@ impl ServiceResourceId {
 #[doc = "SIM resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sim {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "SIM properties."]
     pub properties: SimPropertiesFormat,
 }
 impl Sim {
     pub fn new(properties: SimPropertiesFormat) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "The SIMs to delete."]

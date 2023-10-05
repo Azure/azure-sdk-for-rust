@@ -4206,6 +4206,8 @@ impl FabricQueryParameter {
 #[doc = "This class represents the fabric replication group task details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FabricReplicationGroupTaskDetails {
+    #[serde(flatten)]
+    pub job_task_details: JobTaskDetails,
     #[doc = "The skipped reason."]
     #[serde(rename = "skippedReason", default, skip_serializing_if = "Option::is_none")]
     pub skipped_reason: Option<String>,
@@ -4214,8 +4216,9 @@ pub struct FabricReplicationGroupTaskDetails {
     pub skipped_reason_string: Option<String>,
 }
 impl FabricReplicationGroupTaskDetails {
-    pub fn new() -> Self {
+    pub fn new(job_task_details: JobTaskDetails) -> Self {
         Self {
+            job_task_details,
             skipped_reason: None,
             skipped_reason_string: None,
         }
@@ -18991,6 +18994,8 @@ pub mod version_details {
 #[doc = "This class represents the virtual machine task details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineTaskDetails {
+    #[serde(flatten)]
+    pub job_task_details: JobTaskDetails,
     #[doc = "The skipped reason."]
     #[serde(rename = "skippedReason", default, skip_serializing_if = "Option::is_none")]
     pub skipped_reason: Option<String>,
@@ -18999,8 +19004,9 @@ pub struct VirtualMachineTaskDetails {
     pub skipped_reason_string: Option<String>,
 }
 impl VirtualMachineTaskDetails {
-    pub fn new() -> Self {
+    pub fn new(job_task_details: JobTaskDetails) -> Self {
         Self {
+            job_task_details,
             skipped_reason: None,
             skipped_reason_string: None,
         }

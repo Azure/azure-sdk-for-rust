@@ -160,6 +160,8 @@ pub mod identity {
 #[doc = "Lab services virtual machine image"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Image {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -169,6 +171,7 @@ pub struct Image {
 impl Image {
     pub fn new(properties: ImageProperties) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             system_data: None,
             properties,
         }
@@ -1357,6 +1360,8 @@ impl SaveImageBody {
 #[doc = "Schedule for automatically turning virtual machines in a lab on and off at specified times."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Schedule {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -1366,6 +1371,7 @@ pub struct Schedule {
 impl Schedule {
     pub fn new(properties: ScheduleProperties) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             system_data: None,
             properties,
         }
@@ -1624,6 +1630,8 @@ impl UsageName {
 #[doc = "User of a lab that can register for and use virtual machines within the lab."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct User {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -1633,6 +1641,7 @@ pub struct User {
 impl User {
     pub fn new(properties: UserProperties) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             system_data: None,
             properties,
         }
@@ -1705,6 +1714,8 @@ impl UserUpdateProperties {
 #[doc = "A lab virtual machine resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachine {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -1714,6 +1725,7 @@ pub struct VirtualMachine {
 impl VirtualMachine {
     pub fn new(properties: VirtualMachineProperties) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             system_data: None,
             properties,
         }

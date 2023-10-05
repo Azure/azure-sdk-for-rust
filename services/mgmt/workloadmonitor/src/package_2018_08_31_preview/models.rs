@@ -6,6 +6,8 @@ use std::str::FromStr;
 #[doc = "Model for component."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Component {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "For optimistic concurrency control."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -276,6 +278,8 @@ pub mod health_state_change {
 #[doc = "Model for Monitor"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Monitor {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "For optimistic concurrency control."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -331,6 +335,8 @@ pub mod monitor_criteria {
 #[doc = "Model for monitor instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MonitorInstance {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "For optimistic concurrency control."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -752,6 +758,8 @@ impl MonitorsCollection {
 #[doc = "Model for NotificationSetting."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NotificationSetting {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "For optimistic concurrency control."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,

@@ -139,6 +139,8 @@ impl SerialConsoleStatus {
 #[doc = "Represents the serial port of the parent resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SerialPort {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of the serial port."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SerialPortProperties>,

@@ -1025,6 +1025,8 @@ pub mod sender_username_properties {
 #[doc = "A class representing a SenderUsername resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SenderUsernameResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "A class that describes the properties of a SenderUsername resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SenderUsernameProperties>,

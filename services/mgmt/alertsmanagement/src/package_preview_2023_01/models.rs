@@ -28,12 +28,17 @@ impl AlertRuleRecommendationProperties {
 #[doc = "A single alert rule recommendation resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertRuleRecommendationResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Describes the format of Alert Rule Recommendations response."]
     pub properties: AlertRuleRecommendationProperties,
 }
 impl AlertRuleRecommendationResource {
     pub fn new(properties: AlertRuleRecommendationProperties) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "List of alert rule recommendations."]

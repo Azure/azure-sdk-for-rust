@@ -61,6 +61,8 @@ pub type DicomAudience = String;
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DicomService {
     #[serde(flatten)]
+    pub tagged_resource: TaggedResource,
+    #[serde(flatten)]
     pub service_managed_identity: ServiceManagedIdentity,
     #[doc = "Dicom Service properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -259,6 +261,8 @@ impl Serialize for FhirResourceVersionPolicy {
 #[doc = "The description of Fhir Service"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FhirService {
+    #[serde(flatten)]
+    pub tagged_resource: TaggedResource,
     #[serde(flatten)]
     pub service_managed_identity: ServiceManagedIdentity,
     #[doc = "The kind of the service."]
@@ -543,6 +547,8 @@ impl ImplementationGuidesConfiguration {
 #[doc = "IoT Connector definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IotConnector {
+    #[serde(flatten)]
+    pub tagged_resource: TaggedResource,
     #[serde(flatten)]
     pub service_managed_identity: ServiceManagedIdentity,
     #[doc = "IoT Connector properties."]
@@ -2203,6 +2209,8 @@ impl UserAssignedIdentity {
 #[doc = "Workspace resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Workspace {
+    #[serde(flatten)]
+    pub tagged_resource: TaggedResource,
     #[doc = "Workspaces resource specific properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<workspace::Properties>,

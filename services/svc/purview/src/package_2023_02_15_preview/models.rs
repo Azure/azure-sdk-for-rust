@@ -155,12 +155,17 @@ impl BlobStorageArtifactProperties {
 #[doc = "An InPlace received share kind."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InPlaceReceivedShare {
+    #[serde(flatten)]
+    pub received_share: ReceivedShare,
     #[doc = "Properties of in place received share."]
     pub properties: InPlaceReceivedShareProperties,
 }
 impl InPlaceReceivedShare {
-    pub fn new(properties: InPlaceReceivedShareProperties) -> Self {
-        Self { properties }
+    pub fn new(received_share: ReceivedShare, properties: InPlaceReceivedShareProperties) -> Self {
+        Self {
+            received_share,
+            properties,
+        }
     }
 }
 #[doc = "Properties of in place received share."]
@@ -223,12 +228,14 @@ impl InPlaceReceivedShareProperties {
 #[doc = "An InPlace share kind."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InPlaceSentShare {
+    #[serde(flatten)]
+    pub sent_share: SentShare,
     #[doc = "Properties for InPlace sent share."]
     pub properties: InPlaceSentShareProperties,
 }
 impl InPlaceSentShare {
-    pub fn new(properties: InPlaceSentShareProperties) -> Self {
-        Self { properties }
+    pub fn new(sent_share: SentShare, properties: InPlaceSentShareProperties) -> Self {
+        Self { sent_share, properties }
     }
 }
 #[doc = "Properties for InPlace sent share."]
@@ -567,12 +574,17 @@ impl SentShareList {
 #[doc = "An service invitation kind."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceInvitation {
+    #[serde(flatten)]
+    pub sent_share_invitation: SentShareInvitation,
     #[doc = "Properties of the service invitation type."]
     pub properties: ServiceInvitationProperties,
 }
 impl ServiceInvitation {
-    pub fn new(properties: ServiceInvitationProperties) -> Self {
-        Self { properties }
+    pub fn new(sent_share_invitation: SentShareInvitation, properties: ServiceInvitationProperties) -> Self {
+        Self {
+            sent_share_invitation,
+            properties,
+        }
     }
 }
 #[doc = "Properties of the service invitation type."]
@@ -923,12 +935,17 @@ impl Serialize for TenantEmailRegistrationStatus {
 #[doc = "A user invitation kind."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserInvitation {
+    #[serde(flatten)]
+    pub sent_share_invitation: SentShareInvitation,
     #[doc = "Properties of the user invitation type."]
     pub properties: UserInvitationProperties,
 }
 impl UserInvitation {
-    pub fn new(properties: UserInvitationProperties) -> Self {
-        Self { properties }
+    pub fn new(sent_share_invitation: SentShareInvitation, properties: UserInvitationProperties) -> Self {
+        Self {
+            sent_share_invitation,
+            properties,
+        }
     }
 }
 #[doc = "Properties of the user invitation type."]

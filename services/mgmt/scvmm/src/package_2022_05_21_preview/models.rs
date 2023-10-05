@@ -373,12 +373,17 @@ impl ExtendedLocation {
 #[doc = "Defines the GuestAgent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GuestAgent {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Defines the resource properties."]
     pub properties: GuestAgentProperties,
 }
 impl GuestAgent {
     pub fn new(properties: GuestAgentProperties) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "List of GuestAgent."]
@@ -754,12 +759,17 @@ impl HttpProxyConfiguration {
 #[doc = "Defines the HybridIdentityMetadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HybridIdentityMetadata {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Defines the resource properties."]
     pub properties: HybridIdentityMetadataProperties,
 }
 impl HybridIdentityMetadata {
     pub fn new(properties: HybridIdentityMetadataProperties) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "List of HybridIdentityMetadata."]
@@ -868,6 +878,8 @@ pub mod identity {
 #[doc = "Defines the inventory item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InventoryItem {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Defines the resource properties."]
     pub properties: InventoryItemPropertiesUnion,
     #[doc = "Metadata used by portal/tooling/etc to render different UX experiences for resources of the same type; e.g. ApiApps are a kind of Microsoft.Web/sites type.  If supported, the resource provider must validate and persist this value."]
@@ -876,7 +888,11 @@ pub struct InventoryItem {
 }
 impl InventoryItem {
     pub fn new(properties: InventoryItemPropertiesUnion) -> Self {
-        Self { properties, kind: None }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+            kind: None,
+        }
     }
 }
 #[doc = "Defines the resource properties."]

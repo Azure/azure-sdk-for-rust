@@ -388,6 +388,8 @@ impl CoreSummary {
 #[doc = "The top level data export resource container."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataExport {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Data Export properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataExportProperties>,
@@ -456,6 +458,8 @@ impl DataExportProperties {
 #[doc = "Datasources under OMS Workspace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataSource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "JSON object"]
     pub properties: Object,
     #[doc = "The ETag of the data source."]
@@ -470,6 +474,7 @@ pub struct DataSource {
 impl DataSource {
     pub fn new(properties: Object, kind: DataSourceKind) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             properties,
             etag: None,
             kind,
@@ -825,6 +830,8 @@ impl IntelligencePack {
 #[doc = "The top level Linked service resource container."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedService {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Linked service properties."]
     pub properties: LinkedServiceProperties,
     #[doc = "Resource tags."]
@@ -833,7 +840,11 @@ pub struct LinkedService {
 }
 impl LinkedService {
     pub fn new(properties: LinkedServiceProperties) -> Self {
-        Self { properties, tags: None }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+            tags: None,
+        }
     }
 }
 #[doc = "The list linked service operation response."]
@@ -977,12 +988,17 @@ pub mod linked_storage_accounts_properties {
 #[doc = "Linked storage accounts top level resource container."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedStorageAccountsResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Linked storage accounts properties."]
     pub properties: LinkedStorageAccountsProperties,
 }
 impl LinkedStorageAccountsResource {
     pub fn new(properties: LinkedStorageAccountsProperties) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "A management group that is connected to a workspace"]
@@ -1233,6 +1249,8 @@ impl Resource {
 #[doc = "Value object for saved search results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SavedSearch {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The ETag of the saved search. To override an existing saved search, use \"*\" or specify the current Etag"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -1241,7 +1259,11 @@ pub struct SavedSearch {
 }
 impl SavedSearch {
     pub fn new(properties: SavedSearchProperties) -> Self {
-        Self { etag: None, properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            etag: None,
+            properties,
+        }
     }
 }
 #[doc = "Value object for saved search results."]
@@ -1531,6 +1553,8 @@ impl StorageAccount {
 #[doc = "The top level storage insight resource container."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageInsight {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Storage insight properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageInsightProperties>,
@@ -1664,6 +1688,8 @@ pub mod storage_insight_status {
 #[doc = "Workspace data table definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Table {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Table properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TableProperties>,

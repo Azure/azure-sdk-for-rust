@@ -6,13 +6,18 @@ use std::str::FromStr;
 #[doc = "A vulnerability assessments setting on Azure servers in the defined scope."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureServersSetting {
+    #[serde(flatten)]
+    pub server_vulnerability_assessments_setting: ServerVulnerabilityAssessmentsSetting,
     #[doc = "Describes the vulnerability assessments setting properties on Azure servers in the defined scope."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerVulnerabilityAssessmentsAzureSettingProperties>,
 }
 impl AzureServersSetting {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(server_vulnerability_assessments_setting: ServerVulnerabilityAssessmentsSetting) -> Self {
+        Self {
+            server_vulnerability_assessments_setting,
+            properties: None,
+        }
     }
 }
 #[doc = "The resource management error additional info."]

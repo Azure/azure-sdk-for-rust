@@ -246,6 +246,8 @@ impl DynatraceSingleSignOnProperties {
 #[doc = "Single sign-on configurations for a given monitor resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DynatraceSingleSignOnResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The details of a Dynatrace single sign-on."]
     pub properties: DynatraceSingleSignOnProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -255,6 +257,7 @@ pub struct DynatraceSingleSignOnResource {
 impl DynatraceSingleSignOnResource {
     pub fn new(properties: DynatraceSingleSignOnProperties) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -1526,6 +1529,8 @@ impl Serialize for TagAction {
 #[doc = "Tag rules for a monitor resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TagRule {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties for the Tag rules resource of a Monitor account."]
     pub properties: MonitoringTagRulesProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -1535,6 +1540,7 @@ pub struct TagRule {
 impl TagRule {
     pub fn new(properties: MonitoringTagRulesProperties) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }

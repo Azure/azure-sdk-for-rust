@@ -963,6 +963,8 @@ impl Resources {
 #[doc = "Concrete proxy resource types can be created by aliasing this type using a specific property type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Snapshot {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Volume Snapshot Properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SnapshotProperties>,
@@ -1059,6 +1061,8 @@ impl UserAssignedIdentity {
 #[doc = "Concrete proxy resource types can be created by aliasing this type using a specific property type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Volume {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Volume Properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VolumeProperties>,

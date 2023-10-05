@@ -6,6 +6,8 @@ use std::str::FromStr;
 #[doc = "Friendly domain name mapping to the endpoint hostname that the customer provides for branding purposes, e.g. www.contoso.com."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AfdDomain {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The JSON object that contains the properties of the domain to create."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AfdDomainProperties>,
@@ -402,6 +404,8 @@ impl AfdEndpointUpdateParameters {
 #[doc = "CDN origin is the source of the content being delivered via CDN. When the edge nodes represented by an endpoint do not have the requested content cached, they attempt to fetch it from one or more of the configured origins."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AfdOrigin {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The JSON object that contains the properties of the origin."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AfdOriginProperties>,
@@ -414,6 +418,8 @@ impl AfdOrigin {
 #[doc = "AFDOrigin group comprising of origins is used for load balancing to origins when the content cannot be served from CDN."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AfdOriginGroup {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The JSON object that contains the properties of the origin group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AfdOriginGroupProperties>,
@@ -1955,6 +1961,8 @@ pub mod cookies_match_condition_parameters {
 #[doc = "Friendly domain name mapping to the endpoint hostname that the customer provides for branding purposes, e.g. www.contoso.com."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomDomain {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The JSON object that contains the properties of the custom domain to create."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CustomDomainProperties>,
@@ -3010,6 +3018,8 @@ impl DomainValidationProperties {
 #[doc = "Edgenode is a global Point of Presence (POP) location used to deliver CDN content to end users."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgeNode {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The JSON object that contains the properties required to create an edgenode."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EdgeNodeProperties>,
@@ -4779,6 +4789,8 @@ impl Serialize for OptimizationType {
 #[doc = "CDN origin is the source of the content being delivered via CDN. When the edge nodes represented by an endpoint do not have the requested content cached, they attempt to fetch it from one or more of the configured origins."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Origin {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The JSON object that contains the properties of the origin."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OriginProperties>,
@@ -4791,6 +4803,8 @@ impl Origin {
 #[doc = "Origin group comprising of origins is used for load balancing to origins when the content cannot be served from CDN."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OriginGroup {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The JSON object that contains the properties of the origin group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OriginGroupProperties>,
@@ -6520,6 +6534,8 @@ pub mod response_based_origin_error_detection_parameters {
 #[doc = "Friendly Routes name mapping to the any Routes or secret related information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Route {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The JSON object that contains the properties of the Routes to create."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RouteProperties>,
@@ -6846,6 +6862,8 @@ pub mod route_update_properties_parameters {
 #[doc = "Friendly Rules name mapping to the any Rules or secret related information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Rule {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The JSON object that contains the properties of the Rules to create."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RuleProperties>,
@@ -6899,6 +6917,8 @@ impl RuleProperties {
 #[doc = "Friendly RuleSet name mapping to the any RuleSet or secret related information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RuleSet {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The JSON object that contains the properties of the Rule Set to create."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<RuleSetProperties>,
@@ -7039,6 +7059,8 @@ pub mod rule_update_properties_parameters {
 #[doc = "Friendly Secret name mapping to the any Secret or secret related information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Secret {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The JSON object that contains the properties of the Secret to create."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecretProperties>,
@@ -7145,6 +7167,8 @@ impl Serialize for SecretType {
 #[doc = "SecurityPolicy association for AzureFrontDoor profile"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityPolicy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The json object that contains properties required to create a security policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecurityPolicyProperties>,

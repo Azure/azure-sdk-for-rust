@@ -267,6 +267,8 @@ impl LoadBalancerProfile {
 #[doc = "MachinePool represents a MachinePool"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MachinePool {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "MachinePoolProperties represents the properties of a MachinePool"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MachinePoolProperties>,
@@ -524,6 +526,8 @@ impl OpenShiftClusterUpdate {
 #[doc = "OpenShiftVersion represents an OpenShift version that can be installed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenShiftVersion {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "OpenShiftVersionProperties represents the properties of an OpenShiftVersion."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OpenShiftVersionProperties>,
@@ -722,6 +726,8 @@ impl Resource {
 #[doc = "Secret represents a secret."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Secret {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "SecretProperties represents the properties of a Secret"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SecretProperties>,
@@ -804,6 +810,8 @@ impl ServicePrincipalProfile {
 #[doc = "SyncIdentityProvider represents a SyncIdentityProvider"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncIdentityProvider {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "SyncSetProperties represents the properties of a SyncSet"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SyncIdentityProviderProperties>,
@@ -870,6 +878,8 @@ impl SyncIdentityProviderUpdate {
 #[doc = "SyncSet represents a SyncSet for an Azure Red Hat OpenShift Cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SyncSet {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "SyncSetProperties represents the properties of a SyncSet"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SyncSetProperties>,

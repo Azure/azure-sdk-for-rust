@@ -6,6 +6,8 @@ use std::str::FromStr;
 #[doc = "Policy that determines how a video can be accessed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicyEntity {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Application level properties for the access policy resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccessPolicyProperties>,
@@ -307,6 +309,8 @@ pub mod ecc_token_key {
 #[doc = "The representation of an edge module."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgeModuleEntity {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Application level properties for the edge module resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EdgeModuleProperties>,
@@ -1249,6 +1253,8 @@ impl VideoAnalyzerUpdate {
 #[doc = "The representation of a single video in a Video Analyzer account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VideoEntity {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Application level properties for the video resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VideoProperties>,

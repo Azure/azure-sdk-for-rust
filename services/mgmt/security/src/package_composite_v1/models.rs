@@ -58,6 +58,8 @@ pub mod aad_connectivity_state {
 #[doc = "Represents an AAD identity protection solution which sends logs to an OMS workspace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AadExternalSecuritySolution {
+    #[serde(flatten)]
+    pub external_security_solution: ExternalSecuritySolution,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AadSolutionProperties>,
 }
@@ -763,6 +765,8 @@ impl AscLocationProperties {
 #[doc = "Represents an ATA security solution which sends logs to an OMS workspace"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AtaExternalSecuritySolution {
+    #[serde(flatten)]
+    pub external_security_solution: ExternalSecuritySolution,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AtaSolutionProperties>,
 }
@@ -955,6 +959,8 @@ pub mod auto_provisioning_setting_properties {
 #[doc = "The security automation resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Automation {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
     #[doc = "A set of properties that defines the behavior of the automation configuration. To learn more about the supported security events data models schemas - please visit https://aka.ms/ASCAutomationSchemas."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AutomationProperties>,
@@ -1566,6 +1572,8 @@ impl Cvss {
 #[doc = "Represents a security solution which sends CEF logs to an OMS workspace"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CefExternalSecuritySolution {
+    #[serde(flatten)]
+    pub external_security_solution: ExternalSecuritySolution,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CefSolutionProperties>,
 }
@@ -2022,13 +2030,15 @@ impl CustomEntityStoreAssignmentsListResult {
 #[doc = "Represents a data export setting"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataExportSetting {
+    #[serde(flatten)]
+    pub setting: Setting,
     #[doc = "The data export setting properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DataExportSettingProperties>,
 }
 impl DataExportSetting {
-    pub fn new() -> Self {
-        Self { properties: None }
+    pub fn new(setting: Setting) -> Self {
+        Self { setting, properties: None }
     }
 }
 #[doc = "The data export setting properties"]
@@ -2329,6 +2339,21 @@ pub struct ErrorAdditionalInfo {
     pub info: Option<serde_json::Value>,
 }
 impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Represents a security solution external to Microsoft Defender for Cloud which sends information to an OMS workspace and whose data is displayed by Microsoft Defender for Cloud."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ExternalSecuritySolution {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[serde(flatten)]
+    pub external_security_solution_kind: ExternalSecuritySolutionKind,
+    #[serde(flatten)]
+    pub location: Location,
+}
+impl ExternalSecuritySolution {
     pub fn new() -> Self {
         Self::default()
     }
@@ -5038,6 +5063,8 @@ impl SecureScoresList {
 #[doc = "The security connector resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecurityConnector {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,

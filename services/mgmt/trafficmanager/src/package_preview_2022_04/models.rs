@@ -135,6 +135,8 @@ impl DnsConfig {
 #[doc = "Class representing a Traffic Manager endpoint."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Endpoint {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Class representing a Traffic Manager endpoint properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EndpointProperties>,
@@ -361,6 +363,8 @@ impl HeatMapEndpoint {
 #[doc = "Class representing a Traffic Manager HeatMap."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HeatMapModel {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Class representing a Traffic Manager HeatMap properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HeatMapProperties>,
@@ -853,6 +857,8 @@ impl TrafficFlow {
 #[doc = "Class representing the Geographic hierarchy used with the Geographic traffic routing method."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TrafficManagerGeographicHierarchy {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Class representing the properties of the Geographic hierarchy used with the Geographic traffic routing method."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GeographicHierarchyProperties>,
@@ -889,6 +895,8 @@ impl TrafficManagerNameAvailability {
 #[doc = "Class representing Traffic Manager User Metrics."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct UserMetricsModel {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Class representing a Traffic Manager Real User Metrics key response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<UserMetricsProperties>,

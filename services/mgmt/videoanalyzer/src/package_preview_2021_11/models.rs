@@ -6,6 +6,8 @@ use std::str::FromStr;
 #[doc = "Access policies help define the authentication rules, and control access to specific video resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessPolicyEntity {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Application level properties for the access policy resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AccessPolicyProperties>,
@@ -348,6 +350,8 @@ pub mod ecc_token_key {
 #[doc = "The representation of an edge module."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EdgeModuleEntity {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Application level properties for the edge module resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EdgeModuleProperties>,
@@ -806,6 +810,8 @@ impl ListProvisioningTokenInput {
 #[doc = "Live pipeline represents a unique instance of a live topology, used for real-time ingestion, archiving and publishing of content for a unique RTSP camera."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LivePipeline {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Live pipeline properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LivePipelineProperties>,
@@ -1011,6 +1017,8 @@ pub mod live_pipeline_properties_update {
 #[doc = "Live pipeline represents a unique instance of a live topology, used for real-time ingestion, archiving and publishing of content for a unique RTSP camera."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LivePipelineUpdate {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Live pipeline properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LivePipelinePropertiesUpdate>,
@@ -1494,6 +1502,8 @@ impl PemCertificateList {
 #[doc = "Pipeline job represents a unique instance of a batch topology, used for offline processing of selected portions of archived content."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineJob {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Pipeline job properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PipelineJobProperties>,
@@ -1721,6 +1731,8 @@ pub mod pipeline_job_properties_update {
 #[doc = "Pipeline job represents a unique instance of a batch topology, used for offline processing of selected portions of archived content."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineJobUpdate {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Pipeline job properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PipelineJobPropertiesUpdate>,
@@ -1733,6 +1745,8 @@ impl PipelineJobUpdate {
 #[doc = "Pipeline topology describes the processing steps to be applied when processing content for a particular outcome. The topology should be defined according to the scenario to be achieved and can be reused across many pipeline instances which share the same processing characteristics. For instance, a pipeline topology which captures content from a RTSP camera and archives the content can be reused across many different cameras, as long as the same processing is to be applied across all the cameras. Individual instance properties can be defined through the use of user-defined parameters, which allow for a topology to be parameterized. This allows  individual pipelines refer to different values, such as individual cameras' RTSP endpoints and credentials. Overall a topology is composed of the following:\r\n\r\n  - Parameters: list of user defined parameters that can be references across the topology nodes.\r\n  - Sources: list of one or more data sources nodes such as an RTSP source which allows for content to be ingested from cameras.\r\n  - Processors: list of nodes which perform data analysis or transformations.\r\n  - Sinks: list of one or more data sinks which allow for data to be stored or exported to other destinations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PipelineTopology {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Describes the properties of a pipeline topology."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PipelineTopologyProperties>,
@@ -1744,6 +1758,7 @@ pub struct PipelineTopology {
 impl PipelineTopology {
     pub fn new(kind: pipeline_topology::Kind, sku: Sku) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             properties: None,
             kind,
             sku,
@@ -1894,6 +1909,8 @@ impl PipelineTopologyPropertiesUpdate {
 #[doc = "Pipeline topology describes the processing steps to be applied when processing content for a particular outcome. The topology should be defined according to the scenario to be achieved and can be reused across many pipeline instances which share the same processing characteristics. For instance, a pipeline topology which captures content from a RTSP camera and archives the content can be reused across many different cameras, as long as the same processing is to be applied across all the cameras. Individual instance properties can be defined through the use of user-defined parameters, which allow for a topology to be parameterized. This allows  individual pipelines refer to different values, such as individual cameras' RTSP endpoints and credentials. Overall a topology is composed of the following:\r\n\r\n  - Parameters: list of user defined parameters that can be references across the topology nodes.\r\n  - Sources: list of one or more data sources nodes such as an RTSP source which allows for content to be ingested from cameras.\r\n  - Processors: list of nodes which perform data analysis or transformations.\r\n  - Sinks: list of one or more data sinks which allow for data to be stored or exported to other destinations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PipelineTopologyUpdate {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Describes the properties of a pipeline topology."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PipelineTopologyPropertiesUpdate>,
@@ -2310,6 +2327,8 @@ pub mod rsa_token_key {
 #[doc = "RTSP source allows for media from an RTSP camera or generic RTSP server to be ingested into a pipeline."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RtspSource {
+    #[serde(flatten)]
+    pub source_node_base: SourceNodeBase,
     #[doc = "Network transport utilized by the RTSP and RTP exchange: TCP or HTTP. When using TCP, the RTP packets are interleaved on the TCP RTSP connection. When using HTTP, the RTSP messages are exchanged through long lived HTTP connections, and the RTP packages are interleaved in the HTTP connections alongside the RTSP messages."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub transport: Option<rtsp_source::Transport>,
@@ -2317,8 +2336,12 @@ pub struct RtspSource {
     pub endpoint: EndpointBaseUnion,
 }
 impl RtspSource {
-    pub fn new(endpoint: EndpointBaseUnion) -> Self {
-        Self { transport: None, endpoint }
+    pub fn new(source_node_base: SourceNodeBase, endpoint: EndpointBaseUnion) -> Self {
+        Self {
+            source_node_base,
+            transport: None,
+            endpoint,
+        }
     }
 }
 pub mod rtsp_source {
@@ -3209,6 +3232,8 @@ impl VideoEncoderH264 {
 #[doc = "Represents a video resource within Azure Video Analyzer. Videos can be ingested from RTSP cameras through live pipelines or can be created by exporting sequences from existing captured video through a pipeline job. Videos ingested through live pipelines can be streamed through Azure Video Analyzer Player Widget or compatible players. Exported videos can be downloaded as MP4 files."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VideoEntity {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Application level properties for the video resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<VideoProperties>,
@@ -3479,6 +3504,8 @@ impl VideoSink {
 #[doc = "Video source allows for content from a Video Analyzer video resource to be ingested into a pipeline. Currently supported only with batch pipelines."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VideoSource {
+    #[serde(flatten)]
+    pub source_node_base: SourceNodeBase,
     #[doc = "Name of the Video Analyzer video resource to be used as the source."]
     #[serde(rename = "videoName")]
     pub video_name: String,
@@ -3487,8 +3514,9 @@ pub struct VideoSource {
     pub time_sequences: TimeSequenceBaseUnion,
 }
 impl VideoSource {
-    pub fn new(video_name: String, time_sequences: TimeSequenceBaseUnion) -> Self {
+    pub fn new(source_node_base: SourceNodeBase, video_name: String, time_sequences: TimeSequenceBaseUnion) -> Self {
         Self {
+            source_node_base,
             video_name,
             time_sequences,
         }

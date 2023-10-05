@@ -68,6 +68,8 @@ pub type ChartVersion = String;
 #[doc = "Extension scope settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterScopeSettings {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Extension scope settings"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<cluster_scope_settings::Properties>,
@@ -290,6 +292,8 @@ impl ErrorResponse {
 #[doc = "The Extension object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Extension {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of an Extension resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<extension::Properties>,
@@ -641,6 +645,8 @@ impl Default for FluxComplianceStateDefinition {
 #[doc = "The Flux Configuration object returned in Get & Put response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FluxConfiguration {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties to create a Flux Configuration resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<flux_configuration::Properties>,
@@ -1485,6 +1491,8 @@ impl ScopeNamespace {
 #[doc = "The SourceControl Configuration object returned in Get & Put response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SourceControlConfiguration {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties to create a Source Control Configuration resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<source_control_configuration::Properties>,

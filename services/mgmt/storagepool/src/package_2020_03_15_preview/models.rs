@@ -371,23 +371,33 @@ impl IscsiLun {
 #[doc = "Response for iSCSI target requests."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTarget {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Response properties for iSCSI target operations."]
     pub properties: IscsiTargetProperties,
 }
 impl IscsiTarget {
     pub fn new(properties: IscsiTargetProperties) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "Payload for iSCSI target create or update requests."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IscsiTargetCreate {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties for iSCSI target create or update request."]
     pub properties: IscsiTargetCreateProperties,
 }
 impl IscsiTargetCreate {
     pub fn new(properties: IscsiTargetCreateProperties) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "Properties for iSCSI target create or update request."]

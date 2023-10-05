@@ -247,6 +247,8 @@ impl ClusterPropertiesForUpdate {
 #[doc = "Represents a server in a cluster."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ClusterServer {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a server in cluster."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ClusterServerProperties>,
@@ -313,6 +315,8 @@ impl ClusterServerProperties {
 #[doc = "Represents configuration details for coordinator and node."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Configuration {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ConfigurationProperties>,
@@ -469,12 +473,17 @@ impl ErrorResponse {
 #[doc = "Represents a cluster firewall rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FirewallRule {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a cluster firewall rule."]
     pub properties: FirewallRuleProperties,
 }
 impl FirewallRule {
     pub fn new(properties: FirewallRuleProperties) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "A list of firewall rules."]
@@ -1052,12 +1061,17 @@ impl Resource {
 #[doc = "Represents a cluster role."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Role {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a cluster role."]
     pub properties: RoleProperties,
 }
 impl Role {
     pub fn new(properties: RoleProperties) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "A list of roles."]
@@ -1102,6 +1116,8 @@ impl RoleProperties {
 #[doc = "Represents a configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerConfiguration {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties of a configuration."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServerConfigurationProperties>,
@@ -1330,6 +1346,8 @@ impl ServerRoleGroupConfiguration {
 #[doc = "A private endpoint connection."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SimplePrivateEndpointConnection {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The properties in private endpoint connection"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionSimpleProperties>,

@@ -581,6 +581,8 @@ impl ExtensionTargetProperties {
 #[doc = "Describes a Extension Metadata"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ExtensionValue {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Describes Extension Metadata properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExtensionValueProperties>,
@@ -700,6 +702,8 @@ impl HybridComputePrivateLinkScopeProperties {
 #[doc = "Defines the HybridIdentityMetadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HybridIdentityMetadata {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Defines the resource properties."]
     pub properties: HybridIdentityMetadataProperties,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -709,6 +713,7 @@ pub struct HybridIdentityMetadata {
 impl HybridIdentityMetadata {
     pub fn new(properties: HybridIdentityMetadataProperties) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -2633,6 +2638,8 @@ pub mod patch_settings {
 #[doc = "A private endpoint connection"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a private endpoint connection."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
@@ -2732,6 +2739,8 @@ impl PrivateEndpointProperty {
 #[doc = "A private link resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of a private link resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,

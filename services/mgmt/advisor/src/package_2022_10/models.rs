@@ -1038,6 +1038,8 @@ impl SuppressionProperties {
 #[doc = "The details of Advisor score for a single category."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdvisorScoreEntity {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "The Advisor score data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<advisor_score_entity::Properties>,

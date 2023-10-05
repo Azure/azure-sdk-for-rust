@@ -93,6 +93,8 @@ impl CheckinManifestParams {
 #[doc = "Rollout details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomRollout {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of the rollout."]
     pub properties: serde_json::Value,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -102,6 +104,7 @@ pub struct CustomRollout {
 impl CustomRollout {
     pub fn new(properties: serde_json::Value) -> Self {
         Self {
+            proxy_resource: ProxyResource::default(),
             properties,
             system_data: None,
         }
@@ -189,6 +192,8 @@ impl CustomRolloutStatus {
 #[doc = "Default rollout definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DefaultRollout {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties of the rollout."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
@@ -1336,6 +1341,8 @@ impl OperationsDisplayDefinition {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationsPutContent {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
 }
@@ -1365,6 +1372,8 @@ impl ProviderHubMetadata {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProviderRegistration {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -2488,6 +2497,8 @@ impl ResourceTypeExtensionOptions {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceTypeRegistration {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
@@ -2978,6 +2989,8 @@ pub mod sku_location_info {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SkuResource {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]

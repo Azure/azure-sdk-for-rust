@@ -1192,12 +1192,17 @@ impl Serialize for SkuTier {
 #[doc = "Response for Volume Snapshot request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Snapshot {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Properties for Snapshot."]
     pub properties: SnapshotProperties,
 }
 impl Snapshot {
     pub fn new(properties: SnapshotProperties) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "Data used when creating a volume snapshot."]
@@ -1456,17 +1461,24 @@ pub mod virtual_network_rule {
 #[doc = "Response for Volume request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Volume {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Volume response properties."]
     pub properties: VolumeProperties,
 }
 impl Volume {
     pub fn new(properties: VolumeProperties) -> Self {
-        Self { properties }
+        Self {
+            proxy_resource: ProxyResource::default(),
+            properties,
+        }
     }
 }
 #[doc = "Response for Volume Group request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct VolumeGroup {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Identity for the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<Identity>,
