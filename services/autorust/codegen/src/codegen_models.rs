@@ -502,6 +502,7 @@ pub fn create_models(cg: &mut CodeGen) -> Result<ModelsCode> {
 
                 // create the union type with the discriminator
                 models.push(ModelCode::Union(UnionCode::from_schema(
+                    cg,
                     tag,
                     schema_name,
                     ref_key,
@@ -534,6 +535,7 @@ pub struct UnionCode {
 
 impl UnionCode {
     fn from_schema(
+        cg: &CodeGen,
         tag: &str,
         schema_name: &str,
         ref_key: &RefKey,
@@ -549,7 +551,8 @@ impl UnionCode {
             {
                 if let Some(tag) = child_schema.discriminator_value() {
                     let name = tag.to_camel_case_ident()?;
-                    let type_name = TypeNameCode::from(child_ref_key.name.to_camel_case_ident()?);
+                    let mut type_name = TypeNameCode::from(child_ref_key.name.to_camel_case_ident()?);
+                    cg.set_if_union_type(&mut type_name);
                     values.push(UnionValueCode {
                         tag: tag.to_string(),
                         name,
