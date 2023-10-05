@@ -161,28 +161,18 @@ impl SchemaGen {
         self.all_of.iter().collect()
     }
 
-    /// Get the number of fields in the struct.
-    fn len_fields(&self) -> usize {
-        self.all_of().len() + self.properties.len()
-    }
-
     /// Get the number of fields in the struct, excluding the discriminator.
-    fn len_fields_without_descriminator(&self) -> usize {
-        let mut len = self.len_fields();
+    fn len_fields(&self) -> usize {
+        let mut len = self.all_of().len() + self.properties.len();
         if self.discriminator().is_some() {
             len = len.saturating_sub(1);
         }
         len
     }
 
-    /// If the struct has any fields.
+    /// If the struct has any fields, excluding the discriminator.
     fn has_fields(&self) -> bool {
         self.len_fields() > 0
-    }
-
-    /// // If the struct has any fields, excluding the discriminator.
-    fn has_fields_without_descriminator(&self) -> bool {
-        self.len_fields_without_descriminator() > 0
     }
 
     fn array_items(&self) -> Result<&ReferenceOr<Schema>> {
@@ -513,8 +503,8 @@ pub fn create_models(cg: &mut CodeGen) -> Result<ModelsCode> {
                 let mut schema = schema.clone();
                 let tag_property = schema.properties.iter().find(|property| property.name() == tag);
                 let tag_property_description = tag_property.and_then(|property| property.schema().schema.common.description.clone());
-                schema.properties.retain(|property| property.name() != tag);
                 if schema.has_fields() {
+                    schema.properties.retain(|property| property.name() != tag);
                     models.push(ModelCode::Struct(create_struct(
                         cg,
                         &schema,
@@ -931,7 +921,7 @@ fn create_struct(
 
     for base_schema in schema.all_of() {
         // skip empty base types
-        if !base_schema.has_fields_without_descriminator() {
+        if !base_schema.has_fields() {
             continue;
         }
         let schema_name = base_schema.name()?;
