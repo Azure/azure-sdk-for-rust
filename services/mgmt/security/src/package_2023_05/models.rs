@@ -157,6 +157,19 @@ pub mod server_vulnerability_assessments_azure_setting_properties {
         }
     }
 }
+#[doc = "A base vulnerability assessments setting on servers in the defined scope."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerVulnerabilityAssessmentsSetting {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+impl ServerVulnerabilityAssessmentsSetting {
+    pub fn new() -> Self {
+        Self {
+            resource: Resource::default(),
+        }
+    }
+}
 #[doc = "The kind of the server vulnerability assessments setting"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]

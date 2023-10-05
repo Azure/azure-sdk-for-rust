@@ -1744,6 +1744,19 @@ pub mod consumer_source_data_set_properties {
         }
     }
 }
+#[doc = "A DataSet data transfer object."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataSet {
+    #[serde(flatten)]
+    pub proxy_dto: ProxyDto,
+}
+impl DataSet {
+    pub fn new() -> Self {
+        Self {
+            proxy_dto: ProxyDto::default(),
+        }
+    }
+}
 #[doc = "Kind of data set."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
@@ -1783,6 +1796,19 @@ impl azure_core::Continuable for DataSetList {
 impl DataSetList {
     pub fn new(value: Vec<DataSetUnion>) -> Self {
         Self { next_link: None, value }
+    }
+}
+#[doc = "A data set mapping data transfer object."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataSetMapping {
+    #[serde(flatten)]
+    pub proxy_dto: ProxyDto,
+}
+impl DataSetMapping {
+    pub fn new() -> Self {
+        Self {
+            proxy_dto: ProxyDto::default(),
+        }
     }
 }
 #[doc = "Kind of data set mapping."]
@@ -4864,6 +4890,19 @@ impl SynchronizationDetailsList {
         Self { next_link: None, value }
     }
 }
+#[doc = "A Synchronization Setting data transfer object."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SynchronizationSetting {
+    #[serde(flatten)]
+    pub proxy_dto: ProxyDto,
+}
+impl SynchronizationSetting {
+    pub fn new() -> Self {
+        Self {
+            proxy_dto: ProxyDto::default(),
+        }
+    }
+}
 #[doc = "Kind of synchronization setting."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
@@ -5109,6 +5148,19 @@ pub struct TableLevelSharingProperties {
 impl TableLevelSharingProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "A Trigger data transfer object."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Trigger {
+    #[serde(flatten)]
+    pub proxy_dto: ProxyDto,
+}
+impl Trigger {
+    pub fn new() -> Self {
+        Self {
+            proxy_dto: ProxyDto::default(),
+        }
     }
 }
 #[doc = "Kind of synchronization on trigger."]

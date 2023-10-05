@@ -668,6 +668,19 @@ impl AlertPropertyMapping {
         Self::default()
     }
 }
+#[doc = "Alert rule."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AlertRule {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+}
+impl AlertRule {
+    pub fn new() -> Self {
+        Self {
+            resource_with_etag: ResourceWithEtag::default(),
+        }
+    }
+}
 #[doc = "The kind of the alert rule"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
@@ -727,6 +740,19 @@ impl Serialize for AlertRuleKindEnum {
             Self::ThreatIntelligence => serializer.serialize_unit_variant("AlertRuleKindEnum", 4u32, "ThreatIntelligence"),
             Self::Nrt => serializer.serialize_unit_variant("AlertRuleKindEnum", 5u32, "NRT"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Alert rule template."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AlertRuleTemplate {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+impl AlertRuleTemplate {
+    pub fn new() -> Self {
+        Self {
+            resource: Resource::default(),
         }
     }
 }
@@ -2354,6 +2380,19 @@ impl AzureEntityResource {
         Self::default()
     }
 }
+#[doc = "Billing statistic"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BillingStatistic {
+    #[serde(flatten)]
+    pub azure_entity_resource: AzureEntityResource,
+}
+impl BillingStatistic {
+    pub fn new() -> Self {
+        Self {
+            azure_entity_resource: AzureEntityResource::default(),
+        }
+    }
+}
 #[doc = "The kind of the billing statistic"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
@@ -3414,6 +3453,19 @@ impl Serialize for ContentType {
         }
     }
 }
+#[doc = "Specific entity query that supports put requests."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CustomEntityQuery {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+}
+impl CustomEntityQuery {
+    pub fn new() -> Self {
+        Self {
+            resource_with_etag: ResourceWithEtag::default(),
+        }
+    }
+}
 #[doc = "The kind of the entity query that supports put request."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
@@ -3650,6 +3702,19 @@ impl DcrConfiguration {
         }
     }
 }
+#[doc = "Data connector"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataConnector {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+}
+impl DataConnector {
+    pub fn new() -> Self {
+        Self {
+            resource_with_etag: ResourceWithEtag::default(),
+        }
+    }
+}
 #[doc = "The kind of the data connector"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
@@ -3859,6 +3924,19 @@ pub mod data_connector_data_type_common {
                 Self::Disabled => serializer.serialize_unit_variant("State", 1u32, "Disabled"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+}
+#[doc = "An Azure resource, which encapsulate the entire info requires to display a data connector page in Azure portal,\r\nand the info required to define data connections."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DataConnectorDefinition {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+}
+impl DataConnectorDefinition {
+    pub fn new() -> Self {
+        Self {
+            resource_with_etag: ResourceWithEtag::default(),
         }
     }
 }
@@ -4598,6 +4676,19 @@ impl EnrichmentIpGeodata {
         Self::default()
     }
 }
+#[doc = "Specific entity."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Entity {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+impl Entity {
+    pub fn new() -> Self {
+        Self {
+            resource: Resource::default(),
+        }
+    }
+}
 #[doc = "The kind of the entity"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
@@ -5167,6 +5258,19 @@ impl Serialize for EntityProviders {
         }
     }
 }
+#[doc = "Specific entity query."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityQuery {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+}
+impl EntityQuery {
+    pub fn new() -> Self {
+        Self {
+            resource_with_etag: ResourceWithEtag::default(),
+        }
+    }
+}
 #[doc = "The kind of the entity query"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
@@ -5290,6 +5394,19 @@ impl azure_core::Continuable for EntityQueryList {
 impl EntityQueryList {
     pub fn new(value: Vec<EntityQueryUnion>) -> Self {
         Self { next_link: None, value }
+    }
+}
+#[doc = "Specific entity query template."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EntityQueryTemplate {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+impl EntityQueryTemplate {
+    pub fn new() -> Self {
+        Self {
+            resource: Resource::default(),
+        }
     }
 }
 #[doc = "The kind of the entity query template."]
@@ -11380,6 +11497,19 @@ pub mod security_alert_timeline_item {
         }
     }
 }
+#[doc = "Security ML Analytics Setting"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SecurityMlAnalyticsSetting {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+}
+impl SecurityMlAnalyticsSetting {
+    pub fn new() -> Self {
+        Self {
+            resource_with_etag: ResourceWithEtag::default(),
+        }
+    }
+}
 #[doc = "The kind of security ML analytics settings"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
@@ -11538,6 +11668,19 @@ pub struct SettingList {
 impl SettingList {
     pub fn new(value: Vec<SettingsUnion>) -> Self {
         Self { value }
+    }
+}
+#[doc = "The Setting."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Settings {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+}
+impl Settings {
+    pub fn new() -> Self {
+        Self {
+            resource_with_etag: ResourceWithEtag::default(),
+        }
     }
 }
 #[doc = "The kind of the setting"]
@@ -12166,6 +12309,19 @@ pub struct ThreatIntelligenceIndicatorProperties {
 impl ThreatIntelligenceIndicatorProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Threat intelligence information object."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ThreatIntelligenceInformation {
+    #[serde(flatten)]
+    pub resource_with_etag: ResourceWithEtag,
+}
+impl ThreatIntelligenceInformation {
+    pub fn new() -> Self {
+        Self {
+            resource_with_etag: ResourceWithEtag::default(),
+        }
     }
 }
 #[doc = "The kind of the threat intelligence entity"]

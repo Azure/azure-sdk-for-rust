@@ -2535,6 +2535,17 @@ pub mod sku {
         }
     }
 }
+#[doc = "Base class for topology source nodes."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SourceNodeBase {
+    #[serde(flatten)]
+    pub node_base: NodeBase,
+}
+impl SourceNodeBase {
+    pub fn new(node_base: NodeBase) -> Self {
+        Self { node_base }
+    }
+}
 #[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]

@@ -3,6 +3,19 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
+#[doc = "Represents a Blueprint artifact."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Artifact {
+    #[serde(flatten)]
+    pub azure_resource_base: AzureResourceBase,
+}
+impl Artifact {
+    pub fn new() -> Self {
+        Self {
+            azure_resource_base: AzureResourceBase::default(),
+        }
+    }
+}
 #[doc = "Specifies the kind of Blueprint artifact."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]

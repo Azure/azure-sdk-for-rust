@@ -480,6 +480,17 @@ impl EventSourceMutableProperties {
         Self::default()
     }
 }
+#[doc = "An environment receives data from one or more event sources. Each event source has associated connection info that allows the Time Series Insights ingress pipeline to connect to and pull data from the event source"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EventSourceResource {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+}
+impl EventSourceResource {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self { tracked_resource }
+    }
+}
 #[doc = "The kind of the event source."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]

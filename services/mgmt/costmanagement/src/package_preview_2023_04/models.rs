@@ -614,6 +614,19 @@ impl BenefitUtilizationSummariesListResult {
         Self::default()
     }
 }
+#[doc = "Benefit utilization summary resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BenefitUtilizationSummary {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+impl BenefitUtilizationSummary {
+    pub fn new() -> Self {
+        Self {
+            resource: Resource::default(),
+        }
+    }
+}
 #[doc = "Kind/type of the benefit."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]

@@ -418,6 +418,19 @@ impl BudgetsListResult {
         Self::default()
     }
 }
+#[doc = "A charge summary resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ChargeSummary {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+}
+impl ChargeSummary {
+    pub fn new() -> Self {
+        Self {
+            proxy_resource: ProxyResource::default(),
+        }
+    }
+}
 #[doc = "Specifies the kind of charge summary."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
@@ -3385,6 +3398,19 @@ pub struct TagsResult {
 impl TagsResult {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "An usage detail resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UsageDetail {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+impl UsageDetail {
+    pub fn new() -> Self {
+        Self {
+            resource: Resource::default(),
+        }
     }
 }
 #[doc = "Specifies the kind of usage details."]

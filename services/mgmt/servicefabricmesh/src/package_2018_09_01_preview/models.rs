@@ -1604,6 +1604,19 @@ impl NetworkResourceProperties {
         }
     }
 }
+#[doc = "This type describes the properties of a network resource, including its kind."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct NetworkResourcePropertiesBase {
+    #[serde(flatten)]
+    pub provisioned_resource_properties: ProvisionedResourceProperties,
+}
+impl NetworkResourcePropertiesBase {
+    pub fn new() -> Self {
+        Self {
+            provisioned_resource_properties: ProvisionedResourceProperties::default(),
+        }
+    }
+}
 #[doc = "The type of a Service Fabric container network."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
@@ -1943,6 +1956,19 @@ impl SecretResourceProperties {
             status: None,
             status_details: None,
             content_type: None,
+        }
+    }
+}
+#[doc = "This type describes the properties of a secret resource, including its kind."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SecretResourcePropertiesBase {
+    #[serde(flatten)]
+    pub provisioned_resource_properties: ProvisionedResourceProperties,
+}
+impl SecretResourcePropertiesBase {
+    pub fn new() -> Self {
+        Self {
+            provisioned_resource_properties: ProvisionedResourceProperties::default(),
         }
     }
 }

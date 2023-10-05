@@ -503,6 +503,19 @@ impl EventSourceCommonProperties {
         Self::default()
     }
 }
+#[doc = "Parameters supplied to the Create or Update Event Source operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EventSourceCreateOrUpdateParameters {
+    #[serde(flatten)]
+    pub create_or_update_tracked_resource_properties: CreateOrUpdateTrackedResourceProperties,
+}
+impl EventSourceCreateOrUpdateParameters {
+    pub fn new(create_or_update_tracked_resource_properties: CreateOrUpdateTrackedResourceProperties) -> Self {
+        Self {
+            create_or_update_tracked_resource_properties,
+        }
+    }
+}
 #[doc = "The kind of the event source."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
@@ -541,6 +554,17 @@ pub struct EventSourceMutableProperties {
 impl EventSourceMutableProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "An environment receives data from one or more event sources. Each event source has associated connection info that allows the Time Series Insights ingress pipeline to connect to and pull data from the event source"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct EventSourceResource {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+}
+impl EventSourceResource {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self { tracked_resource }
     }
 }
 #[doc = "The kind of the event source."]

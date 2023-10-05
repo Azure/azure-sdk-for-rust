@@ -6487,6 +6487,19 @@ impl ServicePrincipalProperties {
         Self::default()
     }
 }
+#[doc = "The kind of the security setting"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Setting {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+impl Setting {
+    pub fn new() -> Self {
+        Self {
+            resource: Resource::default(),
+        }
+    }
+}
 #[doc = "the kind of the settings string (DataExportSetting)"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]

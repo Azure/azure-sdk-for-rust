@@ -1652,6 +1652,19 @@ impl ProcessUser {
         Self::default()
     }
 }
+#[doc = "A typed relationship between two entities."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Relationship {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+impl Relationship {
+    pub fn new() -> Self {
+        Self {
+            resource: Resource::default(),
+        }
+    }
+}
 #[doc = "Additional resource type qualifier."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]

@@ -457,6 +457,19 @@ impl PurviewShareErrorInfo {
         }
     }
 }
+#[doc = "A received share data transfer object."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ReceivedShare {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+}
+impl ReceivedShare {
+    pub fn new() -> Self {
+        Self {
+            proxy_resource: ProxyResource::default(),
+        }
+    }
+}
 #[doc = "Defines the supported types for share."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "shareKind")]
@@ -518,11 +531,37 @@ impl Serialize for ReferenceNameType {
         }
     }
 }
+#[doc = "A sent share data transfer object."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SentShare {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+}
+impl SentShare {
+    pub fn new() -> Self {
+        Self {
+            proxy_resource: ProxyResource::default(),
+        }
+    }
+}
 #[doc = "Defines the supported types for share."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "shareKind")]
 pub enum SentShareUnion {
     InPlace(InPlaceSentShare),
+}
+#[doc = "A sent share invitation data transfer object."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SentShareInvitation {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+}
+impl SentShareInvitation {
+    pub fn new() -> Self {
+        Self {
+            proxy_resource: ProxyResource::default(),
+        }
+    }
 }
 #[doc = "The types of invitations."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
