@@ -2919,7 +2919,7 @@ impl ComputeSizeErrorDetails {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum ConfigurationSettingsUnion {
-    HyperVVirtualMachine(HyperVVirtualMachineDetails),
+    HyperVVirtualMachine(HyperVVirtualMachineDetailsUnion),
     ReplicationGroupDetails(ReplicationGroupDetails),
     VMwareVirtualMachine(VMwareVirtualMachineDetails),
 }
@@ -4266,7 +4266,7 @@ impl GroupTaskDetails {
 #[serde(tag = "instanceType")]
 pub enum GroupTaskDetailsUnion {
     InlineWorkflowTaskDetails(InlineWorkflowTaskDetails),
-    RecoveryPlanGroupTaskDetails(RecoveryPlanGroupTaskDetails),
+    RecoveryPlanGroupTaskDetails(RecoveryPlanGroupTaskDetailsUnion),
 }
 #[doc = "Health Error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -12168,7 +12168,7 @@ pub enum PolicyProviderSpecificInputUnion {
     #[serde(rename = "A2A")]
     A2a(A2aPolicyCreationInput),
     HyperVReplicaAzure(HyperVReplicaAzurePolicyInput),
-    HyperVReplica2012(HyperVReplicaPolicyInput),
+    HyperVReplica2012(HyperVReplicaPolicyInputUnion),
     InMageAzureV2(InMageAzureV2PolicyInput),
     InMage(InMagePolicyInput),
     InMageRcmFailback(InMageRcmFailbackPolicyCreationInput),
@@ -16206,7 +16206,7 @@ impl TargetComputeSizeProperties {
 pub enum TaskTypeDetailsUnion {
     AutomationRunbookTaskDetails(AutomationRunbookTaskDetails),
     ConsistencyCheckTaskDetails(ConsistencyCheckTaskDetails),
-    JobTaskDetails(JobTaskDetails),
+    JobTaskDetails(JobTaskDetailsUnion),
     ManualActionTaskDetails(ManualActionTaskDetails),
     ScriptActionTaskDetails(ScriptActionTaskDetails),
     VmNicUpdatesTaskDetails(VmNicUpdatesTaskDetails),

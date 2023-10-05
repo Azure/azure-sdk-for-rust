@@ -1269,11 +1269,11 @@ impl NodeBase {
 #[serde(tag = "@type")]
 pub enum NodeBaseUnion {
     #[serde(rename = "#Microsoft.VideoAnalyzer.ProcessorNodeBase")]
-    MicrosoftVideoAnalyzerProcessorNodeBase(ProcessorNodeBase),
+    MicrosoftVideoAnalyzerProcessorNodeBase(ProcessorNodeBaseUnion),
     #[serde(rename = "#Microsoft.VideoAnalyzer.SinkNodeBase")]
-    MicrosoftVideoAnalyzerSinkNodeBase(SinkNodeBase),
+    MicrosoftVideoAnalyzerSinkNodeBase(SinkNodeBaseUnion),
     #[serde(rename = "#Microsoft.VideoAnalyzer.SourceNodeBase")]
-    MicrosoftVideoAnalyzerSourceNodeBase(SourceNodeBase),
+    MicrosoftVideoAnalyzerSourceNodeBase(SourceNodeBaseUnion),
 }
 #[doc = "Describes an input signal to be used on a pipeline node."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
