@@ -27,6 +27,7 @@ use azure_core::{
 use azure_storage::{ConsistencyCRC64, ConsistencyMD5, CopyId, CopyProgress};
 use serde::{self, Deserialize, Deserializer};
 use std::collections::HashMap;
+use serde_json::Value;
 use time::OffsetDateTime;
 
 #[cfg(feature = "azurite_workaround")]
@@ -174,8 +175,9 @@ pub struct BlobProperties {
     )]
     pub expiry_time: Option<OffsetDateTime>,
     pub blob_committed_block_count: Option<u64>,
+    pub resource_type: Option<String>,
     #[serde(flatten)]
-    extra: HashMap<String, String>, // For debug purposes, should be compiled out in the future
+    extra: HashMap<String, Value>, // For debug purposes, should be compiled out in the future
 }
 
 impl Blob {
@@ -281,6 +283,7 @@ impl Blob {
                 tag_count: None,                    // TODO
                 rehydrate_priority: None,           // TODO
                 expiry_time: None,
+                resource_type: None,
                 blob_committed_block_count,
                 extra: HashMap::new(),
             },
