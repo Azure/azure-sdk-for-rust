@@ -26,8 +26,8 @@ use azure_core::{
 };
 use azure_storage::{ConsistencyCRC64, ConsistencyMD5, CopyId, CopyProgress};
 use serde::{self, Deserialize, Deserializer};
-use std::collections::HashMap;
 use serde_json::Value;
+use std::collections::HashMap;
 use time::OffsetDateTime;
 
 #[cfg(feature = "azurite_workaround")]
