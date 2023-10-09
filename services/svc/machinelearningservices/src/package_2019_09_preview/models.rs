@@ -1309,9 +1309,6 @@ pub struct CreateServiceRequest {
     pub properties: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub keys: Option<AuthKeys>,
-    #[doc = "The compute environment type for the service."]
-    #[serde(rename = "computeType")]
-    pub compute_type: create_service_request::ComputeType,
     #[doc = "The deployment type for the service."]
     #[serde(rename = "deploymentType", default, skip_serializing_if = "Option::is_none")]
     pub deployment_type: Option<create_service_request::DeploymentType>,
@@ -1326,14 +1323,13 @@ pub struct CreateServiceRequest {
     pub location: Option<String>,
 }
 impl CreateServiceRequest {
-    pub fn new(name: String, compute_type: create_service_request::ComputeType) -> Self {
+    pub fn new(name: String) -> Self {
         Self {
             name,
             description: None,
             kv_tags: None,
             properties: None,
             keys: None,
-            compute_type,
             deployment_type: None,
             image_id: None,
             environment_image_request: None,
@@ -1343,22 +1339,6 @@ impl CreateServiceRequest {
 }
 pub mod create_service_request {
     use super::*;
-    #[doc = "The compute environment type for the service."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ComputeType {
-        #[serde(rename = "ACI")]
-        Aci,
-        #[serde(rename = "AKS")]
-        Aks,
-        #[serde(rename = "AMLCOMPUTE")]
-        Amlcompute,
-        #[serde(rename = "IOT")]
-        Iot,
-        #[serde(rename = "AKSENDPOINT")]
-        Aksendpoint,
-        #[serde(rename = "UNKNOWN")]
-        Unknown,
-    }
     #[doc = "The deployment type for the service."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DeploymentType {
@@ -1368,6 +1348,7 @@ pub mod create_service_request {
         Batch,
     }
 }
+#[doc = "The compute environment type for the service."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "computeType")]
 pub enum CreateServiceRequestUnion {
@@ -1837,18 +1818,13 @@ impl HistoryConfiguration {
 #[doc = "Bandit Policy configuration. Please refer https://docs.microsoft.com/en-us/python/api/azureml-train-core/azureml.train.hyperdrive.banditpolicy?view=azure-ml-py for more information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperDriveBanditPolicy {
-    #[serde(flatten)]
-    pub hyper_drive_policy_config_base: HyperDrivePolicyConfigBase,
     #[doc = "Policy configuration properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<hyper_drive_bandit_policy::Properties>,
 }
 impl HyperDriveBanditPolicy {
-    pub fn new(hyper_drive_policy_config_base: HyperDrivePolicyConfigBase) -> Self {
-        Self {
-            hyper_drive_policy_config_base,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 pub mod hyper_drive_bandit_policy {
@@ -1907,15 +1883,10 @@ impl HyperDriveCreateExperiment {
 }
 #[doc = "No early termination is applied in the case of DefaultPolicy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HyperDriveDefaultPolicy {
-    #[serde(flatten)]
-    pub hyper_drive_policy_config_base: HyperDrivePolicyConfigBase,
-}
+pub struct HyperDriveDefaultPolicy {}
 impl HyperDriveDefaultPolicy {
-    pub fn new(hyper_drive_policy_config_base: HyperDrivePolicyConfigBase) -> Self {
-        Self {
-            hyper_drive_policy_config_base,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Response in case of an error."]
@@ -2207,18 +2178,13 @@ impl HyperDriveExperimentResponse {
 #[doc = "Median stopping policy configuration. Please refer https://docs.microsoft.com/en-us/python/api/azureml-train-core/azureml.train.hyperdrive.medianstoppingpolicy?view=azure-ml-py for more information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperDriveMedianStoppingPolicy {
-    #[serde(flatten)]
-    pub hyper_drive_policy_config_base: HyperDrivePolicyConfigBase,
     #[doc = "Policy configuration properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<hyper_drive_median_stopping_policy::Properties>,
 }
 impl HyperDriveMedianStoppingPolicy {
-    pub fn new(hyper_drive_policy_config_base: HyperDrivePolicyConfigBase) -> Self {
-        Self {
-            hyper_drive_policy_config_base,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 pub mod hyper_drive_median_stopping_policy {
@@ -2239,61 +2205,7 @@ pub mod hyper_drive_median_stopping_policy {
         }
     }
 }
-#[doc = "Early termination policy configuration."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HyperDrivePolicyConfigBase {
-    #[doc = "Type of early termination policy."]
-    pub name: hyper_drive_policy_config_base::Name,
-}
-impl HyperDrivePolicyConfigBase {
-    pub fn new(name: hyper_drive_policy_config_base::Name) -> Self {
-        Self { name }
-    }
-}
-pub mod hyper_drive_policy_config_base {
-    use super::*;
-    #[doc = "Type of early termination policy."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Name")]
-    pub enum Name {
-        Default,
-        Bandit,
-        MedianStopping,
-        TruncationSelection,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Name {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Name {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Name {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Default => serializer.serialize_unit_variant("Name", 0u32, "Default"),
-                Self::Bandit => serializer.serialize_unit_variant("Name", 1u32, "Bandit"),
-                Self::MedianStopping => serializer.serialize_unit_variant("Name", 2u32, "MedianStopping"),
-                Self::TruncationSelection => serializer.serialize_unit_variant("Name", 3u32, "TruncationSelection"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Type of early termination policy."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "name")]
 pub enum HyperDrivePolicyConfigBaseUnion {
@@ -2305,18 +2217,13 @@ pub enum HyperDrivePolicyConfigBaseUnion {
 #[doc = "Truncation selection policy configuration. Please refer https://docs.microsoft.com/en-us/python/api/azureml-train-core/azureml.train.hyperdrive.truncationselectionpolicy?view=azure-ml-py for more information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HyperDriveTruncationSelectionPolicy {
-    #[serde(flatten)]
-    pub hyper_drive_policy_config_base: HyperDrivePolicyConfigBase,
     #[doc = "Policy configuration properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<hyper_drive_truncation_selection_policy::Properties>,
 }
 impl HyperDriveTruncationSelectionPolicy {
-    pub fn new(hyper_drive_policy_config_base: HyperDrivePolicyConfigBase) -> Self {
-        Self {
-            hyper_drive_policy_config_base,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 pub mod hyper_drive_truncation_selection_policy {
@@ -2375,9 +2282,6 @@ pub struct ImageResponseBase {
     #[doc = "The type of the image."]
     #[serde(rename = "imageType", default, skip_serializing_if = "Option::is_none")]
     pub image_type: Option<image_response_base::ImageType>,
-    #[doc = "The flavor of the image."]
-    #[serde(rename = "imageFlavor")]
-    pub image_flavor: image_response_base::ImageFlavor,
     #[doc = "The state of the operation."]
     #[serde(rename = "creationState", default, skip_serializing_if = "Option::is_none")]
     pub creation_state: Option<image_response_base::CreationState>,
@@ -2411,7 +2315,7 @@ pub struct ImageResponseBase {
     pub operation_id: Option<String>,
 }
 impl ImageResponseBase {
-    pub fn new(image_flavor: image_response_base::ImageFlavor) -> Self {
+    pub fn new() -> Self {
         Self {
             id: None,
             name: None,
@@ -2423,7 +2327,6 @@ impl ImageResponseBase {
             modified_time: None,
             auto_delete: None,
             image_type: None,
-            image_flavor,
             creation_state: None,
             error: None,
             model_ids: Vec::new(),
@@ -2441,15 +2344,6 @@ pub mod image_response_base {
     pub enum ImageType {
         Docker,
     }
-    #[doc = "The flavor of the image."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ImageFlavor {
-        WebApiContainer,
-        BatchContainer,
-        IoTContainer,
-        AccelContainer,
-        UserProvidedContainer,
-    }
     #[doc = "The state of the operation."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum CreationState {
@@ -2461,6 +2355,7 @@ pub mod image_response_base {
         TimedOut,
     }
 }
+#[doc = "The flavor of the image."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "imageFlavor")]
 pub enum ImageResponseBaseUnion {
@@ -3724,15 +3619,12 @@ pub struct ServiceResponseBase {
     #[doc = "The Model Management Service Error object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ModelErrorResponse>,
-    #[doc = "The compute environment type for the service."]
-    #[serde(rename = "computeType")]
-    pub compute_type: service_response_base::ComputeType,
     #[doc = "The deployment type for the service."]
     #[serde(rename = "deploymentType", default, skip_serializing_if = "Option::is_none")]
     pub deployment_type: Option<service_response_base::DeploymentType>,
 }
 impl ServiceResponseBase {
-    pub fn new(compute_type: service_response_base::ComputeType) -> Self {
+    pub fn new() -> Self {
         Self {
             id: None,
             name: None,
@@ -3744,7 +3636,6 @@ impl ServiceResponseBase {
             created_time: None,
             updated_time: None,
             error: None,
-            compute_type,
             deployment_type: None,
         }
     }
@@ -3759,22 +3650,6 @@ pub mod service_response_base {
         Unhealthy,
         Failed,
     }
-    #[doc = "The compute environment type for the service."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ComputeType {
-        #[serde(rename = "ACI")]
-        Aci,
-        #[serde(rename = "AKS")]
-        Aks,
-        #[serde(rename = "AMLCOMPUTE")]
-        Amlcompute,
-        #[serde(rename = "IOT")]
-        Iot,
-        #[serde(rename = "AKSENDPOINT")]
-        Aksendpoint,
-        #[serde(rename = "UNKNOWN")]
-        Unknown,
-    }
     #[doc = "The deployment type for the service."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum DeploymentType {
@@ -3784,6 +3659,7 @@ pub mod service_response_base {
         Batch,
     }
 }
+#[doc = "The compute environment type for the service."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "computeType")]
 pub enum ServiceResponseBaseUnion {

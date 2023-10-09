@@ -260,17 +260,15 @@ impl TrackedResource {
 #[doc = "Model that represents the base action model."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Action {
-    #[doc = "Enum that discriminates between action models."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "String that represents a URN."]
     pub name: Urn,
 }
 impl Action {
-    pub fn new(type_: String, name: Urn) -> Self {
-        Self { type_, name }
+    pub fn new(name: Urn) -> Self {
+        Self { name }
     }
 }
+#[doc = "Enum that discriminates between action models."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ActionUnion {}
@@ -802,56 +800,7 @@ impl ExperimentStatusProperties {
         Self::default()
     }
 }
-#[doc = "Model that represents available filter types that can be applied to a targets list."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Filter {
-    #[doc = "Enum that discriminates between filter types. Currently only `Simple` type is supported."]
-    #[serde(rename = "type")]
-    pub type_: filter::Type,
-}
-impl Filter {
-    pub fn new(type_: filter::Type) -> Self {
-        Self { type_ }
-    }
-}
-pub mod filter {
-    use super::*;
-    #[doc = "Enum that discriminates between filter types. Currently only `Simple` type is supported."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        Simple,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Simple => serializer.serialize_unit_variant("Type", 0u32, "Simple"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Enum that discriminates between filter types. Currently only `Simple` type is supported."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum FilterUnion {}

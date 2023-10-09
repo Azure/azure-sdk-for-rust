@@ -748,17 +748,7 @@ impl Serialize for ServiceStateNodeStatus {
         }
     }
 }
-#[doc = "Common type for attestation information, describing the cryptographically-endorsed claim of what code is executing, and what platform it is executing on. Derived types contain platform-specific details."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceStateQuoteInfo {
-    #[doc = "Discriminator property for QuoteInfo."]
-    pub format: String,
-}
-impl ServiceStateQuoteInfo {
-    pub fn new(format: String) -> Self {
-        Self { format }
-    }
-}
+#[doc = "Discriminator property for QuoteInfo."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "format")]
 pub enum ServiceStateQuoteInfoUnion {
@@ -875,20 +865,14 @@ impl Serialize for ServiceStateServiceStatus {
 #[doc = "Attestation information for Intel SGX enclaves."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceStateSgxQuoteInfo {
-    #[serde(flatten)]
-    pub service_state_quote_info: ServiceStateQuoteInfo,
     #[doc = "Base-64 encoded SGX quote."]
     pub quote: String,
     #[doc = "Base-64 encoded SGX endorsements."]
     pub endorsements: String,
 }
 impl ServiceStateSgxQuoteInfo {
-    pub fn new(service_state_quote_info: ServiceStateQuoteInfo, quote: String, endorsements: String) -> Self {
-        Self {
-            service_state_quote_info,
-            quote,
-            endorsements,
-        }
+    pub fn new(quote: String, endorsements: String) -> Self {
+        Self { quote, endorsements }
     }
 }
 #[doc = "Join policy fields specific to nodes running on AMD SEV-SNP hardware."]
@@ -915,8 +899,6 @@ impl ServiceStateSnpJoinPolicy {
 #[doc = "Attestation information for AMD SEV-SNP containers."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceStateSnpQuoteInfo {
-    #[serde(flatten)]
-    pub service_state_quote_info: ServiceStateQuoteInfo,
     #[doc = "Base-64 encoded SNP UVM endorsements."]
     #[serde(rename = "uvmEndorsements")]
     pub uvm_endorsements: String,
@@ -925,9 +907,8 @@ pub struct ServiceStateSnpQuoteInfo {
     pub endorsed_tcb: String,
 }
 impl ServiceStateSnpQuoteInfo {
-    pub fn new(service_state_quote_info: ServiceStateQuoteInfo, uvm_endorsements: String, endorsed_tcb: String) -> Self {
+    pub fn new(uvm_endorsements: String, endorsed_tcb: String) -> Self {
         Self {
-            service_state_quote_info,
             uvm_endorsements,
             endorsed_tcb,
         }

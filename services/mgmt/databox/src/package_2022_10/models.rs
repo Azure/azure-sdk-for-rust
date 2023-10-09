@@ -385,29 +385,7 @@ impl ContactInfo {
         }
     }
 }
-#[doc = "Details for log generated during copy."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CopyLogDetails {
-    #[doc = "Indicates the type of job details."]
-    #[serde(rename = "copyLogDetailsType")]
-    pub copy_log_details_type: copy_log_details::CopyLogDetailsType,
-}
-impl CopyLogDetails {
-    pub fn new(copy_log_details_type: copy_log_details::CopyLogDetailsType) -> Self {
-        Self { copy_log_details_type }
-    }
-}
-pub mod copy_log_details {
-    use super::*;
-    #[doc = "Indicates the type of job details."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CopyLogDetailsType {
-        DataBox,
-        DataBoxDisk,
-        DataBoxHeavy,
-        DataBoxCustomerDisk,
-    }
-}
+#[doc = "Indicates the type of job details."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "copyLogDetailsType")]
 pub enum CopyLogDetailsUnion {
@@ -499,21 +477,13 @@ impl CreateJobValidations {
 #[doc = "Request to validate create order limit for current subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateOrderLimitForSubscriptionValidationRequest {
-    #[serde(flatten)]
-    pub validation_input_request: ValidationInputRequest,
     #[doc = "Device type to be used for the job."]
     #[serde(rename = "deviceType")]
     pub device_type: create_order_limit_for_subscription_validation_request::DeviceType,
 }
 impl CreateOrderLimitForSubscriptionValidationRequest {
-    pub fn new(
-        validation_input_request: ValidationInputRequest,
-        device_type: create_order_limit_for_subscription_validation_request::DeviceType,
-    ) -> Self {
-        Self {
-            validation_input_request,
-            device_type,
-        }
+    pub fn new(device_type: create_order_limit_for_subscription_validation_request::DeviceType) -> Self {
+        Self { device_type }
     }
 }
 pub mod create_order_limit_for_subscription_validation_request {
@@ -583,35 +553,16 @@ impl CustomerDiskJobSecrets {
 #[doc = "Account details of the data to be transferred"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataAccountDetails {
-    #[doc = "Account Type of the data to be transferred."]
-    #[serde(rename = "dataAccountType")]
-    pub data_account_type: data_account_details::DataAccountType,
     #[doc = "Password for all the shares to be created on the device. Should not be passed for TransferType:ExportFromAzure jobs. If this is not passed, the service will generate password itself. This will not be returned in Get Call. Password Requirements :  Password must be minimum of 12 and maximum of 64 characters. Password must have at least one uppercase alphabet, one number and one special character. Password cannot have the following characters : IilLoO0 Password can have only alphabets, numbers and these characters : @#\\-$%^!+=;:_()]+"]
     #[serde(rename = "sharePassword", default, skip_serializing_if = "Option::is_none")]
     pub share_password: Option<String>,
 }
 impl DataAccountDetails {
-    pub fn new(data_account_type: data_account_details::DataAccountType) -> Self {
-        Self {
-            data_account_type,
-            share_password: None,
-        }
+    pub fn new() -> Self {
+        Self { share_password: None }
     }
 }
-pub mod data_account_details {
-    use super::*;
-    #[doc = "Account Type of the data to be transferred."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DataAccountType {
-        StorageAccount,
-        ManagedDisk,
-    }
-    impl Default for DataAccountType {
-        fn default() -> Self {
-            Self::StorageAccount
-        }
-    }
-}
+#[doc = "Account Type of the data to be transferred."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "dataAccountType")]
 pub enum DataAccountDetailsUnion {
@@ -621,8 +572,6 @@ pub enum DataAccountDetailsUnion {
 #[doc = "Copy log details for a storage account of a DataBox job"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataBoxAccountCopyLogDetails {
-    #[serde(flatten)]
-    pub copy_log_details: CopyLogDetails,
     #[doc = "Account name."]
     #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
     pub account_name: Option<String>,
@@ -634,9 +583,8 @@ pub struct DataBoxAccountCopyLogDetails {
     pub copy_verbose_log_link: Option<String>,
 }
 impl DataBoxAccountCopyLogDetails {
-    pub fn new(copy_log_details: CopyLogDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            copy_log_details,
             account_name: None,
             copy_log_link: None,
             copy_verbose_log_link: None,
@@ -646,8 +594,6 @@ impl DataBoxAccountCopyLogDetails {
 #[doc = "Copy Log Details for customer disk"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataBoxCustomerDiskCopyLogDetails {
-    #[serde(flatten)]
-    pub copy_log_details: CopyLogDetails,
     #[doc = "Disk Serial Number."]
     #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
     pub serial_number: Option<String>,
@@ -659,9 +605,8 @@ pub struct DataBoxCustomerDiskCopyLogDetails {
     pub verbose_log_link: Option<String>,
 }
 impl DataBoxCustomerDiskCopyLogDetails {
-    pub fn new(copy_log_details: CopyLogDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            copy_log_details,
             serial_number: None,
             error_log_link: None,
             verbose_log_link: None,
@@ -804,8 +749,6 @@ impl DataBoxCustomerDiskJobDetails {
 #[doc = "Copy Log Details for a disk"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataBoxDiskCopyLogDetails {
-    #[serde(flatten)]
-    pub copy_log_details: CopyLogDetails,
     #[doc = "Disk Serial Number."]
     #[serde(rename = "diskSerialNumber", default, skip_serializing_if = "Option::is_none")]
     pub disk_serial_number: Option<String>,
@@ -817,9 +760,8 @@ pub struct DataBoxDiskCopyLogDetails {
     pub verbose_log_link: Option<String>,
 }
 impl DataBoxDiskCopyLogDetails {
-    pub fn new(copy_log_details: CopyLogDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            copy_log_details,
             disk_serial_number: None,
             error_log_link: None,
             verbose_log_link: None,
@@ -934,8 +876,6 @@ pub mod data_box_disk_copy_progress {
 #[doc = "Granular Copy Log Details for customer disk"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataBoxDiskGranularCopyLogDetails {
-    #[serde(flatten)]
-    pub granular_copy_log_details: GranularCopyLogDetails,
     #[doc = "Disk Serial Number."]
     #[serde(rename = "serialNumber", default, skip_serializing_if = "Option::is_none")]
     pub serial_number: Option<String>,
@@ -950,9 +890,8 @@ pub struct DataBoxDiskGranularCopyLogDetails {
     pub verbose_log_link: Option<String>,
 }
 impl DataBoxDiskGranularCopyLogDetails {
-    pub fn new(granular_copy_log_details: GranularCopyLogDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            granular_copy_log_details,
             serial_number: None,
             account_id: None,
             error_log_link: None,
@@ -1136,8 +1075,6 @@ impl DataBoxDiskJobSecrets {
 #[doc = "Copy log details for a storage account for Databox heavy"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataBoxHeavyAccountCopyLogDetails {
-    #[serde(flatten)]
-    pub copy_log_details: CopyLogDetails,
     #[doc = "Account name."]
     #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
     pub account_name: Option<String>,
@@ -1159,9 +1096,8 @@ pub struct DataBoxHeavyAccountCopyLogDetails {
     pub copy_verbose_log_link: Vec<String>,
 }
 impl DataBoxHeavyAccountCopyLogDetails {
-    pub fn new(copy_log_details: CopyLogDetails) -> Self {
+    pub fn new() -> Self {
         Self {
-            copy_log_details,
             account_name: None,
             copy_log_link: Vec::new(),
             copy_verbose_log_link: Vec::new(),
@@ -1409,8 +1345,6 @@ impl DataLocationToServiceLocationMap {
 #[doc = "Request to validate export and import data details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataTransferDetailsValidationRequest {
-    #[serde(flatten)]
-    pub validation_input_request: ValidationInputRequest,
     #[doc = "List of DataTransfer details to be used to export data from azure."]
     #[serde(
         rename = "dataExportDetails",
@@ -1436,12 +1370,10 @@ pub struct DataTransferDetailsValidationRequest {
 }
 impl DataTransferDetailsValidationRequest {
     pub fn new(
-        validation_input_request: ValidationInputRequest,
         device_type: data_transfer_details_validation_request::DeviceType,
         transfer_type: data_transfer_details_validation_request::TransferType,
     ) -> Self {
         Self {
-            validation_input_request,
             data_export_details: Vec::new(),
             data_import_details: Vec::new(),
             device_type,
@@ -1629,9 +1561,6 @@ pub mod datacenter_address_request {
 #[doc = "Datacenter address for given storage location."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatacenterAddressResponse {
-    #[doc = "Data center address type"]
-    #[serde(rename = "datacenterAddressType")]
-    pub datacenter_address_type: datacenter_address_response::DatacenterAddressType,
     #[doc = "List of supported carriers for return shipment."]
     #[serde(
         rename = "supportedCarriersForReturnShipment",
@@ -1645,23 +1574,14 @@ pub struct DatacenterAddressResponse {
     pub data_center_azure_location: Option<String>,
 }
 impl DatacenterAddressResponse {
-    pub fn new(datacenter_address_type: datacenter_address_response::DatacenterAddressType) -> Self {
+    pub fn new() -> Self {
         Self {
-            datacenter_address_type,
             supported_carriers_for_return_shipment: Vec::new(),
             data_center_azure_location: None,
         }
     }
 }
-pub mod datacenter_address_response {
-    use super::*;
-    #[doc = "Data center address type"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum DatacenterAddressType {
-        DatacenterAddressLocation,
-        DatacenterAddressInstruction,
-    }
-}
+#[doc = "Data center address type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "datacenterAddressType")]
 pub enum DatacenterAddressResponseUnion {
@@ -1854,29 +1774,7 @@ pub mod filter_file_details {
         AzureFile,
     }
 }
-#[doc = "Granular Details for log generated during copy."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GranularCopyLogDetails {
-    #[doc = "Indicates the type of job details."]
-    #[serde(rename = "copyLogDetailsType")]
-    pub copy_log_details_type: granular_copy_log_details::CopyLogDetailsType,
-}
-impl GranularCopyLogDetails {
-    pub fn new(copy_log_details_type: granular_copy_log_details::CopyLogDetailsType) -> Self {
-        Self { copy_log_details_type }
-    }
-}
-pub mod granular_copy_log_details {
-    use super::*;
-    #[doc = "Indicates the type of job details."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum CopyLogDetailsType {
-        DataBox,
-        DataBoxDisk,
-        DataBoxHeavy,
-        DataBoxCustomerDisk,
-    }
-}
+#[doc = "Indicates the type of job details."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "copyLogDetailsType")]
 pub enum GranularCopyLogDetailsUnion {
@@ -2066,9 +1964,6 @@ pub struct JobDetails {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub data_export_details: Vec<DataExportDetails>,
-    #[doc = "Indicates the type of job details."]
-    #[serde(rename = "jobDetailsType")]
-    pub job_details_type: job_details::JobDetailsType,
     #[doc = "Preferences related to the order"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub preferences: Option<Preferences>,
@@ -2116,7 +2011,7 @@ pub struct JobDetails {
     pub data_center_code: Option<job_details::DataCenterCode>,
 }
 impl JobDetails {
-    pub fn new(contact_details: ContactDetails, job_details_type: job_details::JobDetailsType) -> Self {
+    pub fn new(contact_details: ContactDetails) -> Self {
         Self {
             job_stages: Vec::new(),
             contact_details,
@@ -2125,7 +2020,6 @@ impl JobDetails {
             return_package: None,
             data_import_details: Vec::new(),
             data_export_details: Vec::new(),
-            job_details_type,
             preferences: None,
             reverse_shipping_details: None,
             copy_log_details: Vec::new(),
@@ -2143,14 +2037,6 @@ impl JobDetails {
 }
 pub mod job_details {
     use super::*;
-    #[doc = "Indicates the type of job details."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum JobDetailsType {
-        DataBox,
-        DataBoxDisk,
-        DataBoxHeavy,
-        DataBoxCustomerDisk,
-    }
     #[doc = "DataCenter code."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "DataCenterCode")]
@@ -2360,6 +2246,7 @@ pub mod job_details {
         }
     }
 }
+#[doc = "Indicates the type of job details."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "jobDetailsType")]
 pub enum JobDetailsUnion {
@@ -2632,9 +2519,6 @@ impl JobResourceUpdateParameter {
 #[doc = "The base class for the secrets"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobSecrets {
-    #[doc = "Used to indicate what type of job secrets object."]
-    #[serde(rename = "jobSecretsType")]
-    pub job_secrets_type: job_secrets::JobSecretsType,
     #[doc = "Dc access security code"]
     #[serde(rename = "dcAccessSecurityCode", default, skip_serializing_if = "Option::is_none")]
     pub dc_access_security_code: Option<DcAccessSecurityCode>,
@@ -2643,25 +2527,14 @@ pub struct JobSecrets {
     pub error: Option<CloudError>,
 }
 impl JobSecrets {
-    pub fn new(job_secrets_type: job_secrets::JobSecretsType) -> Self {
+    pub fn new() -> Self {
         Self {
-            job_secrets_type,
             dc_access_security_code: None,
             error: None,
         }
     }
 }
-pub mod job_secrets {
-    use super::*;
-    #[doc = "Used to indicate what type of job secrets object."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum JobSecretsType {
-        DataBox,
-        DataBoxDisk,
-        DataBoxHeavy,
-        DataBoxCustomerDisk,
-    }
-}
+#[doc = "Used to indicate what type of job secrets object."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "jobSecretsType")]
 pub enum JobSecretsUnion {
@@ -3169,8 +3042,6 @@ impl Preferences {
 #[doc = "Request to validate preference of transport and data center."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PreferencesValidationRequest {
-    #[serde(flatten)]
-    pub validation_input_request: ValidationInputRequest,
     #[doc = "Preferences related to the order"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub preference: Option<Preferences>,
@@ -3179,9 +3050,8 @@ pub struct PreferencesValidationRequest {
     pub device_type: preferences_validation_request::DeviceType,
 }
 impl PreferencesValidationRequest {
-    pub fn new(validation_input_request: ValidationInputRequest, device_type: preferences_validation_request::DeviceType) -> Self {
+    pub fn new(device_type: preferences_validation_request::DeviceType) -> Self {
         Self {
-            validation_input_request,
             preference: None,
             device_type,
         }
@@ -3330,33 +3200,19 @@ pub struct ScheduleAvailabilityRequest {
     #[doc = "Location for data transfer. For locations check: https://management.azure.com/subscriptions/SUBSCRIPTIONID/locations?api-version=2018-01-01"]
     #[serde(rename = "storageLocation")]
     pub storage_location: String,
-    #[doc = "Sku Name for which the order is to be scheduled."]
-    #[serde(rename = "skuName")]
-    pub sku_name: schedule_availability_request::SkuName,
     #[doc = "Country in which storage location should be supported."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub country: Option<String>,
 }
 impl ScheduleAvailabilityRequest {
-    pub fn new(storage_location: String, sku_name: schedule_availability_request::SkuName) -> Self {
+    pub fn new(storage_location: String) -> Self {
         Self {
             storage_location,
-            sku_name,
             country: None,
         }
     }
 }
-pub mod schedule_availability_request {
-    use super::*;
-    #[doc = "Sku Name for which the order is to be scheduled."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum SkuName {
-        DataBox,
-        DataBoxDisk,
-        DataBoxHeavy,
-        DataBoxCustomerDisk,
-    }
-}
+#[doc = "Sku Name for which the order is to be scheduled."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "skuName")]
 pub enum ScheduleAvailabilityRequestUnion {
@@ -3560,8 +3416,6 @@ pub mod sku {
 #[doc = "Request to validate sku availability."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkuAvailabilityValidationRequest {
-    #[serde(flatten)]
-    pub validation_input_request: ValidationInputRequest,
     #[doc = "Device type to be used for the job."]
     #[serde(rename = "deviceType")]
     pub device_type: sku_availability_validation_request::DeviceType,
@@ -3575,14 +3429,12 @@ pub struct SkuAvailabilityValidationRequest {
 }
 impl SkuAvailabilityValidationRequest {
     pub fn new(
-        validation_input_request: ValidationInputRequest,
         device_type: sku_availability_validation_request::DeviceType,
         transfer_type: sku_availability_validation_request::TransferType,
         country: String,
         location: String,
     ) -> Self {
         Self {
-            validation_input_request,
             device_type,
             transfer_type,
             country,
@@ -3769,13 +3621,10 @@ impl StorageAccountDetails {
 }
 #[doc = "Request to validate subscription permission to create jobs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SubscriptionIsAllowedToCreateJobValidationRequest {
-    #[serde(flatten)]
-    pub validation_input_request: ValidationInputRequest,
-}
+pub struct SubscriptionIsAllowedToCreateJobValidationRequest {}
 impl SubscriptionIsAllowedToCreateJobValidationRequest {
-    pub fn new(validation_input_request: ValidationInputRequest) -> Self {
-        Self { validation_input_request }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Properties of subscription permission to create job validation response."]
@@ -4138,8 +3987,6 @@ impl UserAssignedProperties {
 #[doc = "The requirements to validate customer address where the device needs to be shipped."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidateAddress {
-    #[serde(flatten)]
-    pub validation_input_request: ValidationInputRequest,
     #[doc = "Shipping address where customer wishes to receive the device."]
     #[serde(rename = "shippingAddress")]
     pub shipping_address: ShippingAddress,
@@ -4151,13 +3998,8 @@ pub struct ValidateAddress {
     pub transport_preferences: Option<TransportPreferences>,
 }
 impl ValidateAddress {
-    pub fn new(
-        validation_input_request: ValidationInputRequest,
-        shipping_address: ShippingAddress,
-        device_type: validate_address::DeviceType,
-    ) -> Self {
+    pub fn new(shipping_address: ShippingAddress, device_type: validate_address::DeviceType) -> Self {
         Self {
-            validation_input_request,
             shipping_address,
             device_type,
             transport_preferences: None,
@@ -4175,31 +4017,7 @@ pub mod validate_address {
         DataBoxCustomerDisk,
     }
 }
-#[doc = "Minimum fields that must be present in any type of validation request."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ValidationInputRequest {
-    #[doc = "Identifies the type of validation request."]
-    #[serde(rename = "validationType")]
-    pub validation_type: validation_input_request::ValidationType,
-}
-impl ValidationInputRequest {
-    pub fn new(validation_type: validation_input_request::ValidationType) -> Self {
-        Self { validation_type }
-    }
-}
-pub mod validation_input_request {
-    use super::*;
-    #[doc = "Identifies the type of validation request."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ValidationType {
-        ValidateAddress,
-        ValidateSubscriptionIsAllowedToCreateJob,
-        ValidatePreferences,
-        ValidateCreateOrderLimit,
-        ValidateSkuAvailability,
-        ValidateDataTransferDetails,
-    }
-}
+#[doc = "Identifies the type of validation request."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "validationType")]
 pub enum ValidationInputRequestUnion {
@@ -4213,34 +4031,16 @@ pub enum ValidationInputRequestUnion {
 #[doc = "Minimum properties that should be present in each individual validation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidationInputResponse {
-    #[doc = "Identifies the type of validation response."]
-    #[serde(rename = "validationType")]
-    pub validation_type: validation_input_response::ValidationType,
     #[doc = "Provides additional information about an http error response."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<CloudError>,
 }
 impl ValidationInputResponse {
-    pub fn new(validation_type: validation_input_response::ValidationType) -> Self {
-        Self {
-            validation_type,
-            error: None,
-        }
+    pub fn new() -> Self {
+        Self { error: None }
     }
 }
-pub mod validation_input_response {
-    use super::*;
-    #[doc = "Identifies the type of validation response."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ValidationType {
-        ValidateAddress,
-        ValidateSubscriptionIsAllowedToCreateJob,
-        ValidatePreferences,
-        ValidateCreateOrderLimit,
-        ValidateSkuAvailability,
-        ValidateDataTransferDetails,
-    }
-}
+#[doc = "Identifies the type of validation response."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "validationType")]
 pub enum ValidationInputResponseUnion {
@@ -4254,32 +4054,18 @@ pub enum ValidationInputResponseUnion {
 #[doc = "Minimum request requirement of any validation category."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValidationRequest {
-    #[doc = "Identify the nature of validation."]
-    #[serde(rename = "validationCategory")]
-    pub validation_category: validation_request::ValidationCategory,
     #[doc = "List of request details contain validationType and its request as key and value respectively."]
     #[serde(rename = "individualRequestDetails")]
     pub individual_request_details: Vec<ValidationInputRequestUnion>,
 }
 impl ValidationRequest {
-    pub fn new(
-        validation_category: validation_request::ValidationCategory,
-        individual_request_details: Vec<ValidationInputRequestUnion>,
-    ) -> Self {
+    pub fn new(individual_request_details: Vec<ValidationInputRequestUnion>) -> Self {
         Self {
-            validation_category,
             individual_request_details,
         }
     }
 }
-pub mod validation_request {
-    use super::*;
-    #[doc = "Identify the nature of validation."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ValidationCategory {
-        JobCreationValidation,
-    }
-}
+#[doc = "Identify the nature of validation."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "validationCategory")]
 pub enum ValidationRequestUnion {

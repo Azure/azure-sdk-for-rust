@@ -274,9 +274,6 @@ impl Endpoint {
 #[doc = "The resource specific properties for the Storage Mover resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EndpointBaseProperties {
-    #[doc = "The Endpoint resource type."]
-    #[serde(rename = "endpointType")]
-    pub endpoint_type: endpoint_base_properties::EndpointType,
     #[doc = "A description for the Endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -285,9 +282,8 @@ pub struct EndpointBaseProperties {
     pub provisioning_state: Option<endpoint_base_properties::ProvisioningState>,
 }
 impl EndpointBaseProperties {
-    pub fn new(endpoint_type: endpoint_base_properties::EndpointType) -> Self {
+    pub fn new() -> Self {
         Self {
-            endpoint_type,
             description: None,
             provisioning_state: None,
         }
@@ -295,43 +291,6 @@ impl EndpointBaseProperties {
 }
 pub mod endpoint_base_properties {
     use super::*;
-    #[doc = "The Endpoint resource type."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "EndpointType")]
-    pub enum EndpointType {
-        AzureStorageBlobContainer,
-        NfsMount,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for EndpointType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for EndpointType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for EndpointType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::AzureStorageBlobContainer => serializer.serialize_unit_variant("EndpointType", 0u32, "AzureStorageBlobContainer"),
-                Self::NfsMount => serializer.serialize_unit_variant("EndpointType", 1u32, "NfsMount"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
     #[doc = "The provisioning state of this resource."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ProvisioningState")]
@@ -368,6 +327,7 @@ pub mod endpoint_base_properties {
         }
     }
 }
+#[doc = "The Endpoint resource type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "endpointType")]
 pub enum EndpointBasePropertiesUnion {

@@ -231,8 +231,6 @@ impl ErrorDetails {
 #[doc = "Contains information used to connect to a Kubernetes cluster"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct KubernetesConnectionDetails {
-    #[serde(flatten)]
-    pub orchestrator_specific_connection_details: OrchestratorSpecificConnectionDetails,
     #[doc = "Gets the kubeconfig for the cluster."]
     #[serde(rename = "kubeConfig", default, skip_serializing_if = "Option::is_none")]
     pub kube_config: Option<String>,
@@ -256,18 +254,7 @@ impl ListConnectionDetailsParameters {
         }
     }
 }
-#[doc = "Base class for types that supply values used to connect to container orchestrators"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct OrchestratorSpecificConnectionDetails {
-    #[doc = "Gets the Instance type."]
-    #[serde(rename = "instanceType", default, skip_serializing_if = "Option::is_none")]
-    pub instance_type: Option<String>,
-}
-impl OrchestratorSpecificConnectionDetails {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
+#[doc = "Gets the Instance type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "instanceType")]
 pub enum OrchestratorSpecificConnectionDetailsUnion {

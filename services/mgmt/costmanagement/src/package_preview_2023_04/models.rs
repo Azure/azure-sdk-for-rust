@@ -619,17 +619,15 @@ impl BenefitUtilizationSummariesListResult {
 pub struct BenefitUtilizationSummary {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "Kind/type of the benefit."]
-    pub kind: BenefitKind,
 }
 impl BenefitUtilizationSummary {
-    pub fn new(kind: BenefitKind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource: Resource::default(),
-            kind,
         }
     }
 }
+#[doc = "Kind/type of the benefit."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum BenefitUtilizationSummaryUnion {
@@ -5436,11 +5434,9 @@ pub struct BenefitRecommendationProperties {
     #[doc = "The list of all benefit recommendations with the recommendation details."]
     #[serde(rename = "allRecommendationDetails", default, skip_serializing_if = "Option::is_none")]
     pub all_recommendation_details: Option<AllSavingsList>,
-    #[doc = "Kind of the recommendation scope."]
-    pub scope: RecommendationScope,
 }
 impl BenefitRecommendationProperties {
-    pub fn new(scope: RecommendationScope) -> Self {
+    pub fn new() -> Self {
         Self {
             first_consumption_date: None,
             last_consumption_date: None,
@@ -5454,10 +5450,10 @@ impl BenefitRecommendationProperties {
             cost_without_benefit: None,
             recommendation_details: None,
             all_recommendation_details: None,
-            scope,
         }
     }
 }
+#[doc = "Kind of the recommendation scope."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "scope")]
 pub enum BenefitRecommendationPropertiesUnion {

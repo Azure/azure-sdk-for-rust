@@ -107,53 +107,13 @@ impl ApplicationGroupListResult {
 pub struct ApplicationGroupPolicy {
     #[doc = "The Name of this policy"]
     pub name: String,
-    #[doc = "Application Group Policy types"]
-    #[serde(rename = "type")]
-    pub type_: application_group_policy::Type,
 }
 impl ApplicationGroupPolicy {
-    pub fn new(name: String, type_: application_group_policy::Type) -> Self {
-        Self { name, type_ }
+    pub fn new(name: String) -> Self {
+        Self { name }
     }
 }
-pub mod application_group_policy {
-    use super::*;
-    #[doc = "Application Group Policy types"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        ThrottlingPolicy,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::ThrottlingPolicy => serializer.serialize_unit_variant("Type", 0u32, "ThrottlingPolicy"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Application Group Policy types"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ApplicationGroupPolicyUnion {

@@ -61,18 +61,13 @@ impl Default for AuthenticationMode {
 #[doc = "Describes how data from an input is serialized or how data is serialized when written to an output in Avro format."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvroSerialization {
-    #[serde(flatten)]
-    pub serialization: Serialization,
     #[doc = "The properties that are associated with the Avro serialization type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AvroSerializationProperties>,
 }
 impl AvroSerialization {
-    pub fn new(serialization: Serialization) -> Self {
-        Self {
-            serialization,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with the Avro serialization type."]
@@ -86,18 +81,13 @@ impl AvroSerializationProperties {
 #[doc = "Describes an Azure Data Lake Store output data source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureDataLakeStoreOutputDataSource {
-    #[serde(flatten)]
-    pub output_data_source: OutputDataSource,
     #[doc = "The properties that are associated with an Azure Data Lake Store."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureDataLakeStoreOutputDataSourceProperties>,
 }
 impl AzureDataLakeStoreOutputDataSource {
-    pub fn new(output_data_source: OutputDataSource) -> Self {
-        Self {
-            output_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with an Azure Data Lake Store."]
@@ -132,18 +122,13 @@ impl AzureDataLakeStoreOutputDataSourceProperties {
 #[doc = "Defines the metadata of AzureFunctionOutputDataSource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFunctionOutputDataSource {
-    #[serde(flatten)]
-    pub output_data_source: OutputDataSource,
     #[doc = "The properties that are associated with an Azure Function output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureFunctionOutputDataSourceProperties>,
 }
 impl AzureFunctionOutputDataSource {
-    pub fn new(output_data_source: OutputDataSource) -> Self {
-        Self {
-            output_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with an Azure Function output."]
@@ -173,18 +158,13 @@ impl AzureFunctionOutputDataSourceProperties {
 #[doc = "The binding to an Azure Machine Learning web service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureMachineLearningWebServiceFunctionBinding {
-    #[serde(flatten)]
-    pub function_binding: FunctionBinding,
     #[doc = "The binding properties associated with an Azure Machine learning web service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureMachineLearningWebServiceFunctionBindingProperties>,
 }
 impl AzureMachineLearningWebServiceFunctionBinding {
-    pub fn new(function_binding: FunctionBinding) -> Self {
-        Self {
-            function_binding,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The binding properties associated with an Azure Machine learning web service."]
@@ -233,16 +213,13 @@ impl AzureMachineLearningWebServiceFunctionBindingRetrievalProperties {
 #[doc = "The parameters needed to retrieve the default function definition for an Azure Machine Learning web service function."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureMachineLearningWebServiceFunctionRetrieveDefaultDefinitionParameters {
-    #[serde(flatten)]
-    pub function_retrieve_default_definition_parameters: FunctionRetrieveDefaultDefinitionParameters,
     #[doc = "The binding retrieval properties associated with an Azure Machine learning web service."]
     #[serde(rename = "bindingRetrievalProperties", default, skip_serializing_if = "Option::is_none")]
     pub binding_retrieval_properties: Option<AzureMachineLearningWebServiceFunctionBindingRetrievalProperties>,
 }
 impl AzureMachineLearningWebServiceFunctionRetrieveDefaultDefinitionParameters {
-    pub fn new(function_retrieve_default_definition_parameters: FunctionRetrieveDefaultDefinitionParameters) -> Self {
+    pub fn new() -> Self {
         Self {
-            function_retrieve_default_definition_parameters,
             binding_retrieval_properties: None,
         }
     }
@@ -336,18 +313,13 @@ impl AzureSqlDatabaseDataSourceProperties {
 #[doc = "Describes an Azure SQL database output data source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureSqlDatabaseOutputDataSource {
-    #[serde(flatten)]
-    pub output_data_source: OutputDataSource,
     #[doc = "The properties that are associated with an Azure SQL database output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureSqlDatabaseOutputDataSourceProperties>,
 }
 impl AzureSqlDatabaseOutputDataSource {
-    pub fn new(output_data_source: OutputDataSource) -> Self {
-        Self {
-            output_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with an Azure SQL database output."]
@@ -364,18 +336,13 @@ impl AzureSqlDatabaseOutputDataSourceProperties {
 #[doc = "Describes an Azure SQL database reference input data source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureSqlReferenceInputDataSource {
-    #[serde(flatten)]
-    pub reference_input_data_source: ReferenceInputDataSource,
     #[doc = "The properties that are associated with SQL DB input containing reference data. Required on PUT (CreateOrReplace) requests."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureSqlReferenceInputDataSourceProperties>,
 }
 impl AzureSqlReferenceInputDataSource {
-    pub fn new(reference_input_data_source: ReferenceInputDataSource) -> Self {
-        Self {
-            reference_input_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with SQL DB input containing reference data. Required on PUT (CreateOrReplace) requests."]
@@ -441,18 +408,13 @@ impl AzureSynapseDataSourceProperties {
 #[doc = "Describes an Azure Synapse output data source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureSynapseOutputDataSource {
-    #[serde(flatten)]
-    pub output_data_source: OutputDataSource,
     #[doc = "The properties that are associated with an Azure Synapse output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureSynapseOutputDataSourceProperties>,
 }
 impl AzureSynapseOutputDataSource {
-    pub fn new(output_data_source: OutputDataSource) -> Self {
-        Self {
-            output_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with an Azure Synapse output."]
@@ -469,18 +431,13 @@ impl AzureSynapseOutputDataSourceProperties {
 #[doc = "Describes an Azure Table output data source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureTableOutputDataSource {
-    #[serde(flatten)]
-    pub output_data_source: OutputDataSource,
     #[doc = "The properties that are associated with an Azure Table output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureTableOutputDataSourceProperties>,
 }
 impl AzureTableOutputDataSource {
-    pub fn new(output_data_source: OutputDataSource) -> Self {
-        Self {
-            output_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with an Azure Table output."]
@@ -553,18 +510,13 @@ impl BlobDataSourceProperties {
 #[doc = "Describes a blob output data source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobOutputDataSource {
-    #[serde(flatten)]
-    pub output_data_source: OutputDataSource,
     #[doc = "The properties that are associated with a blob output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BlobOutputDataSourceProperties>,
 }
 impl BlobOutputDataSource {
-    pub fn new(output_data_source: OutputDataSource) -> Self {
-        Self {
-            output_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with a blob output."]
@@ -584,18 +536,13 @@ impl BlobOutputDataSourceProperties {
 #[doc = "Describes a blob input data source that contains reference data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobReferenceInputDataSource {
-    #[serde(flatten)]
-    pub reference_input_data_source: ReferenceInputDataSource,
     #[doc = "The properties that are associated with a blob input containing reference data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BlobReferenceInputDataSourceProperties>,
 }
 impl BlobReferenceInputDataSource {
-    pub fn new(reference_input_data_source: ReferenceInputDataSource) -> Self {
-        Self {
-            reference_input_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with a blob input containing reference data."]
@@ -612,18 +559,13 @@ impl BlobReferenceInputDataSourceProperties {
 #[doc = "Describes a blob input data source that contains stream data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobStreamInputDataSource {
-    #[serde(flatten)]
-    pub stream_input_data_source: StreamInputDataSource,
     #[doc = "The properties that are associated with a blob input containing stream data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<BlobStreamInputDataSourceProperties>,
 }
 impl BlobStreamInputDataSource {
-    pub fn new(stream_input_data_source: StreamInputDataSource) -> Self {
-        Self {
-            stream_input_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with a blob input containing stream data."]
@@ -956,18 +898,13 @@ impl Default for CompressionType {
 #[doc = "Describes how data from an input is serialized or how data is serialized when written to an output in CSV format."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CsvSerialization {
-    #[serde(flatten)]
-    pub serialization: Serialization,
     #[doc = "The properties that are associated with the CSV serialization type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<CsvSerializationProperties>,
 }
 impl CsvSerialization {
-    pub fn new(serialization: Serialization) -> Self {
-        Self {
-            serialization,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with the CSV serialization type."]
@@ -1022,18 +959,13 @@ impl Diagnostics {
 #[doc = "Describes a DocumentDB output data source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DocumentDbOutputDataSource {
-    #[serde(flatten)]
-    pub output_data_source: OutputDataSource,
     #[doc = "The properties that are associated with a DocumentDB output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DocumentDbOutputDataSourceProperties>,
 }
 impl DocumentDbOutputDataSource {
-    pub fn new(output_data_source: OutputDataSource) -> Self {
-        Self {
-            output_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with a DocumentDB output."]
@@ -1195,18 +1127,13 @@ impl EventHubDataSourceProperties {
 #[doc = "Describes an Event Hub output data source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubOutputDataSource {
-    #[serde(flatten)]
-    pub output_data_source: OutputDataSource,
     #[doc = "The properties that are associated with an Event Hub output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventHubOutputDataSourceProperties>,
 }
 impl EventHubOutputDataSource {
-    pub fn new(output_data_source: OutputDataSource) -> Self {
-        Self {
-            output_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with an Event Hub output."]
@@ -1234,18 +1161,13 @@ impl EventHubOutputDataSourceProperties {
 #[doc = "Describes an Event Hub input data source that contains stream data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubStreamInputDataSource {
-    #[serde(flatten)]
-    pub stream_input_data_source: StreamInputDataSource,
     #[doc = "The properties that are associated with a Event Hub input containing stream data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventHubStreamInputDataSourceProperties>,
 }
 impl EventHubStreamInputDataSource {
-    pub fn new(stream_input_data_source: StreamInputDataSource) -> Self {
-        Self {
-            stream_input_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with a Event Hub input containing stream data."]
@@ -1265,35 +1187,25 @@ impl EventHubStreamInputDataSourceProperties {
 #[doc = "Describes an Event Hub output data source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubV2OutputDataSource {
-    #[serde(flatten)]
-    pub output_data_source: OutputDataSource,
     #[doc = "The properties that are associated with an Event Hub output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventHubOutputDataSourceProperties>,
 }
 impl EventHubV2OutputDataSource {
-    pub fn new(output_data_source: OutputDataSource) -> Self {
-        Self {
-            output_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "Describes an Event Hub input data source that contains stream data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubV2StreamInputDataSource {
-    #[serde(flatten)]
-    pub stream_input_data_source: StreamInputDataSource,
     #[doc = "The properties that are associated with a Event Hub input containing stream data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventHubStreamInputDataSourceProperties>,
 }
 impl EventHubV2StreamInputDataSource {
-    pub fn new(stream_input_data_source: StreamInputDataSource) -> Self {
-        Self {
-            stream_input_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "Indicates the type of serialization that the input or output uses. Required on PUT (CreateOrReplace) requests."]
@@ -1377,18 +1289,13 @@ impl Serialize for EventsOutOfOrderPolicy {
 #[doc = "Describes a file input data source that contains reference data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FileReferenceInputDataSource {
-    #[serde(flatten)]
-    pub reference_input_data_source: ReferenceInputDataSource,
     #[doc = "The properties that are associated with a file input containing reference data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FileReferenceInputDataSourceProperties>,
 }
 impl FileReferenceInputDataSource {
-    pub fn new(reference_input_data_source: ReferenceInputDataSource) -> Self {
-        Self {
-            reference_input_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with a file input containing reference data."]
@@ -1417,18 +1324,7 @@ impl Function {
         Self::default()
     }
 }
-#[doc = "The physical binding of the function. For example, in the Azure Machine Learning web service’s case, this describes the endpoint."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FunctionBinding {
-    #[doc = "Indicates the function binding type."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl FunctionBinding {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "Indicates the function binding type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum FunctionBindingUnion {
@@ -1512,9 +1408,6 @@ impl FunctionOutput {
 #[doc = "The properties that are associated with a function."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FunctionProperties {
-    #[doc = "Indicates the type of function."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The current entity tag for the function. This is an opaque string. You can use it to detect whether the resource has changed between requests. You can also use it in the If-Match or If-None-Match headers for write operations for optimistic concurrency."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -1522,32 +1415,21 @@ pub struct FunctionProperties {
     pub properties: Option<FunctionConfiguration>,
 }
 impl FunctionProperties {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             etag: None,
             properties: None,
         }
     }
 }
+#[doc = "Indicates the type of function."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum FunctionPropertiesUnion {
     Aggregate(AggregateFunctionProperties),
     Scalar(ScalarFunctionProperties),
 }
-#[doc = "Parameters used to specify the type of function to retrieve the default definition for."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FunctionRetrieveDefaultDefinitionParameters {
-    #[doc = "Indicates the function binding type."]
-    #[serde(rename = "bindingType")]
-    pub binding_type: String,
-}
-impl FunctionRetrieveDefaultDefinitionParameters {
-    pub fn new(binding_type: String) -> Self {
-        Self { binding_type }
-    }
-}
+#[doc = "Indicates the function binding type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "bindingType")]
 pub enum FunctionRetrieveDefaultDefinitionParametersUnion {
@@ -1559,18 +1441,13 @@ pub enum FunctionRetrieveDefaultDefinitionParametersUnion {
 #[doc = "Describes a Gateway Message Bus output data source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GatewayMessageBusOutputDataSource {
-    #[serde(flatten)]
-    pub output_data_source: OutputDataSource,
     #[doc = "The properties that are associated with a Gateway Message Bus."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GatewayMessageBusOutputDataSourceProperties>,
 }
 impl GatewayMessageBusOutputDataSource {
-    pub fn new(output_data_source: OutputDataSource) -> Self {
-        Self {
-            output_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with a Gateway Message Bus."]
@@ -1599,18 +1476,13 @@ impl GatewayMessageBusSourceProperties {
 #[doc = "Describes a blob input data source that contains stream data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GatewayMessageBusStreamInputDataSource {
-    #[serde(flatten)]
-    pub stream_input_data_source: StreamInputDataSource,
     #[doc = "The properties that are associated with a gateway message bus input containing stream data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<GatewayMessageBusStreamInputDataSourceProperties>,
 }
 impl GatewayMessageBusStreamInputDataSource {
-    pub fn new(stream_input_data_source: StreamInputDataSource) -> Self {
-        Self {
-            stream_input_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with a gateway message bus input containing stream data."]
@@ -1684,9 +1556,6 @@ impl InputListResult {
 #[doc = "The properties that are associated with an input."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InputProperties {
-    #[doc = "Indicates whether the input is a source of reference data or stream data. Required on PUT (CreateOrReplace) requests."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Describes how data from an input is serialized or how data is serialized when written to an output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub serialization: Option<SerializationUnion>,
@@ -1704,9 +1573,8 @@ pub struct InputProperties {
     pub partition_key: Option<String>,
 }
 impl InputProperties {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             serialization: None,
             diagnostics: None,
             etag: None,
@@ -1715,6 +1583,7 @@ impl InputProperties {
         }
     }
 }
+#[doc = "Indicates whether the input is a source of reference data or stream data. Required on PUT (CreateOrReplace) requests."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum InputPropertiesUnion {
@@ -1724,18 +1593,13 @@ pub enum InputPropertiesUnion {
 #[doc = "Describes an IoT Hub input data source that contains stream data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTHubStreamInputDataSource {
-    #[serde(flatten)]
-    pub stream_input_data_source: StreamInputDataSource,
     #[doc = "The properties that are associated with a IoT Hub input containing stream data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IoTHubStreamInputDataSourceProperties>,
 }
 impl IoTHubStreamInputDataSource {
-    pub fn new(stream_input_data_source: StreamInputDataSource) -> Self {
-        Self {
-            stream_input_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with a IoT Hub input containing stream data."]
@@ -1765,18 +1629,13 @@ impl IoTHubStreamInputDataSourceProperties {
 #[doc = "The binding to a JavaScript function."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JavaScriptFunctionBinding {
-    #[serde(flatten)]
-    pub function_binding: FunctionBinding,
     #[doc = "The binding properties associated with a JavaScript function."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JavaScriptFunctionBindingProperties>,
 }
 impl JavaScriptFunctionBinding {
-    pub fn new(function_binding: FunctionBinding) -> Self {
-        Self {
-            function_binding,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The binding properties associated with a JavaScript function."]
@@ -1809,16 +1668,13 @@ impl JavaScriptFunctionBindingRetrievalProperties {
 #[doc = "The parameters needed to retrieve the default function definition for a JavaScript function."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JavaScriptFunctionRetrieveDefaultDefinitionParameters {
-    #[serde(flatten)]
-    pub function_retrieve_default_definition_parameters: FunctionRetrieveDefaultDefinitionParameters,
     #[doc = "The binding retrieval properties associated with a JavaScript function."]
     #[serde(rename = "bindingRetrievalProperties", default, skip_serializing_if = "Option::is_none")]
     pub binding_retrieval_properties: Option<JavaScriptFunctionBindingRetrievalProperties>,
 }
 impl JavaScriptFunctionRetrieveDefaultDefinitionParameters {
-    pub fn new(function_retrieve_default_definition_parameters: FunctionRetrieveDefaultDefinitionParameters) -> Self {
+    pub fn new() -> Self {
         Self {
-            function_retrieve_default_definition_parameters,
             binding_retrieval_properties: None,
         }
     }
@@ -1930,18 +1786,13 @@ impl Serialize for JsonOutputSerializationFormat {
 #[doc = "Describes how data from an input is serialized or how data is serialized when written to an output in JSON format."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JsonSerialization {
-    #[serde(flatten)]
-    pub serialization: Serialization,
     #[doc = "The properties that are associated with the JSON serialization type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JsonSerializationProperties>,
 }
 impl JsonSerialization {
-    pub fn new(serialization: Serialization) -> Self {
-        Self {
-            serialization,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with the JSON serialization type."]
@@ -2058,18 +1909,7 @@ impl Output {
         Self::default()
     }
 }
-#[doc = "Describes the data source that output will be written to."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OutputDataSource {
-    #[doc = "Indicates the type of data source output will be written to. Required on PUT (CreateOrReplace) requests."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl OutputDataSource {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "Indicates the type of data source output will be written to. Required on PUT (CreateOrReplace) requests."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum OutputDataSourceUnion {
@@ -2230,18 +2070,13 @@ impl Serialize for OutputStartMode {
 #[doc = "Describes how data from an input is serialized or how data is serialized when written to an output in Parquet format."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ParquetSerialization {
-    #[serde(flatten)]
-    pub serialization: Serialization,
     #[doc = "The properties that are associated with the Parquet serialization type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ParquetSerializationProperties>,
 }
 impl ParquetSerialization {
-    pub fn new(serialization: Serialization) -> Self {
-        Self {
-            serialization,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with the Parquet serialization type."]
@@ -2255,18 +2090,13 @@ impl ParquetSerializationProperties {
 #[doc = "Describes a Power BI output data source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PowerBiOutputDataSource {
-    #[serde(flatten)]
-    pub output_data_source: OutputDataSource,
     #[doc = "The properties that are associated with a Power BI output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PowerBiOutputDataSourceProperties>,
 }
 impl PowerBiOutputDataSource {
-    pub fn new(output_data_source: OutputDataSource) -> Self {
-        Self {
-            output_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with a Power BI output."]
@@ -2424,18 +2254,7 @@ impl ProxyResource {
         Self::default()
     }
 }
-#[doc = "Describes an input data source that contains reference data."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ReferenceInputDataSource {
-    #[doc = "Indicates the type of input data source containing reference data. Required on PUT (CreateOrReplace) requests."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl ReferenceInputDataSource {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "Indicates the type of input data source containing reference data. Required on PUT (CreateOrReplace) requests."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ReferenceInputDataSourceUnion {
@@ -2557,18 +2376,7 @@ impl ScaleStreamingJobParameters {
         Self::default()
     }
 }
-#[doc = "Describes how data from an input is serialized or how data is serialized when written to an output."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Serialization {
-    #[doc = "Indicates the type of serialization that the input or output uses. Required on PUT (CreateOrReplace) requests."]
-    #[serde(rename = "type")]
-    pub type_: EventSerializationType,
-}
-impl Serialization {
-    pub fn new(type_: EventSerializationType) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "Indicates the type of serialization that the input or output uses. Required on PUT (CreateOrReplace) requests."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum SerializationUnion {
@@ -2601,18 +2409,13 @@ impl ServiceBusDataSourceProperties {
 #[doc = "Describes a Service Bus Queue output data source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusQueueOutputDataSource {
-    #[serde(flatten)]
-    pub output_data_source: OutputDataSource,
     #[doc = "The properties that are associated with a Service Bus Queue output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceBusQueueOutputDataSourceProperties>,
 }
 impl ServiceBusQueueOutputDataSource {
-    pub fn new(output_data_source: OutputDataSource) -> Self {
-        Self {
-            output_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with a Service Bus Queue output."]
@@ -2643,18 +2446,13 @@ impl ServiceBusQueueOutputDataSourceProperties {
 #[doc = "Describes a Service Bus Topic output data source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusTopicOutputDataSource {
-    #[serde(flatten)]
-    pub output_data_source: OutputDataSource,
     #[doc = "The properties that are associated with a Service Bus Topic output."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceBusTopicOutputDataSourceProperties>,
 }
 impl ServiceBusTopicOutputDataSource {
-    pub fn new(output_data_source: OutputDataSource) -> Self {
-        Self {
-            output_data_source,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that are associated with a Service Bus Topic output."]
@@ -2762,18 +2560,7 @@ impl StorageAccount {
         Self::default()
     }
 }
-#[doc = "Describes an input data source that contains stream data."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StreamInputDataSource {
-    #[doc = "Indicates the type of input data source containing stream data. Required on PUT (CreateOrReplace) requests."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl StreamInputDataSource {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "Indicates the type of input data source containing stream data. Required on PUT (CreateOrReplace) requests."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum StreamInputDataSourceUnion {

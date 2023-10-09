@@ -58,65 +58,17 @@ impl AddonList {
 #[doc = "The properties of an addon"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddonProperties {
-    #[doc = "The type of private cloud addon"]
-    #[serde(rename = "addonType")]
-    pub addon_type: addon_properties::AddonType,
     #[doc = "The state of the addon provisioning"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<addon_properties::ProvisioningState>,
 }
 impl AddonProperties {
-    pub fn new(addon_type: addon_properties::AddonType) -> Self {
-        Self {
-            addon_type,
-            provisioning_state: None,
-        }
+    pub fn new() -> Self {
+        Self { provisioning_state: None }
     }
 }
 pub mod addon_properties {
     use super::*;
-    #[doc = "The type of private cloud addon"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "AddonType")]
-    pub enum AddonType {
-        #[serde(rename = "SRM")]
-        Srm,
-        #[serde(rename = "VR")]
-        Vr,
-        #[serde(rename = "HCX")]
-        Hcx,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for AddonType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for AddonType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for AddonType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Srm => serializer.serialize_unit_variant("AddonType", 0u32, "SRM"),
-                Self::Vr => serializer.serialize_unit_variant("AddonType", 1u32, "VR"),
-                Self::Hcx => serializer.serialize_unit_variant("AddonType", 2u32, "HCX"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
     #[doc = "The state of the addon provisioning"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ProvisioningState")]
@@ -163,6 +115,7 @@ pub mod addon_properties {
         }
     }
 }
+#[doc = "The type of private cloud addon"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "addonType")]
 pub enum AddonPropertiesUnion {
@@ -1828,57 +1781,13 @@ impl ScriptExecution {
 pub struct ScriptExecutionParameter {
     #[doc = "The parameter name"]
     pub name: String,
-    #[doc = "The type of execution parameter"]
-    #[serde(rename = "type")]
-    pub type_: script_execution_parameter::Type,
 }
 impl ScriptExecutionParameter {
-    pub fn new(name: String, type_: script_execution_parameter::Type) -> Self {
-        Self { name, type_ }
+    pub fn new(name: String) -> Self {
+        Self { name }
     }
 }
-pub mod script_execution_parameter {
-    use super::*;
-    #[doc = "The type of execution parameter"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        Value,
-        SecureValue,
-        Credential,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Value => serializer.serialize_unit_variant("Type", 0u32, "Value"),
-                Self::SecureValue => serializer.serialize_unit_variant("Type", 1u32, "SecureValue"),
-                Self::Credential => serializer.serialize_unit_variant("Type", 2u32, "Credential"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The type of execution parameter"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ScriptExecutionParameterUnion {
@@ -2416,9 +2325,6 @@ impl WorkloadNetworkDhcp {
 #[doc = "Base class for WorkloadNetworkDhcpServer and WorkloadNetworkDhcpRelay to inherit from"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkloadNetworkDhcpEntity {
-    #[doc = "Type of DHCP: SERVER or RELAY."]
-    #[serde(rename = "dhcpType")]
-    pub dhcp_type: workload_network_dhcp_entity::DhcpType,
     #[doc = "Display name of the DHCP entity."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
@@ -2437,9 +2343,8 @@ pub struct WorkloadNetworkDhcpEntity {
     pub revision: Option<i64>,
 }
 impl WorkloadNetworkDhcpEntity {
-    pub fn new(dhcp_type: workload_network_dhcp_entity::DhcpType) -> Self {
+    pub fn new() -> Self {
         Self {
-            dhcp_type,
             display_name: None,
             segments: Vec::new(),
             provisioning_state: None,
@@ -2449,45 +2354,6 @@ impl WorkloadNetworkDhcpEntity {
 }
 pub mod workload_network_dhcp_entity {
     use super::*;
-    #[doc = "Type of DHCP: SERVER or RELAY."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "DhcpType")]
-    pub enum DhcpType {
-        #[serde(rename = "SERVER")]
-        Server,
-        #[serde(rename = "RELAY")]
-        Relay,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for DhcpType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for DhcpType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for DhcpType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Server => serializer.serialize_unit_variant("DhcpType", 0u32, "SERVER"),
-                Self::Relay => serializer.serialize_unit_variant("DhcpType", 1u32, "RELAY"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
     #[doc = "The provisioning state"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ProvisioningState")]
@@ -2532,6 +2398,7 @@ pub mod workload_network_dhcp_entity {
         }
     }
 }
+#[doc = "Type of DHCP: SERVER or RELAY."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "dhcpType")]
 pub enum WorkloadNetworkDhcpEntityUnion {

@@ -71,21 +71,16 @@ impl AdlsGen2ArtifactProperties {
 #[doc = "A class for sent share artifact."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Artifact {
-    #[doc = "The types of asset."]
-    #[serde(rename = "storeKind")]
-    pub store_kind: StoreKind,
     #[doc = "A Store Reference for an artifact or sink."]
     #[serde(rename = "storeReference")]
     pub store_reference: StoreReference,
 }
 impl Artifact {
-    pub fn new(store_kind: StoreKind, store_reference: StoreReference) -> Self {
-        Self {
-            store_kind,
-            store_reference,
-        }
+    pub fn new(store_reference: StoreReference) -> Self {
+        Self { store_reference }
     }
 }
+#[doc = "The types of asset."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "storeKind")]
 pub enum ArtifactUnion {
@@ -467,18 +462,15 @@ impl PurviewShareErrorInfo {
 pub struct ReceivedShare {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[doc = "Defines the supported types for share."]
-    #[serde(rename = "shareKind")]
-    pub share_kind: ShareKind,
 }
 impl ReceivedShare {
-    pub fn new(share_kind: ShareKind) -> Self {
+    pub fn new() -> Self {
         Self {
             proxy_resource: ProxyResource::default(),
-            share_kind,
         }
     }
 }
+#[doc = "Defines the supported types for share."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "shareKind")]
 pub enum ReceivedShareUnion {
@@ -544,18 +536,15 @@ impl Serialize for ReferenceNameType {
 pub struct SentShare {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[doc = "Defines the supported types for share."]
-    #[serde(rename = "shareKind")]
-    pub share_kind: ShareKind,
 }
 impl SentShare {
-    pub fn new(share_kind: ShareKind) -> Self {
+    pub fn new() -> Self {
         Self {
             proxy_resource: ProxyResource::default(),
-            share_kind,
         }
     }
 }
+#[doc = "Defines the supported types for share."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "shareKind")]
 pub enum SentShareUnion {
@@ -566,18 +555,15 @@ pub enum SentShareUnion {
 pub struct SentShareInvitation {
     #[serde(flatten)]
     pub proxy_resource: ProxyResource,
-    #[doc = "The types of invitations."]
-    #[serde(rename = "invitationKind")]
-    pub invitation_kind: InvitationKind,
 }
 impl SentShareInvitation {
-    pub fn new(invitation_kind: InvitationKind) -> Self {
+    pub fn new() -> Self {
         Self {
             proxy_resource: ProxyResource::default(),
-            invitation_kind,
         }
     }
 }
+#[doc = "The types of invitations."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "invitationKind")]
 pub enum SentShareInvitationUnion {
@@ -761,21 +747,16 @@ impl Serialize for ShareStatus {
 #[doc = "Holds details on the destination of the mapped artifact"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Sink {
-    #[doc = "The types of asset."]
-    #[serde(rename = "storeKind")]
-    pub store_kind: StoreKind,
     #[doc = "A Store Reference for an artifact or sink."]
     #[serde(rename = "storeReference")]
     pub store_reference: StoreReference,
 }
 impl Sink {
-    pub fn new(store_kind: StoreKind, store_reference: StoreReference) -> Self {
-        Self {
-            store_kind,
-            store_reference,
-        }
+    pub fn new(store_reference: StoreReference) -> Self {
+        Self { store_reference }
     }
 }
+#[doc = "The types of asset."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "storeKind")]
 pub enum SinkUnion {

@@ -154,9 +154,6 @@ impl AccessReviewDecision {
 #[doc = "Target of the decision."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessReviewDecisionIdentity {
-    #[doc = "The type of decision target : User/ServicePrincipal"]
-    #[serde(rename = "type")]
-    pub type_: access_review_decision_identity::Type,
     #[doc = "The id of principal whose access was reviewed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -165,56 +162,14 @@ pub struct AccessReviewDecisionIdentity {
     pub display_name: Option<String>,
 }
 impl AccessReviewDecisionIdentity {
-    pub fn new(type_: access_review_decision_identity::Type) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             id: None,
             display_name: None,
         }
     }
 }
-pub mod access_review_decision_identity {
-    use super::*;
-    #[doc = "The type of decision target : User/ServicePrincipal"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        #[serde(rename = "user")]
-        User,
-        #[serde(rename = "servicePrincipal")]
-        ServicePrincipal,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::User => serializer.serialize_unit_variant("Type", 0u32, "user"),
-                Self::ServicePrincipal => serializer.serialize_unit_variant("Type", 1u32, "servicePrincipal"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The type of decision target : User/ServicePrincipal"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum AccessReviewDecisionIdentityUnion {
@@ -422,9 +377,6 @@ pub mod access_review_decision_properties {
 #[doc = "Target of the decision."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessReviewDecisionResource {
-    #[doc = "The type of resource: azureRole"]
-    #[serde(rename = "type")]
-    pub type_: access_review_decision_resource::Type,
     #[doc = "The id of resource associated with a decision record."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -433,53 +385,14 @@ pub struct AccessReviewDecisionResource {
     pub display_name: Option<String>,
 }
 impl AccessReviewDecisionResource {
-    pub fn new(type_: access_review_decision_resource::Type) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             id: None,
             display_name: None,
         }
     }
 }
-pub mod access_review_decision_resource {
-    use super::*;
-    #[doc = "The type of resource: azureRole"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        #[serde(rename = "azureRole")]
-        AzureRole,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::AzureRole => serializer.serialize_unit_variant("Type", 0u32, "azureRole"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The type of resource: azureRole"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum AccessReviewDecisionResourceUnion {

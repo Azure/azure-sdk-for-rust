@@ -3471,69 +3471,7 @@ impl MetricAlertAction {
         Self::default()
     }
 }
-#[doc = "The rule criteria that defines the conditions of the alert rule."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct MetricAlertCriteria {
-    #[doc = "specifies the type of the alert criteria."]
-    #[serde(rename = "odata.type")]
-    pub odata_type: metric_alert_criteria::OdataType,
-}
-impl MetricAlertCriteria {
-    pub fn new(odata_type: metric_alert_criteria::OdataType) -> Self {
-        Self { odata_type }
-    }
-}
-pub mod metric_alert_criteria {
-    use super::*;
-    #[doc = "specifies the type of the alert criteria."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "OdataType")]
-    pub enum OdataType {
-        #[serde(rename = "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria")]
-        MicrosoftAzureMonitorSingleResourceMultipleMetricCriteria,
-        #[serde(rename = "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria")]
-        MicrosoftAzureMonitorMultipleResourceMultipleMetricCriteria,
-        #[serde(rename = "Microsoft.Azure.Monitor.WebtestLocationAvailabilityCriteria")]
-        MicrosoftAzureMonitorWebtestLocationAvailabilityCriteria,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for OdataType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for OdataType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for OdataType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::MicrosoftAzureMonitorSingleResourceMultipleMetricCriteria => {
-                    serializer.serialize_unit_variant("OdataType", 0u32, "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria")
-                }
-                Self::MicrosoftAzureMonitorMultipleResourceMultipleMetricCriteria => {
-                    serializer.serialize_unit_variant("OdataType", 1u32, "Microsoft.Azure.Monitor.MultipleResourceMultipleMetricCriteria")
-                }
-                Self::MicrosoftAzureMonitorWebtestLocationAvailabilityCriteria => {
-                    serializer.serialize_unit_variant("OdataType", 2u32, "Microsoft.Azure.Monitor.WebtestLocationAvailabilityCriteria")
-                }
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "specifies the type of the alert criteria."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "odata.type")]
 pub enum MetricAlertCriteriaUnion {
@@ -3547,8 +3485,6 @@ pub enum MetricAlertCriteriaUnion {
 #[doc = "Specifies the metric alert criteria for multiple resource that has multiple metric criteria."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertMultipleResourceMultipleMetricCriteria {
-    #[serde(flatten)]
-    pub metric_alert_criteria: MetricAlertCriteria,
     #[doc = "the list of multiple metric criteria for this 'all of' operation. "]
     #[serde(
         rename = "allOf",
@@ -3559,11 +3495,8 @@ pub struct MetricAlertMultipleResourceMultipleMetricCriteria {
     pub all_of: Vec<MultiMetricCriteriaUnion>,
 }
 impl MetricAlertMultipleResourceMultipleMetricCriteria {
-    pub fn new(metric_alert_criteria: MetricAlertCriteria) -> Self {
-        Self {
-            metric_alert_criteria,
-            all_of: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { all_of: Vec::new() }
     }
 }
 #[doc = "An alert rule."]
@@ -3744,8 +3677,6 @@ impl MetricAlertResourcePatch {
 #[doc = "Specifies the metric alert criteria for a single resource that has multiple metric criteria."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MetricAlertSingleResourceMultipleMetricCriteria {
-    #[serde(flatten)]
-    pub metric_alert_criteria: MetricAlertCriteria,
     #[doc = "The list of metric criteria for this 'all of' operation. "]
     #[serde(
         rename = "allOf",
@@ -3756,11 +3687,8 @@ pub struct MetricAlertSingleResourceMultipleMetricCriteria {
     pub all_of: Vec<MetricCriteria>,
 }
 impl MetricAlertSingleResourceMultipleMetricCriteria {
-    pub fn new(metric_alert_criteria: MetricAlertCriteria) -> Self {
-        Self {
-            metric_alert_criteria,
-            all_of: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { all_of: Vec::new() }
     }
 }
 #[doc = "An alert status."]
@@ -4382,9 +4310,6 @@ impl Metrics {
 #[doc = "The types of conditions for a multi resource alert."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MultiMetricCriteria {
-    #[doc = "Specifies the type of threshold criteria"]
-    #[serde(rename = "criterionType")]
-    pub criterion_type: multi_metric_criteria::CriterionType,
     #[doc = "Name of the criteria."]
     pub name: String,
     #[doc = "Name of the metric."]
@@ -4408,14 +4333,8 @@ pub struct MultiMetricCriteria {
     pub skip_metric_validation: Option<bool>,
 }
 impl MultiMetricCriteria {
-    pub fn new(
-        criterion_type: multi_metric_criteria::CriterionType,
-        name: String,
-        metric_name: String,
-        time_aggregation: multi_metric_criteria::TimeAggregation,
-    ) -> Self {
+    pub fn new(name: String, metric_name: String, time_aggregation: multi_metric_criteria::TimeAggregation) -> Self {
         Self {
-            criterion_type,
             name,
             metric_name,
             metric_namespace: None,
@@ -4427,43 +4346,6 @@ impl MultiMetricCriteria {
 }
 pub mod multi_metric_criteria {
     use super::*;
-    #[doc = "Specifies the type of threshold criteria"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "CriterionType")]
-    pub enum CriterionType {
-        StaticThresholdCriterion,
-        DynamicThresholdCriterion,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for CriterionType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for CriterionType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for CriterionType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::StaticThresholdCriterion => serializer.serialize_unit_variant("CriterionType", 0u32, "StaticThresholdCriterion"),
-                Self::DynamicThresholdCriterion => serializer.serialize_unit_variant("CriterionType", 1u32, "DynamicThresholdCriterion"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
     #[doc = "the criteria time aggregation types."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "TimeAggregation")]
@@ -4508,6 +4390,7 @@ pub mod multi_metric_criteria {
         }
     }
 }
+#[doc = "Specifies the type of threshold criteria"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "criterionType")]
 pub enum MultiMetricCriteriaUnion {
@@ -5303,18 +5186,7 @@ impl RetentionPolicy {
         Self { enabled, days }
     }
 }
-#[doc = "The action that is performed when the alert rule becomes active, and when an alert condition is resolved."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RuleAction {
-    #[doc = "specifies the type of the action. There are two types of actions: RuleEmailAction and RuleWebhookAction."]
-    #[serde(rename = "odata.type")]
-    pub odata_type: String,
-}
-impl RuleAction {
-    pub fn new(odata_type: String) -> Self {
-        Self { odata_type }
-    }
-}
+#[doc = "specifies the type of the action. There are two types of actions: RuleEmailAction and RuleWebhookAction."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "odata.type")]
 pub enum RuleActionUnion {
@@ -5326,21 +5198,16 @@ pub enum RuleActionUnion {
 #[doc = "The condition that results in the alert rule being activated."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleCondition {
-    #[doc = "specifies the type of condition. This can be one of three types: ManagementEventRuleCondition (occurrences of management events), LocationThresholdRuleCondition (based on the number of failures of a web test), and ThresholdRuleCondition (based on the threshold of a metric)."]
-    #[serde(rename = "odata.type")]
-    pub odata_type: String,
     #[doc = "The resource from which the rule collects its data."]
     #[serde(rename = "dataSource", default, skip_serializing_if = "Option::is_none")]
     pub data_source: Option<RuleDataSourceUnion>,
 }
 impl RuleCondition {
-    pub fn new(odata_type: String) -> Self {
-        Self {
-            odata_type,
-            data_source: None,
-        }
+    pub fn new() -> Self {
+        Self { data_source: None }
     }
 }
+#[doc = "specifies the type of condition. This can be one of three types: ManagementEventRuleCondition (occurrences of management events), LocationThresholdRuleCondition (based on the number of failures of a web test), and ThresholdRuleCondition (based on the threshold of a metric)."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "odata.type")]
 pub enum RuleConditionUnion {
@@ -5354,9 +5221,6 @@ pub enum RuleConditionUnion {
 #[doc = "The resource from which the rule collects its data."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleDataSource {
-    #[doc = "specifies the type of data source. There are two types of rule data sources: RuleMetricDataSource and RuleManagementEventDataSource"]
-    #[serde(rename = "odata.type")]
-    pub odata_type: String,
     #[doc = "the resource identifier of the resource the rule monitors. **NOTE**: this property cannot be updated for an existing rule."]
     #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
     pub resource_uri: Option<String>,
@@ -5371,9 +5235,8 @@ pub struct RuleDataSource {
     pub metric_namespace: Option<String>,
 }
 impl RuleDataSource {
-    pub fn new(odata_type: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            odata_type,
             resource_uri: None,
             legacy_resource_id: None,
             resource_location: None,
@@ -5381,6 +5244,7 @@ impl RuleDataSource {
         }
     }
 }
+#[doc = "specifies the type of data source. There are two types of rule data sources: RuleMetricDataSource and RuleManagementEventDataSource"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "odata.type")]
 pub enum RuleDataSourceUnion {
@@ -5392,8 +5256,6 @@ pub enum RuleDataSourceUnion {
 #[doc = "Specifies the action to send email when the rule condition is evaluated. The discriminator is always RuleEmailAction in this case."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleEmailAction {
-    #[serde(flatten)]
-    pub rule_action: RuleAction,
     #[doc = "Whether the administrators (service and co-administrators) of the service should be notified when the alert is activated."]
     #[serde(rename = "sendToServiceOwners", default, skip_serializing_if = "Option::is_none")]
     pub send_to_service_owners: Option<bool>,
@@ -5407,9 +5269,8 @@ pub struct RuleEmailAction {
     pub custom_emails: Vec<String>,
 }
 impl RuleEmailAction {
-    pub fn new(rule_action: RuleAction) -> Self {
+    pub fn new() -> Self {
         Self {
-            rule_action,
             send_to_service_owners: None,
             custom_emails: Vec::new(),
         }
@@ -5511,8 +5372,6 @@ impl RuleResolveConfiguration {
 #[doc = "Specifies the action to post to service when the rule condition is evaluated. The discriminator is always RuleWebhookAction in this case."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RuleWebhookAction {
-    #[serde(flatten)]
-    pub rule_action: RuleAction,
     #[doc = "the service uri to Post the notification when the alert activates or resolves."]
     #[serde(rename = "serviceUri", default, skip_serializing_if = "Option::is_none")]
     pub service_uri: Option<String>,
@@ -5521,9 +5380,8 @@ pub struct RuleWebhookAction {
     pub properties: Option<serde_json::Value>,
 }
 impl RuleWebhookAction {
-    pub fn new(rule_action: RuleAction) -> Self {
+    pub fn new() -> Self {
         Self {
-            rule_action,
             service_uri: None,
             properties: None,
         }
@@ -6865,8 +6723,6 @@ impl WebhookReceiver {
 #[doc = "Specifies the metric alert rule criteria for a web test resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebtestLocationAvailabilityCriteria {
-    #[serde(flatten)]
-    pub metric_alert_criteria: MetricAlertCriteria,
     #[doc = "The Application Insights web test Id."]
     #[serde(rename = "webTestId")]
     pub web_test_id: String,
@@ -6878,9 +6734,8 @@ pub struct WebtestLocationAvailabilityCriteria {
     pub failed_location_count: f64,
 }
 impl WebtestLocationAvailabilityCriteria {
-    pub fn new(metric_alert_criteria: MetricAlertCriteria, web_test_id: String, component_id: String, failed_location_count: f64) -> Self {
+    pub fn new(web_test_id: String, component_id: String, failed_location_count: f64) -> Self {
         Self {
-            metric_alert_criteria,
             web_test_id,
             component_id,
             failed_location_count,

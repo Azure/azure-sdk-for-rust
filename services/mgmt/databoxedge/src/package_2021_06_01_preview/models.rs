@@ -26,61 +26,19 @@ impl ArmBaseModel {
 pub struct Addon {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "Addon type."]
-    pub kind: addon::Kind,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 impl Addon {
-    pub fn new(kind: addon::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
-            kind,
             system_data: None,
         }
     }
 }
-pub mod addon {
-    use super::*;
-    #[doc = "Addon type."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        IotEdge,
-        ArcForKubernetes,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::IotEdge => serializer.serialize_unit_variant("Kind", 0u32, "IotEdge"),
-                Self::ArcForKubernetes => serializer.serialize_unit_variant("Kind", 1u32, "ArcForKubernetes"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Addon type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum AddonUnion {
@@ -5342,74 +5300,19 @@ impl ResourceTypeSku {
 pub struct Role {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "Role type."]
-    pub kind: role::Kind,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 impl Role {
-    pub fn new(kind: role::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
-            kind,
             system_data: None,
         }
     }
 }
-pub mod role {
-    use super::*;
-    #[doc = "Role type."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        #[serde(rename = "IOT")]
-        Iot,
-        #[serde(rename = "ASA")]
-        Asa,
-        Functions,
-        Cognitive,
-        #[serde(rename = "MEC")]
-        Mec,
-        CloudEdgeManagement,
-        Kubernetes,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Iot => serializer.serialize_unit_variant("Kind", 0u32, "IOT"),
-                Self::Asa => serializer.serialize_unit_variant("Kind", 1u32, "ASA"),
-                Self::Functions => serializer.serialize_unit_variant("Kind", 2u32, "Functions"),
-                Self::Cognitive => serializer.serialize_unit_variant("Kind", 3u32, "Cognitive"),
-                Self::Mec => serializer.serialize_unit_variant("Kind", 4u32, "MEC"),
-                Self::CloudEdgeManagement => serializer.serialize_unit_variant("Kind", 5u32, "CloudEdgeManagement"),
-                Self::Kubernetes => serializer.serialize_unit_variant("Kind", 6u32, "Kubernetes"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Role type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum RoleUnion {
@@ -6679,58 +6582,16 @@ pub struct Trigger {
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
-    #[doc = "Trigger Kind."]
-    pub kind: trigger::Kind,
 }
 impl Trigger {
-    pub fn new(kind: trigger::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
             system_data: None,
-            kind,
         }
     }
 }
-pub mod trigger {
-    use super::*;
-    #[doc = "Trigger Kind."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        FileEvent,
-        PeriodicTimerEvent,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::FileEvent => serializer.serialize_unit_variant("Kind", 0u32, "FileEvent"),
-                Self::PeriodicTimerEvent => serializer.serialize_unit_variant("Kind", 1u32, "PeriodicTimerEvent"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Trigger Kind."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum TriggerUnion {

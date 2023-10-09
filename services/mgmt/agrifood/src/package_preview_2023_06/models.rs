@@ -6,15 +6,13 @@ use std::str::FromStr;
 #[doc = "ApiKeyAuthCredentials class for ApiKey based Auth."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiKeyAuthCredentials {
-    #[serde(flatten)]
-    pub auth_credentials: AuthCredentials,
     #[doc = "Properties of the key vault."]
     #[serde(rename = "apiKey")]
     pub api_key: KeyVaultProperties,
 }
 impl ApiKeyAuthCredentials {
-    pub fn new(auth_credentials: AuthCredentials, api_key: KeyVaultProperties) -> Self {
-        Self { auth_credentials, api_key }
+    pub fn new(api_key: KeyVaultProperties) -> Self {
+        Self { api_key }
     }
 }
 #[doc = "Api properties."]
@@ -59,17 +57,7 @@ impl ArmAsyncOperationError {
         Self::default()
     }
 }
-#[doc = "AuthCredentials abstract base class for Auth Purpose."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthCredentials {
-    #[doc = "Enum for different types of AuthCredentials supported."]
-    pub kind: AuthCredentialsKind,
-}
-impl AuthCredentials {
-    pub fn new(kind: AuthCredentialsKind) -> Self {
-        Self { kind }
-    }
-}
+#[doc = "Enum for different types of AuthCredentials supported."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum AuthCredentialsUnion {
@@ -856,8 +844,6 @@ impl MarketplaceOfferDetails {
 #[doc = "OAuthClientCredentials for clientId clientSecret auth."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OAuthClientCredentials {
-    #[serde(flatten)]
-    pub auth_credentials: AuthCredentials,
     #[doc = "ClientId associated with the provider."]
     #[serde(rename = "clientId")]
     pub client_id: String,
@@ -866,12 +852,8 @@ pub struct OAuthClientCredentials {
     pub client_secret: KeyVaultProperties,
 }
 impl OAuthClientCredentials {
-    pub fn new(auth_credentials: AuthCredentials, client_id: String, client_secret: KeyVaultProperties) -> Self {
-        Self {
-            auth_credentials,
-            client_id,
-            client_secret,
-        }
+    pub fn new(client_id: String, client_secret: KeyVaultProperties) -> Self {
+        Self { client_id, client_secret }
     }
 }
 #[doc = "Details of a REST API operation, returned from the Resource Provider Operations API"]

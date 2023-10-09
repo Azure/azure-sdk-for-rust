@@ -76,18 +76,7 @@ impl ApiTokenCollection {
         Self { value, next_link: None }
     }
 }
-#[doc = "The device attestation information."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Attestation {
-    #[doc = "Type of the attestation."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl Attestation {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "Type of the attestation."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum AttestationUnion {
@@ -114,18 +103,7 @@ impl BlobStorageV1Destination {
         }
     }
 }
-#[doc = "The authentication definition of blob storage destination."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BlobStorageV1DestinationAuth {
-    #[doc = "The kind of authentication to use."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl BlobStorageV1DestinationAuth {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum BlobStorageV1DestinationAuthUnion {
@@ -137,8 +115,6 @@ pub enum BlobStorageV1DestinationAuthUnion {
 #[doc = "The authentication definition with connection string of blob storage destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobStorageV1DestinationConnectionStringAuth {
-    #[serde(flatten)]
-    pub blob_storage_v1_destination_auth: BlobStorageV1DestinationAuth,
     #[doc = "The connection string for accessing the blob storage account."]
     #[serde(rename = "connectionString")]
     pub connection_string: String,
@@ -147,9 +123,8 @@ pub struct BlobStorageV1DestinationConnectionStringAuth {
     pub container_name: String,
 }
 impl BlobStorageV1DestinationConnectionStringAuth {
-    pub fn new(blob_storage_v1_destination_auth: BlobStorageV1DestinationAuth, connection_string: String, container_name: String) -> Self {
+    pub fn new(connection_string: String, container_name: String) -> Self {
         Self {
-            blob_storage_v1_destination_auth,
             connection_string,
             container_name,
         }
@@ -158,8 +133,6 @@ impl BlobStorageV1DestinationConnectionStringAuth {
 #[doc = "The authentication definition with system assigned managed identity of blob storage destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BlobStorageV1DestinationSystemAssignedManagedIdentityAuth {
-    #[serde(flatten)]
-    pub blob_storage_v1_destination_auth: BlobStorageV1DestinationAuth,
     #[doc = "The storage account's blob service endpoint URL."]
     #[serde(rename = "endpointUri")]
     pub endpoint_uri: String,
@@ -168,9 +141,8 @@ pub struct BlobStorageV1DestinationSystemAssignedManagedIdentityAuth {
     pub container_name: String,
 }
 impl BlobStorageV1DestinationSystemAssignedManagedIdentityAuth {
-    pub fn new(blob_storage_v1_destination_auth: BlobStorageV1DestinationAuth, endpoint_uri: String, container_name: String) -> Self {
+    pub fn new(endpoint_uri: String, container_name: String) -> Self {
         Self {
-            blob_storage_v1_destination_auth,
             endpoint_uri,
             container_name,
         }
@@ -196,16 +168,11 @@ impl CapabilityJobData {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudPropertyJobData {
     #[serde(flatten)]
-    pub job_data: JobData,
-    #[serde(flatten)]
     pub capability_job_data: CapabilityJobData,
 }
 impl CloudPropertyJobData {
-    pub fn new(job_data: JobData, capability_job_data: CapabilityJobData) -> Self {
-        Self {
-            job_data,
-            capability_job_data,
-        }
+    pub fn new(capability_job_data: CapabilityJobData) -> Self {
+        Self { capability_job_data }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -225,16 +192,11 @@ impl Collection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommandJobData {
     #[serde(flatten)]
-    pub job_data: JobData,
-    #[serde(flatten)]
     pub capability_job_data: CapabilityJobData,
 }
 impl CommandJobData {
-    pub fn new(job_data: JobData, capability_job_data: CapabilityJobData) -> Self {
-        Self {
-            job_data,
-            capability_job_data,
-        }
+    pub fn new(capability_job_data: CapabilityJobData) -> Self {
+        Self { capability_job_data }
     }
 }
 #[doc = "The azure data explorer destination."]
@@ -269,18 +231,7 @@ impl DataExplorerV1Destination {
         }
     }
 }
-#[doc = "The authentication definition of azure data explorer destination."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataExplorerV1DestinationAuth {
-    #[doc = "The kind of authentication to use."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl DataExplorerV1DestinationAuth {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DataExplorerV1DestinationAuthUnion {
@@ -292,8 +243,6 @@ pub enum DataExplorerV1DestinationAuthUnion {
 #[doc = "The authentication definition with service principal of azure data explorer destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataExplorerV1DestinationServicePrincipalAuth {
-    #[serde(flatten)]
-    pub data_explorer_v1_destination_auth: DataExplorerV1DestinationAuth,
     #[doc = "Service Principal client ID."]
     #[serde(rename = "clientId")]
     pub client_id: String,
@@ -305,14 +254,8 @@ pub struct DataExplorerV1DestinationServicePrincipalAuth {
     pub client_secret: String,
 }
 impl DataExplorerV1DestinationServicePrincipalAuth {
-    pub fn new(
-        data_explorer_v1_destination_auth: DataExplorerV1DestinationAuth,
-        client_id: String,
-        tenant_id: String,
-        client_secret: String,
-    ) -> Self {
+    pub fn new(client_id: String, tenant_id: String, client_secret: String) -> Self {
         Self {
-            data_explorer_v1_destination_auth,
             client_id,
             tenant_id,
             client_secret,
@@ -321,15 +264,10 @@ impl DataExplorerV1DestinationServicePrincipalAuth {
 }
 #[doc = "The authentication definition with system assigned managed identity of azure data explorer destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataExplorerV1DestinationSystemAssignedManagedIdentityAuth {
-    #[serde(flatten)]
-    pub data_explorer_v1_destination_auth: DataExplorerV1DestinationAuth,
-}
+pub struct DataExplorerV1DestinationSystemAssignedManagedIdentityAuth {}
 impl DataExplorerV1DestinationSystemAssignedManagedIdentityAuth {
-    pub fn new(data_explorer_v1_destination_auth: DataExplorerV1DestinationAuth) -> Self {
-        Self {
-            data_explorer_v1_destination_auth,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -379,20 +317,17 @@ pub struct Destination {
     #[doc = "Display name of the destination."]
     #[serde(rename = "displayName")]
     pub display_name: String,
-    #[doc = "The type of destination configuration."]
-    #[serde(rename = "type")]
-    pub type_: String,
 }
 impl Destination {
-    pub fn new(display_name: String, type_: String) -> Self {
+    pub fn new(display_name: String) -> Self {
         Self {
             data_export_status: DataExportStatus::default(),
             id: None,
             display_name,
-            type_,
         }
     }
 }
+#[doc = "The type of destination configuration."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DestinationUnion {
@@ -757,14 +692,12 @@ impl DeviceTemplateCollection {
 #[doc = "The device template migration job data definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeviceTemplateMigrationJobData {
-    #[serde(flatten)]
-    pub job_data: JobData,
     #[doc = "The target device template to which devices will be migrated."]
     pub template: String,
 }
 impl DeviceTemplateMigrationJobData {
-    pub fn new(job_data: JobData, template: String) -> Self {
-        Self { job_data, template }
+    pub fn new(template: String) -> Self {
+        Self { template }
     }
 }
 #[doc = "The email user definition."]
@@ -853,18 +786,7 @@ impl EventHubsV1Destination {
         }
     }
 }
-#[doc = "The authentication definition for event hub destination."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventHubsV1DestinationAuth {
-    #[doc = "The kind of authentication to use."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl EventHubsV1DestinationAuth {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum EventHubsV1DestinationAuthUnion {
@@ -876,25 +798,18 @@ pub enum EventHubsV1DestinationAuthUnion {
 #[doc = "The authentication definition with connection string for event hub destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubsV1DestinationConnectionStringAuth {
-    #[serde(flatten)]
-    pub event_hubs_v1_destination_auth: EventHubsV1DestinationAuth,
     #[doc = "The connection string for accessing the Event Hubs namespace, including the `EntityPath` of the event hub."]
     #[serde(rename = "connectionString")]
     pub connection_string: String,
 }
 impl EventHubsV1DestinationConnectionStringAuth {
-    pub fn new(event_hubs_v1_destination_auth: EventHubsV1DestinationAuth, connection_string: String) -> Self {
-        Self {
-            event_hubs_v1_destination_auth,
-            connection_string,
-        }
+    pub fn new(connection_string: String) -> Self {
+        Self { connection_string }
     }
 }
 #[doc = "The authentication definition with system assigned managed identity for event hub destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubsV1DestinationSystemAssignedManagedIdentityAuth {
-    #[serde(flatten)]
-    pub event_hubs_v1_destination_auth: EventHubsV1DestinationAuth,
     #[doc = "The host name of the Event Hubs namespace."]
     #[serde(rename = "hostName")]
     pub host_name: String,
@@ -903,12 +818,8 @@ pub struct EventHubsV1DestinationSystemAssignedManagedIdentityAuth {
     pub event_hub_name: String,
 }
 impl EventHubsV1DestinationSystemAssignedManagedIdentityAuth {
-    pub fn new(event_hubs_v1_destination_auth: EventHubsV1DestinationAuth, host_name: String, event_hub_name: String) -> Self {
-        Self {
-            event_hubs_v1_destination_auth,
-            host_name,
-            event_hub_name,
-        }
+    pub fn new(host_name: String, event_hub_name: String) -> Self {
+        Self { host_name, event_hub_name }
     }
 }
 #[doc = "The data export definition."]
@@ -1172,18 +1083,7 @@ impl JobCollection {
         Self { value, next_link: None }
     }
 }
-#[doc = "The job data definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct JobData {
-    #[doc = "Type of the job data."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl JobData {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "Type of the job data."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum JobDataUnion {
@@ -1282,16 +1182,11 @@ impl Permission {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PropertyJobData {
     #[serde(flatten)]
-    pub job_data: JobData,
-    #[serde(flatten)]
     pub capability_job_data: CapabilityJobData,
 }
 impl PropertyJobData {
-    pub fn new(job_data: JobData, capability_job_data: CapabilityJobData) -> Self {
-        Self {
-            job_data,
-            capability_job_data,
-        }
+    pub fn new(capability_job_data: CapabilityJobData) -> Self {
+        Self { capability_job_data }
     }
 }
 #[doc = "The query request payload definition."]
@@ -1379,18 +1274,7 @@ impl ServiceBusQueueV1Destination {
         }
     }
 }
-#[doc = "The authentication definition for service bus queue destination."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceBusQueueV1DestinationAuth {
-    #[doc = "The kind of authentication to use."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl ServiceBusQueueV1DestinationAuth {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ServiceBusQueueV1DestinationAuthUnion {
@@ -1402,25 +1286,18 @@ pub enum ServiceBusQueueV1DestinationAuthUnion {
 #[doc = "The authentication definition with connection string for service bus queue destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusQueueV1DestinationConnectionStringAuth {
-    #[serde(flatten)]
-    pub service_bus_queue_v1_destination_auth: ServiceBusQueueV1DestinationAuth,
     #[doc = "The connection string for accessing the Service Bus namespace, including the `EntityPath` of the queue."]
     #[serde(rename = "connectionString")]
     pub connection_string: String,
 }
 impl ServiceBusQueueV1DestinationConnectionStringAuth {
-    pub fn new(service_bus_queue_v1_destination_auth: ServiceBusQueueV1DestinationAuth, connection_string: String) -> Self {
-        Self {
-            service_bus_queue_v1_destination_auth,
-            connection_string,
-        }
+    pub fn new(connection_string: String) -> Self {
+        Self { connection_string }
     }
 }
 #[doc = "The authentication definition with system assigned managed identity for service bus queue destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusQueueV1DestinationSystemAssignedManagedIdentityAuth {
-    #[serde(flatten)]
-    pub service_bus_queue_v1_destination_auth: ServiceBusQueueV1DestinationAuth,
     #[doc = "The host name of the Service Bus namespace."]
     #[serde(rename = "hostName")]
     pub host_name: String,
@@ -1429,12 +1306,8 @@ pub struct ServiceBusQueueV1DestinationSystemAssignedManagedIdentityAuth {
     pub queue_name: String,
 }
 impl ServiceBusQueueV1DestinationSystemAssignedManagedIdentityAuth {
-    pub fn new(service_bus_queue_v1_destination_auth: ServiceBusQueueV1DestinationAuth, host_name: String, queue_name: String) -> Self {
-        Self {
-            service_bus_queue_v1_destination_auth,
-            host_name,
-            queue_name,
-        }
+    pub fn new(host_name: String, queue_name: String) -> Self {
+        Self { host_name, queue_name }
     }
 }
 #[doc = "The service bus topic destination definition."]
@@ -1453,18 +1326,7 @@ impl ServiceBusTopicV1Destination {
         }
     }
 }
-#[doc = "The authentication definition for service bus topic destination."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServiceBusTopicV1DestinationAuth {
-    #[doc = "The kind of authentication to use."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl ServiceBusTopicV1DestinationAuth {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ServiceBusTopicV1DestinationAuthUnion {
@@ -1476,25 +1338,18 @@ pub enum ServiceBusTopicV1DestinationAuthUnion {
 #[doc = "The authentication definition with connection string for service bus topic destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusTopicV1DestinationConnectionStringAuth {
-    #[serde(flatten)]
-    pub service_bus_topic_v1_destination_auth: ServiceBusTopicV1DestinationAuth,
     #[doc = "The connection string for accessing the Service Bus namespace, including the `EntityPath` of the topic."]
     #[serde(rename = "connectionString")]
     pub connection_string: String,
 }
 impl ServiceBusTopicV1DestinationConnectionStringAuth {
-    pub fn new(service_bus_topic_v1_destination_auth: ServiceBusTopicV1DestinationAuth, connection_string: String) -> Self {
-        Self {
-            service_bus_topic_v1_destination_auth,
-            connection_string,
-        }
+    pub fn new(connection_string: String) -> Self {
+        Self { connection_string }
     }
 }
 #[doc = "The authentication definition with system assigned managed identity for service bus topic destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusTopicV1DestinationSystemAssignedManagedIdentityAuth {
-    #[serde(flatten)]
-    pub service_bus_topic_v1_destination_auth: ServiceBusTopicV1DestinationAuth,
     #[doc = "The host name of the Service Bus namespace."]
     #[serde(rename = "hostName")]
     pub host_name: String,
@@ -1503,12 +1358,8 @@ pub struct ServiceBusTopicV1DestinationSystemAssignedManagedIdentityAuth {
     pub topic_name: String,
 }
 impl ServiceBusTopicV1DestinationSystemAssignedManagedIdentityAuth {
-    pub fn new(service_bus_topic_v1_destination_auth: ServiceBusTopicV1DestinationAuth, host_name: String, topic_name: String) -> Self {
-        Self {
-            service_bus_topic_v1_destination_auth,
-            host_name,
-            topic_name,
-        }
+    pub fn new(host_name: String, topic_name: String) -> Self {
+        Self { host_name, topic_name }
     }
 }
 #[doc = "The service principal user destination."]
@@ -1553,18 +1404,13 @@ impl SymmetricKey {
 #[doc = "The symmetric key attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SymmetricKeyAttestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     #[doc = "The symmetric key definition."]
     #[serde(rename = "symmetricKey")]
     pub symmetric_key: SymmetricKey,
 }
 impl SymmetricKeyAttestation {
-    pub fn new(attestation: Attestation, symmetric_key: SymmetricKey) -> Self {
-        Self {
-            attestation,
-            symmetric_key,
-        }
+    pub fn new(symmetric_key: SymmetricKey) -> Self {
+        Self { symmetric_key }
     }
 }
 #[doc = "The trusted platform module definition."]
@@ -1582,14 +1428,12 @@ impl Tpm {
 #[doc = "The trusted platform module attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TpmAttestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     #[doc = "The trusted platform module definition."]
     pub tpm: Tpm,
 }
 impl TpmAttestation {
-    pub fn new(attestation: Attestation, tpm: Tpm) -> Self {
-        Self { attestation, tpm }
+    pub fn new(tpm: Tpm) -> Self {
+        Self { tpm }
     }
 }
 #[doc = "The user definition."]
@@ -1600,19 +1444,13 @@ pub struct User {
     #[doc = "Unique ID of the user."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Type of the user."]
-    #[serde(rename = "type")]
-    pub type_: String,
 }
 impl User {
-    pub fn new(permission: Permission, type_: String) -> Self {
-        Self {
-            permission,
-            id: None,
-            type_,
-        }
+    pub fn new(permission: Permission) -> Self {
+        Self { permission, id: None }
     }
 }
+#[doc = "Type of the user."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum UserUnion {
@@ -1670,18 +1508,7 @@ impl WebhookV1Destination {
         }
     }
 }
-#[doc = "The authentication definition for webhook destination."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WebhookV1DestinationAuth {
-    #[doc = "The kind of authentication to use."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl WebhookV1DestinationAuth {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The kind of authentication to use."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum WebhookV1DestinationAuthUnion {
@@ -1707,24 +1534,17 @@ impl WebhookV1DestinationCustomization {
 #[doc = "The authentication definition with header for webhook destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebhookV1DestinationHeaderAuth {
-    #[serde(flatten)]
-    pub webhook_v1_destination_auth: WebhookV1DestinationAuth,
     #[doc = "Value to use for the Authorization header when making requests."]
     pub value: String,
 }
 impl WebhookV1DestinationHeaderAuth {
-    pub fn new(webhook_v1_destination_auth: WebhookV1DestinationAuth, value: String) -> Self {
-        Self {
-            webhook_v1_destination_auth,
-            value,
-        }
+    pub fn new(value: String) -> Self {
+        Self { value }
     }
 }
 #[doc = "The authentication definition with OAuth for webhook destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebhookV1DestinationOAuthAuth {
-    #[serde(flatten)]
-    pub webhook_v1_destination_auth: WebhookV1DestinationAuth,
     #[doc = "URL where an access token can be retrieved."]
     #[serde(rename = "tokenUrl")]
     pub token_url: String,
@@ -1745,9 +1565,8 @@ pub struct WebhookV1DestinationOAuthAuth {
     pub request_type: Option<webhook_v1_destination_o_auth_auth::RequestType>,
 }
 impl WebhookV1DestinationOAuthAuth {
-    pub fn new(webhook_v1_destination_auth: WebhookV1DestinationAuth, token_url: String, client_id: String, client_secret: String) -> Self {
+    pub fn new(token_url: String, client_id: String, client_secret: String) -> Self {
         Self {
-            webhook_v1_destination_auth,
             token_url,
             client_id,
             client_secret,
@@ -1785,14 +1604,12 @@ impl X509 {
 #[doc = "The X509 attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509Attestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     #[doc = "The X509 definition."]
     pub x509: X509,
 }
 impl X509Attestation {
-    pub fn new(attestation: Attestation, x509: X509) -> Self {
-        Self { attestation, x509 }
+    pub fn new(x509: X509) -> Self {
+        Self { x509 }
     }
 }
 #[doc = "The X509 certificate definition."]

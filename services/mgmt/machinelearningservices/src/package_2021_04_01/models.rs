@@ -543,8 +543,6 @@ pub mod aks_variant_response {
 #[doc = "Secrets related to a Machine Learning compute based on AKS."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AksComputeSecrets {
-    #[serde(flatten)]
-    pub compute_secrets: ComputeSecrets,
     #[doc = "Content of kubeconfig file that can be used to connect to the Kubernetes cluster."]
     #[serde(rename = "userKubeConfig", default, skip_serializing_if = "Option::is_none")]
     pub user_kube_config: Option<String>,
@@ -556,9 +554,8 @@ pub struct AksComputeSecrets {
     pub image_pull_secret_name: Option<String>,
 }
 impl AksComputeSecrets {
-    pub fn new(compute_secrets: ComputeSecrets) -> Self {
+    pub fn new() -> Self {
         Self {
-            compute_secrets,
             user_kube_config: None,
             admin_kube_config: None,
             image_pull_secret_name: None,
@@ -1065,9 +1062,6 @@ impl ClusterUpdateProperties {
 #[doc = "Machine Learning compute object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Compute {
-    #[doc = "The type of compute"]
-    #[serde(rename = "computeType")]
-    pub compute_type: ComputeType,
     #[doc = "Location for the underlying compute"]
     #[serde(rename = "computeLocation", default, skip_serializing_if = "Option::is_none")]
     pub compute_location: Option<String>,
@@ -1102,9 +1096,8 @@ pub struct Compute {
     pub disable_local_auth: Option<bool>,
 }
 impl Compute {
-    pub fn new(compute_type: ComputeType) -> Self {
+    pub fn new() -> Self {
         Self {
-            compute_type,
             compute_location: None,
             provisioning_state: None,
             description: None,
@@ -1167,6 +1160,7 @@ pub mod compute {
         }
     }
 }
+#[doc = "The type of compute"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "computeType")]
 pub enum ComputeUnion {
@@ -1636,21 +1630,16 @@ impl Serialize for ComputeInstanceState {
 #[doc = "Compute nodes information related to a Machine Learning compute. Might differ for every type of compute."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComputeNodesInformation {
-    #[doc = "The type of compute"]
-    #[serde(rename = "computeType")]
-    pub compute_type: ComputeType,
     #[doc = "The continuation token."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
 impl ComputeNodesInformation {
-    pub fn new(compute_type: ComputeType) -> Self {
-        Self {
-            compute_type,
-            next_link: None,
-        }
+    pub fn new() -> Self {
+        Self { next_link: None }
     }
 }
+#[doc = "The type of compute"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "computeType")]
 pub enum ComputeNodesInformationUnion {
@@ -1670,18 +1659,7 @@ impl ComputeResource {
         Self::default()
     }
 }
-#[doc = "Secrets related to a Machine Learning compute. Might differ for every type of compute."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ComputeSecrets {
-    #[doc = "The type of compute"]
-    #[serde(rename = "computeType")]
-    pub compute_type: ComputeType,
-}
-impl ComputeSecrets {
-    pub fn new(compute_type: ComputeType) -> Self {
-        Self { compute_type }
-    }
-}
+#[doc = "The type of compute"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "computeType")]
 pub enum ComputeSecretsUnion {
@@ -1885,9 +1863,6 @@ pub struct CreateServiceRequest {
     #[doc = "The authentication keys."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub keys: Option<serde_json::Value>,
-    #[doc = "The compute environment type for the service."]
-    #[serde(rename = "computeType")]
-    pub compute_type: create_service_request::ComputeType,
     #[doc = "The Environment, models and assets needed for inferencing."]
     #[serde(rename = "environmentImageRequest", default, skip_serializing_if = "Option::is_none")]
     pub environment_image_request: Option<serde_json::Value>,
@@ -1896,60 +1871,18 @@ pub struct CreateServiceRequest {
     pub location: Option<String>,
 }
 impl CreateServiceRequest {
-    pub fn new(compute_type: create_service_request::ComputeType) -> Self {
+    pub fn new() -> Self {
         Self {
             description: None,
             kv_tags: None,
             properties: None,
             keys: None,
-            compute_type,
             environment_image_request: None,
             location: None,
         }
     }
 }
-pub mod create_service_request {
-    use super::*;
-    #[doc = "The compute environment type for the service."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ComputeType")]
-    pub enum ComputeType {
-        #[serde(rename = "ACI")]
-        Aci,
-        #[serde(rename = "AKS")]
-        Aks,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ComputeType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ComputeType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ComputeType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Aci => serializer.serialize_unit_variant("ComputeType", 0u32, "ACI"),
-                Self::Aks => serializer.serialize_unit_variant("ComputeType", 1u32, "AKS"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The compute environment type for the service."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "computeType")]
 pub enum CreateServiceRequestUnion {
@@ -2028,16 +1961,13 @@ pub mod databricks {
 #[doc = "Secrets related to a Machine Learning compute based on Databricks."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabricksComputeSecrets {
-    #[serde(flatten)]
-    pub compute_secrets: ComputeSecrets,
     #[doc = "access token for databricks account."]
     #[serde(rename = "databricksAccessToken", default, skip_serializing_if = "Option::is_none")]
     pub databricks_access_token: Option<String>,
 }
 impl DatabricksComputeSecrets {
-    pub fn new(compute_secrets: ComputeSecrets) -> Self {
+    pub fn new() -> Self {
         Self {
-            compute_secrets,
             databricks_access_token: None,
         }
     }
@@ -4102,22 +4032,18 @@ pub struct ServiceResponseBase {
     #[doc = "The error details."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<serde_json::Value>,
-    #[doc = "The compute environment type for the service."]
-    #[serde(rename = "computeType")]
-    pub compute_type: service_response_base::ComputeType,
     #[doc = "The deployment type for the service."]
     #[serde(rename = "deploymentType", default, skip_serializing_if = "Option::is_none")]
     pub deployment_type: Option<service_response_base::DeploymentType>,
 }
 impl ServiceResponseBase {
-    pub fn new(compute_type: service_response_base::ComputeType) -> Self {
+    pub fn new() -> Self {
         Self {
             description: None,
             kv_tags: None,
             properties: None,
             state: None,
             error: None,
-            compute_type,
             deployment_type: None,
         }
     }
@@ -4167,45 +4093,6 @@ pub mod service_response_base {
             }
         }
     }
-    #[doc = "The compute environment type for the service."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ComputeType")]
-    pub enum ComputeType {
-        #[serde(rename = "ACI")]
-        Aci,
-        #[serde(rename = "AKS")]
-        Aks,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ComputeType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ComputeType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ComputeType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Aci => serializer.serialize_unit_variant("ComputeType", 0u32, "ACI"),
-                Self::Aks => serializer.serialize_unit_variant("ComputeType", 1u32, "AKS"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
     #[doc = "The deployment type for the service."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "DeploymentType")]
@@ -4247,6 +4134,7 @@ pub mod service_response_base {
         }
     }
 }
+#[doc = "The compute environment type for the service."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "computeType")]
 pub enum ServiceResponseBaseUnion {
@@ -4825,16 +4713,13 @@ impl VirtualMachineImage {
 #[doc = "Secrets related to a Machine Learning compute based on AKS."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineSecrets {
-    #[serde(flatten)]
-    pub compute_secrets: ComputeSecrets,
     #[doc = "Admin credentials for virtual machine"]
     #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
     pub administrator_account: Option<VirtualMachineSshCredentials>,
 }
 impl VirtualMachineSecrets {
-    pub fn new(compute_secrets: ComputeSecrets) -> Self {
+    pub fn new() -> Self {
         Self {
-            compute_secrets,
             administrator_account: None,
         }
     }

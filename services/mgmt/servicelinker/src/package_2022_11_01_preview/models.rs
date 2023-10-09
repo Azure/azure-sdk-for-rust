@@ -6,8 +6,6 @@ use std::str::FromStr;
 #[doc = "The access key directly from target resource properties, which target service is Azure Resource, such as Microsoft.Storage"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AccessKeyInfoBase {
-    #[serde(flatten)]
-    pub auth_info_base: AuthInfoBase,
     #[doc = "Permissions of the accessKey. `Read` and `Write` are for Azure Cosmos DB and Azure App Configuration, `Listen`, `Send` and `Manage` are for Azure Event Hub and Azure Service Bus."]
     #[serde(
         default,
@@ -17,11 +15,8 @@ pub struct AccessKeyInfoBase {
     pub permissions: Vec<String>,
 }
 impl AccessKeyInfoBase {
-    pub fn new(auth_info_base: AuthInfoBase) -> Self {
-        Self {
-            auth_info_base,
-            permissions: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { permissions: Vec::new() }
     }
 }
 #[doc = "Indicates how to apply the connector operations, such as opt out network configuration, opt in configuration."]
@@ -102,18 +97,7 @@ impl Serialize for AllowType {
         }
     }
 }
-#[doc = "The authentication info"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthInfoBase {
-    #[doc = "The authentication type."]
-    #[serde(rename = "authType")]
-    pub auth_type: AuthType,
-}
-impl AuthInfoBase {
-    pub fn new(auth_type: AuthType) -> Self {
-        Self { auth_type }
-    }
-}
+#[doc = "The authentication type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "authType")]
 pub enum AuthInfoBaseUnion {
@@ -189,16 +173,13 @@ impl Serialize for AuthType {
 #[doc = "The resource properties when type is Azure Key Vault"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureKeyVaultProperties {
-    #[serde(flatten)]
-    pub azure_resource_properties_base: AzureResourcePropertiesBase,
     #[doc = "True if connect via Kubernetes CSI Driver."]
     #[serde(rename = "connectAsKubernetesCsiDriver", default, skip_serializing_if = "Option::is_none")]
     pub connect_as_kubernetes_csi_driver: Option<bool>,
 }
 impl AzureKeyVaultProperties {
-    pub fn new(azure_resource_properties_base: AzureResourcePropertiesBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            azure_resource_properties_base,
             connect_as_kubernetes_csi_driver: None,
         }
     }
@@ -206,8 +187,6 @@ impl AzureKeyVaultProperties {
 #[doc = "The azure resource info when target service type is AzureResource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureResource {
-    #[serde(flatten)]
-    pub target_service_base: TargetServiceBase,
     #[doc = "The Id of azure resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -216,26 +195,14 @@ pub struct AzureResource {
     pub resource_properties: Option<AzureResourcePropertiesBaseUnion>,
 }
 impl AzureResource {
-    pub fn new(target_service_base: TargetServiceBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            target_service_base,
             id: None,
             resource_properties: None,
         }
     }
 }
-#[doc = "The azure resource properties"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureResourcePropertiesBase {
-    #[doc = "The azure resource type."]
-    #[serde(rename = "type")]
-    pub type_: AzureResourceType,
-}
-impl AzureResourcePropertiesBase {
-    pub fn new(type_: AzureResourceType) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The azure resource type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum AzureResourcePropertiesBaseUnion {
@@ -279,8 +246,6 @@ impl Serialize for AzureResourceType {
 #[doc = "The represent of basic error"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BasicErrorDryrunPrerequisiteResult {
-    #[serde(flatten)]
-    pub dryrun_prerequisite_result: DryrunPrerequisiteResult,
     #[doc = "The error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<String>,
@@ -289,12 +254,8 @@ pub struct BasicErrorDryrunPrerequisiteResult {
     pub message: Option<String>,
 }
 impl BasicErrorDryrunPrerequisiteResult {
-    pub fn new(dryrun_prerequisite_result: DryrunPrerequisiteResult) -> Self {
-        Self {
-            dryrun_prerequisite_result,
-            code: None,
-            message: None,
-        }
+    pub fn new() -> Self {
+        Self { code: None, message: None }
     }
 }
 #[doc = "The application client type"]
@@ -490,49 +451,36 @@ impl ConfigurationResult {
 #[doc = "The service properties when target service type is ConfluentBootstrapServer"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfluentBootstrapServer {
-    #[serde(flatten)]
-    pub target_service_base: TargetServiceBase,
     #[doc = "The endpoint of service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
 }
 impl ConfluentBootstrapServer {
-    pub fn new(target_service_base: TargetServiceBase) -> Self {
-        Self {
-            target_service_base,
-            endpoint: None,
-        }
+    pub fn new() -> Self {
+        Self { endpoint: None }
     }
 }
 #[doc = "The service properties when target service type is ConfluentSchemaRegistry"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfluentSchemaRegistry {
-    #[serde(flatten)]
-    pub target_service_base: TargetServiceBase,
     #[doc = "The endpoint of service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
 }
 impl ConfluentSchemaRegistry {
-    pub fn new(target_service_base: TargetServiceBase) -> Self {
-        Self {
-            target_service_base,
-            endpoint: None,
-        }
+    pub fn new() -> Self {
+        Self { endpoint: None }
     }
 }
 #[doc = "The dryrun parameters for creation or update a linker"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateOrUpdateDryrunParameters {
     #[serde(flatten)]
-    pub dryrun_parameters: DryrunParameters,
-    #[serde(flatten)]
     pub linker_properties: LinkerProperties,
 }
 impl CreateOrUpdateDryrunParameters {
-    pub fn new(dryrun_parameters: DryrunParameters) -> Self {
+    pub fn new() -> Self {
         Self {
-            dryrun_parameters,
             linker_properties: LinkerProperties::default(),
         }
     }
@@ -766,18 +714,7 @@ pub mod dryrun_operation_preview {
         }
     }
 }
-#[doc = "The parameters of the dryrun"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DryrunParameters {
-    #[doc = "The name of action for you dryrun job."]
-    #[serde(rename = "actionName")]
-    pub action_name: DryrunActionName,
-}
-impl DryrunParameters {
-    pub fn new(action_name: DryrunActionName) -> Self {
-        Self { action_name }
-    }
-}
+#[doc = "The name of action for you dryrun job."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "actionName")]
 pub enum DryrunParametersUnion {
@@ -796,18 +733,7 @@ impl DryrunPatch {
         Self::default()
     }
 }
-#[doc = "A result of dryrun"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DryrunPrerequisiteResult {
-    #[doc = "The type of dryrun result."]
-    #[serde(rename = "type")]
-    pub type_: DryrunPrerequisiteResultType,
-}
-impl DryrunPrerequisiteResult {
-    pub fn new(type_: DryrunPrerequisiteResultType) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The type of dryrun result."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DryrunPrerequisiteResultUnion {
@@ -992,8 +918,6 @@ impl FirewallRules {
 #[doc = "The secret info when type is keyVaultSecretReference. It's for scenario that user provides a secret stored in user's keyvault and source is Azure Kubernetes. The key Vault's resource id is linked to secretStore.keyVaultId."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultSecretReferenceSecretInfo {
-    #[serde(flatten)]
-    pub secret_info_base: SecretInfoBase,
     #[doc = "Name of the Key Vault secret."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -1002,29 +926,20 @@ pub struct KeyVaultSecretReferenceSecretInfo {
     pub version: Option<String>,
 }
 impl KeyVaultSecretReferenceSecretInfo {
-    pub fn new(secret_info_base: SecretInfoBase) -> Self {
-        Self {
-            secret_info_base,
-            name: None,
-            version: None,
-        }
+    pub fn new() -> Self {
+        Self { name: None, version: None }
     }
 }
 #[doc = "The secret info when type is keyVaultSecretUri. It's for scenario that user provides a secret stored in user's keyvault and source is Web App, Spring Cloud or Container App."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultSecretUriSecretInfo {
-    #[serde(flatten)]
-    pub secret_info_base: SecretInfoBase,
     #[doc = "URI to the keyvault secret"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
 impl KeyVaultSecretUriSecretInfo {
-    pub fn new(secret_info_base: SecretInfoBase) -> Self {
-        Self {
-            secret_info_base,
-            value: None,
-        }
+    pub fn new() -> Self {
+        Self { value: None }
     }
 }
 #[doc = "A Linker to be updated."]
@@ -1248,8 +1163,6 @@ impl OperationListResult {
 #[doc = "The represent of missing permissions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PermissionsMissingDryrunPrerequisiteResult {
-    #[serde(flatten)]
-    pub dryrun_prerequisite_result: DryrunPrerequisiteResult,
     #[doc = "The permission scope"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<String>,
@@ -1265,9 +1178,8 @@ pub struct PermissionsMissingDryrunPrerequisiteResult {
     pub recommended_role: Option<String>,
 }
 impl PermissionsMissingDryrunPrerequisiteResult {
-    pub fn new(dryrun_prerequisite_result: DryrunPrerequisiteResult) -> Self {
+    pub fn new() -> Self {
         Self {
-            dryrun_prerequisite_result,
             scope: None,
             permissions: Vec::new(),
             recommended_role: None,
@@ -1352,8 +1264,6 @@ impl ResourceList {
 #[doc = "The authentication info when authType is secret"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretAuthInfo {
-    #[serde(flatten)]
-    pub auth_info_base: AuthInfoBase,
     #[doc = "Username or account name for secret auth."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -1362,26 +1272,14 @@ pub struct SecretAuthInfo {
     pub secret_info: Option<SecretInfoBaseUnion>,
 }
 impl SecretAuthInfo {
-    pub fn new(auth_info_base: AuthInfoBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            auth_info_base,
             name: None,
             secret_info: None,
         }
     }
 }
-#[doc = "The secret info"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretInfoBase {
-    #[doc = "The secret type."]
-    #[serde(rename = "secretType")]
-    pub secret_type: SecretType,
-}
-impl SecretInfoBase {
-    pub fn new(secret_type: SecretType) -> Self {
-        Self { secret_type }
-    }
-}
+#[doc = "The secret type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "secretType")]
 pub enum SecretInfoBaseUnion {
@@ -1452,25 +1350,18 @@ impl Serialize for SecretType {
 #[doc = "The service properties when target service type is SelfHostedServer"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SelfHostedServer {
-    #[serde(flatten)]
-    pub target_service_base: TargetServiceBase,
     #[doc = "The endpoint of service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
 }
 impl SelfHostedServer {
-    pub fn new(target_service_base: TargetServiceBase) -> Self {
-        Self {
-            target_service_base,
-            endpoint: None,
-        }
+    pub fn new() -> Self {
+        Self { endpoint: None }
     }
 }
 #[doc = "The authentication info when authType is servicePrincipal certificate"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalCertificateAuthInfo {
-    #[serde(flatten)]
-    pub auth_info_base: AuthInfoBase,
     #[doc = "Application clientId for servicePrincipal auth."]
     #[serde(rename = "clientId")]
     pub client_id: String,
@@ -1491,9 +1382,8 @@ pub struct ServicePrincipalCertificateAuthInfo {
     pub roles: Vec<String>,
 }
 impl ServicePrincipalCertificateAuthInfo {
-    pub fn new(auth_info_base: AuthInfoBase, client_id: String, principal_id: String, certificate: String) -> Self {
+    pub fn new(client_id: String, principal_id: String, certificate: String) -> Self {
         Self {
-            auth_info_base,
             client_id,
             principal_id,
             certificate,
@@ -1505,8 +1395,6 @@ impl ServicePrincipalCertificateAuthInfo {
 #[doc = "The authentication info when authType is servicePrincipal secret"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalSecretAuthInfo {
-    #[serde(flatten)]
-    pub auth_info_base: AuthInfoBase,
     #[serde(flatten)]
     pub database_aad_auth_info: DatabaseAadAuthInfo,
     #[doc = "ServicePrincipal application clientId for servicePrincipal auth."]
@@ -1529,9 +1417,8 @@ pub struct ServicePrincipalSecretAuthInfo {
     pub roles: Vec<String>,
 }
 impl ServicePrincipalSecretAuthInfo {
-    pub fn new(auth_info_base: AuthInfoBase, client_id: String, principal_id: String, secret: String) -> Self {
+    pub fn new(client_id: String, principal_id: String, secret: String) -> Self {
         Self {
-            auth_info_base,
             database_aad_auth_info: DatabaseAadAuthInfo::default(),
             client_id,
             principal_id,
@@ -1560,8 +1447,6 @@ impl SourceConfiguration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SystemAssignedIdentityAuthInfo {
     #[serde(flatten)]
-    pub auth_info_base: AuthInfoBase,
-    #[serde(flatten)]
     pub database_aad_auth_info: DatabaseAadAuthInfo,
     #[doc = "The cleanup behavior to indicate whether clean up operation when resource is deleted or updated"]
     #[serde(rename = "deleteOrUpdateBehavior", default, skip_serializing_if = "Option::is_none")]
@@ -1575,27 +1460,15 @@ pub struct SystemAssignedIdentityAuthInfo {
     pub roles: Vec<String>,
 }
 impl SystemAssignedIdentityAuthInfo {
-    pub fn new(auth_info_base: AuthInfoBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            auth_info_base,
             database_aad_auth_info: DatabaseAadAuthInfo::default(),
             delete_or_update_behavior: None,
             roles: Vec::new(),
         }
     }
 }
-#[doc = "The target service properties"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TargetServiceBase {
-    #[doc = "The target service type."]
-    #[serde(rename = "type")]
-    pub type_: TargetServiceType,
-}
-impl TargetServiceBase {
-    pub fn new(type_: TargetServiceType) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The target service type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum TargetServiceBaseUnion {
@@ -1649,8 +1522,6 @@ impl Serialize for TargetServiceType {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserAccountAuthInfo {
     #[serde(flatten)]
-    pub auth_info_base: AuthInfoBase,
-    #[serde(flatten)]
     pub database_aad_auth_info: DatabaseAadAuthInfo,
     #[doc = "Principal Id for user account."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
@@ -1667,9 +1538,8 @@ pub struct UserAccountAuthInfo {
     pub roles: Vec<String>,
 }
 impl UserAccountAuthInfo {
-    pub fn new(auth_info_base: AuthInfoBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            auth_info_base,
             database_aad_auth_info: DatabaseAadAuthInfo::default(),
             principal_id: None,
             delete_or_update_behavior: None,
@@ -1680,8 +1550,6 @@ impl UserAccountAuthInfo {
 #[doc = "The authentication info when authType is userAssignedIdentity"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserAssignedIdentityAuthInfo {
-    #[serde(flatten)]
-    pub auth_info_base: AuthInfoBase,
     #[serde(flatten)]
     pub database_aad_auth_info: DatabaseAadAuthInfo,
     #[doc = "Client Id for userAssignedIdentity."]
@@ -1702,9 +1570,8 @@ pub struct UserAssignedIdentityAuthInfo {
     pub roles: Vec<String>,
 }
 impl UserAssignedIdentityAuthInfo {
-    pub fn new(auth_info_base: AuthInfoBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            auth_info_base,
             database_aad_auth_info: DatabaseAadAuthInfo::default(),
             client_id: None,
             subscription_id: None,
@@ -1898,18 +1765,13 @@ pub mod validation_result_item {
 #[doc = "The secret info when type is rawValue. It's for scenarios that user input the secret."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValueSecretInfo {
-    #[serde(flatten)]
-    pub secret_info_base: SecretInfoBase,
     #[doc = "The actual value of the secret."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
 impl ValueSecretInfo {
-    pub fn new(secret_info_base: SecretInfoBase) -> Self {
-        Self {
-            secret_info_base,
-            value: None,
-        }
+    pub fn new() -> Self {
+        Self { value: None }
     }
 }
 #[doc = "Metadata pertaining to creation and last modification of the resource."]

@@ -26,9 +26,6 @@ impl AccessPolicyResponse {
 pub struct Activity {
     #[doc = "Activity name."]
     pub name: String,
-    #[doc = "Type of activity."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Activity description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -56,10 +53,9 @@ pub struct Activity {
     pub user_properties: Vec<UserProperty>,
 }
 impl Activity {
-    pub fn new(name: String, type_: String) -> Self {
+    pub fn new(name: String) -> Self {
         Self {
             name,
-            type_,
             description: None,
             state: None,
             on_inactive_mark_as: None,
@@ -147,6 +143,7 @@ pub mod activity {
         }
     }
 }
+#[doc = "Type of activity."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ActivityUnion {
@@ -1335,8 +1332,6 @@ impl AvroSource {
 #[doc = "Avro write settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AvroWriteSettings {
-    #[serde(flatten)]
-    pub format_write_settings: FormatWriteSettings,
     #[doc = "Top level record name in write result, which is required in AVRO spec."]
     #[serde(rename = "recordName", default, skip_serializing_if = "Option::is_none")]
     pub record_name: Option<String>,
@@ -1351,9 +1346,8 @@ pub struct AvroWriteSettings {
     pub file_name_prefix: Option<serde_json::Value>,
 }
 impl AvroWriteSettings {
-    pub fn new(format_write_settings: FormatWriteSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            format_write_settings,
             record_name: None,
             record_namespace: None,
             max_rows_per_file: None,
@@ -1364,18 +1358,13 @@ impl AvroWriteSettings {
 #[doc = "The express custom setup of installing Azure PowerShell."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzPowerShellSetup {
-    #[serde(flatten)]
-    pub custom_setup_base: CustomSetupBase,
     #[doc = "Installation of Azure PowerShell type properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: AzPowerShellSetupTypeProperties,
 }
 impl AzPowerShellSetup {
-    pub fn new(custom_setup_base: CustomSetupBase, type_properties: AzPowerShellSetupTypeProperties) -> Self {
-        Self {
-            custom_setup_base,
-            type_properties,
-        }
+    pub fn new(type_properties: AzPowerShellSetupTypeProperties) -> Self {
+        Self { type_properties }
     }
 }
 #[doc = "Installation of Azure PowerShell type properties."]
@@ -2421,8 +2410,6 @@ impl AzureDatabricksDeltaLakeDatasetTypeProperties {
 #[doc = "Azure Databricks Delta Lake export command settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureDatabricksDeltaLakeExportCommand {
-    #[serde(flatten)]
-    pub export_settings: ExportSettings,
     #[doc = "Specify the date format for the csv in Azure Databricks Delta Lake Copy. Type: string (or Expression with resultType string)."]
     #[serde(rename = "dateFormat", default, skip_serializing_if = "Option::is_none")]
     pub date_format: Option<serde_json::Value>,
@@ -2431,9 +2418,8 @@ pub struct AzureDatabricksDeltaLakeExportCommand {
     pub timestamp_format: Option<serde_json::Value>,
 }
 impl AzureDatabricksDeltaLakeExportCommand {
-    pub fn new(export_settings: ExportSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            export_settings,
             date_format: None,
             timestamp_format: None,
         }
@@ -2442,8 +2428,6 @@ impl AzureDatabricksDeltaLakeExportCommand {
 #[doc = "Azure Databricks Delta Lake import command settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureDatabricksDeltaLakeImportCommand {
-    #[serde(flatten)]
-    pub import_settings: ImportSettings,
     #[doc = "Specify the date format for csv in Azure Databricks Delta Lake Copy. Type: string (or Expression with resultType string)."]
     #[serde(rename = "dateFormat", default, skip_serializing_if = "Option::is_none")]
     pub date_format: Option<serde_json::Value>,
@@ -2452,9 +2436,8 @@ pub struct AzureDatabricksDeltaLakeImportCommand {
     pub timestamp_format: Option<serde_json::Value>,
 }
 impl AzureDatabricksDeltaLakeImportCommand {
-    pub fn new(import_settings: ImportSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            import_settings,
             date_format: None,
             timestamp_format: None,
         }
@@ -2970,8 +2953,6 @@ impl AzureKeyVaultLinkedServiceTypeProperties {
 #[doc = "Azure Key Vault secret reference."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureKeyVaultSecretReference {
-    #[serde(flatten)]
-    pub secret_base: SecretBase,
     #[doc = "Linked service reference type."]
     pub store: LinkedServiceReference,
     #[doc = "The name of the secret in Azure Key Vault. Type: string (or Expression with resultType string)."]
@@ -2982,9 +2963,8 @@ pub struct AzureKeyVaultSecretReference {
     pub secret_version: Option<serde_json::Value>,
 }
 impl AzureKeyVaultSecretReference {
-    pub fn new(secret_base: SecretBase, store: LinkedServiceReference, secret_name: serde_json::Value) -> Self {
+    pub fn new(store: LinkedServiceReference, secret_name: serde_json::Value) -> Self {
         Self {
-            secret_base,
             store,
             secret_name,
             secret_version: None,
@@ -4312,16 +4292,13 @@ impl BinaryDatasetTypeProperties {
 #[doc = "Binary read settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BinaryReadSettings {
-    #[serde(flatten)]
-    pub format_read_settings: FormatReadSettings,
     #[doc = "Compression read settings."]
     #[serde(rename = "compressionProperties", default, skip_serializing_if = "Option::is_none")]
     pub compression_properties: Option<CompressionReadSettingsUnion>,
 }
 impl BinaryReadSettings {
-    pub fn new(format_read_settings: FormatReadSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            format_read_settings,
             compression_properties: None,
         }
     }
@@ -4877,18 +4854,13 @@ impl CloudErrorBody {
 #[doc = "The custom setup of running cmdkey commands."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CmdkeySetup {
-    #[serde(flatten)]
-    pub custom_setup_base: CustomSetupBase,
     #[doc = "Cmdkey command custom setup type properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: CmdkeySetupTypeProperties,
 }
 impl CmdkeySetup {
-    pub fn new(custom_setup_base: CustomSetupBase, type_properties: CmdkeySetupTypeProperties) -> Self {
-        Self {
-            custom_setup_base,
-            type_properties,
-        }
+    pub fn new(type_properties: CmdkeySetupTypeProperties) -> Self {
+        Self { type_properties }
     }
 }
 #[doc = "Cmdkey command custom setup type properties."]
@@ -5065,18 +5037,13 @@ impl CommonDataServiceForAppsSource {
 #[doc = "The custom setup of installing 3rd party components."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComponentSetup {
-    #[serde(flatten)]
-    pub custom_setup_base: CustomSetupBase,
     #[doc = "Installation of licensed component setup type properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: LicensedComponentSetupTypeProperties,
 }
 impl ComponentSetup {
-    pub fn new(custom_setup_base: CustomSetupBase, type_properties: LicensedComponentSetupTypeProperties) -> Self {
-        Self {
-            custom_setup_base,
-            type_properties,
-        }
+    pub fn new(type_properties: LicensedComponentSetupTypeProperties) -> Self {
+        Self { type_properties }
     }
 }
 #[doc = "All available compressionCodec values."]
@@ -5179,18 +5146,7 @@ impl Serialize for CompressionLevel {
         }
     }
 }
-#[doc = "Compression read settings."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CompressionReadSettings {
-    #[doc = "The Compression setting type."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl CompressionReadSettings {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The Compression setting type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CompressionReadSettingsUnion {}
@@ -5497,9 +5453,6 @@ impl CopyComputeScaleProperties {
 #[doc = "A copy activity sink."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CopySink {
-    #[doc = "Copy sink type."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Write batch size. Type: integer (or Expression with resultType integer), minimum: 0."]
     #[serde(rename = "writeBatchSize", default, skip_serializing_if = "Option::is_none")]
     pub write_batch_size: Option<serde_json::Value>,
@@ -5520,9 +5473,8 @@ pub struct CopySink {
     pub disable_metrics_collection: Option<serde_json::Value>,
 }
 impl CopySink {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             write_batch_size: None,
             write_batch_timeout: None,
             sink_retry_count: None,
@@ -5532,15 +5484,13 @@ impl CopySink {
         }
     }
 }
+#[doc = "Copy sink type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CopySinkUnion {}
 #[doc = "A copy activity source."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CopySource {
-    #[doc = "Copy source type."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Source retry count. Type: integer (or Expression with resultType integer)."]
     #[serde(rename = "sourceRetryCount", default, skip_serializing_if = "Option::is_none")]
     pub source_retry_count: Option<serde_json::Value>,
@@ -5555,9 +5505,8 @@ pub struct CopySource {
     pub disable_metrics_collection: Option<serde_json::Value>,
 }
 impl CopySource {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             source_retry_count: None,
             source_retry_wait: None,
             max_concurrent_connections: None,
@@ -5565,21 +5514,11 @@ impl CopySource {
         }
     }
 }
+#[doc = "Copy source type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CopySourceUnion {}
-#[doc = "A copy activity translator."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CopyTranslator {
-    #[doc = "Copy translator type."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl CopyTranslator {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "Copy translator type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CopyTranslatorUnion {}
@@ -6015,9 +5954,6 @@ impl CreateRunResponse {
 #[doc = "The Azure Data Factory nested object which contains the information and credential which can be used to connect with related store or compute resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Credential {
-    #[doc = "Type of credential."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Credential description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -6030,14 +5966,14 @@ pub struct Credential {
     pub annotations: Vec<serde_json::Value>,
 }
 impl Credential {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             description: None,
             annotations: Vec::new(),
         }
     }
 }
+#[doc = "Type of credential."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CredentialUnion {
@@ -6288,18 +6224,7 @@ pub mod custom_events_trigger {
         }
     }
 }
-#[doc = "The base definition of the custom setup."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CustomSetupBase {
-    #[doc = "The type of custom setup."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl CustomSetupBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The type of custom setup."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CustomSetupBaseUnion {}
@@ -6341,9 +6266,6 @@ impl DwCopyCommandSettings {
 #[doc = "Azure Data Factory nested object which contains a flow with data movements and transformations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DataFlow {
-    #[doc = "Type of data flow."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The description of the data flow."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -6359,9 +6281,8 @@ pub struct DataFlow {
     pub folder: Option<data_flow::Folder>,
 }
 impl DataFlow {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             description: None,
             annotations: Vec::new(),
             folder: None,
@@ -6383,6 +6304,7 @@ pub mod data_flow {
         }
     }
 }
+#[doc = "Type of data flow."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DataFlowUnion {
@@ -7031,9 +6953,6 @@ impl DatabricksSparkPythonActivityTypeProperties {
 #[doc = "The Azure Data Factory nested object which identifies data within different data stores, such as tables, files, folders, and documents."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dataset {
-    #[doc = "Type of dataset."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Dataset description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -7061,9 +6980,8 @@ pub struct Dataset {
     pub folder: Option<dataset::Folder>,
 }
 impl Dataset {
-    pub fn new(type_: String, linked_service_name: LinkedServiceReference) -> Self {
+    pub fn new(linked_service_name: LinkedServiceReference) -> Self {
         Self {
-            type_,
             description: None,
             structure: None,
             schema: None,
@@ -7089,6 +7007,7 @@ pub mod dataset {
         }
     }
 }
+#[doc = "Type of dataset."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DatasetUnion {
@@ -7264,9 +7183,6 @@ impl DatasetListResponse {
 #[doc = "Dataset location."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetLocation {
-    #[doc = "Type of dataset storage location."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Specify the folder path of dataset. Type: string (or Expression with resultType string)"]
     #[serde(rename = "folderPath", default, skip_serializing_if = "Option::is_none")]
     pub folder_path: Option<serde_json::Value>,
@@ -7275,14 +7191,14 @@ pub struct DatasetLocation {
     pub file_name: Option<serde_json::Value>,
 }
 impl DatasetLocation {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             folder_path: None,
             file_name: None,
         }
     }
 }
+#[doc = "Type of dataset storage location."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DatasetLocationUnion {}
@@ -7350,9 +7266,6 @@ impl DatasetSchemaDataElement {
 #[doc = "The format definition of a storage."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetStorageFormat {
-    #[doc = "Type of dataset storage format."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Serializer. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub serializer: Option<serde_json::Value>,
@@ -7361,14 +7274,14 @@ pub struct DatasetStorageFormat {
     pub deserializer: Option<serde_json::Value>,
 }
 impl DatasetStorageFormat {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             serializer: None,
             deserializer: None,
         }
     }
 }
+#[doc = "Type of dataset storage format."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DatasetStorageFormatUnion {}
@@ -7692,8 +7605,6 @@ impl DelimitedTextDatasetTypeProperties {
 #[doc = "Delimited text read settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DelimitedTextReadSettings {
-    #[serde(flatten)]
-    pub format_read_settings: FormatReadSettings,
     #[doc = "Indicates the number of non-empty rows to skip when reading data from input files. Type: integer (or Expression with resultType integer)."]
     #[serde(rename = "skipLineCount", default, skip_serializing_if = "Option::is_none")]
     pub skip_line_count: Option<serde_json::Value>,
@@ -7702,9 +7613,8 @@ pub struct DelimitedTextReadSettings {
     pub compression_properties: Option<CompressionReadSettingsUnion>,
 }
 impl DelimitedTextReadSettings {
-    pub fn new(format_read_settings: FormatReadSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            format_read_settings,
             skip_line_count: None,
             compression_properties: None,
         }
@@ -7759,8 +7669,6 @@ impl DelimitedTextSource {
 #[doc = "Delimited text write settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DelimitedTextWriteSettings {
-    #[serde(flatten)]
-    pub format_write_settings: FormatWriteSettings,
     #[doc = "Indicates whether string values should always be enclosed with quotes. Type: boolean (or Expression with resultType boolean)."]
     #[serde(rename = "quoteAllText", default, skip_serializing_if = "Option::is_none")]
     pub quote_all_text: Option<serde_json::Value>,
@@ -7775,9 +7683,8 @@ pub struct DelimitedTextWriteSettings {
     pub file_name_prefix: Option<serde_json::Value>,
 }
 impl DelimitedTextWriteSettings {
-    pub fn new(format_write_settings: FormatWriteSettings, file_extension: serde_json::Value) -> Self {
+    pub fn new(file_extension: serde_json::Value) -> Self {
         Self {
-            format_write_settings,
             quote_all_text: None,
             file_extension,
             max_rows_per_file: None,
@@ -7785,18 +7692,7 @@ impl DelimitedTextWriteSettings {
         }
     }
 }
-#[doc = "Referenced dependency."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DependencyReference {
-    #[doc = "The type of dependency reference."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl DependencyReference {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The type of dependency reference."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum DependencyReferenceUnion {}
@@ -8673,18 +8569,13 @@ pub mod entity_reference {
 #[doc = "The custom setup of setting environment variable."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentVariableSetup {
-    #[serde(flatten)]
-    pub custom_setup_base: CustomSetupBase,
     #[doc = "Environment variable custom setup type properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: EnvironmentVariableSetupTypeProperties,
 }
 impl EnvironmentVariableSetup {
-    pub fn new(custom_setup_base: CustomSetupBase, type_properties: EnvironmentVariableSetupTypeProperties) -> Self {
-        Self {
-            custom_setup_base,
-            type_properties,
-        }
+    pub fn new(type_properties: EnvironmentVariableSetupTypeProperties) -> Self {
+        Self { type_properties }
     }
 }
 #[doc = "Environment variable custom setup type properties."]
@@ -9053,18 +8944,7 @@ impl ExecutionActivity {
         }
     }
 }
-#[doc = "Export command settings."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ExportSettings {
-    #[doc = "The export setting type."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl ExportSettings {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The export setting type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ExportSettingsUnion {}
@@ -9353,9 +9233,6 @@ pub mod factory_properties {
 #[doc = "Factory's git repo information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FactoryRepoConfiguration {
-    #[doc = "Type of repo configuration."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Account name."]
     #[serde(rename = "accountName")]
     pub account_name: String,
@@ -9376,9 +9253,8 @@ pub struct FactoryRepoConfiguration {
     pub disable_publish: Option<bool>,
 }
 impl FactoryRepoConfiguration {
-    pub fn new(type_: String, account_name: String, repository_name: String, collaboration_branch: String, root_folder: String) -> Self {
+    pub fn new(account_name: String, repository_name: String, collaboration_branch: String, root_folder: String) -> Self {
         Self {
-            type_,
             account_name,
             repository_name,
             collaboration_branch,
@@ -9388,6 +9264,7 @@ impl FactoryRepoConfiguration {
         }
     }
 }
+#[doc = "Type of repo configuration."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum FactoryRepoConfigurationUnion {
@@ -9863,33 +9740,11 @@ impl ForEachActivityTypeProperties {
         }
     }
 }
-#[doc = "Format read settings."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FormatReadSettings {
-    #[doc = "The read setting type."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl FormatReadSettings {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The read setting type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum FormatReadSettingsUnion {}
-#[doc = "Format write settings."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FormatWriteSettings {
-    #[doc = "The write setting type."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl FormatWriteSettings {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The write setting type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum FormatWriteSettingsUnion {}
@@ -12564,18 +12419,7 @@ impl ImpalaSource {
         }
     }
 }
-#[doc = "Import command settings."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImportSettings {
-    #[doc = "The import setting type."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl ImportSettings {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The import setting type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ImportSettingsUnion {}
@@ -12696,18 +12540,16 @@ impl InformixTableDatasetTypeProperties {
 #[doc = "Azure Data Factory nested object which serves as a compute resource for activities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntime {
-    #[doc = "The type of integration runtime."]
-    #[serde(rename = "type")]
-    pub type_: IntegrationRuntimeType,
     #[doc = "Integration runtime description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 impl IntegrationRuntime {
-    pub fn new(type_: IntegrationRuntimeType) -> Self {
-        Self { type_, description: None }
+    pub fn new() -> Self {
+        Self { description: None }
     }
 }
+#[doc = "The type of integration runtime."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum IntegrationRuntimeUnion {
@@ -13458,9 +13300,6 @@ impl Serialize for IntegrationRuntimeState {
 #[doc = "Integration runtime status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeStatus {
-    #[doc = "The type of integration runtime."]
-    #[serde(rename = "type")]
-    pub type_: IntegrationRuntimeType,
     #[doc = "The data factory name which the integration runtime belong to."]
     #[serde(rename = "dataFactoryName", default, skip_serializing_if = "Option::is_none")]
     pub data_factory_name: Option<String>,
@@ -13469,14 +13308,14 @@ pub struct IntegrationRuntimeStatus {
     pub state: Option<IntegrationRuntimeState>,
 }
 impl IntegrationRuntimeStatus {
-    pub fn new(type_: IntegrationRuntimeType) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             data_factory_name: None,
             state: None,
         }
     }
 }
+#[doc = "The type of integration runtime."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum IntegrationRuntimeStatusUnion {
@@ -13778,16 +13617,13 @@ impl Serialize for JsonFormatFilePattern {
 #[doc = "Json read settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JsonReadSettings {
-    #[serde(flatten)]
-    pub format_read_settings: FormatReadSettings,
     #[doc = "Compression read settings."]
     #[serde(rename = "compressionProperties", default, skip_serializing_if = "Option::is_none")]
     pub compression_properties: Option<CompressionReadSettingsUnion>,
 }
 impl JsonReadSettings {
-    pub fn new(format_read_settings: FormatReadSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            format_read_settings,
             compression_properties: None,
         }
     }
@@ -13880,18 +13716,13 @@ impl Serialize for JsonWriteFilePattern {
 #[doc = "Json write settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JsonWriteSettings {
-    #[serde(flatten)]
-    pub format_write_settings: FormatWriteSettings,
     #[doc = "File pattern of JSON. This setting controls the way a collection of JSON objects will be treated. The default value is 'setOfObjects'. It is case-sensitive."]
     #[serde(rename = "filePattern", default, skip_serializing_if = "Option::is_none")]
     pub file_pattern: Option<serde_json::Value>,
 }
 impl JsonWriteSettings {
-    pub fn new(format_write_settings: FormatWriteSettings) -> Self {
-        Self {
-            format_write_settings,
-            file_pattern: None,
-        }
+    pub fn new() -> Self {
+        Self { file_pattern: None }
     }
 }
 #[doc = "Installation of licensed component setup type properties."]
@@ -13939,24 +13770,17 @@ impl LinkedIntegrationRuntime {
 #[doc = "The key authorization type integration runtime."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedIntegrationRuntimeKeyAuthorization {
-    #[serde(flatten)]
-    pub linked_integration_runtime_type: LinkedIntegrationRuntimeType,
     #[doc = "Azure Data Factory secure string definition. The string value will be masked with asterisks '*' during Get or List API calls."]
     pub key: SecureString,
 }
 impl LinkedIntegrationRuntimeKeyAuthorization {
-    pub fn new(linked_integration_runtime_type: LinkedIntegrationRuntimeType, key: SecureString) -> Self {
-        Self {
-            linked_integration_runtime_type,
-            key,
-        }
+    pub fn new(key: SecureString) -> Self {
+        Self { key }
     }
 }
 #[doc = "The role based access control (RBAC) authorization type integration runtime."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedIntegrationRuntimeRbacAuthorization {
-    #[serde(flatten)]
-    pub linked_integration_runtime_type: LinkedIntegrationRuntimeType,
     #[doc = "The resource identifier of the integration runtime to be shared."]
     #[serde(rename = "resourceId")]
     pub resource_id: String,
@@ -13965,9 +13789,8 @@ pub struct LinkedIntegrationRuntimeRbacAuthorization {
     pub credential: Option<CredentialReference>,
 }
 impl LinkedIntegrationRuntimeRbacAuthorization {
-    pub fn new(linked_integration_runtime_type: LinkedIntegrationRuntimeType, resource_id: String) -> Self {
+    pub fn new(resource_id: String) -> Self {
         Self {
-            linked_integration_runtime_type,
             resource_id,
             credential: None,
         }
@@ -13985,18 +13808,7 @@ impl LinkedIntegrationRuntimeRequest {
         Self { factory_name }
     }
 }
-#[doc = "The base definition of a linked integration runtime."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LinkedIntegrationRuntimeType {
-    #[doc = "The authorization type for integration runtime sharing."]
-    #[serde(rename = "authorizationType")]
-    pub authorization_type: String,
-}
-impl LinkedIntegrationRuntimeType {
-    pub fn new(authorization_type: String) -> Self {
-        Self { authorization_type }
-    }
-}
+#[doc = "The authorization type for integration runtime sharing."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "authorizationType")]
 pub enum LinkedIntegrationRuntimeTypeUnion {
@@ -14007,9 +13819,6 @@ pub enum LinkedIntegrationRuntimeTypeUnion {
 #[doc = "The nested object which contains the information and credential which can be used to connect with related store or compute resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedService {
-    #[doc = "Type of linked service."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Integration runtime reference type."]
     #[serde(rename = "connectVia", default, skip_serializing_if = "Option::is_none")]
     pub connect_via: Option<IntegrationRuntimeReference>,
@@ -14028,9 +13837,8 @@ pub struct LinkedService {
     pub annotations: Vec<serde_json::Value>,
 }
 impl LinkedService {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             connect_via: None,
             description: None,
             parameters: None,
@@ -14038,6 +13846,7 @@ impl LinkedService {
         }
     }
 }
+#[doc = "Type of linked service."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum LinkedServiceUnion {
@@ -17553,8 +17362,6 @@ impl OrcSource {
 #[doc = "Orc write settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OrcWriteSettings {
-    #[serde(flatten)]
-    pub format_write_settings: FormatWriteSettings,
     #[doc = "Limit the written file's row count to be smaller than or equal to the specified count. Type: integer (or Expression with resultType integer)."]
     #[serde(rename = "maxRowsPerFile", default, skip_serializing_if = "Option::is_none")]
     pub max_rows_per_file: Option<serde_json::Value>,
@@ -17563,9 +17370,8 @@ pub struct OrcWriteSettings {
     pub file_name_prefix: Option<serde_json::Value>,
 }
 impl OrcWriteSettings {
-    pub fn new(format_write_settings: FormatWriteSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            format_write_settings,
             max_rows_per_file: None,
             file_name_prefix: None,
         }
@@ -17782,8 +17588,6 @@ impl ParquetSource {
 #[doc = "Parquet write settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ParquetWriteSettings {
-    #[serde(flatten)]
-    pub format_write_settings: FormatWriteSettings,
     #[doc = "Limit the written file's row count to be smaller than or equal to the specified count. Type: integer (or Expression with resultType integer)."]
     #[serde(rename = "maxRowsPerFile", default, skip_serializing_if = "Option::is_none")]
     pub max_rows_per_file: Option<serde_json::Value>,
@@ -17792,9 +17596,8 @@ pub struct ParquetWriteSettings {
     pub file_name_prefix: Option<serde_json::Value>,
 }
 impl ParquetWriteSettings {
-    pub fn new(format_write_settings: FormatWriteSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            format_write_settings,
             max_rows_per_file: None,
             file_name_prefix: None,
         }
@@ -22017,18 +21820,7 @@ pub mod script_activity_type_properties {
         }
     }
 }
-#[doc = "The base definition of a secret type."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretBase {
-    #[doc = "Type of the secret."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl SecretBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "Type of the secret."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum SecretBaseUnion {
@@ -22053,21 +21845,17 @@ impl SecureInputOutputPolicy {
 #[doc = "Azure Data Factory secure string definition. The string value will be masked with asterisks '*' during Get or List API calls."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecureString {
-    #[serde(flatten)]
-    pub secret_base: SecretBase,
     #[doc = "Value of secure string."]
     pub value: String,
 }
 impl SecureString {
-    pub fn new(secret_base: SecretBase, value: String) -> Self {
-        Self { secret_base, value }
+    pub fn new(value: String) -> Self {
+        Self { value }
     }
 }
 #[doc = "Self referenced tumbling window trigger dependency."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SelfDependencyTumblingWindowTriggerReference {
-    #[serde(flatten)]
-    pub dependency_reference: DependencyReference,
     #[doc = "Timespan applied to the start time of a tumbling window when evaluating dependency."]
     pub offset: String,
     #[doc = "The size of the window when evaluating the dependency. If undefined the frequency of the tumbling window will be used."]
@@ -22075,12 +21863,8 @@ pub struct SelfDependencyTumblingWindowTriggerReference {
     pub size: Option<String>,
 }
 impl SelfDependencyTumblingWindowTriggerReference {
-    pub fn new(dependency_reference: DependencyReference, offset: String) -> Self {
-        Self {
-            dependency_reference,
-            offset,
-            size: None,
-        }
+    pub fn new(offset: String) -> Self {
+        Self { offset, size: None }
     }
 }
 #[doc = "Self-hosted integration runtime."]
@@ -23091,8 +22875,6 @@ impl SnowflakeDatasetTypeProperties {
 #[doc = "Snowflake export command settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnowflakeExportCopyCommand {
-    #[serde(flatten)]
-    pub export_settings: ExportSettings,
     #[doc = "Additional copy options directly passed to snowflake Copy Command. Type: key value pairs (value should be string type) (or Expression with resultType object). Example: \"additionalCopyOptions\": { \"DATE_FORMAT\": \"MM/DD/YYYY\", \"TIME_FORMAT\": \"'HH24:MI:SS.FF'\" }"]
     #[serde(rename = "additionalCopyOptions", default, skip_serializing_if = "Option::is_none")]
     pub additional_copy_options: Option<serde_json::Value>,
@@ -23101,9 +22883,8 @@ pub struct SnowflakeExportCopyCommand {
     pub additional_format_options: Option<serde_json::Value>,
 }
 impl SnowflakeExportCopyCommand {
-    pub fn new(export_settings: ExportSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            export_settings,
             additional_copy_options: None,
             additional_format_options: None,
         }
@@ -23112,8 +22893,6 @@ impl SnowflakeExportCopyCommand {
 #[doc = "Snowflake import command settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SnowflakeImportCopyCommand {
-    #[serde(flatten)]
-    pub import_settings: ImportSettings,
     #[doc = "Additional copy options directly passed to snowflake Copy Command. Type: key value pairs (value should be string type) (or Expression with resultType object). Example: \"additionalCopyOptions\": { \"DATE_FORMAT\": \"MM/DD/YYYY\", \"TIME_FORMAT\": \"'HH24:MI:SS.FF'\" }"]
     #[serde(rename = "additionalCopyOptions", default, skip_serializing_if = "Option::is_none")]
     pub additional_copy_options: Option<serde_json::Value>,
@@ -23122,9 +22901,8 @@ pub struct SnowflakeImportCopyCommand {
     pub additional_format_options: Option<serde_json::Value>,
 }
 impl SnowflakeImportCopyCommand {
-    pub fn new(import_settings: ImportSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            import_settings,
             additional_copy_options: None,
             additional_format_options: None,
         }
@@ -24380,9 +24158,6 @@ impl SsisFolder {
 #[doc = "SSIS object metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SsisObjectMetadata {
-    #[doc = "The type of SSIS object metadata."]
-    #[serde(rename = "type")]
-    pub type_: SsisObjectMetadataType,
     #[doc = "Metadata id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<i64>,
@@ -24394,15 +24169,15 @@ pub struct SsisObjectMetadata {
     pub description: Option<String>,
 }
 impl SsisObjectMetadata {
-    pub fn new(type_: SsisObjectMetadataType) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             id: None,
             name: None,
             description: None,
         }
     }
 }
+#[doc = "The type of SSIS object metadata."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum SsisObjectMetadataUnion {
@@ -24663,9 +24438,6 @@ impl StagingSettings {
 #[doc = "Connector read setting."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StoreReadSettings {
-    #[doc = "The read setting type."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The maximum concurrent connection count for the source data store. Type: integer (or Expression with resultType integer)."]
     #[serde(rename = "maxConcurrentConnections", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_connections: Option<serde_json::Value>,
@@ -24674,23 +24446,20 @@ pub struct StoreReadSettings {
     pub disable_metrics_collection: Option<serde_json::Value>,
 }
 impl StoreReadSettings {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             max_concurrent_connections: None,
             disable_metrics_collection: None,
         }
     }
 }
+#[doc = "The read setting type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum StoreReadSettingsUnion {}
 #[doc = "Connector write settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StoreWriteSettings {
-    #[doc = "The write setting type."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The maximum concurrent connection count for the source data store. Type: integer (or Expression with resultType integer)."]
     #[serde(rename = "maxConcurrentConnections", default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_connections: Option<serde_json::Value>,
@@ -24702,15 +24471,15 @@ pub struct StoreWriteSettings {
     pub copy_behavior: Option<serde_json::Value>,
 }
 impl StoreWriteSettings {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             max_concurrent_connections: None,
             disable_metrics_collection: None,
             copy_behavior: None,
         }
     }
 }
+#[doc = "The write setting type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum StoreWriteSettingsUnion {}
@@ -25403,8 +25172,6 @@ impl TabularSource {
 #[doc = "A copy activity tabular translator."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TabularTranslator {
-    #[serde(flatten)]
-    pub copy_translator: CopyTranslator,
     #[doc = "Column mappings. Example: \"UserId: MyUserId, Group: MyGroup, Name: MyName\" Type: string (or Expression with resultType string). This property will be retired. Please use mappings property."]
     #[serde(rename = "columnMappings", default, skip_serializing_if = "Option::is_none")]
     pub column_mappings: Option<serde_json::Value>,
@@ -25428,9 +25195,8 @@ pub struct TabularTranslator {
     pub type_conversion_settings: Option<TypeConversionSettings>,
 }
 impl TabularTranslator {
-    pub fn new(copy_translator: CopyTranslator) -> Self {
+    pub fn new() -> Self {
         Self {
-            copy_translator,
             column_mappings: None,
             schema_mapping: None,
             collection_reference: None,
@@ -25444,16 +25210,13 @@ impl TabularTranslator {
 #[doc = "The TarGZip compression read settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TarGZipReadSettings {
-    #[serde(flatten)]
-    pub compression_read_settings: CompressionReadSettings,
     #[doc = "Preserve the compression file name as folder path. Type: boolean (or Expression with resultType boolean)."]
     #[serde(rename = "preserveCompressionFileNameAsFolder", default, skip_serializing_if = "Option::is_none")]
     pub preserve_compression_file_name_as_folder: Option<serde_json::Value>,
 }
 impl TarGZipReadSettings {
-    pub fn new(compression_read_settings: CompressionReadSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            compression_read_settings,
             preserve_compression_file_name_as_folder: None,
         }
     }
@@ -25461,16 +25224,13 @@ impl TarGZipReadSettings {
 #[doc = "The Tar compression read settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TarReadSettings {
-    #[serde(flatten)]
-    pub compression_read_settings: CompressionReadSettings,
     #[doc = "Preserve the compression file name as folder path. Type: boolean (or Expression with resultType boolean)."]
     #[serde(rename = "preserveCompressionFileNameAsFolder", default, skip_serializing_if = "Option::is_none")]
     pub preserve_compression_file_name_as_folder: Option<serde_json::Value>,
 }
 impl TarReadSettings {
-    pub fn new(compression_read_settings: CompressionReadSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            compression_read_settings,
             preserve_compression_file_name_as_folder: None,
         }
     }
@@ -25844,9 +25604,6 @@ impl Transformation {
 #[doc = "Azure data factory nested object which contains information about creating pipeline run"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Trigger {
-    #[doc = "Trigger type."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Trigger description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -25862,15 +25619,15 @@ pub struct Trigger {
     pub annotations: Vec<serde_json::Value>,
 }
 impl Trigger {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             description: None,
             runtime_state: None,
             annotations: Vec::new(),
         }
     }
 }
+#[doc = "Trigger type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum TriggerUnion {
@@ -25879,18 +25636,13 @@ pub enum TriggerUnion {
 #[doc = "Trigger referenced dependency."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TriggerDependencyReference {
-    #[serde(flatten)]
-    pub dependency_reference: DependencyReference,
     #[doc = "Trigger reference type."]
     #[serde(rename = "referenceTrigger")]
     pub reference_trigger: TriggerReference,
 }
 impl TriggerDependencyReference {
-    pub fn new(dependency_reference: DependencyReference, reference_trigger: TriggerReference) -> Self {
-        Self {
-            dependency_reference,
-            reference_trigger,
-        }
+    pub fn new(reference_trigger: TriggerReference) -> Self {
+        Self { reference_trigger }
     }
 }
 #[doc = "Query parameters for triggers."]
@@ -27075,57 +26827,13 @@ impl WebLinkedService {
 pub struct WebLinkedServiceTypeProperties {
     #[doc = "The URL of the web service endpoint, e.g. https://www.microsoft.com . Type: string (or Expression with resultType string)."]
     pub url: serde_json::Value,
-    #[doc = "Type of authentication used to connect to the web table source."]
-    #[serde(rename = "authenticationType")]
-    pub authentication_type: web_linked_service_type_properties::AuthenticationType,
 }
 impl WebLinkedServiceTypeProperties {
-    pub fn new(url: serde_json::Value, authentication_type: web_linked_service_type_properties::AuthenticationType) -> Self {
-        Self { url, authentication_type }
+    pub fn new(url: serde_json::Value) -> Self {
+        Self { url }
     }
 }
-pub mod web_linked_service_type_properties {
-    use super::*;
-    #[doc = "Type of authentication used to connect to the web table source."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "AuthenticationType")]
-    pub enum AuthenticationType {
-        Basic,
-        Anonymous,
-        ClientCertificate,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for AuthenticationType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for AuthenticationType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for AuthenticationType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Basic => serializer.serialize_unit_variant("AuthenticationType", 0u32, "Basic"),
-                Self::Anonymous => serializer.serialize_unit_variant("AuthenticationType", 1u32, "Anonymous"),
-                Self::ClientCertificate => serializer.serialize_unit_variant("AuthenticationType", 2u32, "ClientCertificate"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Type of authentication used to connect to the web table source."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "authenticationType")]
 pub enum WebLinkedServiceTypePropertiesUnion {
@@ -27324,8 +27032,6 @@ impl XmlDatasetTypeProperties {
 #[doc = "Xml read settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct XmlReadSettings {
-    #[serde(flatten)]
-    pub format_read_settings: FormatReadSettings,
     #[doc = "Compression read settings."]
     #[serde(rename = "compressionProperties", default, skip_serializing_if = "Option::is_none")]
     pub compression_properties: Option<CompressionReadSettingsUnion>,
@@ -27343,9 +27049,8 @@ pub struct XmlReadSettings {
     pub namespace_prefixes: Option<serde_json::Value>,
 }
 impl XmlReadSettings {
-    pub fn new(format_read_settings: FormatReadSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            format_read_settings,
             compression_properties: None,
             validation_mode: None,
             detect_data_type: None,
@@ -27472,16 +27177,13 @@ pub mod zendesk_linked_service_type_properties {
 #[doc = "The ZipDeflate compression read settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ZipDeflateReadSettings {
-    #[serde(flatten)]
-    pub compression_read_settings: CompressionReadSettings,
     #[doc = "Preserve the zip file name as folder path. Type: boolean (or Expression with resultType boolean)."]
     #[serde(rename = "preserveZipFileNameAsFolder", default, skip_serializing_if = "Option::is_none")]
     pub preserve_zip_file_name_as_folder: Option<serde_json::Value>,
 }
 impl ZipDeflateReadSettings {
-    pub fn new(compression_read_settings: CompressionReadSettings) -> Self {
+    pub fn new() -> Self {
         Self {
-            compression_read_settings,
             preserve_zip_file_name_as_folder: None,
         }
     }

@@ -462,9 +462,6 @@ impl CheckOciDriverTaskProperties {
 #[doc = "Base class for all types of DMS command properties. If command is not supported by current client, this object is returned."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommandProperties {
-    #[doc = "Command type."]
-    #[serde(rename = "commandType")]
-    pub command_type: String,
     #[doc = "Array of errors. This is ignored if submitted."]
     #[serde(
         default,
@@ -477,9 +474,8 @@ pub struct CommandProperties {
     pub state: Option<command_properties::State>,
 }
 impl CommandProperties {
-    pub fn new(command_type: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            command_type,
             errors: Vec::new(),
             state: None,
         }
@@ -531,6 +527,7 @@ pub mod command_properties {
         }
     }
 }
+#[doc = "Command type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "commandType")]
 pub enum CommandPropertiesUnion {
@@ -860,15 +857,13 @@ pub struct ConnectToSourceSqlServerTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Type of result - database level or task level"]
-    #[serde(rename = "resultType")]
-    pub result_type: String,
 }
 impl ConnectToSourceSqlServerTaskOutput {
-    pub fn new(result_type: String) -> Self {
-        Self { id: None, result_type }
+    pub fn new() -> Self {
+        Self { id: None }
     }
 }
+#[doc = "Type of result - database level or task level"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum ConnectToSourceSqlServerTaskOutputUnion {
@@ -1558,9 +1553,6 @@ impl ConnectToTargetSqlSqlDbSyncTaskProperties {
 #[doc = "Defines the connection properties of a server"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionInfo {
-    #[doc = "Type of connection info"]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "User name"]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
@@ -1569,14 +1561,14 @@ pub struct ConnectionInfo {
     pub password: Option<String>,
 }
 impl ConnectionInfo {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             user_name: None,
             password: None,
         }
     }
 }
+#[doc = "Type of connection info"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ConnectionInfoUnion {
@@ -3244,15 +3236,13 @@ pub struct MigrateMySqlAzureDbForMySqlOfflineTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType")]
-    pub result_type: String,
 }
 impl MigrateMySqlAzureDbForMySqlOfflineTaskOutput {
-    pub fn new(result_type: String) -> Self {
-        Self { id: None, result_type }
+    pub fn new() -> Self {
+        Self { id: None }
     }
 }
+#[doc = "Result type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum MigrateMySqlAzureDbForMySqlOfflineTaskOutputUnion {}
@@ -3340,15 +3330,13 @@ pub struct MigrateMySqlAzureDbForMySqlSyncTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType")]
-    pub result_type: String,
 }
 impl MigrateMySqlAzureDbForMySqlSyncTaskOutput {
-    pub fn new(result_type: String) -> Self {
-        Self { id: None, result_type }
+    pub fn new() -> Self {
+        Self { id: None }
     }
 }
+#[doc = "Result type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum MigrateMySqlAzureDbForMySqlSyncTaskOutputUnion {
@@ -3685,15 +3673,13 @@ pub struct MigrateOracleAzureDbPostgreSqlSyncTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType")]
-    pub result_type: String,
 }
 impl MigrateOracleAzureDbPostgreSqlSyncTaskOutput {
-    pub fn new(result_type: String) -> Self {
-        Self { id: None, result_type }
+    pub fn new() -> Self {
+        Self { id: None }
     }
 }
+#[doc = "Result type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum MigrateOracleAzureDbPostgreSqlSyncTaskOutputUnion {
@@ -3991,15 +3977,13 @@ pub struct MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType")]
-    pub result_type: String,
 }
 impl MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutput {
-    pub fn new(result_type: String) -> Self {
-        Self { id: None, result_type }
+    pub fn new() -> Self {
+        Self { id: None }
     }
 }
+#[doc = "Result type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputUnion {
@@ -4299,15 +4283,13 @@ pub struct MigrateSchemaSqlServerSqlDbTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType")]
-    pub result_type: String,
 }
 impl MigrateSchemaSqlServerSqlDbTaskOutput {
-    pub fn new(result_type: String) -> Self {
-        Self { id: None, result_type }
+    pub fn new() -> Self {
+        Self { id: None }
     }
 }
+#[doc = "Result type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum MigrateSchemaSqlServerSqlDbTaskOutputUnion {
@@ -4550,15 +4532,13 @@ pub struct MigrateSqlServerSqlDbSyncTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType")]
-    pub result_type: String,
 }
 impl MigrateSqlServerSqlDbSyncTaskOutput {
-    pub fn new(result_type: String) -> Self {
-        Self { id: None, result_type }
+    pub fn new() -> Self {
+        Self { id: None }
     }
 }
+#[doc = "Result type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum MigrateSqlServerSqlDbSyncTaskOutputUnion {
@@ -4836,15 +4816,13 @@ pub struct MigrateSqlServerSqlDbTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType")]
-    pub result_type: String,
 }
 impl MigrateSqlServerSqlDbTaskOutput {
-    pub fn new(result_type: String) -> Self {
-        Self { id: None, result_type }
+    pub fn new() -> Self {
+        Self { id: None }
     }
 }
+#[doc = "Result type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum MigrateSqlServerSqlDbTaskOutputUnion {
@@ -5177,15 +5155,13 @@ pub struct MigrateSqlServerSqlMiSyncTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType")]
-    pub result_type: String,
 }
 impl MigrateSqlServerSqlMiSyncTaskOutput {
-    pub fn new(result_type: String) -> Self {
-        Self { id: None, result_type }
+    pub fn new() -> Self {
+        Self { id: None }
     }
 }
+#[doc = "Result type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum MigrateSqlServerSqlMiSyncTaskOutputUnion {
@@ -5421,15 +5397,13 @@ pub struct MigrateSqlServerSqlMiTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType")]
-    pub result_type: String,
 }
 impl MigrateSqlServerSqlMiTaskOutput {
-    pub fn new(result_type: String) -> Self {
-        Self { id: None, result_type }
+    pub fn new() -> Self {
+        Self { id: None }
     }
 }
+#[doc = "Result type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum MigrateSqlServerSqlMiTaskOutputUnion {
@@ -5754,15 +5728,13 @@ pub struct MigrateSsisTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType")]
-    pub result_type: String,
 }
 impl MigrateSsisTaskOutput {
-    pub fn new(result_type: String) -> Self {
-        Self { id: None, result_type }
+    pub fn new() -> Self {
+        Self { id: None }
     }
 }
+#[doc = "Result type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum MigrateSsisTaskOutputUnion {
@@ -6706,9 +6678,6 @@ pub struct MongoDbProgress {
     #[doc = "The qualified name of the progress object. For a collection, this is the database-qualified name. For a database, this is the database name. For the overall migration, this is null."]
     #[serde(rename = "qualifiedName", default, skip_serializing_if = "Option::is_none")]
     pub qualified_name: Option<String>,
-    #[doc = "The type of progress object"]
-    #[serde(rename = "resultType")]
-    pub result_type: mongo_db_progress::ResultType,
     pub state: mongo_db_progress::State,
     #[doc = "The total number of document bytes on the source at the beginning of the Copying stage, or -1 if the total size was unknown"]
     #[serde(rename = "totalBytes")]
@@ -6725,7 +6694,6 @@ impl MongoDbProgress {
         errors: serde_json::Value,
         events_pending: i64,
         events_replayed: i64,
-        result_type: mongo_db_progress::ResultType,
         state: mongo_db_progress::State,
         total_bytes: i64,
         total_documents: i64,
@@ -6741,7 +6709,6 @@ impl MongoDbProgress {
             last_replay_time: None,
             name: None,
             qualified_name: None,
-            result_type,
             state,
             total_bytes,
             total_documents,
@@ -6750,13 +6717,6 @@ impl MongoDbProgress {
 }
 pub mod mongo_db_progress {
     use super::*;
-    #[doc = "The type of progress object"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum ResultType {
-        Migration,
-        Database,
-        Collection,
-    }
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "State")]
     pub enum State {
@@ -6812,6 +6772,7 @@ pub mod mongo_db_progress {
         }
     }
 }
+#[doc = "The type of progress object"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum MongoDbProgressUnion {
@@ -7641,9 +7602,6 @@ impl ProjectTask {
 #[doc = "Base class for all types of DMS task properties. If task is not supported by current client, this object is returned."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProjectTaskProperties {
-    #[doc = "Task type."]
-    #[serde(rename = "taskType")]
-    pub task_type: String,
     #[doc = "Array of errors. This is ignored if submitted."]
     #[serde(
         default,
@@ -7666,9 +7624,8 @@ pub struct ProjectTaskProperties {
     pub client_data: Option<serde_json::Value>,
 }
 impl ProjectTaskProperties {
-    pub fn new(task_type: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            task_type,
             errors: Vec::new(),
             state: None,
             commands: Vec::new(),
@@ -7728,6 +7685,7 @@ pub mod project_task_properties {
         }
     }
 }
+#[doc = "Task type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "taskType")]
 pub enum ProjectTaskPropertiesUnion {

@@ -1074,8 +1074,6 @@ pub mod experiment_update_properties {
 #[doc = "Describes Forwarding Route."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ForwardingConfiguration {
-    #[serde(flatten)]
-    pub route_configuration: RouteConfiguration,
     #[doc = "A custom path used to rewrite resource paths matched by this rule. Leave empty to use incoming path."]
     #[serde(rename = "customForwardingPath", default, skip_serializing_if = "Option::is_none")]
     pub custom_forwarding_path: Option<String>,
@@ -1090,9 +1088,8 @@ pub struct ForwardingConfiguration {
     pub backend_pool: Option<SubResource>,
 }
 impl ForwardingConfiguration {
-    pub fn new(route_configuration: RouteConfiguration) -> Self {
+    pub fn new() -> Self {
         Self {
-            route_configuration,
             custom_forwarding_path: None,
             forwarding_protocol: None,
             cache_configuration: None,
@@ -3134,8 +3131,6 @@ impl PurgeParameters {
 #[doc = "Describes Redirect Route."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedirectConfiguration {
-    #[serde(flatten)]
-    pub route_configuration: RouteConfiguration,
     #[doc = "The redirect type the rule will use when redirecting traffic."]
     #[serde(rename = "redirectType", default, skip_serializing_if = "Option::is_none")]
     pub redirect_type: Option<redirect_configuration::RedirectType>,
@@ -3156,9 +3151,8 @@ pub struct RedirectConfiguration {
     pub custom_query_string: Option<String>,
 }
 impl RedirectConfiguration {
-    pub fn new(route_configuration: RouteConfiguration) -> Self {
+    pub fn new() -> Self {
         Self {
-            route_configuration,
             redirect_type: None,
             redirect_protocol: None,
             custom_host: None,
@@ -3326,17 +3320,6 @@ pub enum ResourceType {
     MicrosoftNetworkFrontDoors,
     #[serde(rename = "Microsoft.Network/frontDoors/frontendEndpoints")]
     MicrosoftNetworkFrontDoorsFrontendEndpoints,
-}
-#[doc = "Base class for all types of Route."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RouteConfiguration {
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
-}
-impl RouteConfiguration {
-    pub fn new(odata_type: String) -> Self {
-        Self { odata_type }
-    }
 }
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]

@@ -6,8 +6,6 @@ use std::str::FromStr;
 #[doc = "Describes the horizontal auto scaling mechanism that adds or removes replicas (containers or container groups)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddRemoveReplicaScalingMechanism {
-    #[serde(flatten)]
-    pub auto_scaling_mechanism: AutoScalingMechanism,
     #[doc = "Minimum number of containers (scale down won't be performed below this number)."]
     #[serde(rename = "minCount")]
     pub min_count: i64,
@@ -19,9 +17,8 @@ pub struct AddRemoveReplicaScalingMechanism {
     pub scale_increment: i64,
 }
 impl AddRemoveReplicaScalingMechanism {
-    pub fn new(auto_scaling_mechanism: AutoScalingMechanism, min_count: i64, max_count: i64, scale_increment: i64) -> Self {
+    pub fn new(min_count: i64, max_count: i64, scale_increment: i64) -> Self {
         Self {
-            auto_scaling_mechanism,
             min_count,
             max_count,
             scale_increment,
@@ -147,17 +144,16 @@ impl ApplicationScopedVolume {
 #[doc = "Describes parameters for creating application-scoped volumes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationScopedVolumeCreationParameters {
-    #[doc = "Specifies the application-scoped volume kind."]
-    pub kind: ApplicationScopedVolumeKind,
     #[doc = "User readable description of the volume."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 impl ApplicationScopedVolumeCreationParameters {
-    pub fn new(kind: ApplicationScopedVolumeKind) -> Self {
-        Self { kind, description: None }
+    pub fn new() -> Self {
+        Self { description: None }
     }
 }
+#[doc = "Specifies the application-scoped volume kind."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum ApplicationScopedVolumeCreationParametersUnion {
@@ -262,17 +258,7 @@ impl Serialize for ApplicationScopedVolumeKind {
         }
     }
 }
-#[doc = "Describes the mechanism for performing auto scaling operation. Derived classes will describe the actual mechanism."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScalingMechanism {
-    #[doc = "Enumerates the mechanisms for auto scaling."]
-    pub kind: AutoScalingMechanismKind,
-}
-impl AutoScalingMechanism {
-    pub fn new(kind: AutoScalingMechanismKind) -> Self {
-        Self { kind }
-    }
-}
+#[doc = "Enumerates the mechanisms for auto scaling."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum AutoScalingMechanismUnion {
@@ -313,17 +299,7 @@ impl Serialize for AutoScalingMechanismKind {
         }
     }
 }
-#[doc = "Describes the metric that is used for triggering auto scaling operation. Derived classes will describe resources or metrics."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScalingMetric {
-    #[doc = "Enumerates the metrics that are used for triggering auto scaling."]
-    pub kind: AutoScalingMetricKind,
-}
-impl AutoScalingMetric {
-    pub fn new(kind: AutoScalingMetricKind) -> Self {
-        Self { kind }
-    }
-}
+#[doc = "Enumerates the metrics that are used for triggering auto scaling."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum AutoScalingMetricUnion {
@@ -382,14 +358,12 @@ impl AutoScalingPolicy {
 #[doc = "Describes the resource that is used for triggering auto scaling."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScalingResourceMetric {
-    #[serde(flatten)]
-    pub auto_scaling_metric: AutoScalingMetric,
     #[doc = "Enumerates the resources that are used for triggering auto scaling."]
     pub name: AutoScalingResourceMetricName,
 }
 impl AutoScalingResourceMetric {
-    pub fn new(auto_scaling_metric: AutoScalingMetric, name: AutoScalingResourceMetricName) -> Self {
-        Self { auto_scaling_metric, name }
+    pub fn new(name: AutoScalingResourceMetricName) -> Self {
+        Self { name }
     }
 }
 #[doc = "Enumerates the resources that are used for triggering auto scaling."]
@@ -431,17 +405,7 @@ impl Serialize for AutoScalingResourceMetricName {
         }
     }
 }
-#[doc = "Describes the trigger for performing auto scaling operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScalingTrigger {
-    #[doc = "Enumerates the triggers for auto scaling."]
-    pub kind: AutoScalingTriggerKind,
-}
-impl AutoScalingTrigger {
-    pub fn new(kind: AutoScalingTriggerKind) -> Self {
-        Self { kind }
-    }
-}
+#[doc = "Enumerates the triggers for auto scaling."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum AutoScalingTriggerUnion {
@@ -518,8 +482,6 @@ impl AvailableOperationDisplay {
 #[doc = "Describes the average load trigger used for auto scaling."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AverageLoadScalingTrigger {
-    #[serde(flatten)]
-    pub auto_scaling_trigger: AutoScalingTrigger,
     #[doc = "Describes the metric that is used for triggering auto scaling operation. Derived classes will describe resources or metrics."]
     pub metric: AutoScalingMetricUnion,
     #[doc = "Lower load threshold (if average load is below this threshold, service will scale down)."]
@@ -534,14 +496,12 @@ pub struct AverageLoadScalingTrigger {
 }
 impl AverageLoadScalingTrigger {
     pub fn new(
-        auto_scaling_trigger: AutoScalingTrigger,
         metric: AutoScalingMetricUnion,
         lower_load_threshold: f64,
         upper_load_threshold: f64,
         scale_interval_in_seconds: i64,
     ) -> Self {
         Self {
-            auto_scaling_trigger,
             metric,
             lower_load_threshold,
             upper_load_threshold,
@@ -874,8 +834,6 @@ impl Serialize for DiagnosticsSinkKind {
 #[doc = "Properties of a DiagnosticsSink."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiagnosticsSinkProperties {
-    #[doc = "The kind of DiagnosticsSink."]
-    pub kind: DiagnosticsSinkKind,
     #[doc = "Name of the sink. This value is referenced by DiagnosticsReferenceDescription"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -884,14 +842,14 @@ pub struct DiagnosticsSinkProperties {
     pub description: Option<String>,
 }
 impl DiagnosticsSinkProperties {
-    pub fn new(kind: DiagnosticsSinkKind) -> Self {
+    pub fn new() -> Self {
         Self {
-            kind,
             name: None,
             description: None,
         }
     }
 }
+#[doc = "The kind of DiagnosticsSink."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum DiagnosticsSinkPropertiesUnion {
@@ -1651,17 +1609,15 @@ impl NetworkResourceProperties {
 pub struct NetworkResourcePropertiesBase {
     #[serde(flatten)]
     pub provisioned_resource_properties: ProvisionedResourceProperties,
-    #[doc = "The type of a Service Fabric container network."]
-    pub kind: NetworkKind,
 }
 impl NetworkResourcePropertiesBase {
-    pub fn new(kind: NetworkKind) -> Self {
+    pub fn new() -> Self {
         Self {
             provisioned_resource_properties: ProvisionedResourceProperties::default(),
-            kind,
         }
     }
 }
+#[doc = "The type of a Service Fabric container network."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum NetworkResourcePropertiesBaseUnion {}
@@ -2008,17 +1964,15 @@ impl SecretResourceProperties {
 pub struct SecretResourcePropertiesBase {
     #[serde(flatten)]
     pub provisioned_resource_properties: ProvisionedResourceProperties,
-    #[doc = "Describes the kind of secret."]
-    pub kind: SecretKind,
 }
 impl SecretResourcePropertiesBase {
-    pub fn new(kind: SecretKind) -> Self {
+    pub fn new() -> Self {
         Self {
             provisioned_resource_properties: ProvisionedResourceProperties::default(),
-            kind,
         }
     }
 }
+#[doc = "Describes the kind of secret."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum SecretResourcePropertiesBaseUnion {}

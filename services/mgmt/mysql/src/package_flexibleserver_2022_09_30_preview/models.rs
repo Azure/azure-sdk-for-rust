@@ -273,18 +273,7 @@ pub mod backup_settings {
         }
     }
 }
-#[doc = "Details about the target where the backup content will be stored."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BackupStoreDetails {
-    #[doc = "Type of the specific object - used for deserializing"]
-    #[serde(rename = "objectType")]
-    pub object_type: String,
-}
-impl BackupStoreDetails {
-    pub fn new(object_type: String) -> Self {
-        Self { object_type }
-    }
-}
+#[doc = "Type of the specific object - used for deserializing"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum BackupStoreDetailsUnion {}
@@ -985,18 +974,13 @@ impl FirewallRuleProperties {
 #[doc = "FullBackupStoreDetails is used for scenarios where backup data is streamed/copied over to a storage destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FullBackupStoreDetails {
-    #[serde(flatten)]
-    pub backup_store_details: BackupStoreDetails,
     #[doc = "SASUriList of storage containers where backup data is to be streamed/copied."]
     #[serde(rename = "sasUriList")]
     pub sas_uri_list: Vec<String>,
 }
 impl FullBackupStoreDetails {
-    pub fn new(backup_store_details: BackupStoreDetails, sas_uri_list: Vec<String>) -> Self {
-        Self {
-            backup_store_details,
-            sas_uri_list,
-        }
+    pub fn new(sas_uri_list: Vec<String>) -> Self {
+        Self { sas_uri_list }
     }
 }
 #[doc = "The response of get private dns zone suffix."]

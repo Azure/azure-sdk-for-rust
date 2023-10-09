@@ -512,8 +512,6 @@ impl Serialize for DiagnosticsSinkKind {
 #[doc = "Properties of a DiagnosticsSink."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiagnosticsSinkProperties {
-    #[doc = "The kind of DiagnosticsSink."]
-    pub kind: DiagnosticsSinkKind,
     #[doc = "Name of the sink. This value is referenced by DiagnosticsReferenceDescription"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -522,14 +520,14 @@ pub struct DiagnosticsSinkProperties {
     pub description: Option<String>,
 }
 impl DiagnosticsSinkProperties {
-    pub fn new(kind: DiagnosticsSinkKind) -> Self {
+    pub fn new() -> Self {
         Self {
-            kind,
             name: None,
             description: None,
         }
     }
 }
+#[doc = "The kind of DiagnosticsSink."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum DiagnosticsSinkPropertiesUnion {

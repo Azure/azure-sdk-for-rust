@@ -267,62 +267,7 @@ impl AdaptiveNetworkHardeningsList {
         Self::default()
     }
 }
-#[doc = "Details of the sub-assessment"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AdditionalData {
-    #[doc = "Sub-assessment resource type"]
-    #[serde(rename = "assessedResourceType")]
-    pub assessed_resource_type: additional_data::AssessedResourceType,
-}
-impl AdditionalData {
-    pub fn new(assessed_resource_type: additional_data::AssessedResourceType) -> Self {
-        Self { assessed_resource_type }
-    }
-}
-pub mod additional_data {
-    use super::*;
-    #[doc = "Sub-assessment resource type"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "AssessedResourceType")]
-    pub enum AssessedResourceType {
-        SqlServerVulnerability,
-        ContainerRegistryVulnerability,
-        ServerVulnerability,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for AssessedResourceType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for AssessedResourceType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for AssessedResourceType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::SqlServerVulnerability => serializer.serialize_unit_variant("AssessedResourceType", 0u32, "SqlServerVulnerability"),
-                Self::ContainerRegistryVulnerability => {
-                    serializer.serialize_unit_variant("AssessedResourceType", 1u32, "ContainerRegistryVulnerability")
-                }
-                Self::ServerVulnerability => serializer.serialize_unit_variant("AssessedResourceType", 2u32, "ServerVulnerability"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Sub-assessment resource type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "assessedResourceType")]
 pub enum AdditionalDataUnion {
@@ -772,8 +717,6 @@ pub mod alert_properties {
 #[doc = "Simulate alerts according to this bundles."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlertSimulatorBundlesRequestProperties {
-    #[serde(flatten)]
-    pub alert_simulator_request_properties: AlertSimulatorRequestProperties,
     #[doc = "Bundles list."]
     #[serde(
         default,
@@ -783,11 +726,8 @@ pub struct AlertSimulatorBundlesRequestProperties {
     pub bundles: Vec<BundleType>,
 }
 impl AlertSimulatorBundlesRequestProperties {
-    pub fn new(alert_simulator_request_properties: AlertSimulatorRequestProperties) -> Self {
-        Self {
-            alert_simulator_request_properties,
-            bundles: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { bundles: Vec::new() }
     }
 }
 #[doc = "Alert Simulator request body."]
@@ -802,55 +742,7 @@ impl AlertSimulatorRequestBody {
         Self::default()
     }
 }
-#[doc = "Describes properties of an alert simulation request"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertSimulatorRequestProperties {
-    #[doc = "The kind of alert simulation."]
-    pub kind: alert_simulator_request_properties::Kind,
-}
-impl AlertSimulatorRequestProperties {
-    pub fn new(kind: alert_simulator_request_properties::Kind) -> Self {
-        Self { kind }
-    }
-}
-pub mod alert_simulator_request_properties {
-    use super::*;
-    #[doc = "The kind of alert simulation."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        Bundles,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Bundles => serializer.serialize_unit_variant("Kind", 0u32, "Bundles"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The kind of alert simulation."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum AlertSimulatorRequestPropertiesUnion {
@@ -1431,16 +1323,12 @@ pub struct AuthenticationDetailsProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub granted_permissions: Vec<PermissionProperty>,
-    #[doc = "Connect to your cloud account, for AWS use either account credentials or role-based authentication. For GCP use account organization credentials."]
-    #[serde(rename = "authenticationType")]
-    pub authentication_type: authentication_details_properties::AuthenticationType,
 }
 impl AuthenticationDetailsProperties {
-    pub fn new(authentication_type: authentication_details_properties::AuthenticationType) -> Self {
+    pub fn new() -> Self {
         Self {
             authentication_provisioning_state: None,
             granted_permissions: Vec::new(),
-            authentication_type,
         }
     }
 }
@@ -1487,49 +1375,8 @@ pub mod authentication_details_properties {
             }
         }
     }
-    #[doc = "Connect to your cloud account, for AWS use either account credentials or role-based authentication. For GCP use account organization credentials."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "AuthenticationType")]
-    pub enum AuthenticationType {
-        #[serde(rename = "awsCreds")]
-        AwsCreds,
-        #[serde(rename = "awsAssumeRole")]
-        AwsAssumeRole,
-        #[serde(rename = "gcpCredentials")]
-        GcpCredentials,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for AuthenticationType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for AuthenticationType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for AuthenticationType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::AwsCreds => serializer.serialize_unit_variant("AuthenticationType", 0u32, "awsCreds"),
-                Self::AwsAssumeRole => serializer.serialize_unit_variant("AuthenticationType", 1u32, "awsAssumeRole"),
-                Self::GcpCredentials => serializer.serialize_unit_variant("AuthenticationType", 2u32, "gcpCredentials"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
 }
+#[doc = "Connect to your cloud account, for AWS use either account credentials or role-based authentication. For GCP use account organization credentials."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "authenticationType")]
 pub enum AuthenticationDetailsPropertiesUnion {
@@ -1645,60 +1492,7 @@ impl Automation {
         Self::default()
     }
 }
-#[doc = "The action that should be triggered."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutomationAction {
-    #[doc = "The type of the action that will be triggered by the Automation"]
-    #[serde(rename = "actionType")]
-    pub action_type: automation_action::ActionType,
-}
-impl AutomationAction {
-    pub fn new(action_type: automation_action::ActionType) -> Self {
-        Self { action_type }
-    }
-}
-pub mod automation_action {
-    use super::*;
-    #[doc = "The type of the action that will be triggered by the Automation"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ActionType")]
-    pub enum ActionType {
-        LogicApp,
-        EventHub,
-        Workspace,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ActionType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ActionType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ActionType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::LogicApp => serializer.serialize_unit_variant("ActionType", 0u32, "LogicApp"),
-                Self::EventHub => serializer.serialize_unit_variant("ActionType", 1u32, "EventHub"),
-                Self::Workspace => serializer.serialize_unit_variant("ActionType", 2u32, "Workspace"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The type of the action that will be triggered by the Automation"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "actionType")]
 pub enum AutomationActionUnion {
@@ -1709,8 +1503,6 @@ pub enum AutomationActionUnion {
 #[doc = "The target Event Hub to which event data will be exported. To learn more about Microsoft Defender for Cloud continuous export capabilities, visit https://aka.ms/ASCExportLearnMore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationActionEventHub {
-    #[serde(flatten)]
-    pub automation_action: AutomationAction,
     #[doc = "The target Event Hub Azure Resource ID."]
     #[serde(rename = "eventHubResourceId", default, skip_serializing_if = "Option::is_none")]
     pub event_hub_resource_id: Option<String>,
@@ -1722,9 +1514,8 @@ pub struct AutomationActionEventHub {
     pub connection_string: Option<String>,
 }
 impl AutomationActionEventHub {
-    pub fn new(automation_action: AutomationAction) -> Self {
+    pub fn new() -> Self {
         Self {
-            automation_action,
             event_hub_resource_id: None,
             sas_policy_name: None,
             connection_string: None,
@@ -1734,8 +1525,6 @@ impl AutomationActionEventHub {
 #[doc = "The logic app action that should be triggered. To learn more about Microsoft Defender for Cloud's Workflow Automation capabilities, visit https://aka.ms/ASCWorkflowAutomationLearnMore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationActionLogicApp {
-    #[serde(flatten)]
-    pub automation_action: AutomationAction,
     #[doc = "The triggered Logic App Azure Resource ID. This can also reside on other subscriptions, given that you have permissions to trigger the Logic App"]
     #[serde(rename = "logicAppResourceId", default, skip_serializing_if = "Option::is_none")]
     pub logic_app_resource_id: Option<String>,
@@ -1744,9 +1533,8 @@ pub struct AutomationActionLogicApp {
     pub uri: Option<String>,
 }
 impl AutomationActionLogicApp {
-    pub fn new(automation_action: AutomationAction) -> Self {
+    pub fn new() -> Self {
         Self {
-            automation_action,
             logic_app_resource_id: None,
             uri: None,
         }
@@ -1755,16 +1543,13 @@ impl AutomationActionLogicApp {
 #[doc = "The\u{a0}Log\u{a0}Analytics\u{a0}Workspace\u{a0}to\u{a0}which\u{a0}event data will be exported. Security alerts data will reside in the 'SecurityAlert' table and the assessments data will reside in the 'SecurityRecommendation' table (under the 'Security'/'SecurityCenterFree' solutions). Note that in order to view the data in the workspace, the Security Center Log Analytics free/standard solution needs to be enabled on that workspace. To learn more about Microsoft Defender for Cloud continuous export capabilities, visit https://aka.ms/ASCExportLearnMore"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationActionWorkspace {
-    #[serde(flatten)]
-    pub automation_action: AutomationAction,
     #[doc = "The fully qualified Log Analytics Workspace Azure Resource ID."]
     #[serde(rename = "workspaceResourceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_resource_id: Option<String>,
 }
 impl AutomationActionWorkspace {
-    pub fn new(automation_action: AutomationAction) -> Self {
+    pub fn new() -> Self {
         Self {
-            automation_action,
             workspace_resource_id: None,
         }
     }
@@ -2129,74 +1914,16 @@ impl AwsCredsAuthenticationDetailsProperties {
 #[doc = "The aws connector environment data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AwsEnvironmentData {
-    #[serde(flatten)]
-    pub environment_data: EnvironmentData,
     #[doc = "The awsOrganization data "]
     #[serde(rename = "organizationalData", default, skip_serializing_if = "Option::is_none")]
     pub organizational_data: Option<AwsOrganizationalDataUnion>,
 }
 impl AwsEnvironmentData {
-    pub fn new(environment_data: EnvironmentData) -> Self {
-        Self {
-            environment_data,
-            organizational_data: None,
-        }
+    pub fn new() -> Self {
+        Self { organizational_data: None }
     }
 }
-#[doc = "The awsOrganization data "]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AwsOrganizationalData {
-    #[doc = "The multi cloud account's membership type in the organization"]
-    #[serde(rename = "organizationMembershipType")]
-    pub organization_membership_type: aws_organizational_data::OrganizationMembershipType,
-}
-impl AwsOrganizationalData {
-    pub fn new(organization_membership_type: aws_organizational_data::OrganizationMembershipType) -> Self {
-        Self {
-            organization_membership_type,
-        }
-    }
-}
-pub mod aws_organizational_data {
-    use super::*;
-    #[doc = "The multi cloud account's membership type in the organization"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "OrganizationMembershipType")]
-    pub enum OrganizationMembershipType {
-        Member,
-        Organization,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for OrganizationMembershipType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for OrganizationMembershipType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for OrganizationMembershipType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Member => serializer.serialize_unit_variant("OrganizationMembershipType", 0u32, "Member"),
-                Self::Organization => serializer.serialize_unit_variant("OrganizationMembershipType", 1u32, "Organization"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The multi cloud account's membership type in the organization"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "organizationMembershipType")]
 pub enum AwsOrganizationalDataUnion {
@@ -2206,8 +1933,6 @@ pub enum AwsOrganizationalDataUnion {
 #[doc = "The awsOrganization data for the master account"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AwsOrganizationalDataMaster {
-    #[serde(flatten)]
-    pub aws_organizational_data: AwsOrganizationalData,
     #[doc = "If the multi cloud account is of membership type organization, this will be the name of the onboarding stackset"]
     #[serde(rename = "stacksetName", default, skip_serializing_if = "Option::is_none")]
     pub stackset_name: Option<String>,
@@ -2221,9 +1946,8 @@ pub struct AwsOrganizationalDataMaster {
     pub excluded_account_ids: Vec<String>,
 }
 impl AwsOrganizationalDataMaster {
-    pub fn new(aws_organizational_data: AwsOrganizationalData) -> Self {
+    pub fn new() -> Self {
         Self {
-            aws_organizational_data,
             stackset_name: None,
             excluded_account_ids: Vec::new(),
         }
@@ -2232,46 +1956,33 @@ impl AwsOrganizationalDataMaster {
 #[doc = "The awsOrganization data for the member account"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AwsOrganizationalDataMember {
-    #[serde(flatten)]
-    pub aws_organizational_data: AwsOrganizationalData,
     #[doc = "If the multi cloud account is not of membership type organization, this will be the ID of the account's parent"]
     #[serde(rename = "parentHierarchyId", default, skip_serializing_if = "Option::is_none")]
     pub parent_hierarchy_id: Option<String>,
 }
 impl AwsOrganizationalDataMember {
-    pub fn new(aws_organizational_data: AwsOrganizationalData) -> Self {
-        Self {
-            aws_organizational_data,
-            parent_hierarchy_id: None,
-        }
+    pub fn new() -> Self {
+        Self { parent_hierarchy_id: None }
     }
 }
 #[doc = "The AzureDevOps scope connector's environment data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureDevOpsScopeEnvironmentData {
-    #[serde(flatten)]
-    pub environment_data: EnvironmentData,
-}
+pub struct AzureDevOpsScopeEnvironmentData {}
 impl AzureDevOpsScopeEnvironmentData {
-    pub fn new(environment_data: EnvironmentData) -> Self {
-        Self { environment_data }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Azure resource identifier."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureResourceIdentifier {
-    #[serde(flatten)]
-    pub resource_identifier: ResourceIdentifier,
     #[doc = "ARM resource identifier for the cloud resource being alerted on"]
     #[serde(rename = "azureResourceId", default, skip_serializing_if = "Option::is_none")]
     pub azure_resource_id: Option<String>,
 }
 impl AzureResourceIdentifier {
-    pub fn new(resource_identifier: ResourceIdentifier) -> Self {
-        Self {
-            resource_identifier,
-            azure_resource_id: None,
-        }
+    pub fn new() -> Self {
+        Self { azure_resource_id: None }
     }
 }
 #[doc = "Describes an Azure resource with kind"]
@@ -2913,8 +2624,6 @@ impl ConnectorSettingProperties {
 #[doc = "Additional context fields for container registry Vulnerability assessment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ContainerRegistryVulnerabilityProperties {
-    #[serde(flatten)]
-    pub additional_data: AdditionalData,
     #[doc = "Vulnerability Type. e.g: Vulnerability, Potential Vulnerability, Information Gathered, Vulnerability"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
@@ -2949,9 +2658,8 @@ pub struct ContainerRegistryVulnerabilityProperties {
     pub image_digest: Option<String>,
 }
 impl ContainerRegistryVulnerabilityProperties {
-    pub fn new(additional_data: AdditionalData) -> Self {
+    pub fn new() -> Self {
         Self {
-            additional_data,
             type_: None,
             cvss: None,
             patchable: None,
@@ -2975,20 +2683,17 @@ pub struct CustomAlertRule {
     #[doc = "Status of the custom alert."]
     #[serde(rename = "isEnabled")]
     pub is_enabled: bool,
-    #[doc = "The type of the custom alert rule."]
-    #[serde(rename = "ruleType")]
-    pub rule_type: String,
 }
 impl CustomAlertRule {
-    pub fn new(is_enabled: bool, rule_type: String) -> Self {
+    pub fn new(is_enabled: bool) -> Self {
         Self {
             display_name: None,
             description: None,
             is_enabled,
-            rule_type,
         }
     }
 }
+#[doc = "The type of the custom alert rule."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "ruleType")]
 pub enum CustomAlertRuleUnion {}
@@ -3365,62 +3070,7 @@ pub enum EnforcementSupport {
     NotSupported,
     Unknown,
 }
-#[doc = "The security connector environment data."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EnvironmentData {
-    #[doc = "The type of the environment data."]
-    #[serde(rename = "environmentType")]
-    pub environment_type: environment_data::EnvironmentType,
-}
-impl EnvironmentData {
-    pub fn new(environment_type: environment_data::EnvironmentType) -> Self {
-        Self { environment_type }
-    }
-}
-pub mod environment_data {
-    use super::*;
-    #[doc = "The type of the environment data."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "EnvironmentType")]
-    pub enum EnvironmentType {
-        AwsAccount,
-        GcpProject,
-        GithubScope,
-        AzureDevOpsScope,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for EnvironmentType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for EnvironmentType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for EnvironmentType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::AwsAccount => serializer.serialize_unit_variant("EnvironmentType", 0u32, "AwsAccount"),
-                Self::GcpProject => serializer.serialize_unit_variant("EnvironmentType", 1u32, "GcpProject"),
-                Self::GithubScope => serializer.serialize_unit_variant("EnvironmentType", 2u32, "GithubScope"),
-                Self::AzureDevOpsScope => serializer.serialize_unit_variant("EnvironmentType", 3u32, "AzureDevOpsScope"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The type of the environment data."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "environmentType")]
 pub enum EnvironmentDataUnion {
@@ -3751,60 +3401,7 @@ impl GcpCredentialsDetailsProperties {
         }
     }
 }
-#[doc = "The gcpOrganization data"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GcpOrganizationalData {
-    #[doc = "The multi cloud account's membership type in the organization"]
-    #[serde(rename = "organizationMembershipType")]
-    pub organization_membership_type: gcp_organizational_data::OrganizationMembershipType,
-}
-impl GcpOrganizationalData {
-    pub fn new(organization_membership_type: gcp_organizational_data::OrganizationMembershipType) -> Self {
-        Self {
-            organization_membership_type,
-        }
-    }
-}
-pub mod gcp_organizational_data {
-    use super::*;
-    #[doc = "The multi cloud account's membership type in the organization"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "OrganizationMembershipType")]
-    pub enum OrganizationMembershipType {
-        Member,
-        Organization,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for OrganizationMembershipType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for OrganizationMembershipType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for OrganizationMembershipType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Member => serializer.serialize_unit_variant("OrganizationMembershipType", 0u32, "Member"),
-                Self::Organization => serializer.serialize_unit_variant("OrganizationMembershipType", 1u32, "Organization"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The multi cloud account's membership type in the organization"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "organizationMembershipType")]
 pub enum GcpOrganizationalDataUnion {
@@ -3814,8 +3411,6 @@ pub enum GcpOrganizationalDataUnion {
 #[doc = "The gcpOrganization data for the member account"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GcpOrganizationalDataMember {
-    #[serde(flatten)]
-    pub gcp_organizational_data: GcpOrganizationalData,
     #[doc = "If the multi cloud account is not of membership type organization, this will be the ID of the project's parent"]
     #[serde(rename = "parentHierarchyId", default, skip_serializing_if = "Option::is_none")]
     pub parent_hierarchy_id: Option<String>,
@@ -3824,9 +3419,8 @@ pub struct GcpOrganizationalDataMember {
     pub management_project_number: Option<String>,
 }
 impl GcpOrganizationalDataMember {
-    pub fn new(gcp_organizational_data: GcpOrganizationalData) -> Self {
+    pub fn new() -> Self {
         Self {
-            gcp_organizational_data,
             parent_hierarchy_id: None,
             management_project_number: None,
         }
@@ -3835,8 +3429,6 @@ impl GcpOrganizationalDataMember {
 #[doc = "The gcpOrganization data for the parent account"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GcpOrganizationalDataOrganization {
-    #[serde(flatten)]
-    pub gcp_organizational_data: GcpOrganizationalData,
     #[doc = "If the multi cloud account is of membership type organization, list of accounts excluded from offering"]
     #[serde(
         rename = "excludedProjectNumbers",
@@ -3853,9 +3445,8 @@ pub struct GcpOrganizationalDataOrganization {
     pub workload_identity_provider_id: Option<String>,
 }
 impl GcpOrganizationalDataOrganization {
-    pub fn new(gcp_organizational_data: GcpOrganizationalData) -> Self {
+    pub fn new() -> Self {
         Self {
-            gcp_organizational_data,
             excluded_project_numbers: Vec::new(),
             service_account_email_address: None,
             workload_identity_provider_id: None,
@@ -3883,8 +3474,6 @@ impl GcpProjectDetails {
 #[doc = "The GCP project connector environment data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GcpProjectEnvironmentData {
-    #[serde(flatten)]
-    pub environment_data: EnvironmentData,
     #[doc = "The gcpOrganization data"]
     #[serde(rename = "organizationalData", default, skip_serializing_if = "Option::is_none")]
     pub organizational_data: Option<GcpOrganizationalDataUnion>,
@@ -3893,9 +3482,8 @@ pub struct GcpProjectEnvironmentData {
     pub project_details: Option<GcpProjectDetails>,
 }
 impl GcpProjectEnvironmentData {
-    pub fn new(environment_data: EnvironmentData) -> Self {
+    pub fn new() -> Self {
         Self {
-            environment_data,
             organizational_data: None,
             project_details: None,
         }
@@ -3903,13 +3491,10 @@ impl GcpProjectEnvironmentData {
 }
 #[doc = "The github scope connector's environment data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct GithubScopeEnvironmentData {
-    #[serde(flatten)]
-    pub environment_data: EnvironmentData,
-}
+pub struct GithubScopeEnvironmentData {}
 impl GithubScopeEnvironmentData {
-    pub fn new(environment_data: EnvironmentData) -> Self {
-        Self { environment_data }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Governance assignment over a given scope"]
@@ -5796,8 +5381,6 @@ impl Location {
 #[doc = "Represents a Log Analytics workspace scope identifier."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LogAnalyticsIdentifier {
-    #[serde(flatten)]
-    pub resource_identifier: ResourceIdentifier,
     #[doc = "The LogAnalytics workspace id that stores this alert."]
     #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
@@ -5812,9 +5395,8 @@ pub struct LogAnalyticsIdentifier {
     pub agent_id: Option<String>,
 }
 impl LogAnalyticsIdentifier {
-    pub fn new(resource_identifier: ResourceIdentifier) -> Self {
+    pub fn new() -> Self {
         Self {
-            resource_identifier,
             workspace_id: None,
             workspace_subscription_id: None,
             workspace_resource_group: None,
@@ -6959,114 +6541,11 @@ impl Resource {
         Self::default()
     }
 }
-#[doc = "Details of the resource that was assessed"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceDetails {
-    #[doc = "The platform where the assessed resource resides"]
-    pub source: resource_details::Source,
-}
-impl ResourceDetails {
-    pub fn new(source: resource_details::Source) -> Self {
-        Self { source }
-    }
-}
-pub mod resource_details {
-    use super::*;
-    #[doc = "The platform where the assessed resource resides"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Source")]
-    pub enum Source {
-        Azure,
-        OnPremise,
-        OnPremiseSql,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Source {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Source {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Source {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Azure => serializer.serialize_unit_variant("Source", 0u32, "Azure"),
-                Self::OnPremise => serializer.serialize_unit_variant("Source", 1u32, "OnPremise"),
-                Self::OnPremiseSql => serializer.serialize_unit_variant("Source", 2u32, "OnPremiseSql"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The platform where the assessed resource resides"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "source")]
 pub enum ResourceDetailsUnion {}
-#[doc = "A resource identifier for an alert which can be used to direct the alert to the right product exposure group (tenant, workspace, subscription etc.)."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceIdentifier {
-    #[doc = "There can be multiple identifiers of different type per alert, this field specify the identifier type."]
-    #[serde(rename = "type")]
-    pub type_: resource_identifier::Type,
-}
-impl ResourceIdentifier {
-    pub fn new(type_: resource_identifier::Type) -> Self {
-        Self { type_ }
-    }
-}
-pub mod resource_identifier {
-    use super::*;
-    #[doc = "There can be multiple identifiers of different type per alert, this field specify the identifier type."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        AzureResource,
-        LogAnalytics,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::AzureResource => serializer.serialize_unit_variant("Type", 0u32, "AzureResource"),
-                Self::LogAnalytics => serializer.serialize_unit_variant("Type", 1u32, "LogAnalytics"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "There can be multiple identifiers of different type per alert, this field specify the identifier type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ResourceIdentifierUnion {
@@ -9082,8 +8561,6 @@ impl ServerVulnerabilityAssessmentsList {
 #[doc = "Additional context fields for server vulnerability assessment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerVulnerabilityProperties {
-    #[serde(flatten)]
-    pub additional_data: AdditionalData,
     #[doc = "Vulnerability Type. e.g: Vulnerability, Potential Vulnerability, Information Gathered"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
@@ -9115,9 +8592,8 @@ pub struct ServerVulnerabilityProperties {
     pub vendor_references: Vec<VendorReference>,
 }
 impl ServerVulnerabilityProperties {
-    pub fn new(additional_data: AdditionalData) -> Self {
+    pub fn new() -> Self {
         Self {
-            additional_data,
             type_: None,
             cvss: None,
             patchable: None,
@@ -9148,59 +8624,15 @@ impl ServicePrincipalProperties {
 pub struct Setting {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "the kind of the settings string"]
-    pub kind: setting::Kind,
 }
 impl Setting {
-    pub fn new(kind: setting::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource: Resource::default(),
-            kind,
         }
     }
 }
-pub mod setting {
-    use super::*;
-    #[doc = "the kind of the settings string"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        DataExportSettings,
-        AlertSuppressionSetting,
-        AlertSyncSettings,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::DataExportSettings => serializer.serialize_unit_variant("Kind", 0u32, "DataExportSettings"),
-                Self::AlertSuppressionSetting => serializer.serialize_unit_variant("Kind", 1u32, "AlertSuppressionSetting"),
-                Self::AlertSyncSettings => serializer.serialize_unit_variant("Kind", 2u32, "AlertSyncSettings"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "the kind of the settings string"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum SettingUnion {
@@ -9378,8 +8810,6 @@ pub enum SourceSystem {
 #[doc = "Details of the resource that was assessed"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SqlServerVulnerabilityProperties {
-    #[serde(flatten)]
-    pub additional_data: AdditionalData,
     #[doc = "The resource type the sub assessment refers to in its resource details"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
@@ -9388,12 +8818,8 @@ pub struct SqlServerVulnerabilityProperties {
     pub query: Option<String>,
 }
 impl SqlServerVulnerabilityProperties {
-    pub fn new(additional_data: AdditionalData) -> Self {
-        Self {
-            additional_data,
-            type_: None,
-            query: None,
-        }
+    pub fn new() -> Self {
+        Self { type_: None, query: None }
     }
 }
 #[doc = "Status of the sub-assessment"]
@@ -9924,89 +9350,16 @@ impl WorkspaceSettingProperties {
 #[doc = "The security offering details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudOffering {
-    #[doc = "The type of the security offering."]
-    #[serde(rename = "offeringType")]
-    pub offering_type: cloud_offering::OfferingType,
     #[doc = "The offering description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 impl CloudOffering {
-    pub fn new(offering_type: cloud_offering::OfferingType) -> Self {
-        Self {
-            offering_type,
-            description: None,
-        }
+    pub fn new() -> Self {
+        Self { description: None }
     }
 }
-pub mod cloud_offering {
-    use super::*;
-    #[doc = "The type of the security offering."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "OfferingType")]
-    pub enum OfferingType {
-        CspmMonitorAws,
-        DefenderForContainersAws,
-        DefenderForServersAws,
-        DefenderForDatabasesAws,
-        InformationProtectionAws,
-        CspmMonitorGcp,
-        CspmMonitorGithub,
-        CspmMonitorAzureDevOps,
-        DefenderForServersGcp,
-        DefenderForContainersGcp,
-        DefenderForDatabasesGcp,
-        DefenderCspmAws,
-        DefenderCspmGcp,
-        DefenderForDevOpsGithub,
-        DefenderForDevOpsAzureDevOps,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for OfferingType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for OfferingType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for OfferingType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::CspmMonitorAws => serializer.serialize_unit_variant("OfferingType", 0u32, "CspmMonitorAws"),
-                Self::DefenderForContainersAws => serializer.serialize_unit_variant("OfferingType", 1u32, "DefenderForContainersAws"),
-                Self::DefenderForServersAws => serializer.serialize_unit_variant("OfferingType", 2u32, "DefenderForServersAws"),
-                Self::DefenderForDatabasesAws => serializer.serialize_unit_variant("OfferingType", 3u32, "DefenderForDatabasesAws"),
-                Self::InformationProtectionAws => serializer.serialize_unit_variant("OfferingType", 4u32, "InformationProtectionAws"),
-                Self::CspmMonitorGcp => serializer.serialize_unit_variant("OfferingType", 5u32, "CspmMonitorGcp"),
-                Self::CspmMonitorGithub => serializer.serialize_unit_variant("OfferingType", 6u32, "CspmMonitorGithub"),
-                Self::CspmMonitorAzureDevOps => serializer.serialize_unit_variant("OfferingType", 7u32, "CspmMonitorAzureDevOps"),
-                Self::DefenderForServersGcp => serializer.serialize_unit_variant("OfferingType", 8u32, "DefenderForServersGcp"),
-                Self::DefenderForContainersGcp => serializer.serialize_unit_variant("OfferingType", 9u32, "DefenderForContainersGcp"),
-                Self::DefenderForDatabasesGcp => serializer.serialize_unit_variant("OfferingType", 10u32, "DefenderForDatabasesGcp"),
-                Self::DefenderCspmAws => serializer.serialize_unit_variant("OfferingType", 11u32, "DefenderCspmAws"),
-                Self::DefenderCspmGcp => serializer.serialize_unit_variant("OfferingType", 12u32, "DefenderCspmGcp"),
-                Self::DefenderForDevOpsGithub => serializer.serialize_unit_variant("OfferingType", 13u32, "DefenderForDevOpsGithub"),
-                Self::DefenderForDevOpsAzureDevOps => {
-                    serializer.serialize_unit_variant("OfferingType", 14u32, "DefenderForDevOpsAzureDevOps")
-                }
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The type of the security offering."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "offeringType")]
 pub enum CloudOfferingUnion {

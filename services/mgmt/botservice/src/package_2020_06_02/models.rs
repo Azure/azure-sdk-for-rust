@@ -6,15 +6,13 @@ use std::str::FromStr;
 #[doc = "Alexa channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AlexaChannel {
-    #[serde(flatten)]
-    pub channel: Channel,
     #[doc = "The parameters to provide for the Alexa channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AlexaChannelProperties>,
 }
 impl AlexaChannel {
-    pub fn new(channel: Channel) -> Self {
-        Self { channel, properties: None }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The parameters to provide for the Alexa channel."]
@@ -180,18 +178,7 @@ impl BotResponseList {
         Self::default()
     }
 }
-#[doc = "Channel definition"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Channel {
-    #[doc = "The channel name"]
-    #[serde(rename = "channelName")]
-    pub channel_name: String,
-}
-impl Channel {
-    pub fn new(channel_name: String) -> Self {
-        Self { channel_name }
-    }
-}
+#[doc = "The channel name"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "channelName")]
 pub enum ChannelUnion {
@@ -367,15 +354,13 @@ impl ConnectionSettingResponseList {
 #[doc = "Direct Line channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DirectLineChannel {
-    #[serde(flatten)]
-    pub channel: Channel,
     #[doc = "The parameters to provide for the Direct Line channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DirectLineChannelProperties>,
 }
 impl DirectLineChannel {
-    pub fn new(channel: Channel) -> Self {
-        Self { channel, properties: None }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The parameters to provide for the Direct Line channel."]
@@ -448,15 +433,13 @@ impl DirectLineSite {
 #[doc = "DirectLine Speech channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DirectLineSpeechChannel {
-    #[serde(flatten)]
-    pub channel: Channel,
     #[doc = "The parameters to provide for the DirectLine Speech channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<DirectLineSpeechChannelProperties>,
 }
 impl DirectLineSpeechChannel {
-    pub fn new(channel: Channel) -> Self {
-        Self { channel, properties: None }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The parameters to provide for the DirectLine Speech channel."]
@@ -492,15 +475,13 @@ impl DirectLineSpeechChannelProperties {
 #[doc = "Email channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EmailChannel {
-    #[serde(flatten)]
-    pub channel: Channel,
     #[doc = "The parameters to provide for the Email channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EmailChannelProperties>,
 }
 impl EmailChannel {
-    pub fn new(channel: Channel) -> Self {
-        Self { channel, properties: None }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The parameters to provide for the Email channel."]
@@ -559,15 +540,13 @@ impl ErrorBody {
 #[doc = "Facebook channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct FacebookChannel {
-    #[serde(flatten)]
-    pub channel: Channel,
     #[doc = "The parameters to provide for the Facebook channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<FacebookChannelProperties>,
 }
 impl FacebookChannel {
-    pub fn new(channel: Channel) -> Self {
-        Self { channel, properties: None }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The parameters to provide for the Facebook channel."]
@@ -625,15 +604,13 @@ impl FacebookPage {
 #[doc = "Kik channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KikChannel {
-    #[serde(flatten)]
-    pub channel: Channel,
     #[doc = "The parameters to provide for the Kik channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<KikChannelProperties>,
 }
 impl KikChannel {
-    pub fn new(channel: Channel) -> Self {
-        Self { channel, properties: None }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The parameters to provide for the Kik channel."]
@@ -710,15 +687,13 @@ impl Serialize for Kind {
 #[doc = "Line channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LineChannel {
-    #[serde(flatten)]
-    pub channel: Channel,
     #[doc = "The parameters to provide for the Line channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<LineChannelProperties>,
 }
 impl LineChannel {
-    pub fn new(channel: Channel) -> Self {
-        Self { channel, properties: None }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The parameters to provide for the Line channel."]
@@ -764,15 +739,13 @@ impl LineRegistration {
 #[doc = "Microsoft Teams channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MsTeamsChannel {
-    #[serde(flatten)]
-    pub channel: Channel,
     #[doc = "The parameters to provide for the Microsoft Teams channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MsTeamsChannelProperties>,
 }
 impl MsTeamsChannel {
-    pub fn new(channel: Channel) -> Self {
-        Self { channel, properties: None }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The parameters to provide for the Microsoft Teams channel."]
@@ -1105,15 +1078,13 @@ impl Serialize for SkuName {
 #[doc = "Skype channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SkypeChannel {
-    #[serde(flatten)]
-    pub channel: Channel,
     #[doc = "The parameters to provide for the Microsoft Teams channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SkypeChannelProperties>,
 }
 impl SkypeChannel {
-    pub fn new(channel: Channel) -> Self {
-        Self { channel, properties: None }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The parameters to provide for the Microsoft Teams channel."]
@@ -1165,15 +1136,13 @@ impl SkypeChannelProperties {
 #[doc = "Slack channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SlackChannel {
-    #[serde(flatten)]
-    pub channel: Channel,
     #[doc = "The parameters to provide for the Slack channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SlackChannelProperties>,
 }
 impl SlackChannel {
-    pub fn new(channel: Channel) -> Self {
-        Self { channel, properties: None }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The parameters to provide for the Slack channel."]
@@ -1229,15 +1198,13 @@ impl SlackChannelProperties {
 #[doc = "Sms channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SmsChannel {
-    #[serde(flatten)]
-    pub channel: Channel,
     #[doc = "The parameters to provide for the Sms channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SmsChannelProperties>,
 }
 impl SmsChannel {
-    pub fn new(channel: Channel) -> Self {
-        Self { channel, properties: None }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The parameters to provide for the Sms channel."]
@@ -1272,15 +1239,13 @@ impl SmsChannelProperties {
 #[doc = "Telegram channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TelegramChannel {
-    #[serde(flatten)]
-    pub channel: Channel,
     #[doc = "The parameters to provide for the Telegram channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TelegramChannelProperties>,
 }
 impl TelegramChannel {
-    pub fn new(channel: Channel) -> Self {
-        Self { channel, properties: None }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The parameters to provide for the Telegram channel."]
@@ -1308,15 +1273,13 @@ impl TelegramChannelProperties {
 #[doc = "Web Chat channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebChatChannel {
-    #[serde(flatten)]
-    pub channel: Channel,
     #[doc = "The parameters to provide for the Web Chat channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebChatChannelProperties>,
 }
 impl WebChatChannel {
-    pub fn new(channel: Channel) -> Self {
-        Self { channel, properties: None }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The parameters to provide for the Web Chat channel."]

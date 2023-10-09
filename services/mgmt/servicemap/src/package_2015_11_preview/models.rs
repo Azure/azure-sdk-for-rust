@@ -465,35 +465,16 @@ pub struct CoreResource {
     #[doc = "Resource ETAG."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
-    #[doc = "Additional resource type qualifier."]
-    pub kind: core_resource::Kind,
 }
 impl CoreResource {
-    pub fn new(kind: core_resource::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource: Resource::default(),
             etag: None,
-            kind,
         }
     }
 }
-pub mod core_resource {
-    use super::*;
-    #[doc = "Additional resource type qualifier."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "machine")]
-        Machine,
-        #[serde(rename = "process")]
-        Process,
-        #[serde(rename = "port")]
-        Port,
-        #[serde(rename = "clientGroup")]
-        ClientGroup,
-        #[serde(rename = "machineGroup")]
-        MachineGroup,
-    }
-}
+#[doc = "Additional resource type qualifier."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum CoreResourceUnion {
@@ -545,12 +526,10 @@ pub struct HostingConfiguration {
     #[doc = "The hosting provider of the VM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<hosting_configuration::Provider>,
-    #[doc = "Additional hosting configuration type qualifier."]
-    pub kind: hosting_configuration::Kind,
 }
 impl HostingConfiguration {
-    pub fn new(kind: hosting_configuration::Kind) -> Self {
-        Self { provider: None, kind }
+    pub fn new() -> Self {
+        Self { provider: None }
     }
 }
 pub mod hosting_configuration {
@@ -561,13 +540,8 @@ pub mod hosting_configuration {
         #[serde(rename = "azure")]
         Azure,
     }
-    #[doc = "Additional hosting configuration type qualifier."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "provider:azure")]
-        ProviderAzure,
-    }
 }
+#[doc = "Additional hosting configuration type qualifier."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum HostingConfigurationUnion {
@@ -1141,31 +1115,16 @@ pub struct MapRequest {
     #[doc = "Map interval end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
-    #[doc = "The type of map to create."]
-    pub kind: map_request::Kind,
 }
 impl MapRequest {
-    pub fn new(kind: map_request::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             start_time: None,
             end_time: None,
-            kind,
         }
     }
 }
-pub mod map_request {
-    use super::*;
-    #[doc = "The type of map to create."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "map:single-machine-dependency")]
-        MapSingleMachineDependency,
-        #[serde(rename = "map:machine-group-dependency")]
-        MapMachineGroupDependency,
-        #[serde(rename = "map:machine-list-dependency")]
-        MapMachineListDependency,
-    }
-}
+#[doc = "The type of map to create."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum MapRequestUnion {
@@ -1624,12 +1583,10 @@ pub struct ProcessHostingConfiguration {
     #[doc = "The hosting provider of the VM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<process_hosting_configuration::Provider>,
-    #[doc = "Additional hosting configuration type qualifier."]
-    pub kind: process_hosting_configuration::Kind,
 }
 impl ProcessHostingConfiguration {
-    pub fn new(kind: process_hosting_configuration::Kind) -> Self {
-        Self { provider: None, kind }
+    pub fn new() -> Self {
+        Self { provider: None }
     }
 }
 pub mod process_hosting_configuration {
@@ -1640,13 +1597,8 @@ pub mod process_hosting_configuration {
         #[serde(rename = "azure")]
         Azure,
     }
-    #[doc = "Additional hosting configuration type qualifier."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "provider:azure")]
-        ProviderAzure,
-    }
 }
+#[doc = "Additional hosting configuration type qualifier."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum ProcessHostingConfigurationUnion {
@@ -1705,28 +1657,15 @@ impl ProcessUser {
 pub struct Relationship {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "Additional resource type qualifier."]
-    pub kind: relationship::Kind,
 }
 impl Relationship {
-    pub fn new(kind: relationship::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource: Resource::default(),
-            kind,
         }
     }
 }
-pub mod relationship {
-    use super::*;
-    #[doc = "Additional resource type qualifier."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "rel:connection")]
-        RelConnection,
-        #[serde(rename = "rel:acceptor")]
-        RelAcceptor,
-    }
-}
+#[doc = "Additional resource type qualifier."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum RelationshipUnion {
@@ -1788,38 +1727,17 @@ pub struct ResourceReference {
     #[doc = "Resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[doc = "Specifies the sub-class of the reference."]
-    pub kind: resource_reference::Kind,
 }
 impl ResourceReference {
-    pub fn new(id: String, kind: resource_reference::Kind) -> Self {
+    pub fn new(id: String) -> Self {
         Self {
             id,
             type_: None,
             name: None,
-            kind,
         }
     }
 }
-pub mod resource_reference {
-    use super::*;
-    #[doc = "Specifies the sub-class of the reference."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "ref:machine")]
-        RefMachine,
-        #[serde(rename = "ref:machinewithhints")]
-        RefMachinewithhints,
-        #[serde(rename = "ref:process")]
-        RefProcess,
-        #[serde(rename = "ref:port")]
-        RefPort,
-        #[serde(rename = "ref:onmachine")]
-        RefOnmachine,
-        #[serde(rename = "ref:clientgroup")]
-        RefClientgroup,
-    }
-}
+#[doc = "Specifies the sub-class of the reference."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum ResourceReferenceUnion {

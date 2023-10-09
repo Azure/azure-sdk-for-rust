@@ -5751,9 +5751,6 @@ pub mod run_properties {
 #[doc = "The request parameters for scheduling a run."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunRequest {
-    #[doc = "The type of the run request."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The value that indicates whether archiving is enabled for the run or not."]
     #[serde(rename = "isArchiveEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_archive_enabled: Option<bool>,
@@ -5765,15 +5762,15 @@ pub struct RunRequest {
     pub log_template: Option<String>,
 }
 impl RunRequest {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             is_archive_enabled: None,
             agent_pool_name: None,
             log_template: None,
         }
     }
 }
+#[doc = "The type of the run request."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum RunRequestUnion {
@@ -7242,9 +7239,6 @@ impl TaskRunUpdateParameters {
 #[doc = "Base properties for any task step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskStepProperties {
-    #[doc = "The type of the step."]
-    #[serde(rename = "type")]
-    pub type_: task_step_properties::Type,
     #[doc = "List of base image dependencies for a step."]
     #[serde(
         rename = "baseImageDependencies",
@@ -7261,57 +7255,15 @@ pub struct TaskStepProperties {
     pub context_access_token: Option<String>,
 }
 impl TaskStepProperties {
-    pub fn new(type_: task_step_properties::Type) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             base_image_dependencies: Vec::new(),
             context_path: None,
             context_access_token: None,
         }
     }
 }
-pub mod task_step_properties {
-    use super::*;
-    #[doc = "The type of the step."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        Docker,
-        FileTask,
-        EncodedTask,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Docker => serializer.serialize_unit_variant("Type", 0u32, "Docker"),
-                Self::FileTask => serializer.serialize_unit_variant("Type", 1u32, "FileTask"),
-                Self::EncodedTask => serializer.serialize_unit_variant("Type", 2u32, "EncodedTask"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The type of the step."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum TaskStepPropertiesUnion {
@@ -7322,9 +7274,6 @@ pub enum TaskStepPropertiesUnion {
 #[doc = "Base properties for updating any task step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TaskStepUpdateParameters {
-    #[doc = "The type of the step."]
-    #[serde(rename = "type")]
-    pub type_: task_step_update_parameters::Type,
     #[doc = "The URL(absolute or relative) of the source context for the task step."]
     #[serde(rename = "contextPath", default, skip_serializing_if = "Option::is_none")]
     pub context_path: Option<String>,
@@ -7333,56 +7282,14 @@ pub struct TaskStepUpdateParameters {
     pub context_access_token: Option<String>,
 }
 impl TaskStepUpdateParameters {
-    pub fn new(type_: task_step_update_parameters::Type) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             context_path: None,
             context_access_token: None,
         }
     }
 }
-pub mod task_step_update_parameters {
-    use super::*;
-    #[doc = "The type of the step."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        Docker,
-        FileTask,
-        EncodedTask,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Docker => serializer.serialize_unit_variant("Type", 0u32, "Docker"),
-                Self::FileTask => serializer.serialize_unit_variant("Type", 1u32, "FileTask"),
-                Self::EncodedTask => serializer.serialize_unit_variant("Type", 2u32, "EncodedTask"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The type of the step."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum TaskStepUpdateParametersUnion {

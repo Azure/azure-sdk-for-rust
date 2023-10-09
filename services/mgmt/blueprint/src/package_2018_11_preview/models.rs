@@ -8,62 +8,15 @@ use std::str::FromStr;
 pub struct Artifact {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
-    #[doc = "Specifies the kind of blueprint artifact."]
-    pub kind: artifact::Kind,
 }
 impl Artifact {
-    pub fn new(kind: artifact::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             azure_resource_base: AzureResourceBase::default(),
-            kind,
         }
     }
 }
-pub mod artifact {
-    use super::*;
-    #[doc = "Specifies the kind of blueprint artifact."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        #[serde(rename = "template")]
-        Template,
-        #[serde(rename = "roleAssignment")]
-        RoleAssignment,
-        #[serde(rename = "policyAssignment")]
-        PolicyAssignment,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Template => serializer.serialize_unit_variant("Kind", 0u32, "template"),
-                Self::RoleAssignment => serializer.serialize_unit_variant("Kind", 1u32, "roleAssignment"),
-                Self::PolicyAssignment => serializer.serialize_unit_variant("Kind", 2u32, "policyAssignment"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Specifies the kind of blueprint artifact."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum ArtifactUnion {

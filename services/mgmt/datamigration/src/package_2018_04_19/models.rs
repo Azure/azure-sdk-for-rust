@@ -402,9 +402,6 @@ impl BlobShare {
 #[doc = "Base class for all types of DMS command properties. If command is not supported by current client, this object is returned."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CommandProperties {
-    #[doc = "Command type."]
-    #[serde(rename = "commandType")]
-    pub command_type: String,
     #[doc = "Array of errors. This is ignored if submitted."]
     #[serde(
         default,
@@ -417,9 +414,8 @@ pub struct CommandProperties {
     pub state: Option<command_properties::State>,
 }
 impl CommandProperties {
-    pub fn new(command_type: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            command_type,
             errors: Vec::new(),
             state: None,
         }
@@ -471,6 +467,7 @@ pub mod command_properties {
         }
     }
 }
+#[doc = "Command type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "commandType")]
 pub enum CommandPropertiesUnion {
@@ -686,15 +683,13 @@ pub struct ConnectToSourceSqlServerTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Type of result - database level or task level"]
-    #[serde(rename = "resultType")]
-    pub result_type: String,
 }
 impl ConnectToSourceSqlServerTaskOutput {
-    pub fn new(result_type: String) -> Self {
-        Self { id: None, result_type }
+    pub fn new() -> Self {
+        Self { id: None }
     }
 }
+#[doc = "Type of result - database level or task level"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum ConnectToSourceSqlServerTaskOutputUnion {
@@ -1278,9 +1273,6 @@ impl ConnectToTargetSqlSqlDbSyncTaskProperties {
 #[doc = "Defines the connection properties of a server"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionInfo {
-    #[doc = "Type of connection info"]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "User name"]
     #[serde(rename = "userName", default, skip_serializing_if = "Option::is_none")]
     pub user_name: Option<String>,
@@ -1289,14 +1281,14 @@ pub struct ConnectionInfo {
     pub password: Option<String>,
 }
 impl ConnectionInfo {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             user_name: None,
             password: None,
         }
     }
 }
+#[doc = "Type of connection info"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ConnectionInfoUnion {
@@ -2626,15 +2618,13 @@ pub struct MigrateMySqlAzureDbForMySqlSyncTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType", default, skip_serializing_if = "Option::is_none")]
-    pub result_type: Option<String>,
 }
 impl MigrateMySqlAzureDbForMySqlSyncTaskOutput {
     pub fn new() -> Self {
         Self::default()
     }
 }
+#[doc = "Result type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum MigrateMySqlAzureDbForMySqlSyncTaskOutputUnion {
@@ -2890,15 +2880,13 @@ pub struct MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType", default, skip_serializing_if = "Option::is_none")]
-    pub result_type: Option<String>,
 }
 impl MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutput {
     pub fn new() -> Self {
         Self::default()
     }
 }
+#[doc = "Result type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum MigratePostgreSqlAzureDbForPostgreSqlSyncTaskOutputUnion {
@@ -3179,15 +3167,13 @@ pub struct MigrateSqlServerSqlDbSyncTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType", default, skip_serializing_if = "Option::is_none")]
-    pub result_type: Option<String>,
 }
 impl MigrateSqlServerSqlDbSyncTaskOutput {
     pub fn new() -> Self {
         Self::default()
     }
 }
+#[doc = "Result type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum MigrateSqlServerSqlDbSyncTaskOutputUnion {
@@ -3417,15 +3403,13 @@ pub struct MigrateSqlServerSqlDbTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType")]
-    pub result_type: String,
 }
 impl MigrateSqlServerSqlDbTaskOutput {
-    pub fn new(result_type: String) -> Self {
-        Self { id: None, result_type }
+    pub fn new() -> Self {
+        Self { id: None }
     }
 }
+#[doc = "Result type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum MigrateSqlServerSqlDbTaskOutputUnion {
@@ -3802,15 +3786,13 @@ pub struct MigrateSqlServerSqlMiSyncTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType", default, skip_serializing_if = "Option::is_none")]
-    pub result_type: Option<String>,
 }
 impl MigrateSqlServerSqlMiSyncTaskOutput {
     pub fn new() -> Self {
         Self::default()
     }
 }
+#[doc = "Result type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum MigrateSqlServerSqlMiSyncTaskOutputUnion {
@@ -4012,15 +3994,13 @@ pub struct MigrateSqlServerSqlMiTaskOutput {
     #[doc = "Result identifier"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType", default, skip_serializing_if = "Option::is_none")]
-    pub result_type: Option<String>,
 }
 impl MigrateSqlServerSqlMiTaskOutput {
     pub fn new() -> Self {
         Self::default()
     }
 }
+#[doc = "Result type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum MigrateSqlServerSqlMiTaskOutputUnion {
@@ -5105,9 +5085,6 @@ impl ProjectTask {
 #[doc = "Base class for all types of DMS task properties. If task is not supported by current client, this object is returned."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ProjectTaskProperties {
-    #[doc = "Task type."]
-    #[serde(rename = "taskType")]
-    pub task_type: String,
     #[doc = "Array of errors. This is ignored if submitted."]
     #[serde(
         default,
@@ -5127,9 +5104,8 @@ pub struct ProjectTaskProperties {
     pub commands: Vec<CommandPropertiesUnion>,
 }
 impl ProjectTaskProperties {
-    pub fn new(task_type: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            task_type,
             errors: Vec::new(),
             state: None,
             commands: Vec::new(),
@@ -5188,6 +5164,7 @@ pub mod project_task_properties {
         }
     }
 }
+#[doc = "Task type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "taskType")]
 pub enum ProjectTaskPropertiesUnion {

@@ -355,9 +355,6 @@ impl BotResponseList {
 #[doc = "Channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Channel {
-    #[doc = "The channel name"]
-    #[serde(rename = "channelName")]
-    pub channel_name: String,
     #[doc = "Entity Tag of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -369,15 +366,15 @@ pub struct Channel {
     pub location: Option<String>,
 }
 impl Channel {
-    pub fn new(channel_name: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            channel_name,
             etag: None,
             provisioning_state: None,
             location: None,
         }
     }
 }
+#[doc = "The channel name"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "channelName")]
 pub enum ChannelUnion {

@@ -164,18 +164,7 @@ pub mod account_encryption {
         }
     }
 }
-#[doc = "Base class for access policies authentication methods."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthenticationBase {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
-}
-impl AuthenticationBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum AuthenticationBaseUnion {
@@ -508,8 +497,6 @@ impl ErrorResponse {
 #[doc = "Properties for access validation based on JSON Web Tokens (JWT)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JwtAuthentication {
-    #[serde(flatten)]
-    pub authentication_base: AuthenticationBase,
     #[doc = "List of expected token issuers. Token issuer is valid if it matches at least one of the given values."]
     #[serde(
         default,
@@ -540,9 +527,8 @@ pub struct JwtAuthentication {
     pub keys: Vec<TokenKeyUnion>,
 }
 impl JwtAuthentication {
-    pub fn new(authentication_base: AuthenticationBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            authentication_base,
             issuers: Vec::new(),
             audiences: Vec::new(),
             claims: Vec::new(),
@@ -1089,17 +1075,15 @@ impl TokenClaim {
 #[doc = "Key properties for JWT token validation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TokenKey {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
     #[doc = "JWT token key id. Validation keys are looked up based on the key id present on the JWT token header."]
     pub kid: String,
 }
 impl TokenKey {
-    pub fn new(type_: String, kid: String) -> Self {
-        Self { type_, kid }
+    pub fn new(kid: String) -> Self {
+        Self { kid }
     }
 }
+#[doc = "The discriminator for derived types."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@type")]
 pub enum TokenKeyUnion {

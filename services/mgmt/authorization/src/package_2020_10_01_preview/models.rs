@@ -280,60 +280,7 @@ pub mod access_review_decision_properties {
         }
     }
 }
-#[doc = "Target of the decision."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AccessReviewDecisionTarget {
-    #[doc = "The type of decision target : User/ServicePrincipal"]
-    #[serde(rename = "type")]
-    pub type_: access_review_decision_target::Type,
-}
-impl AccessReviewDecisionTarget {
-    pub fn new(type_: access_review_decision_target::Type) -> Self {
-        Self { type_ }
-    }
-}
-pub mod access_review_decision_target {
-    use super::*;
-    #[doc = "The type of decision target : User/ServicePrincipal"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        #[serde(rename = "user")]
-        User,
-        #[serde(rename = "servicePrincipal")]
-        ServicePrincipal,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::User => serializer.serialize_unit_variant("Type", 0u32, "user"),
-                Self::ServicePrincipal => serializer.serialize_unit_variant("Type", 1u32, "servicePrincipal"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "The type of decision target : User/ServicePrincipal"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum AccessReviewDecisionTargetUnion {
@@ -4622,22 +4569,16 @@ pub struct RoleManagementPolicyRule {
     #[doc = "The id of the rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "The type of rule"]
-    #[serde(rename = "ruleType")]
-    pub rule_type: RoleManagementPolicyRuleType,
     #[doc = "The role management policy rule target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<RoleManagementPolicyRuleTarget>,
 }
 impl RoleManagementPolicyRule {
-    pub fn new(rule_type: RoleManagementPolicyRuleType) -> Self {
-        Self {
-            id: None,
-            rule_type,
-            target: None,
-        }
+    pub fn new() -> Self {
+        Self { id: None, target: None }
     }
 }
+#[doc = "The type of rule"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "ruleType")]
 pub enum RoleManagementPolicyRuleUnion {}
@@ -4745,8 +4686,6 @@ impl Serialize for RoleManagementPolicyRuleType {
 #[doc = "Service Principal Decision Target"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalDecisionTarget {
-    #[serde(flatten)]
-    pub access_review_decision_target: AccessReviewDecisionTarget,
     #[doc = "The id of service principal whose access is reviewed."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
@@ -4758,9 +4697,8 @@ pub struct ServicePrincipalDecisionTarget {
     pub app_id: Option<String>,
 }
 impl ServicePrincipalDecisionTarget {
-    pub fn new(access_review_decision_target: AccessReviewDecisionTarget) -> Self {
+    pub fn new() -> Self {
         Self {
-            access_review_decision_target,
             principal_id: None,
             principal_name: None,
             app_id: None,
@@ -4770,8 +4708,6 @@ impl ServicePrincipalDecisionTarget {
 #[doc = "User Decision Target"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserDecisionTarget {
-    #[serde(flatten)]
-    pub access_review_decision_target: AccessReviewDecisionTarget,
     #[doc = "The id of user whose access was reviewed."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
@@ -4783,9 +4719,8 @@ pub struct UserDecisionTarget {
     pub user_principal_name: Option<String>,
 }
 impl UserDecisionTarget {
-    pub fn new(access_review_decision_target: AccessReviewDecisionTarget) -> Self {
+    pub fn new() -> Self {
         Self {
-            access_review_decision_target,
             principal_id: None,
             principal_name: None,
             user_principal_name: None,

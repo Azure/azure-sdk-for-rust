@@ -224,8 +224,6 @@ impl AgentUpdateProperties {
 #[doc = "The Azure Key Vault secret URIs which store the credentials."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureKeyVaultSmbCredentials {
-    #[serde(flatten)]
-    pub credentials: Credentials,
     #[doc = "The Azure Key Vault secret URI which stores the username. Use empty string to clean-up existing value."]
     #[serde(rename = "usernameUri", default, skip_serializing_if = "Option::is_none")]
     pub username_uri: Option<String>,
@@ -234,9 +232,8 @@ pub struct AzureKeyVaultSmbCredentials {
     pub password_uri: Option<String>,
 }
 impl AzureKeyVaultSmbCredentials {
-    pub fn new(credentials: Credentials) -> Self {
+    pub fn new() -> Self {
         Self {
-            credentials,
             username_uri: None,
             password_uri: None,
         }
@@ -344,18 +341,7 @@ impl Serialize for CredentialType {
         }
     }
 }
-#[doc = "The Credentials."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Credentials {
-    #[doc = "The Credentials type."]
-    #[serde(rename = "type")]
-    pub type_: CredentialType,
-}
-impl Credentials {
-    pub fn new(type_: CredentialType) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The Credentials type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum CredentialsUnion {
@@ -384,9 +370,6 @@ impl Endpoint {
 #[doc = "The resource specific properties for the Storage Mover resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EndpointBaseProperties {
-    #[doc = "The Endpoint resource type."]
-    #[serde(rename = "endpointType")]
-    pub endpoint_type: EndpointType,
     #[doc = "A description for the Endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -395,9 +378,8 @@ pub struct EndpointBaseProperties {
     pub provisioning_state: Option<endpoint_base_properties::ProvisioningState>,
 }
 impl EndpointBaseProperties {
-    pub fn new(endpoint_type: EndpointType) -> Self {
+    pub fn new() -> Self {
         Self {
-            endpoint_type,
             description: None,
             provisioning_state: None,
         }
@@ -441,6 +423,7 @@ pub mod endpoint_base_properties {
         }
     }
 }
+#[doc = "The Endpoint resource type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "endpointType")]
 pub enum EndpointBasePropertiesUnion {
@@ -464,21 +447,16 @@ impl EndpointBaseUpdateParameters {
 #[doc = "The Endpoint resource, which contains information about file sources and targets."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EndpointBaseUpdateProperties {
-    #[doc = "The Endpoint resource type."]
-    #[serde(rename = "endpointType")]
-    pub endpoint_type: EndpointType,
     #[doc = "A description for the Endpoint."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 impl EndpointBaseUpdateProperties {
-    pub fn new(endpoint_type: EndpointType) -> Self {
-        Self {
-            endpoint_type,
-            description: None,
-        }
+    pub fn new() -> Self {
+        Self { description: None }
     }
 }
+#[doc = "The Endpoint resource type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "endpointType")]
 pub enum EndpointBaseUpdatePropertiesUnion {

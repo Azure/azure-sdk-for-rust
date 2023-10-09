@@ -104,15 +104,13 @@ impl ErrorResponse {
 pub struct Facet {
     #[doc = "Facet expression, same as in the corresponding facet request."]
     pub expression: String,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType")]
-    pub result_type: String,
 }
 impl Facet {
-    pub fn new(expression: String, result_type: String) -> Self {
-        Self { expression, result_type }
+    pub fn new(expression: String) -> Self {
+        Self { expression }
     }
 }
+#[doc = "Result type"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resultType")]
 pub enum FacetUnion {

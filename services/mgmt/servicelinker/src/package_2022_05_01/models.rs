@@ -3,18 +3,7 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "The authentication info"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthInfoBase {
-    #[doc = "The authentication type."]
-    #[serde(rename = "authType")]
-    pub auth_type: AuthType,
-}
-impl AuthInfoBase {
-    pub fn new(auth_type: AuthType) -> Self {
-        Self { auth_type }
-    }
-}
+#[doc = "The authentication type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "authType")]
 pub enum AuthInfoBaseUnion {
@@ -80,16 +69,13 @@ impl Serialize for AuthType {
 #[doc = "The resource properties when type is Azure Key Vault"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureKeyVaultProperties {
-    #[serde(flatten)]
-    pub azure_resource_properties_base: AzureResourcePropertiesBase,
     #[doc = "True if connect via Kubernetes CSI Driver."]
     #[serde(rename = "connectAsKubernetesCsiDriver", default, skip_serializing_if = "Option::is_none")]
     pub connect_as_kubernetes_csi_driver: Option<bool>,
 }
 impl AzureKeyVaultProperties {
-    pub fn new(azure_resource_properties_base: AzureResourcePropertiesBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            azure_resource_properties_base,
             connect_as_kubernetes_csi_driver: None,
         }
     }
@@ -97,8 +83,6 @@ impl AzureKeyVaultProperties {
 #[doc = "The azure resource info when target service type is AzureResource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureResource {
-    #[serde(flatten)]
-    pub target_service_base: TargetServiceBase,
     #[doc = "The Id of azure resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -107,26 +91,14 @@ pub struct AzureResource {
     pub resource_properties: Option<AzureResourcePropertiesBaseUnion>,
 }
 impl AzureResource {
-    pub fn new(target_service_base: TargetServiceBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            target_service_base,
             id: None,
             resource_properties: None,
         }
     }
 }
-#[doc = "The azure resource properties"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AzureResourcePropertiesBase {
-    #[doc = "The azure resource type."]
-    #[serde(rename = "type")]
-    pub type_: AzureResourceType,
-}
-impl AzureResourcePropertiesBase {
-    pub fn new(type_: AzureResourceType) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The azure resource type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum AzureResourcePropertiesBaseUnion {
@@ -170,35 +142,25 @@ impl Serialize for AzureResourceType {
 #[doc = "The service properties when target service type is ConfluentBootstrapServer"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfluentBootstrapServer {
-    #[serde(flatten)]
-    pub target_service_base: TargetServiceBase,
     #[doc = "The endpoint of service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
 }
 impl ConfluentBootstrapServer {
-    pub fn new(target_service_base: TargetServiceBase) -> Self {
-        Self {
-            target_service_base,
-            endpoint: None,
-        }
+    pub fn new() -> Self {
+        Self { endpoint: None }
     }
 }
 #[doc = "The service properties when target service type is ConfluentSchemaRegistry"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConfluentSchemaRegistry {
-    #[serde(flatten)]
-    pub target_service_base: TargetServiceBase,
     #[doc = "The endpoint of service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint: Option<String>,
 }
 impl ConfluentSchemaRegistry {
-    pub fn new(target_service_base: TargetServiceBase) -> Self {
-        Self {
-            target_service_base,
-            endpoint: None,
-        }
+    pub fn new() -> Self {
+        Self { endpoint: None }
     }
 }
 #[doc = "The resource management error additional info."]
@@ -270,8 +232,6 @@ impl ErrorResponse {
 #[doc = "The secret info when type is keyVaultSecretReference. It's for scenario that user provides a secret stored in user's keyvault and source is Azure Kubernetes. The key Vault's resource id is linked to secretStore.keyVaultId."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultSecretReferenceSecretInfo {
-    #[serde(flatten)]
-    pub secret_info_base: SecretInfoBase,
     #[doc = "Name of the Key Vault secret."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -280,29 +240,20 @@ pub struct KeyVaultSecretReferenceSecretInfo {
     pub version: Option<String>,
 }
 impl KeyVaultSecretReferenceSecretInfo {
-    pub fn new(secret_info_base: SecretInfoBase) -> Self {
-        Self {
-            secret_info_base,
-            name: None,
-            version: None,
-        }
+    pub fn new() -> Self {
+        Self { name: None, version: None }
     }
 }
 #[doc = "The secret info when type is keyVaultSecretUri. It's for scenario that user provides a secret stored in user's keyvault and source is Web App, Spring Cloud or Container App."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct KeyVaultSecretUriSecretInfo {
-    #[serde(flatten)]
-    pub secret_info_base: SecretInfoBase,
     #[doc = "URI to the keyvault secret"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
 impl KeyVaultSecretUriSecretInfo {
-    pub fn new(secret_info_base: SecretInfoBase) -> Self {
-        Self {
-            secret_info_base,
-            value: None,
-        }
+    pub fn new() -> Self {
+        Self { value: None }
     }
 }
 #[doc = "The list of Linker."]
@@ -643,8 +594,6 @@ impl Resource {
 #[doc = "The authentication info when authType is secret"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecretAuthInfo {
-    #[serde(flatten)]
-    pub auth_info_base: AuthInfoBase,
     #[doc = "Username or account name for secret auth."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -653,26 +602,14 @@ pub struct SecretAuthInfo {
     pub secret_info: Option<SecretInfoBaseUnion>,
 }
 impl SecretAuthInfo {
-    pub fn new(auth_info_base: AuthInfoBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            auth_info_base,
             name: None,
             secret_info: None,
         }
     }
 }
-#[doc = "The secret info"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretInfoBase {
-    #[doc = "The secret type."]
-    #[serde(rename = "secretType")]
-    pub secret_type: SecretType,
-}
-impl SecretInfoBase {
-    pub fn new(secret_type: SecretType) -> Self {
-        Self { secret_type }
-    }
-}
+#[doc = "The secret type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "secretType")]
 pub enum SecretInfoBaseUnion {
@@ -740,8 +677,6 @@ impl Serialize for SecretType {
 #[doc = "The authentication info when authType is servicePrincipal certificate"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalCertificateAuthInfo {
-    #[serde(flatten)]
-    pub auth_info_base: AuthInfoBase,
     #[doc = "Application clientId for servicePrincipal auth."]
     #[serde(rename = "clientId")]
     pub client_id: String,
@@ -752,9 +687,8 @@ pub struct ServicePrincipalCertificateAuthInfo {
     pub certificate: String,
 }
 impl ServicePrincipalCertificateAuthInfo {
-    pub fn new(auth_info_base: AuthInfoBase, client_id: String, principal_id: String, certificate: String) -> Self {
+    pub fn new(client_id: String, principal_id: String, certificate: String) -> Self {
         Self {
-            auth_info_base,
             client_id,
             principal_id,
             certificate,
@@ -764,8 +698,6 @@ impl ServicePrincipalCertificateAuthInfo {
 #[doc = "The authentication info when authType is servicePrincipal secret"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalSecretAuthInfo {
-    #[serde(flatten)]
-    pub auth_info_base: AuthInfoBase,
     #[doc = "ServicePrincipal application clientId for servicePrincipal auth."]
     #[serde(rename = "clientId")]
     pub client_id: String,
@@ -776,9 +708,8 @@ pub struct ServicePrincipalSecretAuthInfo {
     pub secret: String,
 }
 impl ServicePrincipalSecretAuthInfo {
-    pub fn new(auth_info_base: AuthInfoBase, client_id: String, principal_id: String, secret: String) -> Self {
+    pub fn new(client_id: String, principal_id: String, secret: String) -> Self {
         Self {
-            auth_info_base,
             client_id,
             principal_id,
             secret,
@@ -818,27 +749,13 @@ impl SourceConfigurationResult {
 }
 #[doc = "The authentication info when authType is systemAssignedIdentity"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SystemAssignedIdentityAuthInfo {
-    #[serde(flatten)]
-    pub auth_info_base: AuthInfoBase,
-}
+pub struct SystemAssignedIdentityAuthInfo {}
 impl SystemAssignedIdentityAuthInfo {
-    pub fn new(auth_info_base: AuthInfoBase) -> Self {
-        Self { auth_info_base }
+    pub fn new() -> Self {
+        Self {}
     }
 }
-#[doc = "The target service properties"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TargetServiceBase {
-    #[doc = "The target service type."]
-    #[serde(rename = "type")]
-    pub type_: TargetServiceType,
-}
-impl TargetServiceBase {
-    pub fn new(type_: TargetServiceType) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The target service type."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum TargetServiceBaseUnion {
@@ -888,8 +805,6 @@ impl Serialize for TargetServiceType {
 #[doc = "The authentication info when authType is userAssignedIdentity"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserAssignedIdentityAuthInfo {
-    #[serde(flatten)]
-    pub auth_info_base: AuthInfoBase,
     #[doc = "Client Id for userAssignedIdentity."]
     #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
@@ -898,9 +813,8 @@ pub struct UserAssignedIdentityAuthInfo {
     pub subscription_id: Option<String>,
 }
 impl UserAssignedIdentityAuthInfo {
-    pub fn new(auth_info_base: AuthInfoBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            auth_info_base,
             client_id: None,
             subscription_id: None,
         }
@@ -1088,18 +1002,13 @@ pub mod validation_result_item {
 #[doc = "The secret info when type is rawValue. It's for scenarios that user input the secret."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ValueSecretInfo {
-    #[serde(flatten)]
-    pub secret_info_base: SecretInfoBase,
     #[doc = "The actual value of the secret."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
 impl ValueSecretInfo {
-    pub fn new(secret_info_base: SecretInfoBase) -> Self {
-        Self {
-            secret_info_base,
-            value: None,
-        }
+    pub fn new() -> Self {
+        Self { value: None }
     }
 }
 #[doc = "Metadata pertaining to creation and last modification of the resource."]

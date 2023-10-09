@@ -154,14 +154,11 @@ pub mod aks {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AksComputeSecrets {
     #[serde(flatten)]
-    pub compute_secrets: ComputeSecrets,
-    #[serde(flatten)]
     pub aks_compute_secrets_properties: AksComputeSecretsProperties,
 }
 impl AksComputeSecrets {
-    pub fn new(compute_secrets: ComputeSecrets) -> Self {
+    pub fn new() -> Self {
         Self {
-            compute_secrets,
             aks_compute_secrets_properties: AksComputeSecretsProperties::default(),
         }
     }
@@ -637,9 +634,6 @@ impl ClusterUpdateProperties {
 #[doc = "Machine Learning compute object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Compute {
-    #[doc = "The type of compute"]
-    #[serde(rename = "computeType")]
-    pub compute_type: ComputeType,
     #[doc = "Location for the underlying compute"]
     #[serde(rename = "computeLocation", default, skip_serializing_if = "Option::is_none")]
     pub compute_location: Option<String>,
@@ -674,9 +668,8 @@ pub struct Compute {
     pub disable_local_auth: Option<bool>,
 }
 impl Compute {
-    pub fn new(compute_type: ComputeType) -> Self {
+    pub fn new() -> Self {
         Self {
-            compute_type,
             compute_location: None,
             provisioning_state: None,
             description: None,
@@ -739,6 +732,7 @@ pub mod compute {
         }
     }
 }
+#[doc = "The type of compute"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "computeType")]
 pub enum ComputeUnion {
@@ -1232,18 +1226,7 @@ impl ComputeResource {
         Self::default()
     }
 }
-#[doc = "Secrets related to a Machine Learning compute. Might differ for every type of compute."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ComputeSecrets {
-    #[doc = "The type of compute"]
-    #[serde(rename = "computeType")]
-    pub compute_type: ComputeType,
-}
-impl ComputeSecrets {
-    pub fn new(compute_type: ComputeType) -> Self {
-        Self { compute_type }
-    }
-}
+#[doc = "The type of compute"]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "computeType")]
 pub enum ComputeSecretsUnion {
@@ -1401,14 +1384,11 @@ impl Databricks {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabricksComputeSecrets {
     #[serde(flatten)]
-    pub compute_secrets: ComputeSecrets,
-    #[serde(flatten)]
     pub databricks_compute_secrets_properties: DatabricksComputeSecretsProperties,
 }
 impl DatabricksComputeSecrets {
-    pub fn new(compute_secrets: ComputeSecrets) -> Self {
+    pub fn new() -> Self {
         Self {
-            compute_secrets,
             databricks_compute_secrets_properties: DatabricksComputeSecretsProperties::default(),
         }
     }
@@ -3755,16 +3735,13 @@ impl VirtualMachineImage {
 #[doc = "Secrets related to a Machine Learning compute based on AKS."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct VirtualMachineSecrets {
-    #[serde(flatten)]
-    pub compute_secrets: ComputeSecrets,
     #[doc = "Admin credentials for virtual machine"]
     #[serde(rename = "administratorAccount", default, skip_serializing_if = "Option::is_none")]
     pub administrator_account: Option<VirtualMachineSshCredentials>,
 }
 impl VirtualMachineSecrets {
-    pub fn new(compute_secrets: ComputeSecrets) -> Self {
+    pub fn new() -> Self {
         Self {
-            compute_secrets,
             administrator_account: None,
         }
     }

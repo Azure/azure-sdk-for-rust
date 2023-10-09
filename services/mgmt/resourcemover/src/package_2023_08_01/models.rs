@@ -1472,9 +1472,6 @@ impl ResourceMoveRequest {
 #[doc = "Gets or sets the resource settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSettings {
-    #[doc = "The resource type. For example, the value can be Microsoft.Compute/virtualMachines."]
-    #[serde(rename = "resourceType")]
-    pub resource_type: String,
     #[doc = "Gets or sets the target Resource name."]
     #[serde(rename = "targetResourceName", default, skip_serializing_if = "Option::is_none")]
     pub target_resource_name: Option<String>,
@@ -1483,14 +1480,14 @@ pub struct ResourceSettings {
     pub target_resource_group_name: Option<String>,
 }
 impl ResourceSettings {
-    pub fn new(resource_type: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            resource_type,
             target_resource_name: None,
             target_resource_group_name: None,
         }
     }
 }
+#[doc = "The resource type. For example, the value can be Microsoft.Compute/virtualMachines."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "resourceType")]
 pub enum ResourceSettingsUnion {
