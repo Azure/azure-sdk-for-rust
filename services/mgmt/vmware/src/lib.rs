@@ -23,5 +23,3 @@ pub use package_2021_06_01::*;
 pub mod package_2020_03_20;
 #[cfg(all(feature = "package-2020-03-20", not(feature = "no-default-tag")))]
 pub use package_2020_03_20::*;
-#[cfg(test)]
-mod tests;
