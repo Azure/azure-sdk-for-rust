@@ -32,13 +32,13 @@ fn test_list_dhcp_configurations_deserialization() -> anyhow::Result<()> {
     let dhcp = &dhcp_list.value[0];
     ensure!(dhcp.proxy_resource.resource.name == Some("dhcp1".to_string()));
     match &dhcp.properties {
-        Some(WorkloadNetworkDhcpEntityUnion::Server(server)) =>{
+        Some(WorkloadNetworkDhcpEntityUnion::Server(server)) => {
             ensure!(server.workload_network_dhcp_entity.display_name.as_deref() == Some("dhcpConfigurations1"));
             ensure!(server.workload_network_dhcp_entity.segments.len() == 2);
             ensure!(server.server_address.as_deref() == Some("40.1.5.1/24"));
             ensure!(server.lease_time == Some(86400));
             ensure!(server.workload_network_dhcp_entity.revision == Some(1));
-        },
+        }
         _ => bail!("expected Server"),
     }
     Ok(())

@@ -29,21 +29,9 @@ pub fn gen_crate(package_name: &str, spec: &SpecReadme, run_config: &RunConfig, 
 
     let src_folder = io::join(output_folder, "src")?;
     let lib_rs_path = &io::join(&src_folder, "lib.rs")?;
-    let tests_rs_path = &io::join(&src_folder, "tests.rs")?;
-    let tests_rs_path_exists = tests_rs_path.exists();
-    let tmp_tests_rs_path = &io::join(output_folder, "tests.rs.tmp")?;
-
-    if tests_rs_path_exists {
-        fs::rename(tests_rs_path, tmp_tests_rs_path)?;
-    }
 
     if src_folder.exists() {
         fs::remove_dir_all(&src_folder)?;
-    }
-
-    if tests_rs_path_exists {
-        fs::create_dir_all(&src_folder)?;
-        fs::rename(tmp_tests_rs_path, tests_rs_path)?;
     }
 
     let readme_path = io::join(output_folder, "README.md")?;
@@ -97,7 +85,7 @@ pub fn gen_crate(package_name: &str, spec: &SpecReadme, run_config: &RunConfig, 
     let default_tag = cargo_toml::get_default_tag(tags, default_tag_name);
 
     cargo_toml::create(package_name, tags, default_tag, has_xml, &cargo_toml_path)?;
-    lib_rs::create(tags, lib_rs_path, false, tests_rs_path_exists)?;
+    lib_rs::create(tags, lib_rs_path, false)?;
     let readme = ReadmeMd {
         package_name,
         readme_url: readme_md::url(spec.readme().as_str()),

@@ -4,12 +4,8 @@ use camino::Utf8Path;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 
-pub fn create(tags: &[&Tag], path: &Utf8Path, print_writing_file: bool, tests_rs_path_exists: bool) -> Result<()> {
-    write_file(
-        path,
-        &create_body(tags, tests_rs_path_exists)?.into_token_stream(),
-        print_writing_file,
-    )
+pub fn create(tags: &[&Tag], path: &Utf8Path, print_writing_file: bool) -> Result<()> {
+    write_file(path, &create_body(tags)?.into_token_stream(), print_writing_file)
 }
 
 struct Feature {
@@ -19,10 +15,9 @@ struct Feature {
 
 struct BodyCode {
     pub features: Vec<Feature>,
-    pub tests_rs_path_exists: bool,
 }
 
-fn create_body(tags: &[&Tag], tests_rs_path_exists: bool) -> Result<BodyCode> {
+fn create_body(tags: &[&Tag]) -> Result<BodyCode> {
     let features: Vec<Feature> = tags
         .iter()
         .map(|tag| {
@@ -31,10 +26,7 @@ fn create_body(tags: &[&Tag], tests_rs_path_exists: bool) -> Result<BodyCode> {
             Ok(Feature { feature_name, mod_name })
         })
         .collect::<Result<_>>()?;
-    Ok(BodyCode {
-        features,
-        tests_rs_path_exists,
-    })
+    Ok(BodyCode { features })
 }
 
 impl ToTokens for BodyCode {
@@ -58,11 +50,5 @@ impl ToTokens for BodyCode {
             #![allow(clippy::derive_partial_eq_without_eq)]
             #cfgs
         });
-        if self.tests_rs_path_exists {
-            tokens.extend(quote! {
-                #[cfg(test)]
-                mod tests;
-            })
-        }
     }
 }
