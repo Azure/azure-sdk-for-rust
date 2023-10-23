@@ -33,6 +33,13 @@ impl KeyClient {
         GetKeyBuilder::new(self.clone(), name.into())
     }
 
+    pub fn create<N>(&self, name: N, kty: crate::prelude::JsonWebKeyType) -> CreateBuilder
+    where
+        N: Into<String>,
+    {
+        CreateBuilder::new(self.clone(), name.into(), kty)
+    }
+
     /// Creates a signature from a digest using the specified key.
     ///
     /// The SIGN operation is applicable to asymmetric and symmetric keys stored

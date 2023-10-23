@@ -78,22 +78,6 @@ struct Issuer {
     name: String,
 }
 
-#[derive(Serialize, Debug, Clone, Copy)]
-pub enum JsonWebKeyType {
-    #[serde(rename = "EC")]
-    Ec,
-    #[serde(rename = "EC-HSM")]
-    EcHsm,
-    #[serde(rename = "RSA")]
-    Rsa,
-    #[serde(rename = "RSA-HSM")]
-    RsaHsm,
-    #[serde(rename = "oct")]
-    Oct,
-    #[serde(rename = "oct-HSM")]
-    OctHsm,
-}
-
 impl CreateCertificateBuilder {
     pub fn into_future(self) -> CreateCertificate {
         Box::pin(async move {
