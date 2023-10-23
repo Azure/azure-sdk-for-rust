@@ -60,7 +60,7 @@ impl GetPageRangesResponse {
         let date = date_from_headers(headers)?;
 
         let body = from_utf8(body)?;
-        let page_list = PageRangeList::try_from_xml(&body[3..] as &str)?;
+        let page_list = PageRangeList::try_from_xml(body)?;
 
         Ok(GetPageRangesResponse {
             etag,
