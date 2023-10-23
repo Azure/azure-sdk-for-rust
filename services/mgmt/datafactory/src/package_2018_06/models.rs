@@ -26724,12 +26724,16 @@ pub struct WebHookActivity {
     #[doc = "WebHook activity type properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: WebHookActivityTypeProperties,
+    #[doc = "Execution policy for an activity that supports secure input and output."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub policy: Option<SecureInputOutputPolicy>,
 }
 impl WebHookActivity {
     pub fn new(control_activity: ControlActivity, type_properties: WebHookActivityTypeProperties) -> Self {
         Self {
             control_activity,
             type_properties,
+            policy: None,
         }
     }
 }
