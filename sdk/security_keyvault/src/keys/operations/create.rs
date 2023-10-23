@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{models::JsonWebKeyType, prelude::*};
 use azure_core::{headers::Headers, CollectedResponse, Method};
 use serde::Serialize;
 

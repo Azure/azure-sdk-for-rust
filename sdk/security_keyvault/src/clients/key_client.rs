@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{models::JsonWebKeyType, prelude::*};
 use azure_core::auth::TokenCredential;
 use std::sync::Arc;
 
@@ -33,7 +33,7 @@ impl KeyClient {
         GetKeyBuilder::new(self.clone(), name.into())
     }
 
-    pub fn create<N>(&self, name: N, kty: crate::prelude::JsonWebKeyType) -> CreateBuilder
+    pub fn create<N>(&self, name: N, kty: JsonWebKeyType) -> CreateBuilder
     where
         N: Into<String>,
     {
