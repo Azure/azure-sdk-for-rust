@@ -18,7 +18,7 @@ struct CreateRequest {
 }
 
 impl CreateBuilder {
-    pub fn into_future(mut self) -> Create {
+    pub fn into_future(self) -> Create {
         Box::pin(async move {
             // POST {vaultBaseUrl}/keys/{key-name}/create?api-version=7.2
             let mut uri = self.client.keyvault_client.vault_url.clone();
@@ -38,7 +38,7 @@ impl CreateBuilder {
             let response = self
                 .client
                 .keyvault_client
-                .send(&mut self.context, &mut request)
+                .send(&self.context, &mut request)
                 .await?;
 
             let response = CollectedResponse::from_response(response).await?;
