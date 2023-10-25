@@ -24,10 +24,8 @@ impl PutBlockUrlBuilder {
             let mut headers = Headers::new();
             headers.insert(COPY_SOURCE, self.url.to_string());
             headers.add(self.lease_id);
-            if let Some(mut range) = self.range {
-                // to accomodate with the standard HTTP range header format:
-                range.end += 1;
-                headers.insert(COPY_SOURCE_RANGE, format!("{range}"));
+            if let Some(range) = self.range {
+                headers.insert(SOURCE_RANGE, format!("{range}"));
             }
 
             let mut request =
