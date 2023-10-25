@@ -287,7 +287,7 @@ pub struct BrokerProperties {
     #[serde(with = "time::serde::rfc2822")]
     pub locked_until_utc: OffsetDateTime,
     pub message_id: String,
-    pub sequence_number: i32,
+    pub sequence_number: i64,
     pub state: String,
     pub time_to_live: i64,
 }
