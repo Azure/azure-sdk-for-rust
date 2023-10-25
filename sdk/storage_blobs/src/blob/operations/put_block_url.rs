@@ -25,9 +25,7 @@ impl PutBlockUrlBuilder {
             headers.insert(COPY_SOURCE, self.url.to_string());
             headers.add(self.lease_id);
             if let Some(range) = self.range {
-                for (name, value) in range.as_headers() {
-                    headers.insert(name, value);
-                }
+                headers.insert(COPY_SOURCE_RANGE, format!("{range}"));
             }
 
             let mut request =
