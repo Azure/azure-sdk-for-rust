@@ -289,7 +289,7 @@ pub struct BrokerProperties {
     pub message_id: String,
     pub sequence_number: i64,
     pub state: String,
-    pub time_to_live: i64,
+    pub time_to_live: f64,
 }
 
 impl BrokerProperties {
