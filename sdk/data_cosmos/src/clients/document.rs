@@ -42,6 +42,11 @@ impl DocumentClient {
         ReplaceDocumentBuilder::new(self.clone(), document)
     }
 
+    /// Patch the document.
+    pub fn patch_document(&self, operations: Vec<Operation>) -> PatchDocumentBuilder {
+        PatchDocumentBuilder::new(self.clone(), operations)
+    }
+
     /// Delete the document.
     pub fn delete_document(&self) -> DeleteDocumentBuilder {
         DeleteDocumentBuilder::new(self.clone())

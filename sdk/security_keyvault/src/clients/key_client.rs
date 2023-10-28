@@ -33,11 +33,11 @@ impl KeyClient {
         GetKeyBuilder::new(self.clone(), name.into())
     }
 
-    pub fn create<N>(&self, name: N, kty: JsonWebKeyType) -> CreateBuilder
+    pub fn create<N>(&self, name: N, kty: JsonWebKeyType) -> CreateKeyBuilder
     where
         N: Into<String>,
     {
-        CreateBuilder::new(self.clone(), name.into(), kty)
+        CreateKeyBuilder::new(self.clone(), name.into(), kty)
     }
 
     /// Creates a signature from a digest using the specified key.

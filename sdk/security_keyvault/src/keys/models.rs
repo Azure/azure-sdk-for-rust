@@ -26,7 +26,7 @@ pub struct KeyProperties {
     pub tags: Option<Map<String, Value>>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct KeyAttributes {
     /// Creation time in UTC.
@@ -430,4 +430,17 @@ pub struct UnwrapKeyResult {
         deserialize_with = "deser_base64"
     )]
     pub result: Vec<u8>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+
+pub enum CurveName {
+    #[serde(rename = "P-256")]
+    P256,
+    #[serde(rename = "P-384")]
+    P384,
+    #[serde(rename = "P-521")]
+    P521,
+    #[serde(rename = "P-256K")]
+    P256k,
 }
