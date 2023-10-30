@@ -63,6 +63,16 @@ pub struct Operation {
     pub value: String,
 }
 
+impl Operation {
+    pub fn new<S: Into<String>, PK: Serialize>(op: OperationType, path: S, value: S) -> Operation {
+        Self {
+            op,
+            path: path.into(),
+            value: value.into(),
+        }
+    }
+}
+
 #[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum OperationType {
