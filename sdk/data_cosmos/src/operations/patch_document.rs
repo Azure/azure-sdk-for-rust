@@ -64,7 +64,11 @@ pub struct Operation {
 }
 
 impl Operation {
-    pub fn new<S: Into<String>, PK: Serialize>(op: OperationType, path: S, value: S) -> Operation {
+    pub fn new<P: Into<String>, V: Into<String>>(
+        op: OperationType,
+        path: P,
+        value: V,
+    ) -> Operation {
         Self {
             op,
             path: path.into(),
