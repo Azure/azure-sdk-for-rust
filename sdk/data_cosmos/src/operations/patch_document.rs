@@ -57,35 +57,56 @@ struct PatchDocumentRequest {
 }
 
 #[derive(Serialize, Debug, Clone)]
-pub struct Operation {
-    pub op: OperationType,
-    pub path: String,
-    pub value: String,
+#[serde(rename_all = "lowercase")]
+#[serde(tag = "op")]
+pub enum Operation {
+    Add { path: String, value: String },
+    Remove { path: String },
+    Set { path: String, value: String },
+    Incr { path: String, value: String },
+    Replace { path: String, value: String },
+    Move { path: String, from: String },
 }
 
 impl Operation {
-    pub fn new<P: Into<String>, V: Into<String>>(
-        op: OperationType,
-        path: P,
-        value: V,
-    ) -> Operation {
-        Self {
-            op,
+    pub fn add<P: Into<String>, V: Into<String>>(path: P, value: V) -> Operation {
+        Operation::Add {
             path: path.into(),
             value: value.into(),
         }
     }
-}
 
-#[derive(Serialize, Debug, Clone)]
-#[serde(rename_all = "lowercase")]
-pub enum OperationType {
-    Add,
-    Remove,
-    Set,
-    Incr,
-    Replace,
-    Move,
+    pub fn remove<P: Into<String>, V: Into<String>>(path: P) -> Operation {
+        Operation::Remove { path: path.into() }
+    }
+
+    pub fn set<P: Into<String>, V: Into<String>>(path: P, value: V) -> Operation {
+        Operation::Set {
+            path: path.into(),
+            value: value.into(),
+        }
+    }
+
+    pub fn incr<P: Into<String>, V: Into<String>>(path: P, value: V) -> Operation {
+        Operation::Incr {
+            path: path.into(),
+            value: value.into(),
+        }
+    }
+
+    pub fn replace<P: Into<String>, V: Into<String>>(path: P, value: V) -> Operation {
+        Operation::Replace {
+            path: path.into(),
+            value: value.into(),
+        }
+    }
+
+    pub fn r#move<P: Into<String>, V: Into<String>>(path: P, from: V) -> Operation {
+        Operation::Move {
+            path: path.into(),
+            from: from.into(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
