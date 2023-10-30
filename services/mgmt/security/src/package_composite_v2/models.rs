@@ -1792,17 +1792,6 @@ impl ConnectedWorkspace {
         Self::default()
     }
 }
-#[doc = "Connection string for ingesting security data and logs"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ConnectionStrings {
-    #[doc = "Connection strings"]
-    pub value: Vec<IngestionConnectionString>,
-}
-impl ConnectionStrings {
-    pub fn new(value: Vec<IngestionConnectionString>) -> Self {
-        Self { value }
-    }
-}
 #[doc = "Outbound connection to an ip that isn't allowed. Allow list consists of ipv4 or ipv6 range in CIDR notation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ConnectionToIpNotAllowed {
@@ -2929,80 +2918,6 @@ pub struct InformationType {
     pub keywords: Vec<InformationProtectionKeyword>,
 }
 impl InformationType {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Connection string for ingesting security data and logs"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct IngestionConnectionString {
-    #[doc = "The region where ingested logs and data resides"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[doc = "Connection string value"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-}
-impl IngestionConnectionString {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Configures how to correlate scan data and logs with resources associated with the subscription."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct IngestionSetting {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[doc = "Ingestion setting data"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<IngestionSettingProperties>,
-}
-impl IngestionSetting {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "List of ingestion settings"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct IngestionSettingList {
-    #[doc = "List of ingestion settings"]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<IngestionSetting>,
-    #[doc = "The URI to fetch the next page."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for IngestionSettingList {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone().filter(|value| !value.is_empty())
-    }
-}
-impl IngestionSettingList {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Ingestion setting data"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct IngestionSettingProperties {}
-impl IngestionSettingProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Configures how to correlate scan data and logs with resources associated with the subscription."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct IngestionSettingToken {
-    #[doc = "The token is used for correlating security data and logs with the resources in the subscription."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub token: Option<String>,
-}
-impl IngestionSettingToken {
     pub fn new() -> Self {
         Self::default()
     }

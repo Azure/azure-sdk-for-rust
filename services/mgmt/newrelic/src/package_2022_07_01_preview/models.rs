@@ -59,7 +59,7 @@ pub struct AccountInfo {
     #[doc = "Credential string."]
     #[serde(rename = "ingestionKey", default, skip_serializing_if = "Option::is_none")]
     pub ingestion_key: Option<SecureString>,
-    #[doc = "NewRelic account region"]
+    #[doc = "Region where New Relic account is present"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub region: Option<String>,
 }
@@ -80,7 +80,7 @@ pub struct AccountProperties {
     #[doc = "account name"]
     #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
     pub account_name: Option<String>,
-    #[doc = "region"]
+    #[doc = "Region where New Relic account is present"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub region: Option<String>,
 }

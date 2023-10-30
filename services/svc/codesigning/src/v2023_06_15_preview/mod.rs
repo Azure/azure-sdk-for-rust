@@ -138,20 +138,20 @@ pub mod certificate_profile_operations {
         #[doc = "This status operation requires that a Sign request has been submitted and the operationId is known."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `operation_id`: The unique ID of the operation."]
         #[doc = "* `code_signing_account_name`: CodeSigning account name."]
         #[doc = "* `certificate_profile_name`: Certificate profile name."]
+        #[doc = "* `operation_id`: The unique ID of the operation."]
         pub fn get_code_signing_status(
             &self,
-            operation_id: impl Into<String>,
             code_signing_account_name: impl Into<String>,
             certificate_profile_name: impl Into<String>,
+            operation_id: impl Into<String>,
         ) -> get_code_signing_status::RequestBuilder {
             get_code_signing_status::RequestBuilder {
                 client: self.0.clone(),
-                operation_id: operation_id.into(),
                 code_signing_account_name: code_signing_account_name.into(),
                 certificate_profile_name: certificate_profile_name.into(),
+                operation_id: operation_id.into(),
             }
         }
         #[doc = "Gets a list of extended key usage object identifiers that are allowed for this account and profile combination."]
@@ -386,9 +386,9 @@ pub mod certificate_profile_operations {
         #[doc = r" that resolves to a lower-level [`Response`] value."]
         pub struct RequestBuilder {
             pub(crate) client: super::super::Client,
-            pub(crate) operation_id: String,
             pub(crate) code_signing_account_name: String,
             pub(crate) certificate_profile_name: String,
+            pub(crate) operation_id: String,
         }
         impl RequestBuilder {
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]

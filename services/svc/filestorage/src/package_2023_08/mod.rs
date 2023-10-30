@@ -5720,6 +5720,7 @@ pub mod file {
                 x_ms_file_last_write_time: None,
                 x_ms_allow_trailing_dot: None,
                 x_ms_source_allow_trailing_dot: None,
+                x_ms_file_request_intent: None,
             }
         }
         #[doc = "Returns the list of valid ranges for a file."]
@@ -8384,6 +8385,7 @@ pub mod file {
             pub(crate) x_ms_file_last_write_time: Option<String>,
             pub(crate) x_ms_allow_trailing_dot: Option<bool>,
             pub(crate) x_ms_source_allow_trailing_dot: Option<bool>,
+            pub(crate) x_ms_file_request_intent: Option<String>,
         }
         impl RequestBuilder {
             #[doc = "The timeout parameter is expressed in seconds. For more information, see <a href=\"https://docs.microsoft.com/en-us/rest/api/storageservices/Setting-Timeouts-for-File-Service-Operations?redirectedfrom=MSDN\">Setting Timeouts for File Service Operations.</a>"]
@@ -8436,6 +8438,11 @@ pub mod file {
                 self.x_ms_source_allow_trailing_dot = Some(x_ms_source_allow_trailing_dot);
                 self
             }
+            #[doc = "Valid value is backup"]
+            pub fn x_ms_file_request_intent(mut self, x_ms_file_request_intent: impl Into<String>) -> Self {
+                self.x_ms_file_request_intent = Some(x_ms_file_request_intent.into());
+                self
+            }
             #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
             #[doc = ""]
             #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -8486,6 +8493,9 @@ pub mod file {
                         }
                         if let Some(x_ms_source_allow_trailing_dot) = &this.x_ms_source_allow_trailing_dot {
                             req.insert_header("x-ms-source-allow-trailing-dot", &x_ms_source_allow_trailing_dot.to_string());
+                        }
+                        if let Some(x_ms_file_request_intent) = &this.x_ms_file_request_intent {
+                            req.insert_header("x-ms-file-request-intent", x_ms_file_request_intent);
                         }
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);

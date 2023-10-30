@@ -170,61 +170,81 @@ impl Client {
             max_wait_time: None,
         }
     }
-    #[doc = "Acknowledge batch of Cloud Events. The server responds with an HTTP 200 status code if at least one event is successfully acknowledged. The response body will include the set of successfully acknowledged lockTokens, along with other failed lockTokens with their corresponding error information. Successfully acknowledged events will no longer be available to any consumer."]
+    #[doc = "Acknowledge batch of Cloud Events. The server responds with an HTTP 200 status code if the request is successfully accepted. The response body will include the set of successfully acknowledged lockTokens, along with other failed lockTokens with their corresponding error information. Successfully acknowledged events will no longer be available to any consumer."]
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `topic_name`: Topic Name."]
     #[doc = "* `event_subscription_name`: Event Subscription Name."]
-    #[doc = "* `lock_tokens`: AcknowledgeOptions."]
+    #[doc = "* `acknowledge_options`: AcknowledgeOptions."]
     pub fn acknowledge_cloud_events(
         &self,
         topic_name: impl Into<String>,
         event_subscription_name: impl Into<String>,
-        lock_tokens: impl Into<models::AcknowledgeOptions>,
+        acknowledge_options: impl Into<models::AcknowledgeOptions>,
     ) -> acknowledge_cloud_events::RequestBuilder {
         acknowledge_cloud_events::RequestBuilder {
             client: self.clone(),
             topic_name: topic_name.into(),
             event_subscription_name: event_subscription_name.into(),
-            lock_tokens: lock_tokens.into(),
+            acknowledge_options: acknowledge_options.into(),
         }
     }
-    #[doc = "Release batch of Cloud Events. The server responds with an HTTP 200 status code if at least one event is successfully released. The response body will include the set of successfully released lockTokens, along with other failed lockTokens with their corresponding error information."]
+    #[doc = "Release batch of Cloud Events. The server responds with an HTTP 200 status code if the request is successfully accepted. The response body will include the set of successfully released lockTokens, along with other failed lockTokens with their corresponding error information."]
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `topic_name`: Topic Name."]
     #[doc = "* `event_subscription_name`: Event Subscription Name."]
-    #[doc = "* `lock_tokens`: ReleaseOptions"]
+    #[doc = "* `release_options`: ReleaseOptions"]
     pub fn release_cloud_events(
         &self,
         topic_name: impl Into<String>,
         event_subscription_name: impl Into<String>,
-        lock_tokens: impl Into<models::ReleaseOptions>,
+        release_options: impl Into<models::ReleaseOptions>,
     ) -> release_cloud_events::RequestBuilder {
         release_cloud_events::RequestBuilder {
             client: self.clone(),
             topic_name: topic_name.into(),
             event_subscription_name: event_subscription_name.into(),
-            lock_tokens: lock_tokens.into(),
+            release_options: release_options.into(),
+            release_delay_in_seconds: None,
         }
     }
-    #[doc = "Reject batch of Cloud Events."]
+    #[doc = "Reject batch of Cloud Events. The server responds with an HTTP 200 status code if the request is successfully accepted. The response body will include the set of successfully rejected lockTokens, along with other failed lockTokens with their corresponding error information."]
     #[doc = ""]
     #[doc = "Arguments:"]
     #[doc = "* `topic_name`: Topic Name."]
     #[doc = "* `event_subscription_name`: Event Subscription Name."]
-    #[doc = "* `lock_tokens`: RejectOptions"]
+    #[doc = "* `reject_options`: RejectOptions"]
     pub fn reject_cloud_events(
         &self,
         topic_name: impl Into<String>,
         event_subscription_name: impl Into<String>,
-        lock_tokens: impl Into<models::RejectOptions>,
+        reject_options: impl Into<models::RejectOptions>,
     ) -> reject_cloud_events::RequestBuilder {
         reject_cloud_events::RequestBuilder {
             client: self.clone(),
             topic_name: topic_name.into(),
             event_subscription_name: event_subscription_name.into(),
-            lock_tokens: lock_tokens.into(),
+            reject_options: reject_options.into(),
+        }
+    }
+    #[doc = "Renew lock for batch of Cloud Events. The server responds with an HTTP 200 status code if the request is successfully accepted. The response body will include the set of successfully renewed lockTokens, along with other failed lockTokens with their corresponding error information."]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `topic_name`: Topic Name."]
+    #[doc = "* `event_subscription_name`: Event Subscription Name."]
+    #[doc = "* `renew_lock_options`: RenewLockOptions"]
+    pub fn renew_cloud_event_locks(
+        &self,
+        topic_name: impl Into<String>,
+        event_subscription_name: impl Into<String>,
+        renew_lock_options: impl Into<models::RenewLockOptions>,
+    ) -> renew_cloud_event_locks::RequestBuilder {
+        renew_cloud_event_locks::RequestBuilder {
+            client: self.clone(),
+            topic_name: topic_name.into(),
+            event_subscription_name: event_subscription_name.into(),
+            renew_lock_options: renew_lock_options.into(),
         }
     }
 }
@@ -772,7 +792,7 @@ pub mod acknowledge_cloud_events {
         pub(crate) client: super::Client,
         pub(crate) topic_name: String,
         pub(crate) event_subscription_name: String,
-        pub(crate) lock_tokens: models::AcknowledgeOptions,
+        pub(crate) acknowledge_options: models::AcknowledgeOptions,
     }
     impl RequestBuilder {
         #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -792,7 +812,7 @@ pub mod acknowledge_cloud_events {
                         format!("Bearer {}", token_response.token.secret()),
                     );
                     req.insert_header("content-type", "application/json");
-                    let req_body = azure_core::to_json(&this.lock_tokens)?;
+                    let req_body = azure_core::to_json(&this.acknowledge_options)?;
                     req.set_body(req_body);
                     Ok(Response(this.client.send(&mut req).await?))
                 }
@@ -880,9 +900,15 @@ pub mod release_cloud_events {
         pub(crate) client: super::Client,
         pub(crate) topic_name: String,
         pub(crate) event_subscription_name: String,
-        pub(crate) lock_tokens: models::ReleaseOptions,
+        pub(crate) release_options: models::ReleaseOptions,
+        pub(crate) release_delay_in_seconds: Option<f64>,
     }
     impl RequestBuilder {
+        #[doc = "Release cloud events with the specified delay in seconds."]
+        pub fn release_delay_in_seconds(mut self, release_delay_in_seconds: f64) -> Self {
+            self.release_delay_in_seconds = Some(release_delay_in_seconds);
+            self
+        }
         #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
         #[doc = ""]
         #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
@@ -899,8 +925,13 @@ pub mod release_cloud_events {
                         azure_core::headers::AUTHORIZATION,
                         format!("Bearer {}", token_response.token.secret()),
                     );
+                    if let Some(release_delay_in_seconds) = &this.release_delay_in_seconds {
+                        req.url_mut()
+                            .query_pairs_mut()
+                            .append_pair("releaseDelayInSeconds", &release_delay_in_seconds.to_string());
+                    }
                     req.insert_header("content-type", "application/json");
-                    let req_body = azure_core::to_json(&this.lock_tokens)?;
+                    let req_body = azure_core::to_json(&this.release_options)?;
                     req.set_body(req_body);
                     Ok(Response(this.client.send(&mut req).await?))
                 }
@@ -988,7 +1019,7 @@ pub mod reject_cloud_events {
         pub(crate) client: super::Client,
         pub(crate) topic_name: String,
         pub(crate) event_subscription_name: String,
-        pub(crate) lock_tokens: models::RejectOptions,
+        pub(crate) reject_options: models::RejectOptions,
     }
     impl RequestBuilder {
         #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
@@ -1008,7 +1039,7 @@ pub mod reject_cloud_events {
                         format!("Bearer {}", token_response.token.secret()),
                     );
                     req.insert_header("content-type", "application/json");
-                    let req_body = azure_core::to_json(&this.lock_tokens)?;
+                    let req_body = azure_core::to_json(&this.reject_options)?;
                     req.set_body(req_body);
                     Ok(Response(this.client.send(&mut req).await?))
                 }
@@ -1032,6 +1063,114 @@ pub mod reject_cloud_events {
     impl std::future::IntoFuture for RequestBuilder {
         type Output = azure_core::Result<models::RejectResult>;
         type IntoFuture = BoxFuture<'static, azure_core::Result<models::RejectResult>>;
+        #[doc = "Returns a future that sends the request and returns the parsed response body."]
+        #[doc = ""]
+        #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+        #[doc = ""]
+        #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+        fn into_future(self) -> Self::IntoFuture {
+            Box::pin(async move { self.send().await?.into_body().await })
+        }
+    }
+}
+pub mod renew_cloud_event_locks {
+    use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
+    #[derive(Debug)]
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::RenewCloudEventLocksResult> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::RenewCloudEventLocksResult = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    #[derive(Clone)]
+    #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+    #[doc = r""]
+    #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+    #[doc = r" parameters can be chained."]
+    #[doc = r""]
+    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+    #[doc = r" executes the request and returns a `Result` with the parsed"]
+    #[doc = r" response."]
+    #[doc = r""]
+    #[doc = r" In order to execute the request without polling the service"]
+    #[doc = r" until the operation completes, use `.send().await` instead."]
+    #[doc = r""]
+    #[doc = r" If you need lower-level access to the raw response details"]
+    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+    #[doc = r" can finalize the request using the"]
+    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+    #[doc = r" that resolves to a lower-level [`Response`] value."]
+    pub struct RequestBuilder {
+        pub(crate) client: super::Client,
+        pub(crate) topic_name: String,
+        pub(crate) event_subscription_name: String,
+        pub(crate) renew_lock_options: models::RenewLockOptions,
+    }
+    impl RequestBuilder {
+        #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+        #[doc = ""]
+        #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+        #[doc = "However, this function can provide more flexibility when required."]
+        pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
+            Box::pin({
+                let this = self.clone();
+                async move {
+                    let url = this.url()?;
+                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let credential = this.client.token_credential();
+                    let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
+                    req.insert_header(
+                        azure_core::headers::AUTHORIZATION,
+                        format!("Bearer {}", token_response.token.secret()),
+                    );
+                    req.insert_header("content-type", "application/json");
+                    let req_body = azure_core::to_json(&this.renew_lock_options)?;
+                    req.set_body(req_body);
+                    Ok(Response(this.client.send(&mut req).await?))
+                }
+            })
+        }
+        fn url(&self) -> azure_core::Result<azure_core::Url> {
+            let mut url = azure_core::Url::parse(&format!(
+                "{}/topics/{}/eventsubscriptions/{}:renewLock",
+                self.client.endpoint(),
+                &self.topic_name,
+                &self.event_subscription_name
+            ))?;
+            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+            if !has_api_version_already {
+                url.query_pairs_mut()
+                    .append_pair(azure_core::query_param::API_VERSION, "2023-06-01-preview");
+            }
+            Ok(url)
+        }
+    }
+    impl std::future::IntoFuture for RequestBuilder {
+        type Output = azure_core::Result<models::RenewCloudEventLocksResult>;
+        type IntoFuture = BoxFuture<'static, azure_core::Result<models::RenewCloudEventLocksResult>>;
         #[doc = "Returns a future that sends the request and returns the parsed response body."]
         #[doc = ""]
         #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]

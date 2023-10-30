@@ -34,12 +34,12 @@ anyhow = "1.0"
 all-features = true
 
 [features]
-default = ["package-flexibleserver-2023-06-30-privatelink", "enable_reqwest"]
+default = ["package-flexibleserver-2023-06-30", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []
 "package-flexibleserver-2023-06-30-privatelink" = []
+"package-flexibleserver-2023-06-30" = []
 "package-flexibleserver-2023-06-01-preview-new" = []
 "package-flexibleserver-2023-06-01-preview" = []
 "package-flexibleserver-2022-09-30-preview-privatelink" = []
-"package-flexibleserver-2022-09-30-preview" = []

@@ -7991,7 +7991,7 @@ pub struct WorkspaceRepositoryConfiguration {
     #[doc = "Type of workspace repositoryID configuration. Example WorkspaceVSTSConfiguration, WorkspaceGitHubConfiguration"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[doc = "GitHub Enterprise host name. For example: https://github.mydomain.com"]
+    #[doc = "GitHub Enterprise host name. For example: `https://github.mydomain.com`"]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
     #[doc = "Account name"]
