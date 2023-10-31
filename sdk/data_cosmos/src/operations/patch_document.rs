@@ -4,56 +4,56 @@ use crate::resources::document::DocumentAttributes;
 use crate::ResourceQuota;
 
 use azure_core::headers::session_token_from_headers;
-use azure_core::Context;
 use azure_core::Response as HttpResponse;
 use azure_core::SessionToken;
 use serde::Serialize;
+use serde_json::Value;
 use time::OffsetDateTime;
 
-// operation! {
-//     PatchDocument<V: Serialize + Send + 'static>,
+operation! {
+    PatchDocument,
+    client: DocumentClient,
+    operations: Vec<Operation>,
+    ?condition: String
+}
+
+// #[derive(Debug, Clone)]
+// pub struct PatchDocumentBuilder<V: Serialize + Send + 'static> {
 //     client: DocumentClient,
 //     operations: Vec<Operation<V>>,
-//     ?condition: String,
+//     condition: Option<String>,
+//     context: Context,
 // }
 
-#[derive(Debug, Clone)]
-pub struct PatchDocumentBuilder<V: Serialize + Send + 'static> {
-    client: DocumentClient,
-    operations: Vec<Operation<V>>,
-    condition: Option<String>,
-    context: Context,
-}
+// impl<V: Serialize + Send + 'static> PatchDocumentBuilder<V> {
+//     pub(crate) fn new(client: DocumentClient, operations: Vec<Operation<V>>) -> Self {
+//         Self {
+//             client,
+//             operations,
+//             condition: None,
+//             context: Context::new(),
+//         }
+//     }
 
-impl<V: Serialize + Send + 'static> PatchDocumentBuilder<V> {
-    pub(crate) fn new(client: DocumentClient, operations: Vec<Operation<V>>) -> Self {
-        Self {
-            client,
-            operations,
-            condition: None,
-            context: Context::new(),
-        }
-    }
+//     setters! {
+//         condition: String => Some(condition),
+//         context: Context => context,
+//     }
+// }
 
-    setters! {
-        condition: String => Some(condition),
-        context: Context => context,
-    }
-}
+// impl<V: Serialize + Send + 'static> std::future::IntoFuture for PatchDocumentBuilder<V> {
+//     type IntoFuture = PatchDocument;
+//     type Output = <PatchDocument as std::future::Future>::Output;
+//     fn into_future(self) -> Self::IntoFuture {
+//         Self::into_future(self)
+//     }
+// }
 
-impl<V: Serialize + Send + 'static> std::future::IntoFuture for PatchDocumentBuilder<V> {
-    type IntoFuture = PatchDocument;
-    type Output = <PatchDocument as std::future::Future>::Output;
-    fn into_future(self) -> Self::IntoFuture {
-        Self::into_future(self)
-    }
-}
+// /// The future returned by calling `into_future` on the builder.
+// pub type PatchDocument =
+//     futures::future::BoxFuture<'static, azure_core::Result<PatchDocumentResponse>>;
 
-/// The future returned by calling `into_future` on the builder.
-pub type PatchDocument =
-    futures::future::BoxFuture<'static, azure_core::Result<PatchDocumentResponse>>;
-
-impl<V: Serialize + Send + 'static> PatchDocumentBuilder<V> {
+impl PatchDocumentBuilder {
     pub fn into_future(self) -> PatchDocument {
         Box::pin(async move {
             let mut request = self.client.document_request(azure_core::Method::Patch);
@@ -87,58 +87,70 @@ impl<V: Serialize + Send + 'static> PatchDocumentBuilder<V> {
 }
 
 #[derive(Serialize, Debug)]
-struct PatchDocumentRequest<V: Serialize + Send + 'static> {
+struct PatchDocumentRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     condition: Option<String>,
-    operations: Vec<Operation<V>>,
+    operations: Vec<Operation>,
 }
 
 #[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 #[serde(tag = "op")]
-pub enum Operation<V: Serialize + Send + 'static> {
-    Add { path: String, value: V },
+pub enum Operation {
+    Add { path: String, value: Value },
     Remove { path: String },
-    Set { path: String, value: V },
-    Incr { path: String, value: V },
-    Replace { path: String, value: V },
+    Set { path: String, value: Value },
+    Incr { path: String, value: Value },
+    Replace { path: String, value: Value },
     Move { path: String, from: String },
 }
 
-impl<V: Serialize + Send + 'static> Operation<V> {
-    pub fn add<P: Into<String>>(path: P, value: V) -> Operation<V> {
-        Operation::Add {
+impl Operation {
+    pub fn add<P: Into<String>, V: Serialize>(
+        path: P,
+        value: V,
+    ) -> Result<Operation, serde_json::Error> {
+        Ok(Operation::Add {
             path: path.into(),
-            value,
-        }
+            value: serde_json::to_value(value)?,
+        })
     }
 
-    pub fn remove<P: Into<String>>(path: P) -> Operation<V> {
+    pub fn remove<P: Into<String>>(path: P) -> Operation {
         Operation::Remove { path: path.into() }
     }
 
-    pub fn set<P: Into<String>>(path: P, value: V) -> Operation<V> {
-        Operation::Set {
+    pub fn set<P: Into<String>, V: Serialize>(
+        path: P,
+        value: V,
+    ) -> Result<Operation, serde_json::Error> {
+        Ok(Operation::Set {
             path: path.into(),
-            value,
-        }
+            value: serde_json::to_value(value)?,
+        })
     }
 
-    pub fn incr<P: Into<String>>(path: P, value: V) -> Operation<V> {
-        Operation::Incr {
+    pub fn incr<P: Into<String>, V: Serialize>(
+        path: P,
+        value: V,
+    ) -> Result<Operation, serde_json::Error> {
+        Ok(Operation::Incr {
             path: path.into(),
-            value,
-        }
+            value: serde_json::to_value(value)?,
+        })
     }
 
-    pub fn replace<P: Into<String>>(path: P, value: V) -> Operation<V> {
-        Operation::Replace {
+    pub fn replace<P: Into<String>, V: Serialize>(
+        path: P,
+        value: V,
+    ) -> Result<Operation, serde_json::Error> {
+        Ok(Operation::Replace {
             path: path.into(),
-            value,
-        }
+            value: serde_json::to_value(value)?,
+        })
     }
 
-    pub fn r#move<P: Into<String>, F: Into<String>>(path: P, from: F) -> Operation<V> {
+    pub fn r#move<P: Into<String>, F: Into<String>>(path: P, from: F) -> Operation {
         Operation::Move {
             path: path.into(),
             from: from.into(),
