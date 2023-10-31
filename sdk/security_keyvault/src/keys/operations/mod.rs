@@ -1,11 +1,9 @@
-mod create;
 mod decrypt;
 mod encrypt;
 mod get_key;
 mod get_random_bytes;
 mod sign;
 mod unwrap_key;
-pub use create::*;
 pub use decrypt::*;
 pub use encrypt::*;
 pub use get_key::*;

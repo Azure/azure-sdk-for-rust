@@ -1,4 +1,4 @@
-use crate::{models::JsonWebKeyType, prelude::*};
+use crate::prelude::*;
 use azure_core::{headers::Headers, CollectedResponse, Method};
 use serde::Serialize;
 use std::collections::HashMap;
@@ -76,6 +76,22 @@ struct Issuer {
     #[serde(skip_serializing_if = "Option::is_none")]
     cert_transparency: Option<bool>,
     name: String,
+}
+
+#[derive(Serialize, Debug, Clone, Copy)]
+pub enum JsonWebKeyType {
+    #[serde(rename = "EC")]
+    Ec,
+    #[serde(rename = "EC-HSM")]
+    EcHsm,
+    #[serde(rename = "RSA")]
+    Rsa,
+    #[serde(rename = "RSA-HSM")]
+    RsaHsm,
+    #[serde(rename = "oct")]
+    Oct,
+    #[serde(rename = "oct-HSM")]
+    OctHsm,
 }
 
 impl CreateCertificateBuilder {

@@ -13,7 +13,6 @@ mod account;
 mod certificates;
 mod clients;
 mod keys;
-pub mod models;
 pub mod prelude;
 mod secrets;
 

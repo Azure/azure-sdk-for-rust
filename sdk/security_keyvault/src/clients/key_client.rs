@@ -1,4 +1,4 @@
-use crate::{models::JsonWebKeyType, prelude::*};
+use crate::prelude::*;
 use azure_core::auth::TokenCredential;
 use std::sync::Arc;
 
@@ -31,13 +31,6 @@ impl KeyClient {
         N: Into<String>,
     {
         GetKeyBuilder::new(self.clone(), name.into())
-    }
-
-    pub fn create<N>(&self, name: N, kty: JsonWebKeyType) -> CreateKeyBuilder
-    where
-        N: Into<String>,
-    {
-        CreateKeyBuilder::new(self.clone(), name.into(), kty)
     }
 
     /// Creates a signature from a digest using the specified key.
