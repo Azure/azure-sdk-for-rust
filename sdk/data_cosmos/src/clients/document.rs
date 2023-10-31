@@ -43,7 +43,10 @@ impl DocumentClient {
     }
 
     /// Patch the document.
-    pub fn patch_document(&self, operations: Vec<Operation>) -> PatchDocumentBuilder {
+    pub fn patch_document<V: Serialize + Send + 'static>(
+        &self,
+        operations: Vec<Operation<V>>,
+    ) -> PatchDocumentBuilder<V> {
         PatchDocumentBuilder::new(self.clone(), operations)
     }
 

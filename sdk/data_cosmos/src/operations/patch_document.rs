@@ -4,19 +4,56 @@ use crate::resources::document::DocumentAttributes;
 use crate::ResourceQuota;
 
 use azure_core::headers::session_token_from_headers;
+use azure_core::Context;
 use azure_core::Response as HttpResponse;
 use azure_core::SessionToken;
 use serde::Serialize;
 use time::OffsetDateTime;
 
-operation! {
-    PatchDocument,
+// operation! {
+//     PatchDocument<V: Serialize + Send + 'static>,
+//     client: DocumentClient,
+//     operations: Vec<Operation<V>>,
+//     ?condition: String,
+// }
+
+#[derive(Debug, Clone)]
+pub struct PatchDocumentBuilder<V: Serialize + Send + 'static> {
     client: DocumentClient,
-    operations: Vec<Operation>,
-    ?condition: String
+    operations: Vec<Operation<V>>,
+    condition: Option<String>,
+    context: Context,
 }
 
-impl PatchDocumentBuilder {
+impl<V: Serialize + Send + 'static> PatchDocumentBuilder<V> {
+    pub(crate) fn new(client: DocumentClient, operations: Vec<Operation<V>>) -> Self {
+        Self {
+            client,
+            operations,
+            condition: None,
+            context: Context::new(),
+        }
+    }
+
+    setters! {
+        condition: String => Some(condition),
+        context: Context => context,
+    }
+}
+
+impl<V: Serialize + Send + 'static> std::future::IntoFuture for PatchDocumentBuilder<V> {
+    type IntoFuture = PatchDocument;
+    type Output = <PatchDocument as std::future::Future>::Output;
+    fn into_future(self) -> Self::IntoFuture {
+        Self::into_future(self)
+    }
+}
+
+/// The future returned by calling `into_future` on the builder.
+pub type PatchDocument =
+    futures::future::BoxFuture<'static, azure_core::Result<PatchDocumentResponse>>;
+
+impl<V: Serialize + Send + 'static> PatchDocumentBuilder<V> {
     pub fn into_future(self) -> PatchDocument {
         Box::pin(async move {
             let mut request = self.client.document_request(azure_core::Method::Patch);
@@ -50,58 +87,58 @@ impl PatchDocumentBuilder {
 }
 
 #[derive(Serialize, Debug)]
-struct PatchDocumentRequest {
+struct PatchDocumentRequest<V: Serialize + Send + 'static> {
     #[serde(skip_serializing_if = "Option::is_none")]
     condition: Option<String>,
-    operations: Vec<Operation>,
+    operations: Vec<Operation<V>>,
 }
 
 #[derive(Serialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 #[serde(tag = "op")]
-pub enum Operation {
-    Add { path: String, value: String },
+pub enum Operation<V: Serialize + Send + 'static> {
+    Add { path: String, value: V },
     Remove { path: String },
-    Set { path: String, value: String },
-    Incr { path: String, value: String },
-    Replace { path: String, value: String },
+    Set { path: String, value: V },
+    Incr { path: String, value: V },
+    Replace { path: String, value: V },
     Move { path: String, from: String },
 }
 
-impl Operation {
-    pub fn add<P: Into<String>, V: Into<String>>(path: P, value: V) -> Operation {
+impl<V: Serialize + Send + 'static> Operation<V> {
+    pub fn add<P: Into<String>>(path: P, value: V) -> Operation<V> {
         Operation::Add {
             path: path.into(),
-            value: value.into(),
+            value,
         }
     }
 
-    pub fn remove<P: Into<String>, V: Into<String>>(path: P) -> Operation {
+    pub fn remove<P: Into<String>>(path: P) -> Operation<V> {
         Operation::Remove { path: path.into() }
     }
 
-    pub fn set<P: Into<String>, V: Into<String>>(path: P, value: V) -> Operation {
+    pub fn set<P: Into<String>>(path: P, value: V) -> Operation<V> {
         Operation::Set {
             path: path.into(),
-            value: value.into(),
+            value,
         }
     }
 
-    pub fn incr<P: Into<String>, V: Into<String>>(path: P, value: V) -> Operation {
+    pub fn incr<P: Into<String>>(path: P, value: V) -> Operation<V> {
         Operation::Incr {
             path: path.into(),
-            value: value.into(),
+            value,
         }
     }
 
-    pub fn replace<P: Into<String>, V: Into<String>>(path: P, value: V) -> Operation {
+    pub fn replace<P: Into<String>>(path: P, value: V) -> Operation<V> {
         Operation::Replace {
             path: path.into(),
-            value: value.into(),
+            value,
         }
     }
 
-    pub fn r#move<P: Into<String>, V: Into<String>>(path: P, from: V) -> Operation {
+    pub fn r#move<P: Into<String>, F: Into<String>>(path: P, from: F) -> Operation<V> {
         Operation::Move {
             path: path.into(),
             from: from.into(),
