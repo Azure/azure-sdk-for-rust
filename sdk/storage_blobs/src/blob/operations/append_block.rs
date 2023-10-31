@@ -10,7 +10,7 @@ operation! {
     ?condition_append_position: ConditionAppendPosition,
     ?if_modified_since: IfModifiedSinceCondition,
     ?if_match: IfMatchCondition,
-    ?if_tag: IfTags,
+    ?if_tags: IfTags,
     ?lease_id: LeaseId
 }
 
@@ -27,6 +27,7 @@ impl AppendBlockBuilder {
             headers.add(self.condition_append_position);
             headers.add(self.if_modified_since);
             headers.add(self.if_match);
+            headers.add(self.if_tags);
             headers.add(self.lease_id);
 
             let mut request = BlobClient::finalize_request(

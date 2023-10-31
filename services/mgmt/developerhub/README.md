@@ -6,9 +6,10 @@ https://github.com/Azure/azure-rest-api-specs/blob/main/specification/developerh
 
 To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The default tag is `package-preview-2022-10`.
+The default tag is `package-2023-08`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
 - `package-preview-2022-10` has 11 operations from 1 API versions: `2022-10-11-preview`. Use crate feature `package-preview-2022-10` to enable. The operations will be in the `package_preview_2022_10` module.
 - `package-preview-2022-04` has 10 operations from 1 API versions: `2022-04-01-preview`. Use crate feature `package-preview-2022-04` to enable. The operations will be in the `package_preview_2022_04` module.
+- `package-2023-08` has 11 operations from 1 API versions: `2023-08-01`. Use crate feature `package-2023-08` to enable. The operations will be in the `package_2023_08` module.

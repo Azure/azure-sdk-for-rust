@@ -715,11 +715,6 @@ impl Serialize for EvictionPolicyType {
         }
     }
 }
-impl Default for EvictionPolicyType {
-    fn default() -> Self {
-        Self::Delete
-    }
-}
 pub type ForceRestart = bool;
 #[doc = "Describes the frontend configurations for the node type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
