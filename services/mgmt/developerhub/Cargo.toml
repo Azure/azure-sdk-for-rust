@@ -34,9 +34,10 @@ anyhow = "1.0"
 all-features = true
 
 [features]
-default = ["package-preview-2022-10", "enable_reqwest"]
+default = ["package-2023-08", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []
 "package-preview-2022-10" = []
 "package-preview-2022-04" = []
+"package-2023-08" = []

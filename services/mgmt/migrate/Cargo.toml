@@ -34,12 +34,12 @@ anyhow = "1.0"
 all-features = true
 
 [features]
-default = ["package-migrate-2019-10", "enable_reqwest"]
+default = ["package-migrate-2023-03", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 no-default-tag = []
+"package-migrate-2023-03" = []
 "package-migrate-2020-07" = []
 "package-migrate-2020-01" = []
 "package-migrate-2019-10" = []
 "package-migrate-2018-02" = []
-"package-migrate-2017-11" = []

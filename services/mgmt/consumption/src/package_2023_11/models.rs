@@ -659,6 +659,12 @@ pub struct EventProperties {
     #[doc = "The amount plus currency ."]
     #[serde(rename = "closedBalance", default, skip_serializing_if = "Option::is_none")]
     pub closed_balance: Option<Amount>,
+    #[doc = "Identifier of the billing account."]
+    #[serde(rename = "billingAccountId", default, skip_serializing_if = "Option::is_none")]
+    pub billing_account_id: Option<String>,
+    #[doc = "Name of the billing account."]
+    #[serde(rename = "billingAccountDisplayName", default, skip_serializing_if = "Option::is_none")]
+    pub billing_account_display_name: Option<String>,
     #[doc = "Identifies the type of the event."]
     #[serde(rename = "eventType", default, skip_serializing_if = "Option::is_none")]
     pub event_type: Option<event_properties::EventType>,
@@ -1365,8 +1371,8 @@ pub struct LotProperties {
     #[serde(rename = "eTag", default, skip_serializing_if = "Option::is_none")]
     pub e_tag: Option<String>,
     #[doc = "The organization type of the lot."]
-    #[serde(rename = "orgType", default, skip_serializing_if = "Option::is_none")]
-    pub org_type: Option<lot_properties::OrgType>,
+    #[serde(rename = "OrganizationType", default, skip_serializing_if = "Option::is_none")]
+    pub organization_type: Option<lot_properties::OrganizationType>,
     #[doc = "The amount plus currency ."]
     #[serde(rename = "usedAmount", default, skip_serializing_if = "Option::is_none")]
     pub used_amount: Option<Amount>,
@@ -1464,20 +1470,20 @@ pub mod lot_properties {
     }
     #[doc = "The organization type of the lot."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "OrgType")]
-    pub enum OrgType {
+    #[serde(remote = "OrganizationType")]
+    pub enum OrganizationType {
         Primary,
         Contributor,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
-    impl FromStr for OrgType {
+    impl FromStr for OrganizationType {
         type Err = value::Error;
         fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
             Self::deserialize(s.into_deserializer())
         }
     }
-    impl<'de> Deserialize<'de> for OrgType {
+    impl<'de> Deserialize<'de> for OrganizationType {
         fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
         where
             D: Deserializer<'de>,
@@ -1487,14 +1493,14 @@ pub mod lot_properties {
             Ok(deserialized)
         }
     }
-    impl Serialize for OrgType {
+    impl Serialize for OrganizationType {
         fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
         where
             S: Serializer,
         {
             match self {
-                Self::Primary => serializer.serialize_unit_variant("OrgType", 0u32, "Primary"),
-                Self::Contributor => serializer.serialize_unit_variant("OrgType", 1u32, "Contributor"),
+                Self::Primary => serializer.serialize_unit_variant("OrganizationType", 0u32, "Primary"),
+                Self::Contributor => serializer.serialize_unit_variant("OrganizationType", 1u32, "Contributor"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

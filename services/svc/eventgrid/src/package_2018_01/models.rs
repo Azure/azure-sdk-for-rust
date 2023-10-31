@@ -847,6 +847,806 @@ impl AcsRecordingStorageInfoProperties {
         Self::default()
     }
 }
+#[doc = "Router Channel Configuration"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterChannelConfiguration {
+    #[doc = "Channel ID for Router Job"]
+    #[serde(rename = "channelId", default, skip_serializing_if = "Option::is_none")]
+    pub channel_id: Option<String>,
+    #[doc = "Capacity Cost Per Job for Router Job"]
+    #[serde(rename = "capacityCostPerJob", default, skip_serializing_if = "Option::is_none")]
+    pub capacity_cost_per_job: Option<i32>,
+    #[doc = "Max Number of Jobs for Router Job"]
+    #[serde(rename = "maxNumberOfJobs", default, skip_serializing_if = "Option::is_none")]
+    pub max_number_of_jobs: Option<i32>,
+}
+impl AcsRouterChannelConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Router Communication Error"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterCommunicationError {
+    #[doc = "Router Communication Error Code"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "Router Communication Error Message"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[doc = "Router Communication Error Target"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[doc = "Router Communication Error"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub innererror: Option<Box<AcsRouterCommunicationError>>,
+    #[doc = "List of Router Communication Errors"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub details: Vec<AcsRouterCommunicationError>,
+}
+impl AcsRouterCommunicationError {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of common properties of all Router events"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterEventData {
+    #[doc = "Router Event Job ID"]
+    #[serde(rename = "jobId", default, skip_serializing_if = "Option::is_none")]
+    pub job_id: Option<String>,
+    #[doc = "Router Event Channel Reference"]
+    #[serde(rename = "channelReference", default, skip_serializing_if = "Option::is_none")]
+    pub channel_reference: Option<String>,
+    #[doc = "Router Event Channel ID"]
+    #[serde(rename = "channelId", default, skip_serializing_if = "Option::is_none")]
+    pub channel_id: Option<String>,
+}
+impl AcsRouterEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobCancelled event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterJobCancelledEventData {
+    #[serde(flatten)]
+    pub acs_router_job_event_data: AcsRouterJobEventData,
+    #[doc = "Router Job Note"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+    #[doc = "Router Job Disposition Code"]
+    #[serde(rename = "dispositionCode", default, skip_serializing_if = "Option::is_none")]
+    pub disposition_code: Option<String>,
+}
+impl AcsRouterJobCancelledEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobClassificationFailed event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterJobClassificationFailedEventData {
+    #[serde(flatten)]
+    pub acs_router_job_event_data: AcsRouterJobEventData,
+    #[doc = "Router Job Classification Policy Id"]
+    #[serde(rename = "classificationPolicyId", default, skip_serializing_if = "Option::is_none")]
+    pub classification_policy_id: Option<String>,
+    #[doc = "Router Job Classification Failed Errors"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub errors: Vec<AcsRouterCommunicationError>,
+}
+impl AcsRouterJobClassificationFailedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobClassified event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterJobClassifiedEventData {
+    #[serde(flatten)]
+    pub acs_router_job_event_data: AcsRouterJobEventData,
+    #[doc = "Router Queue Details"]
+    #[serde(rename = "queueDetails", default, skip_serializing_if = "Option::is_none")]
+    pub queue_details: Option<AcsRouterQueueDetails>,
+    #[doc = "Router Job Classification Policy Id"]
+    #[serde(rename = "classificationPolicyId", default, skip_serializing_if = "Option::is_none")]
+    pub classification_policy_id: Option<String>,
+    #[doc = "Router Job Priority"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub priority: Option<i32>,
+    #[doc = "Router Job Attached Worker Selector"]
+    #[serde(
+        rename = "attachedWorkerSelectors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub attached_worker_selectors: Vec<AcsRouterWorkerSelector>,
+}
+impl AcsRouterJobClassifiedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobClosed event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterJobClosedEventData {
+    #[serde(flatten)]
+    pub acs_router_job_event_data: AcsRouterJobEventData,
+    #[doc = "Router Job Closed Assignment Id"]
+    #[serde(rename = "assignmentId", default, skip_serializing_if = "Option::is_none")]
+    pub assignment_id: Option<String>,
+    #[doc = "Router Job Closed Worker Id"]
+    #[serde(rename = "workerId", default, skip_serializing_if = "Option::is_none")]
+    pub worker_id: Option<String>,
+    #[doc = "Router Job Closed Disposition Code"]
+    #[serde(rename = "dispositionCode", default, skip_serializing_if = "Option::is_none")]
+    pub disposition_code: Option<String>,
+}
+impl AcsRouterJobClosedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobCompleted event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterJobCompletedEventData {
+    #[serde(flatten)]
+    pub acs_router_job_event_data: AcsRouterJobEventData,
+    #[doc = "Router Job Completed Assignment Id"]
+    #[serde(rename = "assignmentId", default, skip_serializing_if = "Option::is_none")]
+    pub assignment_id: Option<String>,
+    #[doc = "Router Job Completed Worker Id"]
+    #[serde(rename = "workerId", default, skip_serializing_if = "Option::is_none")]
+    pub worker_id: Option<String>,
+}
+impl AcsRouterJobCompletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobDeleted event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterJobDeletedEventData {
+    #[serde(flatten)]
+    pub acs_router_job_event_data: AcsRouterJobEventData,
+}
+impl AcsRouterJobDeletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of common properties of all Router Job events"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterJobEventData {
+    #[serde(flatten)]
+    pub acs_router_event_data: AcsRouterEventData,
+    #[doc = "Router Job events Queue Id"]
+    #[serde(rename = "queueId", default, skip_serializing_if = "Option::is_none")]
+    pub queue_id: Option<String>,
+    #[doc = "Router Job events Labels"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub labels: Option<serde_json::Value>,
+    #[doc = "Router Jobs events Tags"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl AcsRouterJobEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobExceptionTriggered event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterJobExceptionTriggeredEventData {
+    #[serde(flatten)]
+    pub acs_router_job_event_data: AcsRouterJobEventData,
+    #[doc = "Router Job Exception Triggered Rule Key"]
+    #[serde(rename = "ruleKey", default, skip_serializing_if = "Option::is_none")]
+    pub rule_key: Option<String>,
+    #[doc = "Router Job Exception Triggered Rule Id"]
+    #[serde(rename = "exceptionRuleId", default, skip_serializing_if = "Option::is_none")]
+    pub exception_rule_id: Option<String>,
+}
+impl AcsRouterJobExceptionTriggeredEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobQueued event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterJobQueuedEventData {
+    #[serde(flatten)]
+    pub acs_router_job_event_data: AcsRouterJobEventData,
+    #[doc = "Router Job Priority"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub priority: Option<i32>,
+    #[doc = "Router Job Queued Attached Worker Selector"]
+    #[serde(
+        rename = "attachedWorkerSelectors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub attached_worker_selectors: Vec<AcsRouterWorkerSelector>,
+    #[doc = "Router Job Queued Requested Worker Selector"]
+    #[serde(
+        rename = "requestedWorkerSelectors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
+}
+impl AcsRouterJobQueuedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobReceived event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AcsRouterJobReceivedEventData {
+    #[serde(flatten)]
+    pub acs_router_job_event_data: AcsRouterJobEventData,
+    #[doc = "Router Job Received Job Status"]
+    #[serde(rename = "jobStatus", default, skip_serializing_if = "Option::is_none")]
+    pub job_status: Option<acs_router_job_received_event_data::JobStatus>,
+    #[doc = "Router Job Classification Policy Id"]
+    #[serde(rename = "classificationPolicyId", default, skip_serializing_if = "Option::is_none")]
+    pub classification_policy_id: Option<String>,
+    #[doc = "Router Job Priority"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub priority: Option<i32>,
+    #[doc = "Router Job Received Requested Worker Selectors"]
+    #[serde(
+        rename = "requestedWorkerSelectors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
+    #[doc = "Router Job Received Scheduled Time in UTC"]
+    #[serde(rename = "scheduledOn", default, with = "azure_core::date::rfc3339::option")]
+    pub scheduled_on: Option<time::OffsetDateTime>,
+    #[doc = "Unavailable For Matching for Router Job Received"]
+    #[serde(rename = "unavailableForMatching")]
+    pub unavailable_for_matching: bool,
+}
+impl AcsRouterJobReceivedEventData {
+    pub fn new(unavailable_for_matching: bool) -> Self {
+        Self {
+            acs_router_job_event_data: AcsRouterJobEventData::default(),
+            job_status: None,
+            classification_policy_id: None,
+            priority: None,
+            requested_worker_selectors: Vec::new(),
+            scheduled_on: None,
+            unavailable_for_matching,
+        }
+    }
+}
+pub mod acs_router_job_received_event_data {
+    use super::*;
+    #[doc = "Router Job Received Job Status"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "JobStatus")]
+    pub enum JobStatus {
+        PendingClassification,
+        Queued,
+        Assigned,
+        Completed,
+        Closed,
+        Cancelled,
+        ClassificationFailed,
+        Created,
+        PendingSchedule,
+        Scheduled,
+        ScheduleFailed,
+        WaitingForActivation,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for JobStatus {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for JobStatus {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for JobStatus {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::PendingClassification => serializer.serialize_unit_variant("JobStatus", 0u32, "PendingClassification"),
+                Self::Queued => serializer.serialize_unit_variant("JobStatus", 1u32, "Queued"),
+                Self::Assigned => serializer.serialize_unit_variant("JobStatus", 2u32, "Assigned"),
+                Self::Completed => serializer.serialize_unit_variant("JobStatus", 3u32, "Completed"),
+                Self::Closed => serializer.serialize_unit_variant("JobStatus", 4u32, "Closed"),
+                Self::Cancelled => serializer.serialize_unit_variant("JobStatus", 5u32, "Cancelled"),
+                Self::ClassificationFailed => serializer.serialize_unit_variant("JobStatus", 6u32, "ClassificationFailed"),
+                Self::Created => serializer.serialize_unit_variant("JobStatus", 7u32, "Created"),
+                Self::PendingSchedule => serializer.serialize_unit_variant("JobStatus", 8u32, "PendingSchedule"),
+                Self::Scheduled => serializer.serialize_unit_variant("JobStatus", 9u32, "Scheduled"),
+                Self::ScheduleFailed => serializer.serialize_unit_variant("JobStatus", 10u32, "ScheduleFailed"),
+                Self::WaitingForActivation => serializer.serialize_unit_variant("JobStatus", 11u32, "WaitingForActivation"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobSchedulingFailed event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterJobSchedulingFailedEventData {
+    #[serde(flatten)]
+    pub acs_router_job_event_data: AcsRouterJobEventData,
+    #[doc = "Router Job Priority"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub priority: Option<i32>,
+    #[doc = "Router Job Scheduling Failed Attached Worker Selector Expired"]
+    #[serde(
+        rename = "expiredAttachedWorkerSelectors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub expired_attached_worker_selectors: Vec<AcsRouterWorkerSelector>,
+    #[doc = "Router Job Scheduling Failed Requested Worker Selector Expired"]
+    #[serde(
+        rename = "expiredRequestedWorkerSelectors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub expired_requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
+    #[doc = "Router Job Scheduling Failed Scheduled Time in UTC"]
+    #[serde(rename = "scheduledOn", default, with = "azure_core::date::rfc3339::option")]
+    pub scheduled_on: Option<time::OffsetDateTime>,
+    #[doc = "Router Job Scheduling Failed Reason"]
+    #[serde(rename = "failureReason", default, skip_serializing_if = "Option::is_none")]
+    pub failure_reason: Option<String>,
+}
+impl AcsRouterJobSchedulingFailedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobUnassigned event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterJobUnassignedEventData {
+    #[serde(flatten)]
+    pub acs_router_job_event_data: AcsRouterJobEventData,
+    #[doc = "Router Job Unassigned Assignment Id"]
+    #[serde(rename = "assignmentId", default, skip_serializing_if = "Option::is_none")]
+    pub assignment_id: Option<String>,
+    #[doc = "Router Job Unassigned Worker Id"]
+    #[serde(rename = "workerId", default, skip_serializing_if = "Option::is_none")]
+    pub worker_id: Option<String>,
+}
+impl AcsRouterJobUnassignedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobWaitingForActivation event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AcsRouterJobWaitingForActivationEventData {
+    #[serde(flatten)]
+    pub acs_router_job_event_data: AcsRouterJobEventData,
+    #[doc = "Router Job Waiting For Activation Priority"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub priority: Option<i32>,
+    #[doc = "Router Job Waiting For Activation Worker Selector Expired"]
+    #[serde(
+        rename = "expiredAttachedWorkerSelectors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub expired_attached_worker_selectors: Vec<AcsRouterWorkerSelector>,
+    #[doc = "Router Job Waiting For Activation Requested Worker Selector Expired"]
+    #[serde(
+        rename = "expiredRequestedWorkerSelectors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub expired_requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
+    #[doc = "Router Job Waiting For Activation Scheduled Time in UTC"]
+    #[serde(rename = "scheduledOn", default, with = "azure_core::date::rfc3339::option")]
+    pub scheduled_on: Option<time::OffsetDateTime>,
+    #[doc = "Router Job Waiting For Activation Unavailable For Matching"]
+    #[serde(rename = "unavailableForMatching")]
+    pub unavailable_for_matching: bool,
+}
+impl AcsRouterJobWaitingForActivationEventData {
+    pub fn new(unavailable_for_matching: bool) -> Self {
+        Self {
+            acs_router_job_event_data: AcsRouterJobEventData::default(),
+            priority: None,
+            expired_attached_worker_selectors: Vec::new(),
+            expired_requested_worker_selectors: Vec::new(),
+            scheduled_on: None,
+            unavailable_for_matching,
+        }
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterJobWorkerSelectorsExpired event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterJobWorkerSelectorsExpiredEventData {
+    #[serde(flatten)]
+    pub acs_router_job_event_data: AcsRouterJobEventData,
+    #[doc = "Router Job Worker Selectors Expired Requested Worker Selectors"]
+    #[serde(
+        rename = "expiredRequestedWorkerSelectors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub expired_requested_worker_selectors: Vec<AcsRouterWorkerSelector>,
+    #[doc = "Router Job Worker Selectors Expired Attached Worker Selectors"]
+    #[serde(
+        rename = "expiredAttachedWorkerSelectors",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub expired_attached_worker_selectors: Vec<AcsRouterWorkerSelector>,
+}
+impl AcsRouterJobWorkerSelectorsExpiredEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Router Queue Details"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterQueueDetails {
+    #[doc = "Router Queue Id"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Router Queue Name"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Router Queue Labels"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub labels: Option<serde_json::Value>,
+}
+impl AcsRouterQueueDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerDeleted event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterWorkerDeletedEventData {
+    #[serde(flatten)]
+    pub acs_router_worker_event_data: AcsRouterWorkerEventData,
+}
+impl AcsRouterWorkerDeletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerDeregistered event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterWorkerDeregisteredEventData {
+    #[doc = "Router Worker Deregistered Worker Id"]
+    #[serde(rename = "workerId", default, skip_serializing_if = "Option::is_none")]
+    pub worker_id: Option<String>,
+}
+impl AcsRouterWorkerDeregisteredEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of common properties of all Router Worker events"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterWorkerEventData {
+    #[serde(flatten)]
+    pub acs_router_event_data: AcsRouterEventData,
+    #[doc = "Router Worker events Worker Id"]
+    #[serde(rename = "workerId", default, skip_serializing_if = "Option::is_none")]
+    pub worker_id: Option<String>,
+}
+impl AcsRouterWorkerEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerOfferAccepted event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterWorkerOfferAcceptedEventData {
+    #[serde(flatten)]
+    pub acs_router_worker_event_data: AcsRouterWorkerEventData,
+    #[doc = "Router Worker Offer Accepted Queue Id"]
+    #[serde(rename = "queueId", default, skip_serializing_if = "Option::is_none")]
+    pub queue_id: Option<String>,
+    #[doc = "Router Worker Offer Accepted Offer Id"]
+    #[serde(rename = "offerId", default, skip_serializing_if = "Option::is_none")]
+    pub offer_id: Option<String>,
+    #[doc = "Router Worker Offer Accepted Assignment Id"]
+    #[serde(rename = "assignmentId", default, skip_serializing_if = "Option::is_none")]
+    pub assignment_id: Option<String>,
+    #[doc = "Router Worker Offer Accepted Job Priority"]
+    #[serde(rename = "jobPriority", default, skip_serializing_if = "Option::is_none")]
+    pub job_priority: Option<i32>,
+    #[doc = "Router Worker Offer Accepted Worker Labels"]
+    #[serde(rename = "workerLabels", default, skip_serializing_if = "Option::is_none")]
+    pub worker_labels: Option<serde_json::Value>,
+    #[doc = "Router Worker Offer Accepted Worker Tags"]
+    #[serde(rename = "workerTags", default, skip_serializing_if = "Option::is_none")]
+    pub worker_tags: Option<serde_json::Value>,
+    #[doc = "Router Worker Offer Accepted Job Labels"]
+    #[serde(rename = "jobLabels", default, skip_serializing_if = "Option::is_none")]
+    pub job_labels: Option<serde_json::Value>,
+    #[doc = "Router Worker Offer Accepted Job Tags"]
+    #[serde(rename = "jobTags", default, skip_serializing_if = "Option::is_none")]
+    pub job_tags: Option<serde_json::Value>,
+}
+impl AcsRouterWorkerOfferAcceptedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerOfferDeclined event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterWorkerOfferDeclinedEventData {
+    #[serde(flatten)]
+    pub acs_router_worker_event_data: AcsRouterWorkerEventData,
+    #[doc = "Router Worker Offer Declined Queue Id"]
+    #[serde(rename = "queueId", default, skip_serializing_if = "Option::is_none")]
+    pub queue_id: Option<String>,
+    #[doc = "Router Worker Offer Declined Offer Id"]
+    #[serde(rename = "offerId", default, skip_serializing_if = "Option::is_none")]
+    pub offer_id: Option<String>,
+}
+impl AcsRouterWorkerOfferDeclinedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerOfferExpired event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterWorkerOfferExpiredEventData {
+    #[serde(flatten)]
+    pub acs_router_worker_event_data: AcsRouterWorkerEventData,
+    #[doc = "Router Worker Offer Expired Queue Id"]
+    #[serde(rename = "queueId", default, skip_serializing_if = "Option::is_none")]
+    pub queue_id: Option<String>,
+    #[doc = "Router Worker Offer Expired Offer Id"]
+    #[serde(rename = "offerId", default, skip_serializing_if = "Option::is_none")]
+    pub offer_id: Option<String>,
+}
+impl AcsRouterWorkerOfferExpiredEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerOfferIssued event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterWorkerOfferIssuedEventData {
+    #[serde(flatten)]
+    pub acs_router_worker_event_data: AcsRouterWorkerEventData,
+    #[doc = "Router Worker Offer Issued Queue Id"]
+    #[serde(rename = "queueId", default, skip_serializing_if = "Option::is_none")]
+    pub queue_id: Option<String>,
+    #[doc = "Router Worker Offer Issued Offer Id"]
+    #[serde(rename = "offerId", default, skip_serializing_if = "Option::is_none")]
+    pub offer_id: Option<String>,
+    #[doc = "Router Worker Offer Issued Job Priority"]
+    #[serde(rename = "jobPriority", default, skip_serializing_if = "Option::is_none")]
+    pub job_priority: Option<i32>,
+    #[doc = "Router Worker Offer Issued Worker Labels"]
+    #[serde(rename = "workerLabels", default, skip_serializing_if = "Option::is_none")]
+    pub worker_labels: Option<serde_json::Value>,
+    #[doc = "Router Worker Offer Issued Time in UTC"]
+    #[serde(rename = "offeredOn", default, with = "azure_core::date::rfc3339::option")]
+    pub offered_on: Option<time::OffsetDateTime>,
+    #[doc = "Router Worker Offer Issued Expiration Time in UTC"]
+    #[serde(rename = "expiresOn", default, with = "azure_core::date::rfc3339::option")]
+    pub expires_on: Option<time::OffsetDateTime>,
+    #[doc = "Router Worker Offer Issued Worker Tags"]
+    #[serde(rename = "workerTags", default, skip_serializing_if = "Option::is_none")]
+    pub worker_tags: Option<serde_json::Value>,
+    #[doc = "Router Worker Offer Issued Job Labels"]
+    #[serde(rename = "jobLabels", default, skip_serializing_if = "Option::is_none")]
+    pub job_labels: Option<serde_json::Value>,
+    #[doc = "Router Worker Offer Issued Job Tags"]
+    #[serde(rename = "jobTags", default, skip_serializing_if = "Option::is_none")]
+    pub job_tags: Option<serde_json::Value>,
+}
+impl AcsRouterWorkerOfferIssuedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerOfferRevoked event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterWorkerOfferRevokedEventData {
+    #[serde(flatten)]
+    pub acs_router_worker_event_data: AcsRouterWorkerEventData,
+    #[doc = "Router Worker Offer Revoked Queue Id"]
+    #[serde(rename = "queueId", default, skip_serializing_if = "Option::is_none")]
+    pub queue_id: Option<String>,
+    #[doc = "Router Worker Offer Revoked Offer Id"]
+    #[serde(rename = "offerId", default, skip_serializing_if = "Option::is_none")]
+    pub offer_id: Option<String>,
+}
+impl AcsRouterWorkerOfferRevokedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Communication.RouterWorkerRegistered event"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterWorkerRegisteredEventData {
+    #[doc = "Router Worker Registered Worker Id"]
+    #[serde(rename = "workerId", default, skip_serializing_if = "Option::is_none")]
+    pub worker_id: Option<String>,
+    #[doc = "Router Worker Registered Queue Info"]
+    #[serde(
+        rename = "queueAssignments",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub queue_assignments: Vec<AcsRouterQueueDetails>,
+    #[doc = "Router Worker Registered Channel Configuration"]
+    #[serde(
+        rename = "channelConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub channel_configurations: Vec<AcsRouterChannelConfiguration>,
+    #[doc = "Router Worker Register Total Capacity"]
+    #[serde(rename = "totalCapacity", default, skip_serializing_if = "Option::is_none")]
+    pub total_capacity: Option<i32>,
+    #[doc = "Router Worker Registered Labels"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub labels: Option<serde_json::Value>,
+    #[doc = "Router Worker Registered Tags"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl AcsRouterWorkerRegisteredEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Router Job Worker Selector"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AcsRouterWorkerSelector {
+    #[doc = "Router Job Worker Selector Key"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub key: Option<String>,
+    #[doc = "Router Job Worker Selector Label Operator"]
+    #[serde(rename = "labelOperator", default, skip_serializing_if = "Option::is_none")]
+    pub label_operator: Option<acs_router_worker_selector::LabelOperator>,
+    #[doc = "Router Job Worker Selector Value"]
+    #[serde(rename = "labelValue", default, skip_serializing_if = "Option::is_none")]
+    pub label_value: Option<serde_json::Value>,
+    #[doc = "Router Job Worker Selector Time to Live in Seconds"]
+    #[serde(rename = "ttlSeconds", default, skip_serializing_if = "Option::is_none")]
+    pub ttl_seconds: Option<f64>,
+    #[doc = "Router Job Worker Selector State"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<acs_router_worker_selector::State>,
+    #[doc = "Router Job Worker Selector Expiration Time"]
+    #[serde(rename = "expirationTime", default, with = "azure_core::date::rfc3339::option")]
+    pub expiration_time: Option<time::OffsetDateTime>,
+}
+impl AcsRouterWorkerSelector {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod acs_router_worker_selector {
+    use super::*;
+    #[doc = "Router Job Worker Selector Label Operator"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "LabelOperator")]
+    pub enum LabelOperator {
+        Equal,
+        NotEqual,
+        Greater,
+        Less,
+        GreaterThanOrEqual,
+        LessThanOrEqual,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for LabelOperator {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for LabelOperator {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for LabelOperator {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Equal => serializer.serialize_unit_variant("LabelOperator", 0u32, "Equal"),
+                Self::NotEqual => serializer.serialize_unit_variant("LabelOperator", 1u32, "NotEqual"),
+                Self::Greater => serializer.serialize_unit_variant("LabelOperator", 2u32, "Greater"),
+                Self::Less => serializer.serialize_unit_variant("LabelOperator", 3u32, "Less"),
+                Self::GreaterThanOrEqual => serializer.serialize_unit_variant("LabelOperator", 4u32, "GreaterThanOrEqual"),
+                Self::LessThanOrEqual => serializer.serialize_unit_variant("LabelOperator", 5u32, "LessThanOrEqual"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "Router Job Worker Selector State"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "State")]
+    pub enum State {
+        #[serde(rename = "active")]
+        Active,
+        #[serde(rename = "expired")]
+        Expired,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for State {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for State {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for State {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Active => serializer.serialize_unit_variant("State", 0u32, "active"),
+                Self::Expired => serializer.serialize_unit_variant("State", 1u32, "expired"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "Schema for details of a delivery attempt"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AcsSmsDeliveryAttemptProperties {
@@ -4813,6 +5613,85 @@ pub struct ResourceHttpRequest {
     pub url: Option<String>,
 }
 impl ResourceHttpRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ResourceNotifications.HealthResources.ResourceAnnotated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceNotificationsHealthResourcesAnnotatedEventData {
+    #[serde(flatten)]
+    pub resource_notifications_resource_updated_event_data: ResourceNotificationsResourceUpdatedEventData,
+}
+impl ResourceNotificationsHealthResourcesAnnotatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ResourceNotifications.HealthResources.AvailabilityStatusChanged event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceNotificationsHealthResourcesAvailabilityStatusChangedEventData {
+    #[serde(flatten)]
+    pub resource_notifications_resource_updated_event_data: ResourceNotificationsResourceUpdatedEventData,
+}
+impl ResourceNotificationsHealthResourcesAvailabilityStatusChangedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "details of operational info"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceNotificationsOperationalDetails {
+    #[doc = "Date and Time when resource was updated"]
+    #[serde(rename = "resourceEventTime", default, with = "azure_core::date::rfc3339::option")]
+    pub resource_event_time: Option<time::OffsetDateTime>,
+}
+impl ResourceNotificationsOperationalDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes the schema of the properties under resource info which are common across all ARN system topic events"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceNotificationsResourceUpdatedDetails {
+    #[doc = "id of the resource for which the event is being emitted"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "name of the resource for which the event is being emitted"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "the type of the resource for which the event is being emitted"]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "the location of the resource for which the event is being emitted"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[doc = "the tags on the resource for which the event is being emitted"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<String>,
+    #[doc = "properties in the payload of the resource for which the event is being emitted"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<serde_json::Value>,
+}
+impl ResourceNotificationsResourceUpdatedDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes the schema of the common properties across all ARN system topic events"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceNotificationsResourceUpdatedEventData {
+    #[doc = "Describes the schema of the properties under resource info which are common across all ARN system topic events"]
+    #[serde(rename = "resourceInfo", default, skip_serializing_if = "Option::is_none")]
+    pub resource_info: Option<ResourceNotificationsResourceUpdatedDetails>,
+    #[doc = "details of operational info"]
+    #[serde(rename = "operationalInfo", default, skip_serializing_if = "Option::is_none")]
+    pub operational_info: Option<ResourceNotificationsOperationalDetails>,
+    #[doc = "api version of the resource properties bag"]
+    #[serde(rename = "apiVersion", default, skip_serializing_if = "Option::is_none")]
+    pub api_version: Option<String>,
+}
+impl ResourceNotificationsResourceUpdatedEventData {
     pub fn new() -> Self {
         Self::default()
     }

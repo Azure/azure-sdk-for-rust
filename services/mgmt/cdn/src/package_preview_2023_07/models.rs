@@ -135,6 +135,14 @@ pub struct AfdDomainProperties {
     #[doc = "The JSON object that contains the properties to validate a domain."]
     #[serde(rename = "validationProperties", default, skip_serializing_if = "Option::is_none")]
     pub validation_properties: Option<DomainValidationProperties>,
+    #[doc = "The JSON object list that contains the overall picture of how routes are used for the shared custom domain across different profiles."]
+    #[serde(
+        rename = "referencedRoutePaths",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub referenced_route_paths: Vec<AfdDomainReferencedRoutePath>,
 }
 impl AfdDomainProperties {
     pub fn new(host_name: String) -> Self {
@@ -145,6 +153,7 @@ impl AfdDomainProperties {
             host_name,
             extended_properties: None,
             validation_properties: None,
+            referenced_route_paths: Vec::new(),
         }
     }
 }
@@ -202,6 +211,25 @@ pub mod afd_domain_properties {
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
+    }
+}
+#[doc = "route configuration of the shared custom domain."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AfdDomainReferencedRoutePath {
+    #[doc = "Reference to another resource."]
+    #[serde(rename = "routeId", default, skip_serializing_if = "Option::is_none")]
+    pub route_id: Option<ResourceReference>,
+    #[doc = "List of paths of the route."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub paths: Vec<String>,
+}
+impl AfdDomainReferencedRoutePath {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The domain JSON object required for domain creation or update."]

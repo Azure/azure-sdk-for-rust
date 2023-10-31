@@ -371,3 +371,4 @@ pub const BLOB_COMMITTED_BLOCK_COUNT: HeaderName =
     HeaderName::from_static("x-ms-blob-committed-block-count");
 pub const AZURE_ASYNCOPERATION: HeaderName = HeaderName::from_static("azure-asyncoperation");
 pub const OPERATION_LOCATION: HeaderName = HeaderName::from_static("operation-location");
+pub const SOURCE_RANGE: HeaderName = HeaderName::from_static("x-ms-source-range");
