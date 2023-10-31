@@ -17,42 +17,6 @@ operation! {
     ?condition: String
 }
 
-// #[derive(Debug, Clone)]
-// pub struct PatchDocumentBuilder<V: Serialize + Send + 'static> {
-//     client: DocumentClient,
-//     operations: Vec<Operation<V>>,
-//     condition: Option<String>,
-//     context: Context,
-// }
-
-// impl<V: Serialize + Send + 'static> PatchDocumentBuilder<V> {
-//     pub(crate) fn new(client: DocumentClient, operations: Vec<Operation<V>>) -> Self {
-//         Self {
-//             client,
-//             operations,
-//             condition: None,
-//             context: Context::new(),
-//         }
-//     }
-
-//     setters! {
-//         condition: String => Some(condition),
-//         context: Context => context,
-//     }
-// }
-
-// impl<V: Serialize + Send + 'static> std::future::IntoFuture for PatchDocumentBuilder<V> {
-//     type IntoFuture = PatchDocument;
-//     type Output = <PatchDocument as std::future::Future>::Output;
-//     fn into_future(self) -> Self::IntoFuture {
-//         Self::into_future(self)
-//     }
-// }
-
-// /// The future returned by calling `into_future` on the builder.
-// pub type PatchDocument =
-//     futures::future::BoxFuture<'static, azure_core::Result<PatchDocumentResponse>>;
-
 impl PatchDocumentBuilder {
     pub fn into_future(self) -> PatchDocument {
         Box::pin(async move {
