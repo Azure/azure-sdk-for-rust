@@ -145,6 +145,6 @@ impl Stream for ResponseBody {
 
 impl Debug for ResponseBody {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str("ResonseBody")
+        f.write_str("ResponseBody")
     }
 }
