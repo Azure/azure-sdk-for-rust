@@ -15,9 +15,9 @@ mod test {
     #[test]
     fn test_serialize() -> azure_core::Result<()> {
         let serialized = to_xml(&QueueMessageSubmit {
-            message_text: "hello".to_string(),
+            message_text: "<hello> \" there &".to_string(),
         })?;
-        let expected = "<QueueMessage><MessageText>hello</MessageText></QueueMessage>";
+        let expected = "<QueueMessage><MessageText>&lt;hello&gt; &quot; there &amp;</MessageText></QueueMessage>";
         assert_eq!(expected, serialized);
         Ok(())
     }
