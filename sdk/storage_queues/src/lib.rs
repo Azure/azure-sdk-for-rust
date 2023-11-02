@@ -49,6 +49,7 @@ mod number_of_messages;
 pub mod operations;
 mod pop_receipt;
 pub mod prelude;
+mod queue_message;
 mod queue_service_properties;
 mod queue_stored_access_policy;
 mod visibility_timeout;
