@@ -4,6 +4,7 @@ use crate::{
     setters,
 };
 use futures::{task::Poll, Future};
+use log::debug;
 use std::{cmp::min, io::SeekFrom, pin::Pin, sync::Arc, task::Context};
 use tokio::{
     fs::File,
@@ -99,7 +100,7 @@ impl FileStream {
     ///
     /// This is useful if you want to read the stream in multiple blocks
     pub async fn next_block(&mut self) -> crate::Result<()> {
-        log::info!("setting limit to {}", self.block_size);
+        debug!("setting limit to {}", self.block_size);
         let mut handle = self.handle.clone().lock_owned().await;
         {
             let inner = handle.get_mut();
@@ -117,10 +118,9 @@ impl SeekableStream for FileStream {
     ///
     /// This is useful upon encountering an error to reset the stream to the last
     async fn reset(&mut self) -> crate::Result<()> {
-        log::info!(
+        debug!(
             "resetting stream to offset {} and limit to {}",
-            self.offset,
-            self.block_size
+            self.offset, self.block_size
         );
         let mut handle = self.handle.clone().lock_owned().await;
         {
@@ -132,11 +132,9 @@ impl SeekableStream for FileStream {
     }
 
     fn len(&self) -> usize {
-        log::info!(
+        debug!(
             "stream len:  {} - {} ... {}",
-            self.stream_size,
-            self.offset,
-            self.block_size
+            self.stream_size, self.offset, self.block_size
         );
         min(self.stream_size - self.offset, self.block_size) as usize
     }
