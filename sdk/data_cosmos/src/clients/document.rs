@@ -42,6 +42,30 @@ impl DocumentClient {
         ReplaceDocumentBuilder::new(self.clone(), document)
     }
 
+    /// Patch the document.
+    /// The Patch Document operation does path-level updates to specific files/properties in a single document.
+    ///
+    /// # Example
+    /// ```no_run
+    /// # use azure_data_cosmos::prelude::*;
+    /// # async fn func(document_client: &DocumentClient) -> azure_core::Result<()> {
+    /// let operations = vec![
+    ///     Operation::add("/color", "silver")?,
+    ///     Operation::remove("/used"),
+    ///     Operation::set("/price", 355.45)?,
+    ///     Operation::incr("/inventory/quantity", 10)?,
+    ///     Operation::add("/tags/-", "featured-bikes")?,
+    ///     Operation::r#move("/inventory/color", "/color"),
+    /// ];
+    ///    
+    /// document_client.patch_document(operations).await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    pub fn patch_document(&self, operations: Vec<Operation>) -> PatchDocumentBuilder {
+        PatchDocumentBuilder::new(self.clone(), operations)
+    }
+
     /// Delete the document.
     pub fn delete_document(&self) -> DeleteDocumentBuilder {
         DeleteDocumentBuilder::new(self.clone())
