@@ -47,6 +47,8 @@ impl DocumentClient {
     ///
     /// # Example
     /// ```no_run
+    /// # use azure_data_cosmos::prelude::*;
+    /// # async fn func(document_client: &DocumentClient) -> azure_core::Result<()> {
     /// let operations = vec![
     ///     Operation::add("/color", "silver")?,
     ///     Operation::remove("/used"),
@@ -57,6 +59,8 @@ impl DocumentClient {
     /// ];
     ///    
     /// document_client.patch_document(operations).await?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn patch_document(&self, operations: Vec<Operation>) -> PatchDocumentBuilder {
         PatchDocumentBuilder::new(self.clone(), operations)
