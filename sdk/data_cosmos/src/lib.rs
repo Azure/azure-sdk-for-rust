@@ -18,7 +18,7 @@ use azure_core::Context;
 use serde::{Deserialize, Serialize};
 
 // This is the stuct we want to use in our sample.
-// Make sure to have a collection with partition key "a_number" for this example to
+// Make sure to have a collection with partition key "number" for this example to
 // work (you can create with this SDK too, check the examples folder for that task).
 #[derive(Serialize, Deserialize, Debug)]
 struct MySampleStruct {
