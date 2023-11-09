@@ -547,6 +547,19 @@ pub struct UnionCode {
     pub description: Option<String>,
 }
 
+/// Bottom up search through a schema's allOf properties to find if a ref_key exists
+fn recursively_find_parent_schema<'a>(search_for_ref_key: &RefKey, schema: &'a SchemaGen) -> bool {
+    for referenced_schema in schema.all_of().iter() {
+        if referenced_schema.ref_key.as_ref() == Some(search_for_ref_key) {
+            return true;
+        }
+        if recursively_find_parent_schema(search_for_ref_key, referenced_schema) {
+            return true;
+        }
+    }
+    false
+}
+
 impl UnionCode {
     fn from_schema(
         cg: &CodeGen,
@@ -558,11 +571,7 @@ impl UnionCode {
     ) -> Result<Self> {
         let mut values = Vec::new();
         for (child_ref_key, child_schema) in all_schemas {
-            if child_schema
-                .all_of()
-                .iter()
-                .any(|all_of_schema| all_of_schema.ref_key.as_ref() == Some(ref_key))
-            {
+            if recursively_find_parent_schema(ref_key, child_schema) {
                 if let Some(tag) = child_schema.discriminator_value() {
                     let name = tag.to_camel_case_ident()?;
                     let mut type_name = TypeNameCode::from(child_ref_key.name.to_camel_case_ident()?);
