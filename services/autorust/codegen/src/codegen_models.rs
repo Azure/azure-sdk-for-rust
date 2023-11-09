@@ -548,7 +548,7 @@ pub struct UnionCode {
 }
 
 /// Bottom up search through a schema's allOf properties to find if a ref_key exists
-fn recursively_find_parent_schema<'a>(search_for_ref_key: &RefKey, schema: &'a SchemaGen) -> bool {
+fn recursively_find_parent_schema(search_for_ref_key: &RefKey, schema: &SchemaGen) -> bool {
     for referenced_schema in schema.all_of().iter() {
         if referenced_schema.ref_key.as_ref() == Some(search_for_ref_key) {
             return true;
