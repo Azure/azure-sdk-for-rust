@@ -553,6 +553,10 @@ fn recursively_find_parent_schema(search_for_ref_key: &RefKey, schema: &SchemaGe
         if referenced_schema.ref_key.as_ref() == Some(search_for_ref_key) {
             return true;
         }
+        if referenced_schema.discriminator().is_some() {
+            // don't keep going up the tree if there is another discriminator defined
+            continue;
+        }
         if recursively_find_parent_schema(search_for_ref_key, referenced_schema) {
             return true;
         }
