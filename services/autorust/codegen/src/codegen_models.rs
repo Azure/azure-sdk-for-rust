@@ -12,7 +12,10 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use serde_json::Value;
 use spec::{get_schema_schema_references, openapi, RefKey};
-use std::collections::{HashMap, HashSet};
+use std::{
+    cmp::Reverse,
+    collections::{BinaryHeap, HashMap, HashSet},
+};
 
 #[derive(Clone)]
 pub struct PropertyGen {
@@ -547,21 +550,29 @@ pub struct UnionCode {
     pub description: Option<String>,
 }
 
-/// Bottom up search through a schema's allOf properties to find if a ref_key exists
-fn recursively_find_parent_schema(search_for_ref_key: &RefKey, schema: &SchemaGen) -> bool {
-    for referenced_schema in schema.all_of().iter() {
-        if referenced_schema.ref_key.as_ref() == Some(search_for_ref_key) {
-            return true;
-        }
-        if referenced_schema.discriminator().is_some() {
-            // don't keep going up the tree if there is another discriminator defined
-            continue;
-        }
-        if recursively_find_parent_schema(search_for_ref_key, referenced_schema) {
-            return true;
-        }
+struct Depth<T> {
+    inner: T,
+    depth: usize,
+}
+
+impl<T> Ord for Depth<T> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.depth.cmp(&other.depth)
     }
-    false
+}
+
+impl<T> PartialOrd for Depth<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.depth.cmp(&other.depth))
+    }
+}
+
+impl<T> Eq for Depth<T> {}
+
+impl<T> PartialEq for Depth<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.depth == other.depth
+    }
 }
 
 impl UnionCode {
@@ -575,7 +586,7 @@ impl UnionCode {
     ) -> Result<Self> {
         let mut values = Vec::new();
         for (child_ref_key, child_schema) in all_schemas {
-            if recursively_find_parent_schema(ref_key, child_schema) {
+            if Self::breadth_first_search_all_of(ref_key, child_schema) {
                 if let Some(tag) = child_schema.discriminator_value() {
                     let name = tag.to_camel_case_ident()?;
                     let mut type_name = TypeNameCode::from(child_ref_key.name.to_camel_case_ident()?);
@@ -596,6 +607,37 @@ impl UnionCode {
             values,
             description,
         })
+    }
+
+    /// Performs a BFS through multiple layers of allOf properties on a provided start schema
+    fn breadth_first_search_all_of(search_for_ref_key: &RefKey, start_schema: &SchemaGen) -> bool {
+        let mut heap = BinaryHeap::new();
+        let depth = 0;
+        for referenced_schema in start_schema.all_of().iter() {
+            Self::populate_heap(&mut heap, referenced_schema, depth + 1);
+        }
+        while !heap.is_empty() {
+            let Reverse(Depth { inner: schema, .. }) = heap.pop().unwrap();
+            if schema.ref_key.as_ref() == Some(search_for_ref_key) {
+                // we have found an all of schema that matches the ref key we are searching for
+                return true;
+            }
+            if schema.discriminator().is_some() {
+                // if there is another discriminator defined, we can stop searching as the start schema would be a child of this discriminator instead
+                break;
+            }
+        }
+        false
+    }
+
+    fn populate_heap(heap: &mut BinaryHeap<Reverse<Depth<SchemaGen>>>, schema: &SchemaGen, depth: usize) {
+        heap.push(Reverse(Depth {
+            inner: schema.clone(),
+            depth,
+        }));
+        for referenced_schema in schema.all_of().iter() {
+            Self::populate_heap(heap, referenced_schema, depth + 1);
+        }
     }
 }
 
