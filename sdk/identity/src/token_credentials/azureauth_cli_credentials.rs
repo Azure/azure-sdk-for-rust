@@ -37,7 +37,6 @@ mod unix_date_string {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
 struct CliTokenResponse {
     pub token: AccessToken,
     #[serde(with = "unix_date_string")]
@@ -168,7 +167,7 @@ mod tests {
             "user": "example@contoso.com",
             "display_name": "Example User",
             "token": "security token here",
-            "expiration_date": "1700166595",
+            "expiration_date": "1700166595"
         }"#;
 
         let response: CliTokenResponse = serde_json::from_str(src)?;
