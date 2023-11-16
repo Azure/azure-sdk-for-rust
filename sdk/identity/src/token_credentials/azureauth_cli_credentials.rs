@@ -102,6 +102,7 @@ impl AzureauthCliCredential {
 
         let mut cmd = Command::new(cmd_name);
         cmd.args([
+            "aad",
             "--resource",
             resource,
             "--client",
