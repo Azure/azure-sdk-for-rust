@@ -47,7 +47,7 @@ impl Policy for MockTransportRecorderPolicy {
         {
             let mut request_contents_stream = std::fs::File::create(&request_path).unwrap();
             request_contents_stream
-                .write_all(request_contents.as_str().as_bytes())
+                .write_all(request_contents.as_bytes())
                 .context(ErrorKind::MockFramework, "cannot write request file")?;
         }
 
