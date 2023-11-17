@@ -50,6 +50,7 @@ struct CliTokenResponse {
 #[derive(Debug, Clone, Copy)]
 pub enum AzureauthCliMode {
     All,
+    #[cfg(target_os = "windows")]
     IntegratedWindowsAuth,
     Broker,
     Web,
@@ -117,6 +118,7 @@ impl AzureauthCliCredential {
             cmd.arg("--mode");
             match mode {
                 AzureauthCliMode::All => cmd.arg("all"),
+                #[cfg(target_os = "windows")]
                 AzureauthCliMode::IntegratedWindowsAuth => cmd.arg("iwa"),
                 AzureauthCliMode::Broker => cmd.arg("broker"),
                 AzureauthCliMode::Web => cmd.arg("web"),
