@@ -1128,6 +1128,10 @@ impl MapRequest {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
 pub enum MapRequestUnion {
+    #[serde(rename = "map:machine-group-dependency")]
+    MapMachineGroupDependency(MachineGroupMapRequest),
+    #[serde(rename = "map:machine-list-dependency")]
+    MapMachineListDependency(MachineListMapRequest),
     #[serde(rename = "map:single-machine-dependency")]
     MapSingleMachineDependency(SingleMachineDependencyMapRequest),
 }

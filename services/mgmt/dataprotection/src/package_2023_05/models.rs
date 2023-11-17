@@ -602,6 +602,7 @@ pub mod azure_backup_restore_request {
 pub enum AzureBackupRestoreRequestUnion {
     AzureBackupRecoveryPointBasedRestoreRequest(AzureBackupRecoveryPointBasedRestoreRequest),
     AzureBackupRecoveryTimeBasedRestoreRequest(AzureBackupRecoveryTimeBasedRestoreRequest),
+    AzureBackupRestoreWithRehydrationRequest(AzureBackupRestoreWithRehydrationRequest),
 }
 #[doc = "AzureBackup Restore with Rehydration Request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

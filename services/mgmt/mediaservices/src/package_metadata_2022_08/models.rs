@@ -1124,12 +1124,24 @@ impl Codec {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
 pub enum CodecUnion {
+    #[serde(rename = "#Microsoft.Media.AacAudio")]
+    MicrosoftMediaAacAudio(AacAudio),
     #[serde(rename = "#Microsoft.Media.Audio")]
     MicrosoftMediaAudio(Audio),
     #[serde(rename = "#Microsoft.Media.CopyAudio")]
     MicrosoftMediaCopyAudio(CopyAudio),
     #[serde(rename = "#Microsoft.Media.CopyVideo")]
     MicrosoftMediaCopyVideo(CopyVideo),
+    #[serde(rename = "#Microsoft.Media.H264Video")]
+    MicrosoftMediaH264Video(H264Video),
+    #[serde(rename = "#Microsoft.Media.H265Video")]
+    MicrosoftMediaH265Video(H265Video),
+    #[serde(rename = "#Microsoft.Media.Image")]
+    MicrosoftMediaImage(Image),
+    #[serde(rename = "#Microsoft.Media.JpgImage")]
+    MicrosoftMediaJpgImage(JpgImage),
+    #[serde(rename = "#Microsoft.Media.PngImage")]
+    MicrosoftMediaPngImage(PngImage),
     #[serde(rename = "#Microsoft.Media.Video")]
     MicrosoftMediaVideo(Video),
 }
@@ -2694,8 +2706,16 @@ impl Format {
 pub enum FormatUnion {
     #[serde(rename = "#Microsoft.Media.ImageFormat")]
     MicrosoftMediaImageFormat(ImageFormat),
+    #[serde(rename = "#Microsoft.Media.JpgFormat")]
+    MicrosoftMediaJpgFormat(JpgFormat),
+    #[serde(rename = "#Microsoft.Media.Mp4Format")]
+    MicrosoftMediaMp4Format(Mp4Format),
     #[serde(rename = "#Microsoft.Media.MultiBitrateFormat")]
     MicrosoftMediaMultiBitrateFormat(MultiBitrateFormat),
+    #[serde(rename = "#Microsoft.Media.PngFormat")]
+    MicrosoftMediaPngFormat(PngFormat),
+    #[serde(rename = "#Microsoft.Media.TransportStreamFormat")]
+    MicrosoftMediaTransportStreamFormat(TransportStreamFormat),
 }
 #[doc = "An InputDefinition that looks across all of the files provided to select tracks specified by the IncludedTracks property. Generally used with the AudioTrackByAttribute and VideoTrackByAttribute to allow selection of a single track across a set of input files."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3509,8 +3529,12 @@ impl JobErrorDetail {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "@odata.type")]
 pub enum JobInputUnion {
+    #[serde(rename = "#Microsoft.Media.JobInputAsset")]
+    MicrosoftMediaJobInputAsset(JobInputAsset),
     #[serde(rename = "#Microsoft.Media.JobInputClip")]
     MicrosoftMediaJobInputClip(JobInputClip),
+    #[serde(rename = "#Microsoft.Media.JobInputHttp")]
+    MicrosoftMediaJobInputHttp(JobInputHttp),
     #[serde(rename = "#Microsoft.Media.JobInputSequence")]
     MicrosoftMediaJobInputSequence(JobInputSequence),
     #[serde(rename = "#Microsoft.Media.JobInputs")]
@@ -5511,6 +5535,8 @@ pub enum PresetUnion {
     MicrosoftMediaFaceDetectorPreset(FaceDetectorPreset),
     #[serde(rename = "#Microsoft.Media.StandardEncoderPreset")]
     MicrosoftMediaStandardEncoderPreset(StandardEncoderPreset),
+    #[serde(rename = "#Microsoft.Media.VideoAnalyzerPreset")]
+    MicrosoftMediaVideoAnalyzerPreset(VideoAnalyzerPreset),
 }
 #[doc = "An object of optional configuration settings for encoder."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -7071,6 +7097,14 @@ pub enum TrackBaseUnion {
 pub enum TrackDescriptorUnion {
     #[serde(rename = "#Microsoft.Media.AudioTrackDescriptor")]
     MicrosoftMediaAudioTrackDescriptor(AudioTrackDescriptor),
+    #[serde(rename = "#Microsoft.Media.SelectAudioTrackByAttribute")]
+    MicrosoftMediaSelectAudioTrackByAttribute(SelectAudioTrackByAttribute),
+    #[serde(rename = "#Microsoft.Media.SelectAudioTrackById")]
+    MicrosoftMediaSelectAudioTrackById(SelectAudioTrackById),
+    #[serde(rename = "#Microsoft.Media.SelectVideoTrackByAttribute")]
+    MicrosoftMediaSelectVideoTrackByAttribute(SelectVideoTrackByAttribute),
+    #[serde(rename = "#Microsoft.Media.SelectVideoTrackById")]
+    MicrosoftMediaSelectVideoTrackById(SelectVideoTrackById),
     #[serde(rename = "#Microsoft.Media.VideoTrackDescriptor")]
     MicrosoftMediaVideoTrackDescriptor(VideoTrackDescriptor),
 }

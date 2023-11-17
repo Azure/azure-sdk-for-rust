@@ -918,6 +918,14 @@ pub mod method_request {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "methodName")]
 pub enum MethodRequestUnion {
+    #[serde(rename = "livePipelineActivate")]
+    LivePipelineActivate(LivePipelineActivateRequest),
+    #[serde(rename = "livePipelineDeactivate")]
+    LivePipelineDeactivate(LivePipelineDeactivateRequest),
+    #[serde(rename = "livePipelineDelete")]
+    LivePipelineDelete(LivePipelineDeleteRequest),
+    #[serde(rename = "livePipelineGet")]
+    LivePipelineGet(LivePipelineGetRequest),
     #[serde(rename = "livePipelineList")]
     LivePipelineList(LivePipelineListRequest),
     #[serde(rename = "livePipelineSet")]
@@ -926,10 +934,18 @@ pub enum MethodRequestUnion {
     OnvifDeviceDiscover(OnvifDeviceDiscoverRequest),
     #[serde(rename = "onvifDeviceGet")]
     OnvifDeviceGet(OnvifDeviceGetRequest),
+    #[serde(rename = "pipelineTopologyDelete")]
+    PipelineTopologyDelete(PipelineTopologyDeleteRequest),
+    #[serde(rename = "pipelineTopologyGet")]
+    PipelineTopologyGet(PipelineTopologyGetRequest),
     #[serde(rename = "pipelineTopologyList")]
     PipelineTopologyList(PipelineTopologyListRequest),
     #[serde(rename = "pipelineTopologySet")]
     PipelineTopologySet(PipelineTopologySetRequest),
+    #[serde(rename = "remoteDeviceAdapterDelete")]
+    RemoteDeviceAdapterDelete(RemoteDeviceAdapterDeleteRequest),
+    #[serde(rename = "remoteDeviceAdapterGet")]
+    RemoteDeviceAdapterGet(RemoteDeviceAdapterGetRequest),
     #[serde(rename = "remoteDeviceAdapterList")]
     RemoteDeviceAdapterList(RemoteDeviceAdapterListRequest),
     #[serde(rename = "remoteDeviceAdapterSet")]
@@ -1692,6 +1708,10 @@ pub enum ProcessorNodeBaseUnion {
     MicrosoftVideoAnalyzerCognitiveServicesVisionProcessor(CognitiveServicesVisionProcessor),
     #[serde(rename = "#Microsoft.VideoAnalyzer.ExtensionProcessorBase")]
     MicrosoftVideoAnalyzerExtensionProcessorBase(ExtensionProcessorBase),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.GrpcExtension")]
+    MicrosoftVideoAnalyzerGrpcExtension(GrpcExtension),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.HttpExtension")]
+    MicrosoftVideoAnalyzerHttpExtension(HttpExtension),
     #[serde(rename = "#Microsoft.VideoAnalyzer.LineCrossingProcessor")]
     MicrosoftVideoAnalyzerLineCrossingProcessor(LineCrossingProcessor),
     #[serde(rename = "#Microsoft.VideoAnalyzer.MotionDetectionProcessor")]
@@ -2032,6 +2052,14 @@ impl SpatialAnalysisCustomOperation {
 pub enum SpatialAnalysisOperationBaseUnion {
     #[serde(rename = "#Microsoft.VideoAnalyzer.SpatialAnalysisCustomOperation")]
     MicrosoftVideoAnalyzerSpatialAnalysisCustomOperation(SpatialAnalysisCustomOperation),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.SpatialAnalysisPersonCountOperation")]
+    MicrosoftVideoAnalyzerSpatialAnalysisPersonCountOperation(SpatialAnalysisPersonCountOperation),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.SpatialAnalysisPersonDistanceOperation")]
+    MicrosoftVideoAnalyzerSpatialAnalysisPersonDistanceOperation(SpatialAnalysisPersonDistanceOperation),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.SpatialAnalysisPersonLineCrossingOperation")]
+    MicrosoftVideoAnalyzerSpatialAnalysisPersonLineCrossingOperation(SpatialAnalysisPersonLineCrossingOperation),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.SpatialAnalysisPersonZoneCrossingOperation")]
+    MicrosoftVideoAnalyzerSpatialAnalysisPersonZoneCrossingOperation(SpatialAnalysisPersonZoneCrossingOperation),
 }
 #[doc = "Defines the Azure Cognitive Services Spatial Analysis operation eventing configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

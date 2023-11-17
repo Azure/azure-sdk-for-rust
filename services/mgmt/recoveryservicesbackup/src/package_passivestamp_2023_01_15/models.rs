@@ -4373,11 +4373,21 @@ pub mod protected_item {
 #[serde(tag = "protectedItemType")]
 pub enum ProtectedItemUnion {
     AzureFileShareProtectedItem(AzureFileshareProtectedItem),
+    #[serde(rename = "Microsoft.ClassicCompute/virtualMachines")]
+    MicrosoftClassicComputeVirtualMachines(AzureIaaSClassicComputeVmProtectedItem),
+    #[serde(rename = "Microsoft.Compute/virtualMachines")]
+    MicrosoftComputeVirtualMachines(AzureIaaSComputeVmProtectedItem),
     #[serde(rename = "AzureIaaSVMProtectedItem")]
     AzureIaaSvmProtectedItem(AzureIaaSvmProtectedItem),
     #[serde(rename = "Microsoft.Sql/servers/databases")]
     MicrosoftSqlServersDatabases(AzureSqlProtectedItem),
     AzureVmWorkloadProtectedItem(AzureVmWorkloadProtectedItem),
+    #[serde(rename = "AzureVmWorkloadSAPAseDatabase")]
+    AzureVmWorkloadSapAseDatabase(AzureVmWorkloadSapAseDatabaseProtectedItem),
+    #[serde(rename = "AzureVmWorkloadSAPHanaDatabase")]
+    AzureVmWorkloadSapHanaDatabase(AzureVmWorkloadSapHanaDatabaseProtectedItem),
+    #[serde(rename = "AzureVmWorkloadSQLDatabase")]
+    AzureVmWorkloadSqlDatabase(AzureVmWorkloadSqlDatabaseProtectedItem),
     #[serde(rename = "DPMProtectedItem")]
     DpmProtectedItem(DpmProtectedItem),
     GenericProtectedItem(GenericProtectedItem),
@@ -4629,7 +4639,16 @@ impl ProtectedItemResourceList {
 #[serde(tag = "objectType")]
 pub enum RecoveryPointUnion {
     AzureFileShareRecoveryPoint(AzureFileShareRecoveryPoint),
+    AzureWorkloadPointInTimeRecoveryPoint(AzureWorkloadPointInTimeRecoveryPoint),
     AzureWorkloadRecoveryPoint(AzureWorkloadRecoveryPoint),
+    #[serde(rename = "AzureWorkloadSAPHanaPointInTimeRecoveryPoint")]
+    AzureWorkloadSapHanaPointInTimeRecoveryPoint(AzureWorkloadSapHanaPointInTimeRecoveryPoint),
+    #[serde(rename = "AzureWorkloadSAPHanaRecoveryPoint")]
+    AzureWorkloadSapHanaRecoveryPoint(AzureWorkloadSapHanaRecoveryPoint),
+    #[serde(rename = "AzureWorkloadSQLPointInTimeRecoveryPoint")]
+    AzureWorkloadSqlPointInTimeRecoveryPoint(AzureWorkloadSqlPointInTimeRecoveryPoint),
+    #[serde(rename = "AzureWorkloadSQLRecoveryPoint")]
+    AzureWorkloadSqlRecoveryPoint(AzureWorkloadSqlRecoveryPoint),
     GenericRecoveryPoint(GenericRecoveryPoint),
     #[serde(rename = "IaasVMRecoveryPoint")]
     IaasVmRecoveryPoint(IaasVmRecoveryPoint),
@@ -4861,7 +4880,16 @@ impl RestoreFileSpecs {
 #[serde(tag = "objectType")]
 pub enum RestoreRequestUnion {
     AzureFileShareRestoreRequest(AzureFileShareRestoreRequest),
+    AzureWorkloadPointInTimeRestoreRequest(AzureWorkloadPointInTimeRestoreRequest),
     AzureWorkloadRestoreRequest(AzureWorkloadRestoreRequest),
+    #[serde(rename = "AzureWorkloadSAPHanaPointInTimeRestoreRequest")]
+    AzureWorkloadSapHanaPointInTimeRestoreRequest(AzureWorkloadSapHanaPointInTimeRestoreRequest),
+    #[serde(rename = "AzureWorkloadSAPHanaRestoreRequest")]
+    AzureWorkloadSapHanaRestoreRequest(AzureWorkloadSapHanaRestoreRequest),
+    #[serde(rename = "AzureWorkloadSQLPointInTimeRestoreRequest")]
+    AzureWorkloadSqlPointInTimeRestoreRequest(AzureWorkloadSqlPointInTimeRestoreRequest),
+    #[serde(rename = "AzureWorkloadSQLRestoreRequest")]
+    AzureWorkloadSqlRestoreRequest(AzureWorkloadSqlRestoreRequest),
     #[serde(rename = "IaasVMRestoreRequest")]
     IaasVmRestoreRequest(IaasVmRestoreRequest),
 }

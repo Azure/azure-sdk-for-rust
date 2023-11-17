@@ -7034,13 +7034,68 @@ impl FabricEvent {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "Kind")]
 pub enum FabricEventUnion {
+    ApplicationContainerInstanceExited(ApplicationContainerInstanceExitedEvent),
+    ApplicationCreated(ApplicationCreatedEvent),
+    ApplicationDeleted(ApplicationDeletedEvent),
     ApplicationEvent(ApplicationEvent),
+    ApplicationHealthReportExpired(ApplicationHealthReportExpiredEvent),
+    ApplicationNewHealthReport(ApplicationNewHealthReportEvent),
+    ApplicationProcessExited(ApplicationProcessExitedEvent),
+    ApplicationUpgradeCompleted(ApplicationUpgradeCompletedEvent),
+    ApplicationUpgradeDomainCompleted(ApplicationUpgradeDomainCompletedEvent),
+    ApplicationUpgradeRollbackCompleted(ApplicationUpgradeRollbackCompletedEvent),
+    ApplicationUpgradeRollbackStarted(ApplicationUpgradeRollbackStartedEvent),
+    ApplicationUpgradeStarted(ApplicationUpgradeStartedEvent),
+    ChaosCodePackageRestartScheduled(ChaosCodePackageRestartScheduledEvent),
+    ChaosNodeRestartScheduled(ChaosNodeRestartScheduledEvent),
+    ChaosPartitionPrimaryMoveScheduled(ChaosPartitionPrimaryMoveScheduledEvent),
+    ChaosPartitionSecondaryMoveScheduled(ChaosPartitionSecondaryMoveScheduledEvent),
+    ChaosReplicaRemovalScheduled(ChaosReplicaRemovalScheduledEvent),
+    ChaosReplicaRestartScheduled(ChaosReplicaRestartScheduledEvent),
+    ChaosStarted(ChaosStartedEvent),
+    ChaosStopped(ChaosStoppedEvent),
     ClusterEvent(ClusterEvent),
+    ClusterHealthReportExpired(ClusterHealthReportExpiredEvent),
+    ClusterNewHealthReport(ClusterNewHealthReportEvent),
+    ClusterUpgradeCompleted(ClusterUpgradeCompletedEvent),
+    ClusterUpgradeDomainCompleted(ClusterUpgradeDomainCompletedEvent),
+    ClusterUpgradeRollbackCompleted(ClusterUpgradeRollbackCompletedEvent),
+    ClusterUpgradeRollbackStarted(ClusterUpgradeRollbackStartedEvent),
+    ClusterUpgradeStarted(ClusterUpgradeStartedEvent),
     ContainerInstanceEvent(ContainerInstanceEvent),
+    DeployedApplicationHealthReportExpired(DeployedApplicationHealthReportExpiredEvent),
+    DeployedApplicationNewHealthReport(DeployedApplicationNewHealthReportEvent),
+    DeployedServicePackageHealthReportExpired(DeployedServicePackageHealthReportExpiredEvent),
+    DeployedServicePackageNewHealthReport(DeployedServicePackageNewHealthReportEvent),
+    NodeAborted(NodeAbortedEvent),
+    NodeAddedToCluster(NodeAddedToClusterEvent),
+    NodeClosed(NodeClosedEvent),
+    NodeDeactivateCompleted(NodeDeactivateCompletedEvent),
+    NodeDeactivateStarted(NodeDeactivateStartedEvent),
+    NodeDown(NodeDownEvent),
     NodeEvent(NodeEvent),
+    NodeHealthReportExpired(NodeHealthReportExpiredEvent),
+    NodeNewHealthReport(NodeNewHealthReportEvent),
+    NodeOpenFailed(NodeOpenFailedEvent),
+    NodeOpenSucceeded(NodeOpenSucceededEvent),
+    NodeRemovedFromCluster(NodeRemovedFromClusterEvent),
+    NodeUp(NodeUpEvent),
+    PartitionAnalysisEvent(PartitionAnalysisEvent),
     PartitionEvent(PartitionEvent),
+    PartitionHealthReportExpired(PartitionHealthReportExpiredEvent),
+    PartitionNewHealthReport(PartitionNewHealthReportEvent),
+    PartitionPrimaryMoveAnalysis(PartitionPrimaryMoveAnalysisEvent),
+    PartitionReconfigured(PartitionReconfiguredEvent),
     ReplicaEvent(ReplicaEvent),
+    ServiceCreated(ServiceCreatedEvent),
+    ServiceDeleted(ServiceDeletedEvent),
     ServiceEvent(ServiceEvent),
+    ServiceHealthReportExpired(ServiceHealthReportExpiredEvent),
+    ServiceNewHealthReport(ServiceNewHealthReportEvent),
+    StatefulReplicaHealthReportExpired(StatefulReplicaHealthReportExpiredEvent),
+    StatefulReplicaNewHealthReport(StatefulReplicaNewHealthReportEvent),
+    StatelessReplicaHealthReportExpired(StatelessReplicaHealthReportExpiredEvent),
+    StatelessReplicaNewHealthReport(StatelessReplicaNewHealthReportEvent),
 }
 #[doc = "The kind of FabricEvent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -8926,7 +8981,9 @@ impl NetworkResourceProperties {
 #[doc = "The type of a Service Fabric container network."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
-pub enum NetworkResourcePropertiesBaseUnion {}
+pub enum NetworkResourcePropertiesBaseUnion {
+    Local(LocalNetworkResourceProperties),
+}
 pub type NextUpgradeDomain = String;
 #[doc = "Node Aborted event."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -13110,6 +13167,8 @@ impl ReplicatorQueueStatus {
 #[serde(tag = "Kind")]
 pub enum ReplicatorStatusUnion {
     Primary(PrimaryReplicatorStatus),
+    ActiveSecondary(SecondaryActiveReplicatorStatus),
+    IdleSecondary(SecondaryIdleReplicatorStatus),
 }
 #[doc = "Endpoint of a resolved service partition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -13664,7 +13723,13 @@ impl RunToCompletionExecutionPolicy {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "Kind")]
 pub enum SafetyCheckUnion {
+    EnsureAvailability(EnsureAvailabilitySafetyCheck),
+    EnsurePartitionQuorum(EnsurePartitionQuorumSafetyCheck),
     EnsureSeedNodeQuorum(SeedNodeSafetyCheck),
+    WaitForInbuildReplica(WaitForInbuildReplicaSafetyCheck),
+    WaitForPrimaryPlacement(WaitForPrimaryPlacementSafetyCheck),
+    WaitForPrimarySwap(WaitForPrimarySwapSafetyCheck),
+    WaitForReconfiguration(WaitForReconfigurationSafetyCheck),
 }
 pub type SafetyCheckInfoList = Vec<SafetyCheckWrapper>;
 #[doc = "The kind of safety check performed by service fabric before continuing with the operations. These checks ensure the availability of the service and the reliability of the state. Following are the kinds of safety checks."]
@@ -13987,7 +14052,10 @@ impl SecretResourceProperties {
 #[doc = "Describes the kind of secret."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
-pub enum SecretResourcePropertiesBaseUnion {}
+pub enum SecretResourcePropertiesBaseUnion {
+    #[serde(rename = "inlinedValue")]
+    InlinedValue(InlinedValueSecretResourceProperties),
+}
 #[doc = "This type represents the unencrypted value of the secret."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretValue {

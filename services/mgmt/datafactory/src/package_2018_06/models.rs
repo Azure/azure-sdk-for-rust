@@ -147,9 +147,57 @@ pub mod activity {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type")]
 pub enum ActivityUnion {
+    AppendVariable(AppendVariableActivity),
+    AzureDataExplorerCommand(AzureDataExplorerCommandActivity),
+    AzureFunctionActivity(AzureFunctionActivity),
+    #[serde(rename = "AzureMLBatchExecution")]
+    AzureMlBatchExecution(AzureMlBatchExecutionActivity),
+    #[serde(rename = "AzureMLExecutePipeline")]
+    AzureMlExecutePipeline(AzureMlExecutePipelineActivity),
+    #[serde(rename = "AzureMLUpdateResource")]
+    AzureMlUpdateResource(AzureMlUpdateResourceActivity),
     Container(ControlActivity),
+    Copy(CopyActivity),
+    Custom(CustomActivity),
+    #[serde(rename = "DataLakeAnalyticsU-SQL")]
+    DataLakeAnalyticsUSql(DataLakeAnalyticsUsqlActivity),
+    DatabricksNotebook(DatabricksNotebookActivity),
+    DatabricksSparkJar(DatabricksSparkJarActivity),
+    DatabricksSparkPython(DatabricksSparkPythonActivity),
+    Delete(DeleteActivity),
+    ExecuteDataFlow(ExecuteDataFlowActivity),
+    ExecutePipeline(ExecutePipelineActivity),
+    #[serde(rename = "ExecuteSSISPackage")]
+    ExecuteSsisPackage(ExecuteSsisPackageActivity),
     ExecuteWranglingDataflow(ExecuteWranglingDataflowActivity),
     Execution(ExecutionActivity),
+    Fail(FailActivity),
+    Filter(FilterActivity),
+    ForEach(ForEachActivity),
+    GetMetadata(GetMetadataActivity),
+    #[serde(rename = "HDInsightHive")]
+    HdInsightHive(HdInsightHiveActivity),
+    #[serde(rename = "HDInsightMapReduce")]
+    HdInsightMapReduce(HdInsightMapReduceActivity),
+    #[serde(rename = "HDInsightPig")]
+    HdInsightPig(HdInsightPigActivity),
+    #[serde(rename = "HDInsightSpark")]
+    HdInsightSpark(HdInsightSparkActivity),
+    #[serde(rename = "HDInsightStreaming")]
+    HdInsightStreaming(HdInsightStreamingActivity),
+    IfCondition(IfConditionActivity),
+    Lookup(LookupActivity),
+    Script(ScriptActivity),
+    SetVariable(SetVariableActivity),
+    SqlServerStoredProcedure(SqlServerStoredProcedureActivity),
+    Switch(SwitchActivity),
+    SynapseNotebook(SynapseNotebookActivity),
+    SparkJob(SynapseSparkJobDefinitionActivity),
+    Until(UntilActivity),
+    Validation(ValidationActivity),
+    Wait(WaitActivity),
+    WebActivity(WebActivity),
+    WebHook(WebHookActivity),
 }
 #[doc = "Activity dependency information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
