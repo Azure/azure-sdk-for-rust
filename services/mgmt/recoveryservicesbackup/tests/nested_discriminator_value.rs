@@ -11,8 +11,11 @@ fn test_deserialization_of_nested_all_of_property() -> Result<()> {
     let list: WorkloadProtectableItemResourceList = serde_json::from_slice(&bytes)?;
 
     let item = list.value.first().expect("There should be at least one item in the list");
-    let properties= item.properties.as_ref().expect("The properties should be present");
-    assert!(matches!(properties, &WorkloadProtectableItemUnion::MicrosoftClassicComputeVirtualMachines(_)));
+    let properties = item.properties.as_ref().expect("The properties should be present");
+    assert!(matches!(
+        properties,
+        &WorkloadProtectableItemUnion::MicrosoftClassicComputeVirtualMachines(_)
+    ));
 
     Ok(())
 }
