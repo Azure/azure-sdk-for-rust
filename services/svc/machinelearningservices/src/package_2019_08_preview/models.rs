@@ -1354,6 +1354,8 @@ pub mod create_service_request {
 pub enum CreateServiceRequestUnion {
     #[serde(rename = "ACI")]
     Aci(AciServiceCreateRequest),
+    #[serde(rename = "AKS")]
+    Aks(AksServiceCreateRequest),
     #[serde(rename = "AKSENDPOINT")]
     Aksendpoint(CreateEndpointRequest),
     #[serde(rename = "IOT")]
@@ -3667,6 +3669,8 @@ pub enum ServiceResponseBaseUnion {
     Aci(AciServiceResponse),
     #[serde(rename = "AKSENDPOINT")]
     Aksendpoint(AksEndpointResponse),
+    #[serde(rename = "AKS")]
+    Aks(AksServiceResponse),
     #[serde(rename = "AMLCOMPUTE")]
     Amlcompute(BatchServiceResponse),
     #[serde(rename = "IOT")]

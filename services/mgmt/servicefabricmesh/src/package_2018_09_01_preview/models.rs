@@ -1620,7 +1620,9 @@ impl NetworkResourcePropertiesBase {
 #[doc = "The type of a Service Fabric container network."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
-pub enum NetworkResourcePropertiesBaseUnion {}
+pub enum NetworkResourcePropertiesBaseUnion {
+    Local(LocalNetworkResourceProperties),
+}
 #[doc = "The operation system required by the code in service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "OperatingSystemType")]
@@ -1975,7 +1977,10 @@ impl SecretResourcePropertiesBase {
 #[doc = "Describes the kind of secret."]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind")]
-pub enum SecretResourcePropertiesBaseUnion {}
+pub enum SecretResourcePropertiesBaseUnion {
+    #[serde(rename = "inlinedValue")]
+    InlinedValue(InlinedValueSecretResourceProperties),
+}
 #[doc = "This type represents the unencrypted value of the secret."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SecretValue {
