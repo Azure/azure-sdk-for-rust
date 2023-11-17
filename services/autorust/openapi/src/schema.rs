@@ -71,7 +71,7 @@ pub enum AdditionalProperties {
 /// common fields in both Schema Object & Parameter Object
 /// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#schemaObject
 /// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#parameter-object
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct SchemaCommon {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -137,7 +137,7 @@ pub struct SchemaCommon {
 }
 
 /// https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#schemaObject
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Schema {
     #[serde(flatten)]
