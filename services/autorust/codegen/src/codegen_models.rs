@@ -587,8 +587,8 @@ impl UnionCode {
     ) -> Result<Self> {
         let mut values = Vec::new();
         for (child_ref_key, child_schema) in all_schemas {
-            if Self::breadth_first_search_all_of(ref_key, child_schema) {
-                if let Some(tag) = child_schema.discriminator_value() {
+            if let Some(tag) = child_schema.discriminator_value() {
+                if Self::breadth_first_search_all_of(ref_key, child_schema) {
                     let name = tag.to_camel_case_ident()?;
                     let mut type_name = TypeNameCode::from(child_ref_key.name.to_camel_case_ident()?);
                     cg.set_if_union_type(&mut type_name);
