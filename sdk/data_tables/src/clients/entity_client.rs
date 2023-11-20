@@ -13,13 +13,13 @@ impl EntityClient {
     pub(crate) fn new<RK: Into<String>>(
         partition_key_client: PartitionKeyClient,
         row_key: RK,
-    ) -> azure_core::Result<Self> {
+    ) -> Self {
         let row_key = row_key.into();
 
-        Ok(Self {
+        Self {
             partition_key_client,
             row_key,
-        })
+        }
     }
 
     pub fn row_key(&self) -> &str {
@@ -102,14 +102,12 @@ impl EntityClient {
     }
 
     pub(crate) fn finalize_request(
-        &self,
         url: Url,
         method: Method,
         headers: Headers,
         request_body: Option<Body>,
     ) -> azure_core::Result<Request> {
-        self.partition_key_client
-            .finalize_request(url, method, headers, request_body)
+        PartitionKeyClient::finalize_request(url, method, headers, request_body)
     }
 
     pub(crate) async fn send(
@@ -170,8 +168,7 @@ mod integration_tests {
 
         let entity_client = table
             .partition_key_client(&entity.city)
-            .entity_client(&entity.surname)
-            .expect("an entity client");
+            .entity_client(&entity.surname);
 
         entity_client
             .update(&entity, IfMatchCondition::Any)
@@ -222,8 +219,7 @@ mod integration_tests {
 
         let entity_client = table
             .partition_key_client(&entity.city)
-            .entity_client(&entity.surname)
-            .expect("an entity client");
+            .entity_client(&entity.surname);
 
         entity_client
             .merge(&entity2, IfMatchCondition::Any)
@@ -268,8 +264,7 @@ mod integration_tests {
 
         let entity_client = table
             .partition_key_client(&entity.city)
-            .entity_client(&entity.surname)
-            .expect("an entity client");
+            .entity_client(&entity.surname);
         entity_client
             .insert_or_replace(&entity)
             .expect("entity could not be serialized")
@@ -308,8 +303,7 @@ mod integration_tests {
 
         let entity_client = table
             .partition_key_client(&entity.city)
-            .entity_client(&entity.surname)
-            .expect("an entity client");
+            .entity_client(&entity.surname);
         entity_client
             .insert_or_merge(&entity)
             .expect("entity could not be serialized")

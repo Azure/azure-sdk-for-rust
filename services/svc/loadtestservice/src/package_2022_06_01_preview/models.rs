@@ -260,7 +260,7 @@ pub struct FileUrlList {
 impl azure_core::Continuable for FileUrlList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FileUrlList {
@@ -616,7 +616,7 @@ pub struct TestModelResourceList {
 impl azure_core::Continuable for TestModelResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestModelResourceList {
@@ -716,7 +716,7 @@ pub struct TestRunModelResourceList {
 impl azure_core::Continuable for TestRunModelResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestRunModelResourceList {

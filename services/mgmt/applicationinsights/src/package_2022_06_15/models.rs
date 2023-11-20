@@ -679,7 +679,7 @@ pub struct ApplicationInsightsComponentListResult {
 impl azure_core::Continuable for ApplicationInsightsComponentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationInsightsComponentListResult {
@@ -1732,7 +1732,7 @@ pub struct MyWorkbooksListResult {
 impl azure_core::Continuable for MyWorkbooksListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MyWorkbooksListResult {
@@ -1814,7 +1814,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -2857,7 +2857,7 @@ pub struct WorkbooksListResult {
 impl azure_core::Continuable for WorkbooksListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkbooksListResult {
@@ -2989,7 +2989,7 @@ pub struct WebTestListResult {
 impl azure_core::Continuable for WebTestListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WebTestListResult {

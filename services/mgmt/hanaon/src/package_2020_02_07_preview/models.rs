@@ -131,7 +131,7 @@ pub struct ProviderInstanceListResult {
 impl azure_core::Continuable for ProviderInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderInstanceListResult {
@@ -273,7 +273,7 @@ pub struct SapMonitorListResult {
 impl azure_core::Continuable for SapMonitorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SapMonitorListResult {

@@ -38,7 +38,7 @@ struct UpdateRequest {
 }
 
 impl UpdateSecretBuilder {
-    pub fn into_future(mut self) -> UpdateSecret {
+    pub fn into_future(self) -> UpdateSecret {
         Box::pin(async move {
             let mut uri = self.client.keyvault_client.vault_url.clone();
             let version = self.version.unwrap_or_default();
@@ -58,16 +58,12 @@ impl UpdateSecretBuilder {
             let body = serde_json::to_string(&request)?;
 
             let headers = Headers::new();
-            let mut request = self.client.keyvault_client.finalize_request(
-                uri,
-                Method::Patch,
-                headers,
-                Some(body.into()),
-            )?;
+            let mut request =
+                KeyvaultClient::finalize_request(uri, Method::Patch, headers, Some(body.into()));
 
             self.client
                 .keyvault_client
-                .send(&mut self.context, &mut request)
+                .send(&self.context, &mut request)
                 .await?;
 
             Ok(())

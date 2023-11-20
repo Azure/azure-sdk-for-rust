@@ -266,8 +266,6 @@ impl Serialize for ConfigurationType {
 #[doc = "Gets or sets the file share configuration where the transport directory fileshare is created and mounted as a part of the create infra flow. Please pre-create the resource group you intend to place the transport directory in. The storage account and fileshare will be auto-created by the ACSS and doesn’t need to pre-created."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CreateAndMountFileShareConfiguration {
-    #[serde(flatten)]
-    pub file_share_configuration: FileShareConfiguration,
     #[doc = "The name of transport file share resource group. This should be pre created by the customer. The app rg is used in case of missing input."]
     #[serde(rename = "resourceGroup", default, skip_serializing_if = "Option::is_none")]
     pub resource_group: Option<String>,
@@ -276,9 +274,8 @@ pub struct CreateAndMountFileShareConfiguration {
     pub storage_account_name: Option<String>,
 }
 impl CreateAndMountFileShareConfiguration {
-    pub fn new(file_share_configuration: FileShareConfiguration) -> Self {
+    pub fn new() -> Self {
         Self {
-            file_share_configuration,
             resource_group: None,
             storage_account_name: None,
         }
@@ -287,8 +284,6 @@ impl CreateAndMountFileShareConfiguration {
 #[doc = "Gets or sets the DB2 provider properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Db2ProviderInstanceProperties {
-    #[serde(flatten)]
-    pub provider_specific_properties: ProviderSpecificProperties,
     #[doc = "Gets or sets the target virtual machine name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hostname: Option<String>,
@@ -318,9 +313,8 @@ pub struct Db2ProviderInstanceProperties {
     pub ssl_certificate_uri: Option<String>,
 }
 impl Db2ProviderInstanceProperties {
-    pub fn new(provider_specific_properties: ProviderSpecificProperties) -> Self {
+    pub fn new() -> Self {
         Self {
-            provider_specific_properties,
             hostname: None,
             db_name: None,
             db_port: None,
@@ -461,22 +455,19 @@ impl DeployerVmPackages {
 #[doc = "Deployment Configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentConfiguration {
-    #[serde(flatten)]
-    pub sap_configuration: SapConfiguration,
     #[doc = "The geo-location where the SAP system is to be created."]
     #[serde(rename = "appLocation", default, skip_serializing_if = "Option::is_none")]
     pub app_location: Option<String>,
     #[doc = "Deploy SAP Infrastructure Details."]
     #[serde(rename = "infrastructureConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub infrastructure_configuration: Option<InfrastructureConfiguration>,
+    pub infrastructure_configuration: Option<InfrastructureConfigurationUnion>,
     #[doc = "The SAP Software configuration Input."]
     #[serde(rename = "softwareConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub software_configuration: Option<SoftwareConfiguration>,
+    pub software_configuration: Option<SoftwareConfigurationUnion>,
 }
 impl DeploymentConfiguration {
-    pub fn new(sap_configuration: SapConfiguration) -> Self {
+    pub fn new() -> Self {
         Self {
-            sap_configuration,
             app_location: None,
             infrastructure_configuration: None,
             software_configuration: None,
@@ -523,25 +514,22 @@ impl Serialize for DeploymentType {
 #[doc = "Deployment along with OS Configuration."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeploymentWithOsConfiguration {
-    #[serde(flatten)]
-    pub sap_configuration: SapConfiguration,
     #[doc = "The geo-location where the SAP system is to be created."]
     #[serde(rename = "appLocation", default, skip_serializing_if = "Option::is_none")]
     pub app_location: Option<String>,
     #[doc = "Deploy SAP Infrastructure Details."]
     #[serde(rename = "infrastructureConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub infrastructure_configuration: Option<InfrastructureConfiguration>,
+    pub infrastructure_configuration: Option<InfrastructureConfigurationUnion>,
     #[doc = "The SAP Software configuration Input."]
     #[serde(rename = "softwareConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub software_configuration: Option<SoftwareConfiguration>,
+    pub software_configuration: Option<SoftwareConfigurationUnion>,
     #[doc = "Defines the OS and SAP Configurations for Deployment"]
     #[serde(rename = "osSapConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub os_sap_configuration: Option<OsSapConfiguration>,
 }
 impl DeploymentWithOsConfiguration {
-    pub fn new(sap_configuration: SapConfiguration) -> Self {
+    pub fn new() -> Self {
         Self {
-            sap_configuration,
             app_location: None,
             infrastructure_configuration: None,
             software_configuration: None,
@@ -552,8 +540,6 @@ impl DeploymentWithOsConfiguration {
 #[doc = "Discovery Details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiscoveryConfiguration {
-    #[serde(flatten)]
-    pub sap_configuration: SapConfiguration,
     #[doc = "The virtual machine ID of the Central Server."]
     #[serde(rename = "centralServerVmId", default, skip_serializing_if = "Option::is_none")]
     pub central_server_vm_id: Option<String>,
@@ -565,9 +551,8 @@ pub struct DiscoveryConfiguration {
     pub app_location: Option<String>,
 }
 impl DiscoveryConfiguration {
-    pub fn new(sap_configuration: SapConfiguration) -> Self {
+    pub fn new() -> Self {
         Self {
-            sap_configuration,
             central_server_vm_id: None,
             managed_rg_storage_account_name: None,
             app_location: None,
@@ -860,7 +845,7 @@ pub mod error {
     pub struct InnerError {
         #[doc = "Standard error object."]
         #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-        pub inner_error: Box<Option<Error>>,
+        pub inner_error: Option<Box<Error>>,
     }
     impl InnerError {
         pub fn new() -> Self {
@@ -959,31 +944,24 @@ impl ErrorResponse {
 #[doc = "The SAP Software configuration Input when the software is installed externally outside the service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExternalInstallationSoftwareConfiguration {
-    #[serde(flatten)]
-    pub software_configuration: SoftwareConfiguration,
     #[doc = "The resource ID of the virtual machine containing the central server instance."]
     #[serde(rename = "centralServerVmId", default, skip_serializing_if = "Option::is_none")]
     pub central_server_vm_id: Option<String>,
 }
 impl ExternalInstallationSoftwareConfiguration {
-    pub fn new(software_configuration: SoftwareConfiguration) -> Self {
+    pub fn new() -> Self {
         Self {
-            software_configuration,
             central_server_vm_id: None,
         }
     }
 }
-#[doc = "File Share configuration details, populated with information on storage configuration mounted on the VIS. The createAndMount option is selected in case of missing input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct FileShareConfiguration {
-    #[doc = "The type of file share config."]
-    #[serde(rename = "configurationType")]
-    pub configuration_type: FileShareConfigurationType,
-}
-impl FileShareConfiguration {
-    pub fn new(configuration_type: FileShareConfigurationType) -> Self {
-        Self { configuration_type }
-    }
+#[doc = "The type of file share config."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "configurationType")]
+pub enum FileShareConfigurationUnion {
+    CreateAndMount(CreateAndMountFileShareConfiguration),
+    Mount(MountFileShareConfiguration),
+    Skip(SkipFileShareConfiguration),
 }
 #[doc = "The type of file share config."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1042,8 +1020,6 @@ impl GatewayServerProperties {
 #[doc = "Gets or sets the provider properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HanaDbProviderInstanceProperties {
-    #[serde(flatten)]
-    pub provider_specific_properties: ProviderSpecificProperties,
     #[doc = "Gets or sets the target virtual machine size."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hostname: Option<String>,
@@ -1079,9 +1055,8 @@ pub struct HanaDbProviderInstanceProperties {
     pub sap_sid: Option<String>,
 }
 impl HanaDbProviderInstanceProperties {
-    pub fn new(provider_specific_properties: ProviderSpecificProperties) -> Self {
+    pub fn new() -> Self {
         Self {
-            provider_specific_properties,
             hostname: None,
             db_name: None,
             sql_port: None,
@@ -1228,26 +1203,25 @@ impl ImageReference {
 #[doc = "Deploy SAP Infrastructure Details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct InfrastructureConfiguration {
-    #[doc = "The type of SAP deployment, single server or Three tier."]
-    #[serde(rename = "deploymentType")]
-    pub deployment_type: DeploymentType,
     #[doc = "The application resource group where SAP system resources will be deployed."]
     #[serde(rename = "appResourceGroup")]
     pub app_resource_group: String,
 }
 impl InfrastructureConfiguration {
-    pub fn new(deployment_type: DeploymentType, app_resource_group: String) -> Self {
-        Self {
-            deployment_type,
-            app_resource_group,
-        }
+    pub fn new(app_resource_group: String) -> Self {
+        Self { app_resource_group }
     }
+}
+#[doc = "The type of SAP deployment, single server or Three tier."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "deploymentType")]
+pub enum InfrastructureConfigurationUnion {
+    SingleServer(SingleServerConfiguration),
+    ThreeTier(ThreeTierConfiguration),
 }
 #[doc = "Specifies the Linux operating system settings on the virtual machine. <br><br>For a list of supported Linux distributions, see [Linux on Azure-Endorsed Distributions](https://docs.microsoft.com/azure/virtual-machines/linux/endorsed-distros)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinuxConfiguration {
-    #[serde(flatten)]
-    pub os_configuration: OsConfiguration,
     #[doc = "Specifies whether password authentication should be disabled."]
     #[serde(rename = "disablePasswordAuthentication", default, skip_serializing_if = "Option::is_none")]
     pub disable_password_authentication: Option<bool>,
@@ -1259,9 +1233,8 @@ pub struct LinuxConfiguration {
     pub ssh_key_pair: Option<SshKeyPair>,
 }
 impl LinuxConfiguration {
-    pub fn new(os_configuration: OsConfiguration) -> Self {
+    pub fn new() -> Self {
         Self {
-            os_configuration,
             disable_password_authentication: None,
             ssh: None,
             ssh_key_pair: None,
@@ -1432,7 +1405,7 @@ pub struct MonitorListResult {
 impl azure_core::Continuable for MonitorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MonitorListResult {
@@ -1569,8 +1542,6 @@ pub mod monitor_properties {
 #[doc = "Gets or sets the file share configuration where the transport directory fileshare already exists, and user wishes to mount the fileshare as a part of the create infra flow."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MountFileShareConfiguration {
-    #[serde(flatten)]
-    pub file_share_configuration: FileShareConfiguration,
     #[doc = "The fileshare resource ID"]
     pub id: String,
     #[doc = "The private endpoint resource ID"]
@@ -1578,19 +1549,13 @@ pub struct MountFileShareConfiguration {
     pub private_endpoint_id: String,
 }
 impl MountFileShareConfiguration {
-    pub fn new(file_share_configuration: FileShareConfiguration, id: String, private_endpoint_id: String) -> Self {
-        Self {
-            file_share_configuration,
-            id,
-            private_endpoint_id,
-        }
+    pub fn new(id: String, private_endpoint_id: String) -> Self {
+        Self { id, private_endpoint_id }
     }
 }
 #[doc = "Gets or sets the SQL server provider properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MsSqlServerProviderInstanceProperties {
-    #[serde(flatten)]
-    pub provider_specific_properties: ProviderSpecificProperties,
     #[doc = "Gets or sets the SQL server host name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub hostname: Option<String>,
@@ -1617,9 +1582,8 @@ pub struct MsSqlServerProviderInstanceProperties {
     pub ssl_certificate_uri: Option<String>,
 }
 impl MsSqlServerProviderInstanceProperties {
-    pub fn new(provider_specific_properties: ProviderSpecificProperties) -> Self {
+    pub fn new() -> Self {
         Self {
-            provider_specific_properties,
             hostname: None,
             db_port: None,
             db_username: None,
@@ -1690,57 +1654,12 @@ impl NetworkInterfaceResourceNames {
         Self::default()
     }
 }
-#[doc = "Defines the OS configuration."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct OsConfiguration {
-    #[doc = "The OS Type"]
-    #[serde(rename = "osType")]
-    pub os_type: os_configuration::OsType,
-}
-impl OsConfiguration {
-    pub fn new(os_type: os_configuration::OsType) -> Self {
-        Self { os_type }
-    }
-}
-pub mod os_configuration {
-    use super::*;
-    #[doc = "The OS Type"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "OsType")]
-    pub enum OsType {
-        Linux,
-        Windows,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for OsType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for OsType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for OsType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Linux => serializer.serialize_unit_variant("OsType", 0u32, "Linux"),
-                Self::Windows => serializer.serialize_unit_variant("OsType", 1u32, "Windows"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "The OS Type"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "osType")]
+pub enum OsConfigurationUnion {
+    Linux(LinuxConfiguration),
+    Windows(WindowsConfiguration),
 }
 #[doc = "Specifies the operating system settings for the virtual machine. Some of the settings cannot be changed once VM is provisioned."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1753,7 +1672,7 @@ pub struct OsProfile {
     pub admin_password: Option<String>,
     #[doc = "Defines the OS configuration."]
     #[serde(rename = "osConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub os_configuration: Option<OsConfiguration>,
+    pub os_configuration: Option<OsConfigurationUnion>,
 }
 impl OsProfile {
     pub fn new() -> Self {
@@ -1902,7 +1821,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -2139,8 +2058,6 @@ impl OsSapConfiguration {
 #[doc = "Gets or sets the PrometheusHaCluster provider properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrometheusHaClusterProviderInstanceProperties {
-    #[serde(flatten)]
-    pub provider_specific_properties: ProviderSpecificProperties,
     #[doc = "URL of the Node Exporter endpoint."]
     #[serde(rename = "prometheusUrl", default, skip_serializing_if = "Option::is_none")]
     pub prometheus_url: Option<String>,
@@ -2161,9 +2078,8 @@ pub struct PrometheusHaClusterProviderInstanceProperties {
     pub ssl_certificate_uri: Option<String>,
 }
 impl PrometheusHaClusterProviderInstanceProperties {
-    pub fn new(provider_specific_properties: ProviderSpecificProperties) -> Self {
+    pub fn new() -> Self {
         Self {
-            provider_specific_properties,
             prometheus_url: None,
             hostname: None,
             sid: None,
@@ -2176,8 +2092,6 @@ impl PrometheusHaClusterProviderInstanceProperties {
 #[doc = "Gets or sets the PrometheusOS provider properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PrometheusOsProviderInstanceProperties {
-    #[serde(flatten)]
-    pub provider_specific_properties: ProviderSpecificProperties,
     #[doc = "URL of the Node Exporter endpoint"]
     #[serde(rename = "prometheusUrl", default, skip_serializing_if = "Option::is_none")]
     pub prometheus_url: Option<String>,
@@ -2192,9 +2106,8 @@ pub struct PrometheusOsProviderInstanceProperties {
     pub sap_sid: Option<String>,
 }
 impl PrometheusOsProviderInstanceProperties {
-    pub fn new(provider_specific_properties: ProviderSpecificProperties) -> Self {
+    pub fn new() -> Self {
         Self {
-            provider_specific_properties,
             prometheus_url: None,
             ssl_preference: None,
             ssl_certificate_uri: None,
@@ -2236,7 +2149,7 @@ pub struct ProviderInstanceListResult {
 impl azure_core::Continuable for ProviderInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderInstanceListResult {
@@ -2255,7 +2168,7 @@ pub struct ProviderInstanceProperties {
     pub errors: Option<serde_json::Value>,
     #[doc = "Gets or sets the provider specific properties."]
     #[serde(rename = "providerSettings", default, skip_serializing_if = "Option::is_none")]
-    pub provider_settings: Option<ProviderSpecificProperties>,
+    pub provider_settings: Option<ProviderSpecificPropertiesUnion>,
 }
 impl ProviderInstanceProperties {
     pub fn new() -> Self {
@@ -2312,17 +2225,17 @@ pub mod provider_instance_properties {
         }
     }
 }
-#[doc = "Gets or sets the provider specific properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProviderSpecificProperties {
-    #[doc = "The provider type. For example, the value can be SapHana."]
-    #[serde(rename = "providerType")]
-    pub provider_type: String,
-}
-impl ProviderSpecificProperties {
-    pub fn new(provider_type: String) -> Self {
-        Self { provider_type }
-    }
+#[doc = "The provider type. For example, the value can be SapHana."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "providerType")]
+pub enum ProviderSpecificPropertiesUnion {
+    Db2(Db2ProviderInstanceProperties),
+    SapHana(HanaDbProviderInstanceProperties),
+    MsSqlServer(MsSqlServerProviderInstanceProperties),
+    PrometheusHaCluster(PrometheusHaClusterProviderInstanceProperties),
+    #[serde(rename = "PrometheusOS")]
+    PrometheusOs(PrometheusOsProviderInstanceProperties),
+    SapNetWeaver(SapNetWeaverProviderInstanceProperties),
 }
 #[doc = "Defines the provisioning states."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2433,7 +2346,7 @@ pub struct SapApplicationServerInstanceList {
 impl azure_core::Continuable for SapApplicationServerInstanceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SapApplicationServerInstanceList {
@@ -2571,7 +2484,7 @@ pub struct SapCentralInstanceList {
 impl azure_core::Continuable for SapCentralInstanceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SapCentralInstanceList {
@@ -2652,17 +2565,14 @@ impl SapCentralServerProperties {
         Self::default()
     }
 }
-#[doc = "The SAP Configuration."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SapConfiguration {
-    #[doc = "The configuration Type."]
-    #[serde(rename = "configurationType")]
-    pub configuration_type: ConfigurationType,
-}
-impl SapConfiguration {
-    pub fn new(configuration_type: ConfigurationType) -> Self {
-        Self { configuration_type }
-    }
+#[doc = "The configuration Type."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "configurationType")]
+pub enum SapConfigurationUnion {
+    Deployment(DeploymentConfiguration),
+    #[serde(rename = "DeploymentWithOSConfig")]
+    DeploymentWithOsConfig(DeploymentWithOsConfiguration),
+    Discovery(DiscoveryConfiguration),
 }
 #[doc = "Define the Database resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2698,7 +2608,7 @@ pub struct SapDatabaseInstanceList {
 impl azure_core::Continuable for SapDatabaseInstanceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SapDatabaseInstanceList {
@@ -2861,8 +2771,6 @@ impl SapDiskConfigurationsResult {
 #[doc = "The SAP Software configuration Input when the software is to be installed by service without OS Configurations"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapInstallWithoutOsConfigSoftwareConfiguration {
-    #[serde(flatten)]
-    pub software_configuration: SoftwareConfiguration,
     #[doc = "The URL to the SAP Build of Materials(BOM) file."]
     #[serde(rename = "bomUrl")]
     pub bom_url: String,
@@ -2877,14 +2785,8 @@ pub struct SapInstallWithoutOsConfigSoftwareConfiguration {
     pub high_availability_software_configuration: Option<HighAvailabilitySoftwareConfiguration>,
 }
 impl SapInstallWithoutOsConfigSoftwareConfiguration {
-    pub fn new(
-        software_configuration: SoftwareConfiguration,
-        bom_url: String,
-        sap_bits_storage_account_id: String,
-        software_version: String,
-    ) -> Self {
+    pub fn new(bom_url: String, sap_bits_storage_account_id: String, software_version: String) -> Self {
         Self {
-            software_configuration,
             bom_url,
             sap_bits_storage_account_id,
             software_version,
@@ -2985,17 +2887,12 @@ impl SapSizingRecommendationRequest {
         }
     }
 }
-#[doc = "The SAP sizing recommendation result."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SapSizingRecommendationResult {
-    #[doc = "The type of SAP deployment, single server or Three tier."]
-    #[serde(rename = "deploymentType")]
-    pub deployment_type: DeploymentType,
-}
-impl SapSizingRecommendationResult {
-    pub fn new(deployment_type: DeploymentType) -> Self {
-        Self { deployment_type }
-    }
+#[doc = "The type of SAP deployment, single server or Three tier."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "deploymentType")]
+pub enum SapSizingRecommendationResultUnion {
+    SingleServer(SingleServerRecommendationResult),
+    ThreeTier(ThreeTierRecommendationResult),
 }
 #[doc = "The SAP software installation Type."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3162,7 +3059,7 @@ pub struct SapVirtualInstanceList {
 impl azure_core::Continuable for SapVirtualInstanceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SapVirtualInstanceList {
@@ -3179,7 +3076,7 @@ pub struct SapVirtualInstanceProperties {
     #[serde(rename = "sapProduct")]
     pub sap_product: SapProductType,
     #[doc = "The SAP Configuration."]
-    pub configuration: SapConfiguration,
+    pub configuration: SapConfigurationUnion,
     #[doc = "Managed resource group configuration"]
     #[serde(rename = "managedResourceGroupConfiguration", default, skip_serializing_if = "Option::is_none")]
     pub managed_resource_group_configuration: Option<ManagedRgConfiguration>,
@@ -3200,7 +3097,7 @@ pub struct SapVirtualInstanceProperties {
     pub errors: Option<SapVirtualInstanceError>,
 }
 impl SapVirtualInstanceProperties {
-    pub fn new(environment: EnvironmentType, sap_product: SapProductType, configuration: SapConfiguration) -> Self {
+    pub fn new(environment: EnvironmentType, sap_product: SapProductType, configuration: SapConfigurationUnion) -> Self {
         Self {
             environment,
             sap_product,
@@ -3502,8 +3399,6 @@ impl SapLandscapeMonitorSidMapping {
 #[doc = "Gets or sets the provider properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SapNetWeaverProviderInstanceProperties {
-    #[serde(flatten)]
-    pub provider_specific_properties: ProviderSpecificProperties,
     #[doc = "Gets or sets the SAP System Identifier"]
     #[serde(rename = "sapSid", default, skip_serializing_if = "Option::is_none")]
     pub sap_sid: Option<String>,
@@ -3544,9 +3439,8 @@ pub struct SapNetWeaverProviderInstanceProperties {
     pub ssl_preference: Option<SslPreference>,
 }
 impl SapNetWeaverProviderInstanceProperties {
-    pub fn new(provider_specific_properties: ProviderSpecificProperties) -> Self {
+    pub fn new() -> Self {
         Self {
-            provider_specific_properties,
             sap_sid: None,
             sap_hostname: None,
             sap_instance_nr: None,
@@ -3564,8 +3458,6 @@ impl SapNetWeaverProviderInstanceProperties {
 #[doc = "The SAP Software configuration Input when the software is to be installed by service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceInitiatedSoftwareConfiguration {
-    #[serde(flatten)]
-    pub software_configuration: SoftwareConfiguration,
     #[doc = "The URL to the SAP Build of Materials(BOM) file."]
     #[serde(rename = "bomUrl")]
     pub bom_url: String,
@@ -3587,7 +3479,6 @@ pub struct ServiceInitiatedSoftwareConfiguration {
 }
 impl ServiceInitiatedSoftwareConfiguration {
     pub fn new(
-        software_configuration: SoftwareConfiguration,
         bom_url: String,
         software_version: String,
         sap_bits_storage_account_id: String,
@@ -3595,7 +3486,6 @@ impl ServiceInitiatedSoftwareConfiguration {
         ssh_private_key: String,
     ) -> Self {
         Self {
-            software_configuration,
             bom_url,
             software_version,
             sap_bits_storage_account_id,
@@ -3627,7 +3517,7 @@ pub struct SingleServerConfiguration {
     pub db_disk_configuration: Option<DiskConfiguration>,
     #[doc = "The resource-names input to specify custom names for underlying azure resources that are part of a single server SAP system."]
     #[serde(rename = "customResourceNames", default, skip_serializing_if = "Option::is_none")]
-    pub custom_resource_names: Option<SingleServerCustomResourceNames>,
+    pub custom_resource_names: Option<SingleServerCustomResourceNamesUnion>,
 }
 impl SingleServerConfiguration {
     pub fn new(
@@ -3646,76 +3536,52 @@ impl SingleServerConfiguration {
         }
     }
 }
-#[doc = "The resource-names input to specify custom names for underlying azure resources that are part of a single server SAP system."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SingleServerCustomResourceNames {
-    #[doc = "The pattern type to be used for resource naming."]
-    #[serde(rename = "namingPatternType")]
-    pub naming_pattern_type: NamingPatternType,
-}
-impl SingleServerCustomResourceNames {
-    pub fn new(naming_pattern_type: NamingPatternType) -> Self {
-        Self { naming_pattern_type }
-    }
+#[doc = "The pattern type to be used for resource naming."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "namingPatternType")]
+pub enum SingleServerCustomResourceNamesUnion {
+    FullResourceName(SingleServerFullResourceNames),
 }
 #[doc = "The resource name object where the specified values will be full resource names of the corresponding resources in a single server SAP system."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SingleServerFullResourceNames {
-    #[serde(flatten)]
-    pub single_server_custom_resource_names: SingleServerCustomResourceNames,
     #[doc = "The resource names object for virtual machine and related resources."]
     #[serde(rename = "virtualMachine", default, skip_serializing_if = "Option::is_none")]
     pub virtual_machine: Option<VirtualMachineResourceNames>,
 }
 impl SingleServerFullResourceNames {
-    pub fn new(single_server_custom_resource_names: SingleServerCustomResourceNames) -> Self {
-        Self {
-            single_server_custom_resource_names,
-            virtual_machine: None,
-        }
+    pub fn new() -> Self {
+        Self { virtual_machine: None }
     }
 }
 #[doc = "The recommended configuration for a single server SAP system."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SingleServerRecommendationResult {
-    #[serde(flatten)]
-    pub sap_sizing_recommendation_result: SapSizingRecommendationResult,
     #[doc = "The recommended VM SKU for single server."]
     #[serde(rename = "vmSku", default, skip_serializing_if = "Option::is_none")]
     pub vm_sku: Option<String>,
 }
 impl SingleServerRecommendationResult {
-    pub fn new(sap_sizing_recommendation_result: SapSizingRecommendationResult) -> Self {
-        Self {
-            sap_sizing_recommendation_result,
-            vm_sku: None,
-        }
+    pub fn new() -> Self {
+        Self { vm_sku: None }
     }
 }
 #[doc = "Gets or sets the file share configuration for scenarios where transport directory fileshare is not created or required."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SkipFileShareConfiguration {
-    #[serde(flatten)]
-    pub file_share_configuration: FileShareConfiguration,
-}
+pub struct SkipFileShareConfiguration {}
 impl SkipFileShareConfiguration {
-    pub fn new(file_share_configuration: FileShareConfiguration) -> Self {
-        Self { file_share_configuration }
+    pub fn new() -> Self {
+        Self {}
     }
 }
-#[doc = "The SAP Software configuration Input."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SoftwareConfiguration {
-    #[doc = "The SAP software installation Type."]
-    #[serde(rename = "softwareInstallationType")]
-    pub software_installation_type: SapSoftwareInstallationType,
-}
-impl SoftwareConfiguration {
-    pub fn new(software_installation_type: SapSoftwareInstallationType) -> Self {
-        Self {
-            software_installation_type,
-        }
-    }
+#[doc = "The SAP software installation Type."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "softwareInstallationType")]
+pub enum SoftwareConfigurationUnion {
+    External(ExternalInstallationSoftwareConfiguration),
+    #[serde(rename = "SAPInstallWithoutOSConfig")]
+    SapInstallWithoutOsConfig(SapInstallWithoutOsConfigSoftwareConfiguration),
+    ServiceInitiated(ServiceInitiatedSoftwareConfiguration),
 }
 #[doc = "SSH configuration for Linux based VMs running on Azure"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -3817,7 +3683,7 @@ impl StopRequest {
 pub struct StorageConfiguration {
     #[doc = "File Share configuration details, populated with information on storage configuration mounted on the VIS. The createAndMount option is selected in case of missing input."]
     #[serde(rename = "transportFileShareConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub transport_file_share_configuration: Option<FileShareConfiguration>,
+    pub transport_file_share_configuration: Option<FileShareConfigurationUnion>,
 }
 impl StorageConfiguration {
     pub fn new() -> Self {
@@ -3872,7 +3738,7 @@ pub struct ThreeTierConfiguration {
     pub storage_configuration: Option<StorageConfiguration>,
     #[doc = "The resource-names input to specify custom names for underlying azure resources that are part of a three tier SAP system."]
     #[serde(rename = "customResourceNames", default, skip_serializing_if = "Option::is_none")]
-    pub custom_resource_names: Option<ThreeTierCustomResourceNames>,
+    pub custom_resource_names: Option<ThreeTierCustomResourceNamesUnion>,
 }
 impl ThreeTierConfiguration {
     pub fn new(
@@ -3893,23 +3759,15 @@ impl ThreeTierConfiguration {
         }
     }
 }
-#[doc = "The resource-names input to specify custom names for underlying azure resources that are part of a three tier SAP system."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ThreeTierCustomResourceNames {
-    #[doc = "The pattern type to be used for resource naming."]
-    #[serde(rename = "namingPatternType")]
-    pub naming_pattern_type: NamingPatternType,
-}
-impl ThreeTierCustomResourceNames {
-    pub fn new(naming_pattern_type: NamingPatternType) -> Self {
-        Self { naming_pattern_type }
-    }
+#[doc = "The pattern type to be used for resource naming."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "namingPatternType")]
+pub enum ThreeTierCustomResourceNamesUnion {
+    FullResourceName(ThreeTierFullResourceNames),
 }
 #[doc = "The resource name object where the specified values will be full resource names of the corresponding resources in a three tier SAP system."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreeTierFullResourceNames {
-    #[serde(flatten)]
-    pub three_tier_custom_resource_names: ThreeTierCustomResourceNames,
     #[doc = "The full resource names object for central server layer resources."]
     #[serde(rename = "centralServer", default, skip_serializing_if = "Option::is_none")]
     pub central_server: Option<CentralServerFullResourceNames>,
@@ -3924,9 +3782,8 @@ pub struct ThreeTierFullResourceNames {
     pub shared_storage: Option<SharedStorageResourceNames>,
 }
 impl ThreeTierFullResourceNames {
-    pub fn new(three_tier_custom_resource_names: ThreeTierCustomResourceNames) -> Self {
+    pub fn new() -> Self {
         Self {
-            three_tier_custom_resource_names,
             central_server: None,
             application_server: None,
             database_server: None,
@@ -3937,8 +3794,6 @@ impl ThreeTierFullResourceNames {
 #[doc = "The recommended configuration for a three tier SAP system."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThreeTierRecommendationResult {
-    #[serde(flatten)]
-    pub sap_sizing_recommendation_result: SapSizingRecommendationResult,
     #[doc = "The database VM SKU."]
     #[serde(rename = "dbVmSku", default, skip_serializing_if = "Option::is_none")]
     pub db_vm_sku: Option<String>,
@@ -3959,9 +3814,8 @@ pub struct ThreeTierRecommendationResult {
     pub application_server_instance_count: Option<i64>,
 }
 impl ThreeTierRecommendationResult {
-    pub fn new(sap_sizing_recommendation_result: SapSizingRecommendationResult) -> Self {
+    pub fn new() -> Self {
         Self {
-            sap_sizing_recommendation_result,
             db_vm_sku: None,
             database_instance_count: None,
             central_server_vm_sku: None,
@@ -4151,13 +4005,10 @@ impl VirtualMachineResourceNames {
 }
 #[doc = "Specifies Windows operating system settings on the virtual machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct WindowsConfiguration {
-    #[serde(flatten)]
-    pub os_configuration: OsConfiguration,
-}
+pub struct WindowsConfiguration {}
 impl WindowsConfiguration {
-    pub fn new(os_configuration: OsConfiguration) -> Self {
-        Self { os_configuration }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "The resource names object for shared storage."]

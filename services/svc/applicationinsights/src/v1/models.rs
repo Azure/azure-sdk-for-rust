@@ -67,7 +67,7 @@ pub struct ErrorInfo {
     )]
     pub details: Vec<ErrorDetail>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Box<Option<ErrorInfo>>,
+    pub innererror: Option<Box<ErrorInfo>>,
     #[serde(rename = "additionalProperties", default, skip_serializing_if = "Option::is_none")]
     pub additional_properties: Option<serde_json::Value>,
 }
@@ -77,7 +77,7 @@ impl ErrorInfo {
             code,
             message,
             details: Vec::new(),
-            innererror: Box::new(None),
+            innererror: None,
             additional_properties: None,
         }
     }
@@ -793,7 +793,7 @@ pub struct EventsResult {
     pub ai_messages: Vec<ErrorInfo>,
     #[doc = "Events query result data."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<EventsResultData>,
+    pub value: Option<EventsResultDataUnion>,
 }
 impl EventsResult {
     pub fn new() -> Self {
@@ -806,9 +806,6 @@ pub struct EventsResultData {
     #[doc = "The unique ID for this event."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "The type of events to query; either a standard event type (`traces`, `customEvents`, `pageViews`, `requests`, `dependencies`, `exceptions`, `availabilityResults`) or `$all` to query across all event types."]
-    #[serde(rename = "type")]
-    pub type_: EventType,
     #[doc = "Count of the event"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
@@ -844,10 +841,9 @@ pub struct EventsResultData {
     pub client: Option<EventsClientInfo>,
 }
 impl EventsResultData {
-    pub fn new(type_: EventType) -> Self {
+    pub fn new() -> Self {
         Self {
             id: None,
-            type_,
             count: None,
             timestamp: None,
             custom_dimensions: None,
@@ -887,6 +883,31 @@ pub mod events_result_data {
         }
     }
 }
+#[doc = "The type of events to query; either a standard event type (`traces`, `customEvents`, `pageViews`, `requests`, `dependencies`, `exceptions`, `availabilityResults`) or `$all` to query across all event types."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum EventsResultDataUnion {
+    #[serde(rename = "availabilityResult")]
+    AvailabilityResult(EventsAvailabilityResultResult),
+    #[serde(rename = "browserTiming")]
+    BrowserTiming(EventsBrowserTimingResult),
+    #[serde(rename = "customEvent")]
+    CustomEvent(EventsCustomEventResult),
+    #[serde(rename = "customMetric")]
+    CustomMetric(EventsCustomMetricResult),
+    #[serde(rename = "dependency")]
+    Dependency(EventsDependencyResult),
+    #[serde(rename = "exception")]
+    Exception(EventsExceptionResult),
+    #[serde(rename = "pageView")]
+    PageView(EventsPageViewResult),
+    #[serde(rename = "performanceCounter")]
+    PerformanceCounter(EventsPerformanceCounterResult),
+    #[serde(rename = "request")]
+    Request(EventsRequestResult),
+    #[serde(rename = "trace")]
+    Trace(EventsTraceResult),
+}
 #[doc = "An events query result."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EventsResults {
@@ -907,7 +928,7 @@ pub struct EventsResults {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<EventsResultData>,
+    pub value: Vec<EventsResultDataUnion>,
 }
 impl EventsResults {
     pub fn new() -> Self {

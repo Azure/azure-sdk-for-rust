@@ -18,9 +18,10 @@ operation! {
 impl CreateOrReplaceUserDefinedFunctionBuilder {
     pub fn into_future(self) -> CreateOrReplaceUserDefinedFunction {
         Box::pin(async move {
-            let mut request = match self.is_create {
-                true => self.client.udfs_request(azure_core::Method::Post),
-                false => self.client.udf_request(azure_core::Method::Put),
+            let mut request = if self.is_create {
+                self.client.udfs_request(azure_core::Method::Post)
+            } else {
+                self.client.udf_request(azure_core::Method::Put)
             };
 
             if let Some(cl) = &self.consistency_level {

@@ -52,9 +52,9 @@ impl DefaultAzureCredentialBuilder {
 
     /// Create a `DefaultAzureCredential` from this builder.
     pub fn build(&self) -> DefaultAzureCredential {
-        let source_count = self.include_azure_cli_credential as usize
-            + self.include_azure_cli_credential as usize
-            + self.include_managed_identity_credential as usize;
+        let source_count = usize::from(self.include_azure_cli_credential)
+            + usize::from(self.include_azure_cli_credential)
+            + usize::from(self.include_managed_identity_credential);
         let mut sources = Vec::<DefaultAzureCredentialEnum>::with_capacity(source_count);
         if self.include_environment_credential {
             sources.push(DefaultAzureCredentialEnum::Environment(
@@ -173,7 +173,7 @@ impl TokenCredential for DefaultAzureCredential {
 fn format_aggregate_error(errors: &[Error]) -> String {
     errors
         .iter()
-        .map(|error| error.to_string())
+        .map(ToString::to_string)
         .collect::<Vec<String>>()
         .join("\n")
 }

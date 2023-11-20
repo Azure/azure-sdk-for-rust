@@ -2,10 +2,10 @@
   "status": 202,
   "headers": {
     "content-length": "0",
-    "date": "Mon, 02 May 2022 22:54:56 GMT",
+    "date": "Thu, 07 Sep 2023 19:20:13 GMT",
     "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
-    "x-ms-request-id": "3c59a2dc-601f-0058-7177-5eb6f9000000",
-    "x-ms-version": "2019-12-12"
+    "x-ms-request-id": "b04cf733-c01f-0053-27c0-e16139000000",
+    "x-ms-version": "2020-10-02"
   },
   "body": ""
 }

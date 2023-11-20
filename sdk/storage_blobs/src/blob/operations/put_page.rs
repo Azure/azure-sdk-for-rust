@@ -1,6 +1,6 @@
 use crate::prelude::*;
 use azure_core::{headers::*, prelude::*, Body, RequestId};
-use azure_storage::{headers::content_md5_from_headers, ConsistencyMD5};
+use azure_storage::{headers::content_md5_from_headers_optional, ConsistencyMD5};
 use time::OffsetDateTime;
 
 operation! {
@@ -34,7 +34,7 @@ impl PutPageBuilder {
             headers.add(self.if_tags);
             headers.add(self.lease_id);
 
-            let mut request = self.client.finalize_request(
+            let mut request = BlobClient::finalize_request(
                 url,
                 azure_core::Method::Put,
                 headers,
@@ -51,7 +51,7 @@ impl PutPageBuilder {
 pub struct PutPageResponse {
     pub etag: String,
     pub last_modified: OffsetDateTime,
-    pub content_md5: ConsistencyMD5,
+    pub content_md5: Option<ConsistencyMD5>,
     pub sequence_number: u64,
     pub request_id: RequestId,
     pub date: OffsetDateTime,
@@ -62,7 +62,7 @@ impl PutPageResponse {
     pub(crate) fn from_headers(headers: &Headers) -> azure_core::Result<Self> {
         let etag = etag_from_headers(headers)?;
         let last_modified = last_modified_from_headers(headers)?;
-        let content_md5 = content_md5_from_headers(headers)?;
+        let content_md5 = content_md5_from_headers_optional(headers)?;
         let sequence_number = sequence_number_from_headers(headers)?;
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;

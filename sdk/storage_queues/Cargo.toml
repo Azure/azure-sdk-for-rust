@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage_queues"
-version = "0.12.0"
+version = "0.17.0"
 description = "Azure Queue Storage crate from the Azure SDK for Rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -11,11 +11,10 @@ documentation = "https://docs.rs/azure_storage_queues"
 keywords = ["sdk", "azure", "storage", "queues"]
 categories = ["api-bindings"]
 edition = "2021"
-rust-version = "1.64.0"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.12", default-features=false, features = ["xml"] }
-azure_storage = { path = "../storage", version = "0.12", default-features=false }
+azure_core = { path = "../core", version = "0.17", default-features=false, features = ["xml"] }
+azure_storage = { path = "../storage", version = "0.17", default-features=false }
 time = "0.3.10"
 futures = "0.3"
 log = "0.4"

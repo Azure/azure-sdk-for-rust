@@ -1,12 +1,18 @@
 mod authorization_policy;
 
+pub(crate) use self::authorization_policy::AuthorizationPolicy;
+use crate::clients::{EMULATOR_ACCOUNT, EMULATOR_ACCOUNT_KEY};
 use azure_core::{
     auth::TokenCredential,
     error::{ErrorKind, ResultExt},
 };
-use std::sync::Arc;
-
-pub(crate) use authorization_policy::AuthorizationPolicy;
+use futures::lock::Mutex;
+use std::{
+    mem::replace,
+    ops::{Deref, DerefMut},
+    sync::Arc,
+};
+use url::Url;
 
 /// Credentials for accessing a storage account.
 ///
@@ -19,7 +25,10 @@ pub(crate) use authorization_policy::AuthorizationPolicy;
 /// azure_storage::StorageCredentials::access_key("my_account", "SOMEACCESSKEY");
 /// ```
 #[derive(Clone)]
-pub enum StorageCredentials {
+pub struct StorageCredentials(pub Arc<Mutex<StorageCredentialsInner>>);
+
+#[derive(Clone)]
+pub enum StorageCredentialsInner {
     Key(String, String),
     SASToken(Vec<(String, String)>),
     BearerToken(String),
@@ -28,6 +37,11 @@ pub enum StorageCredentials {
 }
 
 impl StorageCredentials {
+    /// Create a new `StorageCredentials` from a `StorageCredentialsInner`
+    fn wrap(inner: StorageCredentialsInner) -> Self {
+        Self(Arc::new(Mutex::new(inner)))
+    }
+
     /// Create an Access Key based credential
     ///
     /// When you create a storage account, Azure generates two 512-bit storage
@@ -41,7 +55,7 @@ impl StorageCredentials {
         A: Into<String>,
         K: Into<String>,
     {
-        Self::Key(account.into(), key.into())
+        Self::wrap(StorageCredentialsInner::Key(account.into(), key.into()))
     }
 
     /// Create a Shared Access Signature (SAS) token based credential
@@ -57,7 +71,7 @@ impl StorageCredentials {
         S: AsRef<str>,
     {
         let params = get_sas_token_parms(token.as_ref())?;
-        Ok(Self::SASToken(params))
+        Ok(Self::wrap(StorageCredentialsInner::SASToken(params)))
     }
 
     /// Create an Bearer Token based credential
@@ -74,7 +88,7 @@ impl StorageCredentials {
     where
         T: Into<String>,
     {
-        Self::BearerToken(token.into())
+        Self::wrap(StorageCredentialsInner::BearerToken(token.into()))
     }
 
     /// Create a `TokenCredential` based credential
@@ -95,7 +109,7 @@ impl StorageCredentials {
     ///
     /// ref: <https://docs.microsoft.com/rest/api/storageservices/authorize-with-azure-active-directory>
     pub fn token_credential(credential: Arc<dyn TokenCredential>) -> Self {
-        Self::TokenCredential(credential)
+        Self::wrap(StorageCredentialsInner::TokenCredential(credential))
     }
 
     /// Create an anonymous credential
@@ -110,40 +124,81 @@ impl StorageCredentials {
     ///
     /// ref: <https://docs.microsoft.com/azure/storage/blobs/anonymous-read-access-configure>
     pub fn anonymous() -> Self {
-        Self::Anonymous
+        Self::wrap(StorageCredentialsInner::Anonymous)
+    }
+
+    /// Create an Access Key credential for use with the Azure Storage emulator
+    pub fn emulator() -> Self {
+        Self::access_key(EMULATOR_ACCOUNT, EMULATOR_ACCOUNT_KEY)
+    }
+
+    /// Replace the current credentials with new credentials
+    ///
+    /// This method is useful for updating credentials that are used by multiple
+    /// clients at once.
+    pub async fn replace(&self, other: Self) -> azure_core::Result<()> {
+        if Arc::ptr_eq(&self.0, &other.0) {
+            return Ok(());
+        }
+
+        let mut creds = self.0.lock().await;
+        let other = other.0.lock().await;
+        let creds = creds.deref_mut();
+        let other = other.deref().clone();
+        let _old_creds = replace(creds, other);
+
+        Ok(())
     }
 }
 
 impl std::fmt::Debug for StorageCredentials {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match &self {
-            StorageCredentials::Key(_, _) => f
+        let creds = self.0.try_lock();
+
+        match creds.as_deref() {
+            None => f
                 .debug_struct("StorageCredentials")
-                .field("credential", &"Key")
+                .field("credential", &"locked")
                 .finish(),
-            StorageCredentials::SASToken(_) => f
-                .debug_struct("StorageCredentials")
-                .field("credential", &"SASToken")
-                .finish(),
-            StorageCredentials::BearerToken(_) => f
-                .debug_struct("StorageCredentials")
-                .field("credential", &"BearerToken")
-                .finish(),
-            StorageCredentials::TokenCredential(_) => f
-                .debug_struct("StorageCredentials")
-                .field("credential", &"TokenCredential")
-                .finish(),
-            StorageCredentials::Anonymous => f
-                .debug_struct("StorageCredentials")
-                .field("credential", &"Anonymous")
-                .finish(),
+            Some(inner) => match &inner {
+                StorageCredentialsInner::Key(_, _) => f
+                    .debug_struct("StorageCredentials")
+                    .field("credential", &"Key")
+                    .finish(),
+                StorageCredentialsInner::SASToken(_) => f
+                    .debug_struct("StorageCredentials")
+                    .field("credential", &"SASToken")
+                    .finish(),
+                StorageCredentialsInner::BearerToken(_) => f
+                    .debug_struct("StorageCredentials")
+                    .field("credential", &"BearerToken")
+                    .finish(),
+                StorageCredentialsInner::TokenCredential(_) => f
+                    .debug_struct("StorageCredentials")
+                    .field("credential", &"TokenCredential")
+                    .finish(),
+                StorageCredentialsInner::Anonymous => f
+                    .debug_struct("StorageCredentials")
+                    .field("credential", &"Anonymous")
+                    .finish(),
+            },
         }
     }
 }
 
 impl From<Arc<dyn TokenCredential>> for StorageCredentials {
     fn from(cred: Arc<dyn TokenCredential>) -> Self {
-        Self::TokenCredential(cred)
+        Self::token_credential(cred)
+    }
+}
+
+impl TryFrom<&Url> for StorageCredentials {
+    type Error = azure_core::Error;
+    fn try_from(value: &Url) -> Result<Self, Self::Error> {
+        match value.query() {
+            Some(query) => Self::sas_token(query),
+            None => Ok(Self::anonymous()),
+        }
     }
 }
 
@@ -169,4 +224,31 @@ fn get_sas_token_parms(sas_token: &str) -> azure_core::Result<Vec<(String, Strin
         .query_pairs()
         .map(|p| (String::from(p.0), String::from(p.1)))
         .collect())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_replacement() -> azure_core::Result<()> {
+        let base = StorageCredentials::anonymous();
+        let other = StorageCredentials::bearer_token("foo");
+
+        base.replace(other).await?;
+
+        // check that the value was updated
+        {
+            let inner = base.0.lock().await;
+            let inner_locked = inner.deref();
+            assert!(
+                matches!(&inner_locked, &StorageCredentialsInner::BearerToken(value) if value == "foo")
+            );
+        }
+
+        // updating with the same StorageCredentials shouldn't deadlock
+        base.replace(base.clone()).await?;
+
+        Ok(())
+    }
 }

@@ -9,11 +9,24 @@ const SIGNATURE_PREFIX: &str = "sig=";
 ///
 /// This field is a url encoded string with the type of permission, the signature, and the version (currently only 1.0)
 /// This type is a wrapper around `AuthorizationToken`.
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(try_from = "String")]
 pub struct PermissionToken {
     pub(crate) token: AuthorizationToken,
 }
+
+impl PartialEq for PermissionToken {
+    fn eq(&self, other: &Self) -> bool {
+        use AuthorizationToken::{Primary, Resource};
+        match (&self.token, &other.token) {
+            (Primary(a), Primary(b)) => a == b,
+            (Resource(a), Resource(b)) => a == b,
+            _ => false,
+        }
+    }
+}
+
+impl Eq for PermissionToken {}
 
 impl serde::Serialize for PermissionToken {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -30,6 +43,9 @@ impl std::fmt::Display for PermissionToken {
         let (permission_type, signature) = match &self.token {
             AuthorizationToken::Resource(s) => ("resource", Cow::Borrowed(s)),
             AuthorizationToken::Primary(s) => ("master", Cow::Owned(base64::encode(s))),
+            AuthorizationToken::TokenCredential(_) => {
+                panic!("TokenCredential not supported for PermissionToken")
+            }
         };
         write!(
             f,

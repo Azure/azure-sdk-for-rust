@@ -6,9 +6,10 @@ use autorust_codegen::{
     crates::{list_crate_names, list_dirs},
     gen, get_mgmt_readmes, get_svc_readmes,
     jinja::{CheckAllServicesYml, PublishSdksYml, PublishServicesYml, WorkspaceCargoToml},
-    Error, ErrorKind, Result, RunConfig,
+    ErrorKind, Result, ResultExt, RunConfig, SpecReadme,
 };
 use clap::Parser;
+use rayon::prelude::*;
 
 #[derive(Debug, clap::Parser)]
 struct Args {
@@ -43,29 +44,47 @@ fn main() -> Result<()> {
             gen_workflow_publish_services()?;
         }
     }
-    if args.fmt {
-        fmt(packages)?;
-    }
     Ok(())
 }
 
-fn gen_crates(only_packages: &[&str]) -> Result<()> {
-    let svc = get_svc_readmes()?.into_iter().map(|x| ("svc", x));
-    let mgmt = get_mgmt_readmes()?.into_iter().map(|x| ("mgmt", x));
+fn gen_crate(only_packages: &[&str], crate_type: &str, spec: &SpecReadme) -> Result<Option<(String, Vec<String>)>> {
+    let output_folder = format!("../{crate_type}");
+    let prefix = format!("azure_{crate_type}_");
 
-    for (i, (crate_type, spec)) in svc.chain(mgmt).enumerate() {
-        let output_folder = format!("../{crate_type}");
-        let prefix = format!("azure_{crate_type}_");
+    let run_config = RunConfig::new(&prefix);
+    let package_name = gen::package_name(spec, &run_config);
 
-        let run_config = RunConfig::new(&prefix);
-        let package_name = gen::package_name(&spec, &run_config);
-        if !only_packages.is_empty() && !only_packages.contains(&package_name.as_str()) {
-            continue;
-        }
-
-        println!("{package_name} ({i})");
-        gen::gen_crate(&package_name, &spec, &run_config, &output_folder)?;
+    if !only_packages.is_empty() && !only_packages.contains(&package_name.as_str()) {
+        Ok(None)
+    } else {
+        let tags = gen::gen_crate(&package_name, spec, &run_config, &output_folder)
+            .with_context(ErrorKind::CodeGen, || format!("generating {package_name}"))?;
+        Ok(Some((package_name, tags)))
     }
+}
+
+fn gen_crates(only_packages: &[&str]) -> Result<()> {
+    let svc = get_svc_readmes()?.into_iter().map(|x| ("svc".to_string(), x));
+    let mgmt = get_mgmt_readmes()?.into_iter().map(|x| ("mgmt".to_string(), x));
+    let crate_iters = svc.chain(mgmt).collect::<Vec<_>>();
+
+    let results: Result<Vec<_>> = crate_iters
+        .par_iter()
+        .map(|(crate_type, spec)| gen_crate(only_packages, crate_type, spec))
+        .collect::<Vec<_>>()
+        .into_iter()
+        .collect();
+
+    (results?).into_iter().flatten().for_each(|(package_name, tags)| {
+        println!("{package_name}");
+        if tags.is_empty() {
+            println!("  No tags");
+        } else {
+            for tag in tags {
+                println!("- {tag}");
+            }
+        }
+    });
 
     Ok(())
 }
@@ -122,24 +141,5 @@ fn gen_workflow_publish_services() -> Result<()> {
     let packages = &packages.iter().map(String::as_str).collect();
     let yml = PublishServicesYml { packages };
     yml.create("../../.github/workflows/publish-services.yml")?;
-    Ok(())
-}
-
-/// Run `cargo fmt` on the services workspace or a subset of packages.
-fn fmt(only_packages: &[&str]) -> Result<()> {
-    let services_dir = "../";
-    let mut args = vec!["fmt"];
-    if !only_packages.is_empty() {
-        args.push("-p");
-        for package in only_packages {
-            args.push(package);
-        }
-    }
-    let out = std::process::Command::new("cargo").current_dir(services_dir).args(args).output()?;
-    if !out.status.success() {
-        println!("cargo fmt failed");
-        println!("{}", std::str::from_utf8(&out.stderr)?);
-        return Err(Error::new(ErrorKind::Io, "cargo fmt failed"));
-    }
     Ok(())
 }

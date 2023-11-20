@@ -130,7 +130,7 @@ pub struct ClientDiscoveryResponse {
 impl azure_core::Continuable for ClientDiscoveryResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClientDiscoveryResponse {
@@ -611,7 +611,7 @@ pub struct PrivateLinkResources {
 impl azure_core::Continuable for PrivateLinkResources {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkResources {
@@ -891,9 +891,6 @@ impl ResourceCertificateAndAcsDetails {
 #[doc = "Certificate details representing the Vault credentials."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceCertificateDetails {
-    #[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
-    #[serde(rename = "authType")]
-    pub auth_type: String,
     #[doc = "The base64 encoded certificate raw data string."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub certificate: Option<String>,
@@ -920,9 +917,8 @@ pub struct ResourceCertificateDetails {
     pub valid_to: Option<time::OffsetDateTime>,
 }
 impl ResourceCertificateDetails {
-    pub fn new(auth_type: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            auth_type,
             certificate: None,
             friendly_name: None,
             issuer: None,
@@ -933,6 +929,13 @@ impl ResourceCertificateDetails {
             valid_to: None,
         }
     }
+}
+#[doc = "This property will be used as the discriminator for deciding the specific types in the polymorphic chain of types."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "authType")]
+pub enum ResourceCertificateDetailsUnion {
+    AzureActiveDirectory(ResourceCertificateAndAadDetails),
+    AccessControlService(ResourceCertificateAndAcsDetails),
 }
 #[doc = "Identifies the unique system identifier for each Azure resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1199,7 +1202,7 @@ pub struct VaultCertificateResponse {
     pub id: Option<String>,
     #[doc = "Certificate details representing the Vault credentials."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ResourceCertificateDetails>,
+    pub properties: Option<ResourceCertificateDetailsUnion>,
 }
 impl VaultCertificateResponse {
     pub fn new() -> Self {
@@ -1256,7 +1259,7 @@ pub struct VaultList {
 impl azure_core::Continuable for VaultList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VaultList {

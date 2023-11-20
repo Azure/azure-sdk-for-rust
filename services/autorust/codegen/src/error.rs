@@ -307,6 +307,7 @@ mod tests {
     use std::io;
 
     #[allow(dead_code, unconditional_recursion)]
+    #[allow(clippy::extra_unused_type_parameters)]
     fn ensure_send<T: Send>() {
         ensure_send::<Error>();
     }

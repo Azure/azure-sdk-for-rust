@@ -37,7 +37,7 @@ pub struct AccessPolicyEntityCollection {
 impl azure_core::Continuable for AccessPolicyEntityCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccessPolicyEntityCollection {
@@ -53,7 +53,7 @@ pub struct AccessPolicyProperties {
     pub role: Option<access_policy_properties::Role>,
     #[doc = "Base class for access policies authentication methods."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub authentication: Option<AuthenticationBase>,
+    pub authentication: Option<AuthenticationBaseUnion>,
 }
 impl AccessPolicyProperties {
     pub fn new() -> Self {
@@ -164,17 +164,12 @@ pub mod account_encryption {
         }
     }
 }
-#[doc = "Base class for access policies authentication methods."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AuthenticationBase {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
-}
-impl AuthenticationBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
+#[doc = "The discriminator for derived types."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum AuthenticationBaseUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.JwtAuthentication")]
+    MicrosoftVideoAnalyzerJwtAuthentication(JwtAuthentication),
 }
 #[doc = "The check availability request body."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -345,7 +340,7 @@ pub struct EdgeModuleEntityCollection {
 impl azure_core::Continuable for EdgeModuleEntityCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EdgeModuleEntityCollection {
@@ -502,8 +497,6 @@ impl ErrorResponse {
 #[doc = "Properties for access validation based on JSON Web Tokens (JWT)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JwtAuthentication {
-    #[serde(flatten)]
-    pub authentication_base: AuthenticationBase,
     #[doc = "List of expected token issuers. Token issuer is valid if it matches at least one of the given values."]
     #[serde(
         default,
@@ -531,12 +524,11 @@ pub struct JwtAuthentication {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub keys: Vec<TokenKey>,
+    pub keys: Vec<TokenKeyUnion>,
 }
 impl JwtAuthentication {
-    pub fn new(authentication_base: AuthenticationBase) -> Self {
+    pub fn new() -> Self {
         Self {
-            authentication_base,
             issuers: Vec::new(),
             audiences: Vec::new(),
             claims: Vec::new(),
@@ -1083,16 +1075,22 @@ impl TokenClaim {
 #[doc = "Key properties for JWT token validation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TokenKey {
-    #[doc = "The discriminator for derived types."]
-    #[serde(rename = "@type")]
-    pub type_: String,
     #[doc = "JWT token key id. Validation keys are looked up based on the key id present on the JWT token header."]
     pub kid: String,
 }
 impl TokenKey {
-    pub fn new(type_: String, kid: String) -> Self {
-        Self { type_, kid }
+    pub fn new(kid: String) -> Self {
+        Self { kid }
     }
+}
+#[doc = "The discriminator for derived types."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@type")]
+pub enum TokenKeyUnion {
+    #[serde(rename = "#Microsoft.VideoAnalyzer.EccTokenKey")]
+    MicrosoftVideoAnalyzerEccTokenKey(EccTokenKey),
+    #[serde(rename = "#Microsoft.VideoAnalyzer.RsaTokenKey")]
+    MicrosoftVideoAnalyzerRsaTokenKey(RsaTokenKey),
 }
 #[doc = "The resource model definition for an Azure Resource Manager tracked top level resource which has 'tags' and a 'location'"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1286,7 +1284,7 @@ pub struct VideoEntityCollection {
 impl azure_core::Continuable for VideoEntityCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VideoEntityCollection {

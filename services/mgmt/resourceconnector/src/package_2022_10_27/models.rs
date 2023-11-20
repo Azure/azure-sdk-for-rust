@@ -555,7 +555,7 @@ pub struct ApplianceListResult {
 impl azure_core::Continuable for ApplianceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplianceListResult {
@@ -617,7 +617,7 @@ pub struct ApplianceOperationsList {
 impl azure_core::Continuable for ApplianceOperationsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplianceOperationsList {
@@ -719,8 +719,6 @@ pub mod appliance_properties {
             Hci,
             #[serde(rename = "SCVMM")]
             Scvmm,
-            KubeVirt,
-            OpenStack,
             #[serde(skip_deserializing)]
             UnknownValue(String),
         }
@@ -749,8 +747,6 @@ pub mod appliance_properties {
                     Self::VmWare => serializer.serialize_unit_variant("Provider", 0u32, "VMWare"),
                     Self::Hci => serializer.serialize_unit_variant("Provider", 1u32, "HCI"),
                     Self::Scvmm => serializer.serialize_unit_variant("Provider", 2u32, "SCVMM"),
-                    Self::KubeVirt => serializer.serialize_unit_variant("Provider", 3u32, "KubeVirt"),
-                    Self::OpenStack => serializer.serialize_unit_variant("Provider", 4u32, "OpenStack"),
                     Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
                 }
             }
@@ -766,7 +762,15 @@ pub mod appliance_properties {
         Connected,
         Running,
         PreparingForUpgrade,
+        #[serde(rename = "ETCDSnapshotFailed")]
+        EtcdSnapshotFailed,
         UpgradePrerequisitesCompleted,
+        #[serde(rename = "ValidatingSFSConnectivity")]
+        ValidatingSfsConnectivity,
+        ValidatingImageDownload,
+        ValidatingImageUpload,
+        #[serde(rename = "ValidatingETCDHealth")]
+        ValidatingEtcdHealth,
         PreUpgrade,
         #[serde(rename = "UpgradingKVAIO")]
         UpgradingKvaio,
@@ -821,29 +825,34 @@ pub mod appliance_properties {
                 Self::Connected => serializer.serialize_unit_variant("Status", 3u32, "Connected"),
                 Self::Running => serializer.serialize_unit_variant("Status", 4u32, "Running"),
                 Self::PreparingForUpgrade => serializer.serialize_unit_variant("Status", 5u32, "PreparingForUpgrade"),
-                Self::UpgradePrerequisitesCompleted => serializer.serialize_unit_variant("Status", 6u32, "UpgradePrerequisitesCompleted"),
-                Self::PreUpgrade => serializer.serialize_unit_variant("Status", 7u32, "PreUpgrade"),
-                Self::UpgradingKvaio => serializer.serialize_unit_variant("Status", 8u32, "UpgradingKVAIO"),
-                Self::WaitingForKvaio => serializer.serialize_unit_variant("Status", 9u32, "WaitingForKVAIO"),
-                Self::ImagePending => serializer.serialize_unit_variant("Status", 10u32, "ImagePending"),
-                Self::ImageProvisioning => serializer.serialize_unit_variant("Status", 11u32, "ImageProvisioning"),
-                Self::ImageProvisioned => serializer.serialize_unit_variant("Status", 12u32, "ImageProvisioned"),
-                Self::ImageDownloading => serializer.serialize_unit_variant("Status", 13u32, "ImageDownloading"),
-                Self::ImageDownloaded => serializer.serialize_unit_variant("Status", 14u32, "ImageDownloaded"),
-                Self::ImageDeprovisioning => serializer.serialize_unit_variant("Status", 15u32, "ImageDeprovisioning"),
-                Self::ImageUnknown => serializer.serialize_unit_variant("Status", 16u32, "ImageUnknown"),
-                Self::UpdatingCloudOperator => serializer.serialize_unit_variant("Status", 17u32, "UpdatingCloudOperator"),
-                Self::WaitingForCloudOperator => serializer.serialize_unit_variant("Status", 18u32, "WaitingForCloudOperator"),
-                Self::UpdatingCapi => serializer.serialize_unit_variant("Status", 19u32, "UpdatingCAPI"),
-                Self::UpdatingCluster => serializer.serialize_unit_variant("Status", 20u32, "UpdatingCluster"),
-                Self::PostUpgrade => serializer.serialize_unit_variant("Status", 21u32, "PostUpgrade"),
-                Self::UpgradeComplete => serializer.serialize_unit_variant("Status", 22u32, "UpgradeComplete"),
+                Self::EtcdSnapshotFailed => serializer.serialize_unit_variant("Status", 6u32, "ETCDSnapshotFailed"),
+                Self::UpgradePrerequisitesCompleted => serializer.serialize_unit_variant("Status", 7u32, "UpgradePrerequisitesCompleted"),
+                Self::ValidatingSfsConnectivity => serializer.serialize_unit_variant("Status", 8u32, "ValidatingSFSConnectivity"),
+                Self::ValidatingImageDownload => serializer.serialize_unit_variant("Status", 9u32, "ValidatingImageDownload"),
+                Self::ValidatingImageUpload => serializer.serialize_unit_variant("Status", 10u32, "ValidatingImageUpload"),
+                Self::ValidatingEtcdHealth => serializer.serialize_unit_variant("Status", 11u32, "ValidatingETCDHealth"),
+                Self::PreUpgrade => serializer.serialize_unit_variant("Status", 12u32, "PreUpgrade"),
+                Self::UpgradingKvaio => serializer.serialize_unit_variant("Status", 13u32, "UpgradingKVAIO"),
+                Self::WaitingForKvaio => serializer.serialize_unit_variant("Status", 14u32, "WaitingForKVAIO"),
+                Self::ImagePending => serializer.serialize_unit_variant("Status", 15u32, "ImagePending"),
+                Self::ImageProvisioning => serializer.serialize_unit_variant("Status", 16u32, "ImageProvisioning"),
+                Self::ImageProvisioned => serializer.serialize_unit_variant("Status", 17u32, "ImageProvisioned"),
+                Self::ImageDownloading => serializer.serialize_unit_variant("Status", 18u32, "ImageDownloading"),
+                Self::ImageDownloaded => serializer.serialize_unit_variant("Status", 19u32, "ImageDownloaded"),
+                Self::ImageDeprovisioning => serializer.serialize_unit_variant("Status", 20u32, "ImageDeprovisioning"),
+                Self::ImageUnknown => serializer.serialize_unit_variant("Status", 21u32, "ImageUnknown"),
+                Self::UpdatingCloudOperator => serializer.serialize_unit_variant("Status", 22u32, "UpdatingCloudOperator"),
+                Self::WaitingForCloudOperator => serializer.serialize_unit_variant("Status", 23u32, "WaitingForCloudOperator"),
+                Self::UpdatingCapi => serializer.serialize_unit_variant("Status", 24u32, "UpdatingCAPI"),
+                Self::UpdatingCluster => serializer.serialize_unit_variant("Status", 25u32, "UpdatingCluster"),
+                Self::PostUpgrade => serializer.serialize_unit_variant("Status", 26u32, "PostUpgrade"),
+                Self::UpgradeComplete => serializer.serialize_unit_variant("Status", 27u32, "UpgradeComplete"),
                 Self::UpgradeClusterExtensionFailedToDelete => {
-                    serializer.serialize_unit_variant("Status", 23u32, "UpgradeClusterExtensionFailedToDelete")
+                    serializer.serialize_unit_variant("Status", 28u32, "UpgradeClusterExtensionFailedToDelete")
                 }
-                Self::UpgradeFailed => serializer.serialize_unit_variant("Status", 24u32, "UpgradeFailed"),
-                Self::Offline => serializer.serialize_unit_variant("Status", 25u32, "Offline"),
-                Self::None => serializer.serialize_unit_variant("Status", 26u32, "None"),
+                Self::UpgradeFailed => serializer.serialize_unit_variant("Status", 29u32, "UpgradeFailed"),
+                Self::Offline => serializer.serialize_unit_variant("Status", 30u32, "Offline"),
+                Self::None => serializer.serialize_unit_variant("Status", 31u32, "None"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

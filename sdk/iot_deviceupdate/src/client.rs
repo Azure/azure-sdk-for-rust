@@ -110,7 +110,7 @@ impl DeviceUpdateClient {
         if resp.status() == 202u16 {
             let headers = resp.headers();
             return match headers.get("operation-location") {
-                Some(location) => location.to_str().map(|x| x.to_string()).context(
+                Some(location) => location.to_str().map(ToString::to_string).context(
                     ErrorKind::Other,
                     "invalid characters in operation-location path",
                 ),

@@ -58,7 +58,7 @@ pub struct ApiTokenCollection {
 impl azure_core::Continuable for ApiTokenCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApiTokenCollection {
@@ -66,17 +66,10 @@ impl ApiTokenCollection {
         Self { value, next_link: None }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Attestation {
-    #[doc = "Type of the attestation."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl Attestation {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "Type of the attestation."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AttestationUnion {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CloudPropertyJobData {
     #[serde(flatten)]
@@ -121,7 +114,7 @@ pub struct ContinuousDataExport {
     #[doc = "Display name of the continuous data export."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
-    pub endpoint: Endpoint,
+    pub endpoint: EndpointUnion,
     #[doc = "Indicates whether the continuous data export is starting, running, etc."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -131,7 +124,7 @@ pub struct ContinuousDataExport {
     pub sources: Vec<String>,
 }
 impl ContinuousDataExport {
-    pub fn new(endpoint: Endpoint, enabled: bool, sources: Vec<String>) -> Self {
+    pub fn new(endpoint: EndpointUnion, enabled: bool, sources: Vec<String>) -> Self {
         Self {
             id: None,
             etag: None,
@@ -154,7 +147,7 @@ pub struct ContinuousDataExportCollection {
 impl azure_core::Continuable for ContinuousDataExportCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ContinuousDataExportCollection {
@@ -210,7 +203,7 @@ pub struct DeviceCollection {
 impl azure_core::Continuable for DeviceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceCollection {
@@ -255,7 +248,7 @@ pub struct DeviceCommandCollection {
 impl azure_core::Continuable for DeviceCommandCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceCommandCollection {
@@ -310,7 +303,7 @@ pub struct DeviceGroupCollection {
 impl azure_core::Continuable for DeviceGroupCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceGroupCollection {
@@ -387,7 +380,7 @@ pub struct DeviceTemplateCollection {
 impl azure_core::Continuable for DeviceTemplateCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceTemplateCollection {
@@ -409,9 +402,6 @@ impl EmailUser {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Endpoint {
-    #[doc = "Type of the endpoint."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Information for connecting to the endpoint."]
     #[serde(rename = "connectionString")]
     pub connection_string: String,
@@ -419,14 +409,14 @@ pub struct Endpoint {
     pub name: String,
 }
 impl Endpoint {
-    pub fn new(type_: String, connection_string: String, name: String) -> Self {
-        Self {
-            type_,
-            connection_string,
-            name,
-        }
+    pub fn new(connection_string: String, name: String) -> Self {
+        Self { connection_string, name }
     }
 }
+#[doc = "Type of the endpoint."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum EndpointUnion {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubsEndpoint {
     #[serde(flatten)]
@@ -455,13 +445,13 @@ pub struct Job {
     #[serde(rename = "cancellationThreshold", default, skip_serializing_if = "Option::is_none")]
     pub cancellation_threshold: Option<JobCancellationThreshold>,
     #[doc = "The capabilities being updated by the job and the values with which they are being updated."]
-    pub data: Vec<JobData>,
+    pub data: Vec<JobDataUnion>,
     #[doc = "Indicates whether the job is starting, running, etc."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
 impl Job {
-    pub fn new(group: String, data: Vec<JobData>) -> Self {
+    pub fn new(group: String, data: Vec<JobDataUnion>) -> Self {
         Self {
             id: None,
             display_name: None,
@@ -536,7 +526,7 @@ pub struct JobCollection {
 impl azure_core::Continuable for JobCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobCollection {
@@ -546,9 +536,6 @@ impl JobCollection {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JobData {
-    #[doc = "Type of the job data."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The device template which defines the target capability for the job."]
     pub target: String,
     #[doc = "The path to the target capability within the device template."]
@@ -558,15 +545,14 @@ pub struct JobData {
     pub value: Option<serde_json::Value>,
 }
 impl JobData {
-    pub fn new(type_: String, target: String, path: String) -> Self {
-        Self {
-            type_,
-            target,
-            path,
-            value: None,
-        }
+    pub fn new(target: String, path: String) -> Self {
+        Self { target, path, value: None }
     }
 }
+#[doc = "Type of the job data."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum JobDataUnion {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobDeviceStatus {
     #[doc = "ID of the device whose job status is being provided."]
@@ -649,7 +635,7 @@ pub struct RoleCollection {
 impl azure_core::Continuable for RoleCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleCollection {
@@ -726,17 +712,12 @@ impl SymmetricKey {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SymmetricKeyAttestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     #[serde(rename = "symmetricKey")]
     pub symmetric_key: SymmetricKey,
 }
 impl SymmetricKeyAttestation {
-    pub fn new(attestation: Attestation, symmetric_key: SymmetricKey) -> Self {
-        Self {
-            attestation,
-            symmetric_key,
-        }
+    pub fn new(symmetric_key: SymmetricKey) -> Self {
+        Self { symmetric_key }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -752,13 +733,11 @@ impl Tpm {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TpmAttestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     pub tpm: Tpm,
 }
 impl TpmAttestation {
-    pub fn new(attestation: Attestation, tpm: Tpm) -> Self {
-        Self { attestation, tpm }
+    pub fn new(tpm: Tpm) -> Self {
+        Self { tpm }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -768,23 +747,20 @@ pub struct User {
     #[doc = "Unique ID of the user."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Type of the user."]
-    #[serde(rename = "type")]
-    pub type_: String,
 }
 impl User {
-    pub fn new(permission: Permission, type_: String) -> Self {
-        Self {
-            permission,
-            id: None,
-            type_,
-        }
+    pub fn new(permission: Permission) -> Self {
+        Self { permission, id: None }
     }
 }
+#[doc = "Type of the user."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum UserUnion {}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserCollection {
     #[doc = "The collection of users."]
-    pub value: Vec<User>,
+    pub value: Vec<UserUnion>,
     #[doc = "URL to get the next page of users."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -792,11 +768,11 @@ pub struct UserCollection {
 impl azure_core::Continuable for UserCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UserCollection {
-    pub fn new(value: Vec<User>) -> Self {
+    pub fn new(value: Vec<UserUnion>) -> Self {
         Self { value, next_link: None }
     }
 }
@@ -812,13 +788,11 @@ impl X509 {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509Attestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     pub x509: X509,
 }
 impl X509Attestation {
-    pub fn new(attestation: Attestation, x509: X509) -> Self {
-        Self { attestation, x509 }
+    pub fn new(x509: X509) -> Self {
+        Self { x509 }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

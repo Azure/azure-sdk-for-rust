@@ -104,7 +104,7 @@ pub struct AccessReviewDecisionListResult {
 impl azure_core::Continuable for AccessReviewDecisionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccessReviewDecisionListResult {
@@ -117,7 +117,7 @@ impl AccessReviewDecisionListResult {
 pub struct AccessReviewDecisionProperties {
     #[doc = "Target of the decision."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target: Option<AccessReviewDecisionTarget>,
+    pub target: Option<AccessReviewDecisionTargetUnion>,
     #[doc = "The feature- generated recommendation shown to the reviewer."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recommendation: Option<access_review_decision_properties::Recommendation>,
@@ -280,59 +280,14 @@ pub mod access_review_decision_properties {
         }
     }
 }
-#[doc = "Target of the decision."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AccessReviewDecisionTarget {
-    #[doc = "The type of decision target : User/ServicePrincipal"]
-    #[serde(rename = "type")]
-    pub type_: access_review_decision_target::Type,
-}
-impl AccessReviewDecisionTarget {
-    pub fn new(type_: access_review_decision_target::Type) -> Self {
-        Self { type_ }
-    }
-}
-pub mod access_review_decision_target {
-    use super::*;
-    #[doc = "The type of decision target : User/ServicePrincipal"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        #[serde(rename = "user")]
-        User,
-        #[serde(rename = "servicePrincipal")]
-        ServicePrincipal,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::User => serializer.serialize_unit_variant("Type", 0u32, "user"),
-                Self::ServicePrincipal => serializer.serialize_unit_variant("Type", 1u32, "servicePrincipal"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "The type of decision target : User/ServicePrincipal"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AccessReviewDecisionTargetUnion {
+    #[serde(rename = "servicePrincipal")]
+    ServicePrincipal(ServicePrincipalDecisionTarget),
+    #[serde(rename = "user")]
+    User(UserDecisionTarget),
 }
 #[doc = "Access Review Default Settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -393,7 +348,7 @@ pub struct AccessReviewInstanceListResult {
 impl azure_core::Continuable for AccessReviewInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccessReviewInstanceListResult {
@@ -710,7 +665,7 @@ pub struct AccessReviewScheduleDefinitionListResult {
 impl azure_core::Continuable for AccessReviewScheduleDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccessReviewScheduleDefinitionListResult {
@@ -1004,13 +959,13 @@ pub mod access_review_scope {
 #[doc = "The approval settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApprovalSettings {
-    #[doc = "Determine whether approval is required or not."]
+    #[doc = "Determines whether approval is required or not."]
     #[serde(rename = "isApprovalRequired", default, skip_serializing_if = "Option::is_none")]
     pub is_approval_required: Option<bool>,
-    #[doc = "Determine whether approval is required for assignment extension."]
+    #[doc = "Determines whether approval is required for assignment extension."]
     #[serde(rename = "isApprovalRequiredForExtension", default, skip_serializing_if = "Option::is_none")]
     pub is_approval_required_for_extension: Option<bool>,
-    #[doc = "Determine whether requestor justification required."]
+    #[doc = "Determine whether requestor justification is required."]
     #[serde(rename = "isRequestorJustificationRequired", default, skip_serializing_if = "Option::is_none")]
     pub is_requestor_justification_required: Option<bool>,
     #[doc = "The type of rule"]
@@ -1077,13 +1032,13 @@ pub mod approval_settings {
 #[doc = "The approval stage."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ApprovalStage {
-    #[doc = "The time in days when approval request would be timed out."]
+    #[doc = "The time in days when approval request would be timed out"]
     #[serde(rename = "approvalStageTimeOutInDays", default, skip_serializing_if = "Option::is_none")]
     pub approval_stage_time_out_in_days: Option<i32>,
-    #[doc = "Determine whether approver need to provide justification for his decision."]
+    #[doc = "Determines whether approver need to provide justification for his decision."]
     #[serde(rename = "isApproverJustificationRequired", default, skip_serializing_if = "Option::is_none")]
     pub is_approver_justification_required: Option<bool>,
-    #[doc = "The time in minutes when the approval request would be escalated if the primary approver does not approves."]
+    #[doc = "The time in minutes when the approval request would be escalated if the primary approver does not approve"]
     #[serde(rename = "escalationTimeInMinutes", default, skip_serializing_if = "Option::is_none")]
     pub escalation_time_in_minutes: Option<i32>,
     #[doc = "The primary approver of the request."]
@@ -1200,7 +1155,7 @@ pub struct DenyAssignmentListResult {
 impl azure_core::Continuable for DenyAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DenyAssignmentListResult {
@@ -1329,7 +1284,7 @@ pub struct EligibleChildResourcesListResult {
 impl azure_core::Continuable for EligibleChildResourcesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EligibleChildResourcesListResult {
@@ -1572,7 +1527,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1637,7 +1592,7 @@ pub struct PermissionGetResult {
 impl azure_core::Continuable for PermissionGetResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PermissionGetResult {
@@ -1852,7 +1807,7 @@ pub struct ProviderOperationsMetadataListResult {
 impl azure_core::Continuable for ProviderOperationsMetadataListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderOperationsMetadataListResult {
@@ -1943,7 +1898,7 @@ pub struct RoleAssignmentListResult {
 impl azure_core::Continuable for RoleAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentListResult {
@@ -2179,7 +2134,7 @@ pub struct RoleAssignmentScheduleInstanceListResult {
 impl azure_core::Continuable for RoleAssignmentScheduleInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentScheduleInstanceListResult {
@@ -2466,7 +2421,7 @@ pub struct RoleAssignmentScheduleListResult {
 impl azure_core::Continuable for RoleAssignmentScheduleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentScheduleListResult {
@@ -2788,7 +2743,7 @@ pub struct RoleAssignmentScheduleRequestListResult {
 impl azure_core::Continuable for RoleAssignmentScheduleRequestListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentScheduleRequestListResult {
@@ -3205,7 +3160,7 @@ pub struct RoleDefinitionListResult {
 impl azure_core::Continuable for RoleDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleDefinitionListResult {
@@ -3344,7 +3299,7 @@ pub struct RoleEligibilityScheduleInstanceListResult {
 impl azure_core::Continuable for RoleEligibilityScheduleInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleEligibilityScheduleInstanceListResult {
@@ -3578,7 +3533,7 @@ pub struct RoleEligibilityScheduleListResult {
 impl azure_core::Continuable for RoleEligibilityScheduleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleEligibilityScheduleListResult {
@@ -3857,7 +3812,7 @@ pub struct RoleEligibilityScheduleRequestListResult {
 impl azure_core::Continuable for RoleEligibilityScheduleRequestListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleEligibilityScheduleRequestListResult {
@@ -4238,7 +4193,7 @@ impl RoleManagementPolicy {
         Self::default()
     }
 }
-#[doc = "The role management policy rule."]
+#[doc = "The role management policy approval rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleManagementPolicyApprovalRule {
     #[serde(flatten)]
@@ -4293,7 +4248,7 @@ pub struct RoleManagementPolicyAssignmentListResult {
 impl azure_core::Continuable for RoleManagementPolicyAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleManagementPolicyAssignmentListResult {
@@ -4321,7 +4276,7 @@ impl RoleManagementPolicyAssignmentProperties {
         Self::default()
     }
 }
-#[doc = "The role management policy rule."]
+#[doc = "The role management policy authentication context rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleManagementPolicyAuthenticationContextRule {
     #[serde(flatten)]
@@ -4364,7 +4319,7 @@ impl RoleManagementPolicyEnablementRule {
         }
     }
 }
-#[doc = "The role management policy rule."]
+#[doc = "The role management policy expiration rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleManagementPolicyExpirationRule {
     #[serde(flatten)]
@@ -4402,7 +4357,7 @@ pub struct RoleManagementPolicyListResult {
 impl azure_core::Continuable for RoleManagementPolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleManagementPolicyListResult {
@@ -4410,7 +4365,7 @@ impl RoleManagementPolicyListResult {
         Self::default()
     }
 }
-#[doc = "The role management policy rule."]
+#[doc = "The role management policy notification rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoleManagementPolicyNotificationRule {
     #[serde(flatten)]
@@ -4424,7 +4379,7 @@ pub struct RoleManagementPolicyNotificationRule {
     #[doc = "The recipient type."]
     #[serde(rename = "recipientType", default, skip_serializing_if = "Option::is_none")]
     pub recipient_type: Option<role_management_policy_notification_rule::RecipientType>,
-    #[doc = "The list notification recipients."]
+    #[doc = "The list of notification recipients."]
     #[serde(
         rename = "notificationRecipients",
         default,
@@ -4432,7 +4387,7 @@ pub struct RoleManagementPolicyNotificationRule {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub notification_recipients: Vec<String>,
-    #[doc = "Its value determine if the notification need to be sent to the recipient type specified in policy rule."]
+    #[doc = "Determines if the notification will be sent to the recipient type specified in the policy rule."]
     #[serde(rename = "isDefaultRecipientsEnabled", default, skip_serializing_if = "Option::is_none")]
     pub is_default_recipients_enabled: Option<bool>,
 }
@@ -4591,7 +4546,7 @@ pub struct RoleManagementPolicyProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub rules: Vec<RoleManagementPolicyRule>,
+    pub rules: Vec<RoleManagementPolicyRuleUnion>,
     #[doc = "The readonly computed rule applied to the policy."]
     #[serde(
         rename = "effectiveRules",
@@ -4599,7 +4554,7 @@ pub struct RoleManagementPolicyProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub effective_rules: Vec<RoleManagementPolicyRule>,
+    pub effective_rules: Vec<RoleManagementPolicyRuleUnion>,
     #[serde(rename = "policyProperties", default, skip_serializing_if = "Option::is_none")]
     pub policy_properties: Option<PolicyProperties>,
 }
@@ -4614,22 +4569,19 @@ pub struct RoleManagementPolicyRule {
     #[doc = "The id of the rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "The type of rule"]
-    #[serde(rename = "ruleType")]
-    pub rule_type: RoleManagementPolicyRuleType,
     #[doc = "The role management policy rule target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<RoleManagementPolicyRuleTarget>,
 }
 impl RoleManagementPolicyRule {
-    pub fn new(rule_type: RoleManagementPolicyRuleType) -> Self {
-        Self {
-            id: None,
-            rule_type,
-            target: None,
-        }
+    pub fn new() -> Self {
+        Self { id: None, target: None }
     }
 }
+#[doc = "The type of rule"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ruleType")]
+pub enum RoleManagementPolicyRuleUnion {}
 #[doc = "The role management policy rule target."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleManagementPolicyRuleTarget {
@@ -4643,7 +4595,7 @@ pub struct RoleManagementPolicyRuleTarget {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub operations: Vec<String>,
-    #[doc = "The assignment level to which it is applied."]
+    #[doc = "The assignment level to which rule is applied."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub level: Option<String>,
     #[doc = "The list of target objects."]
@@ -4734,8 +4686,6 @@ impl Serialize for RoleManagementPolicyRuleType {
 #[doc = "Service Principal Decision Target"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePrincipalDecisionTarget {
-    #[serde(flatten)]
-    pub access_review_decision_target: AccessReviewDecisionTarget,
     #[doc = "The id of service principal whose access is reviewed."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
@@ -4747,9 +4697,8 @@ pub struct ServicePrincipalDecisionTarget {
     pub app_id: Option<String>,
 }
 impl ServicePrincipalDecisionTarget {
-    pub fn new(access_review_decision_target: AccessReviewDecisionTarget) -> Self {
+    pub fn new() -> Self {
         Self {
-            access_review_decision_target,
             principal_id: None,
             principal_name: None,
             app_id: None,
@@ -4759,8 +4708,6 @@ impl ServicePrincipalDecisionTarget {
 #[doc = "User Decision Target"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserDecisionTarget {
-    #[serde(flatten)]
-    pub access_review_decision_target: AccessReviewDecisionTarget,
     #[doc = "The id of user whose access was reviewed."]
     #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
     pub principal_id: Option<String>,
@@ -4772,9 +4719,8 @@ pub struct UserDecisionTarget {
     pub user_principal_name: Option<String>,
 }
 impl UserDecisionTarget {
-    pub fn new(access_review_decision_target: AccessReviewDecisionTarget) -> Self {
+    pub fn new() -> Self {
         Self {
-            access_review_decision_target,
             principal_id: None,
             principal_name: None,
             user_principal_name: None,

@@ -75,8 +75,7 @@ impl ListBlobsBuilder {
                 }
 
                 let mut request =
-                    this.client
-                        .finalize_request(url, Method::Get, Headers::new(), None)?;
+                    ContainerClient::finalize_request(url, Method::Get, Headers::new(), None)?;
 
                 let response = this.client.send(&mut ctx, &mut request).await?;
 
@@ -120,14 +119,14 @@ impl Blobs {
     pub fn blobs(&self) -> impl Iterator<Item = &Blob> {
         self.items.iter().filter_map(|item| match item {
             BlobItem::Blob(blob) => Some(blob),
-            _ => None,
+            BlobItem::BlobPrefix(_) => None,
         })
     }
 
     pub fn prefixes(&self) -> impl Iterator<Item = &BlobPrefix> {
         self.items.iter().filter_map(|item| match item {
             BlobItem::BlobPrefix(prefix) => Some(prefix),
-            _ => None,
+            BlobItem::Blob(_) => None,
         })
     }
 }
@@ -336,6 +335,47 @@ mod tests {
 </EnumerationResults>";
 
         let bytes = Bytes::from(S);
+        let _list_blobs_response_internal: ListBlobsResponseInternal = read_xml(&bytes).unwrap();
+    }
+
+    #[test]
+    fn deserde_properties_with_non_existent_field() {
+        const XML: &str = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>
+        <EnumerationResults ServiceEndpoint=\"http://127.0.0.1:10000/devstoreaccount1\" ContainerName=\"temp\">
+            <Prefix>b39bc5c9-0f31-459c-a271-828467105470/</Prefix>
+            <Marker/>
+            <MaxResults>5000</MaxResults>
+            <Delimiter/>
+            <Blobs>
+                <Blob>
+                    <Name>b39bc5c9-0f31-459c-a271-828467105470/corrupted_data_2020-01-02T03_04_05.json</Name>
+                    <Properties>
+                        <Creation-Time>Mon, 02 Oct 2023 20:00:31 GMT</Creation-Time>
+                        <Last-Modified>Mon, 02 Oct 2023 20:00:31 GMT</Last-Modified>
+                        <Etag>0x23D9DB658CF7480</Etag>
+                        <Content-Length>0</Content-Length>
+                        <Content-Type>application/octet-stream</Content-Type>
+                        <Content-Encoding/>
+                        <Content-Language/>
+                        <Content-CRC64/>
+                        <Content-MD5/>
+                        <Cache-Control/>
+                        <Content-Disposition/>
+                        <BlobType>BlockBlob</BlobType>
+                        <AccessTier>Hot</AccessTier>
+                        <AccessTierInferred>true</AccessTierInferred>
+                        <LeaseStatus>unlocked</LeaseStatus>
+                        <LeaseState>available</LeaseState>
+                        <ServerEncrypted>true</ServerEncrypted>
+                        <ResourceType>file</ResourceType>
+                        <NotRealProperty>notRealValue</NotRealProperty> 
+                    </Properties>
+                </Blob>
+            </Blobs>
+            <NextMarker/>
+        </EnumerationResults>";
+
+        let bytes = Bytes::from(XML);
         let _list_blobs_response_internal: ListBlobsResponseInternal = read_xml(&bytes).unwrap();
     }
 

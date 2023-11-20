@@ -954,7 +954,7 @@ pub struct AccountList {
 impl azure_core::Continuable for AccountList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccountList {
@@ -1896,7 +1896,7 @@ pub struct ConsumerInvitationList {
 impl azure_core::Continuable for ConsumerInvitationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConsumerInvitationList {
@@ -2044,7 +2044,7 @@ pub struct ConsumerSourceDataSetList {
 impl azure_core::Continuable for ConsumerSourceDataSetList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConsumerSourceDataSetList {
@@ -2151,84 +2151,35 @@ pub mod consumer_source_data_set_properties {
 pub struct DataSet {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
-    #[doc = "Kind of data set."]
-    pub kind: data_set::Kind,
 }
 impl DataSet {
-    pub fn new(kind: data_set::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             proxy_dto: ProxyDto::default(),
-            kind,
         }
     }
 }
-pub mod data_set {
-    use super::*;
-    #[doc = "Kind of data set."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        Blob,
-        Container,
-        BlobFolder,
-        AdlsGen2FileSystem,
-        AdlsGen2Folder,
-        AdlsGen2File,
-        AdlsGen1Folder,
-        AdlsGen1File,
-        AdlsGen2StorageAccount,
-        KustoCluster,
-        KustoDatabase,
-        #[serde(rename = "SqlDBTable")]
-        SqlDbTable,
-        #[serde(rename = "SqlDWTable")]
-        SqlDwTable,
-        SynapseWorkspaceSqlPoolTable,
-        BlobStorageAccount,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Blob => serializer.serialize_unit_variant("Kind", 0u32, "Blob"),
-                Self::Container => serializer.serialize_unit_variant("Kind", 1u32, "Container"),
-                Self::BlobFolder => serializer.serialize_unit_variant("Kind", 2u32, "BlobFolder"),
-                Self::AdlsGen2FileSystem => serializer.serialize_unit_variant("Kind", 3u32, "AdlsGen2FileSystem"),
-                Self::AdlsGen2Folder => serializer.serialize_unit_variant("Kind", 4u32, "AdlsGen2Folder"),
-                Self::AdlsGen2File => serializer.serialize_unit_variant("Kind", 5u32, "AdlsGen2File"),
-                Self::AdlsGen1Folder => serializer.serialize_unit_variant("Kind", 6u32, "AdlsGen1Folder"),
-                Self::AdlsGen1File => serializer.serialize_unit_variant("Kind", 7u32, "AdlsGen1File"),
-                Self::AdlsGen2StorageAccount => serializer.serialize_unit_variant("Kind", 8u32, "AdlsGen2StorageAccount"),
-                Self::KustoCluster => serializer.serialize_unit_variant("Kind", 9u32, "KustoCluster"),
-                Self::KustoDatabase => serializer.serialize_unit_variant("Kind", 10u32, "KustoDatabase"),
-                Self::SqlDbTable => serializer.serialize_unit_variant("Kind", 11u32, "SqlDBTable"),
-                Self::SqlDwTable => serializer.serialize_unit_variant("Kind", 12u32, "SqlDWTable"),
-                Self::SynapseWorkspaceSqlPoolTable => serializer.serialize_unit_variant("Kind", 13u32, "SynapseWorkspaceSqlPoolTable"),
-                Self::BlobStorageAccount => serializer.serialize_unit_variant("Kind", 14u32, "BlobStorageAccount"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Kind of data set."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum DataSetUnion {
+    AdlsGen1File(AdlsGen1FileDataSet),
+    AdlsGen1Folder(AdlsGen1FolderDataSet),
+    AdlsGen2File(AdlsGen2FileDataSet),
+    AdlsGen2FileSystem(AdlsGen2FileSystemDataSet),
+    AdlsGen2Folder(AdlsGen2FolderDataSet),
+    AdlsGen2StorageAccount(AdlsGen2StorageAccountDataSet),
+    Container(BlobContainerDataSet),
+    Blob(BlobDataSet),
+    BlobFolder(BlobFolderDataSet),
+    BlobStorageAccount(BlobStorageAccountDataSet),
+    KustoCluster(KustoClusterDataSet),
+    KustoDatabase(KustoDatabaseDataSet),
+    #[serde(rename = "SqlDBTable")]
+    SqlDbTable(SqlDbTableDataSet),
+    #[serde(rename = "SqlDWTable")]
+    SqlDwTable(SqlDwTableDataSet),
+    SynapseWorkspaceSqlPoolTable(SynapseWorkspaceSqlPoolTableDataSet),
 }
 #[doc = "List response for get DataSets"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2237,16 +2188,16 @@ pub struct DataSetList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
-    pub value: Vec<DataSet>,
+    pub value: Vec<DataSetUnion>,
 }
 impl azure_core::Continuable for DataSetList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataSetList {
-    pub fn new(value: Vec<DataSet>) -> Self {
+    pub fn new(value: Vec<DataSetUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -2255,80 +2206,33 @@ impl DataSetList {
 pub struct DataSetMapping {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
-    #[doc = "Kind of data set mapping."]
-    pub kind: data_set_mapping::Kind,
 }
 impl DataSetMapping {
-    pub fn new(kind: data_set_mapping::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             proxy_dto: ProxyDto::default(),
-            kind,
         }
     }
 }
-pub mod data_set_mapping {
-    use super::*;
-    #[doc = "Kind of data set mapping."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        Blob,
-        Container,
-        BlobFolder,
-        AdlsGen2FileSystem,
-        AdlsGen2Folder,
-        AdlsGen2File,
-        AdlsGen2StorageAccount,
-        KustoCluster,
-        KustoDatabase,
-        #[serde(rename = "SqlDBTable")]
-        SqlDbTable,
-        #[serde(rename = "SqlDWTable")]
-        SqlDwTable,
-        SynapseWorkspaceSqlPoolTable,
-        BlobStorageAccount,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Blob => serializer.serialize_unit_variant("Kind", 0u32, "Blob"),
-                Self::Container => serializer.serialize_unit_variant("Kind", 1u32, "Container"),
-                Self::BlobFolder => serializer.serialize_unit_variant("Kind", 2u32, "BlobFolder"),
-                Self::AdlsGen2FileSystem => serializer.serialize_unit_variant("Kind", 3u32, "AdlsGen2FileSystem"),
-                Self::AdlsGen2Folder => serializer.serialize_unit_variant("Kind", 4u32, "AdlsGen2Folder"),
-                Self::AdlsGen2File => serializer.serialize_unit_variant("Kind", 5u32, "AdlsGen2File"),
-                Self::AdlsGen2StorageAccount => serializer.serialize_unit_variant("Kind", 6u32, "AdlsGen2StorageAccount"),
-                Self::KustoCluster => serializer.serialize_unit_variant("Kind", 7u32, "KustoCluster"),
-                Self::KustoDatabase => serializer.serialize_unit_variant("Kind", 8u32, "KustoDatabase"),
-                Self::SqlDbTable => serializer.serialize_unit_variant("Kind", 9u32, "SqlDBTable"),
-                Self::SqlDwTable => serializer.serialize_unit_variant("Kind", 10u32, "SqlDWTable"),
-                Self::SynapseWorkspaceSqlPoolTable => serializer.serialize_unit_variant("Kind", 11u32, "SynapseWorkspaceSqlPoolTable"),
-                Self::BlobStorageAccount => serializer.serialize_unit_variant("Kind", 12u32, "BlobStorageAccount"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Kind of data set mapping."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum DataSetMappingUnion {
+    AdlsGen2File(AdlsGen2FileDataSetMapping),
+    AdlsGen2FileSystem(AdlsGen2FileSystemDataSetMapping),
+    AdlsGen2Folder(AdlsGen2FolderDataSetMapping),
+    AdlsGen2StorageAccount(AdlsGen2StorageAccountDataSetMapping),
+    Container(BlobContainerDataSetMapping),
+    Blob(BlobDataSetMapping),
+    BlobFolder(BlobFolderDataSetMapping),
+    BlobStorageAccount(BlobStorageAccountDataSetMapping),
+    KustoCluster(KustoClusterDataSetMapping),
+    KustoDatabase(KustoDatabaseDataSetMapping),
+    #[serde(rename = "SqlDBTable")]
+    SqlDbTable(SqlDbTableDataSetMapping),
+    #[serde(rename = "SqlDWTable")]
+    SqlDwTable(SqlDwTableDataSetMapping),
+    SynapseWorkspaceSqlPoolTable(SynapseWorkspaceSqlPoolTableDataSetMapping),
 }
 #[doc = "List response for get DataSetMappings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2337,16 +2241,16 @@ pub struct DataSetMappingList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
-    pub value: Vec<DataSetMapping>,
+    pub value: Vec<DataSetMappingUnion>,
 }
 impl azure_core::Continuable for DataSetMappingList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataSetMappingList {
-    pub fn new(value: Vec<DataSetMapping>) -> Self {
+    pub fn new(value: Vec<DataSetMappingUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -2509,7 +2413,7 @@ pub struct InvitationList {
 impl azure_core::Continuable for InvitationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InvitationList {
@@ -3040,7 +2944,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -3303,7 +3207,7 @@ pub struct ProviderShareSubscriptionList {
 impl azure_core::Continuable for ProviderShareSubscriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderShareSubscriptionList {
@@ -3473,18 +3377,13 @@ pub mod scheduled_source_share_synchronization_setting_properties {
 #[doc = "A type of synchronization setting based on schedule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScheduledSourceSynchronizationSetting {
-    #[serde(flatten)]
-    pub source_share_synchronization_setting: SourceShareSynchronizationSetting,
     #[doc = "A Scheduled source synchronization setting data transfer object."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ScheduledSourceShareSynchronizationSettingProperties>,
 }
 impl ScheduledSourceSynchronizationSetting {
-    pub fn new(source_share_synchronization_setting: SourceShareSynchronizationSetting) -> Self {
-        Self {
-            source_share_synchronization_setting,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "A type of synchronization setting based on schedule"]
@@ -3857,7 +3756,7 @@ pub struct ShareList {
 impl azure_core::Continuable for ShareList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ShareList {
@@ -4006,7 +3905,7 @@ pub struct ShareSubscriptionList {
 impl azure_core::Continuable for ShareSubscriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ShareSubscriptionList {
@@ -4298,7 +4197,7 @@ pub struct ShareSubscriptionSynchronizationList {
 impl azure_core::Continuable for ShareSubscriptionSynchronizationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ShareSubscriptionSynchronizationList {
@@ -4397,7 +4296,7 @@ pub struct ShareSynchronizationList {
 impl azure_core::Continuable for ShareSynchronizationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ShareSynchronizationList {
@@ -4405,54 +4304,11 @@ impl ShareSynchronizationList {
         Self { next_link: None, value }
     }
 }
-#[doc = "A view of synchronization setting added by the provider"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SourceShareSynchronizationSetting {
-    #[doc = "Kind of synchronization setting on share."]
-    pub kind: source_share_synchronization_setting::Kind,
-}
-impl SourceShareSynchronizationSetting {
-    pub fn new(kind: source_share_synchronization_setting::Kind) -> Self {
-        Self { kind }
-    }
-}
-pub mod source_share_synchronization_setting {
-    use super::*;
-    #[doc = "Kind of synchronization setting on share."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        ScheduleBased,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::ScheduleBased => serializer.serialize_unit_variant("Kind", 0u32, "ScheduleBased"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Kind of synchronization setting on share."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum SourceShareSynchronizationSettingUnion {
+    ScheduleBased(ScheduledSourceSynchronizationSetting),
 }
 #[doc = "List response for get source share Synchronization settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -4461,16 +4317,16 @@ pub struct SourceShareSynchronizationSettingList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
-    pub value: Vec<SourceShareSynchronizationSetting>,
+    pub value: Vec<SourceShareSynchronizationSettingUnion>,
 }
 impl azure_core::Continuable for SourceShareSynchronizationSettingList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SourceShareSynchronizationSettingList {
-    pub fn new(value: Vec<SourceShareSynchronizationSetting>) -> Self {
+    pub fn new(value: Vec<SourceShareSynchronizationSettingUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -5146,7 +5002,7 @@ pub struct SynchronizationDetailsList {
 impl azure_core::Continuable for SynchronizationDetailsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SynchronizationDetailsList {
@@ -5159,54 +5015,19 @@ impl SynchronizationDetailsList {
 pub struct SynchronizationSetting {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
-    #[doc = "Kind of synchronization setting."]
-    pub kind: synchronization_setting::Kind,
 }
 impl SynchronizationSetting {
-    pub fn new(kind: synchronization_setting::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             proxy_dto: ProxyDto::default(),
-            kind,
         }
     }
 }
-pub mod synchronization_setting {
-    use super::*;
-    #[doc = "Kind of synchronization setting."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        ScheduleBased,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::ScheduleBased => serializer.serialize_unit_variant("Kind", 0u32, "ScheduleBased"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Kind of synchronization setting."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum SynchronizationSettingUnion {
+    ScheduleBased(ScheduledSynchronizationSetting),
 }
 #[doc = "List response for get Synchronization settings"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -5215,16 +5036,16 @@ pub struct SynchronizationSettingList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
-    pub value: Vec<SynchronizationSetting>,
+    pub value: Vec<SynchronizationSettingUnion>,
 }
 impl azure_core::Continuable for SynchronizationSettingList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SynchronizationSettingList {
-    pub fn new(value: Vec<SynchronizationSetting>) -> Self {
+    pub fn new(value: Vec<SynchronizationSettingUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -5397,54 +5218,19 @@ pub mod system_data {
 pub struct Trigger {
     #[serde(flatten)]
     pub proxy_dto: ProxyDto,
-    #[doc = "Kind of synchronization on trigger."]
-    pub kind: trigger::Kind,
 }
 impl Trigger {
-    pub fn new(kind: trigger::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             proxy_dto: ProxyDto::default(),
-            kind,
         }
     }
 }
-pub mod trigger {
-    use super::*;
-    #[doc = "Kind of synchronization on trigger."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        ScheduleBased,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::ScheduleBased => serializer.serialize_unit_variant("Kind", 0u32, "ScheduleBased"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Kind of synchronization on trigger."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum TriggerUnion {
+    ScheduleBased(ScheduledTrigger),
 }
 #[doc = "List response for get triggers"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -5453,16 +5239,16 @@ pub struct TriggerList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Collection of items of type DataTransferObjects."]
-    pub value: Vec<Trigger>,
+    pub value: Vec<TriggerUnion>,
 }
 impl azure_core::Continuable for TriggerList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TriggerList {
-    pub fn new(value: Vec<Trigger>) -> Self {
+    pub fn new(value: Vec<TriggerUnion>) -> Self {
         Self { next_link: None, value }
     }
 }

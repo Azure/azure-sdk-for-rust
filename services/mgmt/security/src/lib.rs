@@ -15,11 +15,11 @@ pub use package_composite_v2::*;
 pub mod package_composite_v1;
 #[cfg(all(feature = "package-composite-v1", not(feature = "no-default-tag")))]
 pub use package_composite_v1::*;
-#[cfg(feature = "package-2023-01")]
-pub mod package_2023_01;
-#[cfg(all(feature = "package-2023-01", not(feature = "no-default-tag")))]
-pub use package_2023_01::*;
-#[cfg(feature = "package-2022-05")]
-pub mod package_2022_05;
-#[cfg(all(feature = "package-2022-05", not(feature = "no-default-tag")))]
-pub use package_2022_05::*;
+#[cfg(feature = "package-2023-11-15")]
+pub mod package_2023_11_15;
+#[cfg(all(feature = "package-2023-11-15", not(feature = "no-default-tag")))]
+pub use package_2023_11_15::*;
+#[cfg(feature = "package-2023-05")]
+pub mod package_2023_05;
+#[cfg(all(feature = "package-2023-05", not(feature = "no-default-tag")))]
+pub use package_2023_05::*;

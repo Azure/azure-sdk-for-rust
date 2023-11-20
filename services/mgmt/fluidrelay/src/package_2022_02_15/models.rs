@@ -103,7 +103,7 @@ pub struct FluidRelayContainerList {
 impl azure_core::Continuable for FluidRelayContainerList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FluidRelayContainerList {
@@ -248,7 +248,7 @@ pub struct FluidRelayServerList {
 impl azure_core::Continuable for FluidRelayServerList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FluidRelayServerList {
@@ -405,7 +405,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {

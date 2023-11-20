@@ -338,7 +338,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -366,13 +366,13 @@ pub struct Pipeline {
     #[serde(flatten)]
     pub resource: Resource,
     #[doc = "Custom properties of a Pipeline."]
-    pub properties: PipelineProperties,
+    pub properties: PipelinePropertiesUnion,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 impl Pipeline {
-    pub fn new(properties: PipelineProperties) -> Self {
+    pub fn new(properties: PipelinePropertiesUnion) -> Self {
         Self {
             resource: Resource::default(),
             properties,
@@ -397,7 +397,7 @@ pub struct PipelineListResult {
 impl azure_core::Continuable for PipelineListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PipelineListResult {
@@ -411,63 +411,26 @@ pub struct PipelineProperties {
     #[doc = "Unique identifier of the Pipeline"]
     #[serde(rename = "pipelineId", default, skip_serializing_if = "Option::is_none")]
     pub pipeline_id: Option<i64>,
-    #[doc = "Specifies which CI/CD provider to use. Valid options are 'azurePipeline', 'githubWorkflow'."]
-    #[serde(rename = "pipelineType")]
-    pub pipeline_type: pipeline_properties::PipelineType,
     #[doc = "Configuration used to bootstrap a Pipeline."]
     #[serde(rename = "bootstrapConfiguration")]
     pub bootstrap_configuration: BootstrapConfiguration,
 }
 impl PipelineProperties {
-    pub fn new(pipeline_type: pipeline_properties::PipelineType, bootstrap_configuration: BootstrapConfiguration) -> Self {
+    pub fn new(bootstrap_configuration: BootstrapConfiguration) -> Self {
         Self {
             pipeline_id: None,
-            pipeline_type,
             bootstrap_configuration,
         }
     }
 }
-pub mod pipeline_properties {
-    use super::*;
-    #[doc = "Specifies which CI/CD provider to use. Valid options are 'azurePipeline', 'githubWorkflow'."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "PipelineType")]
-    pub enum PipelineType {
-        #[serde(rename = "githubWorkflow")]
-        GithubWorkflow,
-        #[serde(rename = "azurePipeline")]
-        AzurePipeline,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for PipelineType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for PipelineType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for PipelineType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::GithubWorkflow => serializer.serialize_unit_variant("PipelineType", 0u32, "githubWorkflow"),
-                Self::AzurePipeline => serializer.serialize_unit_variant("PipelineType", 1u32, "azurePipeline"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Specifies which CI/CD provider to use. Valid options are 'azurePipeline', 'githubWorkflow'."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "pipelineType")]
+pub enum PipelinePropertiesUnion {
+    #[serde(rename = "azurePipeline")]
+    AzurePipeline(AzurePipelineProperties),
+    #[serde(rename = "githubWorkflow")]
+    GithubWorkflow(GithubWorkflowProperties),
 }
 #[doc = "Template used to bootstrap the pipeline."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -525,7 +488,7 @@ pub struct PipelineTemplateDefinitionListResult {
 impl azure_core::Continuable for PipelineTemplateDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PipelineTemplateDefinitionListResult {

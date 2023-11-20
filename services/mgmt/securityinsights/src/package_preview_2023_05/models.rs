@@ -6,18 +6,13 @@ use std::str::FromStr;
 #[doc = "Represents AADIP (Azure Active Directory Identity Protection) requirements check request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AadCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[doc = "AADIP (Azure Active Directory Identity Protection) requirements check properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AadCheckRequirementsProperties>,
 }
 impl AadCheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "AADIP (Azure Active Directory Identity Protection) requirements check properties."]
@@ -67,18 +62,13 @@ impl AadDataConnectorProperties {
 #[doc = "Represents AATP (Azure Advanced Threat Protection) requirements check request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AatpCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[doc = "AATP (Azure Advanced Threat Protection) requirements check properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AatpCheckRequirementsProperties>,
 }
 impl AatpCheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "AATP (Azure Advanced Threat Protection) requirements check properties."]
@@ -128,18 +118,13 @@ impl AatpDataConnectorProperties {
 #[doc = "Represents ASC (Azure Security Center) requirements check request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AscCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[doc = "ASC (Azure Security Center) requirements check properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AscCheckRequirementsProperties>,
 }
 impl AscCheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "ASC (Azure Security Center) requirements check properties."]
@@ -349,7 +334,7 @@ pub struct ActionsList {
 impl azure_core::Continuable for ActionsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ActionsList {
@@ -534,8 +519,6 @@ pub mod activity_entity_query_template_properties {
 #[doc = "Represents Activity timeline item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityTimelineItem {
-    #[serde(flatten)]
-    pub entity_timeline_item: EntityTimelineItem,
     #[doc = "The activity query id."]
     #[serde(rename = "queryId")]
     pub query_id: String,
@@ -558,7 +541,6 @@ pub struct ActivityTimelineItem {
 }
 impl ActivityTimelineItem {
     pub fn new(
-        entity_timeline_item: EntityTimelineItem,
         query_id: String,
         bucket_start_time_utc: time::OffsetDateTime,
         bucket_end_time_utc: time::OffsetDateTime,
@@ -568,7 +550,6 @@ impl ActivityTimelineItem {
         title: String,
     ) -> Self {
         Self {
-            entity_timeline_item,
             query_id,
             bucket_start_time_utc,
             bucket_end_time_utc,
@@ -692,16 +673,26 @@ impl AlertPropertyMapping {
 pub struct AlertRule {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
-    #[doc = "The kind of the alert rule"]
-    pub kind: AlertRuleKindEnum,
 }
 impl AlertRule {
-    pub fn new(kind: AlertRuleKindEnum) -> Self {
+    pub fn new() -> Self {
         Self {
             resource_with_etag: ResourceWithEtag::default(),
-            kind,
         }
     }
+}
+#[doc = "The kind of the alert rule"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AlertRuleUnion {
+    Fusion(FusionAlertRule),
+    #[serde(rename = "MLBehaviorAnalytics")]
+    MlBehaviorAnalytics(MlBehaviorAnalyticsAlertRule),
+    MicrosoftSecurityIncidentCreation(MicrosoftSecurityIncidentCreationAlertRule),
+    #[serde(rename = "NRT")]
+    Nrt(NrtAlertRule),
+    Scheduled(ScheduledAlertRule),
+    ThreatIntelligence(ThreatIntelligenceAlertRule),
 }
 #[doc = "The kind of the alert rule"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -757,16 +748,26 @@ impl Serialize for AlertRuleKindEnum {
 pub struct AlertRuleTemplate {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "The kind of the alert rule"]
-    pub kind: AlertRuleKindEnum,
 }
 impl AlertRuleTemplate {
-    pub fn new(kind: AlertRuleKindEnum) -> Self {
+    pub fn new() -> Self {
         Self {
             resource: Resource::default(),
-            kind,
         }
     }
+}
+#[doc = "The kind of the alert rule"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AlertRuleTemplateUnion {
+    Fusion(FusionAlertRuleTemplate),
+    #[serde(rename = "MLBehaviorAnalytics")]
+    MlBehaviorAnalytics(MlBehaviorAnalyticsAlertRuleTemplate),
+    MicrosoftSecurityIncidentCreation(MicrosoftSecurityIncidentCreationAlertRuleTemplate),
+    #[serde(rename = "NRT")]
+    Nrt(NrtAlertRuleTemplate),
+    Scheduled(ScheduledAlertRuleTemplate),
+    ThreatIntelligence(ThreatIntelligenceAlertRuleTemplate),
 }
 #[doc = "alert rule template data sources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -894,16 +895,16 @@ pub struct AlertRuleTemplatesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of alert rule templates."]
-    pub value: Vec<AlertRuleTemplate>,
+    pub value: Vec<AlertRuleTemplateUnion>,
 }
 impl azure_core::Continuable for AlertRuleTemplatesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertRuleTemplatesList {
-    pub fn new(value: Vec<AlertRuleTemplate>) -> Self {
+    pub fn new(value: Vec<AlertRuleTemplateUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -922,16 +923,16 @@ pub struct AlertRulesList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of alert rules."]
-    pub value: Vec<AlertRule>,
+    pub value: Vec<AlertRuleUnion>,
 }
 impl azure_core::Continuable for AlertRulesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertRulesList {
-    pub fn new(value: Vec<AlertRule>) -> Self {
+    pub fn new(value: Vec<AlertRuleUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -1179,8 +1180,6 @@ impl Serialize for AnomalySecurityMlAnalyticsSettingsStatus {
 #[doc = "Represents anomaly timeline item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnomalyTimelineItem {
-    #[serde(flatten)]
-    pub entity_timeline_item: EntityTimelineItem,
     #[doc = "The anomaly azure resource id."]
     #[serde(rename = "azureResourceId")]
     pub azure_resource_id: String,
@@ -1225,7 +1224,6 @@ pub struct AnomalyTimelineItem {
 }
 impl AnomalyTimelineItem {
     pub fn new(
-        entity_timeline_item: EntityTimelineItem,
         azure_resource_id: String,
         display_name: String,
         end_time_utc: time::OffsetDateTime,
@@ -1233,7 +1231,6 @@ impl AnomalyTimelineItem {
         time_generated: time::OffsetDateTime,
     ) -> Self {
         Self {
-            entity_timeline_item,
             azure_resource_id,
             product_name: None,
             description: None,
@@ -1350,14 +1347,19 @@ impl AutomationRule {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutomationRuleAction {
     pub order: i32,
-    #[doc = "The type of the automation rule action."]
-    #[serde(rename = "actionType")]
-    pub action_type: ActionType,
 }
 impl AutomationRuleAction {
-    pub fn new(order: i32, action_type: ActionType) -> Self {
-        Self { order, action_type }
+    pub fn new(order: i32) -> Self {
+        Self { order }
     }
+}
+#[doc = "The type of the automation rule action."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "actionType")]
+pub enum AutomationRuleActionUnion {
+    AddIncidentTask(AutomationRuleAddIncidentTaskAction),
+    ModifyProperties(AutomationRuleModifyPropertiesAction),
+    RunPlaybook(AutomationRuleRunPlaybookAction),
 }
 #[doc = "Describes an automation rule action to add a task to an incident"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1385,7 +1387,7 @@ pub struct AutomationRuleBooleanCondition {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub inner_conditions: Vec<AutomationRuleCondition>,
+    pub inner_conditions: Vec<AutomationRuleConditionUnion>,
 }
 impl AutomationRuleBooleanCondition {
     pub fn new() -> Self {
@@ -1428,16 +1430,14 @@ impl Serialize for AutomationRuleBooleanConditionSupportedOperator {
         }
     }
 }
-#[doc = "Describes an automation rule condition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutomationRuleCondition {
-    #[serde(rename = "conditionType")]
-    pub condition_type: ConditionType,
-}
-impl AutomationRuleCondition {
-    pub fn new(condition_type: ConditionType) -> Self {
-        Self { condition_type }
-    }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "conditionType")]
+pub enum AutomationRuleConditionUnion {
+    Boolean(BooleanConditionProperties),
+    PropertyArrayChanged(PropertyArrayChangedConditionProperties),
+    PropertyArray(PropertyArrayConditionProperties),
+    PropertyChanged(PropertyChangedConditionProperties),
+    Property(PropertyConditionProperties),
 }
 #[doc = "Describes an automation rule action to modify an object's properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1467,7 +1467,7 @@ pub struct AutomationRuleProperties {
     #[serde(rename = "triggeringLogic")]
     pub triggering_logic: AutomationRuleTriggeringLogic,
     #[doc = "The actions to execute when the automation rule is triggered."]
-    pub actions: Vec<AutomationRuleAction>,
+    pub actions: Vec<AutomationRuleActionUnion>,
     #[doc = "The last time the automation rule was updated."]
     #[serde(rename = "lastModifiedTimeUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_time_utc: Option<time::OffsetDateTime>,
@@ -1486,7 +1486,7 @@ impl AutomationRuleProperties {
         display_name: String,
         order: i32,
         triggering_logic: AutomationRuleTriggeringLogic,
-        actions: Vec<AutomationRuleAction>,
+        actions: Vec<AutomationRuleActionUnion>,
     ) -> Self {
         Self {
             display_name,
@@ -1684,7 +1684,7 @@ pub struct AutomationRulePropertyArrayValuesCondition {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub item_conditions: Vec<AutomationRuleCondition>,
+    pub item_conditions: Vec<AutomationRuleConditionUnion>,
 }
 impl AutomationRulePropertyArrayValuesCondition {
     pub fn new() -> Self {
@@ -2178,7 +2178,7 @@ pub struct AutomationRuleTriggeringLogic {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub conditions: Vec<AutomationRuleCondition>,
+    pub conditions: Vec<AutomationRuleConditionUnion>,
 }
 impl AutomationRuleTriggeringLogic {
     pub fn new(is_enabled: bool, triggers_on: TriggersOn, triggers_when: TriggersWhen) -> Self {
@@ -2205,7 +2205,7 @@ pub struct AutomationRulesList {
 impl azure_core::Continuable for AutomationRulesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AutomationRulesList {
@@ -2236,15 +2236,10 @@ pub mod availability {
 }
 #[doc = "Amazon Web Services CloudTrail requirements check request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AwsCloudTrailCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
-}
+pub struct AwsCloudTrailCheckRequirements {}
 impl AwsCloudTrailCheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Represents Amazon Web Services CloudTrail data connector."]
@@ -2295,15 +2290,10 @@ impl AwsCloudTrailDataConnectorProperties {
 }
 #[doc = "Amazon Web Services S3 requirements check request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AwsS3CheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
-}
+pub struct AwsS3CheckRequirements {}
 impl AwsS3CheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Represents Amazon Web Services S3 data connector."]
@@ -2394,16 +2384,19 @@ impl AzureEntityResource {
 pub struct BillingStatistic {
     #[serde(flatten)]
     pub azure_entity_resource: AzureEntityResource,
-    #[doc = "The kind of the billing statistic"]
-    pub kind: BillingStatisticKindEnum,
 }
 impl BillingStatistic {
-    pub fn new(kind: BillingStatisticKindEnum) -> Self {
+    pub fn new() -> Self {
         Self {
             azure_entity_resource: AzureEntityResource::default(),
-            kind,
         }
     }
+}
+#[doc = "The kind of the billing statistic"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum BillingStatisticUnion {
+    SapSolutionUsage(SapSolutionUsageStatistic),
 }
 #[doc = "The kind of the billing statistic"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2447,16 +2440,16 @@ pub struct BillingStatisticList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of billing statistics."]
-    pub value: Vec<BillingStatistic>,
+    pub value: Vec<BillingStatisticUnion>,
 }
 impl azure_core::Continuable for BillingStatisticList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BillingStatisticList {
-    pub fn new(value: Vec<BillingStatistic>) -> Self {
+    pub fn new(value: Vec<BillingStatisticUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -2538,7 +2531,7 @@ pub mod bookmark_expand_response {
             deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
-        pub entities: Vec<Entity>,
+        pub entities: Vec<EntityUnion>,
         #[doc = "Array of expansion result connected entities"]
         #[serde(
             default,
@@ -2565,7 +2558,7 @@ pub struct BookmarkList {
 impl azure_core::Continuable for BookmarkList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BookmarkList {
@@ -2661,8 +2654,6 @@ impl BookmarkProperties {
 #[doc = "Represents bookmark timeline item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BookmarkTimelineItem {
-    #[serde(flatten)]
-    pub entity_timeline_item: EntityTimelineItem,
     #[doc = "The bookmark azure resource id."]
     #[serde(rename = "azureResourceId")]
     pub azure_resource_id: String,
@@ -2693,9 +2684,8 @@ pub struct BookmarkTimelineItem {
     pub labels: Vec<Label>,
 }
 impl BookmarkTimelineItem {
-    pub fn new(entity_timeline_item: EntityTimelineItem, azure_resource_id: String) -> Self {
+    pub fn new(azure_resource_id: String) -> Self {
         Self {
-            entity_timeline_item,
             azure_resource_id,
             display_name: None,
             notes: None,
@@ -2710,15 +2700,12 @@ impl BookmarkTimelineItem {
 #[doc = "Describes an automation rule condition that applies a boolean operator (e.g AND, OR) to conditions"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BooleanConditionProperties {
-    #[serde(flatten)]
-    pub automation_rule_condition: AutomationRuleCondition,
     #[serde(rename = "conditionProperties", default, skip_serializing_if = "Option::is_none")]
     pub condition_properties: Option<AutomationRuleBooleanCondition>,
 }
 impl BooleanConditionProperties {
-    pub fn new(automation_rule_condition: AutomationRuleCondition) -> Self {
+    pub fn new() -> Self {
         Self {
-            automation_rule_condition,
             condition_properties: None,
         }
     }
@@ -3354,16 +3341,19 @@ impl Serialize for ContentType {
 pub struct CustomEntityQuery {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
-    #[doc = "The kind of the entity query that supports put request."]
-    pub kind: CustomEntityQueryKind,
 }
 impl CustomEntityQuery {
-    pub fn new(kind: CustomEntityQueryKind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource_with_etag: ResourceWithEtag::default(),
-            kind,
         }
     }
+}
+#[doc = "The kind of the entity query that supports put request."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum CustomEntityQueryUnion {
+    Activity(ActivityCustomEntityQuery),
 }
 #[doc = "The kind of the entity query that supports put request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3453,16 +3443,47 @@ impl DcrConfiguration {
 pub struct DataConnector {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
-    #[doc = "The kind of the data connector"]
-    pub kind: DataConnectorKind,
 }
 impl DataConnector {
-    pub fn new(kind: DataConnectorKind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource_with_etag: ResourceWithEtag::default(),
-            kind,
         }
     }
+}
+#[doc = "The kind of the data connector"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum DataConnectorUnion {
+    AzureActiveDirectory(AadDataConnector),
+    AzureAdvancedThreatProtection(AatpDataConnector),
+    AzureSecurityCenter(AscDataConnector),
+    AmazonWebServicesCloudTrail(AwsCloudTrailDataConnector),
+    AmazonWebServicesS3(AwsS3DataConnector),
+    #[serde(rename = "APIPolling")]
+    ApiPolling(CodelessApiPollingDataConnector),
+    #[serde(rename = "GenericUI")]
+    GenericUi(CodelessUiDataConnector),
+    Dynamics365(Dynamics365DataConnector),
+    #[serde(rename = "GCP")]
+    Gcp(GcpDataConnector),
+    #[serde(rename = "IOT")]
+    Iot(IoTDataConnector),
+    MicrosoftCloudAppSecurity(McasDataConnector),
+    MicrosoftDefenderAdvancedThreatProtection(MdatpDataConnector),
+    MicrosoftThreatIntelligence(MstiDataConnector),
+    MicrosoftThreatProtection(MtpDataConnector),
+    MicrosoftPurviewInformationProtection(MicrosoftPurviewInformationProtectionDataConnector),
+    Office365Project(Office365ProjectDataConnector),
+    #[serde(rename = "OfficeATP")]
+    OfficeAtp(OfficeAtpDataConnector),
+    Office365(OfficeDataConnector),
+    #[serde(rename = "OfficeIRM")]
+    OfficeIrm(OfficeIrmDataConnector),
+    #[serde(rename = "OfficePowerBI")]
+    OfficePowerBi(OfficePowerBiDataConnector),
+    ThreatIntelligence(TiDataConnector),
+    ThreatIntelligenceTaxii(TiTaxiiDataConnector),
 }
 #[doc = "Describes the state of user's authorization for a connector kind."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -3782,16 +3803,16 @@ pub struct DataConnectorList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of data connectors."]
-    pub value: Vec<DataConnector>,
+    pub value: Vec<DataConnectorUnion>,
 }
 impl azure_core::Continuable for DataConnectorList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataConnectorList {
-    pub fn new(value: Vec<DataConnector>) -> Self {
+    pub fn new(value: Vec<DataConnectorUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -3834,16 +3855,32 @@ impl DataConnectorWithAlertsProperties {
         Self::default()
     }
 }
-#[doc = "Data connector requirements properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataConnectorsCheckRequirements {
-    #[doc = "The kind of the data connector"]
-    pub kind: DataConnectorKind,
-}
-impl DataConnectorsCheckRequirements {
-    pub fn new(kind: DataConnectorKind) -> Self {
-        Self { kind }
-    }
+#[doc = "The kind of the data connector"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum DataConnectorsCheckRequirementsUnion {
+    AzureActiveDirectory(AadCheckRequirements),
+    AzureAdvancedThreatProtection(AatpCheckRequirements),
+    AzureSecurityCenter(AscCheckRequirements),
+    AmazonWebServicesCloudTrail(AwsCloudTrailCheckRequirements),
+    AmazonWebServicesS3(AwsS3CheckRequirements),
+    Dynamics365(Dynamics365CheckRequirements),
+    #[serde(rename = "IOT")]
+    Iot(IoTCheckRequirements),
+    MicrosoftCloudAppSecurity(McasCheckRequirements),
+    MicrosoftDefenderAdvancedThreatProtection(MdatpCheckRequirements),
+    MicrosoftThreatIntelligence(MstiCheckRequirements),
+    MicrosoftPurviewInformationProtection(MicrosoftPurviewInformationProtectionCheckRequirements),
+    MicrosoftThreatProtection(MtpCheckRequirements),
+    Office365Project(Office365ProjectCheckRequirements),
+    #[serde(rename = "OfficeATP")]
+    OfficeAtp(OfficeAtpCheckRequirements),
+    #[serde(rename = "OfficeIRM")]
+    OfficeIrm(OfficeIrmCheckRequirements),
+    #[serde(rename = "OfficePowerBI")]
+    OfficePowerBi(OfficePowerBiCheckRequirements),
+    ThreatIntelligence(TiCheckRequirements),
+    ThreatIntelligenceTaxii(TiTaxiiCheckRequirements),
 }
 #[doc = "The data type definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -4022,18 +4059,13 @@ impl Serialize for DeploymentState {
 #[doc = "Represents Dynamics365 requirements check request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dynamics365CheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[doc = "Dynamics365 requirements check properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<Dynamics365CheckRequirementsProperties>,
 }
 impl Dynamics365CheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "Dynamics365 requirements check properties."]
@@ -4308,16 +4340,20 @@ impl EnrichmentIpGeodata {
 pub struct Entity {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "The kind of the entity"]
-    pub kind: EntityInnerKind,
 }
 impl Entity {
-    pub fn new(kind: EntityInnerKind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource: Resource::default(),
-            kind,
         }
     }
+}
+#[doc = "The kind of the entity"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EntityUnion {
+    Bookmark(HuntingBookmark),
+    SecurityAlert(SecurityAlert),
 }
 #[doc = "Settings with single toggle."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -4427,7 +4463,7 @@ pub mod entity_expand_response {
             deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
-        pub entities: Vec<Entity>,
+        pub entities: Vec<EntityUnion>,
         #[doc = "Array of edges that connects the entity to the list of entities."]
         #[serde(
             default,
@@ -4715,16 +4751,16 @@ pub struct EntityList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of entities."]
-    pub value: Vec<Entity>,
+    pub value: Vec<EntityUnion>,
 }
 impl azure_core::Continuable for EntityList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EntityList {
-    pub fn new(value: Vec<Entity>) -> Self {
+    pub fn new(value: Vec<EntityUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -4886,16 +4922,20 @@ impl Serialize for EntityProviders {
 pub struct EntityQuery {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
-    #[doc = "The kind of the entity query"]
-    pub kind: EntityQueryKind,
 }
 impl EntityQuery {
-    pub fn new(kind: EntityQueryKind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource_with_etag: ResourceWithEtag::default(),
-            kind,
         }
     }
+}
+#[doc = "The kind of the entity query"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EntityQueryUnion {
+    Activity(ActivityEntityQuery),
+    Expansion(ExpansionEntityQuery),
 }
 #[doc = "An abstract Query item for entity"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -4909,18 +4949,21 @@ pub struct EntityQueryItem {
     #[doc = "ARM Type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[doc = "The kind of the entity query"]
-    pub kind: EntityQueryKind,
 }
 impl EntityQueryItem {
-    pub fn new(kind: EntityQueryKind) -> Self {
+    pub fn new() -> Self {
         Self {
             id: None,
             name: None,
             type_: None,
-            kind,
         }
     }
+}
+#[doc = "The kind of the entity query"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EntityQueryItemUnion {
+    Insight(InsightQueryItem),
 }
 #[doc = "An properties abstract Query item for entity"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -4999,16 +5042,16 @@ pub struct EntityQueryList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of entity queries."]
-    pub value: Vec<EntityQuery>,
+    pub value: Vec<EntityQueryUnion>,
 }
 impl azure_core::Continuable for EntityQueryList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EntityQueryList {
-    pub fn new(value: Vec<EntityQuery>) -> Self {
+    pub fn new(value: Vec<EntityQueryUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -5017,16 +5060,19 @@ impl EntityQueryList {
 pub struct EntityQueryTemplate {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "The kind of the entity query template."]
-    pub kind: EntityQueryTemplateKind,
 }
 impl EntityQueryTemplate {
-    pub fn new(kind: EntityQueryTemplateKind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource: Resource::default(),
-            kind,
         }
     }
+}
+#[doc = "The kind of the entity query template."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EntityQueryTemplateUnion {
+    Activity(ActivityEntityQueryTemplate),
 }
 #[doc = "The kind of the entity query template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -5070,29 +5116,27 @@ pub struct EntityQueryTemplateList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of entity query templates."]
-    pub value: Vec<EntityQueryTemplate>,
+    pub value: Vec<EntityQueryTemplateUnion>,
 }
 impl azure_core::Continuable for EntityQueryTemplateList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EntityQueryTemplateList {
-    pub fn new(value: Vec<EntityQueryTemplate>) -> Self {
+    pub fn new(value: Vec<EntityQueryTemplateUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
-#[doc = "Entity timeline Item."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EntityTimelineItem {
-    #[doc = "The entity query kind"]
-    pub kind: EntityTimelineKind,
-}
-impl EntityTimelineItem {
-    pub fn new(kind: EntityTimelineKind) -> Self {
-        Self { kind }
-    }
+#[doc = "The entity query kind"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EntityTimelineItemUnion {
+    Activity(ActivityTimelineItem),
+    Anomaly(AnomalyTimelineItem),
+    Bookmark(BookmarkTimelineItem),
+    SecurityAlert(SecurityAlertTimelineItem),
 }
 #[doc = "The entity query kind"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -5177,7 +5221,7 @@ pub struct EntityTimelineResponse {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<EntityTimelineItem>,
+    pub value: Vec<EntityTimelineItemUnion>,
 }
 impl EntityTimelineResponse {
     pub fn new() -> Self {
@@ -5469,7 +5513,7 @@ pub struct FileImportList {
 impl azure_core::Continuable for FileImportList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FileImportList {
@@ -6284,7 +6328,7 @@ pub struct GetQueriesResponse {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<EntityQueryItem>,
+    pub value: Vec<EntityQueryItemUnion>,
 }
 impl GetQueriesResponse {
     pub fn new() -> Self {
@@ -6460,7 +6504,7 @@ pub struct HuntCommentList {
 impl azure_core::Continuable for HuntCommentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HuntCommentList {
@@ -6491,7 +6535,7 @@ pub struct HuntList {
 impl azure_core::Continuable for HuntList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HuntList {
@@ -6737,7 +6781,7 @@ pub struct HuntRelationList {
 impl azure_core::Continuable for HuntRelationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HuntRelationList {
@@ -7037,7 +7081,7 @@ pub struct IncidentCommentList {
 impl azure_core::Continuable for IncidentCommentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IncidentCommentList {
@@ -7097,7 +7141,7 @@ pub struct IncidentEntitiesResponse {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub entities: Vec<Entity>,
+    pub entities: Vec<EntityUnion>,
     #[doc = "The metadata from the incident related entities results."]
     #[serde(
         rename = "metaData",
@@ -7213,7 +7257,7 @@ pub struct IncidentList {
 impl azure_core::Continuable for IncidentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IncidentList {
@@ -7523,7 +7567,7 @@ pub struct IncidentTaskList {
 impl azure_core::Continuable for IncidentTaskList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IncidentTaskList {
@@ -7793,18 +7837,13 @@ impl Instructions {
 #[doc = "Represents IoT requirements check request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IoTCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[doc = "IoT requirements check properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<IoTCheckRequirementsProperties>,
 }
 impl IoTCheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "IoT requirements check properties."]
@@ -7876,7 +7915,7 @@ pub struct JobList {
 impl azure_core::Continuable for JobList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobList {
@@ -7975,18 +8014,13 @@ impl LastDataReceivedDataType {
 #[doc = "Represents MCAS (Microsoft Cloud App Security) requirements check request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct McasCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[doc = "MCAS (Microsoft Cloud App Security) requirements check properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<McasCheckRequirementsProperties>,
 }
 impl McasCheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "MCAS (Microsoft Cloud App Security) requirements check properties."]
@@ -8054,18 +8088,13 @@ impl McasDataConnectorProperties {
 #[doc = "Represents MDATP (Microsoft Defender Advanced Threat Protection) requirements check request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MdatpCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[doc = "MDATP (Microsoft Defender Advanced Threat Protection) requirements check properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MdatpCheckRequirementsProperties>,
 }
 impl MdatpCheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "MDATP (Microsoft Defender Advanced Threat Protection) requirements check properties."]
@@ -8217,18 +8246,13 @@ pub mod ml_behavior_analytics_alert_rule_template {
 #[doc = "Represents Microsoft Threat Intelligence requirements check request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MstiCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[doc = "Microsoft Threat Intelligence requirements check properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MstiCheckRequirementsProperties>,
 }
 impl MstiCheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "Microsoft Threat Intelligence requirements check properties."]
@@ -8400,7 +8424,7 @@ pub struct MetadataList {
 impl azure_core::Continuable for MetadataList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MetadataList {
@@ -8425,18 +8449,13 @@ impl MetadataModel {
 #[doc = "Represents MicrosoftPurviewInformationProtection requirements check request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MicrosoftPurviewInformationProtectionCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[doc = "MicrosoftPurviewInformationProtection requirements check properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MicrosoftPurviewInformationProtectionCheckRequirementsProperties>,
 }
 impl MicrosoftPurviewInformationProtectionCheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "MicrosoftPurviewInformationProtection requirements check properties."]
@@ -8718,18 +8737,13 @@ impl Serialize for MicrosoftSecurityProductName {
 #[doc = "Represents MTP (Microsoft Threat Protection) requirements check request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MtpCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[doc = "MTP (Microsoft Threat Protection) requirements check properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<MtpCheckRequirementsProperties>,
 }
 impl MtpCheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "Represents the connector's Filtered providers"]
@@ -8913,18 +8927,13 @@ impl NrtAlertRuleTemplate {
 #[doc = "Represents Office365 Project requirements check request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Office365ProjectCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[doc = "Office365 Project requirements check properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<Office365ProjectCheckRequirementsProperties>,
 }
 impl Office365ProjectCheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "Office365 Project requirements check properties."]
@@ -8986,18 +8995,13 @@ impl Office365ProjectDataConnectorProperties {
 #[doc = "Represents OfficeATP (Office 365 Advanced Threat Protection) requirements check request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfficeAtpCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[doc = "OfficeATP (Office 365 Advanced Threat Protection) requirements check properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OfficeAtpCheckRequirementsProperties>,
 }
 impl OfficeAtpCheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "OfficeATP (Office 365 Advanced Threat Protection) requirements check properties."]
@@ -9070,7 +9074,7 @@ pub struct OfficeConsentList {
 impl azure_core::Continuable for OfficeConsentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OfficeConsentList {
@@ -9150,18 +9154,13 @@ impl OfficeDataConnectorProperties {
 #[doc = "Represents OfficeIRM (Microsoft Insider Risk Management) requirements check request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfficeIrmCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[doc = "OfficeIRM (Microsoft Insider Risk Management) requirements check properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OfficeIrmCheckRequirementsProperties>,
 }
 impl OfficeIrmCheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "OfficeIRM (Microsoft Insider Risk Management) requirements check properties."]
@@ -9211,18 +9210,13 @@ impl OfficeIrmDataConnectorProperties {
 #[doc = "Represents Office PowerBI requirements check request."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OfficePowerBiCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[doc = "Office PowerBI requirements check properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<OfficePowerBiCheckRequirementsProperties>,
 }
 impl OfficePowerBiCheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "Office PowerBI requirements check properties."]
@@ -9338,7 +9332,7 @@ pub struct OperationsList {
 impl azure_core::Continuable for OperationsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationsList {
@@ -9390,15 +9384,12 @@ impl PlaybookActionProperties {
 #[doc = "Describes an automation rule condition that evaluates an array property's value change"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PropertyArrayChangedConditionProperties {
-    #[serde(flatten)]
-    pub automation_rule_condition: AutomationRuleCondition,
     #[serde(rename = "conditionProperties", default, skip_serializing_if = "Option::is_none")]
     pub condition_properties: Option<AutomationRulePropertyArrayChangedValuesCondition>,
 }
 impl PropertyArrayChangedConditionProperties {
-    pub fn new(automation_rule_condition: AutomationRuleCondition) -> Self {
+    pub fn new() -> Self {
         Self {
-            automation_rule_condition,
             condition_properties: None,
         }
     }
@@ -9406,15 +9397,12 @@ impl PropertyArrayChangedConditionProperties {
 #[doc = "Describes an automation rule condition that evaluates an array property's value"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PropertyArrayConditionProperties {
-    #[serde(flatten)]
-    pub automation_rule_condition: AutomationRuleCondition,
     #[serde(rename = "conditionProperties", default, skip_serializing_if = "Option::is_none")]
     pub condition_properties: Option<AutomationRulePropertyArrayValuesCondition>,
 }
 impl PropertyArrayConditionProperties {
-    pub fn new(automation_rule_condition: AutomationRuleCondition) -> Self {
+    pub fn new() -> Self {
         Self {
-            automation_rule_condition,
             condition_properties: None,
         }
     }
@@ -9422,15 +9410,12 @@ impl PropertyArrayConditionProperties {
 #[doc = "Describes an automation rule condition that evaluates a property's value change"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PropertyChangedConditionProperties {
-    #[serde(flatten)]
-    pub automation_rule_condition: AutomationRuleCondition,
     #[serde(rename = "conditionProperties", default, skip_serializing_if = "Option::is_none")]
     pub condition_properties: Option<AutomationRulePropertyValuesChangedCondition>,
 }
 impl PropertyChangedConditionProperties {
-    pub fn new(automation_rule_condition: AutomationRuleCondition) -> Self {
+    pub fn new() -> Self {
         Self {
-            automation_rule_condition,
             condition_properties: None,
         }
     }
@@ -9438,15 +9423,12 @@ impl PropertyChangedConditionProperties {
 #[doc = "Describes an automation rule condition that evaluates a property's value"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PropertyConditionProperties {
-    #[serde(flatten)]
-    pub automation_rule_condition: AutomationRuleCondition,
     #[serde(rename = "conditionProperties", default, skip_serializing_if = "Option::is_none")]
     pub condition_properties: Option<AutomationRulePropertyValuesCondition>,
 }
 impl PropertyConditionProperties {
-    pub fn new(automation_rule_condition: AutomationRuleCondition) -> Self {
+    pub fn new() -> Self {
         Self {
-            automation_rule_condition,
             condition_properties: None,
         }
     }
@@ -9863,7 +9845,7 @@ pub struct RelationList {
 impl azure_core::Continuable for RelationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RelationList {
@@ -9931,7 +9913,7 @@ pub struct RepoList {
 impl azure_core::Continuable for RepoList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RepoList {
@@ -10786,8 +10768,6 @@ pub mod security_alert_properties {
 #[doc = "Represents security alert timeline item."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityAlertTimelineItem {
-    #[serde(flatten)]
-    pub entity_timeline_item: EntityTimelineItem,
     #[doc = "The alert azure resource id."]
     #[serde(rename = "azureResourceId")]
     pub azure_resource_id: String,
@@ -10827,7 +10807,6 @@ pub struct SecurityAlertTimelineItem {
 }
 impl SecurityAlertTimelineItem {
     pub fn new(
-        entity_timeline_item: EntityTimelineItem,
         azure_resource_id: String,
         display_name: String,
         severity: AlertSeverityEnum,
@@ -10837,7 +10816,6 @@ impl SecurityAlertTimelineItem {
         alert_type: String,
     ) -> Self {
         Self {
-            entity_timeline_item,
             azure_resource_id,
             product_name: None,
             description: None,
@@ -10921,16 +10899,19 @@ pub mod security_alert_timeline_item {
 pub struct SecurityMlAnalyticsSetting {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
-    #[doc = "The kind of security ML analytics settings"]
-    pub kind: SecurityMlAnalyticsSettingsKindEnum,
 }
 impl SecurityMlAnalyticsSetting {
-    pub fn new(kind: SecurityMlAnalyticsSettingsKindEnum) -> Self {
+    pub fn new() -> Self {
         Self {
             resource_with_etag: ResourceWithEtag::default(),
-            kind,
         }
     }
+}
+#[doc = "The kind of security ML analytics settings"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum SecurityMlAnalyticsSettingUnion {
+    Anomaly(AnomalySecurityMlAnalyticsSettings),
 }
 #[doc = "security ml analytics settings data sources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -10994,16 +10975,16 @@ pub struct SecurityMlAnalyticsSettingsList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of SecurityMLAnalyticsSettings"]
-    pub value: Vec<SecurityMlAnalyticsSetting>,
+    pub value: Vec<SecurityMlAnalyticsSettingUnion>,
 }
 impl azure_core::Continuable for SecurityMlAnalyticsSettingsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecurityMlAnalyticsSettingsList {
-    pub fn new(value: Vec<SecurityMlAnalyticsSetting>) -> Self {
+    pub fn new(value: Vec<SecurityMlAnalyticsSettingUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -11061,10 +11042,10 @@ impl SentinelOnboardingStatesList {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SettingList {
     #[doc = "Array of settings."]
-    pub value: Vec<Settings>,
+    pub value: Vec<SettingsUnion>,
 }
 impl SettingList {
-    pub fn new(value: Vec<Settings>) -> Self {
+    pub fn new(value: Vec<SettingsUnion>) -> Self {
         Self { value }
     }
 }
@@ -11073,60 +11054,22 @@ impl SettingList {
 pub struct Settings {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
-    #[doc = "The kind of the setting"]
-    pub kind: settings::Kind,
 }
 impl Settings {
-    pub fn new(kind: settings::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource_with_etag: ResourceWithEtag::default(),
-            kind,
         }
     }
 }
-pub mod settings {
-    use super::*;
-    #[doc = "The kind of the setting"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        Anomalies,
-        EyesOn,
-        EntityAnalytics,
-        Ueba,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Anomalies => serializer.serialize_unit_variant("Kind", 0u32, "Anomalies"),
-                Self::EyesOn => serializer.serialize_unit_variant("Kind", 1u32, "EyesOn"),
-                Self::EntityAnalytics => serializer.serialize_unit_variant("Kind", 2u32, "EntityAnalytics"),
-                Self::Ueba => serializer.serialize_unit_variant("Kind", 3u32, "Ueba"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "The kind of the setting"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum SettingsUnion {
+    Anomalies(Anomalies),
+    EntityAnalytics(EntityAnalytics),
+    EyesOn(EyesOn),
+    Ueba(Ueba),
 }
 #[doc = "Represents a SourceControl in Azure Security Insights."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -11154,7 +11097,7 @@ pub struct SourceControlList {
 impl azure_core::Continuable for SourceControlList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SourceControlList {
@@ -11210,18 +11153,13 @@ impl SourceControlProperties {
 #[doc = "Threat Intelligence Platforms data connector check requirements"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TiCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[doc = "Threat Intelligence Platforms data connector required properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TiCheckRequirementsProperties>,
 }
 impl TiCheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "Threat Intelligence Platforms data connector required properties."]
@@ -11745,16 +11683,20 @@ impl ThreatIntelligenceIndicatorProperties {
 pub struct ThreatIntelligenceInformation {
     #[serde(flatten)]
     pub resource_with_etag: ResourceWithEtag,
-    #[doc = "The kind of the threat intelligence entity"]
-    pub kind: ThreatIntelligenceResourceInnerKind,
 }
 impl ThreatIntelligenceInformation {
-    pub fn new(kind: ThreatIntelligenceResourceInnerKind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource_with_etag: ResourceWithEtag::default(),
-            kind,
         }
     }
+}
+#[doc = "The kind of the threat intelligence entity"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ThreatIntelligenceInformationUnion {
+    #[serde(rename = "indicator")]
+    Indicator(ThreatIntelligenceIndicatorModel),
 }
 #[doc = "List of all the threat intelligence information objects."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -11763,16 +11705,16 @@ pub struct ThreatIntelligenceInformationList {
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
     #[doc = "Array of threat intelligence information objects."]
-    pub value: Vec<ThreatIntelligenceInformation>,
+    pub value: Vec<ThreatIntelligenceInformationUnion>,
 }
 impl azure_core::Continuable for ThreatIntelligenceInformationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ThreatIntelligenceInformationList {
-    pub fn new(value: Vec<ThreatIntelligenceInformation>) -> Self {
+    pub fn new(value: Vec<ThreatIntelligenceInformationUnion>) -> Self {
         Self { next_link: None, value }
     }
 }
@@ -11996,18 +11938,13 @@ impl Serialize for ThreatIntelligenceSortingOrder {
 #[doc = "Threat Intelligence TAXII data connector check requirements"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TiTaxiiCheckRequirements {
-    #[serde(flatten)]
-    pub data_connectors_check_requirements: DataConnectorsCheckRequirements,
     #[doc = "Threat Intelligence TAXII data connector required properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<TiTaxiiCheckRequirementsProperties>,
 }
 impl TiTaxiiCheckRequirements {
-    pub fn new(data_connectors_check_requirements: DataConnectorsCheckRequirements) -> Self {
-        Self {
-            data_connectors_check_requirements,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "Threat Intelligence TAXII data connector required properties."]
@@ -12261,7 +12198,7 @@ pub struct TriggeredAnalyticsRuleRuns {
 impl azure_core::Continuable for TriggeredAnalyticsRuleRuns {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TriggeredAnalyticsRuleRuns {
@@ -12459,7 +12396,7 @@ pub struct WatchlistItemList {
 impl azure_core::Continuable for WatchlistItemList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WatchlistItemList {
@@ -12529,7 +12466,7 @@ pub struct WatchlistList {
 impl azure_core::Continuable for WatchlistList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WatchlistList {
@@ -12723,7 +12660,7 @@ pub struct WorkspaceManagerAssignmentList {
 impl azure_core::Continuable for WorkspaceManagerAssignmentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceManagerAssignmentList {
@@ -12826,7 +12763,7 @@ pub struct WorkspaceManagerConfigurationList {
 impl azure_core::Continuable for WorkspaceManagerConfigurationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceManagerConfigurationList {
@@ -12911,7 +12848,7 @@ pub struct WorkspaceManagerGroupList {
 impl azure_core::Continuable for WorkspaceManagerGroupList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceManagerGroupList {
@@ -12959,16 +12896,16 @@ impl WorkspaceManagerMember {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceManagerMemberProperties {
     #[doc = "Fully qualified resource ID of the target Sentinel workspace joining the given Sentinel workspace manager"]
-    #[serde(rename = "targetWorkspaceId")]
-    pub target_workspace_id: String,
+    #[serde(rename = "targetWorkspaceResourceId")]
+    pub target_workspace_resource_id: String,
     #[doc = "Tenant id of the target Sentinel workspace joining the given Sentinel workspace manager"]
     #[serde(rename = "targetWorkspaceTenantId")]
     pub target_workspace_tenant_id: String,
 }
 impl WorkspaceManagerMemberProperties {
-    pub fn new(target_workspace_id: String, target_workspace_tenant_id: String) -> Self {
+    pub fn new(target_workspace_resource_id: String, target_workspace_tenant_id: String) -> Self {
         Self {
-            target_workspace_id,
+            target_workspace_resource_id,
             target_workspace_tenant_id,
         }
     }
@@ -12985,7 +12922,7 @@ pub struct WorkspaceManagerMembersList {
 impl azure_core::Continuable for WorkspaceManagerMembersList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceManagerMembersList {
@@ -13672,7 +13609,7 @@ pub struct PackageList {
 impl azure_core::Continuable for PackageList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PackageList {
@@ -13916,7 +13853,7 @@ pub struct TemplateList {
 impl azure_core::Continuable for TemplateList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TemplateList {

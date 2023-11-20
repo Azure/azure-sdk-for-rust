@@ -68,7 +68,7 @@ impl Container {
         Container {
             name: name.to_owned(),
             last_modified: OffsetDateTime::now_utc(),
-            e_tag: "".to_owned(),
+            e_tag: String::new(),
             lease_status: LeaseStatus::Unlocked,
             lease_state: LeaseState::Available,
             lease_duration: None,
@@ -139,14 +139,11 @@ impl Container {
 
             for m in metadata {
                 for key in &m.children {
-                    let elem = match key {
-                        Xml::ElementNode(elem) => elem,
-                        _ => {
-                            return Err(Error::message(
-                                ErrorKind::DataConversion,
-                                "Metadata should contain an ElementNode",
-                            ));
-                        }
+                    let Xml::ElementNode(elem) = key else {
+                        return Err(Error::message(
+                            ErrorKind::DataConversion,
+                            "Metadata should contain an ElementNode",
+                        ));
                     };
 
                     if elem.children.is_empty() {

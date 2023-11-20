@@ -32,6 +32,7 @@ mod seekable_stream;
 
 pub mod auth;
 pub mod headers;
+pub mod lro;
 pub mod parsing;
 pub mod prelude;
 pub mod request_options;
@@ -42,6 +43,9 @@ use uuid::Uuid;
 
 #[cfg(feature = "xml")]
 pub mod xml;
+
+#[cfg(feature = "tokio")]
+pub mod tokio;
 
 pub mod base64;
 pub use bytes_stream::*;

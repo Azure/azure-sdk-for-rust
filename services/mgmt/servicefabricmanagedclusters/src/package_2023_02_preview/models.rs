@@ -6,8 +6,6 @@ use std::str::FromStr;
 #[doc = "Represents a scaling mechanism for adding or removing named partitions of a stateless service. Partition names are in the format '0','1'...'N-1'."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddRemoveIncrementalNamedPartitionScalingMechanism {
-    #[serde(flatten)]
-    pub scaling_mechanism: ScalingMechanism,
     #[doc = "Minimum number of named partitions of the service."]
     #[serde(rename = "minPartitionCount")]
     pub min_partition_count: i32,
@@ -19,9 +17,8 @@ pub struct AddRemoveIncrementalNamedPartitionScalingMechanism {
     pub scale_increment: i32,
 }
 impl AddRemoveIncrementalNamedPartitionScalingMechanism {
-    pub fn new(scaling_mechanism: ScalingMechanism, min_partition_count: i32, max_partition_count: i32, scale_increment: i32) -> Self {
+    pub fn new(min_partition_count: i32, max_partition_count: i32, scale_increment: i32) -> Self {
         Self {
-            scaling_mechanism,
             min_partition_count,
             max_partition_count,
             scale_increment,
@@ -95,7 +92,7 @@ pub struct ApplicationResourceList {
 impl azure_core::Continuable for ApplicationResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationResourceList {
@@ -162,7 +159,7 @@ pub struct ApplicationTypeResourceList {
 impl azure_core::Continuable for ApplicationTypeResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationTypeResourceList {
@@ -225,7 +222,7 @@ pub struct ApplicationTypeVersionResourceList {
 impl azure_core::Continuable for ApplicationTypeVersionResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationTypeVersionResourceList {
@@ -356,8 +353,6 @@ impl AvailableOperationDisplay {
 #[doc = "Represents a scaling trigger related to an average load of a metric/resource of a partition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AveragePartitionLoadScalingTrigger {
-    #[serde(flatten)]
-    pub scaling_trigger: ScalingTrigger,
     #[doc = "The name of the metric for which usage should be tracked."]
     #[serde(rename = "metricName")]
     pub metric_name: String,
@@ -372,15 +367,8 @@ pub struct AveragePartitionLoadScalingTrigger {
     pub scale_interval: String,
 }
 impl AveragePartitionLoadScalingTrigger {
-    pub fn new(
-        scaling_trigger: ScalingTrigger,
-        metric_name: String,
-        lower_load_threshold: f64,
-        upper_load_threshold: f64,
-        scale_interval: String,
-    ) -> Self {
+    pub fn new(metric_name: String, lower_load_threshold: f64, upper_load_threshold: f64, scale_interval: String) -> Self {
         Self {
-            scaling_trigger,
             metric_name,
             lower_load_threshold,
             upper_load_threshold,
@@ -391,8 +379,6 @@ impl AveragePartitionLoadScalingTrigger {
 #[doc = "Represents a scaling policy related to an average load of a metric/resource of a service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AverageServiceLoadScalingTrigger {
-    #[serde(flatten)]
-    pub scaling_trigger: ScalingTrigger,
     #[doc = "The name of the metric for which usage should be tracked."]
     #[serde(rename = "metricName")]
     pub metric_name: String,
@@ -411,7 +397,6 @@ pub struct AverageServiceLoadScalingTrigger {
 }
 impl AverageServiceLoadScalingTrigger {
     pub fn new(
-        scaling_trigger: ScalingTrigger,
         metric_name: String,
         lower_load_threshold: f64,
         upper_load_threshold: f64,
@@ -419,7 +404,6 @@ impl AverageServiceLoadScalingTrigger {
         use_only_primary_load: bool,
     ) -> Self {
         Self {
-            scaling_trigger,
             metric_name,
             lower_load_threshold,
             upper_load_threshold,
@@ -1091,7 +1075,7 @@ pub struct ManagedClusterListResult {
 impl azure_core::Continuable for ManagedClusterListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedClusterListResult {
@@ -1460,7 +1444,7 @@ pub struct ManagedVmSizesResult {
 impl azure_core::Continuable for ManagedVmSizesResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedVmSizesResult {
@@ -1512,14 +1496,12 @@ impl Serialize for MoveCost {
 #[doc = "Describes the named partition scheme of the service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NamedPartitionScheme {
-    #[serde(flatten)]
-    pub partition: Partition,
     #[doc = "Array for the names of the partitions."]
     pub names: Vec<String>,
 }
 impl NamedPartitionScheme {
-    pub fn new(partition: Partition, names: Vec<String>) -> Self {
-        Self { partition, names }
+    pub fn new(names: Vec<String>) -> Self {
+        Self { names }
     }
 }
 #[doc = "Describes a network security rule."]
@@ -1858,7 +1840,7 @@ pub struct NodeTypeListResult {
 impl azure_core::Continuable for NodeTypeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NodeTypeListResult {
@@ -1883,7 +1865,7 @@ pub struct NodeTypeListSkuResult {
 impl azure_core::Continuable for NodeTypeListSkuResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NodeTypeListSkuResult {
@@ -2270,7 +2252,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -2337,23 +2319,17 @@ impl Serialize for OsType {
         }
     }
 }
-#[doc = "Describes how the service is partitioned."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Partition {
-    #[doc = "Enumerates the ways that a service can be partitioned."]
-    #[serde(rename = "partitionScheme")]
-    pub partition_scheme: PartitionScheme,
-}
-impl Partition {
-    pub fn new(partition_scheme: PartitionScheme) -> Self {
-        Self { partition_scheme }
-    }
+#[doc = "Enumerates the ways that a service can be partitioned."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "partitionScheme")]
+pub enum PartitionUnion {
+    Named(NamedPartitionScheme),
+    Singleton(SingletonPartitionScheme),
+    UniformInt64Range(UniformInt64RangePartitionScheme),
 }
 #[doc = "Represents a scaling mechanism for adding or removing instances of stateless service partition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartitionInstanceCountScaleMechanism {
-    #[serde(flatten)]
-    pub scaling_mechanism: ScalingMechanism,
     #[doc = "Minimum number of instances of the partition."]
     #[serde(rename = "minInstanceCount")]
     pub min_instance_count: i32,
@@ -2365,9 +2341,8 @@ pub struct PartitionInstanceCountScaleMechanism {
     pub scale_increment: i32,
 }
 impl PartitionInstanceCountScaleMechanism {
-    pub fn new(scaling_mechanism: ScalingMechanism, min_instance_count: i32, max_instance_count: i32, scale_increment: i32) -> Self {
+    pub fn new(min_instance_count: i32, max_instance_count: i32, scale_increment: i32) -> Self {
         Self {
-            scaling_mechanism,
             min_instance_count,
             max_instance_count,
             scale_increment,
@@ -2613,29 +2588,25 @@ pub mod rolling_upgrade_monitoring_policy {
         }
     }
 }
-#[doc = "Describes the mechanism for performing a scaling operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScalingMechanism {
-    #[doc = "Enumerates the ways that a service can be partitioned."]
-    pub kind: ServiceScalingMechanismKind,
-}
-impl ScalingMechanism {
-    pub fn new(kind: ServiceScalingMechanismKind) -> Self {
-        Self { kind }
-    }
+#[doc = "Enumerates the ways that a service can be partitioned."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ScalingMechanismUnion {
+    AddRemoveIncrementalNamedPartition(AddRemoveIncrementalNamedPartitionScalingMechanism),
+    ScalePartitionInstanceCount(PartitionInstanceCountScaleMechanism),
 }
 #[doc = "Specifies a metric to load balance a service during runtime."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ScalingPolicy {
     #[doc = "Describes the mechanism for performing a scaling operation."]
     #[serde(rename = "scalingMechanism")]
-    pub scaling_mechanism: ScalingMechanism,
+    pub scaling_mechanism: ScalingMechanismUnion,
     #[doc = "Describes the trigger for performing a scaling operation."]
     #[serde(rename = "scalingTrigger")]
-    pub scaling_trigger: ScalingTrigger,
+    pub scaling_trigger: ScalingTriggerUnion,
 }
 impl ScalingPolicy {
-    pub fn new(scaling_mechanism: ScalingMechanism, scaling_trigger: ScalingTrigger) -> Self {
+    pub fn new(scaling_mechanism: ScalingMechanismUnion, scaling_trigger: ScalingTriggerUnion) -> Self {
         Self {
             scaling_mechanism,
             scaling_trigger,
@@ -2643,16 +2614,12 @@ impl ScalingPolicy {
     }
 }
 pub type ScalingPolicyList = Vec<ScalingPolicy>;
-#[doc = "Describes the trigger for performing a scaling operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ScalingTrigger {
-    #[doc = "Enumerates the ways that a service can be partitioned."]
-    pub kind: ServiceScalingTriggerKind,
-}
-impl ScalingTrigger {
-    pub fn new(kind: ServiceScalingTriggerKind) -> Self {
-        Self { kind }
-    }
+#[doc = "Enumerates the ways that a service can be partitioned."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ScalingTriggerUnion {
+    AveragePartitionLoadTrigger(AveragePartitionLoadScalingTrigger),
+    AverageServiceLoadTrigger(AverageServiceLoadScalingTrigger),
 }
 #[doc = "Creates a particular correlation between services."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2838,43 +2805,33 @@ pub type ServiceName = String;
 #[doc = "Describes the policy to be used for placement of a Service Fabric service where a particular fault or upgrade domain should not be used for placement of the instances or replicas of that service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePlacementInvalidDomainPolicy {
-    #[serde(flatten)]
-    pub service_placement_policy: ServicePlacementPolicy,
     #[doc = "The name of the domain that should not be used for placement."]
     #[serde(rename = "domainName")]
     pub domain_name: String,
 }
 impl ServicePlacementInvalidDomainPolicy {
-    pub fn new(service_placement_policy: ServicePlacementPolicy, domain_name: String) -> Self {
-        Self {
-            service_placement_policy,
-            domain_name,
-        }
+    pub fn new(domain_name: String) -> Self {
+        Self { domain_name }
     }
 }
 #[doc = "The name of the domain that should used for placement as per this policy."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServicePlacementNonPartiallyPlaceServicePolicy {
-    #[serde(flatten)]
-    pub service_placement_policy: ServicePlacementPolicy,
-}
+pub struct ServicePlacementNonPartiallyPlaceServicePolicy {}
 impl ServicePlacementNonPartiallyPlaceServicePolicy {
-    pub fn new(service_placement_policy: ServicePlacementPolicy) -> Self {
-        Self { service_placement_policy }
+    pub fn new() -> Self {
+        Self {}
     }
 }
-pub type ServicePlacementPoliciesList = Vec<ServicePlacementPolicy>;
-#[doc = "Describes the policy to be used for placement of a Service Fabric service."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ServicePlacementPolicy {
-    #[doc = "The type of placement policy for a service fabric service. Following are the possible values."]
-    #[serde(rename = "type")]
-    pub type_: ServicePlacementPolicyType,
-}
-impl ServicePlacementPolicy {
-    pub fn new(type_: ServicePlacementPolicyType) -> Self {
-        Self { type_ }
-    }
+pub type ServicePlacementPoliciesList = Vec<ServicePlacementPolicyUnion>;
+#[doc = "The type of placement policy for a service fabric service. Following are the possible values."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ServicePlacementPolicyUnion {
+    InvalidDomain(ServicePlacementInvalidDomainPolicy),
+    NonPartiallyPlaceService(ServicePlacementNonPartiallyPlaceServicePolicy),
+    PreferredPrimaryDomain(ServicePlacementPreferPrimaryDomainPolicy),
+    RequiredDomainDistribution(ServicePlacementRequireDomainDistributionPolicy),
+    RequiredDomain(ServicePlacementRequiredDomainPolicy),
 }
 #[doc = "The type of placement policy for a service fabric service. Following are the possible values."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2926,52 +2883,37 @@ impl Serialize for ServicePlacementPolicyType {
 #[doc = "Describes the policy to be used for placement of a Service Fabric service where the service's \nPrimary replicas should optimally be placed in a particular domain.\n\nThis placement policy is usually used with fault domains in scenarios where the Service Fabric\ncluster is geographically distributed in order to indicate that a service's primary replica should\nbe located in a particular fault domain, which in geo-distributed scenarios usually aligns with regional\nor datacenter boundaries. Note that since this is an optimization it is possible that the Primary replica\nmay not end up located in this domain due to failures, capacity limits, or other constraints.\n"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePlacementPreferPrimaryDomainPolicy {
-    #[serde(flatten)]
-    pub service_placement_policy: ServicePlacementPolicy,
     #[doc = "The name of the domain that should used for placement as per this policy."]
     #[serde(rename = "domainName")]
     pub domain_name: String,
 }
 impl ServicePlacementPreferPrimaryDomainPolicy {
-    pub fn new(service_placement_policy: ServicePlacementPolicy, domain_name: String) -> Self {
-        Self {
-            service_placement_policy,
-            domain_name,
-        }
+    pub fn new(domain_name: String) -> Self {
+        Self { domain_name }
     }
 }
 #[doc = "Describes the policy to be used for placement of a Service Fabric service where two replicas\nfrom the same partition should never be placed in the same fault or upgrade domain.\n\nWhile this is not common it can expose the service to an increased risk of concurrent failures\ndue to unplanned outages or other cases of subsequent/concurrent failures. As an example, consider\na case where replicas are deployed across different data center, with one replica per location.\nIn the event that one of the datacenters goes offline, normally the replica that was placed in that\ndatacenter will be packed into one of the remaining datacenters. If this is not desirable then this\npolicy should be set.\n"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePlacementRequireDomainDistributionPolicy {
-    #[serde(flatten)]
-    pub service_placement_policy: ServicePlacementPolicy,
     #[doc = "The name of the domain that should used for placement as per this policy."]
     #[serde(rename = "domainName")]
     pub domain_name: String,
 }
 impl ServicePlacementRequireDomainDistributionPolicy {
-    pub fn new(service_placement_policy: ServicePlacementPolicy, domain_name: String) -> Self {
-        Self {
-            service_placement_policy,
-            domain_name,
-        }
+    pub fn new(domain_name: String) -> Self {
+        Self { domain_name }
     }
 }
 #[doc = "Describes the policy to be used for placement of a Service Fabric service where the instances or replicas of that service must be placed in a particular domain."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServicePlacementRequiredDomainPolicy {
-    #[serde(flatten)]
-    pub service_placement_policy: ServicePlacementPolicy,
     #[doc = "The name of the domain that should used for placement as per this policy."]
     #[serde(rename = "domainName")]
     pub domain_name: String,
 }
 impl ServicePlacementRequiredDomainPolicy {
-    pub fn new(service_placement_policy: ServicePlacementPolicy, domain_name: String) -> Self {
-        Self {
-            service_placement_policy,
-            domain_name,
-        }
+    pub fn new(domain_name: String) -> Self {
+        Self { domain_name }
     }
 }
 #[doc = "The service resource."]
@@ -2981,7 +2923,7 @@ pub struct ServiceResource {
     pub proxy_resource: ProxyResource,
     #[doc = "The service resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ServiceResourceProperties>,
+    pub properties: Option<ServiceResourcePropertiesUnion>,
 }
 impl ServiceResource {
     pub fn new() -> Self {
@@ -3004,7 +2946,7 @@ pub struct ServiceResourceList {
 impl azure_core::Continuable for ServiceResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceResourceList {
@@ -3020,15 +2962,12 @@ pub struct ServiceResourceProperties {
     #[doc = "The current deployment or provisioning state, which only appears in the response"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<String>,
-    #[doc = "The kind of service (Stateless or Stateful)."]
-    #[serde(rename = "serviceKind")]
-    pub service_kind: ServiceKind,
     #[doc = "The name of the service type"]
     #[serde(rename = "serviceTypeName")]
     pub service_type_name: String,
     #[doc = "Describes how the service is partitioned."]
     #[serde(rename = "partitionDescription")]
-    pub partition_description: Partition,
+    pub partition_description: PartitionUnion,
     #[doc = "The activation Mode of the service package"]
     #[serde(rename = "servicePackageActivationMode", default, skip_serializing_if = "Option::is_none")]
     pub service_package_activation_mode: Option<service_resource_properties::ServicePackageActivationMode>,
@@ -3037,11 +2976,10 @@ pub struct ServiceResourceProperties {
     pub service_dns_name: Option<String>,
 }
 impl ServiceResourceProperties {
-    pub fn new(service_kind: ServiceKind, service_type_name: String, partition_description: Partition) -> Self {
+    pub fn new(service_type_name: String, partition_description: PartitionUnion) -> Self {
         Self {
             service_resource_properties_base: ServiceResourcePropertiesBase::default(),
             provisioning_state: None,
-            service_kind,
             service_type_name,
             partition_description,
             service_package_activation_mode: None,
@@ -3088,6 +3026,13 @@ pub mod service_resource_properties {
             }
         }
     }
+}
+#[doc = "The kind of service (Stateless or Stateful)."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "serviceKind")]
+pub enum ServiceResourcePropertiesUnion {
+    Stateful(StatefulServiceProperties),
+    Stateless(StatelessServiceProperties),
 }
 #[doc = "The common service resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -3272,13 +3217,10 @@ impl SettingsSectionDescription {
 }
 #[doc = "Describes the partition scheme of a singleton-partitioned, or non-partitioned service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SingletonPartitionScheme {
-    #[serde(flatten)]
-    pub partition: Partition,
-}
+pub struct SingletonPartitionScheme {}
 impl SingletonPartitionScheme {
-    pub fn new(partition: Partition) -> Self {
-        Self { partition }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Service Fabric managed cluster Sku definition"]
@@ -3547,8 +3489,6 @@ impl SystemData {
 #[doc = "Describes a partitioning scheme where an integer range is allocated evenly across a number of partitions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UniformInt64RangePartitionScheme {
-    #[serde(flatten)]
-    pub partition: Partition,
     #[doc = "The number of partitions."]
     pub count: i32,
     #[doc = "The lower bound of the partition key range that\nshould be split between the partition ‘Count’\n"]
@@ -3559,13 +3499,8 @@ pub struct UniformInt64RangePartitionScheme {
     pub high_key: i64,
 }
 impl UniformInt64RangePartitionScheme {
-    pub fn new(partition: Partition, count: i32, low_key: i64, high_key: i64) -> Self {
-        Self {
-            partition,
-            count,
-            low_key,
-            high_key,
-        }
+    pub fn new(count: i32, low_key: i64, high_key: i64) -> Self {
+        Self { count, low_key, high_key }
     }
 }
 pub type UpgradeDomainTimeout = String;

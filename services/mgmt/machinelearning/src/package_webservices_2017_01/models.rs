@@ -824,7 +824,7 @@ pub struct PaginatedWebServicesList {
 impl azure_core::Continuable for PaginatedWebServicesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PaginatedWebServicesList {
@@ -863,7 +863,7 @@ pub struct PatchedWebService {
     pub patched_resource: PatchedResource,
     #[doc = "The set of properties specific to the Azure ML web service resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<WebServiceProperties>,
+    pub properties: Option<WebServicePropertiesUnion>,
 }
 impl PatchedWebService {
     pub fn new() -> Self {
@@ -987,10 +987,10 @@ pub struct WebService {
     #[serde(flatten)]
     pub resource: Resource,
     #[doc = "The set of properties specific to the Azure ML web service resource."]
-    pub properties: WebServiceProperties,
+    pub properties: WebServicePropertiesUnion,
 }
 impl WebService {
-    pub fn new(resource: Resource, properties: WebServiceProperties) -> Self {
+    pub fn new(resource: Resource, properties: WebServicePropertiesUnion) -> Self {
         Self { resource, properties }
     }
 }
@@ -1084,9 +1084,6 @@ pub struct WebServiceProperties {
     #[doc = "The set of global parameters values defined for the web service, given as a global parameter name to default value map. If no default value is specified, the parameter is considered to be required."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<serde_json::Value>,
-    #[doc = "Specifies the package type. Valid values are Graph (Specifies a web service published through the Machine Learning Studio) and Code (Specifies a web service published using code such as Python). Note: Code is not supported at this time."]
-    #[serde(rename = "packageType")]
-    pub package_type: web_service_properties::PackageType,
     #[doc = "When set to true, indicates that the payload size is larger than 3 MB. Otherwise false. If the payload size exceed 3 MB, the payload is stored in a blob and the PayloadsLocation parameter contains the URI of the blob. Otherwise, this will be set to false and Assets, Input, Output, Package, Parameters, ExampleRequest are inline. The Payload sizes is determined by adding the size of the Assets, Input, Output, Package, Parameters, and the ExampleRequest."]
     #[serde(rename = "payloadsInBlobStorage", default, skip_serializing_if = "Option::is_none")]
     pub payloads_in_blob_storage: Option<bool>,
@@ -1095,7 +1092,7 @@ pub struct WebServiceProperties {
     pub payloads_location: Option<BlobLocation>,
 }
 impl WebServiceProperties {
-    pub fn new(package_type: web_service_properties::PackageType) -> Self {
+    pub fn new() -> Self {
         Self {
             title: None,
             description: None,
@@ -1116,7 +1113,6 @@ impl WebServiceProperties {
             example_request: None,
             assets: None,
             parameters: None,
-            package_type,
             payloads_in_blob_storage: None,
             payloads_location: None,
         }
@@ -1165,11 +1161,12 @@ pub mod web_service_properties {
             }
         }
     }
-    #[doc = "Specifies the package type. Valid values are Graph (Specifies a web service published through the Machine Learning Studio) and Code (Specifies a web service published using code such as Python). Note: Code is not supported at this time."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum PackageType {
-        Graph,
-    }
+}
+#[doc = "Specifies the package type. Valid values are Graph (Specifies a web service published through the Machine Learning Studio) and Code (Specifies a web service published using code such as Python). Note: Code is not supported at this time."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "packageType")]
+pub enum WebServicePropertiesUnion {
+    Graph(WebServicePropertiesForGraph),
 }
 #[doc = "Properties specific to a Graph based web service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -1284,7 +1284,7 @@ pub struct AssessedMachineResultList {
 impl azure_core::Continuable for AssessedMachineResultList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AssessedMachineResultList {
@@ -3097,7 +3097,7 @@ pub struct MachineResultList {
 impl azure_core::Continuable for MachineResultList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MachineResultList {
@@ -3552,7 +3552,7 @@ pub struct ProjectResultList {
 impl azure_core::Continuable for ProjectResultList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProjectResultList {

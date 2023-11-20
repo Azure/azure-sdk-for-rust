@@ -8,61 +8,24 @@ use std::str::FromStr;
 pub struct Artifact {
     #[serde(flatten)]
     pub azure_resource_base: AzureResourceBase,
-    #[doc = "Specifies the kind of blueprint artifact."]
-    pub kind: artifact::Kind,
 }
 impl Artifact {
-    pub fn new(kind: artifact::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             azure_resource_base: AzureResourceBase::default(),
-            kind,
         }
     }
 }
-pub mod artifact {
-    use super::*;
-    #[doc = "Specifies the kind of blueprint artifact."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        #[serde(rename = "template")]
-        Template,
-        #[serde(rename = "roleAssignment")]
-        RoleAssignment,
-        #[serde(rename = "policyAssignment")]
-        PolicyAssignment,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Template => serializer.serialize_unit_variant("Kind", 0u32, "template"),
-                Self::RoleAssignment => serializer.serialize_unit_variant("Kind", 1u32, "roleAssignment"),
-                Self::PolicyAssignment => serializer.serialize_unit_variant("Kind", 2u32, "policyAssignment"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Specifies the kind of blueprint artifact."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ArtifactUnion {
+    #[serde(rename = "policyAssignment")]
+    PolicyAssignment(PolicyAssignmentArtifact),
+    #[serde(rename = "roleAssignment")]
+    RoleAssignment(RoleAssignmentArtifact),
+    #[serde(rename = "template")]
+    Template(TemplateArtifact),
 }
 #[doc = "List of blueprint artifacts."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -73,7 +36,7 @@ pub struct ArtifactList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<Artifact>,
+    pub value: Vec<ArtifactUnion>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -81,7 +44,7 @@ pub struct ArtifactList {
 impl azure_core::Continuable for ArtifactList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ArtifactList {
@@ -209,7 +172,7 @@ pub struct AssignmentList {
 impl azure_core::Continuable for AssignmentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AssignmentList {
@@ -318,7 +281,7 @@ pub struct AssignmentOperationList {
 impl azure_core::Continuable for AssignmentOperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AssignmentOperationList {
@@ -548,7 +511,7 @@ pub struct BlueprintList {
 impl azure_core::Continuable for BlueprintList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BlueprintList {
@@ -945,7 +908,7 @@ pub struct PublishedBlueprintList {
 impl azure_core::Continuable for PublishedBlueprintList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PublishedBlueprintList {

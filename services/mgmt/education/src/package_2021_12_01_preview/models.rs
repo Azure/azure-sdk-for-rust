@@ -186,7 +186,7 @@ pub struct GrantListResponse {
 impl azure_core::Continuable for GrantListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GrantListResponse {
@@ -237,7 +237,7 @@ pub struct JoinRequestList {
 impl azure_core::Continuable for JoinRequestList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JoinRequestList {
@@ -337,7 +337,7 @@ pub struct LabListResult {
 impl azure_core::Continuable for LabListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LabListResult {
@@ -668,7 +668,7 @@ pub struct StudentLabListResult {
 impl azure_core::Continuable for StudentLabListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StudentLabListResult {
@@ -812,7 +812,7 @@ pub struct StudentListResult {
 impl azure_core::Continuable for StudentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StudentListResult {

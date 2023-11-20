@@ -17,7 +17,7 @@ mod tests {
     pub(crate) fn mock_client(server_url: String) -> crate::client::DeviceUpdateClient {
         crate::client::DeviceUpdateClient {
             device_update_url: url::Url::parse(&server_url).unwrap(),
-            endpoint: "".to_string(),
+            endpoint: String::new(),
             token_credential: AutoRefreshingTokenCredential::new(Arc::new(MockCredential)),
         }
     }

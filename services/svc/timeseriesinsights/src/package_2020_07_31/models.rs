@@ -1393,7 +1393,7 @@ pub struct TsiErrorBody {
     pub target: Option<String>,
     #[doc = "A particular API error with an error code and a message."]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-    pub inner_error: Box<Option<TsiErrorBody>>,
+    pub inner_error: Option<Box<TsiErrorBody>>,
     #[doc = "Contains additional error information. May be null."]
     #[serde(
         default,
@@ -1527,14 +1527,23 @@ impl UpdateModelSettingsRequest {
 #[doc = "Variables are named calculations over values from the events. Time Series Insights variable definitions contain formula and computation rules. Variables are stored in the type definition in Time Series Model and can be provided inline via Query APIs to override the stored definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Variable {
-    #[doc = "Allowed \"kind\" values are - \"numeric\" or \"aggregate\". While \"numeric\" allows you to specify value of the reconstructed signal and the expression to aggregate them, the \"aggregate\" kind lets you directly aggregate on the event properties without specifying value."]
-    pub kind: String,
     #[doc = "Time series expression (TSX) written as a single string. Examples: \"$event.Status.String='Good'\", \"avg($event.Temperature)\". Refer to the documentation on how to write time series expressions."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filter: Option<Tsx>,
 }
 impl Variable {
-    pub fn new(kind: String) -> Self {
-        Self { kind, filter: None }
+    pub fn new() -> Self {
+        Self { filter: None }
     }
+}
+#[doc = "Allowed \"kind\" values are - \"numeric\" or \"aggregate\". While \"numeric\" allows you to specify value of the reconstructed signal and the expression to aggregate them, the \"aggregate\" kind lets you directly aggregate on the event properties without specifying value."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum VariableUnion {
+    #[serde(rename = "aggregate")]
+    Aggregate(AggregateVariable),
+    #[serde(rename = "categorical")]
+    Categorical(CategoricalVariable),
+    #[serde(rename = "numeric")]
+    Numeric(NumericVariable),
 }

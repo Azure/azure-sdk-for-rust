@@ -44,14 +44,12 @@ impl PopReceiptClient {
     }
 
     pub(crate) fn finalize_request(
-        &self,
         url: url::Url,
         method: azure_core::Method,
         headers: azure_core::headers::Headers,
         request_body: Option<azure_core::Body>,
     ) -> azure_core::Result<Request> {
-        self.client
-            .finalize_request(url, method, headers, request_body)
+        QueueClient::finalize_request(url, method, headers, request_body)
     }
 
     pub(crate) fn url(&self) -> azure_core::Result<url::Url> {

@@ -13,8 +13,7 @@ use azure_core::{
 pub use device_code_responses::*;
 use futures::stream::unfold;
 use serde::Deserialize;
-use std::time::Duration;
-use std::{borrow::Cow, sync::Arc};
+use std::{borrow::Cow, pin::Pin, sync::Arc, time::Duration};
 use url::{form_urlencoded, Url};
 
 /// Start the device authorization grant flow.
@@ -90,76 +89,87 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
     /// This will continue until either success or error is returned.
     pub fn stream(
         &self,
-    ) -> impl futures::Stream<Item = azure_core::Result<DeviceCodeAuthorization>> + '_ {
+    ) -> Pin<Box<impl futures::Stream<Item = azure_core::Result<DeviceCodeAuthorization>> + '_>>
+    {
         #[derive(Debug, Clone, PartialEq, Eq)]
         enum NextState {
             Continue,
             Finish,
         }
 
-        unfold(NextState::Continue, move |state: NextState| async move {
-            match state {
-                NextState::Continue => {
-                    let url = &format!(
-                        "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
-                        self.tenant_id,
-                    );
+        Box::pin(unfold(
+            NextState::Continue,
+            move |state: NextState| async move {
+                match state {
+                    NextState::Continue => {
+                        let url = &format!(
+                            "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
+                            self.tenant_id,
+                        );
 
-                    // Throttle down as specified by Azure. This could be
-                    // smarter: we could calculate the elapsed time since the
-                    // last poll and wait only the delta.
-                    sleep(Duration::from_secs(self.interval)).await;
+                        // Throttle down as specified by Azure. This could be
+                        // smarter: we could calculate the elapsed time since the
+                        // last poll and wait only the delta.
+                        sleep(Duration::from_secs(self.interval)).await;
 
-                    let encoded = form_urlencoded::Serializer::new(String::new())
-                        .append_pair("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
-                        .append_pair("client_id", self.client_id.as_str())
-                        .append_pair("device_code", &self.device_code)
-                        .finish();
+                        let encoded = form_urlencoded::Serializer::new(String::new())
+                            .append_pair(
+                                "grant_type",
+                                "urn:ietf:params:oauth:grant-type:device_code",
+                            )
+                            .append_pair("client_id", self.client_id.as_str())
+                            .append_pair("device_code", &self.device_code)
+                            .finish();
 
-                    let http_client = self.http_client.clone().unwrap();
+                        let http_client = self.http_client.clone().unwrap();
 
-                    match post_form(http_client.clone(), url, encoded).await {
-                        Ok(rsp) => {
-                            let rsp_status = rsp.status();
-                            let rsp_body = match rsp.into_body().collect().await {
-                                Ok(b) => b,
-                                Err(e) => return Some((Err(e), NextState::Finish)),
-                            };
-                            if rsp_status.is_success() {
-                                match serde_json::from_slice::<DeviceCodeAuthorization>(&rsp_body) {
-                                    Ok(authorization) => {
-                                        Some((Ok(authorization), NextState::Finish))
+                        match post_form(http_client.clone(), url, encoded).await {
+                            Ok(rsp) => {
+                                let rsp_status = rsp.status();
+                                let rsp_body = match rsp.into_body().collect().await {
+                                    Ok(b) => b,
+                                    Err(e) => return Some((Err(e), NextState::Finish)),
+                                };
+                                if rsp_status.is_success() {
+                                    match serde_json::from_slice::<DeviceCodeAuthorization>(
+                                        &rsp_body,
+                                    ) {
+                                        Ok(authorization) => {
+                                            Some((Ok(authorization), NextState::Finish))
+                                        }
+                                        Err(error) => {
+                                            Some((Err(Error::from(error)), NextState::Finish))
+                                        }
                                     }
-                                    Err(error) => {
-                                        Some((Err(Error::from(error)), NextState::Finish))
-                                    }
-                                }
-                            } else {
-                                match serde_json::from_slice::<DeviceCodeErrorResponse>(&rsp_body) {
-                                    Ok(error_rsp) => {
-                                        let next_state =
-                                            if error_rsp.error == "authorization_pending" {
-                                                NextState::Continue
-                                            } else {
-                                                NextState::Finish
-                                            };
-                                        Some((
-                                            Err(Error::new(ErrorKind::Credential, error_rsp)),
-                                            next_state,
-                                        ))
-                                    }
-                                    Err(error) => {
-                                        Some((Err(Error::from(error)), NextState::Finish))
+                                } else {
+                                    match serde_json::from_slice::<DeviceCodeErrorResponse>(
+                                        &rsp_body,
+                                    ) {
+                                        Ok(error_rsp) => {
+                                            let next_state =
+                                                if error_rsp.error == "authorization_pending" {
+                                                    NextState::Continue
+                                                } else {
+                                                    NextState::Finish
+                                                };
+                                            Some((
+                                                Err(Error::new(ErrorKind::Credential, error_rsp)),
+                                                next_state,
+                                            ))
+                                        }
+                                        Err(error) => {
+                                            Some((Err(Error::from(error)), NextState::Finish))
+                                        }
                                     }
                                 }
                             }
+                            Err(error) => Some((Err(error), NextState::Finish)),
                         }
-                        Err(error) => Some((Err(error), NextState::Finish)),
                     }
+                    NextState::Finish => None,
                 }
-                NextState::Finish => None,
-            }
-        })
+            },
+        ))
     }
 }
 

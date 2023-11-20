@@ -47,7 +47,7 @@ pub struct AddsConfiguration {
 impl azure_core::Continuable for AddsConfiguration {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AddsConfiguration {
@@ -241,7 +241,7 @@ pub struct AddsServiceMembers {
 impl azure_core::Continuable for AddsServiceMembers {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AddsServiceMembers {
@@ -528,7 +528,7 @@ pub struct Alerts {
 impl azure_core::Continuable for Alerts {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl Alerts {
@@ -1358,7 +1358,7 @@ pub struct Dimensions {
 impl azure_core::Continuable for Dimensions {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl Dimensions {
@@ -1674,7 +1674,7 @@ pub struct ExportStatuses {
 impl azure_core::Continuable for ExportStatuses {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExportStatuses {
@@ -1956,7 +1956,7 @@ pub struct IpAddressAggregates {
 impl azure_core::Continuable for IpAddressAggregates {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IpAddressAggregates {
@@ -2375,7 +2375,7 @@ pub struct MetricMetadataList {
 impl azure_core::Continuable for MetricMetadataList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MetricMetadataList {
@@ -2449,7 +2449,7 @@ pub struct Metrics {
 impl azure_core::Continuable for Metrics {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl Metrics {
@@ -2586,7 +2586,7 @@ pub struct OperationListResponse {
 impl azure_core::Continuable for OperationListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResponse {
@@ -3182,7 +3182,7 @@ pub struct ServiceMembers {
 impl azure_core::Continuable for ServiceMembers {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceMembers {
@@ -3312,7 +3312,7 @@ pub struct Services {
 impl azure_core::Continuable for Services {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl Services {

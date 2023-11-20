@@ -33,12 +33,9 @@ pub fn body_bytes_to_utf8(bytes: &[u8]) -> Result<String, Error> {
 }
 
 pub fn get_head_url(namespace: &str, queue_or_topic: &str, subscription: Option<&str>) -> String {
-    match subscription {
-        Some(sub) => format!(
-            "https://{namespace}.servicebus.windows.net/{queue_or_topic}/subscriptions/{sub}/messages/head"
-        ),
-        None => format!(
-            "https://{namespace}.servicebus.windows.net/{queue_or_topic}/messages/head"
-        ),
+    if let Some(sub) = subscription {
+        format!("https://{namespace}.servicebus.windows.net/{queue_or_topic}/subscriptions/{sub}/messages/head")
+    } else {
+        format!("https://{namespace}.servicebus.windows.net/{queue_or_topic}/messages/head")
     }
 }

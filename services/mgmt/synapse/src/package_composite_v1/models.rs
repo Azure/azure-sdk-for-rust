@@ -133,7 +133,7 @@ pub struct AzureAdOnlyAuthenticationListResult {
 impl azure_core::Continuable for AzureAdOnlyAuthenticationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AzureAdOnlyAuthenticationListResult {
@@ -265,7 +265,7 @@ pub struct BigDataPoolResourceInfoListResult {
 impl azure_core::Continuable for BigDataPoolResourceInfoListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BigDataPoolResourceInfoListResult {
@@ -478,18 +478,13 @@ impl CheckNameAvailabilityResponse {
 #[doc = "The custom setup of running cmdkey commands."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CmdkeySetup {
-    #[serde(flatten)]
-    pub custom_setup_base: CustomSetupBase,
     #[doc = "Cmdkey command custom setup type properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: CmdkeySetupTypeProperties,
 }
 impl CmdkeySetup {
-    pub fn new(custom_setup_base: CustomSetupBase, type_properties: CmdkeySetupTypeProperties) -> Self {
-        Self {
-            custom_setup_base,
-            type_properties,
-        }
+    pub fn new(type_properties: CmdkeySetupTypeProperties) -> Self {
+        Self { type_properties }
     }
 }
 #[doc = "Cmdkey command custom setup type properties."]
@@ -502,10 +497,10 @@ pub struct CmdkeySetupTypeProperties {
     #[serde(rename = "userName")]
     pub user_name: serde_json::Value,
     #[doc = "The base definition of a secret type."]
-    pub password: SecretBase,
+    pub password: SecretBaseUnion,
 }
 impl CmdkeySetupTypeProperties {
-    pub fn new(target_name: serde_json::Value, user_name: serde_json::Value, password: SecretBase) -> Self {
+    pub fn new(target_name: serde_json::Value, user_name: serde_json::Value, password: SecretBaseUnion) -> Self {
         Self {
             target_name,
             user_name,
@@ -516,18 +511,13 @@ impl CmdkeySetupTypeProperties {
 #[doc = "The custom setup of installing 3rd party components."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ComponentSetup {
-    #[serde(flatten)]
-    pub custom_setup_base: CustomSetupBase,
     #[doc = "Installation of licensed component setup type properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: LicensedComponentSetupTypeProperties,
 }
 impl ComponentSetup {
-    pub fn new(custom_setup_base: CustomSetupBase, type_properties: LicensedComponentSetupTypeProperties) -> Self {
-        Self {
-            custom_setup_base,
-            type_properties,
-        }
+    pub fn new(type_properties: LicensedComponentSetupTypeProperties) -> Self {
+        Self { type_properties }
     }
 }
 #[doc = "Contains the information necessary to perform a create Sql pool restore point operation."]
@@ -554,18 +544,10 @@ impl CspWorkspaceAdminProperties {
         Self::default()
     }
 }
-#[doc = "The base definition of the custom setup."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct CustomSetupBase {
-    #[doc = "The type of custom setup."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl CustomSetupBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
-}
+#[doc = "The type of custom setup."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum CustomSetupBaseUnion {}
 #[doc = "Details of the customer managed key associated with the workspace"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomerManagedKeyDetails {
@@ -848,7 +830,7 @@ pub struct DedicatedSqLminimalTlsSettingsListResult {
 impl azure_core::Continuable for DedicatedSqLminimalTlsSettingsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DedicatedSqLminimalTlsSettingsListResult {
@@ -950,7 +932,7 @@ pub struct EncryptionProtectorListResult {
 impl azure_core::Continuable for EncryptionProtectorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EncryptionProtectorListResult {
@@ -1086,18 +1068,13 @@ pub mod entity_reference {
 #[doc = "The custom setup of setting environment variable."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EnvironmentVariableSetup {
-    #[serde(flatten)]
-    pub custom_setup_base: CustomSetupBase,
     #[doc = "Environment variable custom setup type properties."]
     #[serde(rename = "typeProperties")]
     pub type_properties: EnvironmentVariableSetupTypeProperties,
 }
 impl EnvironmentVariableSetup {
-    pub fn new(custom_setup_base: CustomSetupBase, type_properties: EnvironmentVariableSetupTypeProperties) -> Self {
-        Self {
-            custom_setup_base,
-            type_properties,
-        }
+    pub fn new(type_properties: EnvironmentVariableSetupTypeProperties) -> Self {
+        Self { type_properties }
     }
 }
 #[doc = "Environment variable custom setup type properties."]
@@ -1215,7 +1192,7 @@ pub struct ExtendedServerBlobAuditingPolicyListResult {
 impl azure_core::Continuable for ExtendedServerBlobAuditingPolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExtendedServerBlobAuditingPolicyListResult {
@@ -1321,7 +1298,7 @@ pub struct ExtendedSqlPoolBlobAuditingPolicyListResult {
 impl azure_core::Continuable for ExtendedSqlPoolBlobAuditingPolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExtendedSqlPoolBlobAuditingPolicyListResult {
@@ -1476,17 +1453,21 @@ impl GetSsisObjectMetadataRequest {
 #[doc = "Azure Synapse nested object which serves as a compute resource for activities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntime {
-    #[doc = "The type of integration runtime."]
-    #[serde(rename = "type")]
-    pub type_: IntegrationRuntimeType,
     #[doc = "Integration runtime description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 impl IntegrationRuntime {
-    pub fn new(type_: IntegrationRuntimeType) -> Self {
-        Self { type_, description: None }
+    pub fn new() -> Self {
+        Self { description: None }
     }
+}
+#[doc = "The type of integration runtime."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum IntegrationRuntimeUnion {
+    Managed(ManagedIntegrationRuntime),
+    SelfHosted(SelfHostedIntegrationRuntime),
 }
 #[doc = "The integration runtime authentication keys."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1765,7 +1746,7 @@ pub struct IntegrationRuntimeListResponse {
 impl azure_core::Continuable for IntegrationRuntimeListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IntegrationRuntimeListResponse {
@@ -2027,10 +2008,10 @@ pub struct IntegrationRuntimeResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     #[doc = "Azure Synapse nested object which serves as a compute resource for activities."]
-    pub properties: IntegrationRuntime,
+    pub properties: IntegrationRuntimeUnion,
 }
 impl IntegrationRuntimeResource {
-    pub fn new(properties: IntegrationRuntime) -> Self {
+    pub fn new(properties: IntegrationRuntimeUnion) -> Self {
         Self {
             sub_resource: SubResource::default(),
             properties,
@@ -2128,7 +2109,7 @@ pub struct IntegrationRuntimeSsisProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub express_custom_setup_properties: Vec<CustomSetupBase>,
+    pub express_custom_setup_properties: Vec<CustomSetupBaseUnion>,
 }
 impl IntegrationRuntimeSsisProperties {
     pub fn new() -> Self {
@@ -2268,9 +2249,6 @@ impl Serialize for IntegrationRuntimeState {
 #[doc = "Integration runtime status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeStatus {
-    #[doc = "The type of integration runtime."]
-    #[serde(rename = "type")]
-    pub type_: IntegrationRuntimeType,
     #[doc = "The workspace name which the integration runtime belong to."]
     #[serde(rename = "dataFactoryName", default, skip_serializing_if = "Option::is_none")]
     pub data_factory_name: Option<String>,
@@ -2279,13 +2257,19 @@ pub struct IntegrationRuntimeStatus {
     pub state: Option<IntegrationRuntimeState>,
 }
 impl IntegrationRuntimeStatus {
-    pub fn new(type_: IntegrationRuntimeType) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             data_factory_name: None,
             state: None,
         }
     }
+}
+#[doc = "The type of integration runtime."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum IntegrationRuntimeStatusUnion {
+    Managed(ManagedIntegrationRuntimeStatus),
+    SelfHosted(SelfHostedIntegrationRuntimeStatus),
 }
 #[doc = "Integration runtime status response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2294,10 +2278,10 @@ pub struct IntegrationRuntimeStatusResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Integration runtime status."]
-    pub properties: IntegrationRuntimeStatus,
+    pub properties: IntegrationRuntimeStatusUnion,
 }
 impl IntegrationRuntimeStatusResponse {
-    pub fn new(properties: IntegrationRuntimeStatus) -> Self {
+    pub fn new(properties: IntegrationRuntimeStatusUnion) -> Self {
         Self { name: None, properties }
     }
 }
@@ -2458,7 +2442,7 @@ pub struct IpFirewallRuleInfoListResult {
 impl azure_core::Continuable for IpFirewallRuleInfoListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IpFirewallRuleInfoListResult {
@@ -2576,7 +2560,7 @@ pub struct KeyInfoListResult {
 impl azure_core::Continuable for KeyInfoListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl KeyInfoListResult {
@@ -2641,7 +2625,7 @@ pub struct LibraryListResponse {
 impl azure_core::Continuable for LibraryListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LibraryListResponse {
@@ -2691,7 +2675,7 @@ pub struct LicensedComponentSetupTypeProperties {
     pub component_name: String,
     #[doc = "The base definition of a secret type."]
     #[serde(rename = "licenseKey", default, skip_serializing_if = "Option::is_none")]
-    pub license_key: Option<SecretBase>,
+    pub license_key: Option<SecretBaseUnion>,
 }
 impl LicensedComponentSetupTypeProperties {
     pub fn new(component_name: String) -> Self {
@@ -2728,47 +2712,33 @@ impl LinkedIntegrationRuntime {
 #[doc = "The key authorization type integration runtime."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedIntegrationRuntimeKeyAuthorization {
-    #[serde(flatten)]
-    pub linked_integration_runtime_type: LinkedIntegrationRuntimeType,
     #[doc = "Azure Synapse secure string definition. The string value will be masked with asterisks '*' during Get or List API calls."]
     pub key: SecureString,
 }
 impl LinkedIntegrationRuntimeKeyAuthorization {
-    pub fn new(linked_integration_runtime_type: LinkedIntegrationRuntimeType, key: SecureString) -> Self {
-        Self {
-            linked_integration_runtime_type,
-            key,
-        }
+    pub fn new(key: SecureString) -> Self {
+        Self { key }
     }
 }
 #[doc = "The role based access control (RBAC) authorization type integration runtime."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedIntegrationRuntimeRbacAuthorization {
-    #[serde(flatten)]
-    pub linked_integration_runtime_type: LinkedIntegrationRuntimeType,
     #[doc = "The resource identifier of the integration runtime to be shared."]
     #[serde(rename = "resourceId")]
     pub resource_id: String,
 }
 impl LinkedIntegrationRuntimeRbacAuthorization {
-    pub fn new(linked_integration_runtime_type: LinkedIntegrationRuntimeType, resource_id: String) -> Self {
-        Self {
-            linked_integration_runtime_type,
-            resource_id,
-        }
+    pub fn new(resource_id: String) -> Self {
+        Self { resource_id }
     }
 }
-#[doc = "The base definition of a linked integration runtime."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LinkedIntegrationRuntimeType {
-    #[doc = "The authorization type for integration runtime sharing."]
-    #[serde(rename = "authorizationType")]
-    pub authorization_type: String,
-}
-impl LinkedIntegrationRuntimeType {
-    pub fn new(authorization_type: String) -> Self {
-        Self { authorization_type }
-    }
+#[doc = "The authorization type for integration runtime sharing."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "authorizationType")]
+pub enum LinkedIntegrationRuntimeTypeUnion {
+    Key(LinkedIntegrationRuntimeKeyAuthorization),
+    #[serde(rename = "RBAC")]
+    Rbac(LinkedIntegrationRuntimeRbacAuthorization),
 }
 #[doc = "A list of SQL pool security alert policies."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -2787,7 +2757,7 @@ pub struct ListSqlPoolSecurityAlertPolicies {
 impl azure_core::Continuable for ListSqlPoolSecurityAlertPolicies {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListSqlPoolSecurityAlertPolicies {
@@ -3593,7 +3563,7 @@ pub struct PrivateEndpointConnectionForPrivateLinkHubResourceCollectionResponse 
 impl azure_core::Continuable for PrivateEndpointConnectionForPrivateLinkHubResourceCollectionResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionForPrivateLinkHubResourceCollectionResponse {
@@ -3618,7 +3588,7 @@ pub struct PrivateEndpointConnectionList {
 impl azure_core::Continuable for PrivateEndpointConnectionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionList {
@@ -3678,7 +3648,7 @@ pub struct PrivateLinkHubInfoListResult {
 impl azure_core::Continuable for PrivateLinkHubInfoListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkHubInfoListResult {
@@ -3749,7 +3719,7 @@ pub struct PrivateLinkResourceListResult {
 impl azure_core::Continuable for PrivateLinkResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkResourceListResult {
@@ -3987,7 +3957,7 @@ pub struct RecoverableSqlPoolListResult {
 impl azure_core::Continuable for RecoverableSqlPoolListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RecoverableSqlPoolListResult {
@@ -4077,7 +4047,7 @@ pub struct ReplicationLinkListResult {
 impl azure_core::Continuable for ReplicationLinkListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ReplicationLinkListResult {
@@ -4208,17 +4178,6 @@ impl Resource {
         Self::default()
     }
 }
-#[doc = "Contains the information necessary to perform a resource move (rename)."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ResourceMoveDefinition {
-    #[doc = "The target ID for the resource"]
-    pub id: String,
-}
-impl ResourceMoveDefinition {
-    pub fn new(id: String) -> Self {
-        Self { id }
-    }
-}
 #[doc = "A restorable dropped Sql pool"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RestorableDroppedSqlPool {
@@ -4320,7 +4279,7 @@ pub struct RestorePointListResult {
 impl azure_core::Continuable for RestorePointListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RestorePointListResult {
@@ -4360,29 +4319,21 @@ pub mod restore_point_properties {
         Discrete,
     }
 }
-#[doc = "The base definition of a secret type."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretBase {
-    #[doc = "Type of the secret."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl SecretBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
+#[doc = "Type of the secret."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum SecretBaseUnion {
+    SecureString(SecureString),
 }
 #[doc = "Azure Synapse secure string definition. The string value will be masked with asterisks '*' during Get or List API calls."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecureString {
-    #[serde(flatten)]
-    pub secret_base: SecretBase,
     #[doc = "Value of secure string."]
     pub value: String,
 }
 impl SecureString {
-    pub fn new(secret_base: SecretBase, value: String) -> Self {
-        Self { secret_base, value }
+    pub fn new(value: String) -> Self {
+        Self { value }
     }
 }
 #[doc = "Properties of a security alert policy."]
@@ -4774,7 +4725,7 @@ pub mod self_hosted_integration_runtime_status_type_properties {
 pub struct SelfHostedIntegrationRuntimeTypeProperties {
     #[doc = "The base definition of a linked integration runtime."]
     #[serde(rename = "linkedInfo", default, skip_serializing_if = "Option::is_none")]
-    pub linked_info: Option<LinkedIntegrationRuntimeType>,
+    pub linked_info: Option<LinkedIntegrationRuntimeTypeUnion>,
 }
 impl SelfHostedIntegrationRuntimeTypeProperties {
     pub fn new() -> Self {
@@ -4815,7 +4766,7 @@ pub struct SensitivityLabelListResult {
 impl azure_core::Continuable for SensitivityLabelListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SensitivityLabelListResult {
@@ -4964,7 +4915,7 @@ pub struct ServerBlobAuditingPolicyListResult {
 impl azure_core::Continuable for ServerBlobAuditingPolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerBlobAuditingPolicyListResult {
@@ -5066,7 +5017,7 @@ pub struct ServerSecurityAlertPolicyListResult {
 impl azure_core::Continuable for ServerSecurityAlertPolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerSecurityAlertPolicyListResult {
@@ -5177,7 +5128,7 @@ pub struct ServerUsageListResult {
 impl azure_core::Continuable for ServerUsageListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerUsageListResult {
@@ -5216,7 +5167,7 @@ pub struct ServerVulnerabilityAssessmentListResult {
 impl azure_core::Continuable for ServerVulnerabilityAssessmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerVulnerabilityAssessmentListResult {
@@ -5382,7 +5333,7 @@ pub struct SparkConfigurationListResponse {
 impl azure_core::Continuable for SparkConfigurationListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SparkConfigurationListResponse {
@@ -5461,7 +5412,7 @@ pub struct SqlPoolBlobAuditingPolicyListResult {
 impl azure_core::Continuable for SqlPoolBlobAuditingPolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlPoolBlobAuditingPolicyListResult {
@@ -5541,7 +5492,7 @@ pub struct SqlPoolBlobAuditingPolicySqlPoolOperationListResult {
 impl azure_core::Continuable for SqlPoolBlobAuditingPolicySqlPoolOperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlPoolBlobAuditingPolicySqlPoolOperationListResult {
@@ -5580,7 +5531,7 @@ pub struct SqlPoolColumnListResult {
 impl azure_core::Continuable for SqlPoolColumnListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlPoolColumnListResult {
@@ -5808,7 +5759,7 @@ pub struct SqlPoolInfoListResult {
 impl azure_core::Continuable for SqlPoolInfoListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlPoolInfoListResult {
@@ -6108,7 +6059,7 @@ pub struct SqlPoolSchemaListResult {
 impl azure_core::Continuable for SqlPoolSchemaListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlPoolSchemaListResult {
@@ -6158,7 +6109,7 @@ pub struct SqlPoolTableListResult {
 impl azure_core::Continuable for SqlPoolTableListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlPoolTableListResult {
@@ -6208,7 +6159,7 @@ pub struct SqlPoolUsageListResult {
 impl azure_core::Continuable for SqlPoolUsageListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlPoolUsageListResult {
@@ -6247,7 +6198,7 @@ pub struct SqlPoolVulnerabilityAssessmentListResult {
 impl azure_core::Continuable for SqlPoolVulnerabilityAssessmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlPoolVulnerabilityAssessmentListResult {
@@ -6399,9 +6350,6 @@ impl SsisFolder {
 #[doc = "SSIS object metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SsisObjectMetadata {
-    #[doc = "The type of SSIS object metadata."]
-    #[serde(rename = "type")]
-    pub type_: SsisObjectMetadataType,
     #[doc = "Metadata id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<i64>,
@@ -6413,14 +6361,22 @@ pub struct SsisObjectMetadata {
     pub description: Option<String>,
 }
 impl SsisObjectMetadata {
-    pub fn new(type_: SsisObjectMetadataType) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             id: None,
             name: None,
             description: None,
         }
     }
+}
+#[doc = "The type of SSIS object metadata."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum SsisObjectMetadataUnion {
+    Environment(SsisEnvironment),
+    Folder(SsisFolder),
+    Package(SsisPackage),
+    Project(SsisProject),
 }
 #[doc = "A list of SSIS object metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -6431,7 +6387,7 @@ pub struct SsisObjectMetadataListResponse {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<SsisObjectMetadata>,
+    pub value: Vec<SsisObjectMetadataUnion>,
     #[doc = "The link to the next page of results, if any remaining results exist."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -6805,7 +6761,7 @@ pub struct TransparentDataEncryptionListResult {
 impl azure_core::Continuable for TransparentDataEncryptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TransparentDataEncryptionListResult {
@@ -6964,7 +6920,7 @@ pub struct VulnerabilityAssessmentScanRecordListResult {
 impl azure_core::Continuable for VulnerabilityAssessmentScanRecordListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VulnerabilityAssessmentScanRecordListResult {
@@ -7121,7 +7077,7 @@ pub struct WorkloadClassifierListResult {
 impl azure_core::Continuable for WorkloadClassifierListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkloadClassifierListResult {
@@ -7194,7 +7150,7 @@ pub struct WorkloadGroupListResult {
 impl azure_core::Continuable for WorkloadGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkloadGroupListResult {
@@ -7288,7 +7244,7 @@ pub struct WorkspaceInfoListResult {
 impl azure_core::Continuable for WorkspaceInfoListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceInfoListResult {
@@ -7527,7 +7483,7 @@ pub struct WorkspaceRepositoryConfiguration {
     #[doc = "Type of workspace repositoryID configuration. Example WorkspaceVSTSConfiguration, WorkspaceGitHubConfiguration"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[doc = "GitHub Enterprise host name. For example: https://github.mydomain.com"]
+    #[doc = "GitHub Enterprise host name. For example: `https://github.mydomain.com`"]
     #[serde(rename = "hostName", default, skip_serializing_if = "Option::is_none")]
     pub host_name: Option<String>,
     #[doc = "Account name"]

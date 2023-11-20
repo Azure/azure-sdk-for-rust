@@ -19,7 +19,7 @@ impl UpdateOrMergeEntityBuilder {
             headers.add(ContentType::APPLICATION_JSON);
             headers.add(self.if_match_condition);
 
-            let mut request = self.client.finalize_request(
+            let mut request = EntityClient::finalize_request(
                 url,
                 match self.operation {
                     UpdateOperation::Merge => Method::Merge,

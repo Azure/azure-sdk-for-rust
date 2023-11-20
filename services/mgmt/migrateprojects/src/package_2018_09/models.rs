@@ -346,8 +346,6 @@ impl DatabaseProperties {
 #[doc = "Class representing the databases solution summary."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DatabasesSolutionSummary {
-    #[serde(flatten)]
-    pub solution_summary: SolutionSummary,
     #[doc = "Gets or sets the count of databases assessed."]
     #[serde(rename = "databasesAssessedCount", default, skip_serializing_if = "Option::is_none")]
     pub databases_assessed_count: Option<i32>,
@@ -664,7 +662,7 @@ impl IEdmModel {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IEdmNavigationProperty {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub partner: Box<Option<IEdmNavigationProperty>>,
+    pub partner: Option<Box<IEdmNavigationProperty>>,
     #[serde(rename = "onDelete", default, skip_serializing_if = "Option::is_none")]
     pub on_delete: Option<i_edm_navigation_property::OnDelete>,
     #[serde(rename = "containsTarget", default, skip_serializing_if = "Option::is_none")]
@@ -885,7 +883,7 @@ pub struct IEdmStructuredType {
     #[serde(rename = "isOpen", default, skip_serializing_if = "Option::is_none")]
     pub is_open: Option<bool>,
     #[serde(rename = "baseType", default, skip_serializing_if = "Option::is_none")]
-    pub base_type: Box<Option<IEdmStructuredType>>,
+    pub base_type: Option<Box<IEdmStructuredType>>,
     #[serde(
         rename = "declaredProperties",
         default,
@@ -1121,7 +1119,7 @@ pub struct MigrateEvent {
     pub type_: Option<String>,
     #[doc = "Properties of the error resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<MigrateEventProperties>,
+    pub properties: Option<MigrateEventPropertiesUnion>,
 }
 impl MigrateEvent {
     pub fn new() -> Self {
@@ -1131,9 +1129,6 @@ impl MigrateEvent {
 #[doc = "Properties of the error resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MigrateEventProperties {
-    #[doc = "Gets the Instance type."]
-    #[serde(rename = "instanceType", default, skip_serializing_if = "Option::is_none")]
-    pub instance_type: Option<String>,
     #[doc = "Gets or sets the error code."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
@@ -1157,6 +1152,13 @@ impl MigrateEventProperties {
     pub fn new() -> Self {
         Self::default()
     }
+}
+#[doc = "Gets the Instance type."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "instanceType")]
+pub enum MigrateEventPropertiesUnion {
+    Databases(DatabaseMigrateEventProperties),
+    Servers(MachineMigrateEventProperties),
 }
 #[doc = "Migrate Project REST Resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1512,9 +1514,6 @@ impl OperationResultList {
 #[doc = "The project summary class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProjectSummary {
-    #[doc = "Gets the Instance type."]
-    #[serde(rename = "instanceType", default, skip_serializing_if = "Option::is_none")]
-    pub instance_type: Option<String>,
     #[doc = "Gets or sets the state of refresh summary."]
     #[serde(rename = "refreshSummaryState", default, skip_serializing_if = "Option::is_none")]
     pub refresh_summary_state: Option<project_summary::RefreshSummaryState>,
@@ -1540,6 +1539,13 @@ pub mod project_summary {
         Completed,
         Failed,
     }
+}
+#[doc = "Gets the Instance type."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "instanceType")]
+pub enum ProjectSummaryUnion {
+    Databases(DatabaseProjectSummary),
+    Servers(ServersProjectSummary),
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RangeVariable {
@@ -1692,8 +1698,6 @@ impl ServersProjectSummary {
 #[doc = "Class representing the servers solution summary."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServersSolutionSummary {
-    #[serde(flatten)]
-    pub solution_summary: SolutionSummary,
     #[doc = "Gets or sets the count of servers discovered."]
     #[serde(rename = "discoveredCount", default, skip_serializing_if = "Option::is_none")]
     pub discovered_count: Option<i32>,
@@ -1841,7 +1845,7 @@ pub struct SolutionProperties {
     pub cleanup_state: Option<solution_properties::CleanupState>,
     #[doc = "The solution summary class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub summary: Option<SolutionSummary>,
+    pub summary: Option<SolutionSummaryUnion>,
     #[doc = "Class representing the details of the solution."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub details: Option<SolutionDetails>,
@@ -1899,17 +1903,12 @@ pub mod solution_properties {
         Failed,
     }
 }
-#[doc = "The solution summary class."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SolutionSummary {
-    #[doc = "Gets the Instance type."]
-    #[serde(rename = "instanceType", default, skip_serializing_if = "Option::is_none")]
-    pub instance_type: Option<String>,
-}
-impl SolutionSummary {
-    pub fn new() -> Self {
-        Self::default()
-    }
+#[doc = "Gets the Instance type."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "instanceType")]
+pub enum SolutionSummaryUnion {
+    Databases(DatabasesSolutionSummary),
+    Servers(ServersSolutionSummary),
 }
 #[doc = "Collection of solutions."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

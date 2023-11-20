@@ -30,7 +30,7 @@ async fn main() -> azure_core::Result<()> {
         .expect("please specify destination blob name as fourth command line parameter");
 
     let destination_storage_credentials =
-        StorageCredentials::Key(destination_account.clone(), destination_access_key);
+        StorageCredentials::access_key(destination_account.clone(), destination_access_key);
     let destination_service_client =
         BlobServiceClient::new(destination_account, destination_storage_credentials);
     let destination_blob = destination_service_client
@@ -38,7 +38,7 @@ async fn main() -> azure_core::Result<()> {
         .blob_client(&destination_blob_name);
 
     let source_storage_credentials =
-        StorageCredentials::Key(source_account.clone(), source_access_key);
+        StorageCredentials::access_key(source_account.clone(), source_access_key);
     let source_service_client = BlobServiceClient::new(source_account, source_storage_credentials);
     let source_blob = source_service_client
         .container_client(&source_container_name)
@@ -56,7 +56,8 @@ async fn main() -> azure_core::Result<()> {
                     read: true,
                     ..Default::default()
                 },
-            )?
+            )
+            .await?
             .start(now)
             .protocol(SasProtocol::HttpHttps);
         println!("token: '{}'", sas.token());

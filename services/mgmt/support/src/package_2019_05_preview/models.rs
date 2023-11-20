@@ -197,7 +197,7 @@ pub struct CommunicationsListResult {
 impl azure_core::Continuable for CommunicationsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CommunicationsListResult {
@@ -786,7 +786,7 @@ pub struct SupportTicketsListResult {
 impl azure_core::Continuable for SupportTicketsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SupportTicketsListResult {

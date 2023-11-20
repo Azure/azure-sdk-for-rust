@@ -37,7 +37,7 @@ pub struct ClusterConfigurationListResult {
 impl azure_core::Continuable for ClusterConfigurationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClusterConfigurationListResult {
@@ -77,7 +77,7 @@ pub struct ClusterListResult {
 impl azure_core::Continuable for ClusterListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClusterListResult {
@@ -112,7 +112,7 @@ pub struct ClusterProperties {
     #[doc = "Preferred primary availability zone (AZ) for all cluster servers."]
     #[serde(rename = "preferredPrimaryZone", default, skip_serializing_if = "Option::is_none")]
     pub preferred_primary_zone: Option<String>,
-    #[doc = "If shards on coordinator is enabled or not for the cluster."]
+    #[doc = "If distributed tables are placed on coordinator or not. Should be set to 'true' on single node clusters. Requires shard rebalancing after value is changed."]
     #[serde(rename = "enableShardsOnCoordinator", default, skip_serializing_if = "Option::is_none")]
     pub enable_shards_on_coordinator: Option<bool>,
     #[doc = "If high availability (HA) is enabled or not for the cluster."]
@@ -123,10 +123,10 @@ pub struct ClusterProperties {
     pub coordinator_server_edition: Option<String>,
     #[doc = "The storage of a server in MB. Required for creation. See https://learn.microsoft.com/azure/cosmos-db/postgresql/resources-compute for more information."]
     #[serde(rename = "coordinatorStorageQuotaInMb", default, skip_serializing_if = "Option::is_none")]
-    pub coordinator_storage_quota_in_mb: Option<i64>,
+    pub coordinator_storage_quota_in_mb: Option<i32>,
     #[doc = "The vCores count of a server (max: 96). Required for creation. See https://learn.microsoft.com/azure/cosmos-db/postgresql/resources-compute for more information."]
     #[serde(rename = "coordinatorVCores", default, skip_serializing_if = "Option::is_none")]
-    pub coordinator_v_cores: Option<i64>,
+    pub coordinator_v_cores: Option<i32>,
     #[doc = "If public access is enabled on coordinator."]
     #[serde(rename = "coordinatorEnablePublicIpAccess", default, skip_serializing_if = "Option::is_none")]
     pub coordinator_enable_public_ip_access: Option<bool>,
@@ -135,13 +135,13 @@ pub struct ClusterProperties {
     pub node_server_edition: Option<String>,
     #[doc = "Worker node count of the cluster. When node count is 0, it represents a single node configuration with the ability to create distributed tables on that node. 2 or more worker nodes represent multi-node configuration. Node count value cannot be 1. Required for creation."]
     #[serde(rename = "nodeCount", default, skip_serializing_if = "Option::is_none")]
-    pub node_count: Option<i64>,
+    pub node_count: Option<i32>,
     #[doc = "The storage in MB on each worker node. See https://learn.microsoft.com/azure/cosmos-db/postgresql/resources-compute for more information."]
     #[serde(rename = "nodeStorageQuotaInMb", default, skip_serializing_if = "Option::is_none")]
-    pub node_storage_quota_in_mb: Option<i64>,
+    pub node_storage_quota_in_mb: Option<i32>,
     #[doc = "The compute in vCores on each worker node (max: 104). See https://learn.microsoft.com/azure/cosmos-db/postgresql/resources-compute for more information."]
     #[serde(rename = "nodeVCores", default, skip_serializing_if = "Option::is_none")]
-    pub node_v_cores: Option<i64>,
+    pub node_v_cores: Option<i32>,
     #[doc = "If public access is enabled on worker nodes."]
     #[serde(rename = "nodeEnablePublicIpAccess", default, skip_serializing_if = "Option::is_none")]
     pub node_enable_public_ip_access: Option<bool>,
@@ -199,7 +199,7 @@ pub struct ClusterPropertiesForUpdate {
     #[doc = "The Citus extension version on all cluster servers."]
     #[serde(rename = "citusVersion", default, skip_serializing_if = "Option::is_none")]
     pub citus_version: Option<String>,
-    #[doc = "If shards on coordinator is enabled or not for the cluster."]
+    #[doc = "If distributed tables are placed on coordinator or not. Should be set to 'true' on single node clusters. Requires shard rebalancing after value is changed."]
     #[serde(rename = "enableShardsOnCoordinator", default, skip_serializing_if = "Option::is_none")]
     pub enable_shards_on_coordinator: Option<bool>,
     #[doc = "If high availability (HA) is enabled or not for the cluster."]
@@ -213,10 +213,10 @@ pub struct ClusterPropertiesForUpdate {
     pub coordinator_server_edition: Option<String>,
     #[doc = "The storage of the coordinator in MB."]
     #[serde(rename = "coordinatorStorageQuotaInMb", default, skip_serializing_if = "Option::is_none")]
-    pub coordinator_storage_quota_in_mb: Option<i64>,
+    pub coordinator_storage_quota_in_mb: Option<i32>,
     #[doc = "The vCores count of the coordinator (max: 96)."]
     #[serde(rename = "coordinatorVCores", default, skip_serializing_if = "Option::is_none")]
-    pub coordinator_v_cores: Option<i64>,
+    pub coordinator_v_cores: Option<i32>,
     #[doc = "If public access is enabled on coordinator."]
     #[serde(rename = "coordinatorEnablePublicIpAccess", default, skip_serializing_if = "Option::is_none")]
     pub coordinator_enable_public_ip_access: Option<bool>,
@@ -225,13 +225,13 @@ pub struct ClusterPropertiesForUpdate {
     pub node_server_edition: Option<String>,
     #[doc = "Worker node count of the cluster. When node count is 0, it represents a single node configuration with the ability to create distributed tables on that node. 2 or more worker nodes represent multi-node configuration. Node count value cannot be 1."]
     #[serde(rename = "nodeCount", default, skip_serializing_if = "Option::is_none")]
-    pub node_count: Option<i64>,
+    pub node_count: Option<i32>,
     #[doc = "The storage in MB on each worker node."]
     #[serde(rename = "nodeStorageQuotaInMb", default, skip_serializing_if = "Option::is_none")]
-    pub node_storage_quota_in_mb: Option<i64>,
+    pub node_storage_quota_in_mb: Option<i32>,
     #[doc = "The compute in vCores on each worker node (max: 104)."]
     #[serde(rename = "nodeVCores", default, skip_serializing_if = "Option::is_none")]
-    pub node_v_cores: Option<i64>,
+    pub node_v_cores: Option<i32>,
     #[doc = "If public access is enabled on worker nodes."]
     #[serde(rename = "nodeEnablePublicIpAccess", default, skip_serializing_if = "Option::is_none")]
     pub node_enable_public_ip_access: Option<bool>,
@@ -1144,7 +1144,7 @@ pub struct ServerConfigurationListResult {
 impl azure_core::Continuable for ServerConfigurationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerConfigurationListResult {
@@ -1260,10 +1260,10 @@ pub struct ServerProperties {
     pub server_edition: Option<String>,
     #[doc = "The storage of a server in MB."]
     #[serde(rename = "storageQuotaInMb", default, skip_serializing_if = "Option::is_none")]
-    pub storage_quota_in_mb: Option<i64>,
+    pub storage_quota_in_mb: Option<i32>,
     #[doc = "The vCores count of a server."]
     #[serde(rename = "vCores", default, skip_serializing_if = "Option::is_none")]
-    pub v_cores: Option<i64>,
+    pub v_cores: Option<i32>,
     #[doc = "If high availability (HA) is enabled or not for the server."]
     #[serde(rename = "enableHa", default, skip_serializing_if = "Option::is_none")]
     pub enable_ha: Option<bool>,

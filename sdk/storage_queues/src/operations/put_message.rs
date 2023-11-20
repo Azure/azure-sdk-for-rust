@@ -1,6 +1,10 @@
-use crate::prelude::*;
+use crate::{prelude::*, queue_message::QueueMessageSubmit};
 use azure_core::{
-    date, headers::Headers, prelude::*, xml::read_xml, Method, Response as AzureResponse,
+    date,
+    headers::Headers,
+    prelude::*,
+    xml::{read_xml, to_xml},
+    Method, Response as AzureResponse,
 };
 use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
@@ -22,15 +26,11 @@ impl PutMessageBuilder {
             self.visibility_timeout.append_to_url_query(&mut url);
             self.ttl.append_to_url_query(&mut url);
 
-            // since the format is fixed we just decorate the message with the tags.
-            // This could be made optional in the future and/or more
-            // stringent.
-            let message = format!(
-                "<QueueMessage><MessageText>{}</MessageText></QueueMessage>",
-                self.body
-            );
+            let message = to_xml(&QueueMessageSubmit {
+                message_text: self.body,
+            })?;
 
-            let mut request = self.client.finalize_request(
+            let mut request = QueueClient::finalize_request(
                 url,
                 Method::Post,
                 Headers::new(),

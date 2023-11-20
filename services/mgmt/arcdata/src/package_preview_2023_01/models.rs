@@ -122,7 +122,7 @@ pub struct ActiveDirectoryConnectorListResult {
 impl azure_core::Continuable for ActiveDirectoryConnectorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ActiveDirectoryConnectorListResult {
@@ -259,7 +259,7 @@ pub struct ArcSqlServerDatabaseListResult {
 impl azure_core::Continuable for ArcSqlServerDatabaseListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ArcSqlServerDatabaseListResult {
@@ -528,7 +528,7 @@ pub struct FailoverGroupListResult {
 impl azure_core::Continuable for FailoverGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FailoverGroupListResult {
@@ -755,6 +755,66 @@ pub mod failover_group_spec {
         }
     }
 }
+#[doc = "The kubernetes active directory information."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct K8sActiveDirectory {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connector: Option<k8s_active_directory::Connector>,
+    #[doc = "Account name for AAD"]
+    #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
+    pub account_name: Option<String>,
+    #[doc = "Keytab secret used to authenticate with Active Directory."]
+    #[serde(rename = "keytabSecret", default, skip_serializing_if = "Option::is_none")]
+    pub keytab_secret: Option<String>,
+    #[doc = "An array of encryption types"]
+    #[serde(
+        rename = "encryptionTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub encryption_types: Vec<String>,
+}
+impl K8sActiveDirectory {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod k8s_active_directory {
+    use super::*;
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Connector {
+        #[doc = "Name of the connector"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub name: Option<String>,
+        #[doc = "Name space of the connector"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub namespace: Option<String>,
+    }
+    impl Connector {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+}
+#[doc = "The kubernetes network settings information."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct K8sNetworkSettings {
+    #[doc = "If 1, then SQL Server forces all connections to be encrypted. By default, this option is 0"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub forceencryption: Option<i32>,
+    #[doc = "Specifies which ciphers are allowed by SQL Server for TLS"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tlsciphers: Option<String>,
+    #[doc = "A comma-separated list of which TLS protocols are allowed by SQL Server"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tlsprotocols: Option<String>,
+}
+impl K8sNetworkSettings {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The kubernetes resource limits and requests used to restrict or reserve resource usage."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct K8sResourceRequirements {
@@ -790,6 +850,39 @@ pub struct K8sSchedulingOptions {
     pub resources: Option<K8sResourceRequirements>,
 }
 impl K8sSchedulingOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The kubernetes security information."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct K8sSecurity {
+    #[doc = "Admin login secret key"]
+    #[serde(rename = "adminLoginSecret", default, skip_serializing_if = "Option::is_none")]
+    pub admin_login_secret: Option<String>,
+    #[doc = "Service certificate secret used"]
+    #[serde(rename = "serviceCertificateSecret", default, skip_serializing_if = "Option::is_none")]
+    pub service_certificate_secret: Option<String>,
+    #[doc = "The kubernetes active directory information."]
+    #[serde(rename = "activeDirectory", default, skip_serializing_if = "Option::is_none")]
+    pub active_directory: Option<K8sActiveDirectory>,
+    #[doc = "Transparent data encryption information."]
+    #[serde(rename = "transparentDataEncryption", default, skip_serializing_if = "Option::is_none")]
+    pub transparent_data_encryption: Option<K8stransparentDataEncryption>,
+}
+impl K8sSecurity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The kubernetes settings information."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct K8sSettings {
+    #[doc = "The kubernetes network settings information."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub network: Option<K8sNetworkSettings>,
+}
+impl K8sSettings {
     pub fn new() -> Self {
         Self::default()
     }
@@ -951,7 +1044,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -976,7 +1069,7 @@ pub struct PageOfDataControllerResource {
 impl azure_core::Continuable for PageOfDataControllerResource {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageOfDataControllerResource {
@@ -1025,7 +1118,7 @@ pub struct PostgresInstanceListResult {
 impl azure_core::Continuable for PostgresInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PostgresInstanceListResult {
@@ -1179,6 +1272,12 @@ pub struct SqlManagedInstanceK8sSpec {
     #[doc = "This option specifies the number of SQL Managed Instance replicas that will be deployed in your Kubernetes cluster for high availability purposes. If sku.tier is BusinessCritical, allowed values are '2' or '3' with default of '3'. If sku.tier is GeneralPurpose, replicas must be '1'."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub replicas: Option<i32>,
+    #[doc = "The kubernetes security information."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub security: Option<K8sSecurity>,
+    #[doc = "The kubernetes settings information."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settings: Option<K8sSettings>,
 }
 impl SqlManagedInstanceK8sSpec {
     pub fn new() -> Self {
@@ -1202,7 +1301,7 @@ pub struct SqlManagedInstanceListResult {
 impl azure_core::Continuable for SqlManagedInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlManagedInstanceListResult {
@@ -1606,7 +1705,7 @@ pub struct SqlServerInstanceListResult {
 impl azure_core::Continuable for SqlServerInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlServerInstanceListResult {
@@ -2070,6 +2169,21 @@ pub struct UploadWatermark {
     pub usages: Option<time::OffsetDateTime>,
 }
 impl UploadWatermark {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Transparent data encryption information."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct K8stransparentDataEncryption {
+    #[doc = "Transparent data encryption mode. Can be Service Managed, Customer managed or disabled"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<String>,
+    #[doc = "Protector secret for customer managed Transparent data encryption mode"]
+    #[serde(rename = "protectorSecret", default, skip_serializing_if = "Option::is_none")]
+    pub protector_secret: Option<String>,
+}
+impl K8stransparentDataEncryption {
     pub fn new() -> Self {
         Self::default()
     }

@@ -10,7 +10,7 @@ operation! {
 }
 
 impl GetRandomBytesBuilder {
-    pub fn into_future(mut self) -> GetRandomBytes {
+    pub fn into_future(self) -> GetRandomBytes {
         Box::pin(async move {
             // POST {HSMBaseUrl}//rng?api-version=7.4
             let vault_url = format!("https://{}.managedhsm.azure.net/", self.hsm_name);
@@ -23,17 +23,17 @@ impl GetRandomBytesBuilder {
             request_body.insert("count".to_owned(), Value::from(self.count));
 
             let headers = Headers::new();
-            let mut request = self.client.keyvault_client.finalize_request(
+            let mut request = KeyvaultClient::finalize_request(
                 uri,
                 Method::Post,
                 headers,
                 Some(Value::Object(request_body).to_string().into()),
-            )?;
+            );
 
             let response = self
                 .client
                 .keyvault_client
-                .send(&mut self.context, &mut request)
+                .send(&self.context, &mut request)
                 .await?;
 
             let response = CollectedResponse::from_response(response).await?;

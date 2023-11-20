@@ -46,6 +46,95 @@ impl AccessControlList {
         }
     }
 }
+#[doc = "Access Control List condition model."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AccessControlListConditionProperties {
+    #[serde(flatten)]
+    pub annotation_resource: AnnotationResource,
+    #[doc = "sequenceNumber of the Access Control List."]
+    #[serde(rename = "sequenceNumber")]
+    pub sequence_number: i32,
+    #[doc = "action. Example: allow | deny."]
+    pub action: access_control_list_condition_properties::Action,
+    #[doc = "destinationAddress. Example: any | 1.1.1.0/24 | 1.1.10.10"]
+    #[serde(rename = "destinationAddress")]
+    pub destination_address: String,
+    #[doc = "destinationPort. Example: any | 1253"]
+    #[serde(rename = "destinationPort")]
+    pub destination_port: String,
+    #[doc = "sourceAddress. Example: any | 1.1.1.0/24 | 1.1.10.10"]
+    #[serde(rename = "sourceAddress")]
+    pub source_address: String,
+    #[doc = "sourcePort. Example: any | 1253"]
+    #[serde(rename = "sourcePort")]
+    pub source_port: String,
+    #[doc = "TCP/IP protocol as defined in the list of IP protocol numbers. Example: 255 (any) | 0 | 1."]
+    pub protocol: i32,
+}
+impl AccessControlListConditionProperties {
+    pub fn new(
+        sequence_number: i32,
+        action: access_control_list_condition_properties::Action,
+        destination_address: String,
+        destination_port: String,
+        source_address: String,
+        source_port: String,
+        protocol: i32,
+    ) -> Self {
+        Self {
+            annotation_resource: AnnotationResource::default(),
+            sequence_number,
+            action,
+            destination_address,
+            destination_port,
+            source_address,
+            source_port,
+            protocol,
+        }
+    }
+}
+pub mod access_control_list_condition_properties {
+    use super::*;
+    #[doc = "action. Example: allow | deny."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Action")]
+    pub enum Action {
+        #[serde(rename = "allow")]
+        Allow,
+        #[serde(rename = "deny")]
+        Deny,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Action {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Action {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Action {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Allow => serializer.serialize_unit_variant("Action", 0u32, "allow"),
+                Self::Deny => serializer.serialize_unit_variant("Action", 1u32, "deny"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "The AccessControlList patch resource definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AccessControlListPatch {
@@ -75,7 +164,7 @@ pub struct AccessControlListPatchProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub conditions: Vec<serde_json::Value>,
+    pub conditions: Vec<AccessControlListConditionProperties>,
 }
 impl AccessControlListPatchProperties {
     pub fn new() -> Self {
@@ -133,13 +222,16 @@ pub struct AccessControlListProperties {
     #[serde(rename = "addressFamily")]
     pub address_family: access_control_list_properties::AddressFamily,
     #[doc = "Access Control List conditions."]
-    pub conditions: Vec<serde_json::Value>,
+    pub conditions: Vec<AccessControlListConditionProperties>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl AccessControlListProperties {
-    pub fn new(address_family: access_control_list_properties::AddressFamily, conditions: Vec<serde_json::Value>) -> Self {
+    pub fn new(
+        address_family: access_control_list_properties::AddressFamily,
+        conditions: Vec<AccessControlListConditionProperties>,
+    ) -> Self {
         Self {
             annotation_resource: AnnotationResource::default(),
             address_family,
@@ -207,10 +299,77 @@ pub struct AccessControlListsListResult {
 impl azure_core::Continuable for AccessControlListsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccessControlListsListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "IP Community Properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ActionIpCommunityProperties {
+    #[serde(flatten)]
+    pub ip_community_add_operation_properties: IpCommunityAddOperationProperties,
+    #[serde(flatten)]
+    pub ip_community_delete_operation_properties: IpCommunityDeleteOperationProperties,
+    #[serde(flatten)]
+    pub ip_community_set_operation_properties: IpCommunitySetOperationProperties,
+}
+impl ActionIpCommunityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "IP Extended Community Properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ActionIpExtendedCommunityProperties {
+    #[serde(flatten)]
+    pub ip_extended_community_add_operation_properties: IpExtendedCommunityAddOperationProperties,
+    #[serde(flatten)]
+    pub ip_extended_community_delete_operation_properties: IpExtendedCommunityDeleteOperationProperties,
+    #[serde(flatten)]
+    pub ip_extended_community_set_operation_properties: IpExtendedCommunitySetOperationProperties,
+}
+impl ActionIpExtendedCommunityProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Aggregate Route properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AggregateRoute {
+    #[doc = "Prefix of the aggregate Route."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prefix: Option<String>,
+}
+impl AggregateRoute {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List of IPv4 and IPv6 route configurations."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AggregateRouteConfiguration {
+    #[doc = "List of IPv4 Route prefixes."]
+    #[serde(
+        rename = "ipv4Routes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub ipv4_routes: Vec<AggregateRoute>,
+    #[doc = "List of IPv6 Routes prefixes."]
+    #[serde(
+        rename = "ipv6Routes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub ipv6_routes: Vec<AggregateRoute>,
+}
+impl AggregateRouteConfiguration {
     pub fn new() -> Self {
         Self::default()
     }
@@ -243,6 +402,119 @@ pub struct BfdConfiguration {
 impl BfdConfiguration {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "BGP configuration properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct BgpConfiguration {
+    #[serde(flatten)]
+    pub annotation_resource: AnnotationResource,
+    #[doc = "BFD configuration properties"]
+    #[serde(rename = "bfdConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub bfd_configuration: Option<BfdConfiguration>,
+    #[doc = "Boolean Enum. Example- True/False"]
+    #[serde(rename = "defaultRouteOriginate", default, skip_serializing_if = "Option::is_none")]
+    pub default_route_originate: Option<BooleanEnumProperty>,
+    #[doc = "Allows for routes to be received and processed even if the router detects its own ASN in the AS-Path. 0 is disable, Possible values are 1-10, default is 2."]
+    #[serde(rename = "allowAS", default, skip_serializing_if = "Option::is_none")]
+    pub allow_as: Option<i32>,
+    #[doc = "Enable Or Disable state."]
+    #[serde(rename = "allowASOverride", default, skip_serializing_if = "Option::is_none")]
+    pub allow_as_override: Option<bgp_configuration::AllowAsOverride>,
+    #[doc = "ASN of Network Fabric. Example: 65048."]
+    #[serde(rename = "fabricASN", default, skip_serializing_if = "Option::is_none")]
+    pub fabric_asn: Option<i32>,
+    #[doc = "Peer ASN. Example: 65047."]
+    #[serde(rename = "peerASN")]
+    pub peer_asn: i32,
+    #[doc = "BGP Ipv4 ListenRange."]
+    #[serde(
+        rename = "ipv4ListenRangePrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub ipv4_listen_range_prefixes: Vec<String>,
+    #[doc = "BGP Ipv6 ListenRange."]
+    #[serde(
+        rename = "ipv6ListenRangePrefixes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub ipv6_listen_range_prefixes: Vec<String>,
+    #[doc = "List with stringified ipv4NeighborAddresses."]
+    #[serde(
+        rename = "ipv4NeighborAddress",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub ipv4_neighbor_address: Vec<NeighborAddress>,
+    #[doc = "List with stringified IPv6 Neighbor Address."]
+    #[serde(
+        rename = "ipv6NeighborAddress",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub ipv6_neighbor_address: Vec<NeighborAddress>,
+}
+impl BgpConfiguration {
+    pub fn new(peer_asn: i32) -> Self {
+        Self {
+            annotation_resource: AnnotationResource::default(),
+            bfd_configuration: None,
+            default_route_originate: None,
+            allow_as: None,
+            allow_as_override: None,
+            fabric_asn: None,
+            peer_asn,
+            ipv4_listen_range_prefixes: Vec::new(),
+            ipv6_listen_range_prefixes: Vec::new(),
+            ipv4_neighbor_address: Vec::new(),
+            ipv6_neighbor_address: Vec::new(),
+        }
+    }
+}
+pub mod bgp_configuration {
+    use super::*;
+    #[doc = "Enable Or Disable state."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AllowAsOverride")]
+    pub enum AllowAsOverride {
+        Enable,
+        Disable,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AllowAsOverride {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AllowAsOverride {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AllowAsOverride {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Enable => serializer.serialize_unit_variant("AllowAsOverride", 0u32, "Enable"),
+                Self::Disable => serializer.serialize_unit_variant("AllowAsOverride", 1u32, "Disable"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "Boolean Enum. Example- True/False"]
@@ -280,6 +552,111 @@ impl Serialize for BooleanEnumProperty {
             Self::False => serializer.serialize_unit_variant("BooleanEnumProperty", 1u32, "False"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
+    }
+}
+#[doc = "community action types. Example: Permit | Deny."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "CommunityActionTypes")]
+pub enum CommunityActionTypes {
+    Permit,
+    Deny,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for CommunityActionTypes {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for CommunityActionTypes {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for CommunityActionTypes {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Permit => serializer.serialize_unit_variant("CommunityActionTypes", 0u32, "Permit"),
+            Self::Deny => serializer.serialize_unit_variant("CommunityActionTypes", 1u32, "Deny"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Connected Subnet properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ConnectedSubnet {
+    #[serde(flatten)]
+    pub annotation_resource: AnnotationResource,
+    #[doc = "Prefix of the connected Subnet."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prefix: Option<String>,
+}
+impl ConnectedSubnet {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Network device interface properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DeviceInterfaceProperties {
+    #[doc = "Interface identifier. Example: HundredGigE0/0."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identifier: Option<String>,
+    #[doc = "Interface type."]
+    #[serde(rename = "interfaceType", default, skip_serializing_if = "Option::is_none")]
+    pub interface_type: Option<String>,
+    #[doc = "List of supported connector types."]
+    #[serde(
+        rename = "supportedConnectorTypes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub supported_connector_types: Vec<SupportedConnectorProperties>,
+}
+impl DeviceInterfaceProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Network device limits."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DeviceLimits {
+    #[doc = "Maximum number of physical interfaces."]
+    #[serde(rename = "physicalInterfaceCount", default, skip_serializing_if = "Option::is_none")]
+    pub physical_interface_count: Option<i32>,
+    #[doc = "Maximum number of sub-interfaces."]
+    #[serde(rename = "maxSubInterfaces", default, skip_serializing_if = "Option::is_none")]
+    pub max_sub_interfaces: Option<i32>,
+    #[doc = "Maximum number of tunnel interfaces."]
+    #[serde(rename = "maxTunnelInterfaces", default, skip_serializing_if = "Option::is_none")]
+    pub max_tunnel_interfaces: Option<i32>,
+    #[doc = "Maximum number of virtual router functions."]
+    #[serde(rename = "maxVirtualRouterFunctions", default, skip_serializing_if = "Option::is_none")]
+    pub max_virtual_router_functions: Option<i32>,
+    #[doc = "Maximum number of Border Gateway Protocol (BGP) peers."]
+    #[serde(rename = "maxBorderGatewayProtocolPeers", default, skip_serializing_if = "Option::is_none")]
+    pub max_border_gateway_protocol_peers: Option<i32>,
+    #[doc = "Maximum number of Bidirectional Forwarding Detection (BFD) peers."]
+    #[serde(
+        rename = "maxBidirectionalForwardingDetectionPeers",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub max_bidirectional_forwarding_detection_peers: Option<i32>,
+}
+impl DeviceLimits {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Update administrative state on list of resources."]
@@ -531,7 +908,7 @@ pub struct ExternalNetworkPatchableProperties {
     pub option_b_properties: Option<OptionBProperties>,
     #[doc = "Peering optionA properties"]
     #[serde(rename = "optionAProperties", default, skip_serializing_if = "Option::is_none")]
-    pub option_a_properties: Option<OptionAProperties>,
+    pub option_a_properties: Option<Layer3OptionAProperties>,
     #[doc = "ARM resource ID of importRoutePolicy."]
     #[serde(rename = "importRoutePolicyId", default, skip_serializing_if = "Option::is_none")]
     pub import_route_policy_id: Option<String>,
@@ -615,10 +992,25 @@ pub struct ExternalNetworksList {
 impl azure_core::Continuable for ExternalNetworksList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExternalNetworksList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "BFD Configuration properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct FabricBfdConfiguration {
+    #[doc = "interval in seconds. Example: 300."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub interval: Option<i32>,
+    #[doc = "multiplier. Example: 3."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub multiplier: Option<i32>,
+}
+impl FabricBfdConfiguration {
     pub fn new() -> Self {
         Self::default()
     }
@@ -775,6 +1167,31 @@ pub mod get_device_status_properties {
 }
 pub type GetDynamicInterfaceMapsProperties = Vec<serde_json::Value>;
 pub type GetStaticInterfaceMapsProperties = Vec<serde_json::Value>;
+#[doc = "InfrastructureServices IP ranges."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct InfrastructureServices {
+    #[doc = "The IPv4 Address space is optional, if the value is not defined at the time of NFC creation, then the default value 10.0.0.0/19 is considered. The IPV4 address subnet is an optional attribute."]
+    #[serde(
+        rename = "ipv4AddressSpaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub ipv4_address_spaces: Vec<String>,
+    #[doc = "The IPv6 is not supported right now."]
+    #[serde(
+        rename = "ipv6AddressSpaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub ipv6_address_spaces: Vec<String>,
+}
+impl InfrastructureServices {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Interface running status properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InterfaceStatus {
@@ -833,28 +1250,28 @@ pub struct InternalNetworkPatchableProperties {
     #[doc = "Maximum transmission unit. Default value is 1500."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mtu: Option<i32>,
-    #[doc = "List with object connectedIPv4Subnets."]
+    #[doc = "List with object connected IPv4 Subnets."]
     #[serde(
         rename = "connectedIPv4Subnets",
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub connected_i_pv4_subnets: Vec<serde_json::Value>,
-    #[doc = "List with object connectedIPv6Subnets."]
+    pub connected_i_pv4_subnets: Vec<ConnectedSubnet>,
+    #[doc = "List with object connected IPv6 Subnets."]
     #[serde(
         rename = "connectedIPv6Subnets",
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub connected_i_pv6_subnets: Vec<serde_json::Value>,
+    pub connected_i_pv6_subnets: Vec<ConnectedSubnet>,
     #[doc = "staticRouteConfiguration model."]
     #[serde(rename = "staticRouteConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub static_route_configuration: Option<internal_network_patchable_properties::StaticRouteConfiguration>,
+    pub static_route_configuration: Option<StaticRouteConfiguration>,
     #[doc = "BGP configuration properties"]
     #[serde(rename = "bgpConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub bgp_configuration: Option<internal_network_patchable_properties::BgpConfiguration>,
+    pub bgp_configuration: Option<BgpConfiguration>,
     #[doc = "ARM resource ID of importRoutePolicy."]
     #[serde(rename = "importRoutePolicyId", default, skip_serializing_if = "Option::is_none")]
     pub import_route_policy_id: Option<String>,
@@ -865,150 +1282,6 @@ pub struct InternalNetworkPatchableProperties {
 impl InternalNetworkPatchableProperties {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-pub mod internal_network_patchable_properties {
-    use super::*;
-    #[doc = "staticRouteConfiguration model."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct StaticRouteConfiguration {
-        #[doc = "BFD configuration properties"]
-        #[serde(rename = "bfdConfiguration", default, skip_serializing_if = "Option::is_none")]
-        pub bfd_configuration: Option<BfdConfiguration>,
-        #[doc = "List with object IPv4Routes."]
-        #[serde(
-            rename = "ipv4Routes",
-            default,
-            deserialize_with = "azure_core::util::deserialize_null_as_default",
-            skip_serializing_if = "Vec::is_empty"
-        )]
-        pub ipv4_routes: Vec<serde_json::Value>,
-        #[doc = "List with object IPv6Routes."]
-        #[serde(
-            rename = "ipv6Routes",
-            default,
-            deserialize_with = "azure_core::util::deserialize_null_as_default",
-            skip_serializing_if = "Vec::is_empty"
-        )]
-        pub ipv6_routes: Vec<serde_json::Value>,
-    }
-    impl StaticRouteConfiguration {
-        pub fn new() -> Self {
-            Self::default()
-        }
-    }
-    #[doc = "BGP configuration properties"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct BgpConfiguration {
-        #[serde(flatten)]
-        pub annotation_resource: AnnotationResource,
-        #[doc = "BFD configuration properties"]
-        #[serde(rename = "bfdConfiguration", default, skip_serializing_if = "Option::is_none")]
-        pub bfd_configuration: Option<BfdConfiguration>,
-        #[doc = "Boolean Enum. Example- True/False"]
-        #[serde(rename = "defaultRouteOriginate", default, skip_serializing_if = "Option::is_none")]
-        pub default_route_originate: Option<BooleanEnumProperty>,
-        #[doc = "Allows for routes to be received and processed even if the router detects its own ASN in the AS-Path. 0 is disable, Possible values are 1-10, default is 2."]
-        #[serde(rename = "allowAS", default, skip_serializing_if = "Option::is_none")]
-        pub allow_as: Option<i32>,
-        #[doc = "Enable Or Disable state."]
-        #[serde(rename = "allowASOverride", default, skip_serializing_if = "Option::is_none")]
-        pub allow_as_override: Option<bgp_configuration::AllowAsOverride>,
-        #[doc = "ASN of Network Fabric. Example: 65048."]
-        #[serde(rename = "fabricASN", default, skip_serializing_if = "Option::is_none")]
-        pub fabric_asn: Option<i32>,
-        #[doc = "Peer ASN. Example: 65047."]
-        #[serde(rename = "peerASN")]
-        pub peer_asn: i32,
-        #[doc = "BGP Ipv4 ListenRange."]
-        #[serde(
-            rename = "ipv4ListenRangePrefixes",
-            default,
-            deserialize_with = "azure_core::util::deserialize_null_as_default",
-            skip_serializing_if = "Vec::is_empty"
-        )]
-        pub ipv4_listen_range_prefixes: Vec<String>,
-        #[doc = "BGP Ipv6 ListenRange."]
-        #[serde(
-            rename = "ipv6ListenRangePrefixes",
-            default,
-            deserialize_with = "azure_core::util::deserialize_null_as_default",
-            skip_serializing_if = "Vec::is_empty"
-        )]
-        pub ipv6_listen_range_prefixes: Vec<String>,
-        #[doc = "List with stringified ipv4NeighborAddresses."]
-        #[serde(
-            rename = "ipv4NeighborAddress",
-            default,
-            deserialize_with = "azure_core::util::deserialize_null_as_default",
-            skip_serializing_if = "Vec::is_empty"
-        )]
-        pub ipv4_neighbor_address: Vec<serde_json::Value>,
-        #[doc = "List with stringified ipv6NeighborAddress."]
-        #[serde(
-            rename = "ipv6NeighborAddress",
-            default,
-            deserialize_with = "azure_core::util::deserialize_null_as_default",
-            skip_serializing_if = "Vec::is_empty"
-        )]
-        pub ipv6_neighbor_address: Vec<serde_json::Value>,
-    }
-    impl BgpConfiguration {
-        pub fn new(peer_asn: i32) -> Self {
-            Self {
-                annotation_resource: AnnotationResource::default(),
-                bfd_configuration: None,
-                default_route_originate: None,
-                allow_as: None,
-                allow_as_override: None,
-                fabric_asn: None,
-                peer_asn,
-                ipv4_listen_range_prefixes: Vec::new(),
-                ipv6_listen_range_prefixes: Vec::new(),
-                ipv4_neighbor_address: Vec::new(),
-                ipv6_neighbor_address: Vec::new(),
-            }
-        }
-    }
-    pub mod bgp_configuration {
-        use super::*;
-        #[doc = "Enable Or Disable state."]
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        #[serde(remote = "AllowAsOverride")]
-        pub enum AllowAsOverride {
-            Enable,
-            Disable,
-            #[serde(skip_deserializing)]
-            UnknownValue(String),
-        }
-        impl FromStr for AllowAsOverride {
-            type Err = value::Error;
-            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-                Self::deserialize(s.into_deserializer())
-            }
-        }
-        impl<'de> Deserialize<'de> for AllowAsOverride {
-            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-            where
-                D: Deserializer<'de>,
-            {
-                let s = String::deserialize(deserializer)?;
-                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-                Ok(deserialized)
-            }
-        }
-        impl Serialize for AllowAsOverride {
-            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-            where
-                S: Serializer,
-            {
-                match self {
-                    Self::Enable => serializer.serialize_unit_variant("AllowAsOverride", 0u32, "Enable"),
-                    Self::Disable => serializer.serialize_unit_variant("AllowAsOverride", 1u32, "Disable"),
-                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-                }
-            }
-        }
     }
 }
 #[doc = "Internal Network Properties"]
@@ -1092,7 +1365,7 @@ pub struct InternalNetworksList {
 impl azure_core::Continuable for InternalNetworksList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InternalNetworksList {
@@ -1100,16 +1373,41 @@ impl InternalNetworksList {
         Self::default()
     }
 }
-#[doc = "The IpCommunityList resource definition."]
+#[doc = "List of IPCommunities."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IpCommunitiesListResult {
+    #[doc = "List of IpCommunity resources."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<IpCommunity>,
+    #[doc = "Url to follow for getting next page of resources."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for IpCommunitiesListResult {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl IpCommunitiesListResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The IpCommunity resource definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IpCommunityList {
+pub struct IpCommunity {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[doc = "IpCommunityListProperties define the resource properties."]
+    #[doc = "IpCommunityProperties define the resource properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<IpCommunityListProperties>,
+    pub properties: Option<IpCommunityProperties>,
 }
-impl IpCommunityList {
+impl IpCommunity {
     pub fn new(tracked_resource: TrackedResource) -> Self {
         Self {
             tracked_resource,
@@ -1117,726 +1415,305 @@ impl IpCommunityList {
         }
     }
 }
-#[doc = "The IpCommunityList patch resource definition."]
+#[doc = "IP Community add operation properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct IpCommunityListPatch {
-    #[doc = "IpCommunityListPatch define the patchable resource properties."]
+pub struct IpCommunityAddOperationProperties {
+    #[doc = "IP Community ID list properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<IpCommunityListPatchProperties>,
+    pub add: Option<IpCommunityIdList>,
+}
+impl IpCommunityAddOperationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "IP Community delete operation properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IpCommunityDeleteOperationProperties {
+    #[doc = "IP Community ID list properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub delete: Option<IpCommunityIdList>,
+}
+impl IpCommunityDeleteOperationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "IP Community ID list properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IpCommunityIdList {
+    #[doc = "List of IP Community resource IDs."]
+    #[serde(
+        rename = "ipCommunityIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub ip_community_ids: Vec<String>,
+}
+impl IpCommunityIdList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The IPCommunity patch resource definition."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IpCommunityPatch {
     #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-impl IpCommunityListPatch {
+impl IpCommunityPatch {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "IpCommunityListPatch define the patchable resource properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct IpCommunityListPatchProperties {
-    #[serde(flatten)]
-    pub annotation_resource: AnnotationResource,
-    #[doc = "action. Example: allow | deny."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub action: Option<ip_community_list_patch_properties::Action>,
-    #[doc = "Local Autonomous System. Example: true | false."]
-    #[serde(rename = "localAS", default, skip_serializing_if = "Option::is_none")]
-    pub local_as: Option<ip_community_list_patch_properties::LocalAs>,
-    #[doc = "noAdvertise. Example: true | false."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub advertise: Option<ip_community_list_patch_properties::Advertise>,
-    #[doc = "noExport. Example: true | false."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub export: Option<ip_community_list_patch_properties::Export>,
-    #[doc = "Ip Community List communityMembers."]
-    #[serde(
-        rename = "communityMembers",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub community_members: Vec<serde_json::Value>,
-    #[doc = "Ip Community List evpnEsImportRouteTargets."]
-    #[serde(
-        rename = "evpnEsImportRouteTargets",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub evpn_es_import_route_targets: Vec<serde_json::Value>,
-}
-impl IpCommunityListPatchProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod ip_community_list_patch_properties {
-    use super::*;
-    #[doc = "action. Example: allow | deny."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Action")]
-    pub enum Action {
-        #[serde(rename = "allow")]
-        Allow,
-        #[serde(rename = "deny")]
-        Deny,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Action {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Action {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Action {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Allow => serializer.serialize_unit_variant("Action", 0u32, "allow"),
-                Self::Deny => serializer.serialize_unit_variant("Action", 1u32, "deny"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "Local Autonomous System. Example: true | false."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "LocalAs")]
-    pub enum LocalAs {
-        #[serde(rename = "true")]
-        True,
-        #[serde(rename = "false")]
-        False,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for LocalAs {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for LocalAs {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for LocalAs {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::True => serializer.serialize_unit_variant("LocalAs", 0u32, "true"),
-                Self::False => serializer.serialize_unit_variant("LocalAs", 1u32, "false"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "noAdvertise. Example: true | false."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Advertise")]
-    pub enum Advertise {
-        #[serde(rename = "true")]
-        True,
-        #[serde(rename = "false")]
-        False,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Advertise {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Advertise {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Advertise {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::True => serializer.serialize_unit_variant("Advertise", 0u32, "true"),
-                Self::False => serializer.serialize_unit_variant("Advertise", 1u32, "false"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "noExport. Example: true | false."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Export")]
-    pub enum Export {
-        #[serde(rename = "true")]
-        True,
-        #[serde(rename = "false")]
-        False,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Export {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Export {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Export {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::True => serializer.serialize_unit_variant("Export", 0u32, "true"),
-                Self::False => serializer.serialize_unit_variant("Export", 1u32, "false"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "IpCommunityListProperties define the resource properties."]
+#[doc = "IpCommunityProperties define the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IpCommunityListProperties {
+pub struct IpCommunityProperties {
     #[serde(flatten)]
     pub annotation_resource: AnnotationResource,
-    #[doc = "action. Example: allow | deny."]
-    pub action: ip_community_list_properties::Action,
-    #[doc = "Local Autonomous System. Example: true | false."]
-    #[serde(rename = "localAS")]
-    pub local_as: ip_community_list_properties::LocalAs,
-    #[doc = " Graceful Shutdown (GSHUT). Example: true | false."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub gshut: Option<ip_community_list_properties::Gshut>,
-    #[doc = "Internet access. Example: true | false."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub internet: Option<ip_community_list_properties::Internet>,
-    #[doc = "noAdvertise. Example: true | false."]
-    pub advertise: ip_community_list_properties::Advertise,
-    #[doc = "noExport. Example: true | false."]
-    pub export: ip_community_list_properties::Export,
-    #[doc = "Ip Community List communityMembers."]
+    #[doc = "community action types. Example: Permit | Deny."]
+    pub action: CommunityActionTypes,
+    #[doc = "Supported well known Community List."]
     #[serde(
-        rename = "communityMembers",
+        rename = "wellKnownCommunities",
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub community_members: Vec<serde_json::Value>,
-    #[doc = "Ip Community List evpnEsImportRouteTargets."]
-    #[serde(
-        rename = "evpnEsImportRouteTargets",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub evpn_es_import_route_targets: Vec<serde_json::Value>,
+    pub well_known_communities: Vec<String>,
+    #[doc = "List the communityMembers of IP Community ."]
+    #[serde(rename = "communityMembers")]
+    pub community_members: Vec<String>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-impl IpCommunityListProperties {
-    pub fn new(
-        action: ip_community_list_properties::Action,
-        local_as: ip_community_list_properties::LocalAs,
-        advertise: ip_community_list_properties::Advertise,
-        export: ip_community_list_properties::Export,
-    ) -> Self {
+impl IpCommunityProperties {
+    pub fn new(action: CommunityActionTypes, community_members: Vec<String>) -> Self {
         Self {
             annotation_resource: AnnotationResource::default(),
             action,
-            local_as,
-            gshut: None,
-            internet: None,
-            advertise,
-            export,
-            community_members: Vec::new(),
-            evpn_es_import_route_targets: Vec::new(),
+            well_known_communities: Vec::new(),
+            community_members,
             provisioning_state: None,
         }
     }
 }
-pub mod ip_community_list_properties {
-    use super::*;
-    #[doc = "action. Example: allow | deny."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Action")]
-    pub enum Action {
-        #[serde(rename = "allow")]
-        Allow,
-        #[serde(rename = "deny")]
-        Deny,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
+#[doc = "IP Community set operation properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IpCommunitySetOperationProperties {
+    #[doc = "IP Community ID list properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub set: Option<IpCommunityIdList>,
+}
+impl IpCommunitySetOperationProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
-    impl FromStr for Action {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Action {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Action {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Allow => serializer.serialize_unit_variant("Action", 0u32, "allow"),
-                Self::Deny => serializer.serialize_unit_variant("Action", 1u32, "deny"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "Local Autonomous System. Example: true | false."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "LocalAs")]
-    pub enum LocalAs {
-        #[serde(rename = "true")]
-        True,
-        #[serde(rename = "false")]
-        False,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for LocalAs {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for LocalAs {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for LocalAs {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::True => serializer.serialize_unit_variant("LocalAs", 0u32, "true"),
-                Self::False => serializer.serialize_unit_variant("LocalAs", 1u32, "false"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = " Graceful Shutdown (GSHUT). Example: true | false."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Gshut")]
-    pub enum Gshut {
-        #[serde(rename = "true")]
-        True,
-        #[serde(rename = "false")]
-        False,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Gshut {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Gshut {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Gshut {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::True => serializer.serialize_unit_variant("Gshut", 0u32, "true"),
-                Self::False => serializer.serialize_unit_variant("Gshut", 1u32, "false"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "Internet access. Example: true | false."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Internet")]
-    pub enum Internet {
-        #[serde(rename = "true")]
-        True,
-        #[serde(rename = "false")]
-        False,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Internet {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Internet {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Internet {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::True => serializer.serialize_unit_variant("Internet", 0u32, "true"),
-                Self::False => serializer.serialize_unit_variant("Internet", 1u32, "false"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "noAdvertise. Example: true | false."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Advertise")]
-    pub enum Advertise {
-        #[serde(rename = "true")]
-        True,
-        #[serde(rename = "false")]
-        False,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Advertise {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Advertise {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Advertise {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::True => serializer.serialize_unit_variant("Advertise", 0u32, "true"),
-                Self::False => serializer.serialize_unit_variant("Advertise", 1u32, "false"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "noExport. Example: true | false."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Export")]
-    pub enum Export {
-        #[serde(rename = "true")]
-        True,
-        #[serde(rename = "false")]
-        False,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Export {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Export {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Export {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::True => serializer.serialize_unit_variant("Export", 0u32, "true"),
-                Self::False => serializer.serialize_unit_variant("Export", 1u32, "false"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
+}
+#[doc = "The IpExtendedCommunity resource definition."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IpExtendedCommunity {
+    #[serde(flatten)]
+    pub tracked_resource: TrackedResource,
+    #[doc = "IpExtendedCommunityProperties define the resource properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<IpExtendedCommunityProperties>,
+}
+impl IpExtendedCommunity {
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self {
+            tracked_resource,
+            properties: None,
         }
     }
 }
-#[doc = "List of IpCommunityLists."]
+#[doc = "IP Extended Community add operation properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct IpCommunityListsListResult {
-    #[doc = "List of IpCommunityList resources."]
+pub struct IpExtendedCommunityAddOperationProperties {
+    #[doc = "IP Extended Community Id list properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub add: Option<IpExtendedCommunityIdList>,
+}
+impl IpExtendedCommunityAddOperationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "IP Extended Community delete operation properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IpExtendedCommunityDeleteOperationProperties {
+    #[doc = "IP Extended Community Id list properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub delete: Option<IpExtendedCommunityIdList>,
+}
+impl IpExtendedCommunityDeleteOperationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "IP Extended Community Id list properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IpExtendedCommunityIdList {
+    #[doc = "List of IP Extended Community resource IDs."]
+    #[serde(
+        rename = "ipExtendedCommunityIds",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub ip_extended_community_ids: Vec<String>,
+}
+impl IpExtendedCommunityIdList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List of IpExtendedCommunities."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IpExtendedCommunityListResult {
+    #[doc = "List of IpExtendedCommunities resources."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<IpCommunityList>,
+    pub value: Vec<IpExtendedCommunity>,
     #[doc = "Url to follow for getting next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-impl azure_core::Continuable for IpCommunityListsListResult {
+impl azure_core::Continuable for IpExtendedCommunityListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
-impl IpCommunityListsListResult {
+impl IpExtendedCommunityListResult {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "The IpPrefixList resource definition."]
+#[doc = "The IpExtendedCommunities patch resource definition."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IpExtendedCommunityPatch {
+    #[doc = "Resource tags"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl IpExtendedCommunityPatch {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "IpExtendedCommunityProperties define the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IpPrefixList {
+pub struct IpExtendedCommunityProperties {
+    #[serde(flatten)]
+    pub annotation_resource: AnnotationResource,
+    #[doc = "community action types. Example: Permit | Deny."]
+    pub action: CommunityActionTypes,
+    #[doc = "Route Target List.The expected formats are ASN(plain):NN >> example 4294967294:50, ASN.ASN:NN >> example 65533.65333:40, IP-address:NN >> example 10.10.10.10:65535. The possible values of ASN,NN are in range of 0-65535, ASN(plain) is in range of 0-4294967295."]
+    #[serde(rename = "routeTargets")]
+    pub route_targets: Vec<String>,
+    #[doc = "The current provisioning state."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<ProvisioningState>,
+}
+impl IpExtendedCommunityProperties {
+    pub fn new(action: CommunityActionTypes, route_targets: Vec<String>) -> Self {
+        Self {
+            annotation_resource: AnnotationResource::default(),
+            action,
+            route_targets,
+            provisioning_state: None,
+        }
+    }
+}
+#[doc = "IP Extended Community set operation properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct IpExtendedCommunitySetOperationProperties {
+    #[doc = "IP Extended Community Id list properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub set: Option<IpExtendedCommunityIdList>,
+}
+impl IpExtendedCommunitySetOperationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The IPPrefix resource definition."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct IpPrefix {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[doc = "IpPrefixListProperties define the resource properties."]
-    pub properties: IpPrefixListProperties,
+    #[doc = "IpPrefixProperties define the resource properties."]
+    pub properties: IpPrefixProperties,
 }
-impl IpPrefixList {
-    pub fn new(tracked_resource: TrackedResource, properties: IpPrefixListProperties) -> Self {
+impl IpPrefix {
+    pub fn new(tracked_resource: TrackedResource, properties: IpPrefixProperties) -> Self {
         Self {
             tracked_resource,
             properties,
         }
     }
 }
-#[doc = "The IpPrefixList patch resource definition."]
+#[doc = "The IPPrefix patch resource definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct IpPrefixListPatch {
-    #[doc = "IpPrefixListPatchProperties define the patchable resource properties."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<IpPrefixListPatchProperties>,
+pub struct IpPrefixPatch {
     #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
 }
-impl IpPrefixListPatch {
+impl IpPrefixPatch {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "IpPrefixListPatchProperties define the patchable resource properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct IpPrefixListPatchProperties {
-    #[serde(flatten)]
-    pub annotation_resource: AnnotationResource,
-    #[doc = "action. Example: allow | deny."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub action: Option<ip_prefix_list_patch_properties::Action>,
-    #[doc = "sequenceNumber of the Ip Prefix List."]
-    #[serde(rename = "sequenceNumber", default, skip_serializing_if = "Option::is_none")]
-    pub sequence_number: Option<i32>,
-    #[doc = "networkAddress. Example:1.1.1.0/24 | 1.1.10.10."]
-    #[serde(rename = "networkAddress", default, skip_serializing_if = "Option::is_none")]
-    pub network_address: Option<String>,
-}
-impl IpPrefixListPatchProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod ip_prefix_list_patch_properties {
-    use super::*;
-    #[doc = "action. Example: allow | deny."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Action")]
-    pub enum Action {
-        #[serde(rename = "allow")]
-        Allow,
-        #[serde(rename = "deny")]
-        Deny,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Action {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Action {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Action {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Allow => serializer.serialize_unit_variant("Action", 0u32, "allow"),
-                Self::Deny => serializer.serialize_unit_variant("Action", 1u32, "deny"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "IpPrefixListProperties define the resource properties."]
+#[doc = "IpPrefixProperties define the resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct IpPrefixListProperties {
+pub struct IpPrefixProperties {
     #[serde(flatten)]
     pub annotation_resource: AnnotationResource,
-    #[doc = "action. Example: allow | deny."]
-    pub action: ip_prefix_list_properties::Action,
-    #[doc = "sequenceNumber of the Ip Prefix List."]
-    #[serde(rename = "sequenceNumber")]
-    pub sequence_number: i32,
-    #[doc = "networkAddress. Example:1.1.1.0/24 | 1.1.10.10."]
-    #[serde(rename = "networkAddress")]
-    pub network_address: String,
+    #[doc = "IpPrefix contains the list of IP PrefixRules objects."]
+    #[serde(rename = "ipPrefixRules")]
+    pub ip_prefix_rules: Vec<serde_json::Value>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
-impl IpPrefixListProperties {
-    pub fn new(action: ip_prefix_list_properties::Action, sequence_number: i32, network_address: String) -> Self {
+impl IpPrefixProperties {
+    pub fn new(ip_prefix_rules: Vec<serde_json::Value>) -> Self {
         Self {
             annotation_resource: AnnotationResource::default(),
-            action,
-            sequence_number,
-            network_address,
+            ip_prefix_rules,
             provisioning_state: None,
         }
     }
 }
-pub mod ip_prefix_list_properties {
-    use super::*;
-    #[doc = "action. Example: allow | deny."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Action")]
-    pub enum Action {
-        #[serde(rename = "allow")]
-        Allow,
-        #[serde(rename = "deny")]
-        Deny,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Action {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Action {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Action {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Allow => serializer.serialize_unit_variant("Action", 0u32, "allow"),
-                Self::Deny => serializer.serialize_unit_variant("Action", 1u32, "deny"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "List of IpPrefixLists."]
+#[doc = "List of IpPrefixes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct IpPrefixListsListResult {
-    #[doc = "List of IpPrefixList resources."]
+pub struct IpPrefixesListResult {
+    #[doc = "List of IPPrefix resources."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<IpPrefixList>,
+    pub value: Vec<IpPrefix>,
     #[doc = "Url to follow for getting next page of resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
-impl azure_core::Continuable for IpPrefixListsListResult {
+impl azure_core::Continuable for IpPrefixesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
-impl IpPrefixListsListResult {
+impl IpPrefixesListResult {
     pub fn new() -> Self {
         Self::default()
     }
@@ -1946,7 +1823,7 @@ pub struct L2IsolationDomainsListResult {
 impl azure_core::Continuable for L2IsolationDomainsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl L2IsolationDomainsListResult {
@@ -1995,9 +1872,9 @@ pub struct L3IsolationDomainPatchProperties {
     #[doc = "Advertise Static Routes. Ex: \"True\" | \"False\"."]
     #[serde(rename = "redistributeStaticRoutes", default, skip_serializing_if = "Option::is_none")]
     pub redistribute_static_routes: Option<l3_isolation_domain_patch_properties::RedistributeStaticRoutes>,
-    #[doc = "List of Ipv4 and Ipv6 route configurations."]
+    #[doc = "List of IPv4 and IPv6 route configurations."]
     #[serde(rename = "aggregateRouteConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub aggregate_route_configuration: Option<l3_isolation_domain_patch_properties::AggregateRouteConfiguration>,
+    pub aggregate_route_configuration: Option<AggregateRouteConfiguration>,
     #[doc = "L3 Isolation Domain description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -2096,31 +1973,6 @@ pub mod l3_isolation_domain_patch_properties {
             Self::False
         }
     }
-    #[doc = "List of Ipv4 and Ipv6 route configurations."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct AggregateRouteConfiguration {
-        #[doc = "List of Ipv4Route prefixes."]
-        #[serde(
-            rename = "ipv4Routes",
-            default,
-            deserialize_with = "azure_core::util::deserialize_null_as_default",
-            skip_serializing_if = "Vec::is_empty"
-        )]
-        pub ipv4_routes: Vec<serde_json::Value>,
-        #[doc = "List of Ipv6Routes prefixes."]
-        #[serde(
-            rename = "ipv6Routes",
-            default,
-            deserialize_with = "azure_core::util::deserialize_null_as_default",
-            skip_serializing_if = "Vec::is_empty"
-        )]
-        pub ipv6_routes: Vec<serde_json::Value>,
-    }
-    impl AggregateRouteConfiguration {
-        pub fn new() -> Self {
-            Self::default()
-        }
-    }
     #[doc = "Connected Subnet RoutePolicy"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct ConnectedSubnetRoutePolicy {
@@ -2200,7 +2052,7 @@ pub struct L3IsolationDomainsListResult {
 impl azure_core::Continuable for L3IsolationDomainsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl L3IsolationDomainsListResult {
@@ -2262,20 +2114,97 @@ impl Layer3Configuration {
 #[doc = "Layer 3 primary and secondary ip address prefixes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Layer3IpPrefixProperties {
-    #[doc = "IPv4 Address Prefix of CE-PE interconnect links. Default value is 172.23.1.0/31. The values can be specified at the time of creation or can be updated afterwards. Any update to the values post-provisioning may disrupt traffic. The 1st and 3rd IPs are to be configured on CE1 and CE2 for Option B interfaces. The 2nd and 4th IPs are to be configured on PE1 and PE2 for Option B interfaces."]
+    #[doc = "IPv4 Address Prefix of CE-PE interconnect links. Example: 172.31.0.0/31. The values can be specified at the time of creation or can be updated afterwards. Any update to the values post-provisioning may disrupt traffic. The 1st and 3rd IPs are to be configured on CE1 and CE2 for Option B interfaces. The 2nd and 4th IPs are to be configured on PE1 and PE2 for Option B interfaces."]
     #[serde(rename = "primaryIpv4Prefix", default, skip_serializing_if = "Option::is_none")]
     pub primary_ipv4_prefix: Option<String>,
-    #[doc = "IPv6 Address Prefix of CE-PE interconnect links. Default value is 3FFE:FFFF:0:CD30::a1/126. The values can be specified at the time of creation or can be updated afterwards. Any update to the values post-provisioning may disrupt traffic. The 1st and 3rd IPs are to be configured on CE1 and CE2 for Option B interfaces. The 2nd and 4th IPs are to be configured on PE1 and PE2 for Option B interfaces."]
+    #[doc = "IPv6 Address Prefix of CE-PE interconnect links. Example: 3FFE:FFFF:0:CD30::a0/126. The values can be specified at the time of creation or can be updated afterwards. Any update to the values post-provisioning may disrupt traffic. The 1st and 3rd IPs are to be configured on CE1 and CE2 for Option B interfaces. The 2nd and 4th IPs are to be configured on PE1 and PE2 for Option B interfaces."]
     #[serde(rename = "primaryIpv6Prefix", default, skip_serializing_if = "Option::is_none")]
     pub primary_ipv6_prefix: Option<String>,
-    #[doc = "Secondary IPv4 Address Prefix of CE-PE interconnect links. Default value is 172.23.1.2/31. The values can be specified at the time of creation or can be updated afterwards. Any update to the values post-provisioning may disrupt traffic. The 1st and 3rd IPs are to be configured on CE1 and CE2 for Option B interfaces. The 2nd and 4th IPs are to be configured on PE1 and PE2 for Option B interfaces."]
+    #[doc = "Secondary IPv4 Address Prefix of CE-PE interconnect links. Example: 172.31.0.20/31. The values can be specified at the time of creation or can be updated afterwards. Any update to the values post-provisioning may disrupt traffic. The 1st and 3rd IPs are to be configured on CE1 and CE2 for Option B interfaces. The 2nd and 4th IPs are to be configured on PE1 and PE2 for Option B interfaces."]
     #[serde(rename = "secondaryIpv4Prefix", default, skip_serializing_if = "Option::is_none")]
     pub secondary_ipv4_prefix: Option<String>,
-    #[doc = "Secondary IPv6 Address Prefix of CE-PE interconnect links. Default value is 3FFE:FFFF:0:CD30::a1/126. The values can be specified at the time of creation or can be updated afterwards. Any update to the values post-provisioning may disrupt traffic. The 1st and 3rd IPs are to be configured on CE1 and CE2 for Option B interfaces. The 2nd and 4th IPs are to be configured on PE1 and PE2 for Option B interfaces."]
+    #[doc = "Secondary IPv6 Address Prefix of CE-PE interconnect links. Example: 3FFE:FFFF:0:CD30::a4/126. The values can be specified at the time of creation or can be updated afterwards. Any update to the values post-provisioning may disrupt traffic. The 1st and 3rd IPs are to be configured on CE1 and CE2 for Option B interfaces. The 2nd and 4th IPs are to be configured on PE1 and PE2 for Option B interfaces."]
     #[serde(rename = "secondaryIpv6Prefix", default, skip_serializing_if = "Option::is_none")]
     pub secondary_ipv6_prefix: Option<String>,
 }
 impl Layer3IpPrefixProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Peering optionA properties"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Layer3OptionAProperties {
+    #[serde(flatten)]
+    pub layer3_ip_prefix_properties: Layer3IpPrefixProperties,
+    #[doc = "MTU to use for option A peering."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mtu: Option<i32>,
+    #[doc = "Vlan identifier. Example : 501"]
+    #[serde(rename = "vlanId", default, skip_serializing_if = "Option::is_none")]
+    pub vlan_id: Option<i32>,
+    #[doc = "Fabric ASN number. Example 65001 "]
+    #[serde(rename = "fabricASN", default, skip_serializing_if = "Option::is_none")]
+    pub fabric_asn: Option<i32>,
+    #[doc = "Peer ASN number.Example : 28"]
+    #[serde(rename = "peerASN", default, skip_serializing_if = "Option::is_none")]
+    pub peer_asn: Option<i32>,
+    #[doc = "BFD configuration properties"]
+    #[serde(rename = "bfdConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub bfd_configuration: Option<BfdConfiguration>,
+}
+impl Layer3OptionAProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Managed Resource Group configuration properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ManagedResourceGroupConfiguration {
+    #[doc = "The NFC service will be hosted in a Managed resource group."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Managed resource group location."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+}
+impl ManagedResourceGroupConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Configuration to be used to setup the management network."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ManagementNetworkConfiguration {
+    #[doc = "Configuration for infrastructure vpn."]
+    #[serde(rename = "infrastructureVpnConfiguration")]
+    pub infrastructure_vpn_configuration: VpnConfigurationProperties,
+    #[doc = "Configuration for infrastructure vpn."]
+    #[serde(rename = "workloadVpnConfiguration")]
+    pub workload_vpn_configuration: VpnConfigurationProperties,
+}
+impl ManagementNetworkConfiguration {
+    pub fn new(
+        infrastructure_vpn_configuration: VpnConfigurationProperties,
+        workload_vpn_configuration: VpnConfigurationProperties,
+    ) -> Self {
+        Self {
+            infrastructure_vpn_configuration,
+            workload_vpn_configuration,
+        }
+    }
+}
+#[doc = "Neighbor Address properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NeighborAddress {
+    #[doc = "IP Address."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub address: Option<String>,
+    #[doc = "OperationalState of the NeighborAddress."]
+    #[serde(rename = "operationalState", default, skip_serializing_if = "Option::is_none")]
+    pub operational_state: Option<String>,
+}
+impl NeighborAddress {
     pub fn new() -> Self {
         Self::default()
     }
@@ -2362,6 +2291,73 @@ impl NetworkDeviceProperties {
         }
     }
 }
+#[doc = "Network device properties / role for the Network Rack."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct NetworkDeviceRoleProperties {
+    #[doc = "Name of the associated Network Device SKU."]
+    #[serde(rename = "networkDeviceSkuName", default, skip_serializing_if = "Option::is_none")]
+    pub network_device_sku_name: Option<String>,
+    #[doc = "Role for the network device."]
+    #[serde(rename = "roleType", default, skip_serializing_if = "Option::is_none")]
+    pub role_type: Option<network_device_role_properties::RoleType>,
+    #[doc = "Rack slot for the network device."]
+    #[serde(rename = "rackSlot", default, skip_serializing_if = "Option::is_none")]
+    pub rack_slot: Option<i32>,
+}
+impl NetworkDeviceRoleProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod network_device_role_properties {
+    use super::*;
+    #[doc = "Role for the network device."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "RoleType")]
+    pub enum RoleType {
+        #[serde(rename = "CE")]
+        Ce,
+        ToR,
+        #[serde(rename = "NPB")]
+        Npb,
+        #[serde(rename = "TS")]
+        Ts,
+        Management,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for RoleType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for RoleType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for RoleType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Ce => serializer.serialize_unit_variant("RoleType", 0u32, "CE"),
+                Self::ToR => serializer.serialize_unit_variant("RoleType", 1u32, "ToR"),
+                Self::Npb => serializer.serialize_unit_variant("RoleType", 2u32, "NPB"),
+                Self::Ts => serializer.serialize_unit_variant("RoleType", 3u32, "TS"),
+                Self::Management => serializer.serialize_unit_variant("RoleType", 4u32, "Management"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "Available roles for the network device."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "NetworkDeviceRoleTypes")]
@@ -2439,10 +2435,10 @@ pub struct NetworkDeviceSkuProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub supported_versions: Vec<serde_json::Value>,
+    pub supported_versions: Vec<SupportedVersionProperties>,
     #[doc = "Network device limits."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limits: Option<network_device_sku_properties::Limits>,
+    pub limits: Option<DeviceLimits>,
     #[doc = "Available roles for the network device."]
     #[serde(
         rename = "supportedRoleTypes",
@@ -2457,7 +2453,7 @@ pub struct NetworkDeviceSkuProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub interfaces: Vec<serde_json::Value>,
+    pub interfaces: Vec<DeviceInterfaceProperties>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -2472,40 +2468,6 @@ impl NetworkDeviceSkuProperties {
             supported_role_types: Vec::new(),
             interfaces: Vec::new(),
             provisioning_state: None,
-        }
-    }
-}
-pub mod network_device_sku_properties {
-    use super::*;
-    #[doc = "Network device limits."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct Limits {
-        #[doc = "Maximum number of physical interfaces."]
-        #[serde(rename = "physicalInterfaceCount", default, skip_serializing_if = "Option::is_none")]
-        pub physical_interface_count: Option<i32>,
-        #[doc = "Maximum number of sub-interfaces."]
-        #[serde(rename = "maxSubInterfaces", default, skip_serializing_if = "Option::is_none")]
-        pub max_sub_interfaces: Option<i32>,
-        #[doc = "Maximum number of tunnel interfaces."]
-        #[serde(rename = "maxTunnelInterfaces", default, skip_serializing_if = "Option::is_none")]
-        pub max_tunnel_interfaces: Option<i32>,
-        #[doc = "Maximum number of virtual router functions."]
-        #[serde(rename = "maxVirtualRouterFunctions", default, skip_serializing_if = "Option::is_none")]
-        pub max_virtual_router_functions: Option<i32>,
-        #[doc = "Maximum number of Border Gateway Protocol (BGP) peers."]
-        #[serde(rename = "maxBorderGatewayProtocolPeers", default, skip_serializing_if = "Option::is_none")]
-        pub max_border_gateway_protocol_peers: Option<i32>,
-        #[doc = "Maximum number of Bidirectional Forwarding Detection (BFD) peers."]
-        #[serde(
-            rename = "maxBidirectionalForwardingDetectionPeers",
-            default,
-            skip_serializing_if = "Option::is_none"
-        )]
-        pub max_bidirectional_forwarding_detection_peers: Option<i32>,
-    }
-    impl Limits {
-        pub fn new() -> Self {
-            Self::default()
         }
     }
 }
@@ -2526,7 +2488,7 @@ pub struct NetworkDeviceSkusListResult {
 impl azure_core::Continuable for NetworkDeviceSkusListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkDeviceSkusListResult {
@@ -2551,7 +2513,7 @@ pub struct NetworkDevicesListResult {
 impl azure_core::Continuable for NetworkDevicesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkDevicesListResult {
@@ -2679,13 +2641,13 @@ pub struct NetworkFabricControllerProperties {
     pub network_fabric_controller_patchable_properties: NetworkFabricControllerPatchableProperties,
     #[doc = "InfrastructureServices IP ranges."]
     #[serde(rename = "infrastructureServices", default, skip_serializing_if = "Option::is_none")]
-    pub infrastructure_services: Option<network_fabric_controller_properties::InfrastructureServices>,
+    pub infrastructure_services: Option<InfrastructureServices>,
     #[doc = "WorkloadServices IP ranges."]
     #[serde(rename = "workloadServices", default, skip_serializing_if = "Option::is_none")]
-    pub workload_services: Option<network_fabric_controller_properties::WorkloadServices>,
+    pub workload_services: Option<WorkloadServices>,
     #[doc = "Managed Resource Group configuration properties."]
     #[serde(rename = "managedResourceGroupConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub managed_resource_group_configuration: Option<network_fabric_controller_properties::ManagedResourceGroupConfiguration>,
+    pub managed_resource_group_configuration: Option<ManagedResourceGroupConfiguration>,
     #[doc = "The NF-ID will be an input parameter used by the NF to link and get associated with the parent NFC Service."]
     #[serde(
         rename = "networkFabricIds",
@@ -2715,74 +2677,6 @@ impl NetworkFabricControllerProperties {
         Self::default()
     }
 }
-pub mod network_fabric_controller_properties {
-    use super::*;
-    #[doc = "InfrastructureServices IP ranges."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct InfrastructureServices {
-        #[doc = "The IPv4 Address space is optional, if the value is not defined at the time of NFC creation, then the default value 10.0.0.0/19 is considered. The IPV4 address subnet is an optional attribute."]
-        #[serde(
-            rename = "ipv4AddressSpaces",
-            default,
-            deserialize_with = "azure_core::util::deserialize_null_as_default",
-            skip_serializing_if = "Vec::is_empty"
-        )]
-        pub ipv4_address_spaces: Vec<String>,
-        #[doc = "The IPv6 is not supported right now."]
-        #[serde(
-            rename = "ipv6AddressSpaces",
-            default,
-            deserialize_with = "azure_core::util::deserialize_null_as_default",
-            skip_serializing_if = "Vec::is_empty"
-        )]
-        pub ipv6_address_spaces: Vec<String>,
-    }
-    impl InfrastructureServices {
-        pub fn new() -> Self {
-            Self::default()
-        }
-    }
-    #[doc = "WorkloadServices IP ranges."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct WorkloadServices {
-        #[doc = "The IPv4 Address space is optional, if the value is defined at the time of NFC creation, then the default value 10.0.0.0/19 is considered. The IPV4 address subnet is an optional attribute."]
-        #[serde(
-            rename = "ipv4AddressSpaces",
-            default,
-            deserialize_with = "azure_core::util::deserialize_null_as_default",
-            skip_serializing_if = "Vec::is_empty"
-        )]
-        pub ipv4_address_spaces: Vec<String>,
-        #[doc = "The IPv6 is not supported right now."]
-        #[serde(
-            rename = "ipv6AddressSpaces",
-            default,
-            deserialize_with = "azure_core::util::deserialize_null_as_default",
-            skip_serializing_if = "Vec::is_empty"
-        )]
-        pub ipv6_address_spaces: Vec<String>,
-    }
-    impl WorkloadServices {
-        pub fn new() -> Self {
-            Self::default()
-        }
-    }
-    #[doc = "Managed Resource Group configuration properties."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct ManagedResourceGroupConfiguration {
-        #[doc = "The NFC service will be hosted in a Managed resource group."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub name: Option<String>,
-        #[doc = "Managed resource group location."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub location: Option<String>,
-    }
-    impl ManagedResourceGroupConfiguration {
-        pub fn new() -> Self {
-            Self::default()
-        }
-    }
-}
 #[doc = "List of NetworkFabricControllers."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkFabricControllersListResult {
@@ -2800,7 +2694,7 @@ pub struct NetworkFabricControllersListResult {
 impl azure_core::Continuable for NetworkFabricControllersListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkFabricControllersListResult {
@@ -2917,10 +2811,10 @@ pub struct NetworkFabricProperties {
     #[doc = "Number of servers.Possible values are from 1-16."]
     #[serde(rename = "serverCountPerRack")]
     pub server_count_per_rack: i32,
-    #[doc = "IPv4Prefix for Management Network. Default value : 10.1.0.0/19."]
+    #[doc = "IPv4Prefix for Management Network. Example: 10.1.0.0/19."]
     #[serde(rename = "ipv4Prefix", default, skip_serializing_if = "Option::is_none")]
     pub ipv4_prefix: Option<String>,
-    #[doc = "IPv6Prefix for Management Network. Default value 3FFE:FFFF:0:CD40::/59."]
+    #[doc = "IPv6Prefix for Management Network. Example: 3FFE:FFFF:0:CD40::/59."]
     #[serde(rename = "ipv6Prefix", default, skip_serializing_if = "Option::is_none")]
     pub ipv6_prefix: Option<String>,
     #[doc = "Router Id of CE to be used for MP-BGP between PE and CE"]
@@ -2934,10 +2828,10 @@ pub struct NetworkFabricProperties {
     pub network_fabric_controller_id: String,
     #[doc = "Network and credentials configuration currently applied to terminal server."]
     #[serde(rename = "terminalServerConfiguration")]
-    pub terminal_server_configuration: network_fabric_properties::TerminalServerConfiguration,
+    pub terminal_server_configuration: TerminalServerConfiguration,
     #[doc = "Configuration to be used to setup the management network."]
     #[serde(rename = "managementNetworkConfiguration")]
-    pub management_network_configuration: network_fabric_properties::ManagementNetworkConfiguration,
+    pub management_network_configuration: ManagementNetworkConfiguration,
     #[doc = "Operational state for the resource."]
     #[serde(rename = "operationalState", default, skip_serializing_if = "Option::is_none")]
     pub operational_state: Option<NetworkFabricOperationalState>,
@@ -2952,8 +2846,8 @@ impl NetworkFabricProperties {
         server_count_per_rack: i32,
         fabric_asn: i32,
         network_fabric_controller_id: String,
-        terminal_server_configuration: network_fabric_properties::TerminalServerConfiguration,
-        management_network_configuration: network_fabric_properties::ManagementNetworkConfiguration,
+        terminal_server_configuration: TerminalServerConfiguration,
+        management_network_configuration: ManagementNetworkConfiguration,
     ) -> Self {
         Self {
             annotation_resource: AnnotationResource::default(),
@@ -2970,113 +2864,6 @@ impl NetworkFabricProperties {
             management_network_configuration,
             operational_state: None,
             provisioning_state: None,
-        }
-    }
-}
-pub mod network_fabric_properties {
-    use super::*;
-    #[doc = "Network and credentials configuration currently applied to terminal server."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct TerminalServerConfiguration {
-        #[serde(flatten)]
-        pub layer3_ip_prefix_properties: Layer3IpPrefixProperties,
-        #[serde(flatten)]
-        pub terminal_server_patchable_properties: TerminalServerPatchableProperties,
-        #[doc = "ARM Resource ID used for the NetworkDevice."]
-        #[serde(rename = "networkDeviceId", default, skip_serializing_if = "Option::is_none")]
-        pub network_device_id: Option<String>,
-    }
-    impl TerminalServerConfiguration {
-        pub fn new() -> Self {
-            Self {
-                layer3_ip_prefix_properties: Layer3IpPrefixProperties::default(),
-                terminal_server_patchable_properties: TerminalServerPatchableProperties::default(),
-                network_device_id: None,
-            }
-        }
-    }
-    #[doc = "Configuration to be used to setup the management network."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub struct ManagementNetworkConfiguration {
-        #[doc = "Configuration for infrastructure vpn."]
-        #[serde(rename = "infrastructureVpnConfiguration")]
-        pub infrastructure_vpn_configuration: management_network_configuration::InfrastructureVpnConfiguration,
-        #[doc = "Configuration for workload vpn."]
-        #[serde(rename = "workloadVpnConfiguration")]
-        pub workload_vpn_configuration: management_network_configuration::WorkloadVpnConfiguration,
-    }
-    impl ManagementNetworkConfiguration {
-        pub fn new(
-            infrastructure_vpn_configuration: management_network_configuration::InfrastructureVpnConfiguration,
-            workload_vpn_configuration: management_network_configuration::WorkloadVpnConfiguration,
-        ) -> Self {
-            Self {
-                infrastructure_vpn_configuration,
-                workload_vpn_configuration,
-            }
-        }
-    }
-    pub mod management_network_configuration {
-        use super::*;
-        #[doc = "Configuration for infrastructure vpn."]
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        pub struct InfrastructureVpnConfiguration {
-            #[doc = "EnabledDisabledState state for the resource."]
-            #[serde(rename = "administrativeState", default, skip_serializing_if = "Option::is_none")]
-            pub administrative_state: Option<EnabledDisabledState>,
-            #[doc = "Gets the networkToNetworkInterconnectId of the resource."]
-            #[serde(rename = "networkToNetworkInterconnectId", default, skip_serializing_if = "Option::is_none")]
-            pub network_to_network_interconnect_id: Option<String>,
-            #[doc = "Peering option list."]
-            #[serde(rename = "peeringOption", default, skip_serializing_if = "Option::is_none")]
-            pub peering_option: Option<PeeringOption>,
-            #[doc = "Option B configuration to be used for management vpn."]
-            #[serde(rename = "optionBProperties")]
-            pub option_b_properties: OptionBProperties,
-            #[doc = "Peering optionA properties"]
-            #[serde(rename = "optionAProperties", default, skip_serializing_if = "Option::is_none")]
-            pub option_a_properties: Option<OptionAProperties>,
-        }
-        impl InfrastructureVpnConfiguration {
-            pub fn new(option_b_properties: OptionBProperties) -> Self {
-                Self {
-                    administrative_state: None,
-                    network_to_network_interconnect_id: None,
-                    peering_option: None,
-                    option_b_properties,
-                    option_a_properties: None,
-                }
-            }
-        }
-        #[doc = "Configuration for workload vpn."]
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        pub struct WorkloadVpnConfiguration {
-            #[doc = "EnabledDisabledState state for the resource."]
-            #[serde(rename = "administrativeState", default, skip_serializing_if = "Option::is_none")]
-            pub administrative_state: Option<EnabledDisabledState>,
-            #[doc = "Peering option list."]
-            #[serde(rename = "peeringOption", default, skip_serializing_if = "Option::is_none")]
-            pub peering_option: Option<PeeringOption>,
-            #[doc = "Gets the networkToNetworkInterconnectId of the resource."]
-            #[serde(rename = "networkToNetworkInterconnectId", default, skip_serializing_if = "Option::is_none")]
-            pub network_to_network_interconnect_id: Option<String>,
-            #[doc = "Peering optionA properties"]
-            #[serde(rename = "optionAProperties", default, skip_serializing_if = "Option::is_none")]
-            pub option_a_properties: Option<OptionAProperties>,
-            #[doc = "Option B configuration to be used for management vpn."]
-            #[serde(rename = "optionBProperties")]
-            pub option_b_properties: OptionBProperties,
-        }
-        impl WorkloadVpnConfiguration {
-            pub fn new(option_b_properties: OptionBProperties) -> Self {
-                Self {
-                    administrative_state: None,
-                    peering_option: None,
-                    network_to_network_interconnect_id: None,
-                    option_a_properties: None,
-                    option_b_properties,
-                }
-            }
         }
     }
 }
@@ -3140,7 +2927,7 @@ pub struct NetworkFabricSkusListResult {
 impl azure_core::Continuable for NetworkFabricSkusListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkFabricSkusListResult {
@@ -3165,7 +2952,7 @@ pub struct NetworkFabricsListResult {
 impl azure_core::Continuable for NetworkFabricsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkFabricsListResult {
@@ -3290,7 +3077,7 @@ pub struct NetworkInterfacesList {
 impl azure_core::Continuable for NetworkInterfacesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkInterfacesList {
@@ -3409,7 +3196,7 @@ pub struct NetworkRackSkuProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub network_devices: Vec<serde_json::Value>,
+    pub network_devices: Vec<NetworkDeviceRoleProperties>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -3483,7 +3270,7 @@ pub struct NetworkRackSkusListResult {
 impl azure_core::Continuable for NetworkRackSkusListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkRackSkusListResult {
@@ -3508,7 +3295,7 @@ pub struct NetworkRacksListResult {
 impl azure_core::Continuable for NetworkRacksListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkRacksListResult {
@@ -3533,6 +3320,9 @@ impl NetworkToNetworkInterconnect {
 #[doc = "Configuration used to setup CE-PE connectivity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct NetworkToNetworkInterconnectProperties {
+    #[doc = "Type of NNI used. Example: CE | NPB"]
+    #[serde(rename = "nniType", default, skip_serializing_if = "Option::is_none")]
+    pub nni_type: Option<network_to_network_interconnect_properties::NniType>,
     #[doc = "EnabledDisabledState state for the resource."]
     #[serde(rename = "administrativeState", default, skip_serializing_if = "Option::is_none")]
     pub administrative_state: Option<EnabledDisabledState>,
@@ -3542,9 +3332,9 @@ pub struct NetworkToNetworkInterconnectProperties {
     #[doc = "Boolean Enum. Example- True/False"]
     #[serde(rename = "useOptionB")]
     pub use_option_b: BooleanEnumProperty,
-    #[doc = "Common properties for Layer2Configuration."]
+    #[doc = "layer2Configuration"]
     #[serde(rename = "layer2Configuration", default, skip_serializing_if = "Option::is_none")]
-    pub layer2_configuration: Option<serde_json::Value>,
+    pub layer2_configuration: Option<Layer2Configuration>,
     #[doc = "layer3Configuration"]
     #[serde(rename = "layer3Configuration", default, skip_serializing_if = "Option::is_none")]
     pub layer3_configuration: Option<Layer3Configuration>,
@@ -3555,12 +3345,60 @@ pub struct NetworkToNetworkInterconnectProperties {
 impl NetworkToNetworkInterconnectProperties {
     pub fn new(is_management_type: BooleanEnumProperty, use_option_b: BooleanEnumProperty) -> Self {
         Self {
+            nni_type: None,
             administrative_state: None,
             is_management_type,
             use_option_b,
             layer2_configuration: None,
             layer3_configuration: None,
             provisioning_state: None,
+        }
+    }
+}
+pub mod network_to_network_interconnect_properties {
+    use super::*;
+    #[doc = "Type of NNI used. Example: CE | NPB"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "NniType")]
+    pub enum NniType {
+        #[serde(rename = "CE")]
+        Ce,
+        #[serde(rename = "NPB")]
+        Npb,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for NniType {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for NniType {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for NniType {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Ce => serializer.serialize_unit_variant("NniType", 0u32, "CE"),
+                Self::Npb => serializer.serialize_unit_variant("NniType", 1u32, "NPB"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for NniType {
+        fn default() -> Self {
+            Self::Ce
         }
     }
 }
@@ -3581,7 +3419,7 @@ pub struct NetworkToNetworkInterconnectsList {
 impl azure_core::Continuable for NetworkToNetworkInterconnectsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkToNetworkInterconnectsList {
@@ -3731,7 +3569,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -3789,15 +3627,12 @@ pub struct OptionAProperties {
     #[doc = "Vlan identifier. Example : 501"]
     #[serde(rename = "vlanId", default, skip_serializing_if = "Option::is_none")]
     pub vlan_id: Option<i32>,
-    #[doc = "Fabric ASN number. Example 65001 "]
-    #[serde(rename = "fabricASN", default, skip_serializing_if = "Option::is_none")]
-    pub fabric_asn: Option<i32>,
     #[doc = "Peer ASN number.Example : 28"]
     #[serde(rename = "peerASN", default, skip_serializing_if = "Option::is_none")]
     pub peer_asn: Option<i32>,
-    #[doc = "BFD configuration properties"]
+    #[doc = "BFD Configuration properties."]
     #[serde(rename = "bfdConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub bfd_configuration: Option<BfdConfiguration>,
+    pub bfd_configuration: Option<FabricBfdConfiguration>,
 }
 impl OptionAProperties {
     pub fn new() -> Self {
@@ -3995,7 +3830,7 @@ pub struct RoutePoliciesListResult {
 impl azure_core::Continuable for RoutePoliciesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoutePoliciesListResult {
@@ -4008,7 +3843,7 @@ impl RoutePoliciesListResult {
 pub struct RoutePolicy {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[doc = "RoutePolicyProperties define the resource properties."]
+    #[doc = "RoutePolicy Properties define the resource properties."]
     pub properties: RoutePolicyProperties,
 }
 impl RoutePolicy {
@@ -4022,9 +3857,6 @@ impl RoutePolicy {
 #[doc = "The RoutePolicy patch resource definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoutePolicyPatch {
-    #[doc = "RoutePolicyPatchProperties define the patch resource properties."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<RoutePolicyPatchProperties>,
     #[doc = "Resource tags"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -4034,36 +3866,131 @@ impl RoutePolicyPatch {
         Self::default()
     }
 }
-#[doc = "RoutePolicyPatchProperties define the patch resource properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct RoutePolicyPatchProperties {}
-impl RoutePolicyPatchProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "RoutePolicyProperties define the resource properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[doc = "RoutePolicy Properties define the resource properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RoutePolicyProperties {
     #[serde(flatten)]
     pub annotation_resource: AnnotationResource,
-    #[doc = "Route Policy description."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[doc = "Route Policy conditions."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub conditions: Vec<serde_json::Value>,
+    #[doc = "Route Policy statements."]
+    pub statements: Vec<RoutePolicyStatementProperties>,
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
 }
 impl RoutePolicyProperties {
+    pub fn new(statements: Vec<RoutePolicyStatementProperties>) -> Self {
+        Self {
+            annotation_resource: AnnotationResource::default(),
+            statements,
+            provisioning_state: None,
+        }
+    }
+}
+#[doc = "Route Policy Statement properties.."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct RoutePolicyStatementProperties {
+    #[serde(flatten)]
+    pub annotation_resource: AnnotationResource,
+    #[doc = "Sequence to insert to/delete from existing route."]
+    #[serde(rename = "sequenceNumber")]
+    pub sequence_number: i64,
+    #[doc = "Route policy statement condition properties."]
+    pub condition: StatementConditionProperties,
+    #[doc = "Route policy action properties."]
+    pub action: StatementActionProperties,
+}
+impl RoutePolicyStatementProperties {
+    pub fn new(sequence_number: i64, condition: StatementConditionProperties, action: StatementActionProperties) -> Self {
+        Self {
+            annotation_resource: AnnotationResource::default(),
+            sequence_number,
+            condition,
+            action,
+        }
+    }
+}
+#[doc = "Route policy action properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StatementActionProperties {
+    #[doc = "localPreference of the route policy."]
+    #[serde(rename = "localPreference", default, skip_serializing_if = "Option::is_none")]
+    pub local_preference: Option<i64>,
+    #[doc = "community action types. Example: Permit | Deny."]
+    #[serde(rename = "actionType")]
+    pub action_type: CommunityActionTypes,
+    #[doc = "IP Community Properties."]
+    #[serde(rename = "ipCommunityProperties", default, skip_serializing_if = "Option::is_none")]
+    pub ip_community_properties: Option<ActionIpCommunityProperties>,
+    #[doc = "IP Extended Community Properties."]
+    #[serde(rename = "ipExtendedCommunityProperties", default, skip_serializing_if = "Option::is_none")]
+    pub ip_extended_community_properties: Option<ActionIpExtendedCommunityProperties>,
+}
+impl StatementActionProperties {
+    pub fn new(action_type: CommunityActionTypes) -> Self {
+        Self {
+            local_preference: None,
+            action_type,
+            ip_community_properties: None,
+            ip_extended_community_properties: None,
+        }
+    }
+}
+#[doc = "Route policy statement condition properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StatementConditionProperties {
+    #[serde(flatten)]
+    pub ip_community_id_list: IpCommunityIdList,
+    #[serde(flatten)]
+    pub ip_extended_community_id_list: IpExtendedCommunityIdList,
+    #[doc = "Arm Resource Id of IpPrefix."]
+    #[serde(rename = "ipPrefixId", default, skip_serializing_if = "Option::is_none")]
+    pub ip_prefix_id: Option<String>,
+}
+impl StatementConditionProperties {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "staticRouteConfiguration model."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct StaticRouteConfiguration {
+    #[doc = "BFD configuration properties"]
+    #[serde(rename = "bfdConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub bfd_configuration: Option<BfdConfiguration>,
+    #[doc = "List with object IPv4Routes."]
+    #[serde(
+        rename = "ipv4Routes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub ipv4_routes: Vec<StaticRouteProperties>,
+    #[doc = "List with object IPv6Routes."]
+    #[serde(
+        rename = "ipv6Routes",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub ipv6_routes: Vec<StaticRouteProperties>,
+}
+impl StaticRouteConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Static Route properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct StaticRouteProperties {
+    #[doc = "IPv4 | IPv6 Prefix."]
+    pub prefix: String,
+    #[doc = "List of next hop IPv4 | IPv6 addresses."]
+    #[serde(rename = "nextHop")]
+    pub next_hop: Vec<String>,
+}
+impl StaticRouteProperties {
+    pub fn new(prefix: String, next_hop: Vec<String>) -> Self {
+        Self { prefix, next_hop }
     }
 }
 #[doc = "Generate support package post action properties."]
@@ -4076,6 +4003,146 @@ pub struct SupportPackageProperties {
 impl SupportPackageProperties {
     pub fn new(support_package_url: String) -> Self {
         Self { support_package_url }
+    }
+}
+#[doc = "Supported connector properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SupportedConnectorProperties {
+    #[doc = "Connector type. Example: Optical."]
+    #[serde(rename = "connectorType", default, skip_serializing_if = "Option::is_none")]
+    pub connector_type: Option<String>,
+    #[doc = "Maximum speed of the connector in Mbps."]
+    #[serde(rename = "maxSpeedInMbps", default, skip_serializing_if = "Option::is_none")]
+    pub max_speed_in_mbps: Option<i32>,
+}
+impl SupportedConnectorProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Network device supported version properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SupportedVersionProperties {
+    #[doc = "Operating system and firmware combined versions."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[doc = "Operating system version."]
+    #[serde(rename = "vendorOsVersion", default, skip_serializing_if = "Option::is_none")]
+    pub vendor_os_version: Option<String>,
+    #[doc = "Firmware version."]
+    #[serde(rename = "vendorFirmwareVersion", default, skip_serializing_if = "Option::is_none")]
+    pub vendor_firmware_version: Option<String>,
+    #[doc = "If the current version is in use."]
+    #[serde(rename = "isCurrent", default, skip_serializing_if = "Option::is_none")]
+    pub is_current: Option<supported_version_properties::IsCurrent>,
+    #[doc = "If the current version is a test version."]
+    #[serde(rename = "isTest", default, skip_serializing_if = "Option::is_none")]
+    pub is_test: Option<supported_version_properties::IsTest>,
+}
+impl SupportedVersionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod supported_version_properties {
+    use super::*;
+    #[doc = "If the current version is in use."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "IsCurrent")]
+    pub enum IsCurrent {
+        #[serde(rename = "true")]
+        True,
+        #[serde(rename = "false")]
+        False,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for IsCurrent {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for IsCurrent {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for IsCurrent {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::True => serializer.serialize_unit_variant("IsCurrent", 0u32, "true"),
+                Self::False => serializer.serialize_unit_variant("IsCurrent", 1u32, "false"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    #[doc = "If the current version is a test version."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "IsTest")]
+    pub enum IsTest {
+        #[serde(rename = "true")]
+        True,
+        #[serde(rename = "false")]
+        False,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for IsTest {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for IsTest {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for IsTest {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::True => serializer.serialize_unit_variant("IsTest", 0u32, "true"),
+                Self::False => serializer.serialize_unit_variant("IsTest", 1u32, "false"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "Network and credentials configuration currently applied to terminal server."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct TerminalServerConfiguration {
+    #[serde(flatten)]
+    pub layer3_ip_prefix_properties: Layer3IpPrefixProperties,
+    #[serde(flatten)]
+    pub terminal_server_patchable_properties: TerminalServerPatchableProperties,
+    #[doc = "ARM Resource ID used for the NetworkDevice."]
+    #[serde(rename = "networkDeviceId", default, skip_serializing_if = "Option::is_none")]
+    pub network_device_id: Option<String>,
+}
+impl TerminalServerConfiguration {
+    pub fn new() -> Self {
+        Self {
+            layer3_ip_prefix_properties: Layer3IpPrefixProperties::default(),
+            terminal_server_patchable_properties: TerminalServerPatchableProperties::default(),
+            network_device_id: None,
+        }
     }
 }
 #[doc = "TerminalServerConnectivity state for the resource."]
@@ -4117,9 +4184,9 @@ impl Serialize for TerminalServerConnectivityState {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TerminalServerPatchParameters {
-    #[doc = "Network and credentials configuration already applied to terminal server."]
+    #[doc = "Network and credential configuration currently applied on terminal server."]
     #[serde(rename = "terminalServerConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub terminal_server_configuration: Option<serde_json::Value>,
+    pub terminal_server_configuration: Option<TerminalServerPatchableProperties>,
 }
 impl TerminalServerPatchParameters {
     pub fn new() -> Self {
@@ -4319,6 +4386,61 @@ pub struct UpdateVersionProperties {
 impl UpdateVersionProperties {
     pub fn new(sku_version: String) -> Self {
         Self { sku_version }
+    }
+}
+#[doc = "Configuration for infrastructure vpn."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct VpnConfigurationProperties {
+    #[doc = "EnabledDisabledState state for the resource."]
+    #[serde(rename = "administrativeState", default, skip_serializing_if = "Option::is_none")]
+    pub administrative_state: Option<EnabledDisabledState>,
+    #[doc = "Gets the networkToNetworkInterconnectId of the resource."]
+    #[serde(rename = "networkToNetworkInterconnectId", default, skip_serializing_if = "Option::is_none")]
+    pub network_to_network_interconnect_id: Option<String>,
+    #[doc = "Peering option list."]
+    #[serde(rename = "peeringOption")]
+    pub peering_option: PeeringOption,
+    #[doc = "Option B configuration."]
+    #[serde(rename = "optionBProperties", default, skip_serializing_if = "Option::is_none")]
+    pub option_b_properties: Option<OptionBProperties>,
+    #[doc = "Peering optionA properties"]
+    #[serde(rename = "optionAProperties", default, skip_serializing_if = "Option::is_none")]
+    pub option_a_properties: Option<OptionAProperties>,
+}
+impl VpnConfigurationProperties {
+    pub fn new(peering_option: PeeringOption) -> Self {
+        Self {
+            administrative_state: None,
+            network_to_network_interconnect_id: None,
+            peering_option,
+            option_b_properties: None,
+            option_a_properties: None,
+        }
+    }
+}
+#[doc = "WorkloadServices IP ranges."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct WorkloadServices {
+    #[doc = "The IPv4 Address space is optional, if the value is defined at the time of NFC creation, then the default value 10.0.0.0/19 is considered. The IPV4 address subnet is an optional attribute."]
+    #[serde(
+        rename = "ipv4AddressSpaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub ipv4_address_spaces: Vec<String>,
+    #[doc = "The IPv6 is not supported right now."]
+    #[serde(
+        rename = "ipv6AddressSpaces",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub ipv6_address_spaces: Vec<String>,
+}
+impl WorkloadServices {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Metadata pertaining to creation and last modification of the resource."]

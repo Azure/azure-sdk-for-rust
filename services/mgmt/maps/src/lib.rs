@@ -15,11 +15,11 @@ pub use package_preview_2021_07::*;
 pub mod package_preview_2020_02;
 #[cfg(all(feature = "package-preview-2020-02", not(feature = "no-default-tag")))]
 pub use package_preview_2020_02::*;
+#[cfg(feature = "package-2023-06")]
+pub mod package_2023_06;
+#[cfg(all(feature = "package-2023-06", not(feature = "no-default-tag")))]
+pub use package_2023_06::*;
 #[cfg(feature = "package-2021-02")]
 pub mod package_2021_02;
 #[cfg(all(feature = "package-2021-02", not(feature = "no-default-tag")))]
 pub use package_2021_02::*;
-#[cfg(feature = "package-2018-05")]
-pub mod package_2018_05;
-#[cfg(all(feature = "package-2018-05", not(feature = "no-default-tag")))]
-pub use package_2018_05::*;

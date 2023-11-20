@@ -24,8 +24,7 @@ impl GetQueueServiceStatsBuilder {
             url.query_pairs_mut().append_pair("comp", "stats");
 
             let mut request =
-                self.client
-                    .finalize_request(url, Method::Get, Headers::new(), None)?;
+                QueueServiceClient::finalize_request(url, Method::Get, Headers::new(), None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

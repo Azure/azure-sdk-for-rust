@@ -923,7 +923,7 @@ pub struct ExperimentList {
 impl azure_core::Continuable for ExperimentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExperimentList {
@@ -1074,8 +1074,6 @@ pub mod experiment_update_properties {
 #[doc = "Describes Forwarding Route."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ForwardingConfiguration {
-    #[serde(flatten)]
-    pub route_configuration: RouteConfiguration,
     #[doc = "A custom path used to rewrite resource paths matched by this rule. Leave empty to use incoming path."]
     #[serde(rename = "customForwardingPath", default, skip_serializing_if = "Option::is_none")]
     pub custom_forwarding_path: Option<String>,
@@ -1090,9 +1088,8 @@ pub struct ForwardingConfiguration {
     pub backend_pool: Option<SubResource>,
 }
 impl ForwardingConfiguration {
-    pub fn new(route_configuration: RouteConfiguration) -> Self {
+    pub fn new() -> Self {
         Self {
-            route_configuration,
             custom_forwarding_path: None,
             forwarding_protocol: None,
             cache_configuration: None,
@@ -1223,7 +1220,7 @@ pub struct FrontDoorListResult {
 impl azure_core::Continuable for FrontDoorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FrontDoorListResult {
@@ -1624,7 +1621,7 @@ pub struct FrontendEndpointsListResult {
 impl azure_core::Continuable for FrontendEndpointsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FrontendEndpointsListResult {
@@ -2408,7 +2405,7 @@ pub struct ManagedRuleSetDefinitionList {
 impl azure_core::Continuable for ManagedRuleSetDefinitionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedRuleSetDefinitionList {
@@ -2791,7 +2788,7 @@ pub struct PreconfiguredEndpointList {
 impl azure_core::Continuable for PreconfiguredEndpointList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PreconfiguredEndpointList {
@@ -2904,7 +2901,7 @@ pub struct ProfileList {
 impl azure_core::Continuable for ProfileList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProfileList {
@@ -3049,8 +3046,6 @@ impl PurgeParameters {
 #[doc = "Describes Redirect Route."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RedirectConfiguration {
-    #[serde(flatten)]
-    pub route_configuration: RouteConfiguration,
     #[doc = "The redirect type the rule will use when redirecting traffic."]
     #[serde(rename = "redirectType", default, skip_serializing_if = "Option::is_none")]
     pub redirect_type: Option<redirect_configuration::RedirectType>,
@@ -3071,9 +3066,8 @@ pub struct RedirectConfiguration {
     pub custom_query_string: Option<String>,
 }
 impl RedirectConfiguration {
-    pub fn new(route_configuration: RouteConfiguration) -> Self {
+    pub fn new() -> Self {
         Self {
-            route_configuration,
             redirect_type: None,
             redirect_protocol: None,
             custom_host: None,
@@ -3242,16 +3236,13 @@ pub enum ResourceType {
     #[serde(rename = "Microsoft.Network/frontDoors/frontendEndpoints")]
     MicrosoftNetworkFrontDoorsFrontendEndpoints,
 }
-#[doc = "Base class for all types of Route."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RouteConfiguration {
-    #[serde(rename = "@odata.type")]
-    pub odata_type: String,
-}
-impl RouteConfiguration {
-    pub fn new(odata_type: String) -> Self {
-        Self { odata_type }
-    }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "@odata.type")]
+pub enum RouteConfigurationUnion {
+    #[serde(rename = "#Microsoft.Azure.FrontDoor.Models.FrontdoorForwardingConfiguration")]
+    MicrosoftAzureFrontDoorModelsFrontdoorForwardingConfiguration(ForwardingConfiguration),
+    #[serde(rename = "#Microsoft.Azure.FrontDoor.Models.FrontdoorRedirectConfiguration")]
+    MicrosoftAzureFrontDoorModelsFrontdoorRedirectConfiguration(RedirectConfiguration),
 }
 #[doc = "A routing rule represents a specification for traffic to treat and where to send it, along with health probe information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -3349,7 +3340,7 @@ pub struct RoutingRuleUpdateParameters {
     pub enabled_state: Option<routing_rule_update_parameters::EnabledState>,
     #[doc = "Base class for all types of Route."]
     #[serde(rename = "routeConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub route_configuration: Option<RouteConfiguration>,
+    pub route_configuration: Option<RouteConfigurationUnion>,
     #[doc = "Reference to another subresource."]
     #[serde(rename = "rulesEngine", default, skip_serializing_if = "Option::is_none")]
     pub rules_engine: Option<SubResource>,
@@ -3456,7 +3447,7 @@ pub struct RulesEngineAction {
     pub response_header_actions: Vec<HeaderAction>,
     #[doc = "Base class for all types of Route."]
     #[serde(rename = "routeConfigurationOverride", default, skip_serializing_if = "Option::is_none")]
-    pub route_configuration_override: Option<RouteConfiguration>,
+    pub route_configuration_override: Option<RouteConfigurationUnion>,
 }
 impl RulesEngineAction {
     pub fn new() -> Self {
@@ -3480,7 +3471,7 @@ pub struct RulesEngineListResult {
 impl azure_core::Continuable for RulesEngineListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RulesEngineListResult {
@@ -4027,7 +4018,7 @@ pub struct WebApplicationFirewallPolicyList {
 impl azure_core::Continuable for WebApplicationFirewallPolicyList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WebApplicationFirewallPolicyList {

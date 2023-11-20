@@ -97,7 +97,7 @@ pub struct Device {
     pub tracked_resource: TrackedResource,
     #[doc = "Device properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DevicePropertiesFormat>,
+    pub properties: Option<DevicePropertiesFormatUnion>,
 }
 impl Device {
     pub fn new(tracked_resource: TrackedResource) -> Self {
@@ -124,7 +124,7 @@ pub struct DeviceListResult {
 impl azure_core::Continuable for DeviceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceListResult {
@@ -141,9 +141,6 @@ pub struct DevicePropertiesFormat {
     #[doc = "The current provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
-    #[doc = "The type of the device."]
-    #[serde(rename = "deviceType")]
-    pub device_type: device_properties_format::DeviceType,
     #[doc = "The list of network functions deployed on the device."]
     #[serde(
         rename = "networkFunctions",
@@ -154,11 +151,10 @@ pub struct DevicePropertiesFormat {
     pub network_functions: Vec<SubResource>,
 }
 impl DevicePropertiesFormat {
-    pub fn new(device_type: device_properties_format::DeviceType) -> Self {
+    pub fn new() -> Self {
         Self {
             status: None,
             provisioning_state: None,
-            device_type,
             network_functions: Vec::new(),
         }
     }
@@ -206,43 +202,12 @@ pub mod device_properties_format {
             }
         }
     }
-    #[doc = "The type of the device."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "DeviceType")]
-    pub enum DeviceType {
-        Unknown,
-        AzureStackEdge,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for DeviceType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for DeviceType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for DeviceType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Unknown => serializer.serialize_unit_variant("DeviceType", 0u32, "Unknown"),
-                Self::AzureStackEdge => serializer.serialize_unit_variant("DeviceType", 1u32, "AzureStackEdge"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+}
+#[doc = "The type of the device."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "deviceType")]
+pub enum DevicePropertiesFormatUnion {
+    AzureStackEdge(AzureStackEdgeFormat),
 }
 #[doc = "The device registration key."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -404,7 +369,7 @@ pub struct NetworkFunctionListResult {
 impl azure_core::Continuable for NetworkFunctionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkFunctionListResult {
@@ -667,7 +632,7 @@ pub struct NetworkFunctionRoleInstanceListResult {
 impl azure_core::Continuable for NetworkFunctionRoleInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkFunctionRoleInstanceListResult {
@@ -695,7 +660,7 @@ pub struct NetworkFunctionSkuDetails {
 impl azure_core::Continuable for NetworkFunctionSkuDetails {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkFunctionSkuDetails {
@@ -720,7 +685,7 @@ pub struct NetworkFunctionSkuListResult {
 impl azure_core::Continuable for NetworkFunctionSkuListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkFunctionSkuListResult {
@@ -867,7 +832,7 @@ pub struct NetworkFunctionVendorListResult {
 impl azure_core::Continuable for NetworkFunctionVendorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkFunctionVendorListResult {
@@ -1112,7 +1077,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -1239,7 +1204,7 @@ pub struct PreviewSubscriptionsList {
 impl azure_core::Continuable for PreviewSubscriptionsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PreviewSubscriptionsList {
@@ -1625,7 +1590,7 @@ pub struct VendorListResult {
 impl azure_core::Continuable for VendorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VendorListResult {
@@ -1664,7 +1629,7 @@ pub struct VendorNetworkFunctionListResult {
 impl azure_core::Continuable for VendorNetworkFunctionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VendorNetworkFunctionListResult {
@@ -1798,7 +1763,7 @@ pub struct VendorSkuListResult {
 impl azure_core::Continuable for VendorSkuListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VendorSkuListResult {

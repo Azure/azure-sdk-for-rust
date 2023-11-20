@@ -25,11 +25,12 @@
 /// ```
 #[macro_export]
 macro_rules! setters {
-    (@single $name:ident : $typ:ty => $transform:expr) => {
+    (@single $(#[$meta:meta])* $name:ident : $typ:ty => $transform:expr) => {
         #[allow(clippy::redundant_field_names)]
         #[allow(clippy::needless_update)]
         #[allow(missing_docs)]
         #[must_use]
+        $(#[$meta])*
         pub fn $name<P: ::std::convert::Into<$typ>>(self, $name: P) -> Self {
             let $name: $typ = $name.into();
             Self  {
@@ -41,12 +42,12 @@ macro_rules! setters {
     // Terminal condition
     (@recurse) => {};
     // Recurse without transform
-    (@recurse $name:ident : $typ:ty, $($tokens:tt)*) => {
-        $crate::setters! { @recurse $name: $typ => $name, $($tokens)* }
+    (@recurse $(#[$meta:meta])* $name:ident : $typ:ty, $($tokens:tt)*) => {
+        $crate::setters! { @recurse $(#[$meta])* $name: $typ => $name, $($tokens)* }
     };
     // Recurse with transform
-    (@recurse $name:ident : $typ:ty => $transform:expr, $($tokens:tt)*) => {
-        $crate::setters! { @single $name : $typ => $transform }
+    (@recurse $(#[$meta:meta])* $name:ident : $typ:ty => $transform:expr, $($tokens:tt)*) => {
+        $crate::setters! { @single $(#[$meta])* $name : $typ => $transform }
         $crate::setters! { @recurse $($tokens)* }
     };
     ($($tokens:tt)*) => {

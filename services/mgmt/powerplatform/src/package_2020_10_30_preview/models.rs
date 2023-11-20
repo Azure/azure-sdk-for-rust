@@ -41,7 +41,7 @@ pub struct AccountList {
 impl azure_core::Continuable for AccountList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccountList {
@@ -179,7 +179,7 @@ pub struct EnterprisePolicyList {
 impl azure_core::Continuable for EnterprisePolicyList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EnterprisePolicyList {
@@ -259,6 +259,7 @@ impl ErrorResponse {
 pub enum HealthStatus {
     Undetermined,
     Healthy,
+    Warning,
     Unhealthy,
     #[serde(skip_deserializing)]
     UnknownValue(String),
@@ -287,7 +288,8 @@ impl Serialize for HealthStatus {
         match self {
             Self::Undetermined => serializer.serialize_unit_variant("HealthStatus", 0u32, "Undetermined"),
             Self::Healthy => serializer.serialize_unit_variant("HealthStatus", 1u32, "Healthy"),
-            Self::Unhealthy => serializer.serialize_unit_variant("HealthStatus", 2u32, "Unhealthy"),
+            Self::Warning => serializer.serialize_unit_variant("HealthStatus", 2u32, "Warning"),
+            Self::Unhealthy => serializer.serialize_unit_variant("HealthStatus", 3u32, "Unhealthy"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -449,7 +451,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {

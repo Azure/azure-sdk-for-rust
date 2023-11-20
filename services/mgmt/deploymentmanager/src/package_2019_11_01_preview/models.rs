@@ -6,8 +6,6 @@ use std::str::FromStr;
 #[doc = "ApiKey authentication gives a name and a value that can be included in either the request header or query parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApiKeyAuthentication {
-    #[serde(flatten)]
-    pub rest_request_authentication: RestRequestAuthentication,
     #[doc = "The key name of the authentication key/value pair."]
     pub name: String,
     #[doc = "The location of the authentication key/value pair in the request."]
@@ -17,18 +15,8 @@ pub struct ApiKeyAuthentication {
     pub value: String,
 }
 impl ApiKeyAuthentication {
-    pub fn new(
-        rest_request_authentication: RestRequestAuthentication,
-        name: String,
-        in_: api_key_authentication::In,
-        value: String,
-    ) -> Self {
-        Self {
-            rest_request_authentication,
-            name,
-            in_,
-            value,
-        }
+    pub fn new(name: String, in_: api_key_authentication::In, value: String) -> Self {
+        Self { name, in_, value }
     }
 }
 pub mod api_key_authentication {
@@ -68,10 +56,10 @@ pub struct ArtifactSourceProperties {
     #[serde(rename = "artifactRoot", default, skip_serializing_if = "Option::is_none")]
     pub artifact_root: Option<String>,
     #[doc = "Defines the authentication method and properties to access the artifacts."]
-    pub authentication: Authentication,
+    pub authentication: AuthenticationUnion,
 }
 impl ArtifactSourceProperties {
-    pub fn new(source_type: String, authentication: Authentication) -> Self {
+    pub fn new(source_type: String, authentication: AuthenticationUnion) -> Self {
         Self {
             source_type,
             artifact_root: None,
@@ -79,17 +67,11 @@ impl ArtifactSourceProperties {
         }
     }
 }
-#[doc = "Defines the authentication method and properties to access the artifacts."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Authentication {
-    #[doc = "The authentication type"]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl Authentication {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
+#[doc = "The authentication type"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AuthenticationUnion {
+    Sas(SasAuthentication),
 }
 #[doc = "The error information object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -131,9 +113,6 @@ impl CloudErrorBody {
 #[doc = "The attributes for the health check step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthCheckStepAttributes {
-    #[doc = "The type of health check."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The duration in ISO 8601 format for which health check waits idly without any checks."]
     #[serde(rename = "waitDuration", default, skip_serializing_if = "Option::is_none")]
     pub wait_duration: Option<String>,
@@ -145,29 +124,30 @@ pub struct HealthCheckStepAttributes {
     pub healthy_state_duration: String,
 }
 impl HealthCheckStepAttributes {
-    pub fn new(type_: String, healthy_state_duration: String) -> Self {
+    pub fn new(healthy_state_duration: String) -> Self {
         Self {
-            type_,
             wait_duration: None,
             max_elastic_duration: None,
             healthy_state_duration,
         }
     }
 }
+#[doc = "The type of health check."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum HealthCheckStepAttributesUnion {
+    #[serde(rename = "REST")]
+    Rest(RestHealthCheckStepAttributes),
+}
 #[doc = "Defines the properties of a health check step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HealthCheckStepProperties {
-    #[serde(flatten)]
-    pub step_properties: StepProperties,
     #[doc = "The attributes for the health check step."]
-    pub attributes: HealthCheckStepAttributes,
+    pub attributes: HealthCheckStepAttributesUnion,
 }
 impl HealthCheckStepProperties {
-    pub fn new(step_properties: StepProperties, attributes: HealthCheckStepAttributes) -> Self {
-        Self {
-            step_properties,
-            attributes,
-        }
+    pub fn new(attributes: HealthCheckStepAttributesUnion) -> Self {
+        Self { attributes }
     }
 }
 #[doc = "Identity for the resource."]
@@ -368,10 +348,10 @@ pub struct RestRequest {
     #[doc = "The HTTP URI to use for the request."]
     pub uri: String,
     #[doc = "The authentication information required in the REST health check request to the health provider."]
-    pub authentication: RestRequestAuthentication,
+    pub authentication: RestRequestAuthenticationUnion,
 }
 impl RestRequest {
-    pub fn new(method: rest_request::Method, uri: String, authentication: RestRequestAuthentication) -> Self {
+    pub fn new(method: rest_request::Method, uri: String, authentication: RestRequestAuthenticationUnion) -> Self {
         Self {
             method,
             uri,
@@ -390,26 +370,12 @@ pub mod rest_request {
         Post,
     }
 }
-#[doc = "The authentication information required in the REST health check request to the health provider."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RestRequestAuthentication {
-    #[doc = "The authentication type."]
-    #[serde(rename = "type")]
-    pub type_: rest_request_authentication::Type,
-}
-impl RestRequestAuthentication {
-    pub fn new(type_: rest_request_authentication::Type) -> Self {
-        Self { type_ }
-    }
-}
-pub mod rest_request_authentication {
-    use super::*;
-    #[doc = "The authentication type."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        ApiKey,
-        RolloutIdentity,
-    }
+#[doc = "The authentication type."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum RestRequestAuthenticationUnion {
+    ApiKey(ApiKeyAuthentication),
+    RolloutIdentity(RolloutIdentityAuthentication),
 }
 #[doc = "The properties that make up the expected REST response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -485,15 +451,10 @@ impl Rollout {
 }
 #[doc = "RolloutIdentity uses the user-assigned managed identity authentication context specified in the Identity property during rollout creation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RolloutIdentityAuthentication {
-    #[serde(flatten)]
-    pub rest_request_authentication: RestRequestAuthentication,
-}
+pub struct RolloutIdentityAuthentication {}
 impl RolloutIdentityAuthentication {
-    pub fn new(rest_request_authentication: RestRequestAuthentication) -> Self {
-        Self {
-            rest_request_authentication,
-        }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 pub type RolloutListResult = Vec<Rollout>;
@@ -636,18 +597,13 @@ impl RolloutStep {
 #[doc = "Defines the properties to access the artifacts using an Azure Storage SAS URI."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SasAuthentication {
-    #[serde(flatten)]
-    pub authentication: Authentication,
     #[doc = "The properties that define SAS authentication."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SasProperties>,
 }
 impl SasAuthentication {
-    pub fn new(authentication: Authentication) -> Self {
-        Self {
-            authentication,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that define SAS authentication."]
@@ -917,26 +873,12 @@ impl StepOperationInfo {
         Self::default()
     }
 }
-#[doc = "The properties of a step resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StepProperties {
-    #[doc = "The type of step."]
-    #[serde(rename = "stepType")]
-    pub step_type: step_properties::StepType,
-}
-impl StepProperties {
-    pub fn new(step_type: step_properties::StepType) -> Self {
-        Self { step_type }
-    }
-}
-pub mod step_properties {
-    use super::*;
-    #[doc = "The type of step."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum StepType {
-        Wait,
-        HealthCheck,
-    }
+#[doc = "The type of step."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "stepType")]
+pub enum StepPropertiesUnion {
+    HealthCheck(HealthCheckStepProperties),
+    Wait(WaitStepProperties),
 }
 #[doc = "The resource representation of a rollout step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -944,10 +886,10 @@ pub struct StepResource {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
     #[doc = "The properties of a step resource."]
-    pub properties: StepProperties,
+    pub properties: StepPropertiesUnion,
 }
 impl StepResource {
-    pub fn new(tracked_resource: TrackedResource, properties: StepProperties) -> Self {
+    pub fn new(tracked_resource: TrackedResource, properties: StepPropertiesUnion) -> Self {
         Self {
             tracked_resource,
             properties,
@@ -989,16 +931,11 @@ impl WaitStepAttributes {
 #[doc = "Defines the properties of a Wait step."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WaitStepProperties {
-    #[serde(flatten)]
-    pub step_properties: StepProperties,
     #[doc = "The parameters for the wait step."]
     pub attributes: WaitStepAttributes,
 }
 impl WaitStepProperties {
-    pub fn new(step_properties: StepProperties, attributes: WaitStepAttributes) -> Self {
-        Self {
-            step_properties,
-            attributes,
-        }
+    pub fn new(attributes: WaitStepAttributes) -> Self {
+        Self { attributes }
     }
 }

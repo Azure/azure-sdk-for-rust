@@ -243,7 +243,7 @@ pub mod api_kv_reference {
     pub struct Properties {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub reference: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub status: Option<properties::Status>,
         #[serde(rename = "vaultName", default, skip_serializing_if = "Option::is_none")]
         pub vault_name: Option<String>,
@@ -256,7 +256,7 @@ pub mod api_kv_reference {
         pub identity_type: Option<ManagedServiceIdentity>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub details: Option<String>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub source: Option<properties::Source>,
         #[serde(rename = "activeVersion", default, skip_serializing_if = "Option::is_none")]
         pub active_version: Option<String>,
@@ -300,7 +300,7 @@ pub struct ApiKvReferenceCollection {
 impl azure_core::Continuable for ApiKvReferenceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApiKvReferenceCollection {
@@ -372,7 +372,12 @@ pub struct AppServiceCertificate {
     #[serde(rename = "keyVaultSecretName", default, skip_serializing_if = "Option::is_none")]
     pub key_vault_secret_name: Option<String>,
     #[doc = "Status of the Key Vault secret."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<app_service_certificate::ProvisioningState>,
 }
 impl AppServiceCertificate {
@@ -410,7 +415,7 @@ pub struct AppServiceCertificateCollection {
 impl azure_core::Continuable for AppServiceCertificateCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AppServiceCertificateCollection {
@@ -456,16 +461,21 @@ pub mod app_service_certificate_order {
         #[serde(rename = "keySize", default, skip_serializing_if = "Option::is_none")]
         pub key_size: Option<i32>,
         #[doc = "Certificate product type."]
-        #[serde(rename = "productType")]
+        #[serde(rename = "productType", with = "azure_core::xml::text_content")]
         pub product_type: properties::ProductType,
         #[doc = "<code>true</code> if the certificate should be automatically renewed when it expires; otherwise, <code>false</code>."]
         #[serde(rename = "autoRenew", default, skip_serializing_if = "Option::is_none")]
         pub auto_renew: Option<bool>,
         #[doc = "Status of certificate order."]
-        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "provisioningState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub provisioning_state: Option<properties::ProvisioningState>,
         #[doc = "Current order status."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub status: Option<properties::Status>,
         #[doc = "SSL certificate details."]
         #[serde(rename = "signedCertificate", default, skip_serializing_if = "Option::is_none")]
@@ -576,7 +586,7 @@ pub struct AppServiceCertificateOrderCollection {
 impl azure_core::Continuable for AppServiceCertificateOrderCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AppServiceCertificateOrderCollection {
@@ -619,16 +629,21 @@ pub mod app_service_certificate_order_patch_resource {
         #[serde(rename = "keySize", default, skip_serializing_if = "Option::is_none")]
         pub key_size: Option<i32>,
         #[doc = "Certificate product type."]
-        #[serde(rename = "productType")]
+        #[serde(rename = "productType", with = "azure_core::xml::text_content")]
         pub product_type: properties::ProductType,
         #[doc = "<code>true</code> if the certificate should be automatically renewed when it expires; otherwise, <code>false</code>."]
         #[serde(rename = "autoRenew", default, skip_serializing_if = "Option::is_none")]
         pub auto_renew: Option<bool>,
         #[doc = "Status of certificate order."]
-        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "provisioningState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub provisioning_state: Option<properties::ProvisioningState>,
         #[doc = "Current order status."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub status: Option<properties::Status>,
         #[doc = "SSL certificate details."]
         #[serde(rename = "signedCertificate", default, skip_serializing_if = "Option::is_none")]
@@ -762,16 +777,26 @@ impl AppServiceCertificateResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AppServiceEnvironment {
     #[doc = "Provisioning state of the App Service Environment."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "provisioningState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub provisioning_state: Option<app_service_environment::ProvisioningState>,
     #[doc = "Current status of the App Service Environment."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<app_service_environment::Status>,
     #[doc = "Specification for using a Virtual Network."]
     #[serde(rename = "virtualNetwork")]
     pub virtual_network: VirtualNetworkProfile,
     #[doc = "Specifies which endpoints to serve internally in the Virtual Network for the App Service Environment."]
-    #[serde(rename = "internalLoadBalancingMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "internalLoadBalancingMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub internal_load_balancing_mode: Option<app_service_environment::InternalLoadBalancingMode>,
     #[doc = "Front-end VM size, e.g. \"Medium\", \"Large\"."]
     #[serde(rename = "multiSize", default, skip_serializing_if = "Option::is_none")]
@@ -916,7 +941,7 @@ pub struct AppServiceEnvironmentCollection {
 impl azure_core::Continuable for AppServiceEnvironmentCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AppServiceEnvironmentCollection {
@@ -989,7 +1014,7 @@ pub mod app_service_plan {
         #[serde(rename = "workerTierName", default, skip_serializing_if = "Option::is_none")]
         pub worker_tier_name: Option<String>,
         #[doc = "App Service plan status."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub status: Option<properties::Status>,
         #[doc = "App Service plan subscription."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1043,7 +1068,12 @@ pub mod app_service_plan {
         #[serde(rename = "targetWorkerSizeId", default, skip_serializing_if = "Option::is_none")]
         pub target_worker_size_id: Option<i32>,
         #[doc = "Provisioning state of the App Service Plan."]
-        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "provisioningState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub provisioning_state: Option<properties::ProvisioningState>,
         #[doc = "Specification for a Kubernetes Environment to use for this resource."]
         #[serde(rename = "kubeEnvironmentProfile", default, skip_serializing_if = "Option::is_none")]
@@ -1089,7 +1119,7 @@ pub struct AppServicePlanCollection {
 impl azure_core::Continuable for AppServicePlanCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AppServicePlanCollection {
@@ -1120,7 +1150,7 @@ pub mod app_service_plan_patch_resource {
         #[serde(rename = "workerTierName", default, skip_serializing_if = "Option::is_none")]
         pub worker_tier_name: Option<String>,
         #[doc = "App Service plan status."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub status: Option<properties::Status>,
         #[doc = "App Service plan subscription."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1174,7 +1204,12 @@ pub mod app_service_plan_patch_resource {
         #[serde(rename = "targetWorkerSizeId", default, skip_serializing_if = "Option::is_none")]
         pub target_worker_size_id: Option<i32>,
         #[doc = "Provisioning state of the App Service Plan."]
-        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "provisioningState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub provisioning_state: Option<properties::ProvisioningState>,
         #[doc = "Specification for a Kubernetes Environment to use for this resource."]
         #[serde(rename = "kubeEnvironmentProfile", default, skip_serializing_if = "Option::is_none")]
@@ -1312,7 +1347,7 @@ pub struct ApplicationStackCollection {
 impl azure_core::Continuable for ApplicationStackCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationStackCollection {
@@ -1373,7 +1408,12 @@ impl AppserviceGithubTokenRequest {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ArcConfiguration {
-    #[serde(rename = "artifactsStorageType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "artifactsStorageType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub artifacts_storage_type: Option<arc_configuration::ArtifactsStorageType>,
     #[serde(rename = "artifactStorageClassName", default, skip_serializing_if = "Option::is_none")]
     pub artifact_storage_class_name: Option<String>,
@@ -1515,7 +1555,12 @@ impl AuthPlatform {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AutoHealActions {
     #[doc = "Predefined action to be taken."]
-    #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "actionType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub action_type: Option<auto_heal_actions::ActionType>,
     #[doc = "Custom action to be executed\nwhen an auto heal rule is triggered."]
     #[serde(rename = "customAction", default, skip_serializing_if = "Option::is_none")]
@@ -1713,7 +1758,7 @@ impl AzureActiveDirectoryValidation {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureBlobStorageApplicationLogsConfig {
     #[doc = "Log level."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub level: Option<azure_blob_storage_application_logs_config::Level>,
     #[doc = "SAS url to a azure blob container with read/write/list/delete permissions."]
     #[serde(rename = "sasUrl", default, skip_serializing_if = "Option::is_none")]
@@ -1788,7 +1833,12 @@ impl AzureStaticWebAppsRegistration {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureStorageInfoValue {
     #[doc = "Type of storage."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<azure_storage_info_value::Type>,
     #[doc = "Name of the storage account."]
     #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
@@ -1803,7 +1853,7 @@ pub struct AzureStorageInfoValue {
     #[serde(rename = "mountPath", default, skip_serializing_if = "Option::is_none")]
     pub mount_path: Option<String>,
     #[doc = "State of the storage account."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub state: Option<azure_storage_info_value::State>,
 }
 impl AzureStorageInfoValue {
@@ -1846,7 +1896,7 @@ impl AzureStoragePropertyDictionaryResource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureTableStorageApplicationLogsConfig {
     #[doc = "Log level."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub level: Option<azure_table_storage_application_logs_config::Level>,
     #[doc = "SAS URL to an Azure table with add/query/delete permissions."]
     #[serde(rename = "sasUrl")]
@@ -1901,7 +1951,7 @@ pub mod backup_item {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub name: Option<String>,
         #[doc = "Backup status."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub status: Option<properties::Status>,
         #[doc = "Size of the backup in bytes."]
         #[serde(rename = "sizeInBytes", default, skip_serializing_if = "Option::is_none")]
@@ -1970,7 +2020,7 @@ pub struct BackupItemCollection {
 impl azure_core::Continuable for BackupItemCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BackupItemCollection {
@@ -2036,7 +2086,7 @@ pub struct BackupSchedule {
     #[serde(rename = "frequencyInterval")]
     pub frequency_interval: i32,
     #[doc = "The unit of time for how often the backup should be executed (e.g. for weekly backup, this should be set to Day and FrequencyInterval should be set to 7)"]
-    #[serde(rename = "frequencyUnit")]
+    #[serde(rename = "frequencyUnit", with = "azure_core::xml::text_content")]
     pub frequency_unit: backup_schedule::FrequencyUnit,
     #[doc = "True if the retention policy should always keep at least one backup in the storage account, regardless how old it is; false otherwise."]
     #[serde(rename = "keepAtLeastOneBackup")]
@@ -2141,7 +2191,7 @@ pub struct BillingMeterCollection {
 impl azure_core::Continuable for BillingMeterCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BillingMeterCollection {
@@ -2258,7 +2308,12 @@ pub mod certificate {
         #[serde(rename = "keyVaultSecretName", default, skip_serializing_if = "Option::is_none")]
         pub key_vault_secret_name: Option<String>,
         #[doc = "Status of the Key Vault secret."]
-        #[serde(rename = "keyVaultSecretStatus", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "keyVaultSecretStatus",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub key_vault_secret_status: Option<properties::KeyVaultSecretStatus>,
         #[doc = "Resource ID of the associated App Service plan, formatted as: \"/subscriptions/{subscriptionID}/resourceGroups/{groupName}/providers/Microsoft.Web/serverfarms/{appServicePlanName}\"."]
         #[serde(rename = "serverFarmId", default, skip_serializing_if = "Option::is_none")]
@@ -2306,7 +2361,7 @@ pub struct CertificateCollection {
 impl azure_core::Continuable for CertificateCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CertificateCollection {
@@ -2402,7 +2457,12 @@ pub mod certificate_order_action {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Action type."]
-        #[serde(rename = "actionType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "actionType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub action_type: Option<properties::ActionType>,
         #[doc = "Time at which the certificate action was performed."]
         #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
@@ -2527,7 +2587,12 @@ pub mod certificate_patch_resource {
         #[serde(rename = "keyVaultSecretName", default, skip_serializing_if = "Option::is_none")]
         pub key_vault_secret_name: Option<String>,
         #[doc = "Status of the Key Vault secret."]
-        #[serde(rename = "keyVaultSecretStatus", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "keyVaultSecretStatus",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub key_vault_secret_status: Option<properties::KeyVaultSecretStatus>,
         #[doc = "Resource ID of the associated App Service plan, formatted as: \"/subscriptions/{subscriptionID}/resourceGroups/{groupName}/providers/Microsoft.Web/serverfarms/{appServicePlanName}\"."]
         #[serde(rename = "serverFarmId", default, skip_serializing_if = "Option::is_none")]
@@ -2642,7 +2707,12 @@ pub struct ConnStringInfo {
     #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
     pub connection_string: Option<String>,
     #[doc = "Type of database."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<conn_string_info::Type>,
 }
 impl ConnStringInfo {
@@ -2677,7 +2747,7 @@ pub struct ConnStringValueTypePair {
     #[doc = "Value of pair."]
     pub value: String,
     #[doc = "Type of database."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: conn_string_value_type_pair::Type,
 }
 impl ConnStringValueTypePair {
@@ -2897,7 +2967,7 @@ pub mod continuous_web_job {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Job status."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub status: Option<properties::Status>,
         #[doc = "Detailed status."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2915,7 +2985,7 @@ pub mod continuous_web_job {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub extra_info_url: Option<String>,
         #[doc = "Job type."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub web_job_type: Option<properties::WebJobType>,
         #[doc = "Error information."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2963,7 +3033,7 @@ pub struct ContinuousWebJobCollection {
 impl azure_core::Continuable for ContinuousWebJobCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ContinuousWebJobCollection {
@@ -2975,7 +3045,7 @@ impl ContinuousWebJobCollection {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CookieExpiration {
     #[doc = "The convention used when determining the session cookie's expiration."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub convention: Option<cookie_expiration::Convention>,
     #[doc = "The time after the request is made when the session cookie should expire."]
     #[serde(rename = "timeToExpiration", default, skip_serializing_if = "Option::is_none")]
@@ -3044,7 +3114,7 @@ pub struct CsmOperationCollection {
 impl azure_core::Continuable for CsmOperationCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CsmOperationCollection {
@@ -3134,7 +3204,7 @@ pub mod csm_publishing_credentials_policies_entity {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CsmPublishingProfileOptions {
     #[doc = "Name of the format. Valid values are: \nFileZilla3\nWebDeploy -- default\nFtp"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub format: Option<csm_publishing_profile_options::Format>,
     #[doc = "Include the DisasterRecover endpoint if true"]
     #[serde(rename = "includeDisasterRecoveryEndpoints", default, skip_serializing_if = "Option::is_none")]
@@ -3241,7 +3311,7 @@ pub struct CsmUsageQuotaCollection {
 impl azure_core::Continuable for CsmUsageQuotaCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CsmUsageQuotaCollection {
@@ -3272,7 +3342,12 @@ pub mod custom_hostname_analysis_result {
         #[serde(rename = "isHostnameAlreadyVerified", default, skip_serializing_if = "Option::is_none")]
         pub is_hostname_already_verified: Option<bool>,
         #[doc = "DNS verification test result."]
-        #[serde(rename = "customDomainVerificationTest", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "customDomainVerificationTest",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub custom_domain_verification_test: Option<properties::CustomDomainVerificationTest>,
         #[doc = "Body of the error response returned from the API."]
         #[serde(rename = "customDomainVerificationFailureInfo", default, skip_serializing_if = "Option::is_none")]
@@ -3452,7 +3527,7 @@ impl DataTableResponseObject {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatabaseBackupSetting {
     #[doc = "Database type (e.g. SqlAzure / MySql)."]
-    #[serde(rename = "databaseType")]
+    #[serde(rename = "databaseType", with = "azure_core::xml::text_content")]
     pub database_type: database_backup_setting::DatabaseType,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -3685,7 +3760,7 @@ pub struct DeletedWebAppCollection {
 impl azure_core::Continuable for DeletedWebAppCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeletedWebAppCollection {
@@ -3758,7 +3833,7 @@ pub struct DeploymentCollection {
 impl azure_core::Continuable for DeploymentCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeploymentCollection {
@@ -3825,7 +3900,12 @@ pub struct DetectorAbnormalTimePeriod {
     )]
     pub meta_data: Vec<Vec<NameValuePair>>,
     #[doc = "Represents the type of the Detector"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<detector_abnormal_time_period::Type>,
     #[doc = "List of proposed solutions"]
     #[serde(
@@ -3925,7 +4005,12 @@ pub struct DetectorInfo {
     )]
     pub analysis_type: Vec<String>,
     #[doc = "Whether this detector is an Analysis Detector or not."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<detector_info::Type>,
     #[doc = "Defines score of a detector to power ML based matching."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4008,7 +4093,7 @@ pub struct DetectorResponseCollection {
 impl azure_core::Continuable for DetectorResponseCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DetectorResponseCollection {
@@ -4083,7 +4168,7 @@ pub struct DiagnosticAnalysisCollection {
 impl azure_core::Continuable for DiagnosticAnalysisCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DiagnosticAnalysisCollection {
@@ -4132,7 +4217,7 @@ pub struct DiagnosticCategoryCollection {
 impl azure_core::Continuable for DiagnosticCategoryCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DiagnosticCategoryCollection {
@@ -4167,7 +4252,7 @@ pub struct DiagnosticDetectorCollection {
 impl azure_core::Continuable for DiagnosticDetectorCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DiagnosticDetectorCollection {
@@ -4347,10 +4432,20 @@ pub mod domain {
         #[serde(rename = "contactTech")]
         pub contact_tech: Contact,
         #[doc = "Domain registration status."]
-        #[serde(rename = "registrationStatus", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "registrationStatus",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub registration_status: Option<properties::RegistrationStatus>,
         #[doc = "Domain provisioning state."]
-        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "provisioningState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub provisioning_state: Option<properties::ProvisioningState>,
         #[doc = "Name servers."]
         #[serde(
@@ -4397,13 +4492,23 @@ pub mod domain {
         )]
         pub domain_not_renewable_reasons: Vec<String>,
         #[doc = "Current DNS type"]
-        #[serde(rename = "dnsType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "dnsType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub dns_type: Option<properties::DnsType>,
         #[doc = "Azure DNS Zone to use"]
         #[serde(rename = "dnsZoneId", default, skip_serializing_if = "Option::is_none")]
         pub dns_zone_id: Option<String>,
         #[doc = "Target DNS type (would be used for migration)"]
-        #[serde(rename = "targetDnsType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "targetDnsType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub target_dns_type: Option<properties::TargetDnsType>,
         #[serde(rename = "authCode", default, skip_serializing_if = "Option::is_none")]
         pub auth_code: Option<String>,
@@ -4500,7 +4605,12 @@ pub struct DomainAvailabilityCheckResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub available: Option<bool>,
     #[doc = "Valid values are Regular domain: Azure will charge the full price of domain registration, SoftDeleted: Purchasing this domain will simply restore it and this operation will not cost anything."]
-    #[serde(rename = "domainType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "domainType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub domain_type: Option<domain_availability_check_result::DomainType>,
 }
 impl DomainAvailabilityCheckResult {
@@ -4529,7 +4639,7 @@ pub struct DomainCollection {
 impl azure_core::Continuable for DomainCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DomainCollection {
@@ -4596,7 +4706,7 @@ pub struct DomainOwnershipIdentifierCollection {
 impl azure_core::Continuable for DomainOwnershipIdentifierCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DomainOwnershipIdentifierCollection {
@@ -4636,10 +4746,20 @@ pub mod domain_patch_resource {
         #[serde(rename = "contactTech")]
         pub contact_tech: Contact,
         #[doc = "Domain registration status."]
-        #[serde(rename = "registrationStatus", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "registrationStatus",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub registration_status: Option<properties::RegistrationStatus>,
         #[doc = "Domain provisioning state."]
-        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "provisioningState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub provisioning_state: Option<properties::ProvisioningState>,
         #[doc = "Name servers."]
         #[serde(
@@ -4686,13 +4806,23 @@ pub mod domain_patch_resource {
         )]
         pub domain_not_renewable_reasons: Vec<String>,
         #[doc = "Current DNS type"]
-        #[serde(rename = "dnsType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "dnsType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub dns_type: Option<properties::DnsType>,
         #[doc = "Azure DNS Zone to use"]
         #[serde(rename = "dnsZoneId", default, skip_serializing_if = "Option::is_none")]
         pub dns_zone_id: Option<String>,
         #[doc = "Target DNS type (would be used for migration)"]
-        #[serde(rename = "targetDnsType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "targetDnsType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub target_dns_type: Option<properties::TargetDnsType>,
         #[serde(rename = "authCode", default, skip_serializing_if = "Option::is_none")]
         pub auth_code: Option<String>,
@@ -4973,7 +5103,7 @@ impl Facebook {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FileSystemApplicationLogsConfig {
     #[doc = "Log level."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub level: Option<file_system_application_logs_config::Level>,
 }
 impl FileSystemApplicationLogsConfig {
@@ -5032,7 +5162,7 @@ impl FileSystemTokenStore {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ForwardProxy {
     #[doc = "The convention used to determine the url of the request made."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub convention: Option<forward_proxy::Convention>,
     #[doc = "The name of the header containing the host of the request."]
     #[serde(rename = "customHostHeaderName", default, skip_serializing_if = "Option::is_none")]
@@ -5058,7 +5188,7 @@ pub mod forward_proxy {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct FrontEndConfiguration {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub kind: Option<front_end_configuration::Kind>,
 }
 impl FrontEndConfiguration {
@@ -5223,7 +5353,12 @@ pub mod function_app_stack {
         )]
         pub major_versions: Vec<FunctionAppMajorVersion>,
         #[doc = "Function App stack preferred OS."]
-        #[serde(rename = "preferredOs", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "preferredOs",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub preferred_os: Option<properties::PreferredOs>,
     }
     impl Properties {
@@ -5253,7 +5388,7 @@ pub struct FunctionAppStackCollection {
 impl azure_core::Continuable for FunctionAppStackCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FunctionAppStackCollection {
@@ -5338,7 +5473,7 @@ pub struct FunctionEnvelopeCollection {
 impl azure_core::Continuable for FunctionEnvelopeCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FunctionEnvelopeCollection {
@@ -5408,7 +5543,7 @@ pub struct GeoRegionCollection {
 impl azure_core::Continuable for GeoRegionCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GeoRegionCollection {
@@ -5551,7 +5686,12 @@ pub struct GlobalValidation {
     #[serde(rename = "requireAuthentication", default, skip_serializing_if = "Option::is_none")]
     pub require_authentication: Option<bool>,
     #[doc = "The action to take when an unauthenticated client attempts to access the app."]
-    #[serde(rename = "unauthenticatedClientAction", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "unauthenticatedClientAction",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub unauthenticated_client_action: Option<global_validation::UnauthenticatedClientAction>,
     #[doc = "The default authentication provider to use when multiple providers are configured.\nThis setting is only needed if multiple providers are configured and the unauthenticated client\naction is set to \"RedirectToLoginPage\"."]
     #[serde(rename = "redirectToProvider", default, skip_serializing_if = "Option::is_none")]
@@ -5656,13 +5796,28 @@ pub struct HostName {
     #[serde(rename = "azureResourceName", default, skip_serializing_if = "Option::is_none")]
     pub azure_resource_name: Option<String>,
     #[doc = "Type of the Azure resource the hostname is assigned to."]
-    #[serde(rename = "azureResourceType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "azureResourceType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub azure_resource_type: Option<host_name::AzureResourceType>,
     #[doc = "Type of the DNS record."]
-    #[serde(rename = "customHostNameDnsRecordType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "customHostNameDnsRecordType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub custom_host_name_dns_record_type: Option<host_name::CustomHostNameDnsRecordType>,
     #[doc = "Type of the hostname."]
-    #[serde(rename = "hostNameType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hostNameType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub host_name_type: Option<host_name::HostNameType>,
 }
 impl HostName {
@@ -5720,16 +5875,36 @@ pub mod host_name_binding {
         #[serde(rename = "azureResourceName", default, skip_serializing_if = "Option::is_none")]
         pub azure_resource_name: Option<String>,
         #[doc = "Azure resource type."]
-        #[serde(rename = "azureResourceType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "azureResourceType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub azure_resource_type: Option<properties::AzureResourceType>,
         #[doc = "Custom DNS record type."]
-        #[serde(rename = "customHostNameDnsRecordType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "customHostNameDnsRecordType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub custom_host_name_dns_record_type: Option<properties::CustomHostNameDnsRecordType>,
         #[doc = "Hostname type."]
-        #[serde(rename = "hostNameType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "hostNameType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub host_name_type: Option<properties::HostNameType>,
         #[doc = "SSL type"]
-        #[serde(rename = "sslState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "sslState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub ssl_state: Option<properties::SslState>,
         #[doc = "SSL certificate thumbprint"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5784,7 +5959,7 @@ pub struct HostNameBindingCollection {
 impl azure_core::Continuable for HostNameBindingCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HostNameBindingCollection {
@@ -5799,7 +5974,12 @@ pub struct HostNameSslState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "SSL type."]
-    #[serde(rename = "sslState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "sslState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ssl_state: Option<host_name_ssl_state::SslState>,
     #[doc = "Virtual IP address assigned to the hostname if IP based SSL is enabled."]
     #[serde(rename = "virtualIP", default, skip_serializing_if = "Option::is_none")]
@@ -5811,7 +5991,12 @@ pub struct HostNameSslState {
     #[serde(rename = "toUpdate", default, skip_serializing_if = "Option::is_none")]
     pub to_update: Option<bool>,
     #[doc = "Indicates whether the hostname is a standard or repository hostname."]
-    #[serde(rename = "hostType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "hostType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub host_type: Option<host_name_ssl_state::HostType>,
 }
 impl HostNameSslState {
@@ -5990,7 +6175,7 @@ pub struct HybridConnectionCollection {
 impl azure_core::Continuable for HybridConnectionCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HybridConnectionCollection {
@@ -6103,7 +6288,7 @@ pub struct IdentifierCollection {
 impl azure_core::Continuable for IdentifierCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IdentifierCollection {
@@ -6185,7 +6370,7 @@ pub struct InboundEnvironmentEndpointCollection {
 impl azure_core::Continuable for InboundEnvironmentEndpointCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl InboundEnvironmentEndpointCollection {
@@ -6215,7 +6400,7 @@ pub struct IpSecurityRestriction {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<String>,
     #[doc = "Defines what this IP filter will be used for. This is to support IP filtering on proxies."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub tag: Option<ip_security_restriction::Tag>,
     #[doc = "Priority of IP restriction rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6356,7 +6541,12 @@ pub mod kube_environment {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Provisioning state of the Kubernetes Environment."]
-        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "provisioningState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub provisioning_state: Option<properties::ProvisioningState>,
         #[doc = "Any errors that occurred during deployment or deployment validation"]
         #[serde(rename = "deploymentErrors", default, skip_serializing_if = "Option::is_none")]
@@ -6412,7 +6602,7 @@ pub struct KubeEnvironmentCollection {
 impl azure_core::Continuable for KubeEnvironmentCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl KubeEnvironmentCollection {
@@ -6440,7 +6630,12 @@ pub mod kube_environment_patch_resource {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Provisioning state of the Kubernetes Environment."]
-        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "provisioningState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub provisioning_state: Option<properties::ProvisioningState>,
         #[doc = "Any errors that occurred during deployment or deployment validation"]
         #[serde(rename = "deploymentErrors", default, skip_serializing_if = "Option::is_none")]
@@ -6744,7 +6939,12 @@ pub struct MsDeployLogEntry {
     #[serde(default, with = "azure_core::date::rfc3339::option")]
     pub time: Option<time::OffsetDateTime>,
     #[doc = "Log entry type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<ms_deploy_log_entry::Type>,
     #[doc = "Log entry message"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6788,7 +6988,12 @@ pub mod ms_deploy_status {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub deployer: Option<String>,
         #[doc = "Provisioning state"]
-        #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "provisioningState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub provisioning_state: Option<properties::ProvisioningState>,
         #[doc = "Start time of deploy operation"]
         #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
@@ -6827,7 +7032,12 @@ pub mod ms_deploy_status {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ManagedServiceIdentity {
     #[doc = "Type of managed service identity."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<managed_service_identity::Type>,
     #[doc = "Tenant of managed service identity."]
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
@@ -6953,7 +7163,7 @@ pub mod migrate_my_sql_request {
         #[serde(rename = "connectionString")]
         pub connection_string: String,
         #[doc = "The type of migration operation to be done"]
-        #[serde(rename = "migrationType")]
+        #[serde(rename = "migrationType", with = "azure_core::xml::text_content")]
         pub migration_type: properties::MigrationType,
     }
     impl Properties {
@@ -6994,7 +7204,12 @@ pub mod migrate_my_sql_status {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
         #[doc = "Status of the migration task."]
-        #[serde(rename = "migrationOperationStatus", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "migrationOperationStatus",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub migration_operation_status: Option<properties::MigrationOperationStatus>,
         #[doc = "Operation ID for the migration task."]
         #[serde(rename = "operationId", default, skip_serializing_if = "Option::is_none")]
@@ -7045,7 +7260,7 @@ pub struct NameIdentifierCollection {
 impl azure_core::Continuable for NameIdentifierCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NameIdentifierCollection {
@@ -7153,7 +7368,7 @@ impl Nonce {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OpenIdConnectClientCredential {
     #[doc = "The method that should be used to authenticate the user."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub method: Option<open_id_connect_client_credential::Method>,
     #[doc = "The app setting that contains the client secret for the custom Open ID Connect provider."]
     #[serde(rename = "clientSecretSettingName", default, skip_serializing_if = "Option::is_none")]
@@ -7243,7 +7458,7 @@ pub struct Operation {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "The current status of the operation."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<operation::Status>,
     #[doc = "Any errors associate with the operation."]
     #[serde(
@@ -7313,7 +7528,7 @@ pub struct OutboundEnvironmentEndpointCollection {
 impl azure_core::Continuable for OutboundEnvironmentEndpointCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OutboundEnvironmentEndpointCollection {
@@ -7333,7 +7548,7 @@ pub struct PerfMonCounterCollection {
 impl azure_core::Continuable for PerfMonCounterCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PerfMonCounterCollection {
@@ -7484,7 +7699,12 @@ pub mod premier_add_on_offer {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub quota: Option<i32>,
         #[doc = "App Service plans this offer is restricted to."]
-        #[serde(rename = "webHostingPlanRestrictions", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "webHostingPlanRestrictions",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub web_hosting_plan_restrictions: Option<properties::WebHostingPlanRestrictions>,
         #[doc = "Privacy policy URL."]
         #[serde(rename = "privacyPolicyUrl", default, skip_serializing_if = "Option::is_none")]
@@ -7530,7 +7750,7 @@ pub struct PremierAddOnOfferCollection {
 impl azure_core::Continuable for PremierAddOnOfferCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PremierAddOnOfferCollection {
@@ -7667,7 +7887,7 @@ pub struct PrivateEndpointConnectionCollection {
 impl azure_core::Continuable for PrivateEndpointConnectionCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionCollection {
@@ -7940,7 +8160,7 @@ pub struct ProcessInfoCollection {
 impl azure_core::Continuable for ProcessInfoCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProcessInfoCollection {
@@ -8019,7 +8239,7 @@ pub struct ProcessModuleInfoCollection {
 impl azure_core::Continuable for ProcessModuleInfoCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProcessModuleInfoCollection {
@@ -8101,7 +8321,7 @@ pub struct ProcessThreadInfoCollection {
 impl azure_core::Continuable for ProcessThreadInfoCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProcessThreadInfoCollection {
@@ -8153,7 +8373,12 @@ pub mod public_certificate {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub blob: Option<String>,
         #[doc = "Public Certificate Location"]
-        #[serde(rename = "publicCertificateLocation", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "publicCertificateLocation",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub public_certificate_location: Option<properties::PublicCertificateLocation>,
         #[doc = "Certificate Thumbprint"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -8187,7 +8412,7 @@ pub struct PublicCertificateCollection {
 impl azure_core::Continuable for PublicCertificateCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PublicCertificateCollection {
@@ -8207,7 +8432,7 @@ pub struct PublishingCredentialsPoliciesCollection {
 impl azure_core::Continuable for PublishingCredentialsPoliciesCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PublishingCredentialsPoliciesCollection {
@@ -8354,7 +8579,12 @@ pub mod recommendation {
         #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
         pub resource_id: Option<String>,
         #[doc = "Name of a resource type this recommendation applies, e.g. Subscription, ServerFarm, Site."]
-        #[serde(rename = "resourceScope", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "resourceScope",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub resource_scope: Option<properties::ResourceScope>,
         #[doc = "Unique name of the rule."]
         #[serde(rename = "ruleName", default, skip_serializing_if = "Option::is_none")]
@@ -8366,10 +8596,10 @@ pub mod recommendation {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub message: Option<String>,
         #[doc = "Level indicating how critical this recommendation can impact."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub level: Option<properties::Level>,
         #[doc = "List of channels that this recommendation can apply."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub channels: Option<properties::Channels>,
         #[doc = "The list of category tags that this recommendation belongs to."]
         #[serde(
@@ -8500,7 +8730,7 @@ pub struct RecommendationCollection {
 impl azure_core::Continuable for RecommendationCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RecommendationCollection {
@@ -8546,10 +8776,10 @@ pub mod recommendation_rule {
         #[serde(rename = "actionName", default, skip_serializing_if = "Option::is_none")]
         pub action_name: Option<String>,
         #[doc = "Level of impact indicating how critical this rule is."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub level: Option<properties::Level>,
         #[doc = "List of available channels that this rule applies."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub channels: Option<properties::Channels>,
         #[doc = "The list of category tags that this recommendation rule belongs to."]
         #[serde(
@@ -8764,7 +8994,12 @@ pub mod remote_private_endpoint_connection_arm_resource {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Rendering {
     #[doc = "Rendering Type"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<rendering::Type>,
     #[doc = "Title of data"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -8905,7 +9140,7 @@ pub struct ResourceCollection {
 impl azure_core::Continuable for ResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceCollection {
@@ -8957,7 +9192,7 @@ pub struct ResourceHealthMetadataCollection {
 impl azure_core::Continuable for ResourceHealthMetadataCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceHealthMetadataCollection {
@@ -9038,7 +9273,7 @@ pub struct ResourceMetricDefinitionCollection {
 impl azure_core::Continuable for ResourceMetricDefinitionCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceMetricDefinitionCollection {
@@ -9053,7 +9288,7 @@ pub struct ResourceNameAvailability {
     #[serde(rename = "nameAvailable", default, skip_serializing_if = "Option::is_none")]
     pub name_available: Option<bool>,
     #[doc = "<code>Invalid</code> indicates the name provided does not match Azure App Service naming requirements. <code>AlreadyExists</code> indicates that the name is already in use and is therefore unavailable."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub reason: Option<resource_name_availability::Reason>,
     #[doc = "If reason == invalid, provide the user with the reason why the given name is invalid, and provide the resource naming requirements so that the user can select a valid name. If reason == AlreadyExists, explain that resource name is already in use, and direct them to select a different name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9110,7 +9345,7 @@ pub struct ResourceNameAvailabilityRequest {
     #[doc = "Resource name to verify."]
     pub name: String,
     #[doc = "Resource type used for verification."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: resource_name_availability_request::Type,
     #[doc = "Is fully qualified domain name."]
     #[serde(rename = "isFqdn", default, skip_serializing_if = "Option::is_none")]
@@ -9290,7 +9525,12 @@ pub mod restore_request {
         #[serde(rename = "appServicePlan", default, skip_serializing_if = "Option::is_none")]
         pub app_service_plan: Option<String>,
         #[doc = "Operation type."]
-        #[serde(rename = "operationType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "operationType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub operation_type: Option<properties::OperationType>,
         #[doc = "<code>true</code> if SiteConfig.ConnectionStrings should be set in new app; otherwise, <code>false</code>."]
         #[serde(rename = "adjustConnectionStrings", default, skip_serializing_if = "Option::is_none")]
@@ -9425,7 +9665,12 @@ pub mod site {
         #[serde(rename = "repositorySiteName", default, skip_serializing_if = "Option::is_none")]
         pub repository_site_name: Option<String>,
         #[doc = "State indicating whether the app has exceeded its quota usage. Read-only."]
-        #[serde(rename = "usageState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "usageState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub usage_state: Option<properties::UsageState>,
         #[doc = "<code>true</code> if the app is enabled; otherwise, <code>false</code>. Setting this value to false disables the app (takes the app offline)."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9439,7 +9684,12 @@ pub mod site {
         )]
         pub enabled_host_names: Vec<String>,
         #[doc = "Management information availability state for the app."]
-        #[serde(rename = "availabilityState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "availabilityState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub availability_state: Option<properties::AvailabilityState>,
         #[doc = "Hostname SSL states are used to manage the SSL bindings for app's hostnames."]
         #[serde(
@@ -9491,7 +9741,12 @@ pub mod site {
         #[serde(rename = "clientCertEnabled", default, skip_serializing_if = "Option::is_none")]
         pub client_cert_enabled: Option<bool>,
         #[doc = "This composes with ClientCertEnabled setting.\n- ClientCertEnabled: false means ClientCert is ignored.\n- ClientCertEnabled: true and ClientCertMode: Required means ClientCert is required.\n- ClientCertEnabled: true and ClientCertMode: Optional means ClientCert is optional or accepted."]
-        #[serde(rename = "clientCertMode", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "clientCertMode",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub client_cert_mode: Option<properties::ClientCertMode>,
         #[doc = "client certificate authentication comma-separated exclusion paths"]
         #[serde(rename = "clientCertExclusionPaths", default, skip_serializing_if = "Option::is_none")]
@@ -9539,7 +9794,12 @@ pub mod site {
         #[serde(rename = "httpsOnly", default, skip_serializing_if = "Option::is_none")]
         pub https_only: Option<bool>,
         #[doc = "Site redundancy mode"]
-        #[serde(rename = "redundancyMode", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "redundancyMode",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub redundancy_mode: Option<properties::RedundancyMode>,
         #[doc = "Specifies an operation id if this site has a pending operation."]
         #[serde(rename = "inProgressOperationId", default, skip_serializing_if = "Option::is_none")]
@@ -9618,7 +9878,12 @@ pub mod site_auth_settings {
         #[serde(rename = "runtimeVersion", default, skip_serializing_if = "Option::is_none")]
         pub runtime_version: Option<String>,
         #[doc = "The action to take when an unauthenticated client attempts to access the app."]
-        #[serde(rename = "unauthenticatedClientAction", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "unauthenticatedClientAction",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub unauthenticated_client_action: Option<properties::UnauthenticatedClientAction>,
         #[doc = "<code>true</code> to durably store platform-specific security tokens that are obtained during login flows; otherwise, <code>false</code>.\n The default is <code>false</code>."]
         #[serde(rename = "tokenStoreEnabled", default, skip_serializing_if = "Option::is_none")]
@@ -9632,7 +9897,12 @@ pub mod site_auth_settings {
         )]
         pub allowed_external_redirect_urls: Vec<String>,
         #[doc = "The default authentication provider to use when multiple providers are configured.\nThis setting is only needed if multiple providers are configured and the unauthenticated client\naction is set to \"RedirectToLoginPage\"."]
-        #[serde(rename = "defaultProvider", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "defaultProvider",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub default_provider: Option<properties::DefaultProvider>,
         #[doc = "The number of hours after session token expiration that a session token can be used to\ncall the token refresh API. The default is 72 hours."]
         #[serde(rename = "tokenRefreshExtensionHours", default, skip_serializing_if = "Option::is_none")]
@@ -9835,7 +10105,7 @@ pub mod site_auth_settings_v2 {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SiteCloneability {
     #[doc = "Name of app."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub result: Option<site_cloneability::Result>,
     #[doc = "List of features enabled on app that prevent cloning."]
     #[serde(
@@ -9988,7 +10258,12 @@ pub struct SiteConfig {
     #[serde(rename = "documentRoot", default, skip_serializing_if = "Option::is_none")]
     pub document_root: Option<String>,
     #[doc = "SCM type."]
-    #[serde(rename = "scmType", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "scmType",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub scm_type: Option<site_config::ScmType>,
     #[doc = "<code>true</code> to use 32-bit worker process; otherwise, <code>false</code>."]
     #[serde(rename = "use32BitWorkerProcess", default, skip_serializing_if = "Option::is_none")]
@@ -10012,7 +10287,12 @@ pub struct SiteConfig {
     #[serde(rename = "appCommandLine", default, skip_serializing_if = "Option::is_none")]
     pub app_command_line: Option<String>,
     #[doc = "Managed pipeline mode."]
-    #[serde(rename = "managedPipelineMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "managedPipelineMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub managed_pipeline_mode: Option<site_config::ManagedPipelineMode>,
     #[doc = "Virtual applications."]
     #[serde(
@@ -10023,7 +10303,12 @@ pub struct SiteConfig {
     )]
     pub virtual_applications: Vec<VirtualApplication>,
     #[doc = "Site load balancing."]
-    #[serde(rename = "loadBalancing", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "loadBalancing",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub load_balancing: Option<site_config::LoadBalancing>,
     #[doc = "Routing rules in production experiments."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10099,13 +10384,28 @@ pub struct SiteConfig {
     #[serde(rename = "http20Enabled", default, skip_serializing_if = "Option::is_none")]
     pub http20_enabled: Option<bool>,
     #[doc = "MinTlsVersion: configures the minimum version of TLS required for SSL requests"]
-    #[serde(rename = "minTlsVersion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "minTlsVersion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub min_tls_version: Option<site_config::MinTlsVersion>,
     #[doc = "ScmMinTlsVersion: configures the minimum version of TLS required for SSL requests for SCM site"]
-    #[serde(rename = "scmMinTlsVersion", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "scmMinTlsVersion",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub scm_min_tls_version: Option<site_config::ScmMinTlsVersion>,
     #[doc = "State of FTP / FTPS service"]
-    #[serde(rename = "ftpsState", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "ftpsState",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub ftps_state: Option<site_config::FtpsState>,
     #[doc = "Number of preWarmed instances.\nThis setting only applies to the Consumption and Elastic Plans"]
     #[serde(rename = "preWarmedInstanceCount", default, skip_serializing_if = "Option::is_none")]
@@ -10393,7 +10693,7 @@ pub struct SiteConfigResourceCollection {
 impl azure_core::Continuable for SiteConfigResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SiteConfigResourceCollection {
@@ -10445,7 +10745,7 @@ pub struct SiteConfigurationSnapshotInfoCollection {
 impl azure_core::Continuable for SiteConfigurationSnapshotInfoCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SiteConfigurationSnapshotInfoCollection {
@@ -10478,7 +10778,7 @@ pub mod site_extension_info {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub title: Option<String>,
         #[doc = "Site extension type."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub extension_type: Option<properties::ExtensionType>,
         #[doc = "Summary description."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10563,7 +10863,7 @@ pub struct SiteExtensionInfoCollection {
 impl azure_core::Continuable for SiteExtensionInfoCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SiteExtensionInfoCollection {
@@ -10685,7 +10985,12 @@ pub mod site_patch_resource {
         #[serde(rename = "repositorySiteName", default, skip_serializing_if = "Option::is_none")]
         pub repository_site_name: Option<String>,
         #[doc = "State indicating whether the app has exceeded its quota usage. Read-only."]
-        #[serde(rename = "usageState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "usageState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub usage_state: Option<properties::UsageState>,
         #[doc = "<code>true</code> if the app is enabled; otherwise, <code>false</code>. Setting this value to false disables the app (takes the app offline)."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10699,7 +11004,12 @@ pub mod site_patch_resource {
         )]
         pub enabled_host_names: Vec<String>,
         #[doc = "Management information availability state for the app."]
-        #[serde(rename = "availabilityState", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "availabilityState",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub availability_state: Option<properties::AvailabilityState>,
         #[doc = "Hostname SSL states are used to manage the SSL bindings for app's hostnames."]
         #[serde(
@@ -10751,7 +11061,12 @@ pub mod site_patch_resource {
         #[serde(rename = "clientCertEnabled", default, skip_serializing_if = "Option::is_none")]
         pub client_cert_enabled: Option<bool>,
         #[doc = "This composes with ClientCertEnabled setting.\n- ClientCertEnabled: false means ClientCert is ignored.\n- ClientCertEnabled: true and ClientCertMode: Required means ClientCert is required.\n- ClientCertEnabled: true and ClientCertMode: Optional means ClientCert is optional or accepted."]
-        #[serde(rename = "clientCertMode", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "clientCertMode",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub client_cert_mode: Option<properties::ClientCertMode>,
         #[doc = "client certificate authentication comma-separated exclusion paths"]
         #[serde(rename = "clientCertExclusionPaths", default, skip_serializing_if = "Option::is_none")]
@@ -10799,7 +11114,12 @@ pub mod site_patch_resource {
         #[serde(rename = "httpsOnly", default, skip_serializing_if = "Option::is_none")]
         pub https_only: Option<bool>,
         #[doc = "Site redundancy mode"]
-        #[serde(rename = "redundancyMode", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "redundancyMode",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub redundancy_mode: Option<properties::RedundancyMode>,
         #[doc = "Specifies an operation id if this site has a pending operation."]
         #[serde(rename = "inProgressOperationId", default, skip_serializing_if = "Option::is_none")]
@@ -11058,7 +11378,7 @@ pub struct SkuInfoCollection {
 impl azure_core::Continuable for SkuInfoCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SkuInfoCollection {
@@ -11191,7 +11511,7 @@ pub struct SlotDifferenceCollection {
 impl azure_core::Continuable for SlotDifferenceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SlotDifferenceCollection {
@@ -11279,7 +11599,7 @@ pub struct SnapshotCollection {
 impl azure_core::Continuable for SnapshotCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SnapshotCollection {
@@ -11368,7 +11688,12 @@ pub struct Solution {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[doc = "Type of Solution"]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "type",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub type_: Option<solution::Type>,
     #[doc = "Solution Data."]
     #[serde(
@@ -11450,7 +11775,7 @@ pub struct SourceControlCollection {
 impl azure_core::Continuable for SourceControlCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SourceControlCollection {
@@ -11539,10 +11864,20 @@ pub struct StampCapacity {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
     #[doc = "Shared/dedicated workers."]
-    #[serde(rename = "computeMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "computeMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub compute_mode: Option<stamp_capacity::ComputeMode>,
     #[doc = "Size of the machines."]
-    #[serde(rename = "workerSize", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "workerSize",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub worker_size: Option<stamp_capacity::WorkerSize>,
     #[doc = "Size ID of machines: \n0 - Small\n1 - Medium\n2 - Large"]
     #[serde(rename = "workerSizeId", default, skip_serializing_if = "Option::is_none")]
@@ -11603,7 +11938,7 @@ pub struct StampCapacityCollection {
 impl azure_core::Continuable for StampCapacityCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StampCapacityCollection {
@@ -11646,7 +11981,12 @@ pub struct StaticSite {
     )]
     pub private_endpoint_connections: Vec<ResponseMessageEnvelopeRemotePrivateEndpointConnection>,
     #[doc = "State indicating whether staging environments are allowed or not allowed for a static web app."]
-    #[serde(rename = "stagingEnvironmentPolicy", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "stagingEnvironmentPolicy",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub staging_environment_policy: Option<static_site::StagingEnvironmentPolicy>,
     #[doc = "<code>false</code> if config file is locked for this static web app; otherwise, <code>true</code>."]
     #[serde(rename = "allowConfigFileUpdates", default, skip_serializing_if = "Option::is_none")]
@@ -11749,7 +12089,7 @@ pub mod static_site_build_arm_resource {
         #[serde(rename = "lastUpdatedOn", default, with = "azure_core::date::rfc3339::option")]
         pub last_updated_on: Option<time::OffsetDateTime>,
         #[doc = "The status of the static site build."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub status: Option<properties::Status>,
         #[doc = "User provided function apps registered with the static site build"]
         #[serde(
@@ -11828,7 +12168,7 @@ pub struct StaticSiteBuildCollection {
 impl azure_core::Continuable for StaticSiteBuildCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StaticSiteBuildCollection {
@@ -11881,7 +12221,7 @@ pub struct StaticSiteCollection {
 impl azure_core::Continuable for StaticSiteCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StaticSiteCollection {
@@ -11915,7 +12255,7 @@ pub mod static_site_custom_domain_overview_arm_resource {
         #[serde(rename = "createdOn", default, with = "azure_core::date::rfc3339::option")]
         pub created_on: Option<time::OffsetDateTime>,
         #[doc = "The status of the custom domain"]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub status: Option<properties::Status>,
         #[doc = "The TXT record validation token"]
         #[serde(rename = "validationToken", default, skip_serializing_if = "Option::is_none")]
@@ -11989,7 +12329,7 @@ pub struct StaticSiteCustomDomainOverviewCollection {
 impl azure_core::Continuable for StaticSiteCustomDomainOverviewCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StaticSiteCustomDomainOverviewCollection {
@@ -12049,7 +12389,12 @@ pub mod static_site_function_overview_arm_resource {
         #[serde(rename = "functionName", default, skip_serializing_if = "Option::is_none")]
         pub function_name: Option<String>,
         #[doc = "The trigger type of the function"]
-        #[serde(rename = "triggerType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "triggerType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub trigger_type: Option<properties::TriggerType>,
     }
     impl Properties {
@@ -12110,7 +12455,7 @@ pub struct StaticSiteFunctionOverviewCollection {
 impl azure_core::Continuable for StaticSiteFunctionOverviewCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StaticSiteFunctionOverviewCollection {
@@ -12238,7 +12583,7 @@ pub struct StaticSiteUserCollection {
 impl azure_core::Continuable for StaticSiteUserCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StaticSiteUserCollection {
@@ -12401,7 +12746,7 @@ pub struct StaticSiteUserProvidedFunctionAppsCollection {
 impl azure_core::Continuable for StaticSiteUserProvidedFunctionAppsCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StaticSiteUserProvidedFunctionAppsCollection {
@@ -12521,7 +12866,12 @@ pub struct Status {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[doc = "Level of the most severe insight generated by the detector."]
-    #[serde(rename = "statusId", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "statusId",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub status_id: Option<status::StatusId>,
 }
 impl Status {
@@ -12775,7 +13125,7 @@ pub struct TldLegalAgreementCollection {
 impl azure_core::Continuable for TldLegalAgreementCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TldLegalAgreementCollection {
@@ -12860,7 +13210,7 @@ pub struct TopLevelDomainCollection {
 impl azure_core::Continuable for TopLevelDomainCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TopLevelDomainCollection {
@@ -12913,7 +13263,7 @@ pub struct TriggeredJobHistoryCollection {
 impl azure_core::Continuable for TriggeredJobHistoryCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TriggeredJobHistoryCollection {
@@ -12931,7 +13281,7 @@ pub struct TriggeredJobRun {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub web_job_name: Option<String>,
     #[doc = "Job status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
     pub status: Option<triggered_job_run::Status>,
     #[doc = "Start time."]
     #[serde(default, with = "azure_core::date::rfc3339::option")]
@@ -13011,7 +13361,7 @@ pub mod triggered_web_job {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub extra_info_url: Option<String>,
         #[doc = "Job type."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub web_job_type: Option<properties::WebJobType>,
         #[doc = "Error information."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -13050,7 +13400,7 @@ pub struct TriggeredWebJobCollection {
 impl azure_core::Continuable for TriggeredWebJobCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TriggeredWebJobCollection {
@@ -13126,7 +13476,12 @@ pub mod usage {
         #[serde(rename = "nextResetTime", default, with = "azure_core::date::rfc3339::option")]
         pub next_reset_time: Option<time::OffsetDateTime>,
         #[doc = "Compute mode used for this usage."]
-        #[serde(rename = "computeMode", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "computeMode",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub compute_mode: Option<properties::ComputeMode>,
         #[doc = "Site mode used for this usage."]
         #[serde(rename = "siteMode", default, skip_serializing_if = "Option::is_none")]
@@ -13160,7 +13515,7 @@ pub struct UsageCollection {
 impl azure_core::Continuable for UsageCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UsageCollection {
@@ -13272,7 +13627,7 @@ pub struct ValidateRequest {
     #[doc = "Resource name to verify."]
     pub name: String,
     #[doc = "Resource type used for verification."]
-    #[serde(rename = "type")]
+    #[serde(rename = "type", with = "azure_core::xml::text_content")]
     pub type_: validate_request::Type,
     #[doc = "Expected location of the resource."]
     pub location: String,
@@ -13601,7 +13956,12 @@ pub mod vnet_route {
         #[serde(rename = "endAddress", default, skip_serializing_if = "Option::is_none")]
         pub end_address: Option<String>,
         #[doc = "The type of route this is:\nDEFAULT - By default, every app has routes to the local address ranges specified by RFC1918\nINHERITED - Routes inherited from the real Virtual Network routes\nSTATIC - Static route set on the app only\n\nThese values will be used for syncing an app's routes with those from a Virtual Network."]
-        #[serde(rename = "routeType", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "routeType",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub route_type: Option<properties::RouteType>,
     }
     impl Properties {
@@ -13746,7 +14106,7 @@ pub struct WebAppCollection {
 impl azure_core::Continuable for WebAppCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WebAppCollection {
@@ -13766,7 +14126,7 @@ pub struct WebAppInstanceStatusCollection {
 impl azure_core::Continuable for WebAppInstanceStatusCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WebAppInstanceStatusCollection {
@@ -13912,7 +14272,12 @@ pub mod web_app_stack {
         )]
         pub major_versions: Vec<WebAppMajorVersion>,
         #[doc = "Web App stack preferred OS."]
-        #[serde(rename = "preferredOs", default, skip_serializing_if = "Option::is_none")]
+        #[serde(
+            rename = "preferredOs",
+            default,
+            skip_serializing_if = "Option::is_none",
+            with = "azure_core::xml::text_content"
+        )]
         pub preferred_os: Option<properties::PreferredOs>,
     }
     impl Properties {
@@ -13942,7 +14307,7 @@ pub struct WebAppStackCollection {
 impl azure_core::Continuable for WebAppStackCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WebAppStackCollection {
@@ -13979,7 +14344,7 @@ pub mod web_job {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub extra_info_url: Option<String>,
         #[doc = "Job type."]
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub web_job_type: Option<properties::WebJobType>,
         #[doc = "Error information."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -14018,7 +14383,7 @@ pub struct WebJobCollection {
 impl azure_core::Continuable for WebJobCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WebJobCollection {
@@ -14044,7 +14409,7 @@ pub mod web_site_instance_status {
     #[doc = "WebSiteInstanceStatus resource specific properties"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Properties {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
+        #[serde(default, skip_serializing_if = "Option::is_none", with = "azure_core::xml::text_content")]
         pub state: Option<properties::State>,
         #[doc = "Link to the GetStatusApi in Kudu"]
         #[serde(rename = "statusUrl", default, skip_serializing_if = "Option::is_none")]
@@ -14119,7 +14484,12 @@ pub struct WorkerPool {
     #[serde(rename = "workerSizeId", default, skip_serializing_if = "Option::is_none")]
     pub worker_size_id: Option<i32>,
     #[doc = "Shared or dedicated app hosting."]
-    #[serde(rename = "computeMode", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "computeMode",
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "azure_core::xml::text_content"
+    )]
     pub compute_mode: Option<worker_pool::ComputeMode>,
     #[doc = "VM size of the worker pool instances."]
     #[serde(rename = "workerSize", default, skip_serializing_if = "Option::is_none")]
@@ -14163,7 +14533,7 @@ pub struct WorkerPoolCollection {
 impl azure_core::Continuable for WorkerPoolCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkerPoolCollection {

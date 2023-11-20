@@ -104,7 +104,7 @@ impl TransactionBuilder {
         row_key: RK,
         match_condition: Option<IfMatchCondition>,
     ) -> azure_core::Result<Self> {
-        let entity_client = self.client.entity_client(row_key)?;
+        let entity_client = self.client.entity_client(row_key);
         let url = entity_client.url()?;
 
         let mut request = Request::new(url, Method::Delete);
@@ -140,8 +140,7 @@ impl TransactionBuilder {
             );
 
             let mut request =
-                self.client
-                    .finalize_request(url, Method::Post, headers, request_body)?;
+                PartitionKeyClient::finalize_request(url, Method::Post, headers, request_body)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 
@@ -158,7 +157,7 @@ impl TransactionBuilder {
         match_condition: Option<IfMatchCondition>,
     ) -> azure_core::Result<Self> {
         let body = serde_json::to_string(&entity)?;
-        let entity_client = self.client.entity_client(row_key)?;
+        let entity_client = self.client.entity_client(row_key);
         let url = entity_client.url()?;
 
         let mut request = Request::new(url, method);

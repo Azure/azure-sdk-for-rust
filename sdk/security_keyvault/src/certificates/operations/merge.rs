@@ -34,7 +34,7 @@ struct MergeRequest {
 }
 
 impl MergeCertificateBuilder {
-    pub fn into_future(mut self) -> MergeCertificate {
+    pub fn into_future(self) -> MergeCertificate {
         Box::pin(async move {
             let mut uri = self.client.keyvault_client.vault_url.clone();
             uri.set_path(&format!("certificates/{}/pending/merge", self.name));
@@ -52,17 +52,13 @@ impl MergeCertificateBuilder {
             let body = serde_json::to_string(&request)?;
 
             let headers = Headers::new();
-            let mut request = self.client.keyvault_client.finalize_request(
-                uri,
-                Method::Post,
-                headers,
-                Some(body.into()),
-            )?;
+            let mut request =
+                KeyvaultClient::finalize_request(uri, Method::Post, headers, Some(body.into()));
 
             let response = self
                 .client
                 .keyvault_client
-                .send(&mut self.context, &mut request)
+                .send(&self.context, &mut request)
                 .await?;
 
             let response = CollectedResponse::from_response(response).await?;

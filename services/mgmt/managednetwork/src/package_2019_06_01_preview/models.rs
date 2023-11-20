@@ -161,7 +161,7 @@ pub struct ManagedNetworkGroupListResult {
 impl azure_core::Continuable for ManagedNetworkGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedNetworkGroupListResult {
@@ -227,7 +227,7 @@ pub struct ManagedNetworkListResult {
 impl azure_core::Continuable for ManagedNetworkListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedNetworkListResult {
@@ -266,7 +266,7 @@ pub struct ManagedNetworkPeeringPolicyListResult {
 impl azure_core::Continuable for ManagedNetworkPeeringPolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedNetworkPeeringPolicyListResult {
@@ -454,7 +454,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -635,7 +635,7 @@ pub struct ScopeAssignmentListResult {
 impl azure_core::Continuable for ScopeAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScopeAssignmentListResult {

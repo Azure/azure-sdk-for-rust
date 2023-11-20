@@ -1395,7 +1395,7 @@ pub struct CapacityPoolList {
 impl azure_core::Continuable for CapacityPoolList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CapacityPoolList {
@@ -1759,7 +1759,7 @@ pub struct NetAppAccountList {
 impl azure_core::Continuable for NetAppAccountList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetAppAccountList {
@@ -2983,7 +2983,7 @@ pub struct SubvolumesList {
 impl azure_core::Continuable for SubvolumesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SubvolumesList {
@@ -3391,7 +3391,7 @@ pub struct VolumeList {
 impl azure_core::Continuable for VolumeList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VolumeList {

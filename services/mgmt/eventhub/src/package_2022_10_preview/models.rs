@@ -65,7 +65,7 @@ pub mod application_group {
             deserialize_with = "azure_core::util::deserialize_null_as_default",
             skip_serializing_if = "Vec::is_empty"
         )]
-        pub policies: Vec<ApplicationGroupPolicy>,
+        pub policies: Vec<ApplicationGroupPolicyUnion>,
     }
     impl Properties {
         pub fn new(client_app_group_identifier: String) -> Self {
@@ -94,7 +94,7 @@ pub struct ApplicationGroupListResult {
 impl azure_core::Continuable for ApplicationGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationGroupListResult {
@@ -107,52 +107,17 @@ impl ApplicationGroupListResult {
 pub struct ApplicationGroupPolicy {
     #[doc = "The Name of this policy"]
     pub name: String,
-    #[doc = "Application Group Policy types"]
-    #[serde(rename = "type")]
-    pub type_: application_group_policy::Type,
 }
 impl ApplicationGroupPolicy {
-    pub fn new(name: String, type_: application_group_policy::Type) -> Self {
-        Self { name, type_ }
+    pub fn new(name: String) -> Self {
+        Self { name }
     }
 }
-pub mod application_group_policy {
-    use super::*;
-    #[doc = "Application Group Policy types"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        ThrottlingPolicy,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::ThrottlingPolicy => serializer.serialize_unit_variant("Type", 0u32, "ThrottlingPolicy"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Application Group Policy types"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ApplicationGroupPolicyUnion {
+    ThrottlingPolicy(ThrottlingPolicy),
 }
 #[doc = "Single item in List or Get Alias(Disaster Recovery configuration) operation"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -232,7 +197,7 @@ pub struct ArmDisasterRecoveryListResult {
 impl azure_core::Continuable for ArmDisasterRecoveryListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ArmDisasterRecoveryListResult {
@@ -288,7 +253,7 @@ pub struct AuthorizationRuleListResult {
 impl azure_core::Continuable for AuthorizationRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AuthorizationRuleListResult {
@@ -453,7 +418,7 @@ pub struct ClusterListResult {
 impl azure_core::Continuable for ClusterListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClusterListResult {
@@ -639,7 +604,7 @@ pub struct ConsumerGroupListResult {
 impl azure_core::Continuable for ConsumerGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConsumerGroupListResult {
@@ -917,7 +882,7 @@ pub struct EhNamespaceListResult {
 impl azure_core::Continuable for EhNamespaceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EhNamespaceListResult {
@@ -1045,7 +1010,7 @@ pub struct EventHubListResult {
 impl azure_core::Continuable for EventHubListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EventHubListResult {
@@ -1793,7 +1758,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1847,7 +1812,7 @@ pub struct PrivateEndpointConnectionListResult {
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionListResult {
@@ -2122,10 +2087,10 @@ pub struct RetentionDescription {
     #[doc = "Enumerates the possible values for cleanup policy"]
     #[serde(rename = "cleanupPolicy", default, skip_serializing_if = "Option::is_none")]
     pub cleanup_policy: Option<retention_description::CleanupPolicy>,
-    #[doc = "Number of hours to retain the events for this Event Hub. This value is only used when cleanupPolicy is Delete. If cleanupPolicy is Compaction the returned value of this property is Long.MaxValue "]
+    #[doc = "Number of hours to retain the events for this Event Hub. This value is only used when cleanupPolicy is Delete. If cleanupPolicy is Compact the returned value of this property is Long.MaxValue "]
     #[serde(rename = "retentionTimeInHours", default, skip_serializing_if = "Option::is_none")]
     pub retention_time_in_hours: Option<i64>,
-    #[doc = "Number of hours to retain the tombstone markers of a compacted Event Hub. This value is only used when cleanupPolicy is Compaction. Consumer must complete reading the tombstone marker within this specified amount of time if consumer begins from starting offset to ensure they get a valid snapshot for the specific key described by the tombstone marker within the compacted Event Hub"]
+    #[doc = "Number of hours to retain the tombstone markers of a compacted Event Hub. This value is only used when cleanupPolicy is Compact. Consumer must complete reading the tombstone marker within this specified amount of time if consumer begins from starting offset to ensure they get a valid snapshot for the specific key described by the tombstone marker within the compacted Event Hub"]
     #[serde(rename = "tombstoneRetentionTimeInHours", default, skip_serializing_if = "Option::is_none")]
     pub tombstone_retention_time_in_hours: Option<i32>,
 }
@@ -2141,7 +2106,7 @@ pub mod retention_description {
     #[serde(remote = "CleanupPolicy")]
     pub enum CleanupPolicy {
         Delete,
-        Compaction,
+        Compact,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -2168,7 +2133,7 @@ pub mod retention_description {
         {
             match self {
                 Self::Delete => serializer.serialize_unit_variant("CleanupPolicy", 0u32, "Delete"),
-                Self::Compaction => serializer.serialize_unit_variant("CleanupPolicy", 1u32, "Compaction"),
+                Self::Compact => serializer.serialize_unit_variant("CleanupPolicy", 1u32, "Compact"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -2317,7 +2282,7 @@ pub struct SchemaGroupListResult {
 impl azure_core::Continuable for SchemaGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SchemaGroupListResult {

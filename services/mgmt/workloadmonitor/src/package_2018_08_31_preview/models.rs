@@ -194,7 +194,7 @@ pub struct ComponentsCollection {
 impl azure_core::Continuable for ComponentsCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ComponentsCollection {
@@ -590,7 +590,7 @@ pub struct MonitorInstancesCollection {
 impl azure_core::Continuable for MonitorInstancesCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MonitorInstancesCollection {
@@ -747,7 +747,7 @@ pub struct MonitorsCollection {
 impl azure_core::Continuable for MonitorsCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MonitorsCollection {
@@ -805,7 +805,7 @@ pub struct NotificationSettingsCollection {
 impl azure_core::Continuable for NotificationSettingsCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NotificationSettingsCollection {
@@ -848,7 +848,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {

@@ -305,7 +305,7 @@ pub struct DigitalTwinsDescriptionListResult {
 impl azure_core::Continuable for DigitalTwinsDescriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DigitalTwinsDescriptionListResult {
@@ -319,10 +319,10 @@ pub struct DigitalTwinsEndpointResource {
     #[serde(flatten)]
     pub external_resource: ExternalResource,
     #[doc = "Properties related to Digital Twins Endpoint"]
-    pub properties: DigitalTwinsEndpointResourceProperties,
+    pub properties: DigitalTwinsEndpointResourcePropertiesUnion,
 }
 impl DigitalTwinsEndpointResource {
-    pub fn new(properties: DigitalTwinsEndpointResourceProperties) -> Self {
+    pub fn new(properties: DigitalTwinsEndpointResourcePropertiesUnion) -> Self {
         Self {
             external_resource: ExternalResource::default(),
             properties,
@@ -346,7 +346,7 @@ pub struct DigitalTwinsEndpointResourceListResult {
 impl azure_core::Continuable for DigitalTwinsEndpointResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DigitalTwinsEndpointResourceListResult {
@@ -357,9 +357,6 @@ impl DigitalTwinsEndpointResourceListResult {
 #[doc = "Properties related to Digital Twins Endpoint"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DigitalTwinsEndpointResourceProperties {
-    #[doc = "The type of Digital Twins endpoint"]
-    #[serde(rename = "endpointType")]
-    pub endpoint_type: digital_twins_endpoint_resource_properties::EndpointType,
     #[doc = "The provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<digital_twins_endpoint_resource_properties::ProvisioningState>,
@@ -377,9 +374,8 @@ pub struct DigitalTwinsEndpointResourceProperties {
     pub dead_letter_uri: Option<String>,
 }
 impl DigitalTwinsEndpointResourceProperties {
-    pub fn new(endpoint_type: digital_twins_endpoint_resource_properties::EndpointType) -> Self {
+    pub fn new() -> Self {
         Self {
-            endpoint_type,
             provisioning_state: None,
             created_time: None,
             authentication_type: None,
@@ -390,45 +386,6 @@ impl DigitalTwinsEndpointResourceProperties {
 }
 pub mod digital_twins_endpoint_resource_properties {
     use super::*;
-    #[doc = "The type of Digital Twins endpoint"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "EndpointType")]
-    pub enum EndpointType {
-        EventHub,
-        EventGrid,
-        ServiceBus,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for EndpointType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for EndpointType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for EndpointType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::EventHub => serializer.serialize_unit_variant("EndpointType", 0u32, "EventHub"),
-                Self::EventGrid => serializer.serialize_unit_variant("EndpointType", 1u32, "EventGrid"),
-                Self::ServiceBus => serializer.serialize_unit_variant("EndpointType", 2u32, "ServiceBus"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
     #[doc = "The provisioning state."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ProvisioningState")]
@@ -523,6 +480,14 @@ pub mod digital_twins_endpoint_resource_properties {
             }
         }
     }
+}
+#[doc = "The type of Digital Twins endpoint"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "endpointType")]
+pub enum DigitalTwinsEndpointResourcePropertiesUnion {
+    EventGrid(EventGrid),
+    EventHub(EventHub),
+    ServiceBus(ServiceBus),
 }
 #[doc = "The managed identity for the DigitalTwinsInstance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1067,7 +1032,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1280,7 +1245,7 @@ pub struct TimeSeriesDatabaseConnection {
     pub external_resource: ExternalResource,
     #[doc = "Properties of a time series database connection resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<TimeSeriesDatabaseConnectionProperties>,
+    pub properties: Option<TimeSeriesDatabaseConnectionPropertiesUnion>,
 }
 impl TimeSeriesDatabaseConnection {
     pub fn new() -> Self {
@@ -1304,7 +1269,7 @@ pub struct TimeSeriesDatabaseConnectionListResult {
 impl azure_core::Continuable for TimeSeriesDatabaseConnectionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TimeSeriesDatabaseConnectionListResult {
@@ -1315,58 +1280,17 @@ impl TimeSeriesDatabaseConnectionListResult {
 #[doc = "Properties of a time series database connection resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimeSeriesDatabaseConnectionProperties {
-    #[doc = "The type of time series connection resource."]
-    #[serde(rename = "connectionType")]
-    pub connection_type: time_series_database_connection_properties::ConnectionType,
     #[doc = "The provisioning state."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<time_series_database_connection_properties::ProvisioningState>,
 }
 impl TimeSeriesDatabaseConnectionProperties {
-    pub fn new(connection_type: time_series_database_connection_properties::ConnectionType) -> Self {
-        Self {
-            connection_type,
-            provisioning_state: None,
-        }
+    pub fn new() -> Self {
+        Self { provisioning_state: None }
     }
 }
 pub mod time_series_database_connection_properties {
     use super::*;
-    #[doc = "The type of time series connection resource."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ConnectionType")]
-    pub enum ConnectionType {
-        AzureDataExplorer,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ConnectionType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ConnectionType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ConnectionType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::AzureDataExplorer => serializer.serialize_unit_variant("ConnectionType", 0u32, "AzureDataExplorer"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
     #[doc = "The provisioning state."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ProvisioningState")]
@@ -1424,4 +1348,10 @@ pub mod time_series_database_connection_properties {
             }
         }
     }
+}
+#[doc = "The type of time series connection resource."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "connectionType")]
+pub enum TimeSeriesDatabaseConnectionPropertiesUnion {
+    AzureDataExplorer(AzureDataExplorerConnectionProperties),
 }

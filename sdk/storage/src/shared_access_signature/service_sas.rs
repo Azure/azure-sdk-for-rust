@@ -1,9 +1,10 @@
 use crate::{
     hmac,
-    shared_access_signature::{format_date, format_form, SasProtocol, SasToken},
+    shared_access_signature::{format_date, SasProtocol, SasToken},
 };
 use std::fmt;
 use time::OffsetDateTime;
+use url::form_urlencoded;
 
 const SERVICE_SAS_VERSION: &str = "2020-06-12";
 
@@ -27,6 +28,7 @@ impl fmt::Display for BlobSignedResource {
     }
 }
 
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Default)]
 pub struct BlobSasPermissions {
     pub read: bool,             // r - Container | Directory | Blob
@@ -136,25 +138,23 @@ impl BlobSharedAccessSignature {
     fn sign(&self) -> String {
         let content = vec![
             self.permissions.to_string(),
-            self.start.map_or("".to_string(), format_date),
+            self.start.map_or(String::new(), format_date),
             format_date(self.expiry),
             self.canonicalized_resource.clone(),
             self.identifier
                 .as_ref()
-                .unwrap_or(&"".to_string())
+                .unwrap_or(&String::new())
                 .to_string(),
-            self.ip.as_ref().unwrap_or(&"".to_string()).to_string(),
-            self.protocol
-                .map(|x| x.to_string())
-                .unwrap_or_else(|| "".to_string()),
+            self.ip.as_ref().unwrap_or(&String::new()).to_string(),
+            self.protocol.map(|x| x.to_string()).unwrap_or_default(),
             SERVICE_SAS_VERSION.to_string(),
             self.resource.to_string(),
-            "".to_string(), // snapshot time
-            "".to_string(), // rscd
-            "".to_string(), // rscc
-            "".to_string(), // rsce
-            "".to_string(), // rscl
-            "".to_string(), // rsct
+            String::new(), // snapshot time
+            String::new(), // rscd
+            String::new(), // rscc
+            String::new(), // rsce
+            String::new(), // rscl
+            String::new(), // rsct
         ];
 
         hmac::sign(&content.join("\n"), &self.key).expect("HMAC signing failed")
@@ -163,40 +163,40 @@ impl BlobSharedAccessSignature {
 
 impl SasToken for BlobSharedAccessSignature {
     fn token(&self) -> String {
-        let mut elements: Vec<String> = vec![
-            format!("sv={SERVICE_SAS_VERSION}"),
-            format!("sp={}", self.permissions),
-            format!("sr={}", self.resource),
-            format!("se={}", format_form(format_date(self.expiry))),
-        ];
+        let mut form = form_urlencoded::Serializer::new(String::new());
+
+        form.extend_pairs(&[
+            ("sv", SERVICE_SAS_VERSION),
+            ("sp", &self.permissions.to_string()),
+            ("sr", &self.resource.to_string()),
+            ("se", &format_date(self.expiry)),
+        ]);
 
         if let Some(start) = &self.start {
-            elements.push(format!("st={}", format_form(format_date(*start))));
+            form.append_pair("st", &format_date(*start));
         }
 
         if let Some(ip) = &self.ip {
-            elements.push(format!("sip={ip}"));
+            form.append_pair("sip", ip);
         }
 
         if let Some(protocol) = &self.protocol {
-            elements.push(format!("spr={protocol}"));
+            form.append_pair("spr", &protocol.to_string());
         }
 
         if let Some(signed_directory_depth) = &self.signed_directory_depth {
-            elements.push(format!("sdd={signed_directory_depth}"));
+            form.append_pair("sdd", &signed_directory_depth.to_string());
         }
 
         let sig = self.sign();
-        elements.push(format!("sig={}", format_form(sig)));
-
-        elements.join("&")
+        form.append_pair("sig", &sig);
+        form.finish()
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::collections::HashSet;
     use time::Duration;
 
     const MOCK_SECRET_KEY: &str = "RZfi3m1W7eyQ5zD4ymSmGANVdJ2SDQmg4sE89SW104s=";
@@ -217,16 +217,15 @@ mod test {
         )
         .token();
 
-        // splitting by & is only safe if & is not part of any fields
-        // if that changes in the future we might want to use a proper query string parser
-        let elements = signed_token.split('&').collect::<HashSet<_>>();
+        assert_eq!(signed_token, "sv=2020-06-12&sp=r&sr=b&se=1970-01-08T00%3A00%3A00Z&sig=alEGfKjtiLs5LO%2FyrfPkzjQBHbk4Uda9XOezbRyKwEM%3D");
+
+        let mut parsed = url::form_urlencoded::parse(&signed_token.as_bytes());
 
         // BlobSignedResource::Blob
-        assert!(elements.contains("sr=b"));
-        // signed_directory_depth NOT set
-        assert!(!elements.iter().any(|element| element.starts_with("sdd=")));
+        assert!(parsed.find(|(k, v)| k == "sr" && v == "b").is_some());
 
-        assert_eq!(signed_token, "sv=2020-06-12&sp=r&sr=b&se=1970-01-08T00%3A00%3A00Z&sig=alEGfKjtiLs5LO%2FyrfPkzjQBHbk4Uda9XOezbRyKwEM%3D");
+        // signed_directory_depth NOT set
+        assert!(parsed.find(|(k, _)| k == "sdd").is_none());
     }
 
     #[test]
@@ -245,15 +244,14 @@ mod test {
         .signed_directory_depth(2_usize)
         .token();
 
-        // splitting by & is only safe if & is not part of any fields
-        // if that changes in the future we might want to use a proper query string parser
-        let elements = signed_token.split('&').collect::<HashSet<_>>();
-
-        // BlobSignedResource::Blob
-        assert!(elements.contains("sr=d"));
-        // signed_directory_depth = 2
-        assert!(elements.contains("sdd=2"));
-
         assert_eq!(signed_token, "sv=2020-06-12&sp=r&sr=d&se=1970-01-08T00%3A00%3A00Z&sdd=2&sig=e0eoY169%2Bex4AnI9ZAOiOaX49snoJiuvyJ22XV6qW2k%3D");
+
+        let mut parsed = url::form_urlencoded::parse(&signed_token.as_bytes());
+
+        // BlobSignedResource::Directory
+        assert!(parsed.find(|(k, v)| k == "sr" && v == "d").is_some());
+
+        // signed_directory_depth NOT set
+        assert!(parsed.find(|(k, v)| k == "sdd" && v == "2").is_some());
     }
 }

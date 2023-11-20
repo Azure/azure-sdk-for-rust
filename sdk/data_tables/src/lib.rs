@@ -28,7 +28,7 @@ async fn main() -> azure_core::Result<()> {
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
     let table_name = std::env::var("STORAGE_TABLE_NAME").expect("Set env variable STORAGE_TABLE_NAME first!");
 
-    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
     let table_service = TableServiceClient::new(account, storage_credentials);
 
     let table_client = table_service.table_client(table_name);
@@ -43,7 +43,7 @@ async fn main() -> azure_core::Result<()> {
     let _: InsertEntityResponse<MyEntity> = table_client.insert(&entity)?.await?;
 
     // Get a client that refers to the above entity
-    let entity_client = table_client.partition_key_client(&entity.city).entity_client(&entity.surname)?;
+    let entity_client = table_client.partition_key_client(&entity.city).entity_client(&entity.surname);
 
     // Get an entity from the table
     let response = entity_client.get().await?;

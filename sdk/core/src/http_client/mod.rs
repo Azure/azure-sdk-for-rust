@@ -1,40 +1,29 @@
+#[cfg(not(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")))]
 mod noop;
-#[cfg(all(
-    not(target_arch = "wasm32"),
-    any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")
-))]
+#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 mod reqwest;
-#[cfg(all(
-    target_arch = "wasm32",
-    any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")
-))]
-compile_error!("The `enable_request` and `enable_reqwest_rustls` features are not allowed for `wasm32` targets");
 
-#[cfg(all(
-    not(target_arch = "wasm32"),
-    any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")
-))]
-pub use self::reqwest::*;
-pub use noop::*;
-
-use std::sync::Arc;
-
-/// Construct a new `HttpClient`
-pub fn new_http_client() -> Arc<dyn HttpClient> {
-    #[allow(unused)]
-    let http_client: Arc<dyn HttpClient> = Arc::new(NoopClient);
-    #[cfg(all(
-        not(target_arch = "wasm32"),
-        any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")
-    ))]
-    let http_client = new_reqwest_client();
-    http_client
-}
-
+#[cfg(not(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")))]
+use self::noop::NoopClient;
+#[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
+use self::reqwest::new_reqwest_client;
 use crate::error::ErrorKind;
 use async_trait::async_trait;
 use bytes::Bytes;
 use serde::Serialize;
+use std::sync::Arc;
+
+/// Construct a new `HttpClient`
+pub fn new_http_client() -> Arc<dyn HttpClient> {
+    #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
+    {
+        new_reqwest_client()
+    }
+    #[cfg(not(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")))]
+    {
+        Arc::new(NoopClient)
+    }
+}
 
 /// An HTTP client which can send requests.
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]

@@ -14,28 +14,20 @@ impl ListSecretsBuilder {
     pub fn into_stream(self) -> Pageable<KeyVaultGetSecretsResponse, Error> {
         let make_request = move |continuation: Option<String>| {
             let this = self.clone();
-            let mut ctx = self.context.clone();
+            let ctx = self.context.clone();
             async move {
-                let mut uri = this.client.keyvault_client.vault_url.clone();
-                uri.set_path("secrets");
-
-                if let Some(continuation) = continuation {
-                    uri = Url::parse(&continuation)?;
-                }
+                let url = if let Some(url) = continuation {
+                    Url::parse(&url)?
+                } else {
+                    let mut url = this.client.keyvault_client.vault_url.clone();
+                    url.set_path("secrets");
+                    url
+                };
 
                 let headers = Headers::new();
-                let mut request = this.client.keyvault_client.finalize_request(
-                    uri,
-                    Method::Get,
-                    headers,
-                    None,
-                )?;
+                let mut request = KeyvaultClient::finalize_request(url, Method::Get, headers, None);
 
-                let response = this
-                    .client
-                    .keyvault_client
-                    .send(&mut ctx, &mut request)
-                    .await?;
+                let response = this.client.keyvault_client.send(&ctx, &mut request).await?;
 
                 let response = CollectedResponse::from_response(response).await?;
                 let body = response.body();

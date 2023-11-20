@@ -117,7 +117,7 @@ pub struct ArmTemplateList {
 impl azure_core::Continuable for ArmTemplateList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ArmTemplateList {
@@ -287,7 +287,7 @@ pub struct ArtifactList {
 impl azure_core::Continuable for ArtifactList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ArtifactList {
@@ -395,7 +395,7 @@ pub struct ArtifactSourceList {
 impl azure_core::Continuable for ArtifactSourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ArtifactSourceList {
@@ -928,7 +928,7 @@ pub struct CustomImageList {
 impl azure_core::Continuable for CustomImageList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomImageList {
@@ -1340,7 +1340,7 @@ pub struct DiskList {
 impl azure_core::Continuable for DiskList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DiskList {
@@ -1485,7 +1485,7 @@ pub struct DtlEnvironmentList {
 impl azure_core::Continuable for DtlEnvironmentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DtlEnvironmentList {
@@ -1750,7 +1750,7 @@ pub struct FormulaList {
 impl azure_core::Continuable for FormulaList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FormulaList {
@@ -1852,7 +1852,7 @@ pub struct GalleryImageList {
 impl azure_core::Continuable for GalleryImageList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GalleryImageList {
@@ -2440,7 +2440,7 @@ pub struct LabList {
 impl azure_core::Continuable for LabList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LabList {
@@ -2785,7 +2785,7 @@ pub struct LabVhdList {
 impl azure_core::Continuable for LabVhdList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LabVhdList {
@@ -2969,7 +2969,7 @@ pub struct LabVirtualMachineList {
 impl azure_core::Continuable for LabVirtualMachineList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LabVirtualMachineList {
@@ -3307,7 +3307,7 @@ pub struct NotificationChannelList {
 impl azure_core::Continuable for NotificationChannelList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NotificationChannelList {
@@ -3780,7 +3780,7 @@ pub struct PolicyList {
 impl azure_core::Continuable for PolicyList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PolicyList {
@@ -4077,7 +4077,7 @@ pub struct ProviderOperationResult {
 impl azure_core::Continuable for ProviderOperationResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderOperationResult {
@@ -4211,7 +4211,7 @@ pub struct ScheduleCreationParameterProperties {
     #[doc = "Properties of an hourly schedule."]
     #[serde(rename = "hourlyRecurrence", default, skip_serializing_if = "Option::is_none")]
     pub hourly_recurrence: Option<HourDetails>,
-    #[doc = "The time zone ID (e.g. Pacific Standard time)."]
+    #[doc = "The time zone ID (e.g. China Standard Time, Greenland Standard Time, Pacific Standard time, etc.). The possible values for this property can be found in `IReadOnlyCollection<string> TimeZoneConverter.TZConvert.KnownWindowsTimeZoneIds` (https://github.com/mattjohnsonpint/TimeZoneConverter/blob/main/README.md)"]
     #[serde(rename = "timeZoneId", default, skip_serializing_if = "Option::is_none")]
     pub time_zone_id: Option<String>,
     #[doc = "Notification settings for a schedule."]
@@ -4307,7 +4307,7 @@ pub struct ScheduleList {
 impl azure_core::Continuable for ScheduleList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScheduleList {
@@ -4333,7 +4333,7 @@ pub struct ScheduleProperties {
     #[doc = "Properties of an hourly schedule."]
     #[serde(rename = "hourlyRecurrence", default, skip_serializing_if = "Option::is_none")]
     pub hourly_recurrence: Option<HourDetails>,
-    #[doc = "The time zone ID (e.g. Pacific Standard time)."]
+    #[doc = "The time zone ID (e.g. China Standard Time, Greenland Standard Time, Pacific Standard time, etc.). The possible values for this property can be found in `IReadOnlyCollection<string> TimeZoneConverter.TZConvert.KnownWindowsTimeZoneIds` (https://github.com/mattjohnsonpint/TimeZoneConverter/blob/main/README.md)"]
     #[serde(rename = "timeZoneId", default, skip_serializing_if = "Option::is_none")]
     pub time_zone_id: Option<String>,
     #[doc = "Notification settings for a schedule."]
@@ -4454,7 +4454,7 @@ pub struct SecretList {
 impl azure_core::Continuable for SecretList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecretList {
@@ -4532,7 +4532,7 @@ pub struct ServiceFabricList {
 impl azure_core::Continuable for ServiceFabricList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceFabricList {
@@ -5082,7 +5082,7 @@ pub struct UserList {
 impl azure_core::Continuable for UserList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UserList {
@@ -5187,7 +5187,7 @@ pub struct VirtualNetworkList {
 impl azure_core::Continuable for VirtualNetworkList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualNetworkList {

@@ -484,7 +484,7 @@ pub struct ExtensionTypeList {
 impl azure_core::Continuable for ExtensionTypeList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExtensionTypeList {
@@ -540,7 +540,7 @@ pub struct ExtensionVersionList {
 impl azure_core::Continuable for ExtensionVersionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExtensionVersionList {
@@ -565,7 +565,7 @@ pub struct ExtensionsList {
 impl azure_core::Continuable for ExtensionsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExtensionsList {
@@ -759,7 +759,7 @@ pub struct FluxConfigurationsList {
 impl azure_core::Continuable for FluxConfigurationsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FluxConfigurationsList {
@@ -1104,7 +1104,7 @@ pub struct OperationStatusList {
 impl azure_core::Continuable for OperationStatusList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationStatusList {
@@ -1377,7 +1377,7 @@ pub struct ResourceProviderOperationList {
 impl azure_core::Continuable for ResourceProviderOperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceProviderOperationList {
@@ -1599,7 +1599,7 @@ pub struct SourceControlConfigurationList {
 impl azure_core::Continuable for SourceControlConfigurationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SourceControlConfigurationList {

@@ -598,7 +598,7 @@ pub struct BenefitUtilizationSummariesListResult {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<BenefitUtilizationSummary>,
+    pub value: Vec<BenefitUtilizationSummaryUnion>,
     #[doc = "The link (URL) to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -606,7 +606,7 @@ pub struct BenefitUtilizationSummariesListResult {
 impl azure_core::Continuable for BenefitUtilizationSummariesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BenefitUtilizationSummariesListResult {
@@ -619,16 +619,20 @@ impl BenefitUtilizationSummariesListResult {
 pub struct BenefitUtilizationSummary {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "Kind/type of the benefit."]
-    pub kind: BenefitKind,
 }
 impl BenefitUtilizationSummary {
-    pub fn new(kind: BenefitKind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource: Resource::default(),
-            kind,
         }
     }
+}
+#[doc = "Kind/type of the benefit."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum BenefitUtilizationSummaryUnion {
+    IncludedQuantity(IncludedQuantityUtilizationSummary),
+    SavingsPlan(SavingsPlanUtilizationSummary),
 }
 #[doc = "The properties of a benefit utilization summary."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -938,7 +942,7 @@ pub struct BudgetsListResult {
 impl azure_core::Continuable for BudgetsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BudgetsListResult {
@@ -1406,7 +1410,7 @@ impl DownloadUrl {
 pub struct ErrorDetails {
     #[doc = "Error code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<i32>,
+    pub code: Option<String>,
     #[doc = "Error message indicating why the operation failed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -1475,6 +1479,12 @@ impl ErrorResponseWithNestedDetails {
 pub struct Export {
     #[serde(flatten)]
     pub cost_management_proxy_resource: CostManagementProxyResource,
+    #[doc = "Managed service identity (either system assigned, or none)"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<SystemAssignedServiceIdentity>,
+    #[doc = "The location of the Export's managed identity. Only required when utilizing managed identity."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
     #[doc = "The properties of the export."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ExportProperties>,
@@ -3344,7 +3354,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -4784,7 +4794,7 @@ pub struct ScheduledActionListResult {
 impl azure_core::Continuable for ScheduledActionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScheduledActionListResult {
@@ -4958,6 +4968,65 @@ pub mod status {
         }
     }
 }
+#[doc = "Managed service identity (either system assigned, or none)"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SystemAssignedServiceIdentity {
+    #[doc = "The service principal ID of the system assigned identity. This property will only be provided for a system assigned identity."]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "The tenant ID of the system assigned identity. This property will only be provided for a system assigned identity."]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "Type of managed service identity (either system assigned, or none)."]
+    #[serde(rename = "type")]
+    pub type_: SystemAssignedServiceIdentityType,
+}
+impl SystemAssignedServiceIdentity {
+    pub fn new(type_: SystemAssignedServiceIdentityType) -> Self {
+        Self {
+            principal_id: None,
+            tenant_id: None,
+            type_,
+        }
+    }
+}
+#[doc = "Type of managed service identity (either system assigned, or none)."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "SystemAssignedServiceIdentityType")]
+pub enum SystemAssignedServiceIdentityType {
+    None,
+    SystemAssigned,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for SystemAssignedServiceIdentityType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for SystemAssignedServiceIdentityType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for SystemAssignedServiceIdentityType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::None => serializer.serialize_unit_variant("SystemAssignedServiceIdentityType", 0u32, "None"),
+            Self::SystemAssigned => serializer.serialize_unit_variant("SystemAssignedServiceIdentityType", 1u32, "SystemAssigned"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "Grain which corresponds to value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "Term")]
@@ -5028,7 +5097,7 @@ pub struct ViewListResult {
 impl azure_core::Continuable for ViewListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ViewListResult {
@@ -5319,7 +5388,7 @@ pub struct BenefitRecommendationModel {
     pub benefit_resource: BenefitResource,
     #[doc = "The properties of the benefit recommendations."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<BenefitRecommendationProperties>,
+    pub properties: Option<BenefitRecommendationPropertiesUnion>,
 }
 impl BenefitRecommendationModel {
     pub fn new() -> Self {
@@ -5365,11 +5434,9 @@ pub struct BenefitRecommendationProperties {
     #[doc = "The list of all benefit recommendations with the recommendation details."]
     #[serde(rename = "allRecommendationDetails", default, skip_serializing_if = "Option::is_none")]
     pub all_recommendation_details: Option<AllSavingsList>,
-    #[doc = "Kind of the recommendation scope."]
-    pub scope: RecommendationScope,
 }
 impl BenefitRecommendationProperties {
-    pub fn new(scope: RecommendationScope) -> Self {
+    pub fn new() -> Self {
         Self {
             first_consumption_date: None,
             last_consumption_date: None,
@@ -5383,9 +5450,15 @@ impl BenefitRecommendationProperties {
             cost_without_benefit: None,
             recommendation_details: None,
             all_recommendation_details: None,
-            scope,
         }
     }
+}
+#[doc = "Kind of the recommendation scope."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "scope")]
+pub enum BenefitRecommendationPropertiesUnion {
+    Shared(SharedScopeBenefitRecommendationProperties),
+    Single(SingleScopeBenefitRecommendationProperties),
 }
 #[doc = "Result of listing benefit recommendations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -5404,7 +5477,7 @@ pub struct BenefitRecommendationsListResult {
 impl azure_core::Continuable for BenefitRecommendationsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BenefitRecommendationsListResult {

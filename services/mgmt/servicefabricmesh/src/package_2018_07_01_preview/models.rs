@@ -129,7 +129,7 @@ pub struct ApplicationResourceDescriptionList {
 impl azure_core::Continuable for ApplicationResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationResourceDescriptionList {
@@ -432,7 +432,7 @@ pub struct DiagnosticsDescription {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub sinks: Vec<DiagnosticsSinkProperties>,
+    pub sinks: Vec<DiagnosticsSinkPropertiesUnion>,
     #[doc = "Status of whether or not sinks are enabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
@@ -512,8 +512,6 @@ impl Serialize for DiagnosticsSinkKind {
 #[doc = "Properties of a DiagnosticsSink."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiagnosticsSinkProperties {
-    #[doc = "The kind of DiagnosticsSink."]
-    pub kind: DiagnosticsSinkKind,
     #[doc = "Name of the sink. This value is referenced by DiagnosticsReferenceDescription"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -522,13 +520,18 @@ pub struct DiagnosticsSinkProperties {
     pub description: Option<String>,
 }
 impl DiagnosticsSinkProperties {
-    pub fn new(kind: DiagnosticsSinkKind) -> Self {
+    pub fn new() -> Self {
         Self {
-            kind,
             name: None,
             description: None,
         }
     }
+}
+#[doc = "The kind of DiagnosticsSink."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum DiagnosticsSinkPropertiesUnion {
+    AzureInternalMonitoringPipeline(AzureInternalMonitoringPipelineSinkDescription),
 }
 #[doc = "Dimension of a resource metric. For e.g. instance specific HTTP requests for a web app, \nwhere instance name is dimension of the metric HTTP request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -955,7 +958,7 @@ pub struct NetworkResourceDescriptionList {
 impl azure_core::Continuable for NetworkResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkResourceDescriptionList {
@@ -996,7 +999,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1132,7 +1135,7 @@ pub struct ServiceList {
 impl azure_core::Continuable for ServiceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceList {
@@ -1174,7 +1177,7 @@ pub struct ServiceReplicaList {
 impl azure_core::Continuable for ServiceReplicaList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceReplicaList {
@@ -1519,7 +1522,7 @@ pub struct VolumeResourceDescriptionList {
 impl azure_core::Continuable for VolumeResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VolumeResourceDescriptionList {

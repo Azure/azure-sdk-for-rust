@@ -1,6 +1,6 @@
 [package]
 name = "azure_data_cosmos"
-version = "0.12.0"
+version = "0.17.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure Cosmos DB"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -11,11 +11,10 @@ documentation = "https://docs.rs/azure_data_cosmos"
 keywords = ["sdk", "azure", "rest", "iot", "cloud"]
 categories = ["api-bindings"]
 edition = "2021"
-rust-version = "1.64.0"
 
 [dependencies]
 async-trait = "0.1"
-azure_core = { path = "../core", version = "0.12" }
+azure_core = { path = "../core", version = "0.17" }
 time = "0.3.10"
 futures = "0.3"
 log = "0.4"

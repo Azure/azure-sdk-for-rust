@@ -12,7 +12,7 @@ operation! {
 }
 
 impl SignBuilder {
-    pub fn into_future(mut self) -> Sign {
+    pub fn into_future(self) -> Sign {
         Box::pin(async move {
             // POST {vaultBaseUrl}/keys/{key-name}/{key-version}/sign?api-version=7.1
             let version = self.version.unwrap_or_default();
@@ -21,20 +21,20 @@ impl SignBuilder {
 
             let mut request_body = Map::new();
             request_body.insert("alg".to_owned(), Value::String(self.algorithm.to_string()));
-            request_body.insert("value".to_owned(), Value::String(self.digest.to_owned()));
+            request_body.insert("value".to_owned(), Value::String(self.digest.clone()));
 
             let headers = Headers::new();
-            let mut request = self.client.keyvault_client.finalize_request(
+            let mut request = KeyvaultClient::finalize_request(
                 uri,
                 Method::Post,
                 headers,
                 Some(Value::Object(request_body).to_string().into()),
-            )?;
+            );
 
             let response = self
                 .client
                 .keyvault_client
-                .send(&mut self.context, &mut request)
+                .send(&self.context, &mut request)
                 .await?;
 
             let response = CollectedResponse::from_response(response).await?;

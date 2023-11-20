@@ -125,7 +125,7 @@ pub struct CustomRolloutArrayResponseWithContinuation {
 impl azure_core::Continuable for CustomRolloutArrayResponseWithContinuation {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomRolloutArrayResponseWithContinuation {
@@ -221,7 +221,7 @@ pub struct DefaultRolloutArrayResponseWithContinuation {
 impl azure_core::Continuable for DefaultRolloutArrayResponseWithContinuation {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DefaultRolloutArrayResponseWithContinuation {
@@ -1094,7 +1094,7 @@ pub struct NotificationRegistrationArrayResponseWithContinuation {
 impl azure_core::Continuable for NotificationRegistrationArrayResponseWithContinuation {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NotificationRegistrationArrayResponseWithContinuation {
@@ -1314,7 +1314,7 @@ pub struct OperationsDefinitionArrayResponseWithContinuation {
 impl azure_core::Continuable for OperationsDefinitionArrayResponseWithContinuation {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationsDefinitionArrayResponseWithContinuation {
@@ -1400,7 +1400,7 @@ pub struct ProviderRegistrationArrayResponseWithContinuation {
 impl azure_core::Continuable for ProviderRegistrationArrayResponseWithContinuation {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderRegistrationArrayResponseWithContinuation {
@@ -2525,7 +2525,7 @@ pub struct ResourceTypeRegistrationArrayResponseWithContinuation {
 impl azure_core::Continuable for ResourceTypeRegistrationArrayResponseWithContinuation {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceTypeRegistrationArrayResponseWithContinuation {
@@ -3017,7 +3017,7 @@ pub struct SkuResourceArrayResponseWithContinuation {
 impl azure_core::Continuable for SkuResourceArrayResponseWithContinuation {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SkuResourceArrayResponseWithContinuation {

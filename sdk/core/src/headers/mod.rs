@@ -15,23 +15,23 @@ impl<T> AsHeaders for T
 where
     T: Header,
 {
-    type Iter = std::option::IntoIter<(HeaderName, HeaderValue)>;
+    type Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>;
 
     fn as_headers(&self) -> Self::Iter {
-        Some((self.name(), self.value())).into_iter()
+        vec![(self.name(), self.value())].into_iter()
     }
 }
 
 impl<T> AsHeaders for Option<T>
 where
-    T: Header,
+    T: AsHeaders<Iter = std::vec::IntoIter<(HeaderName, HeaderValue)>>,
 {
-    type Iter = std::option::IntoIter<(HeaderName, HeaderValue)>;
+    type Iter = T::Iter;
 
     fn as_headers(&self) -> Self::Iter {
         match self {
             Some(h) => h.as_headers(),
-            None => None.into_iter(),
+            None => vec![].into_iter(),
         }
     }
 }
@@ -200,9 +200,10 @@ const fn ensure_no_uppercase(s: &str) {
     let mut i = 0;
     while i < bytes.len() {
         let byte = bytes[i];
-        if byte >= 65u8 && byte <= 90u8 {
-            panic!("header names must not contain any uppercase letters");
-        }
+        assert!(
+            !(byte >= 65u8 && byte <= 90u8),
+            "header names must not contain uppercase letters"
+        );
         i += 1;
     }
 }
@@ -345,6 +346,8 @@ pub const REQUEST_SERVER_ENCRYPTED: HeaderName =
     HeaderName::from_static("x-ms-request-server-encrypted");
 pub const REQUIRES_SYNC: HeaderName = HeaderName::from_static("x-ms-requires-sync");
 pub const RETRY_AFTER: HeaderName = HeaderName::from_static("retry-after");
+pub const RETRY_AFTER_MS: HeaderName = HeaderName::from_static("retry-after-ms");
+pub const X_MS_RETRY_AFTER_MS: HeaderName = HeaderName::from_static("x-ms-retry-after-ms");
 pub const SERVER: HeaderName = HeaderName::from_static("server");
 pub const SERVER_ENCRYPTED: HeaderName = HeaderName::from_static("x-ms-server-encrypted");
 pub const SESSION_TOKEN: HeaderName = HeaderName::from_static("x-ms-session-token");
@@ -361,3 +364,11 @@ pub const USER: HeaderName = HeaderName::from_static("x-ms-user");
 pub const USER_AGENT: HeaderName = HeaderName::from_static("user-agent");
 pub const VERSION: HeaderName = HeaderName::from_static("x-ms-version");
 pub const WWW_AUTHENTICATE: HeaderName = HeaderName::from_static("www-authenticate");
+pub const ENCRYPTION_ALGORITHM: HeaderName = HeaderName::from_static("x-ms-encryption-algorithm");
+pub const ENCRYPTION_KEY: HeaderName = HeaderName::from_static("x-ms-encryption-key");
+pub const ENCRYPTION_KEY_SHA256: HeaderName = HeaderName::from_static("x-ms-encryption-key-sha256");
+pub const BLOB_COMMITTED_BLOCK_COUNT: HeaderName =
+    HeaderName::from_static("x-ms-blob-committed-block-count");
+pub const AZURE_ASYNCOPERATION: HeaderName = HeaderName::from_static("azure-asyncoperation");
+pub const OPERATION_LOCATION: HeaderName = HeaderName::from_static("operation-location");
+pub const SOURCE_RANGE: HeaderName = HeaderName::from_static("x-ms-source-range");

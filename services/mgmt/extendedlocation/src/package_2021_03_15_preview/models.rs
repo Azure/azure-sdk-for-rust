@@ -60,7 +60,7 @@ pub struct EnabledResourceTypesListResult {
 impl azure_core::Continuable for EnabledResourceTypesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EnabledResourceTypesListResult {
@@ -221,7 +221,7 @@ pub struct CustomLocationListResult {
 impl azure_core::Continuable for CustomLocationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomLocationListResult {
@@ -283,7 +283,7 @@ pub struct CustomLocationOperationsList {
 impl azure_core::Continuable for CustomLocationOperationsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomLocationOperationsList {

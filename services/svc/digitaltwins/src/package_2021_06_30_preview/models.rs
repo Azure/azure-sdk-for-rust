@@ -117,7 +117,7 @@ pub struct EventRouteCollection {
 impl azure_core::Continuable for EventRouteCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EventRouteCollection {
@@ -162,7 +162,7 @@ pub struct IncomingRelationshipCollection {
 impl azure_core::Continuable for IncomingRelationshipCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IncomingRelationshipCollection {
@@ -178,7 +178,7 @@ pub struct InnerError {
     pub code: Option<String>,
     #[doc = "A more specific error description than was provided by the containing error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Box<Option<InnerError>>,
+    pub innererror: Option<Box<InnerError>>,
 }
 impl InnerError {
     pub fn new() -> Self {
@@ -203,7 +203,7 @@ pub struct PagedDigitalTwinsModelDataCollection {
 impl azure_core::Continuable for PagedDigitalTwinsModelDataCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PagedDigitalTwinsModelDataCollection {
@@ -262,7 +262,7 @@ pub struct RelationshipCollection {
 impl azure_core::Continuable for RelationshipCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RelationshipCollection {

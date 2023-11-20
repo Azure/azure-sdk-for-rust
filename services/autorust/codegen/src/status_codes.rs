@@ -17,16 +17,17 @@ fn try_from_u16(status_code: u16) -> Result<HttpStatusCode> {
 pub fn get_status_code_name(status_code: &StatusCode) -> Result<&'static str> {
     match status_code {
         StatusCode::Code(status_code) => Ok(try_from_u16(*status_code)?.canonical_reason()),
-        StatusCode::Default => Err(Error::with_message(ErrorKind::Parse, || {
-            format!("no status code for default {status_code}")
-        })),
+        StatusCode::Default => Err(Error::with_message(ErrorKind::Parse, || "no status code name for default")),
     }
 }
 
 /// The canonical name in camel case.
 /// examples: Ok, Created, LoopDetected
 pub fn get_status_code_ident(status_code: &StatusCode) -> Result<Ident> {
-    parse_ident(&get_status_code_name(status_code)?.to_pascal_case())
+    match status_code {
+        StatusCode::Code(_) => parse_ident(&get_status_code_name(status_code)?.to_pascal_case()),
+        StatusCode::Default => parse_ident("Default"),
+    }
 }
 
 pub fn is_success(status_code: &StatusCode) -> bool {
@@ -36,6 +37,23 @@ pub fn is_success(status_code: &StatusCode) -> bool {
             Err(_) => false,
         },
         StatusCode::Default => false,
+    }
+}
+
+pub fn is_error(status_code: &StatusCode) -> bool {
+    match status_code {
+        StatusCode::Code(status_code) => match try_from_u16(*status_code) {
+            Ok(status_code) => !status_code.is_success(),
+            Err(_) => false,
+        },
+        StatusCode::Default => false,
+    }
+}
+
+pub fn is_default(status_code: &StatusCode) -> bool {
+    match status_code {
+        StatusCode::Code(_status_code) => false,
+        StatusCode::Default => true,
     }
 }
 

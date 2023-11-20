@@ -104,14 +104,18 @@ impl ErrorResponse {
 pub struct Facet {
     #[doc = "Facet expression, same as in the corresponding facet request."]
     pub expression: String,
-    #[doc = "Result type"]
-    #[serde(rename = "resultType")]
-    pub result_type: String,
 }
 impl Facet {
-    pub fn new(expression: String, result_type: String) -> Self {
-        Self { expression, result_type }
+    pub fn new(expression: String) -> Self {
+        Self { expression }
     }
+}
+#[doc = "Result type"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "resultType")]
+pub enum FacetUnion {
+    FacetError(FacetError),
+    FacetResult(FacetResult),
 }
 #[doc = "A facet whose execution resulted in an error."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -355,7 +359,7 @@ pub struct QueryResponse {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub facets: Vec<Facet>,
+    pub facets: Vec<FacetUnion>,
 }
 impl QueryResponse {
     pub fn new(total_records: i64, count: i64, result_truncated: query_response::ResultTruncated, data: serde_json::Value) -> Self {

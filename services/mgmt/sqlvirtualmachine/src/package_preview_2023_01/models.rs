@@ -389,6 +389,9 @@ pub struct AutoPatchingSettings {
     #[doc = "Duration of patching."]
     #[serde(rename = "maintenanceWindowDuration", default, skip_serializing_if = "Option::is_none")]
     pub maintenance_window_duration: Option<i32>,
+    #[doc = "Additional Patch to be enable or enabled on the SQL Virtual Machine."]
+    #[serde(rename = "additionalVmPatch", default, skip_serializing_if = "Option::is_none")]
+    pub additional_vm_patch: Option<auto_patching_settings::AdditionalVmPatch>,
 }
 impl AutoPatchingSettings {
     pub fn new() -> Self {
@@ -408,6 +411,48 @@ pub mod auto_patching_settings {
         Friday,
         Saturday,
         Sunday,
+    }
+    #[doc = "Additional Patch to be enable or enabled on the SQL Virtual Machine."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "AdditionalVmPatch")]
+    pub enum AdditionalVmPatch {
+        NotSet,
+        MicrosoftUpdate,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for AdditionalVmPatch {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for AdditionalVmPatch {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for AdditionalVmPatch {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::NotSet => serializer.serialize_unit_variant("AdditionalVmPatch", 0u32, "NotSet"),
+                Self::MicrosoftUpdate => serializer.serialize_unit_variant("AdditionalVmPatch", 1u32, "MicrosoftUpdate"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+    impl Default for AdditionalVmPatch {
+        fn default() -> Self {
+            Self::NotSet
+        }
     }
 }
 #[doc = "A SQL Server availability group listener."]
@@ -444,7 +489,7 @@ pub struct AvailabilityGroupListenerListResult {
 impl azure_core::Continuable for AvailabilityGroupListenerListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AvailabilityGroupListenerListResult {
@@ -734,7 +779,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1200,7 +1245,7 @@ pub struct SqlVirtualMachineGroupListResult {
 impl azure_core::Continuable for SqlVirtualMachineGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlVirtualMachineGroupListResult {
@@ -1414,7 +1459,7 @@ pub struct SqlVirtualMachineListResult {
 impl azure_core::Continuable for SqlVirtualMachineListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlVirtualMachineListResult {

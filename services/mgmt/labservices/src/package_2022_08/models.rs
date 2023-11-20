@@ -852,7 +852,7 @@ pub struct ListUsagesResult {
 impl azure_core::Continuable for ListUsagesResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListUsagesResult {
@@ -1002,7 +1002,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1076,7 +1076,7 @@ pub struct PagedImages {
 impl azure_core::Continuable for PagedImages {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PagedImages {
@@ -1101,7 +1101,7 @@ pub struct PagedLabPlans {
 impl azure_core::Continuable for PagedLabPlans {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PagedLabPlans {
@@ -1126,7 +1126,7 @@ pub struct PagedLabServicesSkus {
 impl azure_core::Continuable for PagedLabServicesSkus {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PagedLabServicesSkus {
@@ -1151,7 +1151,7 @@ pub struct PagedLabs {
 impl azure_core::Continuable for PagedLabs {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PagedLabs {
@@ -1176,7 +1176,7 @@ pub struct PagedSchedules {
 impl azure_core::Continuable for PagedSchedules {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PagedSchedules {
@@ -1201,7 +1201,7 @@ pub struct PagedUsers {
 impl azure_core::Continuable for PagedUsers {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PagedUsers {
@@ -1226,7 +1226,7 @@ pub struct PagedVirtualMachines {
 impl azure_core::Continuable for PagedVirtualMachines {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PagedVirtualMachines {

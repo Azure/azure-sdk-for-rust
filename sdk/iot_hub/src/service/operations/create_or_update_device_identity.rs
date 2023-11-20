@@ -24,6 +24,7 @@ azure_core::operation! {
 
 impl CreateOrUpdateDeviceIdentityBuilder {
     /// Sets a device capability on the device
+    #[must_use]
     pub fn device_capability(mut self, desired_capability: DesiredCapability) -> Self {
         match desired_capability {
             DesiredCapability::IotEdge => {
@@ -37,7 +38,7 @@ impl CreateOrUpdateDeviceIdentityBuilder {
     }
 
     /// Performs the create or update request on the device identity
-    pub fn into_future(mut self) -> CreateOrUpdateDeviceIdentity {
+    pub fn into_future(self) -> CreateOrUpdateDeviceIdentity {
         Box::pin(async move {
             let uri = format!(
                 "https://{}.azure-devices.net/devices/{}?api-version={}",
@@ -66,7 +67,7 @@ impl CreateOrUpdateDeviceIdentityBuilder {
             let body = azure_core::to_json(&body)?;
             request.set_body(body);
 
-            let response = self.client.send(&mut self.context, &mut request).await?;
+            let response = self.client.send(&self.context, &mut request).await?;
 
             CreateOrUpdateDeviceIdentityResponse::try_from(response).await
         })

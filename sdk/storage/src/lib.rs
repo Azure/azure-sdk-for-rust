@@ -39,7 +39,7 @@ pub mod shared_access_signature;
 
 pub use self::connection_string::{ConnectionString, EndpointProtocol};
 pub use self::connection_string_builder::ConnectionStringBuilder;
-pub use authorization::StorageCredentials;
+pub use authorization::{StorageCredentials, StorageCredentialsInner};
 pub use cloud_location::*;
 pub mod headers;
 pub use copy_id::{copy_id_from_headers, CopyId};

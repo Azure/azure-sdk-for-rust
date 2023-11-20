@@ -181,7 +181,7 @@ pub struct AzureBareMetalInstancesListResult {
 impl azure_core::Continuable for AzureBareMetalInstancesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AzureBareMetalInstancesListResult {
@@ -246,7 +246,7 @@ pub struct AzureBareMetalStorageInstancesListResult {
 impl azure_core::Continuable for AzureBareMetalStorageInstancesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AzureBareMetalStorageInstancesListResult {

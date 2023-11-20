@@ -3,23 +3,18 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "Auth setting payload."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AcceleratorAuthSetting {
-    #[doc = "The type of the auth setting."]
-    #[serde(rename = "authType")]
-    pub auth_type: String,
-}
-impl AcceleratorAuthSetting {
-    pub fn new(auth_type: String) -> Self {
-        Self { auth_type }
-    }
+#[doc = "The type of the auth setting."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "authType")]
+pub enum AcceleratorAuthSettingUnion {
+    BasicAuth(AcceleratorBasicAuthSetting),
+    Public(AcceleratorPublicSetting),
+    #[serde(rename = "SSH")]
+    Ssh(AcceleratorSshSetting),
 }
 #[doc = "Auth setting for basic auth."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcceleratorBasicAuthSetting {
-    #[serde(flatten)]
-    pub accelerator_auth_setting: AcceleratorAuthSetting,
     #[doc = "Username of git repository basic auth."]
     pub username: String,
     #[doc = "Password of git repository basic auth."]
@@ -27,12 +22,8 @@ pub struct AcceleratorBasicAuthSetting {
     pub password: Option<String>,
 }
 impl AcceleratorBasicAuthSetting {
-    pub fn new(accelerator_auth_setting: AcceleratorAuthSetting, username: String) -> Self {
-        Self {
-            accelerator_auth_setting,
-            username,
-            password: None,
-        }
+    pub fn new(username: String) -> Self {
+        Self { username, password: None }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -53,10 +44,10 @@ pub struct AcceleratorGitRepository {
     pub git_tag: Option<String>,
     #[doc = "Auth setting payload."]
     #[serde(rename = "authSetting")]
-    pub auth_setting: AcceleratorAuthSetting,
+    pub auth_setting: AcceleratorAuthSettingUnion,
 }
 impl AcceleratorGitRepository {
-    pub fn new(url: String, auth_setting: AcceleratorAuthSetting) -> Self {
+    pub fn new(url: String, auth_setting: AcceleratorAuthSettingUnion) -> Self {
         Self {
             url,
             interval_in_seconds: None,
@@ -69,20 +60,15 @@ impl AcceleratorGitRepository {
 }
 #[doc = "Auth setting for public url."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AcceleratorPublicSetting {
-    #[serde(flatten)]
-    pub accelerator_auth_setting: AcceleratorAuthSetting,
-}
+pub struct AcceleratorPublicSetting {}
 impl AcceleratorPublicSetting {
-    pub fn new(accelerator_auth_setting: AcceleratorAuthSetting) -> Self {
-        Self { accelerator_auth_setting }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Auth setting for SSH auth."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AcceleratorSshSetting {
-    #[serde(flatten)]
-    pub accelerator_auth_setting: AcceleratorAuthSetting,
     #[doc = "Public SSH Key of git repository."]
     #[serde(rename = "hostKey", default, skip_serializing_if = "Option::is_none")]
     pub host_key: Option<String>,
@@ -94,9 +80,8 @@ pub struct AcceleratorSshSetting {
     pub private_key: Option<String>,
 }
 impl AcceleratorSshSetting {
-    pub fn new(accelerator_auth_setting: AcceleratorAuthSetting) -> Self {
+    pub fn new() -> Self {
         Self {
-            accelerator_auth_setting,
             host_key: None,
             host_key_algorithm: None,
             private_key: None,
@@ -163,7 +148,7 @@ pub struct ApiPortalCustomDomainResourceCollection {
 impl azure_core::Continuable for ApiPortalCustomDomainResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApiPortalCustomDomainResourceCollection {
@@ -316,7 +301,7 @@ pub struct ApiPortalResourceCollection {
 impl azure_core::Continuable for ApiPortalResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApiPortalResourceCollection {
@@ -376,7 +361,7 @@ pub struct AppResourceCollection {
 impl azure_core::Continuable for AppResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AppResourceCollection {
@@ -631,7 +616,7 @@ pub struct ApplicationAcceleratorResourceCollection {
 impl azure_core::Continuable for ApplicationAcceleratorResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationAcceleratorResourceCollection {
@@ -791,7 +776,7 @@ pub struct ApplicationLiveViewResourceCollection {
 impl azure_core::Continuable for ApplicationLiveViewResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationLiveViewResourceCollection {
@@ -834,7 +819,7 @@ pub struct AvailableOperations {
 impl azure_core::Continuable for AvailableOperations {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AvailableOperations {
@@ -905,7 +890,7 @@ pub struct BindingResourceCollection {
 impl azure_core::Continuable for BindingResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BindingResourceCollection {
@@ -977,7 +962,7 @@ pub struct BuildCollection {
 impl azure_core::Continuable for BuildCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BuildCollection {
@@ -1107,7 +1092,7 @@ pub struct BuildResultCollection {
 impl azure_core::Continuable for BuildResultCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BuildResultCollection {
@@ -1279,7 +1264,7 @@ pub struct BuildServiceAgentPoolResourceCollection {
 impl azure_core::Continuable for BuildServiceAgentPoolResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BuildServiceAgentPoolResourceCollection {
@@ -1322,7 +1307,7 @@ pub struct BuildServiceCollection {
 impl azure_core::Continuable for BuildServiceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BuildServiceCollection {
@@ -1574,7 +1559,7 @@ pub struct BuilderResourceCollection {
 impl azure_core::Continuable for BuilderResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BuilderResourceCollection {
@@ -1741,7 +1726,7 @@ pub struct BuildpackBindingResourceCollection {
 impl azure_core::Continuable for BuildpackBindingResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BuildpackBindingResourceCollection {
@@ -1783,9 +1768,6 @@ impl BuildpacksGroupProperties {
 #[doc = "Certificate resource payload."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CertificateProperties {
-    #[doc = "The type of the certificate source."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The thumbprint of certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thumbprint: Option<String>,
@@ -1817,9 +1799,8 @@ pub struct CertificateProperties {
     pub provisioning_state: Option<certificate_properties::ProvisioningState>,
 }
 impl CertificateProperties {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             thumbprint: None,
             issuer: None,
             issued_date: None,
@@ -1877,6 +1858,13 @@ pub mod certificate_properties {
         }
     }
 }
+#[doc = "The type of the certificate source."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum CertificatePropertiesUnion {
+    ContentCertificate(ContentCertificateProperties),
+    KeyVaultCertificate(KeyVaultCertificateProperties),
+}
 #[doc = "Certificate resource payload."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CertificateResource {
@@ -1884,7 +1872,7 @@ pub struct CertificateResource {
     pub proxy_resource: ProxyResource,
     #[doc = "Certificate resource payload."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<CertificateProperties>,
+    pub properties: Option<CertificatePropertiesUnion>,
 }
 impl CertificateResource {
     pub fn new() -> Self {
@@ -1908,7 +1896,7 @@ pub struct CertificateResourceCollection {
 impl azure_core::Continuable for CertificateResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CertificateResourceCollection {
@@ -1974,7 +1962,7 @@ pub struct ClusterResourceProperties {
     #[doc = "Version of the Service"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<i32>,
-    #[doc = "ServiceInstanceEntity GUID which uniquely identifies a created resource"]
+    #[doc = "ServiceInstanceEntity Id which uniquely identifies a created resource"]
     #[serde(rename = "serviceId", default, skip_serializing_if = "Option::is_none")]
     pub service_id: Option<String>,
     #[doc = "The resource Id of the Managed Environment that the Spring Apps instance builds on"]
@@ -2489,7 +2477,7 @@ pub struct ConfigurationServiceResourceCollection {
 impl azure_core::Continuable for ConfigurationServiceResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConfigurationServiceResourceCollection {
@@ -2718,7 +2706,7 @@ pub struct CustomDomainResourceCollection {
 impl azure_core::Continuable for CustomDomainResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomDomainResourceCollection {
@@ -2756,9 +2744,6 @@ pub type CustomPersistentDiskCollection = Vec<CustomPersistentDiskResource>;
 #[doc = "Custom persistent disk resource payload."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomPersistentDiskProperties {
-    #[doc = "The type of the underlying resource to mount as a persistent disk."]
-    #[serde(rename = "type")]
-    pub type_: custom_persistent_disk_properties::Type,
     #[doc = "The mount path of the persistent disk."]
     #[serde(rename = "mountPath")]
     pub mount_path: String,
@@ -2778,9 +2763,8 @@ pub struct CustomPersistentDiskProperties {
     pub mount_options: Vec<String>,
 }
 impl CustomPersistentDiskProperties {
-    pub fn new(type_: custom_persistent_disk_properties::Type, mount_path: String) -> Self {
+    pub fn new(mount_path: String) -> Self {
         Self {
-            type_,
             mount_path,
             read_only: None,
             enable_sub_path: None,
@@ -2788,50 +2772,18 @@ impl CustomPersistentDiskProperties {
         }
     }
 }
-pub mod custom_persistent_disk_properties {
-    use super::*;
-    #[doc = "The type of the underlying resource to mount as a persistent disk."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        AzureFileVolume,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::AzureFileVolume => serializer.serialize_unit_variant("Type", 0u32, "AzureFileVolume"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "The type of the underlying resource to mount as a persistent disk."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum CustomPersistentDiskPropertiesUnion {
+    AzureFileVolume(AzureFileVolume),
 }
 #[doc = "Custom persistent disk resource payload."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomPersistentDiskResource {
     #[doc = "Custom persistent disk resource payload."]
     #[serde(rename = "customPersistentDiskProperties", default, skip_serializing_if = "Option::is_none")]
-    pub custom_persistent_disk_properties: Option<CustomPersistentDiskProperties>,
+    pub custom_persistent_disk_properties: Option<CustomPersistentDiskPropertiesUnion>,
     #[doc = "The resource id of Azure Spring Apps Storage resource."]
     #[serde(rename = "storageId")]
     pub storage_id: String,
@@ -2977,7 +2929,7 @@ pub struct CustomizedAcceleratorResourceCollection {
 impl azure_core::Continuable for CustomizedAcceleratorResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomizedAcceleratorResourceCollection {
@@ -3122,7 +3074,7 @@ pub struct DeploymentResourceCollection {
 impl azure_core::Continuable for DeploymentResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeploymentResourceCollection {
@@ -3135,7 +3087,7 @@ impl DeploymentResourceCollection {
 pub struct DeploymentResourceProperties {
     #[doc = "Source information for a deployment"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub source: Option<UserSourceInfo>,
+    pub source: Option<UserSourceInfoUnion>,
     #[doc = "Deployment settings payload"]
     #[serde(rename = "deploymentSettings", default, skip_serializing_if = "Option::is_none")]
     pub deployment_settings: Option<DeploymentSettings>,
@@ -3278,6 +3230,26 @@ impl DeploymentSettings {
         Self::default()
     }
 }
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DevToolPortalComponent {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The resource quantity for required CPU and Memory of Dev Tool Portal"]
+    #[serde(rename = "resourceRequests", default, skip_serializing_if = "Option::is_none")]
+    pub resource_requests: Option<DevToolPortalResourceRequests>,
+    #[doc = "Collection of instances belong to Dev Tool Portal."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub instances: Vec<DevToolPortalInstance>,
+}
+impl DevToolPortalComponent {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Detail settings for Dev Tool Portal feature"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DevToolPortalFeatureDetail {
@@ -3374,16 +3346,13 @@ pub struct DevToolPortalProperties {
     #[doc = "State of the Dev Tool Portal."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<dev_tool_portal_properties::ProvisioningState>,
-    #[doc = "The resource quantity for required CPU and Memory of Dev Tool Portal"]
-    #[serde(rename = "resourceRequests", default, skip_serializing_if = "Option::is_none")]
-    pub resource_requests: Option<DevToolPortalResourceRequests>,
-    #[doc = "Collection of instances belong to Dev Tool Portal."]
+    #[doc = "Collection of components belong to Dev Tool Portal."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub instances: Vec<DevToolPortalInstance>,
+    pub components: Vec<DevToolPortalComponent>,
     #[doc = "Indicates whether the resource exposes public endpoint"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub public: Option<bool>,
@@ -3481,7 +3450,7 @@ pub struct DevToolPortalResourceCollection {
 impl azure_core::Continuable for DevToolPortalResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DevToolPortalResourceCollection {
@@ -3568,8 +3537,6 @@ impl Error {
 #[doc = "ExecAction describes a \"run in container\" action."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ExecAction {
-    #[serde(flatten)]
-    pub probe_action: ProbeAction,
     #[doc = "Command is the command line to execute inside the container, the working directory for the command is root ('/') in the container's filesystem. The command is not run inside a shell, so traditional shell instructions ('|', etc) won't work. To use a shell, you need to explicitly call out to that shell. Exit status of 0 is treated as live/healthy and non-zero is unhealthy."]
     #[serde(
         default,
@@ -3579,11 +3546,8 @@ pub struct ExecAction {
     pub command: Vec<String>,
 }
 impl ExecAction {
-    pub fn new(probe_action: ProbeAction) -> Self {
-        Self {
-            probe_action,
-            command: Vec::new(),
-        }
+    pub fn new() -> Self {
+        Self { command: Vec::new() }
     }
 }
 #[doc = "API metadata property for Spring Cloud Gateway"]
@@ -3748,7 +3712,7 @@ pub struct GatewayCustomDomainResourceCollection {
 impl azure_core::Continuable for GatewayCustomDomainResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GatewayCustomDomainResourceCollection {
@@ -3965,7 +3929,7 @@ pub struct GatewayResourceCollection {
 impl azure_core::Continuable for GatewayResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GatewayResourceCollection {
@@ -4166,7 +4130,7 @@ pub struct GatewayRouteConfigResourceCollection {
 impl azure_core::Continuable for GatewayRouteConfigResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GatewayRouteConfigResourceCollection {
@@ -4238,8 +4202,6 @@ impl GitPatternRepository {
 #[doc = "HTTPGetAction describes an action based on HTTP Get requests."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpGetAction {
-    #[serde(flatten)]
-    pub probe_action: ProbeAction,
     #[doc = "Path to access on the HTTP server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
@@ -4248,12 +4210,8 @@ pub struct HttpGetAction {
     pub scheme: Option<http_get_action::Scheme>,
 }
 impl HttpGetAction {
-    pub fn new(probe_action: ProbeAction) -> Self {
-        Self {
-            probe_action,
-            path: None,
-            scheme: None,
-        }
+    pub fn new() -> Self {
+        Self { path: None, scheme: None }
     }
 }
 pub mod http_get_action {
@@ -5181,7 +5139,7 @@ pub struct PredefinedAcceleratorResourceCollection {
 impl azure_core::Continuable for PredefinedAcceleratorResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PredefinedAcceleratorResourceCollection {
@@ -5194,7 +5152,7 @@ impl PredefinedAcceleratorResourceCollection {
 pub struct Probe {
     #[doc = "The action of the probe."]
     #[serde(rename = "probeAction", default, skip_serializing_if = "Option::is_none")]
-    pub probe_action: Option<ProbeAction>,
+    pub probe_action: Option<ProbeActionUnion>,
     #[doc = "Indicate whether the probe is disabled."]
     #[serde(rename = "disableProbe")]
     pub disable_probe: bool,
@@ -5227,61 +5185,15 @@ impl Probe {
         }
     }
 }
-#[doc = "The action of the probe."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ProbeAction {
-    #[doc = "The type of the action to take to perform the health check."]
-    #[serde(rename = "type")]
-    pub type_: probe_action::Type,
-}
-impl ProbeAction {
-    pub fn new(type_: probe_action::Type) -> Self {
-        Self { type_ }
-    }
-}
-pub mod probe_action {
-    use super::*;
-    #[doc = "The type of the action to take to perform the health check."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        #[serde(rename = "HTTPGetAction")]
-        HttpGetAction,
-        #[serde(rename = "TCPSocketAction")]
-        TcpSocketAction,
-        ExecAction,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::HttpGetAction => serializer.serialize_unit_variant("Type", 0u32, "HTTPGetAction"),
-                Self::TcpSocketAction => serializer.serialize_unit_variant("Type", 1u32, "TCPSocketAction"),
-                Self::ExecAction => serializer.serialize_unit_variant("Type", 2u32, "ExecAction"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "The type of the action to take to perform the health check."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ProbeActionUnion {
+    ExecAction(ExecAction),
+    #[serde(rename = "HTTPGetAction")]
+    HttpGetAction(HttpGetAction),
+    #[serde(rename = "TCPSocketAction")]
+    TcpSocketAction(TcpSocketAction),
 }
 #[doc = "The resource model definition for a ARM proxy resource. It will have everything other than required location and tags."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -5577,7 +5489,7 @@ pub struct ResourceSkuCollection {
 impl azure_core::Continuable for ResourceSkuCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceSkuCollection {
@@ -5965,7 +5877,7 @@ pub struct ServiceRegistryResourceCollection {
 impl azure_core::Continuable for ServiceRegistryResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceRegistryResourceCollection {
@@ -6025,7 +5937,7 @@ pub struct ServiceResourceList {
 impl azure_core::Continuable for ServiceResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceResourceList {
@@ -6231,8 +6143,6 @@ impl StackProperties {
 #[doc = "storage resource of type Azure Storage Account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageAccount {
-    #[serde(flatten)]
-    pub storage_properties: StorageProperties,
     #[doc = "The account name of the Azure Storage Account."]
     #[serde(rename = "accountName")]
     pub account_name: String,
@@ -6241,63 +6151,15 @@ pub struct StorageAccount {
     pub account_key: String,
 }
 impl StorageAccount {
-    pub fn new(storage_properties: StorageProperties, account_name: String, account_key: String) -> Self {
-        Self {
-            storage_properties,
-            account_name,
-            account_key,
-        }
+    pub fn new(account_name: String, account_key: String) -> Self {
+        Self { account_name, account_key }
     }
 }
-#[doc = "Storage resource payload."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct StorageProperties {
-    #[doc = "The type of the storage."]
-    #[serde(rename = "storageType")]
-    pub storage_type: storage_properties::StorageType,
-}
-impl StorageProperties {
-    pub fn new(storage_type: storage_properties::StorageType) -> Self {
-        Self { storage_type }
-    }
-}
-pub mod storage_properties {
-    use super::*;
-    #[doc = "The type of the storage."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "StorageType")]
-    pub enum StorageType {
-        StorageAccount,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for StorageType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for StorageType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for StorageType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::StorageAccount => serializer.serialize_unit_variant("StorageType", 0u32, "StorageAccount"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "The type of the storage."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "storageType")]
+pub enum StoragePropertiesUnion {
+    StorageAccount(StorageAccount),
 }
 #[doc = "Storage resource payload."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -6306,7 +6168,7 @@ pub struct StorageResource {
     pub proxy_resource: ProxyResource,
     #[doc = "Storage resource payload."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<StorageProperties>,
+    pub properties: Option<StoragePropertiesUnion>,
 }
 impl StorageResource {
     pub fn new() -> Self {
@@ -6330,7 +6192,7 @@ pub struct StorageResourceCollection {
 impl azure_core::Continuable for StorageResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageResourceCollection {
@@ -6649,13 +6511,10 @@ pub mod system_data {
 }
 #[doc = "TCPSocketAction describes an action based on opening a socket"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct TcpSocketAction {
-    #[serde(flatten)]
-    pub probe_action: ProbeAction,
-}
+pub struct TcpSocketAction {}
 impl TcpSocketAction {
-    pub fn new(probe_action: ProbeAction) -> Self {
-        Self { probe_action }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "Azure Spring Apps App Instance Tcp scaling rule."]
@@ -6788,17 +6647,24 @@ impl UserAssignedManagedIdentity {
 #[doc = "Source information for a deployment"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserSourceInfo {
-    #[doc = "Type of the source uploaded"]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Version of the source"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
 impl UserSourceInfo {
-    pub fn new(type_: String) -> Self {
-        Self { type_, version: None }
+    pub fn new() -> Self {
+        Self { version: None }
     }
+}
+#[doc = "Type of the source uploaded"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum UserSourceInfoUnion {
+    BuildResult(BuildResultUserSourceInfo),
+    Container(CustomContainerUserSourceInfo),
+    Jar(JarUploadedUserSourceInfo),
+    NetCoreZip(NetCoreZipUploadedUserSourceInfo),
+    Source(SourceUploadedUserSourceInfo),
 }
 #[doc = "Validate messages of the configuration service git repositories"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

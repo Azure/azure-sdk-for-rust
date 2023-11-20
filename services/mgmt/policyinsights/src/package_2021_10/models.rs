@@ -55,7 +55,7 @@ pub struct AttestationListResult {
 impl azure_core::Continuable for AttestationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AttestationListResult {
@@ -825,7 +825,7 @@ pub struct PolicyEventsQueryResults {
 impl azure_core::Continuable for PolicyEventsQueryResults {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PolicyEventsQueryResults {
@@ -886,7 +886,7 @@ pub struct PolicyMetadataCollection {
 impl azure_core::Continuable for PolicyMetadataCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PolicyMetadataCollection {
@@ -1102,7 +1102,7 @@ pub struct PolicyStatesQueryResults {
 impl azure_core::Continuable for PolicyStatesQueryResults {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.odata_next_link.clone()
+        self.odata_next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PolicyStatesQueryResults {
@@ -1151,7 +1151,7 @@ pub struct PolicyTrackedResourcesQueryResults {
 impl azure_core::Continuable for PolicyTrackedResourcesQueryResults {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PolicyTrackedResourcesQueryResults {
@@ -1284,7 +1284,7 @@ pub struct RemediationDeploymentsListResult {
 impl azure_core::Continuable for RemediationDeploymentsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RemediationDeploymentsListResult {
@@ -1325,7 +1325,7 @@ pub struct RemediationListResult {
 impl azure_core::Continuable for RemediationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RemediationListResult {

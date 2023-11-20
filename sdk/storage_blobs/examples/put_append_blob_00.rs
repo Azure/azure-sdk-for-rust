@@ -22,20 +22,14 @@ async fn main() -> azure_core::Result<()> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
     let blob_client =
         ClientBuilder::new(account, storage_credentials).blob_client(&container, &blob_name);
 
-    //let data = b"something";
-
     let mut metadata = Metadata::new();
 
-    metadata.insert("pollo".to_owned(), "arrosto".to_owned());
-    metadata.insert("milk".to_owned(), "shake".to_owned());
-
-    // this is not mandatory but it helps preventing
-    // spurious data to be uploaded.
-    //let _hash = md5::compute(data).into();
+    metadata.insert("pollo", "arrosto");
+    metadata.insert("milk", "shake");
 
     // The required parameters are container_name, blob_name and body.
     // The builder supports many more optional

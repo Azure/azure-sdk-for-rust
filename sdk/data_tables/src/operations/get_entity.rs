@@ -36,9 +36,7 @@ impl<T: DeserializeOwned + Send> GetEntityBuilder<T> {
             let mut headers = Headers::new();
             headers.insert(ACCEPT, "application/json;odata=fullmetadata");
 
-            let mut request =
-                self.entity_client
-                    .finalize_request(url, Method::Get, headers, None)?;
+            let mut request = EntityClient::finalize_request(url, Method::Get, headers, None)?;
 
             let response = self
                 .entity_client

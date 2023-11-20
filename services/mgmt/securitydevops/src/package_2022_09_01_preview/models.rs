@@ -147,7 +147,7 @@ pub struct AzureDevOpsConnectorListResponse {
 impl azure_core::Continuable for AzureDevOpsConnectorListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AzureDevOpsConnectorListResponse {
@@ -253,7 +253,7 @@ pub struct AzureDevOpsOrgListResponse {
 impl azure_core::Continuable for AzureDevOpsOrgListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AzureDevOpsOrgListResponse {
@@ -324,7 +324,7 @@ pub struct AzureDevOpsProjectListResponse {
 impl azure_core::Continuable for AzureDevOpsProjectListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AzureDevOpsProjectListResponse {
@@ -402,7 +402,7 @@ pub struct AzureDevOpsRepoListResponse {
 impl azure_core::Continuable for AzureDevOpsRepoListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AzureDevOpsRepoListResponse {
@@ -537,7 +537,7 @@ pub struct GitHubConnectorListResponse {
 impl azure_core::Continuable for GitHubConnectorListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GitHubConnectorListResponse {
@@ -635,7 +635,7 @@ pub struct GitHubOwnerListResponse {
 impl azure_core::Continuable for GitHubOwnerListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GitHubOwnerListResponse {
@@ -687,7 +687,7 @@ pub struct GitHubRepoListResponse {
 impl azure_core::Continuable for GitHubRepoListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GitHubRepoListResponse {
@@ -876,7 +876,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {

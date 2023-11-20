@@ -273,10 +273,10 @@ pub mod client_group {
     pub struct Properties {
         #[doc = "Represents a reference to another resource."]
         #[serde(rename = "clientsOf")]
-        pub clients_of: ResourceReference,
+        pub clients_of: ResourceReferenceUnion,
     }
     impl Properties {
-        pub fn new(clients_of: ResourceReference) -> Self {
+        pub fn new(clients_of: ResourceReferenceUnion) -> Self {
             Self { clients_of }
         }
     }
@@ -337,7 +337,7 @@ pub struct ClientGroupMembersCollection {
 impl azure_core::Continuable for ClientGroupMembersCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClientGroupMembersCollection {
@@ -418,7 +418,7 @@ pub struct ConnectionCollection {
 impl azure_core::Continuable for ConnectionCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConnectionCollection {
@@ -465,34 +465,29 @@ pub struct CoreResource {
     #[doc = "Resource ETAG."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
-    #[doc = "Additional resource type qualifier."]
-    pub kind: core_resource::Kind,
 }
 impl CoreResource {
-    pub fn new(kind: core_resource::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource: Resource::default(),
             etag: None,
-            kind,
         }
     }
 }
-pub mod core_resource {
-    use super::*;
-    #[doc = "Additional resource type qualifier."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "machine")]
-        Machine,
-        #[serde(rename = "process")]
-        Process,
-        #[serde(rename = "port")]
-        Port,
-        #[serde(rename = "clientGroup")]
-        ClientGroup,
-        #[serde(rename = "machineGroup")]
-        MachineGroup,
-    }
+#[doc = "Additional resource type qualifier."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum CoreResourceUnion {
+    #[serde(rename = "clientGroup")]
+    ClientGroup(ClientGroup),
+    #[serde(rename = "machine")]
+    Machine(Machine),
+    #[serde(rename = "machineGroup")]
+    MachineGroup(MachineGroup),
+    #[serde(rename = "port")]
+    Port(Port),
+    #[serde(rename = "process")]
+    Process(Process),
 }
 #[doc = "Error details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -531,12 +526,10 @@ pub struct HostingConfiguration {
     #[doc = "The hosting provider of the VM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<hosting_configuration::Provider>,
-    #[doc = "Additional hosting configuration type qualifier."]
-    pub kind: hosting_configuration::Kind,
 }
 impl HostingConfiguration {
-    pub fn new(kind: hosting_configuration::Kind) -> Self {
-        Self { provider: None, kind }
+    pub fn new() -> Self {
+        Self { provider: None }
     }
 }
 pub mod hosting_configuration {
@@ -547,12 +540,13 @@ pub mod hosting_configuration {
         #[serde(rename = "azure")]
         Azure,
     }
-    #[doc = "Additional hosting configuration type qualifier."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "provider:azure")]
-        ProviderAzure,
-    }
+}
+#[doc = "Additional hosting configuration type qualifier."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum HostingConfigurationUnion {
+    #[serde(rename = "provider:azure")]
+    ProviderAzure(AzureHostingConfiguration),
 }
 #[doc = "Describes the hypervisor configuration of a machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -715,7 +709,7 @@ pub mod machine {
         pub hypervisor: Option<HypervisorConfiguration>,
         #[doc = "Describes the hosting configuration of a machine."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub hosting: Option<HostingConfiguration>,
+        pub hosting: Option<HostingConfigurationUnion>,
     }
     impl Properties {
         pub fn new() -> Self {
@@ -740,7 +734,7 @@ pub struct MachineCollection {
 impl azure_core::Continuable for MachineCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MachineCollection {
@@ -883,7 +877,7 @@ pub struct MachineGroupCollection {
 impl azure_core::Continuable for MachineGroupCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MachineGroupCollection {
@@ -1121,30 +1115,25 @@ pub struct MapRequest {
     #[doc = "Map interval end time."]
     #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
     pub end_time: Option<time::OffsetDateTime>,
-    #[doc = "The type of map to create."]
-    pub kind: map_request::Kind,
 }
 impl MapRequest {
-    pub fn new(kind: map_request::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             start_time: None,
             end_time: None,
-            kind,
         }
     }
 }
-pub mod map_request {
-    use super::*;
-    #[doc = "The type of map to create."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "map:single-machine-dependency")]
-        MapSingleMachineDependency,
-        #[serde(rename = "map:machine-group-dependency")]
-        MapMachineGroupDependency,
-        #[serde(rename = "map:machine-list-dependency")]
-        MapMachineListDependency,
-    }
+#[doc = "The type of map to create."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum MapRequestUnion {
+    #[serde(rename = "map:machine-group-dependency")]
+    MapMachineGroupDependency(MachineGroupMapRequest),
+    #[serde(rename = "map:machine-list-dependency")]
+    MapMachineListDependency(MachineListMapRequest),
+    #[serde(rename = "map:single-machine-dependency")]
+    MapSingleMachineDependency(SingleMachineDependencyMapRequest),
 }
 #[doc = "Specified the contents of a map response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1298,7 +1287,7 @@ pub mod port {
         pub monitoring_state: Option<MonitoringState>,
         #[doc = "Represents a reference to another resource."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub machine: Option<ResourceReference>,
+        pub machine: Option<ResourceReferenceUnion>,
         #[doc = "Name to use for display purposes."]
         #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
         pub display_name: Option<String>,
@@ -1332,7 +1321,7 @@ pub struct PortCollection {
 impl azure_core::Continuable for PortCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PortCollection {
@@ -1408,7 +1397,7 @@ pub mod process {
         pub monitoring_state: Option<MonitoringState>,
         #[doc = "Represents a reference to another resource."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub machine: Option<ResourceReference>,
+        pub machine: Option<ResourceReferenceUnion>,
         #[doc = "The name of the process executable"]
         #[serde(rename = "executableName", default, skip_serializing_if = "Option::is_none")]
         pub executable_name: Option<String>,
@@ -1432,13 +1421,13 @@ pub mod process {
         pub user: Option<ProcessUser>,
         #[doc = "Represents a reference to another resource."]
         #[serde(rename = "clientOf", default, skip_serializing_if = "Option::is_none")]
-        pub client_of: Option<ResourceReference>,
+        pub client_of: Option<ResourceReferenceUnion>,
         #[doc = "Represents a reference to another resource."]
         #[serde(rename = "acceptorOf", default, skip_serializing_if = "Option::is_none")]
-        pub acceptor_of: Option<ResourceReference>,
+        pub acceptor_of: Option<ResourceReferenceUnion>,
         #[doc = "Describes the hosting configuration of a process."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        pub hosting: Option<ProcessHostingConfiguration>,
+        pub hosting: Option<ProcessHostingConfigurationUnion>,
     }
     impl Properties {
         pub fn new() -> Self {
@@ -1514,7 +1503,7 @@ pub struct ProcessCollection {
 impl azure_core::Continuable for ProcessCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProcessCollection {
@@ -1598,12 +1587,10 @@ pub struct ProcessHostingConfiguration {
     #[doc = "The hosting provider of the VM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<process_hosting_configuration::Provider>,
-    #[doc = "Additional hosting configuration type qualifier."]
-    pub kind: process_hosting_configuration::Kind,
 }
 impl ProcessHostingConfiguration {
-    pub fn new(kind: process_hosting_configuration::Kind) -> Self {
-        Self { provider: None, kind }
+    pub fn new() -> Self {
+        Self { provider: None }
     }
 }
 pub mod process_hosting_configuration {
@@ -1614,12 +1601,13 @@ pub mod process_hosting_configuration {
         #[serde(rename = "azure")]
         Azure,
     }
-    #[doc = "Additional hosting configuration type qualifier."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "provider:azure")]
-        ProviderAzure,
-    }
+}
+#[doc = "Additional hosting configuration type qualifier."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ProcessHostingConfigurationUnion {
+    #[serde(rename = "provider:azure")]
+    ProviderAzure(AzureProcessHostingConfiguration),
 }
 #[doc = "Reference to a process."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1673,35 +1661,30 @@ impl ProcessUser {
 pub struct Relationship {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "Additional resource type qualifier."]
-    pub kind: relationship::Kind,
 }
 impl Relationship {
-    pub fn new(kind: relationship::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             resource: Resource::default(),
-            kind,
         }
     }
 }
-pub mod relationship {
-    use super::*;
-    #[doc = "Additional resource type qualifier."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "rel:connection")]
-        RelConnection,
-        #[serde(rename = "rel:acceptor")]
-        RelAcceptor,
-    }
+#[doc = "Additional resource type qualifier."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum RelationshipUnion {
+    #[serde(rename = "rel:acceptor")]
+    RelAcceptor(Acceptor),
+    #[serde(rename = "rel:connection")]
+    RelConnection(Connection),
 }
 #[doc = "Relationship properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RelationshipProperties {
     #[doc = "Represents a reference to another resource."]
-    pub source: ResourceReference,
+    pub source: ResourceReferenceUnion,
     #[doc = "Represents a reference to another resource."]
-    pub destination: ResourceReference,
+    pub destination: ResourceReferenceUnion,
     #[doc = "Relationship start time."]
     #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
     pub start_time: Option<time::OffsetDateTime>,
@@ -1710,7 +1693,7 @@ pub struct RelationshipProperties {
     pub end_time: Option<time::OffsetDateTime>,
 }
 impl RelationshipProperties {
-    pub fn new(source: ResourceReference, destination: ResourceReference) -> Self {
+    pub fn new(source: ResourceReferenceUnion, destination: ResourceReferenceUnion) -> Self {
         Self {
             source,
             destination,
@@ -1748,37 +1731,30 @@ pub struct ResourceReference {
     #[doc = "Resource name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[doc = "Specifies the sub-class of the reference."]
-    pub kind: resource_reference::Kind,
 }
 impl ResourceReference {
-    pub fn new(id: String, kind: resource_reference::Kind) -> Self {
+    pub fn new(id: String) -> Self {
         Self {
             id,
             type_: None,
             name: None,
-            kind,
         }
     }
 }
-pub mod resource_reference {
-    use super::*;
-    #[doc = "Specifies the sub-class of the reference."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "ref:machine")]
-        RefMachine,
-        #[serde(rename = "ref:machinewithhints")]
-        RefMachinewithhints,
-        #[serde(rename = "ref:process")]
-        RefProcess,
-        #[serde(rename = "ref:port")]
-        RefPort,
-        #[serde(rename = "ref:onmachine")]
-        RefOnmachine,
-        #[serde(rename = "ref:clientgroup")]
-        RefClientgroup,
-    }
+#[doc = "Specifies the sub-class of the reference."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ResourceReferenceUnion {
+    #[serde(rename = "ref:clientgroup")]
+    RefClientgroup(ClientGroupReference),
+    #[serde(rename = "ref:machine")]
+    RefMachine(MachineReference),
+    #[serde(rename = "ref:machinewithhints")]
+    RefMachinewithhints(MachineReferenceWithHints),
+    #[serde(rename = "ref:port")]
+    RefPort(PortReference),
+    #[serde(rename = "ref:process")]
+    RefProcess(ProcessReference),
 }
 #[doc = "Specifies the computation of a single server dependency map. A single server dependency map includes all direct dependencies of a given machine."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

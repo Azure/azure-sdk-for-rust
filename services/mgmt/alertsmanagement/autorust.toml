@@ -1,4 +1,5 @@
 [tags]
 deny = [
-    "package-2021-08"	
+    # error[E0428]: the name `ErrorResponse` is defined multiple times
+    "package-preview-2023-07"
 ]

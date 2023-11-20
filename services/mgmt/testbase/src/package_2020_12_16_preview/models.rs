@@ -38,7 +38,7 @@ pub struct AnalysisResultSingletonResource {
     pub system_data: Option<SystemData>,
     #[doc = "The properties of Analysis Result resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AnalysisResultSingletonResourceProperties>,
+    pub properties: Option<AnalysisResultSingletonResourcePropertiesUnion>,
 }
 impl AnalysisResultSingletonResource {
     pub fn new() -> Self {
@@ -51,69 +51,25 @@ pub struct AnalysisResultSingletonResourceProperties {
     #[doc = "The grade of a test."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub grade: Option<TestGrade>,
-    #[doc = "Type of the Analysis Result."]
-    #[serde(rename = "analysisResultType")]
-    pub analysis_result_type: analysis_result_singleton_resource_properties::AnalysisResultType,
 }
 impl AnalysisResultSingletonResourceProperties {
-    pub fn new(analysis_result_type: analysis_result_singleton_resource_properties::AnalysisResultType) -> Self {
-        Self {
-            grade: None,
-            analysis_result_type,
-        }
+    pub fn new() -> Self {
+        Self { grade: None }
     }
 }
-pub mod analysis_result_singleton_resource_properties {
-    use super::*;
-    #[doc = "Type of the Analysis Result."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "AnalysisResultType")]
-    pub enum AnalysisResultType {
-        ScriptExecution,
-        Reliability,
-        #[serde(rename = "CPUUtilization")]
-        CpuUtilization,
-        MemoryUtilization,
-        #[serde(rename = "CPURegression")]
-        CpuRegression,
-        MemoryRegression,
-        TestAnalysis,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for AnalysisResultType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for AnalysisResultType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for AnalysisResultType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::ScriptExecution => serializer.serialize_unit_variant("AnalysisResultType", 0u32, "ScriptExecution"),
-                Self::Reliability => serializer.serialize_unit_variant("AnalysisResultType", 1u32, "Reliability"),
-                Self::CpuUtilization => serializer.serialize_unit_variant("AnalysisResultType", 2u32, "CPUUtilization"),
-                Self::MemoryUtilization => serializer.serialize_unit_variant("AnalysisResultType", 3u32, "MemoryUtilization"),
-                Self::CpuRegression => serializer.serialize_unit_variant("AnalysisResultType", 4u32, "CPURegression"),
-                Self::MemoryRegression => serializer.serialize_unit_variant("AnalysisResultType", 5u32, "MemoryRegression"),
-                Self::TestAnalysis => serializer.serialize_unit_variant("AnalysisResultType", 6u32, "TestAnalysis"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Type of the Analysis Result."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "analysisResultType")]
+pub enum AnalysisResultSingletonResourcePropertiesUnion {
+    #[serde(rename = "CPURegression")]
+    CpuRegression(CpuRegressionResultSingletonResourceProperties),
+    #[serde(rename = "CPUUtilization")]
+    CpuUtilization(CpuUtilizationResultSingletonResourceProperties),
+    MemoryRegression(MemoryRegressionResultSingletonResourceProperties),
+    MemoryUtilization(MemoryUtilizationResultSingletonResourceProperties),
+    Reliability(ReliabilityResultSingletonResourceProperties),
+    ScriptExecution(ScriptExecutionResultSingletonResourceProperties),
+    TestAnalysis(TestAnalysisResultSingletonResourceProperties),
 }
 #[doc = "A list of available OSs."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -132,7 +88,7 @@ pub struct AvailableOsListResult {
 impl azure_core::Continuable for AvailableOsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AvailableOsListResult {
@@ -435,7 +391,7 @@ pub struct CustomerEventListResult {
 impl azure_core::Continuable for CustomerEventListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomerEventListResult {
@@ -523,7 +479,7 @@ pub struct EmailEventListResult {
 impl azure_core::Continuable for EmailEventListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EmailEventListResult {
@@ -626,7 +582,7 @@ pub struct FavoriteProcessListResult {
 impl azure_core::Continuable for FavoriteProcessListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FavoriteProcessListResult {
@@ -695,7 +651,7 @@ pub struct FlightingRingListResult {
 impl azure_core::Continuable for FlightingRingListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FlightingRingListResult {
@@ -906,7 +862,7 @@ pub struct OsUpdateListResult {
 impl azure_core::Continuable for OsUpdateListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OsUpdateListResult {
@@ -1137,7 +1093,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1194,7 +1150,7 @@ pub struct PackageListResult {
 impl azure_core::Continuable for PackageListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PackageListResult {
@@ -1963,7 +1919,7 @@ pub struct TestBaseAccountListResult {
 impl azure_core::Continuable for TestBaseAccountListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestBaseAccountListResult {
@@ -2117,7 +2073,7 @@ pub struct TestBaseAccountSkuListResult {
 impl azure_core::Continuable for TestBaseAccountSkuListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestBaseAccountSkuListResult {
@@ -2193,7 +2149,7 @@ pub struct TestBaseAccountUsageDataList {
 impl azure_core::Continuable for TestBaseAccountUsageDataList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestBaseAccountUsageDataList {
@@ -2391,7 +2347,7 @@ pub struct TestResultListResult {
 impl azure_core::Continuable for TestResultListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestResultListResult {
@@ -2556,7 +2512,7 @@ pub struct TestSummaryListResult {
 impl azure_core::Continuable for TestSummaryListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestSummaryListResult {
@@ -2674,7 +2630,7 @@ pub struct TestTypeListResult {
 impl azure_core::Continuable for TestTypeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TestTypeListResult {

@@ -7,13 +7,12 @@ use azure_core::{
     prelude::*,
     Body, Context, Method, Pipeline, Request, Response,
 };
-use const_format::formatcp;
 use std::sync::Arc;
 use time::OffsetDateTime;
 use url::Url;
 
 pub const API_VERSION: &str = "7.0";
-const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSION);
+const API_VERSION_PARAM: &str = "api-version";
 
 /// Client for Key Vault operations - getting a secret, listing secrets, etc.
 ///
@@ -66,16 +65,24 @@ impl KeyvaultClient {
     }
 
     pub(crate) fn finalize_request(
-        &self,
-        mut url: Url,
+        url: Url,
         method: Method,
         headers: Headers,
         request_body: Option<Body>,
-    ) -> azure_core::Result<Request> {
+    ) -> Request {
         let dt = OffsetDateTime::now_utc();
         let time = date::to_rfc1123(&dt);
 
-        url.set_query(Some(API_VERSION_PARAM));
+        // per discussion in #1301, we _always_ override the api-version with
+        // the client's version
+        let query = url
+            .query_pairs()
+            .filter(|(name, _)| name != API_VERSION_PARAM);
+        let mut url = url.clone();
+        url.query_pairs_mut()
+            .clear()
+            .extend_pairs(query)
+            .append_pair(API_VERSION_PARAM, API_VERSION);
 
         let mut request = Request::new(url, method);
         for (k, v) in headers {
@@ -95,12 +102,12 @@ impl KeyvaultClient {
             request.set_body(azure_core::EMPTY_BODY);
         };
 
-        Ok(request)
+        request
     }
 
     pub(crate) async fn send(
         &self,
-        context: &mut Context,
+        context: &Context,
         request: &mut Request,
     ) -> azure_core::Result<Response> {
         self.pipeline.send(context, request).await

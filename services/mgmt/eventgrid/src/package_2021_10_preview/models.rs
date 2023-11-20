@@ -6,107 +6,49 @@ use std::str::FromStr;
 #[doc = "This is the base type that represents an advanced filter. To configure an advanced filter, do not directly instantiate an object of this class. Instead, instantiate an object of a derived class such as BoolEqualsAdvancedFilter, NumberInAdvancedFilter, StringEqualsAdvancedFilter etc. depending on the type of the key based on which you want to filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AdvancedFilter {
-    #[doc = "The operator type used for filtering, e.g., NumberIn, StringContains, BoolEquals and others."]
-    #[serde(rename = "operatorType")]
-    pub operator_type: advanced_filter::OperatorType,
     #[doc = "The field/property in the event based on which you want to filter."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
 }
 impl AdvancedFilter {
-    pub fn new(operator_type: advanced_filter::OperatorType) -> Self {
-        Self { operator_type, key: None }
+    pub fn new() -> Self {
+        Self { key: None }
     }
 }
-pub mod advanced_filter {
-    use super::*;
-    #[doc = "The operator type used for filtering, e.g., NumberIn, StringContains, BoolEquals and others."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "OperatorType")]
-    pub enum OperatorType {
-        NumberIn,
-        NumberNotIn,
-        NumberLessThan,
-        NumberGreaterThan,
-        NumberLessThanOrEquals,
-        NumberGreaterThanOrEquals,
-        BoolEquals,
-        StringIn,
-        StringNotIn,
-        StringBeginsWith,
-        StringEndsWith,
-        StringContains,
-        NumberInRange,
-        NumberNotInRange,
-        StringNotBeginsWith,
-        StringNotEndsWith,
-        StringNotContains,
-        IsNullOrUndefined,
-        IsNotNull,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for OperatorType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for OperatorType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for OperatorType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::NumberIn => serializer.serialize_unit_variant("OperatorType", 0u32, "NumberIn"),
-                Self::NumberNotIn => serializer.serialize_unit_variant("OperatorType", 1u32, "NumberNotIn"),
-                Self::NumberLessThan => serializer.serialize_unit_variant("OperatorType", 2u32, "NumberLessThan"),
-                Self::NumberGreaterThan => serializer.serialize_unit_variant("OperatorType", 3u32, "NumberGreaterThan"),
-                Self::NumberLessThanOrEquals => serializer.serialize_unit_variant("OperatorType", 4u32, "NumberLessThanOrEquals"),
-                Self::NumberGreaterThanOrEquals => serializer.serialize_unit_variant("OperatorType", 5u32, "NumberGreaterThanOrEquals"),
-                Self::BoolEquals => serializer.serialize_unit_variant("OperatorType", 6u32, "BoolEquals"),
-                Self::StringIn => serializer.serialize_unit_variant("OperatorType", 7u32, "StringIn"),
-                Self::StringNotIn => serializer.serialize_unit_variant("OperatorType", 8u32, "StringNotIn"),
-                Self::StringBeginsWith => serializer.serialize_unit_variant("OperatorType", 9u32, "StringBeginsWith"),
-                Self::StringEndsWith => serializer.serialize_unit_variant("OperatorType", 10u32, "StringEndsWith"),
-                Self::StringContains => serializer.serialize_unit_variant("OperatorType", 11u32, "StringContains"),
-                Self::NumberInRange => serializer.serialize_unit_variant("OperatorType", 12u32, "NumberInRange"),
-                Self::NumberNotInRange => serializer.serialize_unit_variant("OperatorType", 13u32, "NumberNotInRange"),
-                Self::StringNotBeginsWith => serializer.serialize_unit_variant("OperatorType", 14u32, "StringNotBeginsWith"),
-                Self::StringNotEndsWith => serializer.serialize_unit_variant("OperatorType", 15u32, "StringNotEndsWith"),
-                Self::StringNotContains => serializer.serialize_unit_variant("OperatorType", 16u32, "StringNotContains"),
-                Self::IsNullOrUndefined => serializer.serialize_unit_variant("OperatorType", 17u32, "IsNullOrUndefined"),
-                Self::IsNotNull => serializer.serialize_unit_variant("OperatorType", 18u32, "IsNotNull"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "The operator type used for filtering, e.g., NumberIn, StringContains, BoolEquals and others."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "operatorType")]
+pub enum AdvancedFilterUnion {
+    BoolEquals(BoolEqualsAdvancedFilter),
+    IsNotNull(IsNotNullAdvancedFilter),
+    IsNullOrUndefined(IsNullOrUndefinedAdvancedFilter),
+    NumberGreaterThan(NumberGreaterThanAdvancedFilter),
+    NumberGreaterThanOrEquals(NumberGreaterThanOrEqualsAdvancedFilter),
+    NumberIn(NumberInAdvancedFilter),
+    NumberInRange(NumberInRangeAdvancedFilter),
+    NumberLessThan(NumberLessThanAdvancedFilter),
+    NumberLessThanOrEquals(NumberLessThanOrEqualsAdvancedFilter),
+    NumberNotIn(NumberNotInAdvancedFilter),
+    NumberNotInRange(NumberNotInRangeAdvancedFilter),
+    StringBeginsWith(StringBeginsWithAdvancedFilter),
+    StringContains(StringContainsAdvancedFilter),
+    StringEndsWith(StringEndsWithAdvancedFilter),
+    StringIn(StringInAdvancedFilter),
+    StringNotBeginsWith(StringNotBeginsWithAdvancedFilter),
+    StringNotContains(StringNotContainsAdvancedFilter),
+    StringNotEndsWith(StringNotEndsWithAdvancedFilter),
+    StringNotIn(StringNotInAdvancedFilter),
 }
 #[doc = "Azure Active Directory Partner Client Authentication"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureAdPartnerClientAuthentication {
-    #[serde(flatten)]
-    pub partner_client_authentication: PartnerClientAuthentication,
     #[doc = "Properties of an Azure Active Directory Partner Client Authentication."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureAdPartnerClientAuthenticationProperties>,
 }
 impl AzureAdPartnerClientAuthentication {
-    pub fn new(partner_client_authentication: PartnerClientAuthentication) -> Self {
-        Self {
-            partner_client_authentication,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "Properties of an Azure Active Directory Partner Client Authentication."]
@@ -131,18 +73,13 @@ impl AzureAdPartnerClientAuthenticationProperties {
 #[doc = "Information about the azure function destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFunctionEventSubscriptionDestination {
-    #[serde(flatten)]
-    pub event_subscription_destination: EventSubscriptionDestination,
     #[doc = "The properties that represent the Azure Function destination of an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureFunctionEventSubscriptionDestinationProperties>,
 }
 impl AzureFunctionEventSubscriptionDestination {
-    pub fn new(event_subscription_destination: EventSubscriptionDestination) -> Self {
-        Self {
-            event_subscription_destination,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that represent the Azure Function destination of an event subscription."]
@@ -164,7 +101,7 @@ pub struct AzureFunctionEventSubscriptionDestinationProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
+    pub delivery_attribute_mappings: Vec<DeliveryAttributeMappingUnion>,
 }
 impl AzureFunctionEventSubscriptionDestinationProperties {
     pub fn new() -> Self {
@@ -216,7 +153,7 @@ pub struct ChannelProperties {
     pub partner_topic_info: Option<PartnerTopicInfo>,
     #[doc = "Properties of the corresponding partner destination of a Channel."]
     #[serde(rename = "partnerDestinationInfo", default, skip_serializing_if = "Option::is_none")]
-    pub partner_destination_info: Option<PartnerDestinationInfo>,
+    pub partner_destination_info: Option<PartnerDestinationInfoUnion>,
     #[doc = "Context or helpful message that can be used during the approval process by the subscriber."]
     #[serde(rename = "messageForActivation", default, skip_serializing_if = "Option::is_none")]
     pub message_for_activation: Option<String>,
@@ -377,7 +314,7 @@ pub struct ChannelUpdateParametersProperties {
     pub expiration_time_if_not_activated_utc: Option<time::OffsetDateTime>,
     #[doc = "Properties of the corresponding partner destination of a Channel."]
     #[serde(rename = "partnerDestinationInfo", default, skip_serializing_if = "Option::is_none")]
-    pub partner_destination_info: Option<PartnerUpdateDestinationInfo>,
+    pub partner_destination_info: Option<PartnerUpdateDestinationInfoUnion>,
     #[doc = "Update properties for the corresponding partner topic of a channel."]
     #[serde(rename = "partnerTopicInfo", default, skip_serializing_if = "Option::is_none")]
     pub partner_topic_info: Option<PartnerUpdateTopicInfo>,
@@ -404,7 +341,7 @@ pub struct ChannelsListResult {
 impl azure_core::Continuable for ChannelsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ChannelsListResult {
@@ -474,55 +411,11 @@ pub mod connection_state {
         }
     }
 }
-#[doc = "Information about the dead letter destination for an event subscription. To configure a deadletter destination, do not directly instantiate an object of this class. Instead, instantiate an object of a derived class. Currently, StorageBlobDeadLetterDestination is the only class that derives from this class."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeadLetterDestination {
-    #[doc = "Type of the endpoint for the dead letter destination"]
-    #[serde(rename = "endpointType")]
-    pub endpoint_type: dead_letter_destination::EndpointType,
-}
-impl DeadLetterDestination {
-    pub fn new(endpoint_type: dead_letter_destination::EndpointType) -> Self {
-        Self { endpoint_type }
-    }
-}
-pub mod dead_letter_destination {
-    use super::*;
-    #[doc = "Type of the endpoint for the dead letter destination"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "EndpointType")]
-    pub enum EndpointType {
-        StorageBlob,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for EndpointType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for EndpointType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for EndpointType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::StorageBlob => serializer.serialize_unit_variant("EndpointType", 0u32, "StorageBlob"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Type of the endpoint for the dead letter destination"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "endpointType")]
+pub enum DeadLetterDestinationUnion {
+    StorageBlob(StorageBlobDeadLetterDestination),
 }
 #[doc = "Information about the deadletter destination with resource identity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -532,7 +425,7 @@ pub struct DeadLetterWithResourceIdentity {
     pub identity: Option<EventSubscriptionIdentity>,
     #[doc = "Information about the dead letter destination for an event subscription. To configure a deadletter destination, do not directly instantiate an object of this class. Instead, instantiate an object of a derived class. Currently, StorageBlobDeadLetterDestination is the only class that derives from this class."]
     #[serde(rename = "deadLetterDestination", default, skip_serializing_if = "Option::is_none")]
-    pub dead_letter_destination: Option<DeadLetterDestination>,
+    pub dead_letter_destination: Option<DeadLetterDestinationUnion>,
 }
 impl DeadLetterWithResourceIdentity {
     pub fn new() -> Self {
@@ -548,7 +441,7 @@ pub struct DeliveryAttributeListResult {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<DeliveryAttributeMapping>,
+    pub value: Vec<DeliveryAttributeMappingUnion>,
 }
 impl DeliveryAttributeListResult {
     pub fn new() -> Self {
@@ -561,54 +454,18 @@ pub struct DeliveryAttributeMapping {
     #[doc = "Name of the delivery attribute or header."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[doc = "Type of the delivery attribute or header name."]
-    #[serde(rename = "type")]
-    pub type_: delivery_attribute_mapping::Type,
 }
 impl DeliveryAttributeMapping {
-    pub fn new(type_: delivery_attribute_mapping::Type) -> Self {
-        Self { name: None, type_ }
+    pub fn new() -> Self {
+        Self { name: None }
     }
 }
-pub mod delivery_attribute_mapping {
-    use super::*;
-    #[doc = "Type of the delivery attribute or header name."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        Static,
-        Dynamic,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Static => serializer.serialize_unit_variant("Type", 0u32, "Static"),
-                Self::Dynamic => serializer.serialize_unit_variant("Type", 1u32, "Dynamic"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Type of the delivery attribute or header name."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum DeliveryAttributeMappingUnion {
+    Dynamic(DynamicDeliveryAttributeMapping),
+    Static(StaticDeliveryAttributeMapping),
 }
 #[doc = "Information about the delivery for an event subscription with resource identity."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -618,7 +475,7 @@ pub struct DeliveryWithResourceIdentity {
     pub identity: Option<EventSubscriptionIdentity>,
     #[doc = "Information about the destination for an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub destination: Option<EventSubscriptionDestination>,
+    pub destination: Option<EventSubscriptionDestinationUnion>,
 }
 impl DeliveryWithResourceIdentity {
     pub fn new() -> Self {
@@ -676,7 +533,7 @@ pub struct DomainProperties {
     pub input_schema: Option<domain_properties::InputSchema>,
     #[doc = "By default, Event Grid expects events to be in the Event Grid event schema. Specifying an input schema mapping enables publishing to Event Grid using a custom input schema. Currently, the only supported type of InputSchemaMapping is 'JsonInputSchemaMapping'."]
     #[serde(rename = "inputSchemaMapping", default, skip_serializing_if = "Option::is_none")]
-    pub input_schema_mapping: Option<InputSchemaMapping>,
+    pub input_schema_mapping: Option<InputSchemaMappingUnion>,
     #[doc = "Metric resource id for the Event Grid Domain Resource."]
     #[serde(rename = "metricResourceId", default, skip_serializing_if = "Option::is_none")]
     pub metric_resource_id: Option<String>,
@@ -1002,7 +859,7 @@ pub struct DomainTopicsListResult {
 impl azure_core::Continuable for DomainTopicsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DomainTopicsListResult {
@@ -1162,7 +1019,7 @@ pub struct DomainsListResult {
 impl azure_core::Continuable for DomainsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DomainsListResult {
@@ -1247,7 +1104,7 @@ pub struct EventChannelFilter {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub advanced_filters: Vec<AdvancedFilter>,
+    pub advanced_filters: Vec<AdvancedFilterUnion>,
 }
 impl EventChannelFilter {
     pub fn new() -> Self {
@@ -1404,7 +1261,7 @@ pub struct EventChannelsListResult {
 impl azure_core::Continuable for EventChannelsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EventChannelsListResult {
@@ -1415,18 +1272,13 @@ impl EventChannelsListResult {
 #[doc = "Information about the event hub destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EventHubEventSubscriptionDestination {
-    #[serde(flatten)]
-    pub event_subscription_destination: EventSubscriptionDestination,
     #[doc = "The properties for a event hub destination."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<EventHubEventSubscriptionDestinationProperties>,
 }
 impl EventHubEventSubscriptionDestination {
-    pub fn new(event_subscription_destination: EventSubscriptionDestination) -> Self {
-        Self {
-            event_subscription_destination,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties for a event hub destination."]
@@ -1442,7 +1294,7 @@ pub struct EventHubEventSubscriptionDestinationProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
+    pub delivery_attribute_mappings: Vec<DeliveryAttributeMappingUnion>,
 }
 impl EventHubEventSubscriptionDestinationProperties {
     pub fn new() -> Self {
@@ -1466,69 +1318,18 @@ impl EventSubscription {
         Self::default()
     }
 }
-#[doc = "Information about the destination for an event subscription."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct EventSubscriptionDestination {
-    #[doc = "Type of the endpoint for the event subscription destination."]
-    #[serde(rename = "endpointType")]
-    pub endpoint_type: event_subscription_destination::EndpointType,
-}
-impl EventSubscriptionDestination {
-    pub fn new(endpoint_type: event_subscription_destination::EndpointType) -> Self {
-        Self { endpoint_type }
-    }
-}
-pub mod event_subscription_destination {
-    use super::*;
-    #[doc = "Type of the endpoint for the event subscription destination."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "EndpointType")]
-    pub enum EndpointType {
-        WebHook,
-        EventHub,
-        StorageQueue,
-        HybridConnection,
-        ServiceBusQueue,
-        ServiceBusTopic,
-        AzureFunction,
-        PartnerDestination,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for EndpointType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for EndpointType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for EndpointType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::WebHook => serializer.serialize_unit_variant("EndpointType", 0u32, "WebHook"),
-                Self::EventHub => serializer.serialize_unit_variant("EndpointType", 1u32, "EventHub"),
-                Self::StorageQueue => serializer.serialize_unit_variant("EndpointType", 2u32, "StorageQueue"),
-                Self::HybridConnection => serializer.serialize_unit_variant("EndpointType", 3u32, "HybridConnection"),
-                Self::ServiceBusQueue => serializer.serialize_unit_variant("EndpointType", 4u32, "ServiceBusQueue"),
-                Self::ServiceBusTopic => serializer.serialize_unit_variant("EndpointType", 5u32, "ServiceBusTopic"),
-                Self::AzureFunction => serializer.serialize_unit_variant("EndpointType", 6u32, "AzureFunction"),
-                Self::PartnerDestination => serializer.serialize_unit_variant("EndpointType", 7u32, "PartnerDestination"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Type of the endpoint for the event subscription destination."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "endpointType")]
+pub enum EventSubscriptionDestinationUnion {
+    AzureFunction(AzureFunctionEventSubscriptionDestination),
+    EventHub(EventHubEventSubscriptionDestination),
+    HybridConnection(HybridConnectionEventSubscriptionDestination),
+    PartnerDestination(PartnerEventSubscriptionDestination),
+    ServiceBusQueue(ServiceBusQueueEventSubscriptionDestination),
+    ServiceBusTopic(ServiceBusTopicEventSubscriptionDestination),
+    StorageQueue(StorageQueueEventSubscriptionDestination),
+    WebHook(WebHookEventSubscriptionDestination),
 }
 #[doc = "Filter for the Event Subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1560,7 +1361,7 @@ pub struct EventSubscriptionFilter {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub advanced_filters: Vec<AdvancedFilter>,
+    pub advanced_filters: Vec<AdvancedFilterUnion>,
 }
 impl EventSubscriptionFilter {
     pub fn new() -> Self {
@@ -1645,7 +1446,7 @@ pub struct EventSubscriptionProperties {
     pub provisioning_state: Option<event_subscription_properties::ProvisioningState>,
     #[doc = "Information about the destination for an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub destination: Option<EventSubscriptionDestination>,
+    pub destination: Option<EventSubscriptionDestinationUnion>,
     #[doc = "Information about the delivery for an event subscription with resource identity."]
     #[serde(rename = "deliveryWithResourceIdentity", default, skip_serializing_if = "Option::is_none")]
     pub delivery_with_resource_identity: Option<DeliveryWithResourceIdentity>,
@@ -1670,7 +1471,7 @@ pub struct EventSubscriptionProperties {
     pub retry_policy: Option<RetryPolicy>,
     #[doc = "Information about the dead letter destination for an event subscription. To configure a deadletter destination, do not directly instantiate an object of this class. Instead, instantiate an object of a derived class. Currently, StorageBlobDeadLetterDestination is the only class that derives from this class."]
     #[serde(rename = "deadLetterDestination", default, skip_serializing_if = "Option::is_none")]
-    pub dead_letter_destination: Option<DeadLetterDestination>,
+    pub dead_letter_destination: Option<DeadLetterDestinationUnion>,
     #[doc = "Information about the deadletter destination with resource identity."]
     #[serde(rename = "deadLetterWithResourceIdentity", default, skip_serializing_if = "Option::is_none")]
     pub dead_letter_with_resource_identity: Option<DeadLetterWithResourceIdentity>,
@@ -1780,7 +1581,7 @@ pub mod event_subscription_properties {
 pub struct EventSubscriptionUpdateParameters {
     #[doc = "Information about the destination for an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub destination: Option<EventSubscriptionDestination>,
+    pub destination: Option<EventSubscriptionDestinationUnion>,
     #[doc = "Information about the delivery for an event subscription with resource identity."]
     #[serde(rename = "deliveryWithResourceIdentity", default, skip_serializing_if = "Option::is_none")]
     pub delivery_with_resource_identity: Option<DeliveryWithResourceIdentity>,
@@ -1805,7 +1606,7 @@ pub struct EventSubscriptionUpdateParameters {
     pub retry_policy: Option<RetryPolicy>,
     #[doc = "Information about the dead letter destination for an event subscription. To configure a deadletter destination, do not directly instantiate an object of this class. Instead, instantiate an object of a derived class. Currently, StorageBlobDeadLetterDestination is the only class that derives from this class."]
     #[serde(rename = "deadLetterDestination", default, skip_serializing_if = "Option::is_none")]
-    pub dead_letter_destination: Option<DeadLetterDestination>,
+    pub dead_letter_destination: Option<DeadLetterDestinationUnion>,
     #[doc = "Information about the deadletter destination with resource identity."]
     #[serde(rename = "deadLetterWithResourceIdentity", default, skip_serializing_if = "Option::is_none")]
     pub dead_letter_with_resource_identity: Option<DeadLetterWithResourceIdentity>,
@@ -1875,7 +1676,7 @@ pub struct EventSubscriptionsListResult {
 impl azure_core::Continuable for EventSubscriptionsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EventSubscriptionsListResult {
@@ -2043,18 +1844,13 @@ impl ExtensionTopicProperties {
 #[doc = "Information about the HybridConnection destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HybridConnectionEventSubscriptionDestination {
-    #[serde(flatten)]
-    pub event_subscription_destination: EventSubscriptionDestination,
     #[doc = "The properties for a hybrid connection destination."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<HybridConnectionEventSubscriptionDestinationProperties>,
 }
 impl HybridConnectionEventSubscriptionDestination {
-    pub fn new(event_subscription_destination: EventSubscriptionDestination) -> Self {
-        Self {
-            event_subscription_destination,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties for a hybrid connection destination."]
@@ -2070,7 +1866,7 @@ pub struct HybridConnectionEventSubscriptionDestinationProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
+    pub delivery_attribute_mappings: Vec<DeliveryAttributeMappingUnion>,
 }
 impl HybridConnectionEventSubscriptionDestinationProperties {
     pub fn new() -> Self {
@@ -2213,55 +2009,11 @@ impl InlineEventProperties {
         Self::default()
     }
 }
-#[doc = "By default, Event Grid expects events to be in the Event Grid event schema. Specifying an input schema mapping enables publishing to Event Grid using a custom input schema. Currently, the only supported type of InputSchemaMapping is 'JsonInputSchemaMapping'."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct InputSchemaMapping {
-    #[doc = "Type of the custom mapping"]
-    #[serde(rename = "inputSchemaMappingType")]
-    pub input_schema_mapping_type: input_schema_mapping::InputSchemaMappingType,
-}
-impl InputSchemaMapping {
-    pub fn new(input_schema_mapping_type: input_schema_mapping::InputSchemaMappingType) -> Self {
-        Self { input_schema_mapping_type }
-    }
-}
-pub mod input_schema_mapping {
-    use super::*;
-    #[doc = "Type of the custom mapping"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "InputSchemaMappingType")]
-    pub enum InputSchemaMappingType {
-        Json,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for InputSchemaMappingType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for InputSchemaMappingType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for InputSchemaMappingType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Json => serializer.serialize_unit_variant("InputSchemaMappingType", 0u32, "Json"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Type of the custom mapping"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "inputSchemaMappingType")]
+pub enum InputSchemaMappingUnion {
+    Json(JsonInputSchemaMapping),
 }
 #[doc = "IsNotNull Advanced Filter."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2315,18 +2067,13 @@ impl JsonFieldWithDefault {
 #[doc = "This enables publishing to Event Grid using a custom input schema. This can be used to map properties from a custom input JSON schema to the Event Grid event schema."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct JsonInputSchemaMapping {
-    #[serde(flatten)]
-    pub input_schema_mapping: InputSchemaMapping,
     #[doc = "This can be used to map properties of a source schema (or default values, for certain supported properties) to properties of the EventGridEvent schema."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<JsonInputSchemaMappingProperties>,
 }
 impl JsonInputSchemaMapping {
-    pub fn new(input_schema_mapping: InputSchemaMapping) -> Self {
-        Self {
-            input_schema_mapping,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "This can be used to map properties of a source schema (or default values, for certain supported properties) to properties of the EventGridEvent schema."]
@@ -2613,63 +2360,12 @@ impl PartnerAuthorization {
         Self::default()
     }
 }
-#[doc = "Partner client authentication"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PartnerClientAuthentication {
-    #[doc = "Type of client authentication"]
-    #[serde(rename = "clientAuthenticationType")]
-    pub client_authentication_type: partner_client_authentication::ClientAuthenticationType,
-}
-impl PartnerClientAuthentication {
-    pub fn new(client_authentication_type: partner_client_authentication::ClientAuthenticationType) -> Self {
-        Self {
-            client_authentication_type,
-        }
-    }
-}
-pub mod partner_client_authentication {
-    use super::*;
-    #[doc = "Type of client authentication"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ClientAuthenticationType")]
-    pub enum ClientAuthenticationType {
-        #[serde(rename = "AzureAD")]
-        AzureAd,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ClientAuthenticationType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ClientAuthenticationType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ClientAuthenticationType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::AzureAd => serializer.serialize_unit_variant("ClientAuthenticationType", 0u32, "AzureAD"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    impl Default for ClientAuthenticationType {
-        fn default() -> Self {
-            Self::AzureAd
-        }
-    }
+#[doc = "Type of client authentication"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "clientAuthenticationType")]
+pub enum PartnerClientAuthenticationUnion {
+    #[serde(rename = "AzureAD")]
+    AzureAd(AzureAdPartnerClientAuthentication),
 }
 #[doc = "Partner configuration information"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -2801,7 +2497,7 @@ pub struct PartnerConfigurationsListResult {
 impl azure_core::Continuable for PartnerConfigurationsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PartnerConfigurationsListResult {
@@ -2842,9 +2538,6 @@ pub struct PartnerDestinationInfo {
     #[doc = "Name of the partner destination associated with the channel."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[doc = "Type of the endpoint for the partner destination"]
-    #[serde(rename = "endpointType")]
-    pub endpoint_type: partner_destination_info::EndpointType,
     #[doc = "Additional context of the partner destination endpoint."]
     #[serde(rename = "endpointServiceContext", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_service_context: Option<String>,
@@ -2858,59 +2551,21 @@ pub struct PartnerDestinationInfo {
     pub resource_move_change_history: Vec<ResourceMoveChangeHistory>,
 }
 impl PartnerDestinationInfo {
-    pub fn new(endpoint_type: partner_destination_info::EndpointType) -> Self {
+    pub fn new() -> Self {
         Self {
             azure_subscription_id: None,
             resource_group_name: None,
             name: None,
-            endpoint_type,
             endpoint_service_context: None,
             resource_move_change_history: Vec::new(),
         }
     }
 }
-pub mod partner_destination_info {
-    use super::*;
-    #[doc = "Type of the endpoint for the partner destination"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "EndpointType")]
-    pub enum EndpointType {
-        WebHook,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for EndpointType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for EndpointType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for EndpointType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::WebHook => serializer.serialize_unit_variant("EndpointType", 0u32, "WebHook"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    impl Default for EndpointType {
-        fn default() -> Self {
-            Self::WebHook
-        }
-    }
+#[doc = "Type of the endpoint for the partner destination"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "endpointType")]
+pub enum PartnerDestinationInfoUnion {
+    WebHook(WebhookPartnerDestinationInfo),
 }
 #[doc = "Properties of the Partner Destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -3056,7 +2711,7 @@ pub struct PartnerDestinationsListResult {
 impl azure_core::Continuable for PartnerDestinationsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PartnerDestinationsListResult {
@@ -3084,17 +2739,12 @@ impl PartnerDetails {
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PartnerEventSubscriptionDestination {
-    #[serde(flatten)]
-    pub event_subscription_destination: EventSubscriptionDestination,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PartnerEventSubscriptionDestinationProperties>,
 }
 impl PartnerEventSubscriptionDestination {
-    pub fn new(event_subscription_destination: EventSubscriptionDestination) -> Self {
-        Self {
-            event_subscription_destination,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -3430,7 +3080,7 @@ pub struct PartnerNamespacesListResult {
 impl azure_core::Continuable for PartnerNamespacesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PartnerNamespacesListResult {
@@ -3654,7 +3304,7 @@ pub struct PartnerRegistrationsListResult {
 impl azure_core::Continuable for PartnerRegistrationsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PartnerRegistrationsListResult {
@@ -3863,7 +3513,7 @@ pub struct PartnerTopicsListResult {
 impl azure_core::Continuable for PartnerTopicsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PartnerTopicsListResult {
@@ -3871,60 +3521,11 @@ impl PartnerTopicsListResult {
         Self::default()
     }
 }
-#[doc = "Properties of the corresponding partner destination of a Channel."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PartnerUpdateDestinationInfo {
-    #[doc = "Type of the endpoint for the partner destination"]
-    #[serde(rename = "endpointType")]
-    pub endpoint_type: partner_update_destination_info::EndpointType,
-}
-impl PartnerUpdateDestinationInfo {
-    pub fn new(endpoint_type: partner_update_destination_info::EndpointType) -> Self {
-        Self { endpoint_type }
-    }
-}
-pub mod partner_update_destination_info {
-    use super::*;
-    #[doc = "Type of the endpoint for the partner destination"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "EndpointType")]
-    pub enum EndpointType {
-        WebHook,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for EndpointType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for EndpointType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for EndpointType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::WebHook => serializer.serialize_unit_variant("EndpointType", 0u32, "WebHook"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    impl Default for EndpointType {
-        fn default() -> Self {
-            Self::WebHook
-        }
-    }
+#[doc = "Type of the endpoint for the partner destination"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "endpointType")]
+pub enum PartnerUpdateDestinationInfoUnion {
+    WebHook(WebhookUpdatePartnerDestinationInfo),
 }
 #[doc = "Update properties for the corresponding partner topic of a channel."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -3980,7 +3581,7 @@ pub struct PrivateEndpointConnectionListResult {
 impl azure_core::Continuable for PrivateEndpointConnectionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateEndpointConnectionListResult {
@@ -4125,7 +3726,7 @@ pub struct PrivateLinkResourcesListResult {
 impl azure_core::Continuable for PrivateLinkResourcesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateLinkResourcesListResult {
@@ -4244,18 +3845,13 @@ impl RetryPolicy {
 #[doc = "Information about the service bus destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusQueueEventSubscriptionDestination {
-    #[serde(flatten)]
-    pub event_subscription_destination: EventSubscriptionDestination,
     #[doc = "The properties that represent the Service Bus destination of an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceBusQueueEventSubscriptionDestinationProperties>,
 }
 impl ServiceBusQueueEventSubscriptionDestination {
-    pub fn new(event_subscription_destination: EventSubscriptionDestination) -> Self {
-        Self {
-            event_subscription_destination,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that represent the Service Bus destination of an event subscription."]
@@ -4271,7 +3867,7 @@ pub struct ServiceBusQueueEventSubscriptionDestinationProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
+    pub delivery_attribute_mappings: Vec<DeliveryAttributeMappingUnion>,
 }
 impl ServiceBusQueueEventSubscriptionDestinationProperties {
     pub fn new() -> Self {
@@ -4281,18 +3877,13 @@ impl ServiceBusQueueEventSubscriptionDestinationProperties {
 #[doc = "Information about the service bus topic destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServiceBusTopicEventSubscriptionDestination {
-    #[serde(flatten)]
-    pub event_subscription_destination: EventSubscriptionDestination,
     #[doc = "The properties that represent the Service Bus Topic destination of an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ServiceBusTopicEventSubscriptionDestinationProperties>,
 }
 impl ServiceBusTopicEventSubscriptionDestination {
-    pub fn new(event_subscription_destination: EventSubscriptionDestination) -> Self {
-        Self {
-            event_subscription_destination,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties that represent the Service Bus Topic destination of an event subscription."]
@@ -4308,7 +3899,7 @@ pub struct ServiceBusTopicEventSubscriptionDestinationProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
+    pub delivery_attribute_mappings: Vec<DeliveryAttributeMappingUnion>,
 }
 impl ServiceBusTopicEventSubscriptionDestinationProperties {
     pub fn new() -> Self {
@@ -4350,18 +3941,13 @@ impl StaticDeliveryAttributeMappingProperties {
 #[doc = "Information about the storage blob based dead letter destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageBlobDeadLetterDestination {
-    #[serde(flatten)]
-    pub dead_letter_destination: DeadLetterDestination,
     #[doc = "Properties of the storage blob based dead letter destination."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageBlobDeadLetterDestinationProperties>,
 }
 impl StorageBlobDeadLetterDestination {
-    pub fn new(dead_letter_destination: DeadLetterDestination) -> Self {
-        Self {
-            dead_letter_destination,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "Properties of the storage blob based dead letter destination."]
@@ -4382,18 +3968,13 @@ impl StorageBlobDeadLetterDestinationProperties {
 #[doc = "Information about the storage queue destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct StorageQueueEventSubscriptionDestination {
-    #[serde(flatten)]
-    pub event_subscription_destination: EventSubscriptionDestination,
     #[doc = "The properties for a storage queue destination."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<StorageQueueEventSubscriptionDestinationProperties>,
 }
 impl StorageQueueEventSubscriptionDestination {
-    pub fn new(event_subscription_destination: EventSubscriptionDestination) -> Self {
-        Self {
-            event_subscription_destination,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "The properties for a storage queue destination."]
@@ -4708,7 +4289,7 @@ pub struct SystemTopicsListResult {
 impl azure_core::Continuable for SystemTopicsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SystemTopicsListResult {
@@ -4819,7 +4400,7 @@ pub struct TopicProperties {
     pub input_schema: Option<topic_properties::InputSchema>,
     #[doc = "By default, Event Grid expects events to be in the Event Grid event schema. Specifying an input schema mapping enables publishing to Event Grid using a custom input schema. Currently, the only supported type of InputSchemaMapping is 'JsonInputSchemaMapping'."]
     #[serde(rename = "inputSchemaMapping", default, skip_serializing_if = "Option::is_none")]
-    pub input_schema_mapping: Option<InputSchemaMapping>,
+    pub input_schema_mapping: Option<InputSchemaMappingUnion>,
     #[doc = "Metric resource id for the topic."]
     #[serde(rename = "metricResourceId", default, skip_serializing_if = "Option::is_none")]
     pub metric_resource_id: Option<String>,
@@ -5355,7 +4936,7 @@ pub struct TopicsListResult {
 impl azure_core::Continuable for TopicsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TopicsListResult {
@@ -5507,7 +5088,7 @@ pub struct VerifiedPartnersListResult {
 impl azure_core::Continuable for VerifiedPartnersListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VerifiedPartnersListResult {
@@ -5518,18 +5099,13 @@ impl VerifiedPartnersListResult {
 #[doc = "Information about the webhook destination for an event subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebHookEventSubscriptionDestination {
-    #[serde(flatten)]
-    pub event_subscription_destination: EventSubscriptionDestination,
     #[doc = "Information about the webhook destination properties for an event subscription."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebHookEventSubscriptionDestinationProperties>,
 }
 impl WebHookEventSubscriptionDestination {
-    pub fn new(event_subscription_destination: EventSubscriptionDestination) -> Self {
-        Self {
-            event_subscription_destination,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "Information about the webhook destination properties for an event subscription."]
@@ -5564,7 +5140,7 @@ pub struct WebHookEventSubscriptionDestinationProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub delivery_attribute_mappings: Vec<DeliveryAttributeMapping>,
+    pub delivery_attribute_mappings: Vec<DeliveryAttributeMappingUnion>,
 }
 impl WebHookEventSubscriptionDestinationProperties {
     pub fn new() -> Self {
@@ -5608,7 +5184,7 @@ pub struct WebhookPartnerDestinationProperties {
     pub endpoint_base_url: Option<String>,
     #[doc = "Partner client authentication"]
     #[serde(rename = "clientAuthentication", default, skip_serializing_if = "Option::is_none")]
-    pub client_authentication: Option<PartnerClientAuthentication>,
+    pub client_authentication: Option<PartnerClientAuthenticationUnion>,
 }
 impl WebhookPartnerDestinationProperties {
     pub fn new() -> Self {
@@ -5618,18 +5194,13 @@ impl WebhookPartnerDestinationProperties {
 #[doc = "Information about the update of the WebHook of the partner destination."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WebhookUpdatePartnerDestinationInfo {
-    #[serde(flatten)]
-    pub partner_update_destination_info: PartnerUpdateDestinationInfo,
     #[doc = "Properties of a partner destination webhook."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<WebhookPartnerDestinationProperties>,
 }
 impl WebhookUpdatePartnerDestinationInfo {
-    pub fn new(partner_update_destination_info: PartnerUpdateDestinationInfo) -> Self {
-        Self {
-            partner_update_destination_info,
-            properties: None,
-        }
+    pub fn new() -> Self {
+        Self { properties: None }
     }
 }
 #[doc = "Metadata pertaining to creation and last modification of the resource."]

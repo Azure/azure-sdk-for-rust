@@ -18,43 +18,63 @@ use super::{BlobClient, BlobLeaseClient, ContainerClient, ContainerLeaseClient};
 pub struct ClientBuilder {
     cloud_location: CloudLocation,
     options: ClientOptions,
+    credentials: StorageCredentials,
 }
 
 impl ClientBuilder {
     /// Create a new instance of `ClientBuilder`.
     #[must_use]
-    pub fn new(account: impl Into<String>, credentials: impl Into<StorageCredentials>) -> Self {
-        Self::with_location(CloudLocation::Public {
-            account: account.into(),
-            credentials: credentials.into(),
-        })
+    pub fn new<A, C>(account: A, credentials: C) -> Self
+    where
+        A: Into<String>,
+        C: Into<StorageCredentials>,
+    {
+        Self::with_location(
+            CloudLocation::Public {
+                account: account.into(),
+            },
+            credentials,
+        )
     }
 
     /// Create a new instance of `ClientBuilder` with a cloud location.
     #[must_use]
-    pub fn with_location(cloud_location: CloudLocation) -> Self {
+    pub fn with_location<C>(cloud_location: CloudLocation, credentials: C) -> Self
+    where
+        C: Into<StorageCredentials>,
+    {
         Self {
             options: ClientOptions::default(),
             cloud_location,
+            credentials: credentials.into(),
         }
     }
 
     /// Use the emulator with default settings
     #[must_use]
     pub fn emulator() -> Self {
-        Self::with_location(CloudLocation::Emulator {
-            address: "127.0.0.1".to_owned(),
-            port: 10000,
-        })
+        Self::with_location(
+            CloudLocation::Emulator {
+                address: "127.0.0.1".to_owned(),
+                port: 10000,
+            },
+            StorageCredentials::emulator(),
+        )
     }
 
     /// Convert the builder into a `BlobServiceClient` instance.
     #[must_use]
     pub fn blob_service_client(self) -> BlobServiceClient {
-        let credentials = self.cloud_location.credentials();
+        let Self {
+            cloud_location,
+            options,
+            credentials,
+        } = self;
+
         BlobServiceClient {
-            pipeline: new_pipeline_from_options(self.options, credentials.clone()),
-            cloud_location: self.cloud_location,
+            pipeline: new_pipeline_from_options(options, credentials.clone()),
+            cloud_location,
+            credentials,
         }
     }
 
@@ -138,6 +158,7 @@ impl ClientBuilder {
 pub struct BlobServiceClient {
     pipeline: Pipeline,
     cloud_location: CloudLocation,
+    credentials: StorageCredentials,
 }
 
 impl BlobServiceClient {
@@ -179,7 +200,15 @@ impl BlobServiceClient {
         ContainerClient::new(self.clone(), container_name.into())
     }
 
-    pub fn shared_access_signature(
+    pub fn get_user_deligation_key(
+        &self,
+        start: OffsetDateTime,
+        expiry: OffsetDateTime,
+    ) -> GetUserDelegationKeyBuilder {
+        GetUserDelegationKeyBuilder::new(self.clone(), start, expiry)
+    }
+
+    pub async fn shared_access_signature(
         &self,
         resource_type: AccountSasResourceType,
         expiry: OffsetDateTime,
@@ -192,14 +221,14 @@ impl BlobServiceClient {
             expiry,
             permissions,
         )
+        .await
     }
 
     pub(crate) fn credentials(&self) -> &StorageCredentials {
-        self.cloud_location.credentials()
+        &self.credentials
     }
 
     pub(crate) fn finalize_request(
-        &self,
         url: Url,
         method: Method,
         headers: Headers,

@@ -1,24 +1,26 @@
 use azure_core::date;
-use azure_identity::*;
+use azure_identity::{authorization_code_flow, development::naive_redirect_server};
 use oauth2::{ClientId, ClientSecret, TokenResponse};
-use std::env;
-use std::error::Error;
+use std::{
+    env::{args, var},
+    error::Error,
+};
 use time::OffsetDateTime;
 use url::Url;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let client_id =
-        ClientId::new(env::var("CLIENT_ID").expect("Missing CLIENT_ID environment variable."));
+        ClientId::new(var("CLIENT_ID").expect("Missing CLIENT_ID environment variable."));
     let client_secret = ClientSecret::new(
-        env::var("CLIENT_SECRET").expect("Missing CLIENT_SECRET environment variable."),
+        var("CLIENT_SECRET").expect("Missing CLIENT_SECRET environment variable."),
     );
-    let tenant_id = env::var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
+    let tenant_id = var("TENANT_ID").expect("Missing TENANT_ID environment variable.");
 
-    let storage_account_name = std::env::args()
+    let storage_account_name = args()
         .nth(1)
         .expect("please specify the storage account name as first command line parameter");
-    let container_name = std::env::args()
+    let container_name = args()
         .nth(2)
         .expect("please specify the container name as second command line parameter");
 
@@ -36,7 +38,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Start a naive redirect server to receive the redirect with the token.
     // This naive server is blocking so you should use something better.
-    let code = development::naive_redirect_server(&c, 3003).unwrap();
+    let code = naive_redirect_server(&c, 3003).unwrap();
 
     println!("code received: {code:?}");
 

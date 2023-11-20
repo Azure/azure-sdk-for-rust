@@ -216,16 +216,15 @@ impl ServiceClient {
             ));
         }
 
-        for val in parts.iter() {
+        for val in &parts {
             let start = match val.find('=') {
                 Some(size) => size + 1,
                 None => continue,
             };
 
             if val.contains("HostName=") {
-                let end = match val.find(".azure-devices.net") {
-                    Some(size) => size,
-                    None => continue,
+                let Some(end) = val.find(".azure-devices.net") else {
+                    continue;
                 };
                 iot_hub_name = Some(&val[start..end]);
             }
@@ -838,7 +837,7 @@ impl ServiceClient {
     /// send the request via the request pipeline
     pub async fn send(
         &self,
-        context: &mut Context,
+        context: &Context,
         request: &mut Request,
     ) -> azure_core::Result<Response> {
         self.pipeline.send(context, request).await

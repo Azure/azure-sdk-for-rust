@@ -1,9 +1,10 @@
 use crate::{
     hmac::sign,
-    shared_access_signature::{format_date, format_form, SasProtocol, SasToken},
+    shared_access_signature::{format_date, SasProtocol, SasToken},
 };
 use std::fmt;
 use time::OffsetDateTime;
+use url::form_urlencoded;
 
 /// Service version of the shared access signature ([Azure documentation](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#specifying-the-signed-version-field)).
 #[derive(Copy, Clone)]
@@ -82,6 +83,7 @@ impl fmt::Display for AccountSasResourceType {
 }
 
 /// Indicate which operations a `key_client` may perform on the resource ([Azure documentation](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#specifying-permissions)).
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Copy, Clone, Default)]
 pub struct AccountSasPermissions {
     pub read: bool,
@@ -172,7 +174,7 @@ impl AccountSharedAccessSignature {
     }
 
     // Azure documentation: https://docs.microsoft.com/rest/api/storageservices/create-service-sas#constructing-the-signature-string
-    fn signature(&self) -> String {
+    fn sign(&self) -> String {
         match self.version {
             AccountSasVersion::V20181109 => {
                 let string_to_sign = format!(
@@ -181,12 +183,12 @@ impl AccountSharedAccessSignature {
                     self.permissions,
                     self.resource,
                     self.resource_type,
-                    self.start.map_or("".to_string(), format_date),
+                    self.start.map_or(String::new(), format_date),
                     format_date(self.expiry),
                     self.ip.clone().unwrap_or_default(),
                     self.protocol
                         .as_ref()
-                        .map_or("".to_string(), |v| v.to_string()),
+                        .map_or(String::new(), ToString::to_string),
                     self.version,
                 );
 
@@ -203,38 +205,38 @@ impl AccountSharedAccessSignature {
 impl SasToken for AccountSharedAccessSignature {
     /// [Example](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#service-sas-example) from Azure documentation.
     fn token(&self) -> String {
-        let mut elements: Vec<String> = vec![
-            format!("sv={}", self.version),
-            format!("ss={}", self.resource),
-            format!("srt={}", self.resource_type),
-            format!("se={}", format_form(format_date(self.expiry))),
-            format!("sp={}", self.permissions),
-        ];
+        let mut form = form_urlencoded::Serializer::new(String::new());
+        form.extend_pairs(&[
+            ("sv", &self.version.to_string()),
+            ("ss", &self.resource.to_string()),
+            ("srt", &self.resource_type.to_string()),
+            ("se", &format_date(self.expiry)),
+            ("sp", &self.permissions.to_string()),
+        ]);
 
         if let Some(start) = &self.start {
-            elements.push(format!("st={}", format_form(format_date(*start))));
+            form.append_pair("st", &format_date(*start));
         }
         if let Some(ip) = &self.ip {
-            elements.push(format!("sip={ip}"));
+            form.append_pair("sip", ip);
         }
         if let Some(protocol) = &self.protocol {
-            elements.push(format!("spr={protocol}"));
+            form.append_pair("spr", &protocol.to_string());
         }
-        let sig = AccountSharedAccessSignature::signature(self);
-        elements.push(format!("sig={}", format_form(sig)));
-
-        elements.join("&")
+        let sig = self.sign();
+        form.append_pair("sig", &sig);
+        form.finish()
     }
 }
 
 impl PartialEq for AccountSharedAccessSignature {
     fn eq(&self, other: &Self) -> bool {
-        self.signature() == other.signature()
+        self.sign() == other.sign()
     }
 }
 
 impl std::fmt::Debug for AccountSharedAccessSignature {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "SharedAccessSignature {{{}}}", self.signature())
+        write!(f, "SharedAccessSignature {{{}}}", self.sign())
     }
 }

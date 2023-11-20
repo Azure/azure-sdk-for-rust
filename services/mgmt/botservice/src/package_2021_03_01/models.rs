@@ -75,7 +75,7 @@ pub struct BotChannel {
     pub resource: Resource,
     #[doc = "Channel definition"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<Channel>,
+    pub properties: Option<ChannelUnion>,
 }
 impl BotChannel {
     pub fn new() -> Self {
@@ -344,7 +344,7 @@ pub struct BotResponseList {
 impl azure_core::Continuable for BotResponseList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BotResponseList {
@@ -355,9 +355,6 @@ impl BotResponseList {
 #[doc = "Channel definition"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Channel {
-    #[doc = "The channel name"]
-    #[serde(rename = "channelName")]
-    pub channel_name: String,
     #[doc = "Entity Tag of the resource"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
@@ -369,14 +366,37 @@ pub struct Channel {
     pub location: Option<String>,
 }
 impl Channel {
-    pub fn new(channel_name: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            channel_name,
             etag: None,
             provisioning_state: None,
             location: None,
         }
     }
+}
+#[doc = "The channel name"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "channelName")]
+pub enum ChannelUnion {
+    AcsChatChannel(AcsChatChannel),
+    AlexaChannel(AlexaChannel),
+    DirectLineChannel(DirectLineChannel),
+    DirectLineSpeechChannel(DirectLineSpeechChannel),
+    EmailChannel(EmailChannel),
+    FacebookChannel(FacebookChannel),
+    KikChannel(KikChannel),
+    LineChannel(LineChannel),
+    M365Extensions(M365Extensions),
+    MsTeamsChannel(MsTeamsChannel),
+    Omnichannel(Omnichannel),
+    OutlookChannel(OutlookChannel),
+    SearchAssistant(SearchAssistant),
+    SkypeChannel(SkypeChannel),
+    SlackChannel(SlackChannel),
+    SmsChannel(SmsChannel),
+    TelegramChannel(TelegramChannel),
+    TelephonyChannel(TelephonyChannel),
+    WebChatChannel(WebChatChannel),
 }
 #[doc = "The list of bot service channel operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -395,7 +415,7 @@ pub struct ChannelResponseList {
 impl azure_core::Continuable for ChannelResponseList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ChannelResponseList {
@@ -574,7 +594,7 @@ pub struct ConnectionSettingResponseList {
 impl azure_core::Continuable for ConnectionSettingResponseList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConnectionSettingResponseList {
@@ -1002,7 +1022,7 @@ pub struct ListChannelWithKeysResponse {
     pub bot_channel: BotChannel,
     #[doc = "Channel definition"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub resource: Option<Channel>,
+    pub resource: Option<ChannelUnion>,
     #[doc = "Channel settings definition"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub setting: Option<ChannelSettings>,
@@ -1150,7 +1170,7 @@ pub struct OperationEntityListResult {
 impl azure_core::Continuable for OperationEntityListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationEntityListResult {

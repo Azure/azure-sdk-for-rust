@@ -6,8 +6,6 @@ use std::str::FromStr;
 #[doc = "Describes the horizontal auto scaling mechanism that adds or removes replicas (containers or container groups)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddRemoveReplicaScalingMechanism {
-    #[serde(flatten)]
-    pub auto_scaling_mechanism: AutoScalingMechanism,
     #[doc = "Minimum number of containers (scale down won't be performed below this number)."]
     #[serde(rename = "minCount")]
     pub min_count: i64,
@@ -19,9 +17,8 @@ pub struct AddRemoveReplicaScalingMechanism {
     pub scale_increment: i64,
 }
 impl AddRemoveReplicaScalingMechanism {
-    pub fn new(auto_scaling_mechanism: AutoScalingMechanism, min_count: i64, max_count: i64, scale_increment: i64) -> Self {
+    pub fn new(min_count: i64, max_count: i64, scale_increment: i64) -> Self {
         Self {
-            auto_scaling_mechanism,
             min_count,
             max_count,
             scale_increment,
@@ -106,7 +103,7 @@ pub struct ApplicationResourceDescriptionList {
 impl azure_core::Continuable for ApplicationResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApplicationResourceDescriptionList {
@@ -134,10 +131,10 @@ pub struct ApplicationScopedVolume {
     pub volume_reference: VolumeReference,
     #[doc = "Describes parameters for creating application-scoped volumes."]
     #[serde(rename = "creationParameters")]
-    pub creation_parameters: ApplicationScopedVolumeCreationParameters,
+    pub creation_parameters: ApplicationScopedVolumeCreationParametersUnion,
 }
 impl ApplicationScopedVolume {
-    pub fn new(volume_reference: VolumeReference, creation_parameters: ApplicationScopedVolumeCreationParameters) -> Self {
+    pub fn new(volume_reference: VolumeReference, creation_parameters: ApplicationScopedVolumeCreationParametersUnion) -> Self {
         Self {
             volume_reference,
             creation_parameters,
@@ -147,16 +144,20 @@ impl ApplicationScopedVolume {
 #[doc = "Describes parameters for creating application-scoped volumes."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ApplicationScopedVolumeCreationParameters {
-    #[doc = "Specifies the application-scoped volume kind."]
-    pub kind: ApplicationScopedVolumeKind,
     #[doc = "User readable description of the volume."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 impl ApplicationScopedVolumeCreationParameters {
-    pub fn new(kind: ApplicationScopedVolumeKind) -> Self {
-        Self { kind, description: None }
+    pub fn new() -> Self {
+        Self { description: None }
     }
+}
+#[doc = "Specifies the application-scoped volume kind."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ApplicationScopedVolumeCreationParametersUnion {
+    ServiceFabricVolumeDisk(ApplicationScopedVolumeCreationParametersServiceFabricVolumeDisk),
 }
 #[doc = "Describes parameters for creating application-scoped volumes provided by Service Fabric Volume Disks"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -257,16 +258,11 @@ impl Serialize for ApplicationScopedVolumeKind {
         }
     }
 }
-#[doc = "Describes the mechanism for performing auto scaling operation. Derived classes will describe the actual mechanism."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScalingMechanism {
-    #[doc = "Enumerates the mechanisms for auto scaling."]
-    pub kind: AutoScalingMechanismKind,
-}
-impl AutoScalingMechanism {
-    pub fn new(kind: AutoScalingMechanismKind) -> Self {
-        Self { kind }
-    }
+#[doc = "Enumerates the mechanisms for auto scaling."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AutoScalingMechanismUnion {
+    AddRemoveReplica(AddRemoveReplicaScalingMechanism),
 }
 #[doc = "Enumerates the mechanisms for auto scaling."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -303,16 +299,11 @@ impl Serialize for AutoScalingMechanismKind {
         }
     }
 }
-#[doc = "Describes the metric that is used for triggering auto scaling operation. Derived classes will describe resources or metrics."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScalingMetric {
-    #[doc = "Enumerates the metrics that are used for triggering auto scaling."]
-    pub kind: AutoScalingMetricKind,
-}
-impl AutoScalingMetric {
-    pub fn new(kind: AutoScalingMetricKind) -> Self {
-        Self { kind }
-    }
+#[doc = "Enumerates the metrics that are used for triggering auto scaling."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AutoScalingMetricUnion {
+    Resource(AutoScalingResourceMetric),
 }
 #[doc = "Enumerates the metrics that are used for triggering auto scaling."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -355,26 +346,24 @@ pub struct AutoScalingPolicy {
     #[doc = "The name of the auto scaling policy."]
     pub name: String,
     #[doc = "Describes the trigger for performing auto scaling operation."]
-    pub trigger: AutoScalingTrigger,
+    pub trigger: AutoScalingTriggerUnion,
     #[doc = "Describes the mechanism for performing auto scaling operation. Derived classes will describe the actual mechanism."]
-    pub mechanism: AutoScalingMechanism,
+    pub mechanism: AutoScalingMechanismUnion,
 }
 impl AutoScalingPolicy {
-    pub fn new(name: String, trigger: AutoScalingTrigger, mechanism: AutoScalingMechanism) -> Self {
+    pub fn new(name: String, trigger: AutoScalingTriggerUnion, mechanism: AutoScalingMechanismUnion) -> Self {
         Self { name, trigger, mechanism }
     }
 }
 #[doc = "Describes the resource that is used for triggering auto scaling."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AutoScalingResourceMetric {
-    #[serde(flatten)]
-    pub auto_scaling_metric: AutoScalingMetric,
     #[doc = "Enumerates the resources that are used for triggering auto scaling."]
     pub name: AutoScalingResourceMetricName,
 }
 impl AutoScalingResourceMetric {
-    pub fn new(auto_scaling_metric: AutoScalingMetric, name: AutoScalingResourceMetricName) -> Self {
-        Self { auto_scaling_metric, name }
+    pub fn new(name: AutoScalingResourceMetricName) -> Self {
+        Self { name }
     }
 }
 #[doc = "Enumerates the resources that are used for triggering auto scaling."]
@@ -416,16 +405,11 @@ impl Serialize for AutoScalingResourceMetricName {
         }
     }
 }
-#[doc = "Describes the trigger for performing auto scaling operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AutoScalingTrigger {
-    #[doc = "Enumerates the triggers for auto scaling."]
-    pub kind: AutoScalingTriggerKind,
-}
-impl AutoScalingTrigger {
-    pub fn new(kind: AutoScalingTriggerKind) -> Self {
-        Self { kind }
-    }
+#[doc = "Enumerates the triggers for auto scaling."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AutoScalingTriggerUnion {
+    AverageLoad(AverageLoadScalingTrigger),
 }
 #[doc = "Enumerates the triggers for auto scaling."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -498,10 +482,8 @@ impl AvailableOperationDisplay {
 #[doc = "Describes the average load trigger used for auto scaling."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AverageLoadScalingTrigger {
-    #[serde(flatten)]
-    pub auto_scaling_trigger: AutoScalingTrigger,
     #[doc = "Describes the metric that is used for triggering auto scaling operation. Derived classes will describe resources or metrics."]
-    pub metric: AutoScalingMetric,
+    pub metric: AutoScalingMetricUnion,
     #[doc = "Lower load threshold (if average load is below this threshold, service will scale down)."]
     #[serde(rename = "lowerLoadThreshold")]
     pub lower_load_threshold: f64,
@@ -514,14 +496,12 @@ pub struct AverageLoadScalingTrigger {
 }
 impl AverageLoadScalingTrigger {
     pub fn new(
-        auto_scaling_trigger: AutoScalingTrigger,
-        metric: AutoScalingMetric,
+        metric: AutoScalingMetricUnion,
         lower_load_threshold: f64,
         upper_load_threshold: f64,
         scale_interval_in_seconds: i64,
     ) -> Self {
         Self {
-            auto_scaling_trigger,
             metric,
             lower_load_threshold,
             upper_load_threshold,
@@ -774,7 +754,7 @@ pub struct DiagnosticsDescription {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub sinks: Vec<DiagnosticsSinkProperties>,
+    pub sinks: Vec<DiagnosticsSinkPropertiesUnion>,
     #[doc = "Status of whether or not sinks are enabled."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
@@ -854,8 +834,6 @@ impl Serialize for DiagnosticsSinkKind {
 #[doc = "Properties of a DiagnosticsSink."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DiagnosticsSinkProperties {
-    #[doc = "The kind of DiagnosticsSink."]
-    pub kind: DiagnosticsSinkKind,
     #[doc = "Name of the sink. This value is referenced by DiagnosticsReferenceDescription"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -864,13 +842,18 @@ pub struct DiagnosticsSinkProperties {
     pub description: Option<String>,
 }
 impl DiagnosticsSinkProperties {
-    pub fn new(kind: DiagnosticsSinkKind) -> Self {
+    pub fn new() -> Self {
         Self {
-            kind,
             name: None,
             description: None,
         }
     }
+}
+#[doc = "The kind of DiagnosticsSink."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum DiagnosticsSinkPropertiesUnion {
+    AzureInternalMonitoringPipeline(AzureInternalMonitoringPipelineSinkDescription),
 }
 #[doc = "Dimension of a resource metric. For e.g. instance specific HTTP requests for a web app, \nwhere instance name is dimension of the metric HTTP request"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1091,7 +1074,7 @@ pub struct GatewayResourceDescriptionList {
 impl azure_core::Continuable for GatewayResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GatewayResourceDescriptionList {
@@ -1588,7 +1571,7 @@ pub struct NetworkResourceDescriptionList {
 impl azure_core::Continuable for NetworkResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NetworkResourceDescriptionList {
@@ -1626,16 +1609,19 @@ impl NetworkResourceProperties {
 pub struct NetworkResourcePropertiesBase {
     #[serde(flatten)]
     pub provisioned_resource_properties: ProvisionedResourceProperties,
-    #[doc = "The type of a Service Fabric container network."]
-    pub kind: NetworkKind,
 }
 impl NetworkResourcePropertiesBase {
-    pub fn new(kind: NetworkKind) -> Self {
+    pub fn new() -> Self {
         Self {
             provisioned_resource_properties: ProvisionedResourceProperties::default(),
-            kind,
         }
     }
+}
+#[doc = "The type of a Service Fabric container network."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum NetworkResourcePropertiesBaseUnion {
+    Local(LocalNetworkResourceProperties),
 }
 #[doc = "The operation system required by the code in service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1691,7 +1677,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1938,7 +1924,7 @@ pub struct SecretResourceDescriptionList {
 impl azure_core::Continuable for SecretResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecretResourceDescriptionList {
@@ -1980,16 +1966,20 @@ impl SecretResourceProperties {
 pub struct SecretResourcePropertiesBase {
     #[serde(flatten)]
     pub provisioned_resource_properties: ProvisionedResourceProperties,
-    #[doc = "Describes the kind of secret."]
-    pub kind: SecretKind,
 }
 impl SecretResourcePropertiesBase {
-    pub fn new(kind: SecretKind) -> Self {
+    pub fn new() -> Self {
         Self {
             provisioned_resource_properties: ProvisionedResourceProperties::default(),
-            kind,
         }
     }
+}
+#[doc = "Describes the kind of secret."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum SecretResourcePropertiesBaseUnion {
+    #[serde(rename = "inlinedValue")]
+    InlinedValue(InlinedValueSecretResourceProperties),
 }
 #[doc = "This type represents the unencrypted value of the secret."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -2048,7 +2038,7 @@ pub struct SecretValueResourceDescriptionList {
 impl azure_core::Continuable for SecretValueResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecretValueResourceDescriptionList {
@@ -2138,7 +2128,7 @@ pub struct ServiceReplicaDescriptionList {
 impl azure_core::Continuable for ServiceReplicaDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceReplicaDescriptionList {
@@ -2210,7 +2200,7 @@ pub struct ServiceResourceDescriptionList {
 impl azure_core::Continuable for ServiceResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceResourceDescriptionList {
@@ -2451,7 +2441,7 @@ pub struct VolumeResourceDescriptionList {
 impl azure_core::Continuable for VolumeResourceDescriptionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VolumeResourceDescriptionList {

@@ -231,7 +231,7 @@ pub struct GetTenantPolicyListResponse {
 impl azure_core::Continuable for GetTenantPolicyListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GetTenantPolicyListResponse {
@@ -371,7 +371,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -703,6 +703,18 @@ pub mod subscription_alias_response_properties {
         }
     }
 }
+#[doc = "The created subscription object."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SubscriptionCreationResult {
+    #[doc = "The link to the new subscription. Use this link to check the status of subscription creation operation."]
+    #[serde(rename = "subscriptionLink", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_link: Option<String>,
+}
+impl SubscriptionCreationResult {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Subscription list operation response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SubscriptionListResult {
@@ -720,7 +732,7 @@ pub struct SubscriptionListResult {
 impl azure_core::Continuable for SubscriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SubscriptionListResult {

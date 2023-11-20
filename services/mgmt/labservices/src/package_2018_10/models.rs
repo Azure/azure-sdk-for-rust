@@ -1384,7 +1384,7 @@ pub struct ProviderOperationResult {
 impl azure_core::Continuable for ProviderOperationResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderOperationResult {
@@ -1792,7 +1792,7 @@ pub struct ResponseWithContinuationEnvironmentSetting {
 impl azure_core::Continuable for ResponseWithContinuationEnvironmentSetting {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationEnvironmentSetting {
@@ -1817,7 +1817,7 @@ pub struct ResponseWithContinuationEnvironment {
 impl azure_core::Continuable for ResponseWithContinuationEnvironment {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationEnvironment {
@@ -1842,7 +1842,7 @@ pub struct ResponseWithContinuationGalleryImage {
 impl azure_core::Continuable for ResponseWithContinuationGalleryImage {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationGalleryImage {
@@ -1867,7 +1867,7 @@ pub struct ResponseWithContinuationLabAccount {
 impl azure_core::Continuable for ResponseWithContinuationLabAccount {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationLabAccount {
@@ -1892,7 +1892,7 @@ pub struct ResponseWithContinuationLab {
 impl azure_core::Continuable for ResponseWithContinuationLab {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationLab {
@@ -1917,7 +1917,7 @@ pub struct ResponseWithContinuationUser {
 impl azure_core::Continuable for ResponseWithContinuationUser {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResponseWithContinuationUser {

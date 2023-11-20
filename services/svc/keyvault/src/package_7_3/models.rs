@@ -325,7 +325,7 @@ pub struct CertificateIssuerListResult {
 impl azure_core::Continuable for CertificateIssuerListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CertificateIssuerListResult {
@@ -417,7 +417,7 @@ pub struct CertificateListResult {
 impl azure_core::Continuable for CertificateListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CertificateListResult {
@@ -853,7 +853,7 @@ pub struct DeletedCertificateListResult {
 impl azure_core::Continuable for DeletedCertificateListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeletedCertificateListResult {
@@ -918,7 +918,7 @@ pub struct DeletedKeyListResult {
 impl azure_core::Continuable for DeletedKeyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeletedKeyListResult {
@@ -983,7 +983,7 @@ pub struct DeletedSasDefinitionListResult {
 impl azure_core::Continuable for DeletedSasDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeletedSasDefinitionListResult {
@@ -1048,7 +1048,7 @@ pub struct DeletedSecretListResult {
 impl azure_core::Continuable for DeletedSecretListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeletedSecretListResult {
@@ -1113,7 +1113,7 @@ pub struct DeletedStorageListResult {
 impl azure_core::Continuable for DeletedStorageListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeletedStorageListResult {
@@ -1132,7 +1132,7 @@ pub struct Error {
     pub message: Option<String>,
     #[doc = "The key vault server error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Box<Option<Error>>,
+    pub innererror: Option<Box<Error>>,
 }
 impl Error {
     pub fn new() -> Self {
@@ -1791,7 +1791,7 @@ pub struct KeyListResult {
 impl azure_core::Continuable for KeyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl KeyListResult {
@@ -2466,7 +2466,7 @@ impl LifetimeActionsTrigger {
 #[doc = "The action that will be executed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LifetimeActionsType {
-    #[doc = "The type of the action."]
+    #[doc = "The type of the action. The value should be compared case-insensitively."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<lifetime_actions_type::Type>,
 }
@@ -2477,12 +2477,10 @@ impl LifetimeActionsType {
 }
 pub mod lifetime_actions_type {
     use super::*;
-    #[doc = "The type of the action."]
+    #[doc = "The type of the action. The value should be compared case-insensitively."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Type {
-        #[serde(rename = "rotate")]
         Rotate,
-        #[serde(rename = "notify")]
         Notify,
     }
 }
@@ -2672,7 +2670,7 @@ pub struct RoleAssignmentListResult {
 impl azure_core::Continuable for RoleAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentListResult {
@@ -2818,7 +2816,7 @@ pub struct RoleDefinitionListResult {
 impl azure_core::Continuable for RoleDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleDefinitionListResult {
@@ -3221,7 +3219,7 @@ pub struct SasDefinitionListResult {
 impl azure_core::Continuable for SasDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SasDefinitionListResult {
@@ -3443,7 +3441,7 @@ pub struct SecretListResult {
 impl azure_core::Continuable for SecretListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecretListResult {
@@ -3865,7 +3863,7 @@ pub struct StorageListResult {
 impl azure_core::Continuable for StorageListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageListResult {

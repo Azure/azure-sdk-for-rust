@@ -26,6 +26,7 @@ use azure_core::{
 };
 use azure_storage::{ConsistencyCRC64, ConsistencyMD5, CopyId, CopyProgress};
 use serde::{self, Deserialize, Deserializer};
+use serde_json::Value;
 use std::collections::HashMap;
 use time::OffsetDateTime;
 
@@ -173,8 +174,10 @@ pub struct BlobProperties {
         rename = "Expiry-Time"
     )]
     pub expiry_time: Option<OffsetDateTime>,
+    pub blob_committed_block_count: Option<u64>,
+    pub resource_type: Option<String>,
     #[serde(flatten)]
-    extra: HashMap<String, String>, // For debug purposes, should be compiled out in the future
+    extra: HashMap<String, Value>, // For debug purposes, should be compiled out in the future
 }
 
 impl Blob {
@@ -219,6 +222,7 @@ impl Blob {
             .and_then(|cct| date::parse_rfc1123(cct).ok());
         let copy_status_description = h.get_optional_string(&headers::COPY_STATUS_DESCRIPTION);
         let server_encrypted = h.get_as(&headers::SERVER_ENCRYPTED)?;
+        let blob_committed_block_count = h.get_optional_as(&headers::BLOB_COMMITTED_BLOCK_COUNT)?;
 
         let mut metadata = HashMap::new();
         for (name, value) in h.iter() {
@@ -279,6 +283,8 @@ impl Blob {
                 tag_count: None,                    // TODO
                 rehydrate_priority: None,           // TODO
                 expiry_time: None,
+                resource_type: None,
+                blob_committed_block_count,
                 extra: HashMap::new(),
             },
             metadata,

@@ -182,7 +182,7 @@ pub struct DiskPoolListResult {
 impl azure_core::Continuable for DiskPoolListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DiskPoolListResult {
@@ -351,7 +351,7 @@ pub struct DiskPoolZoneListResult {
 impl azure_core::Continuable for DiskPoolZoneListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DiskPoolZoneListResult {
@@ -570,7 +570,7 @@ pub struct IscsiTargetList {
 impl azure_core::Continuable for IscsiTargetList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IscsiTargetList {
@@ -753,7 +753,7 @@ pub struct OutboundEnvironmentEndpointList {
 impl azure_core::Continuable for OutboundEnvironmentEndpointList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OutboundEnvironmentEndpointList {

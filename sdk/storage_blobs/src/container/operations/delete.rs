@@ -19,9 +19,8 @@ impl DeleteBuilder {
             headers.add(self.lease_id);
             headers.add(self.if_modified_since);
 
-            let mut request = self
-                .client
-                .finalize_request(url, Method::Delete, headers, None)?;
+            let mut request =
+                ContainerClient::finalize_request(url, Method::Delete, headers, None)?;
 
             let _response = self.client.send(&mut self.context, &mut request).await?;
 

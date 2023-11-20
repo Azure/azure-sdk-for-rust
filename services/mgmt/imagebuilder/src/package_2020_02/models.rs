@@ -78,24 +78,28 @@ impl ImageTemplate {
 #[doc = "Describes a unit of image customization"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateCustomizer {
-    #[doc = "The type of customization tool you want to use on the Image. For example, \"Shell\" can be shell customizer"]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Friendly Name to provide context on what this customization step does"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 impl ImageTemplateCustomizer {
-    pub fn new(type_: String) -> Self {
-        Self { type_, name: None }
+    pub fn new() -> Self {
+        Self { name: None }
     }
+}
+#[doc = "The type of customization tool you want to use on the Image. For example, \"Shell\" can be shell customizer"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ImageTemplateCustomizerUnion {
+    File(ImageTemplateFileCustomizer),
+    PowerShell(ImageTemplatePowerShellCustomizer),
+    WindowsRestart(ImageTemplateRestartCustomizer),
+    Shell(ImageTemplateShellCustomizer),
+    WindowsUpdate(ImageTemplateWindowsUpdateCustomizer),
 }
 #[doc = "Generic distribution object"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateDistributor {
-    #[doc = "Type of distribution."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "The name to be used for the associated RunOutput."]
     #[serde(rename = "runOutputName")]
     pub run_output_name: String,
@@ -104,13 +108,21 @@ pub struct ImageTemplateDistributor {
     pub artifact_tags: Option<serde_json::Value>,
 }
 impl ImageTemplateDistributor {
-    pub fn new(type_: String, run_output_name: String) -> Self {
+    pub fn new(run_output_name: String) -> Self {
         Self {
-            type_,
             run_output_name,
             artifact_tags: None,
         }
     }
+}
+#[doc = "Type of distribution."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ImageTemplateDistributorUnion {
+    ManagedImage(ImageTemplateManagedImageDistributor),
+    SharedImage(ImageTemplateSharedImageDistributor),
+    #[serde(rename = "VHD")]
+    Vhd(ImageTemplateVhdDistributor),
 }
 #[doc = "Uploads files to VMs (Linux, Windows). Corresponds to Packer file provisioner"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -223,7 +235,7 @@ pub struct ImageTemplateListResult {
 impl azure_core::Continuable for ImageTemplateListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ImageTemplateListResult {
@@ -254,25 +266,18 @@ impl ImageTemplateManagedImageDistributor {
 #[doc = "Describes an image source that is a managed image in customer subscription."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateManagedImageSource {
-    #[serde(flatten)]
-    pub image_template_source: ImageTemplateSource,
     #[doc = "ARM resource id of the managed image in customer subscription"]
     #[serde(rename = "imageId")]
     pub image_id: String,
 }
 impl ImageTemplateManagedImageSource {
-    pub fn new(image_template_source: ImageTemplateSource, image_id: String) -> Self {
-        Self {
-            image_template_source,
-            image_id,
-        }
+    pub fn new(image_id: String) -> Self {
+        Self { image_id }
     }
 }
 #[doc = "Describes an image source from [Azure Gallery Images](https://docs.microsoft.com/en-us/rest/api/compute/virtualmachineimages)."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplatePlatformImageSource {
-    #[serde(flatten)]
-    pub image_template_source: ImageTemplateSource,
     #[doc = "Image Publisher in [Azure Gallery Images](https://docs.microsoft.com/en-us/rest/api/compute/virtualmachineimages)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub publisher: Option<String>,
@@ -290,9 +295,8 @@ pub struct ImageTemplatePlatformImageSource {
     pub plan_info: Option<PlatformImagePurchasePlan>,
 }
 impl ImageTemplatePlatformImageSource {
-    pub fn new(image_template_source: ImageTemplateSource) -> Self {
+    pub fn new() -> Self {
         Self {
-            image_template_source,
             publisher: None,
             offer: None,
             sku: None,
@@ -351,16 +355,16 @@ impl ImageTemplatePowerShellCustomizer {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateProperties {
     #[doc = "Describes a virtual machine image source for building, customizing and distributing"]
-    pub source: ImageTemplateSource,
+    pub source: ImageTemplateSourceUnion,
     #[doc = "Specifies the properties used to describe the customization steps of the image, like Image source etc"]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub customize: Vec<ImageTemplateCustomizer>,
+    pub customize: Vec<ImageTemplateCustomizerUnion>,
     #[doc = "The distribution targets where the image output needs to go to."]
-    pub distribute: Vec<ImageTemplateDistributor>,
+    pub distribute: Vec<ImageTemplateDistributorUnion>,
     #[doc = "Provisioning state of the resource"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
@@ -378,7 +382,7 @@ pub struct ImageTemplateProperties {
     pub vm_profile: Option<ImageTemplateVmProfile>,
 }
 impl ImageTemplateProperties {
-    pub fn new(source: ImageTemplateSource, distribute: Vec<ImageTemplateDistributor>) -> Self {
+    pub fn new(source: ImageTemplateSourceUnion, distribute: Vec<ImageTemplateDistributorUnion>) -> Self {
         Self {
             source,
             customize: Vec::new(),
@@ -490,18 +494,13 @@ pub mod image_template_shared_image_distributor {
 #[doc = "Describes an image source that is an image version in a shared image gallery."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ImageTemplateSharedImageVersionSource {
-    #[serde(flatten)]
-    pub image_template_source: ImageTemplateSource,
     #[doc = "ARM resource id of the image version in the shared image gallery"]
     #[serde(rename = "imageVersionId")]
     pub image_version_id: String,
 }
 impl ImageTemplateSharedImageVersionSource {
-    pub fn new(image_template_source: ImageTemplateSource, image_version_id: String) -> Self {
-        Self {
-            image_template_source,
-            image_version_id,
-        }
+    pub fn new(image_version_id: String) -> Self {
+        Self { image_version_id }
     }
 }
 #[doc = "Runs a shell script during the customization phase (Linux). Corresponds to Packer shell provisioner. Exactly one of 'scriptUri' or 'inline' can be specified."]
@@ -533,17 +532,13 @@ impl ImageTemplateShellCustomizer {
         }
     }
 }
-#[doc = "Describes a virtual machine image source for building, customizing and distributing"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct ImageTemplateSource {
-    #[doc = "Specifies the type of source image you want to start with."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl ImageTemplateSource {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
+#[doc = "Specifies the type of source image you want to start with."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ImageTemplateSourceUnion {
+    ManagedImage(ImageTemplateManagedImageSource),
+    PlatformImage(ImageTemplatePlatformImageSource),
+    SharedImageVersion(ImageTemplateSharedImageVersionSource),
 }
 #[doc = "Parameters for updating an image template."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -688,7 +683,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -870,7 +865,7 @@ pub struct RunOutputCollection {
 impl azure_core::Continuable for RunOutputCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RunOutputCollection {

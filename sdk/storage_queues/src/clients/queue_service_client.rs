@@ -12,43 +12,62 @@ use std::fmt::Debug;
 pub struct QueueServiceClientBuilder {
     cloud_location: CloudLocation,
     options: ClientOptions,
+    credentials: StorageCredentials,
 }
 
 impl QueueServiceClientBuilder {
     /// Create a new instance of `QueueServiceClientBuilder`.
     #[must_use]
-    pub fn new(account: impl Into<String>, credentials: impl Into<StorageCredentials>) -> Self {
-        Self::with_location(CloudLocation::Public {
-            account: account.into(),
-            credentials: credentials.into(),
-        })
+    pub fn new<A, C>(account: A, credentials: C) -> Self
+    where
+        A: Into<String>,
+        C: Into<StorageCredentials>,
+    {
+        Self::with_location(
+            CloudLocation::Public {
+                account: account.into(),
+            },
+            credentials,
+        )
     }
 
     /// Create a new instance of `QueueServiceClientBuilder` with a cloud location.
     #[must_use]
-    pub fn with_location(cloud_location: CloudLocation) -> Self {
+    pub fn with_location<C>(cloud_location: CloudLocation, credentials: C) -> Self
+    where
+        C: Into<StorageCredentials>,
+    {
         Self {
             options: ClientOptions::default(),
             cloud_location,
+            credentials: credentials.into(),
         }
     }
 
     /// Use the emulator with default settings
     #[must_use]
     pub fn emulator() -> Self {
-        Self::with_location(CloudLocation::Emulator {
-            address: "127.0.0.1".to_owned(),
-            port: 10001,
-        })
+        Self::with_location(
+            CloudLocation::Emulator {
+                address: "127.0.0.1".to_owned(),
+                port: 10001,
+            },
+            StorageCredentials::emulator(),
+        )
     }
 
     /// Convert the builder into a `QueueServiceClient` instance.
     #[must_use]
     pub fn build(self) -> QueueServiceClient {
-        let credentials = self.cloud_location.credentials();
+        let Self {
+            cloud_location,
+            options,
+            credentials,
+        } = self;
+
         QueueServiceClient {
-            pipeline: new_pipeline_from_options(self.options, credentials.clone()),
-            cloud_location: self.cloud_location,
+            pipeline: new_pipeline_from_options(options, credentials),
+            cloud_location,
         }
     }
 
@@ -128,7 +147,6 @@ impl QueueServiceClient {
     }
 
     pub(crate) fn finalize_request(
-        &self,
         url: url::Url,
         method: azure_core::Method,
         headers: azure_core::headers::Headers,

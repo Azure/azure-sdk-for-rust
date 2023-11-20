@@ -29,6 +29,7 @@ operation! {
     ?consistency_level: ConsistencyLevel,
     ?parallelize_cross_partition_query: ParallelizeCrossPartition,
     ?query_cross_partition: QueryCrossPartition,
+    ?partition_range_id: PartitionRangeId,
     #[skip]
     partition_key_serialized: String
 }
@@ -75,6 +76,7 @@ impl QueryDocumentsBuilder {
                 }
                 request.insert_headers(&this.max_item_count.unwrap_or_default());
                 request.insert_headers(&this.query_cross_partition.unwrap_or_default());
+                request.insert_headers(&this.partition_range_id);
 
                 request.set_body(serde_json::to_vec(&this.query)?);
                 if let Some(partition_key_serialized) = this.partition_key_serialized.as_ref() {

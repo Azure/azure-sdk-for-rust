@@ -464,7 +464,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1082,7 +1082,7 @@ pub struct SavingsPlanModelList {
 impl azure_core::Continuable for SavingsPlanModelList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SavingsPlanModelList {
@@ -1114,7 +1114,7 @@ pub struct SavingsPlanModelListResult {
 impl azure_core::Continuable for SavingsPlanModelListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SavingsPlanModelListResult {
@@ -1252,6 +1252,9 @@ pub struct SavingsPlanOrderAliasProperties {
     #[doc = "Commitment towards the benefit."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub commitment: Option<Commitment>,
+    #[doc = "Setting this to true will automatically purchase a new benefit on the expiration date time."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub renew: Option<Renew>,
 }
 impl SavingsPlanOrderAliasProperties {
     pub fn new() -> Self {
@@ -1293,7 +1296,7 @@ pub struct SavingsPlanOrderModelList {
 impl azure_core::Continuable for SavingsPlanOrderModelList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SavingsPlanOrderModelList {

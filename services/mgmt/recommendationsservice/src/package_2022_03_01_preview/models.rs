@@ -151,7 +151,7 @@ pub struct AccountResourceList {
 impl azure_core::Continuable for AccountResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AccountResourceList {
@@ -717,7 +717,7 @@ pub struct ModelingResourceList {
 impl azure_core::Continuable for ModelingResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ModelingResourceList {
@@ -867,7 +867,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1031,7 +1031,7 @@ pub struct ServiceEndpointResourceList {
 impl azure_core::Continuable for ServiceEndpointResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServiceEndpointResourceList {

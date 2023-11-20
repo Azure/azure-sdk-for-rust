@@ -76,7 +76,7 @@ pub struct AddressResourceList {
 impl azure_core::Continuable for AddressResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AddressResourceList {
@@ -269,7 +269,7 @@ pub struct BillingMeterDetails {
     pub name: Option<String>,
     #[doc = "Holds details about billing type and its meter guids"]
     #[serde(rename = "meterDetails", default, skip_serializing_if = "Option::is_none")]
-    pub meter_details: Option<MeterDetails>,
+    pub meter_details: Option<MeterDetailsUnion>,
     #[doc = "Represents Metering type (eg one-time or recurrent)"]
     #[serde(rename = "meteringType", default, skip_serializing_if = "Option::is_none")]
     pub metering_type: Option<billing_meter_details::MeteringType>,
@@ -427,7 +427,7 @@ pub struct Configurations {
 impl azure_core::Continuable for Configurations {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl Configurations {
@@ -1115,9 +1115,6 @@ impl ManagementResourcePreferences {
 #[doc = "Holds details about billing type and its meter guids"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MeterDetails {
-    #[doc = "Represents billing type."]
-    #[serde(rename = "billingType")]
-    pub billing_type: meter_details::BillingType,
     #[doc = "Billing unit applicable for Pav2 billing"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub multiplier: Option<f64>,
@@ -1126,9 +1123,8 @@ pub struct MeterDetails {
     pub charging_type: Option<meter_details::ChargingType>,
 }
 impl MeterDetails {
-    pub fn new(billing_type: meter_details::BillingType) -> Self {
+    pub fn new() -> Self {
         Self {
-            billing_type,
             multiplier: None,
             charging_type: None,
         }
@@ -1136,43 +1132,6 @@ impl MeterDetails {
 }
 pub mod meter_details {
     use super::*;
-    #[doc = "Represents billing type."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "BillingType")]
-    pub enum BillingType {
-        Pav2,
-        Purchase,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for BillingType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for BillingType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for BillingType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Pav2 => serializer.serialize_unit_variant("BillingType", 0u32, "Pav2"),
-                Self::Purchase => serializer.serialize_unit_variant("BillingType", 1u32, "Purchase"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
     #[doc = "Charging type."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ChargingType")]
@@ -1210,6 +1169,13 @@ pub mod meter_details {
             }
         }
     }
+}
+#[doc = "Represents billing type."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "billingType")]
+pub enum MeterDetailsUnion {
+    Pav2(Pav2MeterDetails),
+    Purchase(PurchaseMeterDetails),
 }
 #[doc = "Notification preference for a job stage."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1411,7 +1377,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -1726,7 +1692,7 @@ pub struct OrderItemResourceList {
 impl azure_core::Continuable for OrderItemResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OrderItemResourceList {
@@ -1837,7 +1803,7 @@ pub struct OrderResourceList {
 impl azure_core::Continuable for OrderResourceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OrderResourceList {
@@ -1992,7 +1958,7 @@ pub struct ProductFamilies {
 impl azure_core::Continuable for ProductFamilies {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProductFamilies {
@@ -2017,7 +1983,7 @@ pub struct ProductFamiliesMetadata {
 impl azure_core::Continuable for ProductFamiliesMetadata {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProductFamiliesMetadata {

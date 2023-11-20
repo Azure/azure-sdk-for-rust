@@ -296,17 +296,14 @@ impl AutoscaleSettingsResource {
 #[doc = "An Azure Blob Storage data source/sink"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureBlobDataTransferDataSourceSink {
-    #[serde(flatten)]
-    pub data_transfer_data_source_sink: DataTransferDataSourceSink,
     #[serde(rename = "containerName")]
     pub container_name: String,
     #[serde(rename = "endpointUrl", default, skip_serializing_if = "Option::is_none")]
     pub endpoint_url: Option<String>,
 }
 impl AzureBlobDataTransferDataSourceSink {
-    pub fn new(data_transfer_data_source_sink: DataTransferDataSourceSink, container_name: String) -> Self {
+    pub fn new(container_name: String) -> Self {
         Self {
-            data_transfer_data_source_sink,
             container_name,
             endpoint_url: None,
         }
@@ -327,20 +324,21 @@ impl BackupInformation {
 #[doc = "The object representing the policy for taking backups on an account."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct BackupPolicy {
-    #[doc = "Describes the mode of backups."]
-    #[serde(rename = "type")]
-    pub type_: BackupPolicyType,
     #[doc = "The object representing the state of the migration between the backup policies."]
     #[serde(rename = "migrationState", default, skip_serializing_if = "Option::is_none")]
     pub migration_state: Option<BackupPolicyMigrationState>,
 }
 impl BackupPolicy {
-    pub fn new(type_: BackupPolicyType) -> Self {
-        Self {
-            type_,
-            migration_state: None,
-        }
+    pub fn new() -> Self {
+        Self { migration_state: None }
     }
+}
+#[doc = "Describes the mode of backups."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum BackupPolicyUnion {
+    Continuous(ContinuousModeBackupPolicy),
+    Periodic(PeriodicModeBackupPolicy),
 }
 #[doc = "The object representing the state of the migration between the backup policies."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1726,36 +1724,27 @@ impl CorsPolicy {
 #[doc = "A CosmosDB Cassandra API data source/sink"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CosmosCassandraDataTransferDataSourceSink {
-    #[serde(flatten)]
-    pub data_transfer_data_source_sink: DataTransferDataSourceSink,
     #[serde(rename = "keyspaceName")]
     pub keyspace_name: String,
     #[serde(rename = "tableName")]
     pub table_name: String,
 }
 impl CosmosCassandraDataTransferDataSourceSink {
-    pub fn new(data_transfer_data_source_sink: DataTransferDataSourceSink, keyspace_name: String, table_name: String) -> Self {
-        Self {
-            data_transfer_data_source_sink,
-            keyspace_name,
-            table_name,
-        }
+    pub fn new(keyspace_name: String, table_name: String) -> Self {
+        Self { keyspace_name, table_name }
     }
 }
 #[doc = "A CosmosDB Cassandra API data source/sink"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CosmosMongoDataTransferDataSourceSink {
-    #[serde(flatten)]
-    pub data_transfer_data_source_sink: DataTransferDataSourceSink,
     #[serde(rename = "databaseName")]
     pub database_name: String,
     #[serde(rename = "collectionName")]
     pub collection_name: String,
 }
 impl CosmosMongoDataTransferDataSourceSink {
-    pub fn new(data_transfer_data_source_sink: DataTransferDataSourceSink, database_name: String, collection_name: String) -> Self {
+    pub fn new(database_name: String, collection_name: String) -> Self {
         Self {
-            data_transfer_data_source_sink,
             database_name,
             collection_name,
         }
@@ -1764,17 +1753,14 @@ impl CosmosMongoDataTransferDataSourceSink {
 #[doc = "A CosmosDB Cassandra API data source/sink"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CosmosSqlDataTransferDataSourceSink {
-    #[serde(flatten)]
-    pub data_transfer_data_source_sink: DataTransferDataSourceSink,
     #[serde(rename = "databaseName")]
     pub database_name: String,
     #[serde(rename = "containerName")]
     pub container_name: String,
 }
 impl CosmosSqlDataTransferDataSourceSink {
-    pub fn new(data_transfer_data_source_sink: DataTransferDataSourceSink, database_name: String, container_name: String) -> Self {
+    pub fn new(database_name: String, container_name: String) -> Self {
         Self {
-            data_transfer_data_source_sink,
             database_name,
             container_name,
         }
@@ -1922,66 +1908,16 @@ pub mod data_center_resource {
         }
     }
 }
-#[doc = "Base class for all DataTransfer source/sink"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DataTransferDataSourceSink {
-    pub component: data_transfer_data_source_sink::Component,
-}
-impl DataTransferDataSourceSink {
-    pub fn new(component: data_transfer_data_source_sink::Component) -> Self {
-        Self { component }
-    }
-}
-pub mod data_transfer_data_source_sink {
-    use super::*;
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Component")]
-    pub enum Component {
-        #[serde(rename = "CosmosDBCassandra")]
-        CosmosDbCassandra,
-        #[serde(rename = "CosmosDBMongo")]
-        CosmosDbMongo,
-        #[serde(rename = "CosmosDBSql")]
-        CosmosDbSql,
-        AzureBlobStorage,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Component {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Component {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Component {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::CosmosDbCassandra => serializer.serialize_unit_variant("Component", 0u32, "CosmosDBCassandra"),
-                Self::CosmosDbMongo => serializer.serialize_unit_variant("Component", 1u32, "CosmosDBMongo"),
-                Self::CosmosDbSql => serializer.serialize_unit_variant("Component", 2u32, "CosmosDBSql"),
-                Self::AzureBlobStorage => serializer.serialize_unit_variant("Component", 3u32, "AzureBlobStorage"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    impl Default for Component {
-        fn default() -> Self {
-            Self::CosmosDbCassandra
-        }
-    }
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "component")]
+pub enum DataTransferDataSourceSinkUnion {
+    AzureBlobStorage(AzureBlobDataTransferDataSourceSink),
+    #[serde(rename = "CosmosDBCassandra")]
+    CosmosDbCassandra(CosmosCassandraDataTransferDataSourceSink),
+    #[serde(rename = "CosmosDBMongo")]
+    CosmosDbMongo(CosmosMongoDataTransferDataSourceSink),
+    #[serde(rename = "CosmosDBSql")]
+    CosmosDbSql(CosmosSqlDataTransferDataSourceSink),
 }
 #[doc = "The List operation response, that contains the Data Transfer jobs and their properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -2000,7 +1936,7 @@ pub struct DataTransferJobFeedResults {
 impl azure_core::Continuable for DataTransferJobFeedResults {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataTransferJobFeedResults {
@@ -2029,9 +1965,9 @@ pub struct DataTransferJobProperties {
     #[serde(rename = "jobName", default, skip_serializing_if = "Option::is_none")]
     pub job_name: Option<String>,
     #[doc = "Base class for all DataTransfer source/sink"]
-    pub source: DataTransferDataSourceSink,
+    pub source: DataTransferDataSourceSinkUnion,
     #[doc = "Base class for all DataTransfer source/sink"]
-    pub destination: DataTransferDataSourceSink,
+    pub destination: DataTransferDataSourceSinkUnion,
     #[doc = "Job Status"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -2052,7 +1988,7 @@ pub struct DataTransferJobProperties {
     pub error: Option<ErrorResponse>,
 }
 impl DataTransferJobProperties {
-    pub fn new(source: DataTransferDataSourceSink, destination: DataTransferDataSourceSink) -> Self {
+    pub fn new(source: DataTransferDataSourceSinkUnion, destination: DataTransferDataSourceSinkUnion) -> Self {
         Self {
             job_name: None,
             source,
@@ -2270,7 +2206,7 @@ pub struct DatabaseAccountCreateUpdateProperties {
     pub create_mode: Option<CreateMode>,
     #[doc = "The object representing the policy for taking backups on an account."]
     #[serde(rename = "backupPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub backup_policy: Option<BackupPolicy>,
+    pub backup_policy: Option<BackupPolicyUnion>,
     #[doc = "The CORS policy for the Cosmos DB database account."]
     #[serde(
         default,
@@ -2469,7 +2405,7 @@ pub struct DatabaseAccountGetProperties {
     pub restore_parameters: Option<RestoreParameters>,
     #[doc = "The object representing the policy for taking backups on an account."]
     #[serde(rename = "backupPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub backup_policy: Option<BackupPolicy>,
+    pub backup_policy: Option<BackupPolicyUnion>,
     #[doc = "The CORS policy for the Cosmos DB database account."]
     #[serde(
         default,
@@ -2811,7 +2747,7 @@ pub struct DatabaseAccountUpdateProperties {
     pub analytical_storage_configuration: Option<AnalyticalStorageConfiguration>,
     #[doc = "The object representing the policy for taking backups on an account."]
     #[serde(rename = "backupPolicy", default, skip_serializing_if = "Option::is_none")]
-    pub backup_policy: Option<BackupPolicy>,
+    pub backup_policy: Option<BackupPolicyUnion>,
     #[doc = "The CORS policy for the Cosmos DB database account."]
     #[serde(
         default,
@@ -4876,7 +4812,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -6733,7 +6669,7 @@ pub struct ServiceResource {
     pub arm_proxy_resource: ArmProxyResource,
     #[doc = "Services response resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<ServiceResourceProperties>,
+    pub properties: Option<ServiceResourcePropertiesUnion>,
 }
 impl ServiceResource {
     pub fn new() -> Self {
@@ -6846,23 +6782,29 @@ pub struct ServiceResourceProperties {
     #[doc = "Instance count for the service."]
     #[serde(rename = "instanceCount", default, skip_serializing_if = "Option::is_none")]
     pub instance_count: Option<i32>,
-    #[doc = "ServiceType for the service."]
-    #[serde(rename = "serviceType")]
-    pub service_type: ServiceType,
     #[doc = "Describes the status of a service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<ServiceResourceStatus>,
 }
 impl ServiceResourceProperties {
-    pub fn new(service_type: ServiceType) -> Self {
+    pub fn new() -> Self {
         Self {
             creation_time: None,
             instance_size: None,
             instance_count: None,
-            service_type,
             status: None,
         }
     }
+}
+#[doc = "ServiceType for the service."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "serviceType")]
+pub enum ServiceResourcePropertiesUnion {
+    DataTransfer(DataTransferServiceResourceProperties),
+    #[serde(rename = "GraphAPICompute")]
+    GraphApiCompute(GraphApiComputeServiceResourceProperties),
+    MaterializedViewsBuilder(MaterializedViewsBuilderServiceResourceProperties),
+    SqlDedicatedGateway(SqlDedicatedGatewayServiceResourceProperties),
 }
 #[doc = "Describes the status of a service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

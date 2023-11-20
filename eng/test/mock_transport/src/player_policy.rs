@@ -126,11 +126,13 @@ impl Policy for MockTransportPlayerPolicy {
 
         let actual_body = match request.body() {
             Body::Bytes(bytes) => bytes as &[u8],
+            #[cfg(not(target_arch = "wasm32"))]
             Body::SeekableStream(_) => unimplemented!(),
         };
 
         let expected_body = match expected_request.body() {
             Body::Bytes(bytes) => bytes as &[u8],
+            #[cfg(not(target_arch = "wasm32"))]
             Body::SeekableStream(_) => unimplemented!(),
         };
 

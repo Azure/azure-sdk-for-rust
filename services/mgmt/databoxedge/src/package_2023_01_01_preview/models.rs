@@ -26,60 +26,23 @@ impl ArmBaseModel {
 pub struct Addon {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "Addon type."]
-    pub kind: addon::Kind,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 impl Addon {
-    pub fn new(kind: addon::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
-            kind,
             system_data: None,
         }
     }
 }
-pub mod addon {
-    use super::*;
-    #[doc = "Addon type."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        IotEdge,
-        ArcForKubernetes,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::IotEdge => serializer.serialize_unit_variant("Kind", 0u32, "IotEdge"),
-                Self::ArcForKubernetes => serializer.serialize_unit_variant("Kind", 1u32, "ArcForKubernetes"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Addon type."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum AddonUnion {
+    ArcForKubernetes(ArcAddon),
 }
 #[doc = "Collection of all the Role addon on the Azure Stack Edge device."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -90,7 +53,7 @@ pub struct AddonList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<Addon>,
+    pub value: Vec<AddonUnion>,
     #[doc = "Link to the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -98,7 +61,7 @@ pub struct AddonList {
 impl azure_core::Continuable for AddonList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AddonList {
@@ -195,7 +158,7 @@ pub struct AlertList {
 impl azure_core::Continuable for AlertList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertList {
@@ -675,7 +638,7 @@ pub struct BandwidthSchedulesList {
 impl azure_core::Continuable for BandwidthSchedulesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BandwidthSchedulesList {
@@ -1177,7 +1140,7 @@ pub struct ContainerList {
 impl azure_core::Continuable for ContainerList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ContainerList {
@@ -1656,7 +1619,7 @@ pub struct DataBoxEdgeDeviceList {
 impl azure_core::Continuable for DataBoxEdgeDeviceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataBoxEdgeDeviceList {
@@ -2234,7 +2197,7 @@ pub struct DataBoxEdgeSkuList {
 impl azure_core::Continuable for DataBoxEdgeSkuList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataBoxEdgeSkuList {
@@ -3957,7 +3920,7 @@ pub struct MarketplaceImageOfferList {
 impl azure_core::Continuable for MarketplaceImageOfferList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MarketplaceImageOfferList {
@@ -4014,7 +3977,7 @@ pub struct MarketplaceImagePublisherList {
 impl azure_core::Continuable for MarketplaceImagePublisherList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MarketplaceImagePublisherList {
@@ -4058,7 +4021,7 @@ pub struct MarketplaceImageSkuList {
 impl azure_core::Continuable for MarketplaceImageSkuList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MarketplaceImageSkuList {
@@ -4117,7 +4080,7 @@ pub struct MarketplaceImageVersionList {
 impl azure_core::Continuable for MarketplaceImageVersionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MarketplaceImageVersionList {
@@ -4491,7 +4454,7 @@ pub struct MonitoringMetricConfigurationList {
 impl azure_core::Continuable for MonitoringMetricConfigurationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MonitoringMetricConfigurationList {
@@ -5048,7 +5011,7 @@ pub struct NodeList {
 impl azure_core::Continuable for NodeList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NodeList {
@@ -5246,7 +5209,7 @@ pub struct OperationsList {
 impl azure_core::Continuable for OperationsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationsList {
@@ -5291,7 +5254,7 @@ pub struct OrderList {
 impl azure_core::Continuable for OrderList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OrderList {
@@ -5933,73 +5896,28 @@ pub mod resource_move_details {
 pub struct Role {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "Role type."]
-    pub kind: role::Kind,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 impl Role {
-    pub fn new(kind: role::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
-            kind,
             system_data: None,
         }
     }
 }
-pub mod role {
-    use super::*;
-    #[doc = "Role type."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        #[serde(rename = "IOT")]
-        Iot,
-        #[serde(rename = "ASA")]
-        Asa,
-        Functions,
-        Cognitive,
-        #[serde(rename = "MEC")]
-        Mec,
-        CloudEdgeManagement,
-        Kubernetes,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Iot => serializer.serialize_unit_variant("Kind", 0u32, "IOT"),
-                Self::Asa => serializer.serialize_unit_variant("Kind", 1u32, "ASA"),
-                Self::Functions => serializer.serialize_unit_variant("Kind", 2u32, "Functions"),
-                Self::Cognitive => serializer.serialize_unit_variant("Kind", 3u32, "Cognitive"),
-                Self::Mec => serializer.serialize_unit_variant("Kind", 4u32, "MEC"),
-                Self::CloudEdgeManagement => serializer.serialize_unit_variant("Kind", 5u32, "CloudEdgeManagement"),
-                Self::Kubernetes => serializer.serialize_unit_variant("Kind", 6u32, "Kubernetes"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Role type."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum RoleUnion {
+    CloudEdgeManagement(CloudEdgeManagementRole),
+    #[serde(rename = "IOT")]
+    Iot(IoTRole),
+    Kubernetes(KubernetesRole),
+    #[serde(rename = "MEC")]
+    Mec(MecRole),
 }
 #[doc = "Collection of all the roles on the Data Box Edge device."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -6010,7 +5928,7 @@ pub struct RoleList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<Role>,
+    pub value: Vec<RoleUnion>,
     #[doc = "Link to the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -6018,7 +5936,7 @@ pub struct RoleList {
 impl azure_core::Continuable for RoleList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleList {
@@ -6192,7 +6110,7 @@ pub struct ShareList {
 impl azure_core::Continuable for ShareList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ShareList {
@@ -6734,7 +6652,7 @@ pub struct StorageAccountCredentialList {
 impl azure_core::Continuable for StorageAccountCredentialList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageAccountCredentialList {
@@ -6881,7 +6799,7 @@ pub struct StorageAccountList {
 impl azure_core::Continuable for StorageAccountList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl StorageAccountList {
@@ -7098,60 +7016,24 @@ impl TrackingInfo {
 pub struct Trigger {
     #[serde(flatten)]
     pub arm_base_model: ArmBaseModel,
-    #[doc = "Trigger Kind."]
-    pub kind: trigger::Kind,
     #[doc = "Metadata pertaining to creation and last modification of the resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
 }
 impl Trigger {
-    pub fn new(kind: trigger::Kind) -> Self {
+    pub fn new() -> Self {
         Self {
             arm_base_model: ArmBaseModel::default(),
-            kind,
             system_data: None,
         }
     }
 }
-pub mod trigger {
-    use super::*;
-    #[doc = "Trigger Kind."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Kind")]
-    pub enum Kind {
-        FileEvent,
-        PeriodicTimerEvent,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Kind {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Kind {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Kind {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::FileEvent => serializer.serialize_unit_variant("Kind", 0u32, "FileEvent"),
-                Self::PeriodicTimerEvent => serializer.serialize_unit_variant("Kind", 1u32, "PeriodicTimerEvent"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Trigger Kind."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum TriggerUnion {
+    FileEvent(FileEventTrigger),
+    PeriodicTimerEvent(PeriodicTimerEventTrigger),
 }
 #[doc = "Collection of all trigger on the data box edge device."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -7162,7 +7044,7 @@ pub struct TriggerList {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<Trigger>,
+    pub value: Vec<TriggerUnion>,
     #[doc = "Link to the next set of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -7170,7 +7052,7 @@ pub struct TriggerList {
 impl azure_core::Continuable for TriggerList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TriggerList {
@@ -7955,7 +7837,7 @@ pub struct UserList {
 impl azure_core::Continuable for UserList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UserList {

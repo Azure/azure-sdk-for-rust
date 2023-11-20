@@ -9,6 +9,7 @@ operation! {
     block_id: BlockId,
     url: Url,
     ?hash: Hash,
+    ?range: Range,
     ?lease_id: LeaseId
 }
 
@@ -23,10 +24,12 @@ impl PutBlockUrlBuilder {
             let mut headers = Headers::new();
             headers.insert(COPY_SOURCE, self.url.to_string());
             headers.add(self.lease_id);
+            if let Some(range) = self.range {
+                headers.insert(SOURCE_RANGE, format!("{range}"));
+            }
 
             let mut request =
-                self.client
-                    .finalize_request(url, azure_core::Method::Put, headers, None)?;
+                BlobClient::finalize_request(url, azure_core::Method::Put, headers, None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
             PutBlockUrlResponse::from_headers(response.headers())

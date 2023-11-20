@@ -211,7 +211,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -283,17 +283,18 @@ impl UserAssignedIdentity {
 #[doc = "Model that represents the base action model."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Action {
-    #[doc = "Enum that discriminates between action models."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "String that represents a URN."]
     pub name: Urn,
 }
 impl Action {
-    pub fn new(type_: String, name: Urn) -> Self {
-        Self { type_, name }
+    pub fn new(name: Urn) -> Self {
+        Self { name }
     }
 }
+#[doc = "Enum that discriminates between action models."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ActionUnion {}
 #[doc = "Model that represents the an action and its status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionStatus {
@@ -331,10 +332,10 @@ pub struct Branch {
     #[doc = "String of the branch name."]
     pub name: String,
     #[doc = "List of actions."]
-    pub actions: Vec<Action>,
+    pub actions: Vec<ActionUnion>,
 }
 impl Branch {
-    pub fn new(name: String, actions: Vec<Action>) -> Self {
+    pub fn new(name: String, actions: Vec<ActionUnion>) -> Self {
         Self { name, actions }
     }
 }
@@ -397,7 +398,7 @@ pub struct CapabilityListResult {
 impl azure_core::Continuable for CapabilityListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CapabilityListResult {
@@ -466,7 +467,7 @@ pub struct CapabilityTypeListResult {
 impl azure_core::Continuable for CapabilityTypeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CapabilityTypeListResult {
@@ -500,7 +501,7 @@ pub struct CapabilityTypeProperties {
     pub kind: Option<String>,
     #[doc = "Control plane actions necessary to execute capability type."]
     #[serde(
-        rename = "azureRBACActions",
+        rename = "azureRbacActions",
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
@@ -508,7 +509,7 @@ pub struct CapabilityTypeProperties {
     pub azure_rbac_actions: Vec<String>,
     #[doc = "Data plane actions necessary to execute capability type."]
     #[serde(
-        rename = "azureRBACDataActions",
+        rename = "azureRbacDataActions",
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
@@ -654,7 +655,7 @@ pub struct ExperimentExecutionDetailsListResult {
 impl azure_core::Continuable for ExperimentExecutionDetailsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExperimentExecutionDetailsListResult {
@@ -731,7 +732,7 @@ pub struct ExperimentListResult {
 impl azure_core::Continuable for ExperimentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExperimentListResult {
@@ -745,13 +746,13 @@ pub struct ExperimentProperties {
     #[doc = "List of steps."]
     pub steps: Vec<Step>,
     #[doc = "List of selectors."]
-    pub selectors: Vec<Selector>,
+    pub selectors: Vec<SelectorUnion>,
     #[doc = "A boolean value that indicates if experiment should be started on creation or not."]
     #[serde(rename = "startOnCreation", default, skip_serializing_if = "Option::is_none")]
     pub start_on_creation: Option<bool>,
 }
 impl ExperimentProperties {
-    pub fn new(steps: Vec<Step>, selectors: Vec<Selector>) -> Self {
+    pub fn new(steps: Vec<Step>, selectors: Vec<SelectorUnion>) -> Self {
         Self {
             steps,
             selectors,
@@ -812,7 +813,7 @@ pub struct ExperimentStatusListResult {
 impl azure_core::Continuable for ExperimentStatusListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExperimentStatusListResult {
@@ -850,56 +851,10 @@ impl ExperimentUpdate {
         Self::default()
     }
 }
-#[doc = "Model that represents available filter types that can be applied to a targets list."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Filter {
-    #[doc = "Enum that discriminates between filter types. Currently only `Simple` type is supported."]
-    #[serde(rename = "type")]
-    pub type_: filter::Type,
-}
-impl Filter {
-    pub fn new(type_: filter::Type) -> Self {
-        Self { type_ }
-    }
-}
-pub mod filter {
-    use super::*;
-    #[doc = "Enum that discriminates between filter types. Currently only `Simple` type is supported."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        Simple,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Simple => serializer.serialize_unit_variant("Type", 0u32, "Simple"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Enum that discriminates between filter types. Currently only `Simple` type is supported."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum FilterUnion {}
 #[doc = "The identity of a resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceIdentity {
@@ -939,60 +894,21 @@ pub mod resource_identity {
 #[doc = "Model that represents a selector in the Experiment resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Selector {
-    #[doc = "Enum of the selector type."]
-    #[serde(rename = "type")]
-    pub type_: selector::Type,
     #[doc = "String of the selector ID."]
     pub id: String,
     #[doc = "Model that represents available filter types that can be applied to a targets list."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub filter: Option<Filter>,
+    pub filter: Option<FilterUnion>,
 }
 impl Selector {
-    pub fn new(type_: selector::Type, id: String) -> Self {
-        Self { type_, id, filter: None }
+    pub fn new(id: String) -> Self {
+        Self { id, filter: None }
     }
 }
-pub mod selector {
-    use super::*;
-    #[doc = "Enum of the selector type."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        List,
-        Query,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::List => serializer.serialize_unit_variant("Type", 0u32, "List"),
-                Self::Query => serializer.serialize_unit_variant("Type", 1u32, "Query"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Enum of the selector type."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum SelectorUnion {}
 #[doc = "Model that represents a step in the Experiment resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Step {
@@ -1184,7 +1100,7 @@ pub struct TargetListResult {
 impl azure_core::Continuable for TargetListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TargetListResult {
@@ -1241,7 +1157,7 @@ pub struct TargetTypeListResult {
 impl azure_core::Continuable for TargetTypeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TargetTypeListResult {

@@ -151,7 +151,7 @@ pub struct ClassicAdministratorListResult {
 impl azure_core::Continuable for ClassicAdministratorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClassicAdministratorListResult {
@@ -263,7 +263,7 @@ pub struct DenyAssignmentListResult {
 impl azure_core::Continuable for DenyAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DenyAssignmentListResult {
@@ -416,7 +416,7 @@ pub struct EligibleChildResourcesListResult {
 impl azure_core::Continuable for EligibleChildResourcesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EligibleChildResourcesListResult {
@@ -624,7 +624,7 @@ pub struct PermissionGetResult {
 impl azure_core::Continuable for PermissionGetResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PermissionGetResult {
@@ -841,7 +841,7 @@ pub struct ProviderOperationsMetadataListResult {
 impl azure_core::Continuable for ProviderOperationsMetadataListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderOperationsMetadataListResult {
@@ -932,7 +932,7 @@ pub struct RoleAssignmentListResult {
 impl azure_core::Continuable for RoleAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentListResult {
@@ -1147,7 +1147,7 @@ pub struct RoleAssignmentScheduleInstanceListResult {
 impl azure_core::Continuable for RoleAssignmentScheduleInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentScheduleInstanceListResult {
@@ -1434,7 +1434,7 @@ pub struct RoleAssignmentScheduleListResult {
 impl azure_core::Continuable for RoleAssignmentScheduleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentScheduleListResult {
@@ -1756,7 +1756,7 @@ pub struct RoleAssignmentScheduleRequestListResult {
 impl azure_core::Continuable for RoleAssignmentScheduleRequestListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleAssignmentScheduleRequestListResult {
@@ -2173,7 +2173,7 @@ pub struct RoleDefinitionListResult {
 impl azure_core::Continuable for RoleDefinitionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleDefinitionListResult {
@@ -2324,7 +2324,7 @@ pub struct RoleEligibilityScheduleInstanceListResult {
 impl azure_core::Continuable for RoleEligibilityScheduleInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleEligibilityScheduleInstanceListResult {
@@ -2558,7 +2558,7 @@ pub struct RoleEligibilityScheduleListResult {
 impl azure_core::Continuable for RoleEligibilityScheduleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleEligibilityScheduleListResult {
@@ -2837,7 +2837,7 @@ pub struct RoleEligibilityScheduleRequestListResult {
 impl azure_core::Continuable for RoleEligibilityScheduleRequestListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleEligibilityScheduleRequestListResult {
@@ -3274,7 +3274,7 @@ pub struct RoleManagementPolicyAssignmentListResult {
 impl azure_core::Continuable for RoleManagementPolicyAssignmentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleManagementPolicyAssignmentListResult {
@@ -3301,7 +3301,7 @@ pub struct RoleManagementPolicyAssignmentProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub effective_rules: Vec<RoleManagementPolicyRule>,
+    pub effective_rules: Vec<RoleManagementPolicyRuleUnion>,
     #[doc = "Expanded info of resource scope, role definition and policy"]
     #[serde(rename = "policyAssignmentProperties", default, skip_serializing_if = "Option::is_none")]
     pub policy_assignment_properties: Option<PolicyAssignmentProperties>,
@@ -3392,7 +3392,7 @@ pub struct RoleManagementPolicyListResult {
 impl azure_core::Continuable for RoleManagementPolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleManagementPolicyListResult {
@@ -3581,7 +3581,7 @@ pub struct RoleManagementPolicyProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub rules: Vec<RoleManagementPolicyRule>,
+    pub rules: Vec<RoleManagementPolicyRuleUnion>,
     #[doc = "The readonly computed rule applied to the policy."]
     #[serde(
         rename = "effectiveRules",
@@ -3589,7 +3589,7 @@ pub struct RoleManagementPolicyProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub effective_rules: Vec<RoleManagementPolicyRule>,
+    pub effective_rules: Vec<RoleManagementPolicyRuleUnion>,
     #[doc = "Expanded info of resource scope"]
     #[serde(rename = "policyProperties", default, skip_serializing_if = "Option::is_none")]
     pub policy_properties: Option<PolicyProperties>,
@@ -3605,22 +3605,19 @@ pub struct RoleManagementPolicyRule {
     #[doc = "The id of the rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "The type of rule"]
-    #[serde(rename = "ruleType")]
-    pub rule_type: RoleManagementPolicyRuleType,
     #[doc = "The role management policy rule target."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<RoleManagementPolicyRuleTarget>,
 }
 impl RoleManagementPolicyRule {
-    pub fn new(rule_type: RoleManagementPolicyRuleType) -> Self {
-        Self {
-            id: None,
-            rule_type,
-            target: None,
-        }
+    pub fn new() -> Self {
+        Self { id: None, target: None }
     }
 }
+#[doc = "The type of rule"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "ruleType")]
+pub enum RoleManagementPolicyRuleUnion {}
 #[doc = "The role management policy rule target."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct RoleManagementPolicyRuleTarget {

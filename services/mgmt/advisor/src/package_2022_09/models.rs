@@ -190,7 +190,7 @@ pub struct ConfigurationListResult {
 impl azure_core::Continuable for ConfigurationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConfigurationListResult {
@@ -307,7 +307,7 @@ pub struct MetadataEntityListResult {
 impl azure_core::Continuable for MetadataEntityListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MetadataEntityListResult {
@@ -419,7 +419,7 @@ pub struct OperationEntityListResult {
 impl azure_core::Continuable for OperationEntityListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationEntityListResult {
@@ -926,7 +926,7 @@ pub struct ResourceRecommendationBaseListResult {
 impl azure_core::Continuable for ResourceRecommendationBaseListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceRecommendationBaseListResult {
@@ -980,7 +980,7 @@ pub struct SuppressionContractListResult {
 impl azure_core::Continuable for SuppressionContractListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SuppressionContractListResult {

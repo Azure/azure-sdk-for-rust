@@ -16,7 +16,7 @@ pub async fn create_data_lake_client(transaction_name: &str) -> azure_core::Resu
         mock_transport::new_mock_transport(transaction_name.into()),
     );
 
-    let storage_credentials = StorageCredentials::Key(account_name.clone(), account_key);
+    let storage_credentials = StorageCredentials::access_key(account_name.clone(), account_key);
     Ok(DataLakeClient::builder(account_name, storage_credentials)
         .transport(transport_options)
         .build())

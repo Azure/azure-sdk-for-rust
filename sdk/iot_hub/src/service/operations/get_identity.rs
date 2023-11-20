@@ -11,23 +11,24 @@ azure_core::operation! {
 
 impl GetIdentityBuilder {
     /// Execute the request to get the identity of a device or module.
-    pub fn into_future(mut self) -> GetIdentity {
+    pub fn into_future(self) -> GetIdentity {
         Box::pin(async move {
-            let uri = match self.module_id {
-                Some(module_id) => format!(
+            let url = if let Some(module_id) = &self.module_id {
+                format!(
                     "https://{}.azure-devices.net/devices/{}/modules/{}?api-version={}",
                     self.client.iot_hub_name, self.device_id, module_id, API_VERSION
-                ),
-                None => format!(
+                )
+            } else {
+                format!(
                     "https://{}.azure-devices.net/devices/{}?api-version={}",
                     self.client.iot_hub_name, self.device_id, API_VERSION
-                ),
+                )
             };
 
-            let mut request = self.client.finalize_request(&uri, Method::Get)?;
+            let mut request = self.client.finalize_request(&url, Method::Get)?;
             request.set_body(azure_core::EMPTY_BODY);
 
-            let response = self.client.send(&mut self.context, &mut request).await?;
+            let response = self.client.send(&self.context, &mut request).await?;
 
             GetIdentityResponse::from_response(response).await
         })

@@ -34,7 +34,7 @@ pub struct ConfigurationList {
 impl azure_core::Continuable for ConfigurationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConfigurationList {
@@ -124,7 +124,7 @@ pub struct DashboardListResult {
 impl azure_core::Continuable for DashboardListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DashboardListResult {
@@ -132,17 +132,12 @@ impl DashboardListResult {
         Self::default()
     }
 }
-#[doc = "A dashboard part metadata."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DashboardPartMetadata {
-    #[doc = "The type of dashboard part."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl DashboardPartMetadata {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
+#[doc = "The type of dashboard part."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum DashboardPartMetadataUnion {
+    #[serde(rename = "Extension/HubsExtension/PartType/MarkdownPart")]
+    ExtensionHubsExtensionPartTypeMarkdownPart(MarkdownPartMetadata),
 }
 #[doc = "A dashboard part."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -151,7 +146,7 @@ pub struct DashboardParts {
     pub position: dashboard_parts::Position,
     #[doc = "A dashboard part metadata."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<DashboardPartMetadata>,
+    pub metadata: Option<DashboardPartMetadataUnion>,
 }
 impl DashboardParts {
     pub fn new(position: dashboard_parts::Position) -> Self {
@@ -251,8 +246,6 @@ impl ErrorResponse {
 #[doc = "Markdown part metadata."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MarkdownPartMetadata {
-    #[serde(flatten)]
-    pub dashboard_part_metadata: DashboardPartMetadata,
     #[doc = "Input to dashboard part."]
     #[serde(
         default,
@@ -265,9 +258,8 @@ pub struct MarkdownPartMetadata {
     pub settings: Option<markdown_part_metadata::Settings>,
 }
 impl MarkdownPartMetadata {
-    pub fn new(dashboard_part_metadata: DashboardPartMetadata) -> Self {
+    pub fn new() -> Self {
         Self {
-            dashboard_part_metadata,
             inputs: Vec::new(),
             settings: None,
         }
@@ -433,7 +425,7 @@ pub struct ResourceProviderOperationList {
 impl azure_core::Continuable for ResourceProviderOperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceProviderOperationList {
@@ -476,7 +468,7 @@ pub struct ViolationsList {
 impl azure_core::Continuable for ViolationsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ViolationsList {

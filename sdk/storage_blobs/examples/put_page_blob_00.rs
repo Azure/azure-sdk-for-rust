@@ -23,7 +23,7 @@ async fn main() -> azure_core::Result<()> {
         .nth(2)
         .expect("please specify blob name as command line parameter");
 
-    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
     let blob_client = BlobServiceClient::new(account, storage_credentials)
         .container_client(container_name)
         .blob_client(&blob_name);

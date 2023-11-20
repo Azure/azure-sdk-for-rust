@@ -529,7 +529,7 @@ pub struct MoveCollectionResultList {
 impl azure_core::Continuable for MoveCollectionResultList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MoveCollectionResultList {
@@ -601,7 +601,7 @@ pub struct MoveResourceCollection {
 impl azure_core::Continuable for MoveResourceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MoveResourceCollection {
@@ -767,10 +767,10 @@ pub struct MoveResourceProperties {
     pub existing_target_id: Option<String>,
     #[doc = "Gets or sets the resource settings."]
     #[serde(rename = "resourceSettings", default, skip_serializing_if = "Option::is_none")]
-    pub resource_settings: Option<ResourceSettings>,
+    pub resource_settings: Option<ResourceSettingsUnion>,
     #[doc = "Gets or sets the resource settings."]
     #[serde(rename = "sourceResourceSettings", default, skip_serializing_if = "Option::is_none")]
-    pub source_resource_settings: Option<ResourceSettings>,
+    pub source_resource_settings: Option<ResourceSettingsUnion>,
     #[doc = "Defines the move resource status."]
     #[serde(rename = "moveStatus", default, skip_serializing_if = "Option::is_none")]
     pub move_status: Option<serde_json::Value>,
@@ -1435,9 +1435,6 @@ impl ResourceMoveRequest {
 #[doc = "Gets or sets the resource settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ResourceSettings {
-    #[doc = "The resource type. For example, the value can be Microsoft.Compute/virtualMachines."]
-    #[serde(rename = "resourceType")]
-    pub resource_type: String,
     #[doc = "Gets or sets the target Resource name."]
     #[serde(rename = "targetResourceName")]
     pub target_resource_name: String,
@@ -1446,13 +1443,43 @@ pub struct ResourceSettings {
     pub target_resource_group_name: Option<String>,
 }
 impl ResourceSettings {
-    pub fn new(resource_type: String, target_resource_name: String) -> Self {
+    pub fn new(target_resource_name: String) -> Self {
         Self {
-            resource_type,
             target_resource_name,
             target_resource_group_name: None,
         }
     }
+}
+#[doc = "The resource type. For example, the value can be Microsoft.Compute/virtualMachines."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "resourceType")]
+pub enum ResourceSettingsUnion {
+    #[serde(rename = "Microsoft.Compute/availabilitySets")]
+    MicrosoftComputeAvailabilitySets(AvailabilitySetResourceSettings),
+    #[serde(rename = "Microsoft.Compute/diskEncryptionSets")]
+    MicrosoftComputeDiskEncryptionSets(DiskEncryptionSetResourceSettings),
+    #[serde(rename = "Microsoft.KeyVault/vaults")]
+    MicrosoftKeyVaultVaults(KeyVaultResourceSettings),
+    #[serde(rename = "Microsoft.Network/loadBalancers")]
+    MicrosoftNetworkLoadBalancers(LoadBalancerResourceSettings),
+    #[serde(rename = "Microsoft.Network/networkInterfaces")]
+    MicrosoftNetworkNetworkInterfaces(NetworkInterfaceResourceSettings),
+    #[serde(rename = "Microsoft.Network/networkSecurityGroups")]
+    MicrosoftNetworkNetworkSecurityGroups(NetworkSecurityGroupResourceSettings),
+    #[serde(rename = "Microsoft.Network/publicIPAddresses")]
+    MicrosoftNetworkPublicIpAddresses(PublicIpAddressResourceSettings),
+    #[serde(rename = "resourceGroups")]
+    ResourceGroups(ResourceGroupResourceSettings),
+    #[serde(rename = "Microsoft.Sql/servers/databases")]
+    MicrosoftSqlServersDatabases(SqlDatabaseResourceSettings),
+    #[serde(rename = "Microsoft.Sql/servers/elasticPools")]
+    MicrosoftSqlServersElasticPools(SqlElasticPoolResourceSettings),
+    #[serde(rename = "Microsoft.Sql/servers")]
+    MicrosoftSqlServers(SqlServerResourceSettings),
+    #[serde(rename = "Microsoft.Compute/virtualMachines")]
+    MicrosoftComputeVirtualMachines(VirtualMachineResourceSettings),
+    #[serde(rename = "Microsoft.Network/virtualNetworks")]
+    MicrosoftNetworkVirtualNetworks(VirtualNetworkResourceSettings),
 }
 #[doc = "Defines the Sql Database resource settings."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -1630,7 +1657,7 @@ pub struct UnresolvedDependencyCollection {
 impl azure_core::Continuable for UnresolvedDependencyCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UnresolvedDependencyCollection {

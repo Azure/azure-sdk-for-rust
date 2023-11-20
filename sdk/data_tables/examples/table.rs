@@ -27,7 +27,7 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("please specify the table name as first command line parameter");
 
-    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
     let table_service = TableServiceClient::new(account, storage_credentials);
 
     let table_client = table_service.table_client(table_name);
@@ -88,7 +88,7 @@ async fn main() -> azure_core::Result<()> {
         [StatusCode::Ok, StatusCode::NoContent, StatusCode::Created].contains(&r.status_code)
     }));
 
-    let entity_client = partition_key_client.entity_client(&entity2.surname)?;
+    let entity_client = partition_key_client.entity_client(&entity2.surname);
 
     // Get an entity from the table
     let response = entity_client.get().await?;
@@ -96,7 +96,7 @@ async fn main() -> azure_core::Result<()> {
 
     let entity_client = table_client
         .partition_key_client(&entity.city)
-        .entity_client(&entity.surname)?;
+        .entity_client(&entity.surname);
 
     // update the name passing the Etag received from the previous call.
     entity.name = "Ryan".to_owned();

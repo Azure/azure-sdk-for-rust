@@ -14,6 +14,7 @@ use time::{
 // Serde modules
 pub use time::serde::rfc3339;
 pub use time::serde::timestamp;
+pub mod iso8601;
 pub mod rfc1123;
 
 /// RFC 3339: Date and Time on the Internet: Timestamps
@@ -111,11 +112,6 @@ pub fn to_last_state_change(date: &OffsetDateTime) -> String {
     date.to_offset(UtcOffset::UTC);
     // known format does not panic
     date.format(LAST_STATE_CHANGE_FORMAT).unwrap()
-}
-
-/// Assumes the local offset. Default to UTC if unable to get local offset.
-pub fn assume_local(date: &PrimitiveDateTime) -> OffsetDateTime {
-    date.assume_offset(UtcOffset::current_local_offset().unwrap_or(UtcOffset::UTC))
 }
 
 // Create a duration from the number of minutes.

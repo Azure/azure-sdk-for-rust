@@ -1,9 +1,10 @@
-use crate::{clients::PopReceiptClient, prelude::*};
+use crate::{clients::PopReceiptClient, prelude::*, queue_message::QueueMessageSubmit};
 use azure_core::{
     error::Error,
     headers::Headers,
     headers::{rfc1123_from_headers_mandatory, HeaderName},
     prelude::*,
+    xml::to_xml,
     Method, Response as AzureResponse,
 };
 use azure_storage::headers::CommonStorageResponseHeaders;
@@ -24,15 +25,11 @@ impl UpdateMessageBuilder {
 
             self.visibility_timeout.append_to_url_query(&mut url);
 
-            // since the format is fixed we just decorate the message with the tags.
-            // This could be made optional in the future and/or more
-            // stringent.
-            let message = format!(
-                "<QueueMessage><MessageText>{}</MessageText></QueueMessage>",
-                self.body
-            );
+            let message = to_xml(&QueueMessageSubmit {
+                message_text: self.body,
+            })?;
 
-            let mut request = self.client.finalize_request(
+            let mut request = PopReceiptClient::finalize_request(
                 url,
                 Method::Put,
                 Headers::new(),

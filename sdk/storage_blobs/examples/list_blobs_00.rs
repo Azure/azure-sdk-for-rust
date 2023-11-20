@@ -17,7 +17,7 @@ async fn main() -> azure_core::Result<()> {
         .nth(1)
         .expect("please specify container name as command line parameter");
 
-    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
     let blob_service = BlobServiceClient::new(account, storage_credentials);
     let container_client = blob_service.container_client(&container_name);
 
@@ -79,7 +79,7 @@ async fn main() -> azure_core::Result<()> {
         let len = value?.blobs.blobs().count();
         println!("received {len} blobs");
         match cnt {
-            0 | 1 | 2 => assert_eq!(len, 3),
+            0..=2 => assert_eq!(len, 3),
             3 => assert_eq!(len, 1),
             _ => panic!("more than 10 entries??"),
         }

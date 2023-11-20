@@ -223,7 +223,7 @@ pub struct NotificationListResponse {
 impl azure_core::Continuable for NotificationListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl NotificationListResponse {
@@ -287,7 +287,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -660,7 +660,7 @@ pub struct RedisCacheAccessPolicyAssignmentList {
 impl azure_core::Continuable for RedisCacheAccessPolicyAssignmentList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RedisCacheAccessPolicyAssignmentList {
@@ -759,7 +759,7 @@ pub struct RedisCacheAccessPolicyList {
 impl azure_core::Continuable for RedisCacheAccessPolicyList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RedisCacheAccessPolicyList {
@@ -1163,7 +1163,7 @@ pub struct RedisFirewallRuleListResult {
 impl azure_core::Continuable for RedisFirewallRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RedisFirewallRuleListResult {
@@ -1339,7 +1339,7 @@ pub struct RedisLinkedServerWithPropertiesList {
 impl azure_core::Continuable for RedisLinkedServerWithPropertiesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RedisLinkedServerWithPropertiesList {
@@ -1364,7 +1364,7 @@ pub struct RedisListResult {
 impl azure_core::Continuable for RedisListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RedisListResult {
@@ -1409,7 +1409,7 @@ pub struct RedisPatchScheduleListResult {
 impl azure_core::Continuable for RedisPatchScheduleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RedisPatchScheduleListResult {
@@ -1494,6 +1494,8 @@ pub mod redis_properties {
         Unlinking,
         Unprovisioning,
         Updating,
+        #[serde(rename = "ConfiguringAAD")]
+        ConfiguringAad,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -1531,6 +1533,7 @@ pub mod redis_properties {
                 Self::Unlinking => serializer.serialize_unit_variant("ProvisioningState", 9u32, "Unlinking"),
                 Self::Unprovisioning => serializer.serialize_unit_variant("ProvisioningState", 10u32, "Unprovisioning"),
                 Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 11u32, "Updating"),
+                Self::ConfiguringAad => serializer.serialize_unit_variant("ProvisioningState", 12u32, "ConfiguringAAD"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

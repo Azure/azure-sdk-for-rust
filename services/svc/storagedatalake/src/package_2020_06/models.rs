@@ -218,9 +218,9 @@ impl FileSystemList {
 #[doc = "An enumeration of blobs"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListBlobsHierarchySegmentResponse {
-    #[serde(rename = "ServiceEndpoint")]
+    #[serde(rename = "@ServiceEndpoint")]
     pub service_endpoint: String,
-    #[serde(rename = "ContainerName")]
+    #[serde(rename = "@ContainerName")]
     pub container_name: String,
     #[serde(rename = "Prefix", default, skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
@@ -238,7 +238,7 @@ pub struct ListBlobsHierarchySegmentResponse {
 impl azure_core::Continuable for ListBlobsHierarchySegmentResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_marker.clone()
+        self.next_marker.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListBlobsHierarchySegmentResponse {

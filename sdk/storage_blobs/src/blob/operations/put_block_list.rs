@@ -2,7 +2,7 @@ use crate::prelude::*;
 #[cfg(feature = "md5")]
 use azure_core::base64;
 use azure_core::{headers::*, prelude::*, RequestId};
-use azure_storage::{headers::content_md5_from_headers, ConsistencyMD5};
+use azure_storage::{headers::content_md5_from_headers_optional, ConsistencyMD5};
 use bytes::Bytes;
 use time::OffsetDateTime;
 
@@ -62,7 +62,7 @@ impl PutBlockListBuilder {
             headers.add(self.if_match);
             headers.add(self.if_tags);
 
-            let mut request = self.client.finalize_request(
+            let mut request = BlobClient::finalize_request(
                 url,
                 azure_core::Method::Put,
                 headers,
@@ -79,7 +79,7 @@ impl PutBlockListBuilder {
 pub struct PutBlockListResponse {
     pub etag: String,
     pub last_modified: OffsetDateTime,
-    pub content_md5: ConsistencyMD5,
+    pub content_md5: Option<ConsistencyMD5>,
     pub request_id: RequestId,
     pub date: OffsetDateTime,
     pub request_server_encrypted: bool,
@@ -89,7 +89,7 @@ impl PutBlockListResponse {
     pub(crate) fn from_headers(headers: &Headers) -> azure_core::Result<PutBlockListResponse> {
         let etag = etag_from_headers(headers)?;
         let last_modified = last_modified_from_headers(headers)?;
-        let content_md5 = content_md5_from_headers(headers)?;
+        let content_md5 = content_md5_from_headers_optional(headers)?;
         let request_id = request_id_from_headers(headers)?;
         let date = date_from_headers(headers)?;
         let request_server_encrypted = request_server_encrypted_from_headers(headers)?;

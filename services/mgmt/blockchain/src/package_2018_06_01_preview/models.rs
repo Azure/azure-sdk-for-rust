@@ -68,7 +68,7 @@ pub struct BlockchainMemberCollection {
 impl azure_core::Continuable for BlockchainMemberCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl BlockchainMemberCollection {
@@ -384,7 +384,7 @@ pub struct ConsortiumMemberCollection {
 impl azure_core::Continuable for ConsortiumMemberCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConsortiumMemberCollection {
@@ -559,7 +559,7 @@ pub struct ResourceProviderOperationCollection {
 impl azure_core::Continuable for ResourceProviderOperationCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceProviderOperationCollection {
@@ -719,7 +719,7 @@ pub struct TransactionNodeCollection {
 impl azure_core::Continuable for TransactionNodeCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TransactionNodeCollection {

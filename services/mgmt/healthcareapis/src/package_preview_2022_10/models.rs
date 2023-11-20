@@ -39,7 +39,7 @@ pub struct AnalyticsConnectorCollection {
 impl azure_core::Continuable for AnalyticsConnectorCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AnalyticsConnectorCollection {
@@ -50,56 +50,21 @@ impl AnalyticsConnectorCollection {
 #[doc = "Data destination configuration for Analytics Connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnalyticsConnectorDataDestination {
-    #[doc = "Type of data destination."]
-    #[serde(rename = "type")]
-    pub type_: analytics_connector_data_destination::Type,
     #[doc = "Name of data destination."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 impl AnalyticsConnectorDataDestination {
-    pub fn new(type_: analytics_connector_data_destination::Type) -> Self {
-        Self { type_, name: None }
+    pub fn new() -> Self {
+        Self { name: None }
     }
 }
-pub mod analytics_connector_data_destination {
-    use super::*;
-    #[doc = "Type of data destination."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        #[serde(rename = "datalake")]
-        Datalake,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Datalake => serializer.serialize_unit_variant("Type", 0u32, "datalake"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Type of data destination."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AnalyticsConnectorDataDestinationUnion {
+    #[serde(rename = "datalake")]
+    Datalake(AnalyticsConnectorDataLakeDataDestination),
 }
 #[doc = "The Data Lake data destination for Analytics Connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -118,78 +83,24 @@ impl AnalyticsConnectorDataLakeDataDestination {
         }
     }
 }
-#[doc = "Data source for Analytics Connector. The target resource must be in the same workspace with the Analytics Connector."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AnalyticsConnectorDataSource {
-    #[doc = "Type of data source."]
-    #[serde(rename = "type")]
-    pub type_: analytics_connector_data_source::Type,
-}
-impl AnalyticsConnectorDataSource {
-    pub fn new(type_: analytics_connector_data_source::Type) -> Self {
-        Self { type_ }
-    }
-}
-pub mod analytics_connector_data_source {
-    use super::*;
-    #[doc = "Type of data source."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        #[serde(rename = "fhirservice")]
-        Fhirservice,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Fhirservice => serializer.serialize_unit_variant("Type", 0u32, "fhirservice"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Type of data source."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AnalyticsConnectorDataSourceUnion {
+    #[serde(rename = "fhirservice")]
+    Fhirservice(AnalyticsConnectorFhirServiceDataSource),
 }
 #[doc = "The FHIR service data source for Analytics Connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnalyticsConnectorFhirServiceDataSource {
-    #[serde(flatten)]
-    pub analytics_connector_data_source: AnalyticsConnectorDataSource,
     #[doc = "The URL of FHIR service."]
     pub url: String,
     #[doc = "The kind of FHIR Service."]
     pub kind: analytics_connector_fhir_service_data_source::Kind,
 }
 impl AnalyticsConnectorFhirServiceDataSource {
-    pub fn new(
-        analytics_connector_data_source: AnalyticsConnectorDataSource,
-        url: String,
-        kind: analytics_connector_fhir_service_data_source::Kind,
-    ) -> Self {
-        Self {
-            analytics_connector_data_source,
-            url,
-            kind,
-        }
+    pub fn new(url: String, kind: analytics_connector_fhir_service_data_source::Kind) -> Self {
+        Self { url, kind }
     }
 }
 pub mod analytics_connector_fhir_service_data_source {
@@ -236,8 +147,6 @@ pub mod analytics_connector_fhir_service_data_source {
 #[doc = "FHIR Service data mapping configuration for Analytics Connector."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnalyticsConnectorFhirToParquetMapping {
-    #[serde(flatten)]
-    pub analytics_connector_mapping: AnalyticsConnectorMapping,
     #[doc = "Artifact reference for filter configurations."]
     #[serde(rename = "filterConfigurationReference", default, skip_serializing_if = "Option::is_none")]
     pub filter_configuration_reference: Option<String>,
@@ -246,64 +155,19 @@ pub struct AnalyticsConnectorFhirToParquetMapping {
     pub extension_schema_reference: Option<String>,
 }
 impl AnalyticsConnectorFhirToParquetMapping {
-    pub fn new(analytics_connector_mapping: AnalyticsConnectorMapping) -> Self {
+    pub fn new() -> Self {
         Self {
-            analytics_connector_mapping,
             filter_configuration_reference: None,
             extension_schema_reference: None,
         }
     }
 }
-#[doc = "Data mapping configuration for Analytics Connector."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AnalyticsConnectorMapping {
-    #[doc = "Type of data mapping."]
-    #[serde(rename = "type")]
-    pub type_: analytics_connector_mapping::Type,
-}
-impl AnalyticsConnectorMapping {
-    pub fn new(type_: analytics_connector_mapping::Type) -> Self {
-        Self { type_ }
-    }
-}
-pub mod analytics_connector_mapping {
-    use super::*;
-    #[doc = "Type of data mapping."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        #[serde(rename = "fhirToParquet")]
-        FhirToParquet,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::FhirToParquet => serializer.serialize_unit_variant("Type", 0u32, "fhirToParquet"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Type of data mapping."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AnalyticsConnectorMappingUnion {
+    #[serde(rename = "fhirToParquet")]
+    FhirToParquet(AnalyticsConnectorFhirToParquetMapping),
 }
 #[doc = "AnalyticsConnector patch properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -326,19 +190,19 @@ pub struct AnalyticsConnectorProperties {
     pub provisioning_state: Option<ProvisioningState>,
     #[doc = "Data source for Analytics Connector. The target resource must be in the same workspace with the Analytics Connector."]
     #[serde(rename = "dataSourceConfiguration")]
-    pub data_source_configuration: AnalyticsConnectorDataSource,
+    pub data_source_configuration: AnalyticsConnectorDataSourceUnion,
     #[doc = "Data mapping configuration for Analytics Connector."]
     #[serde(rename = "dataMappingConfiguration")]
-    pub data_mapping_configuration: AnalyticsConnectorMapping,
+    pub data_mapping_configuration: AnalyticsConnectorMappingUnion,
     #[doc = "Data destination configuration for Analytics Connector."]
     #[serde(rename = "dataDestinationConfiguration")]
-    pub data_destination_configuration: AnalyticsConnectorDataDestination,
+    pub data_destination_configuration: AnalyticsConnectorDataDestinationUnion,
 }
 impl AnalyticsConnectorProperties {
     pub fn new(
-        data_source_configuration: AnalyticsConnectorDataSource,
-        data_mapping_configuration: AnalyticsConnectorMapping,
-        data_destination_configuration: AnalyticsConnectorDataDestination,
+        data_source_configuration: AnalyticsConnectorDataSourceUnion,
+        data_mapping_configuration: AnalyticsConnectorMappingUnion,
+        data_destination_configuration: AnalyticsConnectorDataDestinationUnion,
     ) -> Self {
         Self {
             provisioning_state: None,
@@ -457,7 +321,7 @@ pub struct DicomServiceCollection {
 impl azure_core::Continuable for DicomServiceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DicomServiceCollection {
@@ -737,7 +601,7 @@ pub struct FhirServiceCollection {
 impl azure_core::Continuable for FhirServiceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FhirServiceCollection {
@@ -907,7 +771,7 @@ pub struct IotConnectorCollection {
 impl azure_core::Continuable for IotConnectorCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IotConnectorCollection {
@@ -1013,7 +877,7 @@ pub struct IotFhirDestinationCollection {
 impl azure_core::Continuable for IotFhirDestinationCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IotFhirDestinationCollection {
@@ -1116,7 +980,7 @@ pub struct ListOperations {
 impl azure_core::Continuable for ListOperations {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ListOperations {
@@ -2200,7 +2064,7 @@ pub struct ServicesDescriptionListResult {
 impl azure_core::Continuable for ServicesDescriptionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServicesDescriptionListResult {
@@ -2593,7 +2457,7 @@ pub struct WorkspaceList {
 impl azure_core::Continuable for WorkspaceList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkspaceList {

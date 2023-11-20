@@ -3,12 +3,10 @@ use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use time::OffsetDateTime;
 
-fn main() {
+#[tokio::main]
+async fn main() -> azure_core::Result<()> {
     env_logger::init();
-    code().unwrap();
-}
 
-fn code() -> azure_core::Result<()> {
     // First we retrieve the account name and access key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
@@ -26,7 +24,7 @@ fn code() -> azure_core::Result<()> {
     let now = OffsetDateTime::now_utc() - date::duration_from_minutes(15);
     let later = now + date::duration_from_hours(1);
 
-    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
     let service_client = BlobServiceClient::new(account, storage_credentials);
     let container_client = service_client.container_client(container_name);
     let blob_client = container_client.blob_client(blob_name);
@@ -39,7 +37,8 @@ fn code() -> azure_core::Result<()> {
                 read: true,
                 ..Default::default()
             },
-        )?
+        )
+        .await?
         .start(now)
         .protocol(SasProtocol::Https);
 
@@ -54,7 +53,8 @@ fn code() -> azure_core::Result<()> {
                 ..Default::default()
             },
             later,
-        )?
+        )
+        .await?
         .start(now);
     println!("blob service token: {}", sas.token());
     let url = blob_client.generate_signed_blob_url(&sas)?;
@@ -69,7 +69,8 @@ fn code() -> azure_core::Result<()> {
                 ..Default::default()
             },
             later,
-        )?
+        )
+        .await?
         .start(now)
         .protocol(SasProtocol::HttpHttps);
 

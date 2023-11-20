@@ -19,7 +19,7 @@ impl ApiEntityReference {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DedicatedHsm {
     #[serde(flatten)]
-    pub resource: Resource,
+    pub dedicated_hsm_resource: DedicatedHsmResource,
     #[doc = "Metadata pertaining to creation and last modification of dedicated hsm resource."]
     #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
     pub system_data: Option<SystemData>,
@@ -27,9 +27,9 @@ pub struct DedicatedHsm {
     pub properties: DedicatedHsmProperties,
 }
 impl DedicatedHsm {
-    pub fn new(resource: Resource, properties: DedicatedHsmProperties) -> Self {
+    pub fn new(dedicated_hsm_resource: DedicatedHsmResource, properties: DedicatedHsmProperties) -> Self {
         Self {
-            resource,
+            dedicated_hsm_resource,
             system_data: None,
             properties,
         }
@@ -70,7 +70,7 @@ pub struct DedicatedHsmListResult {
 impl azure_core::Continuable for DedicatedHsmListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DedicatedHsmListResult {
@@ -231,6 +231,47 @@ pub mod dedicated_hsm_properties {
         }
     }
 }
+#[doc = "Dedicated HSM resource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DedicatedHsmResource {
+    #[doc = "The Azure Resource Manager resource ID for the dedicated HSM."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The name of the dedicated HSM."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The resource type of the dedicated HSM."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "The supported Azure location where the dedicated HSM should be created."]
+    pub location: String,
+    #[doc = "SKU of the dedicated HSM"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sku: Option<Sku>,
+    #[doc = "The Dedicated Hsm zones."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub zones: Vec<String>,
+    #[doc = "Resource tags"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl DedicatedHsmResource {
+    pub fn new(location: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            type_: None,
+            location,
+            sku: None,
+            zones: Vec::new(),
+            tags: None,
+        }
+    }
+}
 #[doc = "A domain name that dedicated hsm services are reaching at."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EndpointDependency {
@@ -283,7 +324,7 @@ pub struct Error {
     pub message: Option<String>,
     #[doc = "The key vault server error."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub innererror: Box<Option<Error>>,
+    pub innererror: Option<Box<Error>>,
 }
 impl Error {
     pub fn new() -> Self {
@@ -397,53 +438,12 @@ pub struct OutboundEnvironmentEndpointCollection {
 impl azure_core::Continuable for OutboundEnvironmentEndpointCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OutboundEnvironmentEndpointCollection {
     pub fn new(value: Vec<OutboundEnvironmentEndpoint>) -> Self {
         Self { value, next_link: None }
-    }
-}
-#[doc = "Dedicated HSM resource"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Resource {
-    #[doc = "The Azure Resource Manager resource ID for the dedicated HSM."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "The name of the dedicated HSM."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[doc = "The resource type of the dedicated HSM."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[doc = "The supported Azure location where the dedicated HSM should be created."]
-    pub location: String,
-    #[doc = "SKU of the dedicated HSM"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub sku: Option<Sku>,
-    #[doc = "The Dedicated Hsm zones."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub zones: Vec<String>,
-    #[doc = "Resource tags"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<serde_json::Value>,
-}
-impl Resource {
-    pub fn new(location: String) -> Self {
-        Self {
-            id: None,
-            name: None,
-            type_: None,
-            location,
-            sku: None,
-            zones: Vec::new(),
-            tags: None,
-        }
     }
 }
 #[doc = "List of dedicated HSM resources."]
@@ -455,7 +455,7 @@ pub struct ResourceListResult {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<Resource>,
+    pub value: Vec<DedicatedHsmResource>,
     #[doc = "The URL to get the next set of dedicated HSM resources."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,

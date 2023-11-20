@@ -2,7 +2,7 @@ use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
 use azure_core::base64;
 use azure_core::headers::{HeaderValue, AUTHORIZATION, MS_DATE, VERSION};
-use azure_core::{date, Context, Policy, PolicyResult, Request};
+use azure_core::{date, Context, Policy, PolicyResult, Request, Url};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use std::borrow::Cow;
@@ -26,7 +26,7 @@ const VERSION_NUMBER: &str = "1.0";
 ///
 /// This struct implements `Debug` but secrets are encrypted by `AuthorizationToken` so there is no risk of
 /// leaks in debug logs (secrets are stored in cleartext in memory: dumps are still leaky).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone)]
 pub struct AuthorizationPolicy {
     authorization_token: AuthorizationToken,
 }
@@ -62,11 +62,13 @@ impl Policy for AuthorizationPolicy {
             generate_authorization(
                 &self.authorization_token,
                 request.method(),
+                request.url(),
                 ctx.get()
                     .expect("ResourceType must be in the Context at this point"),
                 &resource_link,
                 time_nonce,
             )
+            .await?
         };
 
         trace!(
@@ -130,23 +132,30 @@ fn generate_resource_link(request: &Request) -> String {
         .map(|ending| &ending[1..]) // this is safe since every ENDING_STRING starts with a slash
         .any(|item| uri == item)
     {
-        "".to_string()
+        String::new()
     } else {
         uri.to_string()
     }
 }
 
-/// The `CosmosDB` authorization can either be "primary" (i.e., one of the two service-level tokens) or
-/// "resource" (i.e., a single database). In the first case the signature must be constructed by
-/// signing the HTTP method, resource type, resource link (the relative URI) and the current time.
-/// In the second case, the signature is just the resource key.
-fn generate_authorization(
+/// The `CosmosDB` authorization can either be:
+/// - "primary": one of the two service-level tokens
+/// - "resource": e.g. a single database
+/// - "aad": Azure Active Directory token
+/// In the "primary" case the signature must be constructed by signing the HTTP method,
+/// resource type, resource link (the relative URI) and the current time.
+///
+/// In the "resource" case, the signature is just the resource key.
+///
+/// In the "aad" case, the signature is the AAD token.
+async fn generate_authorization(
     auth_token: &AuthorizationToken,
     http_method: &azure_core::Method,
+    url: &Url,
     resource_type: &ResourceType,
     resource_link: &str,
     time_nonce: OffsetDateTime,
-) -> String {
+) -> azure_core::Result<String> {
     let (authorization_type, signature) = match auth_token {
         AuthorizationToken::Primary(key) => {
             let string_to_sign =
@@ -157,6 +166,17 @@ fn generate_authorization(
             )
         }
         AuthorizationToken::Resource(key) => ("resource", Cow::Borrowed(key)),
+        AuthorizationToken::TokenCredential(token_credential) => (
+            "aad",
+            Cow::Owned(
+                token_credential
+                    .get_token(&scope_from_url(url))
+                    .await?
+                    .token
+                    .secret()
+                    .to_string(),
+            ),
+        ),
     };
 
     let str_unencoded = format!("type={authorization_type}&ver={VERSION_NUMBER}&sig={signature}");
@@ -165,7 +185,15 @@ fn generate_authorization(
         str_unencoded
     );
 
-    form_urlencoded::byte_serialize(str_unencoded.as_bytes()).collect::<String>()
+    Ok(form_urlencoded::byte_serialize(str_unencoded.as_bytes()).collect::<String>())
+}
+
+/// This function generates the scope string from the passed url. The scope string is used to
+/// request the AAD token.
+fn scope_from_url(url: &Url) -> String {
+    let scheme = url.scheme();
+    let hostname = url.host_str().unwrap();
+    format!("{scheme}://{hostname}")
 }
 
 /// This function generates a valid authorization string, according to the documentation.
@@ -255,8 +283,8 @@ mon, 01 jan 1900 01:00:00 gmt
         );
     }
 
-    #[test]
-    fn generate_authorization_00() {
+    #[tokio::test]
+    async fn generate_authorization_00() {
         let time = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
 
         let auth_token = AuthorizationToken::primary_from_base64(
@@ -264,21 +292,27 @@ mon, 01 jan 1900 01:00:00 gmt
         )
         .unwrap();
 
+        let url = azure_core::Url::parse("https://.documents.azure.com/dbs/ToDoList").unwrap();
+
         let ret = generate_authorization(
             &auth_token,
             &azure_core::Method::Get,
+            &url,
             &ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
             time,
-        );
+        )
+        .await
+        .unwrap();
+
         assert_eq!(
             ret,
             "type%3Dmaster%26ver%3D1.0%26sig%3DQkz%2Fr%2B1N2%2BPEnNijxGbGB%2FADvLsLBQmZ7uBBMuIwf4I%3D"
         );
     }
 
-    #[test]
-    fn generate_authorization_01() {
+    #[tokio::test]
+    async fn generate_authorization_01() {
         let time = date::parse_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
 
         let auth_token = AuthorizationToken::primary_from_base64(
@@ -286,13 +320,18 @@ mon, 01 jan 1900 01:00:00 gmt
         )
         .unwrap();
 
+        let url = azure_core::Url::parse("https://.documents.azure.com/dbs/ToDoList").unwrap();
+
         let ret = generate_authorization(
             &auth_token,
             &azure_core::Method::Get,
+            &url,
             &ResourceType::Databases,
             "dbs/ToDoList",
             time,
-        );
+        )
+        .await
+        .unwrap();
 
         // This is the result shown in the MSDN page. It's clearly wrong :)
         // below is the correct one.
@@ -339,5 +378,13 @@ mon, 01 jan 1900 01:00:00 gmt
             azure_core::Method::Get,
         );
         assert_eq!(&generate_resource_link(&request), "dbs/test_db");
+    }
+
+    #[test]
+    fn scope_from_url_01() {
+        let scope = scope_from_url(
+            &azure_core::Url::parse("https://.documents.azure.com/dbs/test_db/colls").unwrap(),
+        );
+        assert_eq!(scope, "https://.documents.azure.com");
     }
 }

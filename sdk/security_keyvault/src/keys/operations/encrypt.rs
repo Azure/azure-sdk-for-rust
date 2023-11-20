@@ -11,7 +11,7 @@ operation! {
 }
 
 impl EncryptBuilder {
-    pub fn into_future(mut self) -> Encrypt {
+    pub fn into_future(self) -> Encrypt {
         Box::pin(async move {
             // POST {vaultBaseUrl}/keys/{key-name}/{key-version}/encrypt?api-version=7.2
             let version = self.version.unwrap_or_default();
@@ -28,8 +28,7 @@ impl EncryptBuilder {
 
             let algorithm = match self.encrypt_parameters.encrypt_parameters_encryption {
                 CryptographParamtersEncryption::Rsa(RsaEncryptionParameters { algorithm }) => {
-                    request_body
-                        .insert("alg".to_owned(), serde_json::to_value(&algorithm).unwrap());
+                    request_body.insert("alg".to_owned(), serde_json::to_value(&algorithm)?);
                     algorithm
                 }
                 CryptographParamtersEncryption::AesGcm(AesGcmEncryptionParameters {
@@ -38,15 +37,12 @@ impl EncryptBuilder {
                     authentication_tag,
                     additional_authenticated_data,
                 }) => {
+                    request_body.insert("alg".to_owned(), serde_json::to_value(&algorithm)?);
+                    request_body.insert("iv".to_owned(), serde_json::to_value(iv)?);
                     request_body
-                        .insert("alg".to_owned(), serde_json::to_value(&algorithm).unwrap());
-                    request_body.insert("iv".to_owned(), serde_json::to_value(iv).unwrap());
-                    request_body.insert(
-                        "tag".to_owned(),
-                        serde_json::to_value(authentication_tag).unwrap(),
-                    );
+                        .insert("tag".to_owned(), serde_json::to_value(authentication_tag)?);
                     if let Some(aad) = additional_authenticated_data {
-                        request_body.insert("aad".to_owned(), serde_json::to_value(aad).unwrap());
+                        request_body.insert("aad".to_owned(), serde_json::to_value(aad)?);
                     };
                     algorithm
                 }
@@ -54,25 +50,24 @@ impl EncryptBuilder {
                     algorithm,
                     iv,
                 }) => {
-                    request_body
-                        .insert("alg".to_owned(), serde_json::to_value(&algorithm).unwrap());
-                    request_body.insert("iv".to_owned(), serde_json::to_value(iv).unwrap());
+                    request_body.insert("alg".to_owned(), serde_json::to_value(&algorithm)?);
+                    request_body.insert("iv".to_owned(), serde_json::to_value(iv)?);
                     algorithm
                 }
             };
 
             let headers = Headers::new();
-            let mut request = self.client.keyvault_client.finalize_request(
+            let mut request = KeyvaultClient::finalize_request(
                 uri,
                 Method::Post,
                 headers,
                 Some(Value::Object(request_body).to_string().into()),
-            )?;
+            );
 
             let response = self
                 .client
                 .keyvault_client
-                .send(&mut self.context, &mut request)
+                .send(&self.context, &mut request)
                 .await?;
 
             let response = CollectedResponse::from_response(response).await?;

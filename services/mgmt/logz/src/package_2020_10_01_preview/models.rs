@@ -219,7 +219,7 @@ pub struct LogzMonitorResourceListResponse {
 impl azure_core::Continuable for LogzMonitorResourceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LogzMonitorResourceListResponse {
@@ -321,7 +321,7 @@ pub struct LogzSingleSignOnResourceListResponse {
 impl azure_core::Continuable for LogzSingleSignOnResourceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LogzSingleSignOnResourceListResponse {
@@ -492,7 +492,7 @@ pub struct MonitoredResourceListResponse {
 impl azure_core::Continuable for MonitoredResourceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MonitoredResourceListResponse {
@@ -583,7 +583,7 @@ pub struct MonitoringTagRulesListResponse {
 impl azure_core::Continuable for MonitoringTagRulesListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MonitoringTagRulesListResponse {
@@ -647,7 +647,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -901,7 +901,7 @@ pub struct UserRoleListResponse {
 impl azure_core::Continuable for UserRoleListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UserRoleListResponse {
@@ -1037,7 +1037,7 @@ pub struct VmResourcesListResponse {
 impl azure_core::Continuable for VmResourcesListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VmResourcesListResponse {

@@ -9,34 +9,92 @@ env:
   CARGO_INCREMENTAL: 0
 
 jobs:
+  msrv:
+    name: Get minimum supported rust version
+    runs-on: ubuntu-20.04
+    outputs:
+      msrv: ${{ steps.get_msrv.outputs.msrv }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: get_msrv
+        run: |
+          MSRV=$(cargo metadata --format-version=1 --no-deps  | jq '.packages[] | select(.name == "azure_core").rust_version' -r)
+          echo setting msrv to ${MSRV}
+          echo msrv=${MSRV} >> "$GITHUB_OUTPUT"
+
   code-style:
     name: Code Style
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - run: eng/scripts/code_style.sh
+      # for code style, we only care about `stable`
+      - run: eng/scripts/code_style.sh stable
 
   test-sdk:
     name: SDK Tests
     runs-on: ubuntu-20.04
+    needs:
+      - msrv
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       matrix:
         build:
           - stable
-          - nightly
+          - ${{ needs.msrv.outputs.msrv }}
+        experimental:
+          - false
+        include:
+          - build: nightly
+            experimental: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
       - run: eng/scripts/sdk_tests.sh ${{ matrix.build }}
+
+  test-wasm:
+    name: WASM Tests
+    runs-on: ubuntu-20.04
+    needs:
+      - msrv
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      matrix:
+        build:
+          - stable
+          - ${{ needs.msrv.outputs.msrv }}
+        experimental:
+          - false
+        include:
+          - build: nightly
+            experimental: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Swatinem/rust-cache@v2
+      - run: eng/scripts/check_wasm.sh ${{ matrix.build }}
 
   test-services:
     name: Services Tests
     runs-on: ubuntu-20.04
+    needs:
+      - msrv
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      matrix:
+        build:
+          - stable
+          - ${{ needs.msrv.outputs.msrv }}
+        experimental:
+          - false
+        include:
+          - build: nightly
+            experimental: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - run: eng/scripts/services_tests.sh
+        with:
+          workspaces: services
+      - run: eng/scripts/services_tests.sh ${{ matrix.build }}
       - name: display free disk space
         run: df -h /
         if: ${{ always() }}
@@ -44,17 +102,23 @@ jobs:
   test-integration:
     name: Integration Tests
     runs-on: ubuntu-20.04
+    needs:
+      - msrv
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      matrix:
+        build:
+          - stable
+          - ${{ needs.msrv.outputs.msrv }}
+        experimental:
+          - false
+        include:
+          - build: nightly
+            experimental: true
     steps:
-      - uses: actions/checkout@v3
-      - run: rustup update --no-self-update stable
+      - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-
-      - name: emulator integration tests
-        run: |
-          npm install azurite@3.13.1
-          npx azurite &
-          cargo test --features test_integration
-
+      - run: eng/scripts/emulator_tests.sh ${{ matrix.build }}
       - name: display free disk space
         run: df -h /
         if: ${{ always() }}
@@ -62,10 +126,23 @@ jobs:
   test-e2e:
     name: E2E Tests
     runs-on: ubuntu-20.04
+    needs:
+      - msrv
+    continue-on-error: ${{ matrix.experimental }}
+    strategy:
+      matrix:
+        build:
+          - stable
+          - ${{ needs.msrv.outputs.msrv }}
+        experimental:
+          - false
+        include:
+          - build: nightly
+            experimental: true
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: Swatinem/rust-cache@v2
-      - run: eng/scripts/e2e_tests.sh
+      - run: eng/scripts/e2e_tests.sh ${{ matrix.build }}
       - name: display free disk space
         run: df -h /
         if: ${{ always() }}
@@ -75,17 +152,18 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: git clone
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: azure-sdk-for-rust
       - name: git clone Azure/azure-rest-api-specs
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: Azure/azure-rest-api-specs
           path: azure-rest-api-specs
       - name: git clone OAI/OpenAPI-Specification
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: OAI/OpenAPI-Specification
           path: OpenAPI-Specification
+      # for code style, we only care about `stable`
       - run: azure-sdk-for-rust/eng/scripts/autorust_tests.sh

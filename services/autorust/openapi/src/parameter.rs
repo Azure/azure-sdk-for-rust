@@ -13,7 +13,7 @@ pub struct Parameter {
 
     /// may be `header`, `query`, 'path`, `formData`
     #[serde(rename = "in")]
-    pub in_: ParameterType,
+    pub in_: ParameterIn,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub required: Option<bool>,
@@ -52,7 +52,7 @@ pub struct Parameter {
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
-pub enum ParameterType {
+pub enum ParameterIn {
     Path,
     Query,
     Header,

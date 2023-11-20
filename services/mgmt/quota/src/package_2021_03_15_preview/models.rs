@@ -97,23 +97,15 @@ impl ExceptionResponse {
         Self::default()
     }
 }
-#[doc = "LimitJson abstract class."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct LimitJsonObject {
-    #[doc = "The limit object type."]
-    #[serde(rename = "limitObjectType")]
-    pub limit_object_type: LimitObjectTypes,
-}
-impl LimitJsonObject {
-    pub fn new(limit_object_type: LimitObjectTypes) -> Self {
-        Self { limit_object_type }
-    }
+#[doc = "The limit object type."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "limitObjectType")]
+pub enum LimitJsonObjectUnion {
+    LimitValue(LimitObject),
 }
 #[doc = "The resource quota limit value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LimitObject {
-    #[serde(flatten)]
-    pub limit_json_object: LimitJsonObject,
     #[doc = "The quota/limit value"]
     pub value: i32,
     #[doc = "The quota or usages limit types."]
@@ -121,12 +113,8 @@ pub struct LimitObject {
     pub limit_type: Option<LimitTypes>,
 }
 impl LimitObject {
-    pub fn new(limit_json_object: LimitJsonObject, value: i32) -> Self {
-        Self {
-            limit_json_object,
-            value,
-            limit_type: None,
-        }
+    pub fn new(value: i32) -> Self {
+        Self { value, limit_type: None }
     }
 }
 #[doc = "The limit object type."]
@@ -236,7 +224,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -275,7 +263,7 @@ pub struct QuotaLimits {
 impl azure_core::Continuable for QuotaLimits {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl QuotaLimits {
@@ -307,7 +295,7 @@ impl QuotaLimitsResponse {
 pub struct QuotaProperties {
     #[doc = "LimitJson abstract class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limit: Option<LimitJsonObject>,
+    pub limit: Option<LimitJsonObjectUnion>,
     #[doc = " The quota units, such as Count and Bytes. When requesting quota, use the **unit** value returned in the GET response in the request body of your PUT operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
@@ -370,7 +358,7 @@ pub struct QuotaRequestDetailsList {
 impl azure_core::Continuable for QuotaRequestDetailsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl QuotaRequestDetailsList {
@@ -621,7 +609,7 @@ pub struct SubRequest {
     pub sub_request_id: Option<String>,
     #[doc = "LimitJson abstract class."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub limit: Option<LimitJsonObject>,
+    pub limit: Option<LimitJsonObjectUnion>,
 }
 impl SubRequest {
     pub fn new() -> Self {
@@ -645,7 +633,7 @@ pub struct UsagesLimits {
 impl azure_core::Continuable for UsagesLimits {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UsagesLimits {

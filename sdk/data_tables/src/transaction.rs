@@ -35,7 +35,7 @@ impl TransactionOperations {
         s.push_str(&self.change_set_uuid.hyphenated().to_string());
         s.push_str("\n\n");
 
-        for transaction_operation in self.transaction_operations.iter() {
+        for transaction_operation in &self.transaction_operations {
             s.push_str("--changeset_");
             s.push_str(&self.change_set_uuid.hyphenated().to_string());
             s.push_str("\nContent-Type: application/http\nContent-Transfer-Encoding: binary\n\n");
@@ -60,6 +60,7 @@ impl TransactionOperations {
                         s.push('\n');
                     }
                 }
+                #[cfg(not(target_arch = "wasm32"))]
                 azure_core::Body::SeekableStream(_) => todo!(),
             }
         }

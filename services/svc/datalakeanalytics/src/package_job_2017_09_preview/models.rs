@@ -10,10 +10,10 @@ pub struct BaseJobParameters {
     #[serde(rename = "type")]
     pub type_: base_job_parameters::Type,
     #[doc = "The common Data Lake Analytics job properties for job submission."]
-    pub properties: CreateJobProperties,
+    pub properties: CreateJobPropertiesUnion,
 }
 impl BaseJobParameters {
-    pub fn new(type_: base_job_parameters::Type, properties: CreateJobProperties) -> Self {
+    pub fn new(type_: base_job_parameters::Type, properties: CreateJobPropertiesUnion) -> Self {
         Self { type_, properties }
     }
 }
@@ -93,18 +93,21 @@ pub struct CreateJobProperties {
     pub runtime_version: Option<String>,
     #[doc = "The script to run. Please note that the maximum script size is 3 MB."]
     pub script: String,
-    #[doc = "The job type of the current job (Hive, USql, or Scope (for internal use only))."]
-    #[serde(rename = "type")]
-    pub type_: String,
 }
 impl CreateJobProperties {
-    pub fn new(script: String, type_: String) -> Self {
+    pub fn new(script: String) -> Self {
         Self {
             runtime_version: None,
             script,
-            type_,
         }
     }
+}
+#[doc = "The job type of the current job (Hive, USql, or Scope (for internal use only))."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum CreateJobPropertiesUnion {
+    Scope(CreateScopeJobProperties),
+    USql(CreateUSqlJobProperties),
 }
 #[doc = "The parameters used to submit a new Data Lake Analytics Scope job. (Only for use internally with Scope job type.)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -347,7 +350,7 @@ pub struct JobInfoListResult {
 impl azure_core::Continuable for JobInfoListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobInfoListResult {
@@ -377,10 +380,10 @@ pub struct JobInformation {
     )]
     pub state_audit_records: Vec<JobStateAuditRecord>,
     #[doc = "The common Data Lake Analytics job properties."]
-    pub properties: JobProperties,
+    pub properties: JobPropertiesUnion,
 }
 impl JobInformation {
-    pub fn new(job_information_basic: JobInformationBasic, properties: JobProperties) -> Self {
+    pub fn new(job_information_basic: JobInformationBasic, properties: JobPropertiesUnion) -> Self {
         Self {
             job_information_basic,
             error_message: Vec::new(),
@@ -543,7 +546,7 @@ pub struct JobInnerError {
     pub internal_diagnostics: Option<String>,
     #[doc = "The Data Lake Analytics job error details."]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-    pub inner_error: Box<Option<JobInnerError>>,
+    pub inner_error: Option<Box<JobInnerError>>,
 }
 impl JobInnerError {
     pub fn new() -> Self {
@@ -633,7 +636,7 @@ pub struct JobPipelineInformationListResult {
 impl azure_core::Continuable for JobPipelineInformationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobPipelineInformationListResult {
@@ -664,18 +667,22 @@ pub struct JobProperties {
     pub runtime_version: Option<String>,
     #[doc = "The script to run. Please note that the maximum script size is 3 MB."]
     pub script: String,
-    #[doc = "The job type of the current job (Hive, USql, or Scope (for internal use only))."]
-    #[serde(rename = "type")]
-    pub type_: String,
 }
 impl JobProperties {
-    pub fn new(script: String, type_: String) -> Self {
+    pub fn new(script: String) -> Self {
         Self {
             runtime_version: None,
             script,
-            type_,
         }
     }
+}
+#[doc = "The job type of the current job (Hive, USql, or Scope (for internal use only))."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum JobPropertiesUnion {
+    Hive(HiveJobProperties),
+    Scope(ScopeJobProperties),
+    USql(USqlJobProperties),
 }
 #[doc = "Recurrence job information for a specific recurrence."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -730,7 +737,7 @@ pub struct JobRecurrenceInformationListResult {
 impl azure_core::Continuable for JobRecurrenceInformationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobRecurrenceInformationListResult {

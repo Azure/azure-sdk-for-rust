@@ -19,18 +19,16 @@ pub const TESTING_MODE_RECORD: &str = "RECORD";
 ///
 /// Returns a reply mock policy unless the environment variable  "`TESTING_MODE`" is set to "RECORD".
 pub fn new_mock_transport(transaction_name: String) -> Arc<dyn Policy> {
-    match std::env::var(TESTING_MODE_KEY)
+    if std::env::var(TESTING_MODE_KEY)
         .as_deref()
         .unwrap_or(TESTING_MODE_REPLAY)
+        == TESTING_MODE_RECORD
     {
-        TESTING_MODE_RECORD => {
-            log::warn!("mock testing framework record mode enabled");
-            new_recorder_transport(transaction_name, azure_core::new_http_client())
-        }
-        _ => {
-            log::info!("mock testing framework replay mode enabled");
-            new_replay_transport(transaction_name)
-        }
+        log::warn!("mock testing framework record mode enabled");
+        new_recorder_transport(transaction_name, azure_core::new_http_client())
+    } else {
+        log::info!("mock testing framework replay mode enabled");
+        new_replay_transport(transaction_name)
     }
 }
 

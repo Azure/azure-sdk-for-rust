@@ -1,5 +1,4 @@
-use crate::{clients::ServiceType, StorageCredentials};
-use once_cell::sync::Lazy;
+use crate::clients::ServiceType;
 use std::convert::TryFrom;
 use url::Url;
 
@@ -8,22 +7,13 @@ use url::Url;
 #[derive(Debug, Clone)]
 pub enum CloudLocation {
     /// Azure public cloud
-    Public {
-        account: String,
-        credentials: StorageCredentials,
-    },
+    Public { account: String },
     /// Azure China cloud
-    China {
-        account: String,
-        credentials: StorageCredentials,
-    },
+    China { account: String },
     /// Use the well-known emulator
     Emulator { address: String, port: u16 },
     /// A custom base URL
-    Custom {
-        uri: String,
-        credentials: StorageCredentials,
-    },
+    Custom { uri: String },
 }
 
 impl CloudLocation {
@@ -51,15 +41,6 @@ impl CloudLocation {
         };
         Ok(url::Url::parse(&url)?)
     }
-
-    pub fn credentials(&self) -> &StorageCredentials {
-        match self {
-            CloudLocation::Public { credentials, .. } => credentials,
-            CloudLocation::China { credentials, .. } => credentials,
-            CloudLocation::Emulator { .. } => &EMULATOR_CREDENTIALS,
-            CloudLocation::Custom { credentials, .. } => credentials,
-        }
-    }
 }
 
 impl TryFrom<&Url> for CloudLocation {
@@ -68,13 +49,6 @@ impl TryFrom<&Url> for CloudLocation {
     // TODO: This only works for Public and China clouds.
     // ref: https://github.com/Azure/azure-sdk-for-rust/issues/502
     fn try_from(url: &Url) -> azure_core::Result<Self> {
-        let token = url.query().ok_or_else(|| {
-            azure_core::Error::with_message(azure_core::error::ErrorKind::DataConversion, || {
-                "unable to find SAS token in URL"
-            })
-        })?;
-        let credentials = StorageCredentials::sas_token(token)?;
-
         let host = url.host_str().ok_or_else(|| {
             azure_core::Error::with_message(azure_core::error::ErrorKind::DataConversion, || {
                 "unable to find the target host in the URL"
@@ -94,14 +68,8 @@ impl TryFrom<&Url> for CloudLocation {
         let rest = domain.join(".");
 
         match rest.as_str() {
-            "core.windows.net" => Ok(CloudLocation::Public {
-                account,
-                credentials,
-            }),
-            "core.chinacloudapi.cn" => Ok(CloudLocation::China {
-                account,
-                credentials,
-            }),
+            "core.windows.net" => Ok(CloudLocation::Public { account }),
+            "core.chinacloudapi.cn" => Ok(CloudLocation::China { account }),
             _ => Err(azure_core::Error::with_message(
                 azure_core::error::ErrorKind::DataConversion,
                 || format!("URL refers to a domain that is not a Public or China domain: {host}"),
@@ -109,10 +77,6 @@ impl TryFrom<&Url> for CloudLocation {
         }
     }
 }
-
-pub static EMULATOR_CREDENTIALS: Lazy<StorageCredentials> = Lazy::new(|| {
-    StorageCredentials::Key(EMULATOR_ACCOUNT.to_owned(), EMULATOR_ACCOUNT_KEY.to_owned())
-});
 
 /// The well-known account used by Azurite and the legacy Azure Storage Emulator.
 /// <https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key>
@@ -134,9 +98,6 @@ mod tests {
 
         let cloud_location: CloudLocation = (&public_with_token).try_into()?;
         assert_eq!(public_without_token, cloud_location.url(ServiceType::Blob)?);
-
-        let creds = cloud_location.credentials();
-        assert!(matches!(creds, &StorageCredentials::SASToken(_)));
 
         let file_url = Url::parse("file://tmp/test.txt")?;
         let result: azure_core::Result<CloudLocation> = (&file_url).try_into();

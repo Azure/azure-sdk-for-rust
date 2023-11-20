@@ -100,4 +100,15 @@ impl KeyClient {
     {
         GetRandomBytesBuilder::new(self.clone(), hsm_name.into(), count)
     }
+
+    pub fn unwrap_key<N>(
+        &self,
+        name: N,
+        unwrap_key_parameters: UnwrapKeyParameters,
+    ) -> UnwrapKeyBuilder
+    where
+        N: Into<String>,
+    {
+        UnwrapKeyBuilder::new(self.clone(), name.into(), unwrap_key_parameters)
+    }
 }

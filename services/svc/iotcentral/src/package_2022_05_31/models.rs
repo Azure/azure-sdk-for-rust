@@ -69,7 +69,7 @@ pub struct ApiTokenCollection {
 impl azure_core::Continuable for ApiTokenCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ApiTokenCollection {
@@ -77,17 +77,16 @@ impl ApiTokenCollection {
         Self { value, next_link: None }
     }
 }
-#[doc = "The attestation definition."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Attestation {
-    #[doc = "Type of the attestation."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl Attestation {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
+#[doc = "Type of the attestation."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum AttestationUnion {
+    #[serde(rename = "symmetricKey")]
+    SymmetricKey(SymmetricKeyAttestation),
+    #[serde(rename = "tpm")]
+    Tpm(TpmAttestation),
+    #[serde(rename = "x509")]
+    X509(X509Attestation),
 }
 #[doc = "The paged results of entities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -152,7 +151,7 @@ pub struct DeviceCollection {
 impl azure_core::Continuable for DeviceCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceCollection {
@@ -199,7 +198,7 @@ pub struct DeviceCommandCollection {
 impl azure_core::Continuable for DeviceCommandCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceCommandCollection {
@@ -282,7 +281,7 @@ pub struct DeviceGroupCollection {
 impl azure_core::Continuable for DeviceGroupCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceGroupCollection {
@@ -359,7 +358,7 @@ pub struct DeviceTemplateCollection {
 impl azure_core::Continuable for DeviceTemplateCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DeviceTemplateCollection {
@@ -500,7 +499,7 @@ pub struct OrganizationCollection {
 impl azure_core::Continuable for OrganizationCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OrganizationCollection {
@@ -560,7 +559,7 @@ pub struct RoleCollection {
 impl azure_core::Continuable for RoleCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RoleCollection {
@@ -610,18 +609,13 @@ impl SymmetricKey {
 #[doc = "The symmetric key attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SymmetricKeyAttestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     #[doc = "The symmetric key definition."]
     #[serde(rename = "symmetricKey")]
     pub symmetric_key: SymmetricKey,
 }
 impl SymmetricKeyAttestation {
-    pub fn new(attestation: Attestation, symmetric_key: SymmetricKey) -> Self {
-        Self {
-            attestation,
-            symmetric_key,
-        }
+    pub fn new(symmetric_key: SymmetricKey) -> Self {
+        Self { symmetric_key }
     }
 }
 #[doc = "The trusted platform module definition."]
@@ -639,14 +633,12 @@ impl Tpm {
 #[doc = "The attestation of TPM."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TpmAttestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     #[doc = "The trusted platform module definition."]
     pub tpm: Tpm,
 }
 impl TpmAttestation {
-    pub fn new(attestation: Attestation, tpm: Tpm) -> Self {
-        Self { attestation, tpm }
+    pub fn new(tpm: Tpm) -> Self {
+        Self { tpm }
     }
 }
 #[doc = "The user definition."]
@@ -657,24 +649,28 @@ pub struct User {
     #[doc = "Unique ID of the user."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Type of the user."]
-    #[serde(rename = "type")]
-    pub type_: String,
 }
 impl User {
-    pub fn new(permission: Permission, type_: String) -> Self {
-        Self {
-            permission,
-            id: None,
-            type_,
-        }
+    pub fn new(permission: Permission) -> Self {
+        Self { permission, id: None }
     }
+}
+#[doc = "Type of the user."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum UserUnion {
+    #[serde(rename = "adGroup")]
+    AdGroup(AdGroupUser),
+    #[serde(rename = "email")]
+    Email(EmailUser),
+    #[serde(rename = "servicePrincipal")]
+    ServicePrincipal(ServicePrincipalUser),
 }
 #[doc = "The paged results of users."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserCollection {
     #[doc = "The collection of users."]
-    pub value: Vec<User>,
+    pub value: Vec<UserUnion>,
     #[doc = "URL to get the next page of users."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -682,11 +678,11 @@ pub struct UserCollection {
 impl azure_core::Continuable for UserCollection {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UserCollection {
-    pub fn new(value: Vec<User>) -> Self {
+    pub fn new(value: Vec<UserUnion>) -> Self {
         Self { value, next_link: None }
     }
 }
@@ -705,14 +701,12 @@ impl X509 {
 #[doc = "The X509 attestation definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct X509Attestation {
-    #[serde(flatten)]
-    pub attestation: Attestation,
     #[doc = "The X509 definition."]
     pub x509: X509,
 }
 impl X509Attestation {
-    pub fn new(attestation: Attestation, x509: X509) -> Self {
-        Self { attestation, x509 }
+    pub fn new(x509: X509) -> Self {
+        Self { x509 }
     }
 }
 #[doc = "The X509 certificate definition."]

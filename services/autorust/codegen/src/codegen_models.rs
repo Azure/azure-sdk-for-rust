@@ -1,7 +1,7 @@
 use crate::{
     codegen::TypeNameCode,
     identifier::{CamelCaseIdent, SnakeCaseIdent},
-    spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref, TypeName},
+    spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref},
     CodeGen, PropertyName, ResolvedSchema, Spec,
 };
 use crate::{Error, ErrorKind, Result};
@@ -12,7 +12,10 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 use serde_json::Value;
 use spec::{get_schema_schema_references, openapi, RefKey};
-use std::collections::{HashMap, HashSet};
+use std::{
+    cmp::Reverse,
+    collections::{BinaryHeap, HashMap, HashSet},
+};
 
 #[derive(Clone)]
 pub struct PropertyGen {
@@ -25,12 +28,20 @@ impl PropertyGen {
         self.name.as_str()
     }
 
+    pub fn xml_attribute(&self) -> bool {
+        self.schema.xml_attribute()
+    }
+
     pub fn xml_name(&self) -> Option<&str> {
         self.schema.xml_name()
     }
 
     pub fn schema(&self) -> &SchemaGen {
         &self.schema
+    }
+
+    pub fn discriminator(&self) -> Option<&str> {
+        self.schema.discriminator()
     }
 }
 
@@ -88,7 +99,6 @@ impl SchemaGen {
     /// Default value is false.
     ///
     /// https://github.com/OAI/OpenAPI-Specification/blob/main/versions/2.0.md#xmlObject
-    #[allow(dead_code)]
     fn xml_attribute(&self) -> bool {
         self.schema.common.xml.as_ref().and_then(|xml| xml.attribute).unwrap_or_default()
     }
@@ -136,8 +146,10 @@ impl SchemaGen {
         )
     }
 
-    fn type_name(&self) -> Result<TypeName> {
-        get_type_name_for_schema(&self.schema.common)
+    pub fn type_name(&self, cg: &CodeGen) -> Result<TypeNameCode> {
+        let mut type_name = TypeNameCode::new(&get_type_name_for_schema(&self.schema.common)?)?;
+        cg.set_if_union_type(&mut type_name);
+        Ok(type_name)
     }
 
     fn required(&self) -> HashSet<&str> {
@@ -150,6 +162,20 @@ impl SchemaGen {
 
     fn all_of(&self) -> Vec<&SchemaGen> {
         self.all_of.iter().collect()
+    }
+
+    /// Get the number of fields in the struct, excluding the discriminator.
+    fn len_fields(&self) -> usize {
+        let mut len = self.all_of().len() + self.properties.len();
+        if self.discriminator().is_some() {
+            len = len.saturating_sub(1);
+        }
+        len
+    }
+
+    /// If the struct has any fields, excluding the discriminator.
+    fn has_fields(&self) -> bool {
+        self.len_fields() > 0
     }
 
     fn array_items(&self) -> Result<&ReferenceOr<Schema>> {
@@ -190,6 +216,14 @@ impl SchemaGen {
             }
         }
         true
+    }
+
+    fn discriminator(&self) -> Option<&str> {
+        self.schema.discriminator.as_deref()
+    }
+
+    fn discriminator_value(&self) -> Option<&str> {
+        self.schema.x_ms_discriminator_value.as_deref()
     }
 }
 
@@ -357,24 +391,54 @@ pub fn all_schemas_resolved(spec: &Spec) -> Result<Vec<(RefKey, SchemaGen)>> {
     Ok(schemas)
 }
 
-pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
-    let mut file = TokenStream::new();
+pub enum ModelCode {
+    Struct(StructCode),
+    Enum(NamedTypeCode),
+    VecAlias(VecAliasCode),
+    TypeAlias(TypeAliasCode),
+    Union(UnionCode),
+}
 
-    let has_case_workaround = cg.should_workaround_case();
+impl ToTokens for ModelCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        match self {
+            ModelCode::Struct(struct_code) => struct_code.to_tokens(tokens),
+            ModelCode::Enum(enum_code) => enum_code.to_tokens(tokens),
+            ModelCode::VecAlias(vec_alias_code) => vec_alias_code.to_tokens(tokens),
+            ModelCode::TypeAlias(type_alias_code) => type_alias_code.to_tokens(tokens),
+            ModelCode::Union(union_code) => union_code.to_tokens(tokens),
+        }
+    }
+}
 
-    file.extend(quote! {
-        #![allow(non_camel_case_types)]
-        #![allow(unused_imports)]
-        use std::str::FromStr;
-        use serde::{Serialize, Deserialize, Serializer};
-        use serde::de::{value, Deserializer, IntoDeserializer};
-    });
-    if has_case_workaround {
-        file.extend(quote! {
-        use azure_core::util::case_insensitive_deserialize;
+pub struct ModelsCode {
+    pub has_case_workaround: bool,
+    pub models: Vec<ModelCode>,
+}
+
+impl ToTokens for ModelsCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let has_case_workaround = self.has_case_workaround;
+        let models = &self.models;
+        tokens.extend(quote! {
+            #![allow(non_camel_case_types)]
+            #![allow(unused_imports)]
+            use std::str::FromStr;
+            use serde::{Serialize, Deserialize, Serializer};
+            use serde::de::{value, Deserializer, IntoDeserializer};
+        });
+        if has_case_workaround {
+            tokens.extend(quote! {
+                use azure_core::util::case_insensitive_deserialize;
+            });
+        }
+        tokens.extend(quote! {
+            #(#models)*
         });
     }
+}
 
+pub fn create_models(cg: &mut CodeGen) -> Result<ModelsCode> {
     let mut pageable_response_names: HashMap<String, MsPageable> = HashMap::new();
     for operation in cg.spec.operations()? {
         if let Some(pageable) = operation.pageable.as_ref() {
@@ -404,40 +468,240 @@ pub fn create_models(cg: &CodeGen) -> Result<TokenStream> {
 
     // println!("response_names: {:?}", pageable_response_names);
 
+    let mut models = Vec::new();
     let mut schema_names = IndexMap::new();
-    for (ref_key, schema) in &all_schemas_resolved(&cg.spec)? {
+    let all_schemas = &all_schemas_resolved(&cg.spec)?;
+
+    // add union types
+    for (_ref_key, schema) in all_schemas {
+        if schema.discriminator().is_some() {
+            let name = schema.name()?.to_camel_case_id();
+            cg.add_union_type(name);
+        }
+    }
+
+    for (ref_key, schema) in all_schemas {
         let doc_file = &ref_key.file_path;
         let schema_name = &ref_key.name;
-
         // println!("schema_name: {}", schema_name);
-
-        // create_response_type()
-
         if let Some(_first_doc_file) = schema_names.insert(schema_name, doc_file) {
             // eprintln!(
             //     "WARN schema {} already created from {:?}, duplicate from {:?}",
             //     schema_name, _first_doc_file, doc_file
             // );
         } else if schema.is_array() {
-            file.extend(create_vec_alias(schema)?);
+            models.push(ModelCode::VecAlias(create_vec_alias(cg, schema)?));
         } else if schema.is_local_enum() {
             let enum_code = create_enum(None, schema, schema_name, false)?;
-            file.extend(enum_code.into_token_stream());
+            models.push(ModelCode::Enum(enum_code));
         } else if schema.is_basic_type() {
-            let (id, value) = create_basic_type_alias(schema_name, schema)?;
-            file.extend(quote! { pub type #id = #value;});
+            let alias = create_basic_type_alias(cg, schema_name, schema)?;
+            models.push(ModelCode::TypeAlias(alias));
         } else {
             let pageable_name = format!("{}", schema_name.to_camel_case_ident()?);
-            file.extend(create_struct(cg, schema, schema_name, pageable_response_names.get(&pageable_name))?);
+
+            // create a base type and union type if there is a discriminator
+            if let Some(tag) = schema.discriminator() {
+                // create the base type without the discriminator
+                let mut schema = schema.clone();
+                let tag_property = schema.properties.iter().find(|property| property.name() == tag);
+                let tag_property_description = tag_property.and_then(|property| property.schema().schema.common.description.clone());
+                if schema.has_fields() {
+                    schema.properties.retain(|property| property.name() != tag);
+                    models.push(ModelCode::Struct(create_struct(
+                        cg,
+                        &schema,
+                        schema_name,
+                        pageable_response_names.get(&pageable_name),
+                        HashSet::new(),
+                    )?));
+                }
+
+                // create the union type with the discriminator
+                models.push(ModelCode::Union(UnionCode::from_schema(
+                    cg,
+                    tag,
+                    schema_name,
+                    ref_key,
+                    all_schemas,
+                    tag_property_description,
+                )?));
+            } else {
+                models.push(ModelCode::Struct(create_struct(
+                    cg,
+                    schema,
+                    schema_name,
+                    pageable_response_names.get(&pageable_name),
+                    HashSet::new(),
+                )?));
+            }
         }
     }
-    Ok(file)
+    Ok(ModelsCode {
+        has_case_workaround: cg.should_workaround_case(),
+        models,
+    })
 }
 
-fn create_basic_type_alias(property_name: &str, property: &SchemaGen) -> Result<(Ident, TypeNameCode)> {
+pub struct UnionCode {
+    pub tag: String,
+    pub name: TypeNameCode,
+    pub values: Vec<UnionValueCode>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug)]
+struct Depth<T> {
+    inner: T,
+    depth: usize,
+}
+
+impl<T> Ord for Depth<T> {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.depth.cmp(&other.depth)
+    }
+}
+
+impl<T> PartialOrd for Depth<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.depth.cmp(&other.depth))
+    }
+}
+
+impl<T> Eq for Depth<T> {}
+
+impl<T> PartialEq for Depth<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.depth == other.depth
+    }
+}
+
+impl UnionCode {
+    fn from_schema(
+        cg: &CodeGen,
+        tag: &str,
+        schema_name: &str,
+        ref_key: &RefKey,
+        all_schemas: &Vec<(RefKey, SchemaGen)>,
+        description: Option<String>,
+    ) -> Result<Self> {
+        let mut values = Vec::new();
+        for (child_ref_key, child_schema) in all_schemas {
+            if let Some(tag) = child_schema.discriminator_value() {
+                if Self::breadth_first_search_all_of(ref_key, child_schema) {
+                    let name = tag.to_camel_case_ident()?;
+                    let mut type_name = TypeNameCode::from(child_ref_key.name.to_camel_case_ident()?);
+                    cg.set_if_union_type(&mut type_name);
+                    values.push(UnionValueCode {
+                        tag: tag.to_string(),
+                        name,
+                        type_name,
+                    });
+                }
+            }
+        }
+        let mut name = TypeNameCode::from(schema_name.to_camel_case_ident()?);
+        name.union(true);
+        Ok(Self {
+            tag: tag.to_string(),
+            name,
+            values,
+            description,
+        })
+    }
+
+    /// Performs a BFS through multiple layers of allOf properties on a provided start schema
+    fn breadth_first_search_all_of(search_for_ref_key: &RefKey, start_schema: &SchemaGen) -> bool {
+        let mut heap = BinaryHeap::new();
+        Self::populate_heap(&mut heap, start_schema, 0);
+        while !heap.is_empty() {
+            let Reverse(Depth { inner: schema, .. }) = heap.pop().unwrap();
+            if schema.ref_key.as_ref() == Some(search_for_ref_key) {
+                // we have found an all of schema that matches the ref key we are searching for
+                return true;
+            }
+            if schema.discriminator().is_some() {
+                // if there is another discriminator defined, we can stop searching as the start schema would be a child of this discriminator instead
+                break;
+            }
+        }
+        false
+    }
+
+    /// Populate a binary heap with all allOf schemas from a provided start schema
+    fn populate_heap(heap: &mut BinaryHeap<Reverse<Depth<SchemaGen>>>, schema: &SchemaGen, depth: usize) {
+        if depth != 0 {
+            heap.push(Reverse(Depth {
+                inner: schema.clone(),
+                depth,
+            }))
+        };
+        for referenced_schema in schema.all_of().iter() {
+            Self::populate_heap(heap, referenced_schema, depth + 1);
+        }
+    }
+}
+
+impl ToTokens for UnionCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let UnionCode {
+            tag,
+            name,
+            values,
+            description,
+        } = self;
+        let doc_comment = DocCommentCode::from(description);
+        tokens.extend(quote! {
+            #doc_comment
+            #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+            #[serde(tag = #tag)]
+            pub enum #name {
+                #(#values)*
+            }
+        });
+    }
+}
+
+pub struct UnionValueCode {
+    pub tag: String,
+    pub name: Ident,
+    pub type_name: TypeNameCode,
+}
+
+impl ToTokens for UnionValueCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let UnionValueCode { tag, name, type_name } = self;
+        let serde = if tag != &name.to_string() {
+            Some(SerdeCode::rename(tag))
+        } else {
+            None
+        };
+        tokens.extend(quote! {
+            #serde
+            #name(#type_name),
+        });
+    }
+}
+
+pub struct TypeAliasCode {
+    pub id: Ident,
+    pub value: TypeNameCode,
+}
+
+impl ToTokens for TypeAliasCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let id = &self.id;
+        let value = &self.value;
+        tokens.extend(quote! {
+            pub type #id = #value;
+        });
+    }
+}
+
+fn create_basic_type_alias(cg: &CodeGen, property_name: &str, property: &SchemaGen) -> Result<TypeAliasCode> {
     let id = property_name.to_camel_case_ident()?;
-    let value = TypeNameCode::new(&property.type_name()?)?;
-    Ok((id, value))
+    let value = property.type_name(cg)?;
+    Ok(TypeAliasCode { id, value })
 }
 
 // For create_models. Recursively adds schema refs.
@@ -454,12 +718,7 @@ fn add_schema_refs(resolved: &mut IndexMap<RefKey, SchemaGen>, spec: &Spec, doc_
     Ok(())
 }
 
-fn create_enum(
-    namespace: Option<&Ident>,
-    property: &SchemaGen,
-    property_name: &str,
-    lowercase_workaround: bool,
-) -> Result<StructFieldCode> {
+fn create_enum(namespace: Option<&Ident>, property: &SchemaGen, property_name: &str, lowercase_workaround: bool) -> Result<NamedTypeCode> {
     let enum_values = property.enum_values();
     let id = &property_name.to_camel_case_ident()?;
 
@@ -467,12 +726,7 @@ fn create_enum(
     for enum_value in &enum_values {
         let value = &enum_value.value;
         let nm = value.to_camel_case_ident()?;
-        let doc_comment = match &enum_value.description {
-            Some(description) => {
-                quote! { #[doc = #description] }
-            }
-            None => quote! {},
-        };
+        let doc_comment = DocCommentCode::from(&enum_value.description);
         let lower = value.to_lowercase();
         let rename = if &nm.to_string() == value {
             quote! {}
@@ -590,12 +844,7 @@ fn create_enum(
         quote! {}
     };
 
-    let doc_comment = match &property.schema.common.description {
-        Some(description) => {
-            quote! { #[doc = #description] }
-        }
-        None => quote! {},
-    };
+    let doc_comment = DocCommentCode::from(&property.schema.common.description);
 
     let code = quote! {
         #doc_comment
@@ -609,23 +858,114 @@ fn create_enum(
     };
     let type_name = TypeNameCode::from(vec![namespace, Some(id)]);
 
-    Ok(StructFieldCode {
+    Ok(NamedTypeCode {
         type_name,
         code: Some(TypeCode::Enum(code)),
     })
 }
 
-fn create_vec_alias(schema: &SchemaGen) -> Result<TokenStream> {
-    let items = schema.array_items()?;
-    let typ = schema.name()?.to_camel_case_ident()?;
-    let items_typ = TypeNameCode::new(&get_type_name_for_schema_ref(items)?)?;
-    Ok(quote! { pub type #typ = Vec<#items_typ>; })
+pub struct VecAliasCode {
+    pub id: Ident,
+    pub value: TypeNameCode,
 }
 
-fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: Option<&MsPageable>) -> Result<TokenStream> {
-    let mut code = TokenStream::new();
+impl ToTokens for VecAliasCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let id = &self.id;
+        let value = &self.value;
+        tokens.extend(quote! {
+            pub type #id = Vec<#value>;
+        });
+    }
+}
+
+fn create_vec_alias(cg: &CodeGen, schema: &SchemaGen) -> Result<VecAliasCode> {
+    let items = schema.array_items()?;
+    let id = schema.name()?.to_camel_case_ident()?;
+    let mut value = TypeNameCode::new(&get_type_name_for_schema_ref(items)?)?;
+    cg.set_if_union_type(&mut value);
+    Ok(VecAliasCode { id, value })
+}
+
+pub struct StructCode {
+    doc_comment: DocCommentCode,
+    struct_name_code: Ident,
+    default_code: TokenStream,
+    props: Vec<StructPropCode>,
+    continuable: Option<ContinuableCode>,
+    implement_default: bool,
+    new_fn_params: Vec<TokenStream>,
+    new_fn_body: TokenStream,
+    mod_code: TokenStream,
+    ns: Ident,
+}
+
+impl ToTokens for StructCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let StructCode {
+            doc_comment,
+            struct_name_code,
+            default_code,
+            props,
+            continuable,
+            implement_default,
+            new_fn_params,
+            new_fn_body,
+            mod_code,
+            ns,
+        } = self;
+
+        let struct_code = quote! {
+            #doc_comment
+            #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+            #default_code
+            pub struct #struct_name_code {
+                #(#props)*
+            }
+            #continuable
+        };
+        tokens.extend(struct_code);
+
+        tokens.extend(if *implement_default {
+            quote! {
+                impl #struct_name_code {
+                    pub fn new() -> Self {
+                        Self::default()
+                    }
+                }
+            }
+        } else {
+            quote! {
+                impl #struct_name_code {
+                    pub fn new(#(#new_fn_params),*) -> Self {
+                        Self {
+                            #new_fn_body
+                        }
+                    }
+                }
+            }
+        });
+
+        if !mod_code.is_empty() {
+            tokens.extend(quote! {
+                pub mod #ns {
+                    use super::*;
+                    #mod_code
+                }
+            });
+        }
+    }
+}
+
+fn create_struct(
+    cg: &CodeGen,
+    schema: &SchemaGen,
+    struct_name: &str,
+    pageable: Option<&MsPageable>,
+    mut needs_boxing: HashSet<String>,
+) -> Result<StructCode> {
     let mut mod_code = TokenStream::new();
-    let mut props = TokenStream::new();
+    let mut props = Vec::new();
     let mut new_fn_params: Vec<TokenStream> = Vec::new();
     let mut new_fn_body = TokenStream::new();
     let ns = struct_name.to_snake_case_ident()?;
@@ -633,16 +973,24 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
     let required = schema.required();
 
     // println!("struct: {} {:?}", struct_name_code, pageable);
+    needs_boxing.insert(struct_name.to_camel_case_ident()?.to_string());
 
-    for schema in schema.all_of() {
-        let schema_name = schema.name()?;
-        let type_name = schema_name.to_camel_case_ident()?;
+    for base_schema in schema.all_of() {
+        // skip empty base types
+        if !base_schema.has_fields() {
+            continue;
+        }
+        let schema_name = base_schema.name()?;
+        let mut type_name = TypeNameCode::from(schema_name.to_camel_case_ident()?);
+        type_name.union(false);
         let field_name = schema_name.to_snake_case_ident()?;
-        props.extend(quote! {
-            #[serde(flatten)]
-            pub #field_name: #type_name,
+        props.push(StructPropCode {
+            doc_comments: Vec::new(),
+            serde: SerdeCode::flatten(),
+            field_name: field_name.clone(),
+            field_type: type_name.clone(),
         });
-        if schema.implement_default() {
+        if base_schema.implement_default() {
             new_fn_body.extend(quote! { #field_name: #type_name::default(), });
         } else {
             new_fn_params.push(quote! { #field_name: #type_name });
@@ -667,17 +1015,30 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
 
         let lowercase_workaround = cg.should_workaround_case();
 
-        let StructFieldCode {
+        let NamedTypeCode {
             mut type_name,
             code: field_code,
-        } = create_struct_field_code(cg, &ns.clone(), &property.schema, property_name, lowercase_workaround)?;
+        } = create_struct_field_code(
+            cg,
+            &ns.clone(),
+            &property.schema,
+            property_name,
+            lowercase_workaround,
+            needs_boxing.clone(),
+        )?;
         mod_code.extend(field_code.into_token_stream());
+        let mut doc_comments = Vec::new();
         // uncomment the next two lines to help identify entries that need boxed
         // let prop_nm_str = format!("{} , {} , {}", prop_nm.file_path, prop_nm.schema_name, property_name);
-        // props.extend(quote! { #[doc = #prop_nm_str ]});
+        // doc_comments.push(DocCommentCode::from(&Some(prop_nm_str)));
+
+        let mut boxed = false;
+        if needs_boxing.contains(&type_name.to_string().to_camel_case_ident()?.to_string()) {
+            boxed = true;
+        }
 
         if cg.should_force_obj(prop_nm) {
-            type_name = type_name.force_value(true);
+            type_name.force_value(true);
         }
 
         let is_required = required.contains(property_name) && !cg.should_force_optional(prop_nm);
@@ -685,55 +1046,64 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
         field_names.insert(format!("{field_name}"), is_required);
 
         if !type_name.is_vec() && !is_required {
-            type_name = type_name.optional(true);
+            type_name.optional(true);
         }
 
-        let mut serde_attrs: Vec<TokenStream> = Vec::new();
+        let mut serde = SerdeCode::default();
         if field_name != property_name {
-            serde_attrs.push(quote! { rename = #property_name });
+            if property.xml_attribute() {
+                let as_attribute = format!("@{}", property_name);
+                serde.add_rename(&as_attribute);
+            } else {
+                serde.add_rename(property_name);
+            }
         }
         #[allow(clippy::collapsible_else_if)]
         if is_required {
             if type_name.is_date_time() {
-                serde_attrs.push(quote! { with = "azure_core::date::rfc3339"});
+                serde.add_with("azure_core::date::rfc3339");
             } else if type_name.is_date_time_rfc1123() {
-                serde_attrs.push(quote! { with = "azure_core::date::rfc1123"});
+                serde.add_with("azure_core::date::rfc1123");
             }
         } else {
             if type_name.is_date_time() {
                 // Must specify `default` when using `with` for `Option`
-                serde_attrs.push(quote! { default, with = "azure_core::date::rfc3339::option"});
+                serde.add_default();
+                serde.add_with("azure_core::date::rfc3339::option");
             } else if type_name.is_date_time_rfc1123() {
                 // Must specify `default` when using `with` for `Option`
-                serde_attrs.push(quote! { default, with = "azure_core::date::rfc1123::option"});
+                serde.add_default();
+                serde.add_with("azure_core::date::rfc1123::option");
             } else if type_name.is_vec() {
-                serde_attrs.push(quote! { default, deserialize_with = "azure_core::util::deserialize_null_as_default", skip_serializing_if = "Vec::is_empty"});
+                serde.add_default();
+                serde.add_deserialize_with("azure_core::util::deserialize_null_as_default");
+                serde.add_skip_serializing_if("Vec::is_empty");
             } else {
-                serde_attrs.push(quote! { default, skip_serializing_if = "Option::is_none"});
+                serde.add_default();
+                serde.add_skip_serializing_if("Option::is_none");
             }
         }
-        if property.schema.is_local_enum() && lowercase_workaround {
-            serde_attrs.push(quote! { deserialize_with = "case_insensitive_deserialize"});
+        if property.schema.is_local_enum() {
+            if lowercase_workaround {
+                serde.add_deserialize_with("case_insensitive_deserialize");
+            } else if cg.has_xml() {
+                serde.add_with("azure_core::xml::text_content");
+            }
         }
-        let serde = if !serde_attrs.is_empty() {
-            quote! { #[serde(#(#serde_attrs),*)] }
-        } else {
-            quote! {}
-        };
 
         // see if a field should be wrapped in a Box
-        let boxed = cg.should_box_property(prop_nm);
-        type_name = type_name.boxed(boxed);
+        if cg.should_box_property(prop_nm) {
+            boxed = true;
+        }
+        type_name.boxed(boxed);
 
-        let doc_comment = match &property.schema.schema.common.description {
-            Some(description) => quote! { #[doc = #description] },
-            None => quote! {},
-        };
+        doc_comments.push(DocCommentCode::from(&property.schema.schema.common.description));
 
-        props.extend(quote! {
-            #doc_comment
-            #serde
-            pub #field_name: #type_name,
+        props.push(StructPropCode {
+            doc_comments,
+            serde,
+            field_name: field_name.clone(),
+            field_type: type_name.clone(),
         });
 
         if is_required {
@@ -747,11 +1117,7 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
             }
         } else {
             #[allow(clippy::collapsible_else_if)]
-            if boxed {
-                new_fn_body.extend(quote! { #field_name: Box::new(None), });
-            } else {
-                new_fn_body.extend(quote! { #field_name: None, });
-            }
+            new_fn_body.extend(quote! { #field_name: None, });
         }
     }
 
@@ -761,22 +1127,71 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
         quote! {}
     };
 
-    let doc_comment = match &schema.schema.common.description {
-        Some(description) => quote! { #[doc = #description] },
-        None => quote! {},
-    };
+    let doc_comment = DocCommentCode::from(&schema.schema.common.description);
 
-    let mut continuable = quote! {};
-    if let Some(pageable) = pageable {
-        if let Some(name) = &pageable.next_link_name {
-            let field_name = name.to_snake_case_ident()?;
+    let continuable = ContinuableCode::from_pageable(struct_name_code.clone(), pageable, field_names)?;
+
+    Ok(StructCode {
+        doc_comment,
+        struct_name_code,
+        default_code,
+        props,
+        continuable,
+        implement_default: schema.implement_default(),
+        new_fn_params,
+        new_fn_body,
+        mod_code,
+        ns,
+    })
+}
+
+pub struct ContinuableCode {
+    pub struct_name: Ident,
+    pub field_name: Option<Ident>,
+    pub is_required: Option<bool>,
+}
+
+impl ContinuableCode {
+    pub fn new(struct_name: Ident, field_name: Option<Ident>, is_required: Option<bool>) -> Self {
+        Self {
+            struct_name,
+            field_name,
+            is_required,
+        }
+    }
+
+    pub fn from_pageable(struct_name: Ident, pageable: Option<&MsPageable>, field_names: HashMap<String, bool>) -> Result<Option<Self>> {
+        if let Some(pageable) = pageable {
+            let field_name = if let Some(name) = &pageable.next_link_name {
+                let field_name = name.to_snake_case_ident()?;
+                Some(field_name)
+            } else {
+                None
+            };
+            let is_required = field_name.as_ref().and_then(|field_name| field_names.get(&format!("{field_name}")));
+            Ok(Some(Self::new(struct_name, field_name, is_required.cloned())))
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+impl ToTokens for ContinuableCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let Self {
+            struct_name,
+            field_name,
+            is_required,
+        } = self;
+
+        if let Some(field_name) = field_name {
             // when there are multiple responses, we only add the Continuable
             // for the cases that have the field we care about.
-            // println!("checking {} {} {}", struct_name_code, field_name, field_names.contains(&format!("{}", field_name)));
-            if let Some(is_required) = field_names.get(&format!("{field_name}")) {
+            // println!("checking {} {} {}", struct_name_code, field_name, is_required);
+            if let Some(is_required) = is_required {
                 if *is_required {
-                    continuable = quote! {
-                        impl azure_core::Continuable for #struct_name_code {
+                    tokens.extend(quote! {
+                        impl azure_core::Continuable for #struct_name {
                             type Continuation = String;
                             fn continuation(&self) -> Option<Self::Continuation> {
                                 if self.#field_name.is_empty() {
@@ -786,30 +1201,30 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
                                 }
                             }
                         }
-                    };
+                    });
                 } else {
-                    continuable = quote! {
-                        impl azure_core::Continuable for #struct_name_code {
+                    tokens.extend(quote! {
+                        impl azure_core::Continuable for #struct_name {
                             type Continuation = String;
                             fn continuation(&self) -> Option<Self::Continuation> {
-                                self.#field_name.clone()
+                                self.#field_name.clone().filter(|value| !value.is_empty())
                             }
                         }
-                    };
+                    });
                 }
             } else {
                 // In a number of cases, such as USqlAssemblyList used in
                 // datalake-analytics, the next link name is provided, but the
                 // field doesn't exist in the response schema.  Handle that by
                 // adding a Continuable that always returns None.
-                continuable = quote! {
-                    impl azure_core::Continuable for #struct_name_code {
+                tokens.extend(quote! {
+                    impl azure_core::Continuable for #struct_name {
                         type Continuation = String;
                         fn continuation(&self) -> Option<Self::Continuation> {
                             None
                         }
                     }
-                };
+                });
             }
         } else {
             // In a number of cases, such as DimensionsListResult used in
@@ -817,66 +1232,157 @@ fn create_struct(cg: &CodeGen, schema: &SchemaGen, struct_name: &str, pageable: 
             // via a header or sometimes used in other responses.
             //
             // Handle that by // adding a Continuable that always returns None.
-            continuable = quote! {
-                impl azure_core::Continuable for #struct_name_code {
+            tokens.extend(quote! {
+                impl azure_core::Continuable for #struct_name {
                     type Continuation = String;
                     fn continuation(&self) -> Option<Self::Continuation> {
                         None
                     }
                 }
-            };
+            });
         }
     }
-
-    let struct_code = quote! {
-        #doc_comment
-        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-        #default_code
-        pub struct #struct_name_code {
-            #props
-        }
-        #continuable
-    };
-    code.extend(struct_code);
-
-    code.extend(if schema.implement_default() {
-        quote! {
-            impl #struct_name_code {
-                pub fn new() -> Self {
-                    Self::default()
-                }
-            }
-        }
-    } else {
-        quote! {
-            impl #struct_name_code {
-                pub fn new(#(#new_fn_params),*) -> Self {
-                    Self {
-                        #new_fn_body
-                    }
-                }
-            }
-        }
-    });
-
-    if !mod_code.is_empty() {
-        code.extend(quote! {
-            pub mod #ns {
-                use super::*;
-                #mod_code
-            }
-        });
-    }
-
-    Ok(code)
 }
 
-struct StructFieldCode {
+pub struct StructPropCode {
+    pub doc_comments: Vec<DocCommentCode>,
+    pub serde: SerdeCode,
+    pub field_name: Ident,
+    pub field_type: TypeNameCode,
+}
+
+impl StructPropCode {
+    pub fn new(field_name: Ident, field_type: TypeNameCode) -> Self {
+        Self {
+            doc_comments: Vec::new(),
+            serde: SerdeCode::default(),
+            field_name,
+            field_type,
+        }
+    }
+}
+
+impl ToTokens for StructPropCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let doc_comments = &self.doc_comments;
+        let serde = &self.serde;
+        let field_name = &self.field_name;
+        let field_type = &self.field_type;
+        tokens.extend(quote! {
+            #(#doc_comments)*
+            #serde
+            pub #field_name: #field_type,
+        });
+    }
+}
+
+#[derive(Default)]
+pub struct SerdeCode {
+    attributes: Vec<TokenStream>,
+}
+
+impl SerdeCode {
+    pub fn flatten() -> Self {
+        let mut serde = Self::default();
+        serde.add_flatten();
+        serde
+    }
+    pub fn tag(tag: &str) -> Self {
+        let mut serde = Self::default();
+        serde.add_tag(tag);
+        serde
+    }
+    pub fn rename(rename: &str) -> Self {
+        let mut serde = Self::default();
+        serde.add_rename(rename);
+        serde
+    }
+    pub fn add_tag(&mut self, tag: &str) {
+        self.attributes.push(quote! { tag = #tag });
+    }
+    pub fn add_flatten(&mut self) {
+        self.attributes.push(quote! { flatten });
+    }
+    pub fn add_rename(&mut self, rename: &str) {
+        self.attributes.push(quote! { rename = #rename });
+    }
+    pub fn add_alias(&mut self, alias: &str) {
+        self.attributes.push(quote! { alias = #alias });
+    }
+    pub fn add_skip_serializing_if(&mut self, skip_serializing_if: &str) {
+        self.attributes.push(quote! { skip_serializing_if = #skip_serializing_if });
+    }
+    pub fn add_default(&mut self) {
+        self.attributes.push(quote! { default });
+    }
+    pub fn add_default_value(&mut self, default: &str) {
+        self.attributes.push(quote! { default = #default });
+    }
+    pub fn add_with(&mut self, with: &str) {
+        self.attributes.push(quote! { with = #with });
+    }
+    pub fn add_deserialize_with(&mut self, deserialize_with: &str) {
+        self.attributes.push(quote! { deserialize_with = #deserialize_with });
+    }
+    pub fn add_serialize_with(&mut self, serialize_with: &str) {
+        self.attributes.push(quote! { serialize_with = #serialize_with });
+    }
+    pub fn add_remote(&mut self, remote: &str) {
+        self.attributes.push(quote! { remote = #remote });
+    }
+    pub fn add_skip_deserializing(&mut self) {
+        self.attributes.push(quote! { skip_deserializing });
+    }
+}
+
+impl ToTokens for SerdeCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        let attributes = &self.attributes;
+        if !attributes.is_empty() {
+            tokens.extend(quote! {
+                #[serde(#(#attributes),*)]
+            });
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct DocCommentCode {
+    description: Option<String>,
+}
+
+impl From<&str> for DocCommentCode {
+    fn from(description: &str) -> Self {
+        Self {
+            description: Some(description.to_string()),
+        }
+    }
+}
+
+impl From<&Option<String>> for DocCommentCode {
+    fn from(description: &Option<String>) -> Self {
+        Self {
+            description: description.clone(),
+        }
+    }
+}
+
+impl ToTokens for DocCommentCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        if let Some(description) = &self.description {
+            tokens.extend(quote! {
+                #[doc = #description]
+            });
+        }
+    }
+}
+
+pub struct NamedTypeCode {
     type_name: TypeNameCode,
     code: Option<TypeCode>,
 }
 
-impl ToTokens for StructFieldCode {
+impl ToTokens for NamedTypeCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         if let Some(code) = &self.code {
             code.to_tokens(tokens)
@@ -885,7 +1391,7 @@ impl ToTokens for StructFieldCode {
 }
 
 enum TypeCode {
-    Struct(TokenStream),
+    Struct(StructCode),
     Enum(TokenStream),
     XmlWrapped(XmlWrappedCode),
 }
@@ -893,8 +1399,8 @@ enum TypeCode {
 impl ToTokens for TypeCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         match self {
-            TypeCode::Struct(code) => tokens.extend(code.clone()),
-            TypeCode::Enum(code) => tokens.extend(code.clone()),
+            TypeCode::Struct(code) => code.to_tokens(tokens),
+            TypeCode::Enum(code) => code.to_tokens(tokens),
             TypeCode::XmlWrapped(code) => code.to_tokens(tokens),
         }
     }
@@ -926,14 +1432,13 @@ fn create_struct_field_code(
     property: &SchemaGen,
     property_name: &str,
     lowercase_workaround: bool,
-) -> Result<StructFieldCode> {
+    needs_boxing: HashSet<String>,
+) -> Result<NamedTypeCode> {
     match &property.ref_key {
         Some(ref_key) => {
-            let tp = ref_key.name.to_camel_case_ident()?;
-            Ok(StructFieldCode {
-                type_name: tp.into(),
-                code: None,
-            })
+            let mut type_name = TypeNameCode::from(ref_key.name.to_camel_case_ident()?);
+            cg.set_if_union_type(&mut type_name);
+            Ok(NamedTypeCode { type_name, code: None })
         }
         None => {
             if property.is_local_enum() {
@@ -941,8 +1446,8 @@ fn create_struct_field_code(
             } else if property.is_local_struct() {
                 let id = property_name.to_camel_case_ident()?;
                 let type_name = TypeNameCode::from(vec![namespace.clone(), id]);
-                let code = create_struct(cg, property, property_name, None)?;
-                Ok(StructFieldCode {
+                let code = create_struct(cg, property, property_name, None, needs_boxing)?;
+                Ok(NamedTypeCode {
                     type_name,
                     code: Some(TypeCode::Struct(code)),
                 })
@@ -955,18 +1460,195 @@ fn create_struct_field_code(
                     .unwrap_or_else(|| id.clone());
                 let code = XmlWrappedCode {
                     struct_name: struct_name.clone(),
-                    type_name: TypeNameCode::new(&property.type_name()?)?,
+                    type_name: property.type_name(cg)?,
                 };
-                Ok(StructFieldCode {
+                Ok(NamedTypeCode {
                     type_name: TypeNameCode::from(vec![namespace.clone(), struct_name]),
                     code: Some(TypeCode::XmlWrapped(code)),
                 })
             } else {
-                Ok(StructFieldCode {
-                    type_name: TypeNameCode::new(&property.type_name()?)?,
+                Ok(NamedTypeCode {
+                    type_name: property.type_name(cg)?,
                     code: None,
                 })
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod union_code_tests {
+    use super::*;
+
+    /// Helper to create a [RefKey] for testing
+    fn create_ref_key(name: &str) -> RefKey {
+        RefKey {
+            file_path: Utf8PathBuf::from(name),
+            name: name.to_string(),
+        }
+    }
+
+    /// Helper to create a [SchemaGen] for testing from a [RefKey]
+    fn create_schemagen(ref_key: RefKey) -> SchemaGen {
+        let schema = Schema::default();
+        SchemaGen::new(Some(ref_key.clone()), schema, Utf8PathBuf::from(ref_key.name))
+    }
+
+    /// Helper to create a [SchemaGen] and a [RefKey] for testing
+    fn create_schema(name: &str) -> (RefKey, SchemaGen) {
+        let ref_key = create_ref_key(name);
+        (ref_key.clone(), create_schemagen(ref_key))
+    }
+
+    const SCHEMA_1A: &str = "schema_1a";
+    const SCHEMA_1B: &str = "schema_1b";
+    const SCHEMA_2A: &str = "schema_2a";
+    const SCHEMA_2B: &str = "schema_2b";
+    const SCHEMA_2C: &str = "schema_2c";
+    const SCHEMA_3A: &str = "schema_3a";
+    const SCHEMA_3B: &str = "schema_3b";
+    const SCHEMA_3C: &str = "schema_3c";
+
+    /// Helper function to setup a scenario to test search functions in [UnionCode]
+    ///
+    /// level 1:
+    /// - A: is discriminator
+    /// - B: nothing special
+    ///
+    /// level 2:
+    /// - A: all of over 1A, has discriminator value
+    /// - B: all of over 1A & 1B, is discriminator, has discriminator value
+    /// - C: all of over 1B
+    ///
+    /// level 3:
+    /// - A: all of over 2A, has discriminator value
+    /// - B: all of over 2B, has discriminator value
+    /// - C: all of over 2C
+    fn setup_scenario() -> HashMap<&'static str, (RefKey, SchemaGen)> {
+        let mut schema_1a = create_schema(SCHEMA_1A);
+        let schema_1b = create_schema(SCHEMA_1B);
+        let mut schema_2a = create_schema(SCHEMA_2A);
+        let mut schema_2b = create_schema(SCHEMA_2B);
+        let mut schema_2c = create_schema(SCHEMA_2C);
+        let mut schema_3a = create_schema(SCHEMA_3A);
+        let mut schema_3b = create_schema(SCHEMA_3B);
+        let mut schema_3c = create_schema(SCHEMA_3C);
+
+        schema_1a.1.schema.discriminator = Some("schema_1a_discriminator".to_string());
+
+        schema_2a.1.all_of = vec![schema_1a.1.clone()];
+        schema_2a.1.schema.x_ms_discriminator_value = Some("schema_2a_discriminator_value".to_string());
+
+        schema_2b.1.all_of = vec![schema_1a.1.clone(), schema_1b.1.clone()];
+        schema_2b.1.schema.discriminator = Some("schema_2b_discriminator".to_string());
+        schema_2b.1.schema.x_ms_discriminator_value = Some("schema_2b_discriminator_value".to_string());
+
+        schema_2c.1.all_of = vec![schema_1b.1.clone()];
+
+        schema_3a.1.all_of = vec![schema_2a.1.clone()];
+        schema_3a.1.schema.x_ms_discriminator_value = Some("schema_3a_discriminator_value".to_string());
+        schema_3b.1.all_of = vec![schema_2b.1.clone()];
+        schema_3b.1.schema.x_ms_discriminator_value = Some("schema_3b_discriminator_value".to_string());
+        schema_3c.1.all_of = vec![schema_2c.1.clone()];
+
+        let mut schemas = HashMap::new();
+        schemas.insert(SCHEMA_1A, schema_1a);
+        schemas.insert(SCHEMA_1B, schema_1b);
+        schemas.insert(SCHEMA_2A, schema_2a);
+        schemas.insert(SCHEMA_2B, schema_2b);
+        schemas.insert(SCHEMA_2C, schema_2c);
+        schemas.insert(SCHEMA_3A, schema_3a);
+        schemas.insert(SCHEMA_3B, schema_3b);
+        schemas.insert(SCHEMA_3C, schema_3c);
+        schemas
+    }
+
+    #[test]
+    fn test_breadth_first_search_all_of() {
+        let schemas = setup_scenario();
+
+        // Test case 1: Searching for (A) with start schema (A), there are no allOf properties
+        assert_eq!(
+            UnionCode::breadth_first_search_all_of(&create_ref_key(SCHEMA_1A), &schemas.get(SCHEMA_1A).unwrap().1),
+            false
+        );
+
+        // Test case 2: Start schema (A) has allOf properties which includes search value (B)
+        assert_eq!(
+            UnionCode::breadth_first_search_all_of(&create_ref_key(SCHEMA_1A), &schemas.get(SCHEMA_2A).unwrap().1),
+            true
+        );
+
+        // Test case 3: Start schema (A) has allOf properties which includes search value (B), but itself is a discriminator
+        assert_eq!(
+            UnionCode::breadth_first_search_all_of(&create_ref_key(SCHEMA_1A), &schemas.get(SCHEMA_2B).unwrap().1),
+            true
+        );
+
+        // Test case 4: Start schema (A) has allOf properties, where one of those (B) contains a reference to what we're searching for (C)
+        assert_eq!(
+            UnionCode::breadth_first_search_all_of(&create_ref_key(SCHEMA_1A), &schemas.get(SCHEMA_3A).unwrap().1),
+            true
+        );
+
+        // Test case 5: Start schema (A) has allOf properties, where one of those (B) contains a reference to what we're searching for (C), but (B) is a discriminator
+        // If we search for (B) instead, we should find it on (A)
+        assert_eq!(
+            UnionCode::breadth_first_search_all_of(&create_ref_key(SCHEMA_1A), &schemas.get(SCHEMA_3B).unwrap().1),
+            false
+        );
+        assert_eq!(
+            UnionCode::breadth_first_search_all_of(&create_ref_key(SCHEMA_2B), &schemas.get(SCHEMA_3B).unwrap().1),
+            true
+        );
+    }
+
+    #[test]
+    fn populate_heap_on_schema_with_no_all_of() {
+        let schemas = setup_scenario();
+        let schema = schemas.get(SCHEMA_1A).unwrap().1.clone();
+        let mut heap = BinaryHeap::new();
+
+        UnionCode::populate_heap(&mut heap, &schema, 0);
+        assert_eq!(heap.len(), 0);
+    }
+
+    #[test]
+    fn populate_heap_on_schema_with_single_all_of() {
+        let schemas = setup_scenario();
+        let schema = schemas.get(SCHEMA_2A).unwrap().1.clone();
+        let mut heap = BinaryHeap::new();
+
+        UnionCode::populate_heap(&mut heap, &schema, 0);
+        // This should include 1A
+        assert_eq!(heap.len(), 1);
+        assert_eq!(heap.pop().unwrap().0.depth, 1);
+    }
+
+    #[test]
+    fn populate_heap_on_schema_with_multiple_all_of() {
+        let schemas = setup_scenario();
+        let schema = schemas.get(SCHEMA_2B).unwrap().1.clone();
+        let mut heap = BinaryHeap::new();
+
+        UnionCode::populate_heap(&mut heap, &schema, 0);
+        // This should include 1A, 1B
+        assert_eq!(heap.len(), 2);
+        assert_eq!(heap.pop().unwrap().0.depth, 1);
+        assert_eq!(heap.pop().unwrap().0.depth, 1);
+    }
+
+    #[test]
+    fn populate_heap_on_schema_with_nested_all_of() {
+        let schemas = setup_scenario();
+        let schema = schemas.get(SCHEMA_3B).unwrap().1.clone();
+        let mut heap = BinaryHeap::new();
+
+        UnionCode::populate_heap(&mut heap, &schema, 0);
+        // This should include 2B, 1A, 1B
+        assert_eq!(heap.len(), 3);
+        assert_eq!(heap.pop().unwrap().0.depth, 1);
+        assert_eq!(heap.pop().unwrap().0.depth, 2);
+        assert_eq!(heap.pop().unwrap().0.depth, 2);
     }
 }

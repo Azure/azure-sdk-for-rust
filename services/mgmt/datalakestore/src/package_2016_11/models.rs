@@ -378,7 +378,7 @@ pub struct DataLakeStoreAccountListResult {
 impl azure_core::Continuable for DataLakeStoreAccountListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataLakeStoreAccountListResult {
@@ -654,7 +654,7 @@ pub struct FirewallRuleListResult {
 impl azure_core::Continuable for FirewallRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FirewallRuleListResult {
@@ -893,7 +893,7 @@ pub struct TrustedIdProviderListResult {
 impl azure_core::Continuable for TrustedIdProviderListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TrustedIdProviderListResult {
@@ -1263,7 +1263,7 @@ pub struct VirtualNetworkRuleListResult {
 impl azure_core::Continuable for VirtualNetworkRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualNetworkRuleListResult {

@@ -108,7 +108,7 @@ pub struct AfdDomainListResult {
 impl azure_core::Continuable for AfdDomainListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AfdDomainListResult {
@@ -271,7 +271,7 @@ pub struct AfdEndpointListResult {
 impl azure_core::Continuable for AfdEndpointListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AfdEndpointListResult {
@@ -450,7 +450,7 @@ pub struct AfdOriginGroupListResult {
 impl azure_core::Continuable for AfdOriginGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AfdOriginGroupListResult {
@@ -568,7 +568,7 @@ pub struct AfdOriginListResult {
 impl azure_core::Continuable for AfdOriginListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AfdOriginListResult {
@@ -1003,8 +1003,6 @@ impl AzureFirstPartyManagedCertificate {
 #[doc = "Azure FirstParty Managed Certificate provided by other first party resource providers to enable HTTPS."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFirstPartyManagedCertificateParameters {
-    #[serde(flatten)]
-    pub secret_parameters: SecretParameters,
     #[doc = "Reference to another resource."]
     #[serde(rename = "secretSource", default, skip_serializing_if = "Option::is_none")]
     pub secret_source: Option<ResourceReference>,
@@ -1030,9 +1028,8 @@ pub struct AzureFirstPartyManagedCertificateParameters {
     pub thumbprint: Option<String>,
 }
 impl AzureFirstPartyManagedCertificateParameters {
-    pub fn new(secret_parameters: SecretParameters) -> Self {
+    pub fn new() -> Self {
         Self {
-            secret_parameters,
             secret_source: None,
             subject: None,
             expiration_date: None,
@@ -1586,7 +1583,7 @@ pub struct CdnWebApplicationFirewallPolicyList {
 impl azure_core::Continuable for CdnWebApplicationFirewallPolicyList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CdnWebApplicationFirewallPolicyList {
@@ -2093,9 +2090,6 @@ impl CustomDomain {
 #[doc = "The JSON object that contains the properties to secure a custom domain."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomDomainHttpsParameters {
-    #[doc = "Defines the source of the SSL certificate."]
-    #[serde(rename = "certificateSource")]
-    pub certificate_source: custom_domain_https_parameters::CertificateSource,
     #[doc = "Defines the TLS extension protocol that is used for secure delivery."]
     #[serde(rename = "protocolType")]
     pub protocol_type: custom_domain_https_parameters::ProtocolType,
@@ -2104,12 +2098,8 @@ pub struct CustomDomainHttpsParameters {
     pub minimum_tls_version: Option<custom_domain_https_parameters::MinimumTlsVersion>,
 }
 impl CustomDomainHttpsParameters {
-    pub fn new(
-        certificate_source: custom_domain_https_parameters::CertificateSource,
-        protocol_type: custom_domain_https_parameters::ProtocolType,
-    ) -> Self {
+    pub fn new(protocol_type: custom_domain_https_parameters::ProtocolType) -> Self {
         Self {
-            certificate_source,
             protocol_type,
             minimum_tls_version: None,
         }
@@ -2117,43 +2107,6 @@ impl CustomDomainHttpsParameters {
 }
 pub mod custom_domain_https_parameters {
     use super::*;
-    #[doc = "Defines the source of the SSL certificate."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "CertificateSource")]
-    pub enum CertificateSource {
-        AzureKeyVault,
-        Cdn,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for CertificateSource {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for CertificateSource {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for CertificateSource {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::AzureKeyVault => serializer.serialize_unit_variant("CertificateSource", 0u32, "AzureKeyVault"),
-                Self::Cdn => serializer.serialize_unit_variant("CertificateSource", 1u32, "Cdn"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
     #[doc = "Defines the TLS extension protocol that is used for secure delivery."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ProtocolType")]
@@ -2202,6 +2155,13 @@ pub mod custom_domain_https_parameters {
         Tls12,
     }
 }
+#[doc = "Defines the source of the SSL certificate."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "certificateSource")]
+pub enum CustomDomainHttpsParametersUnion {
+    Cdn(CdnManagedHttpsParameters),
+    AzureKeyVault(UserManagedHttpsParameters),
+}
 #[doc = "Result of the request to list custom domains. It contains a list of custom domain objects and a URL link to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct CustomDomainListResult {
@@ -2219,7 +2179,7 @@ pub struct CustomDomainListResult {
 impl azure_core::Continuable for CustomDomainListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CustomDomainListResult {
@@ -2256,7 +2216,7 @@ pub struct CustomDomainProperties {
     pub custom_https_provisioning_substate: Option<custom_domain_properties::CustomHttpsProvisioningSubstate>,
     #[doc = "The JSON object that contains the properties to secure a custom domain."]
     #[serde(rename = "customHttpsParameters", default, skip_serializing_if = "Option::is_none")]
-    pub custom_https_parameters: Option<CustomDomainHttpsParameters>,
+    pub custom_https_parameters: Option<CustomDomainHttpsParametersUnion>,
     #[doc = "Special validation or data may be required when delivering CDN to some regions due to local compliance reasons. E.g. ICP license number of a custom domain is required to deliver content in China."]
     #[serde(rename = "validationData", default, skip_serializing_if = "Option::is_none")]
     pub validation_data: Option<String>,
@@ -2612,8 +2572,6 @@ impl CustomerCertificate {
 #[doc = "Customer Certificate used for https"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CustomerCertificateParameters {
-    #[serde(flatten)]
-    pub secret_parameters: SecretParameters,
     #[doc = "Reference to another resource."]
     #[serde(rename = "secretSource")]
     pub secret_source: ResourceReference,
@@ -2645,9 +2603,8 @@ pub struct CustomerCertificateParameters {
     pub thumbprint: Option<String>,
 }
 impl CustomerCertificateParameters {
-    pub fn new(secret_parameters: SecretParameters, secret_source: ResourceReference) -> Self {
+    pub fn new(secret_source: ResourceReference) -> Self {
         Self {
-            secret_parameters,
             secret_source,
             secret_version: None,
             use_latest_version: None,
@@ -2824,12 +2781,12 @@ pub struct DeliveryRule {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub conditions: Vec<DeliveryRuleCondition>,
+    pub conditions: Vec<DeliveryRuleConditionUnion>,
     #[doc = "A list of actions that are executed when all the conditions of a rule are satisfied."]
-    pub actions: Vec<DeliveryRuleAction>,
+    pub actions: Vec<DeliveryRuleActionUnion>,
 }
 impl DeliveryRule {
-    pub fn new(order: i32, actions: Vec<DeliveryRuleAction>) -> Self {
+    pub fn new(order: i32, actions: Vec<DeliveryRuleActionUnion>) -> Self {
         Self {
             name: None,
             order,
@@ -2838,538 +2795,306 @@ impl DeliveryRule {
         }
     }
 }
-#[doc = "An action for the delivery rule."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeliveryRuleAction {
-    #[doc = "The name of the action for the delivery rule."]
-    pub name: delivery_rule_action::Name,
-}
-impl DeliveryRuleAction {
-    pub fn new(name: delivery_rule_action::Name) -> Self {
-        Self { name }
-    }
-}
-pub mod delivery_rule_action {
-    use super::*;
-    #[doc = "The name of the action for the delivery rule."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Name")]
-    pub enum Name {
-        CacheExpiration,
-        CacheKeyQueryString,
-        ModifyRequestHeader,
-        ModifyResponseHeader,
-        UrlRedirect,
-        UrlRewrite,
-        UrlSigning,
-        OriginGroupOverride,
-        RouteConfigurationOverride,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Name {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Name {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Name {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::CacheExpiration => serializer.serialize_unit_variant("Name", 0u32, "CacheExpiration"),
-                Self::CacheKeyQueryString => serializer.serialize_unit_variant("Name", 1u32, "CacheKeyQueryString"),
-                Self::ModifyRequestHeader => serializer.serialize_unit_variant("Name", 2u32, "ModifyRequestHeader"),
-                Self::ModifyResponseHeader => serializer.serialize_unit_variant("Name", 3u32, "ModifyResponseHeader"),
-                Self::UrlRedirect => serializer.serialize_unit_variant("Name", 4u32, "UrlRedirect"),
-                Self::UrlRewrite => serializer.serialize_unit_variant("Name", 5u32, "UrlRewrite"),
-                Self::UrlSigning => serializer.serialize_unit_variant("Name", 6u32, "UrlSigning"),
-                Self::OriginGroupOverride => serializer.serialize_unit_variant("Name", 7u32, "OriginGroupOverride"),
-                Self::RouteConfigurationOverride => serializer.serialize_unit_variant("Name", 8u32, "RouteConfigurationOverride"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "The name of the action for the delivery rule."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "name")]
+pub enum DeliveryRuleActionUnion {
+    CacheExpiration(DeliveryRuleCacheExpirationAction),
+    CacheKeyQueryString(DeliveryRuleCacheKeyQueryStringAction),
+    ModifyRequestHeader(DeliveryRuleRequestHeaderAction),
+    ModifyResponseHeader(DeliveryRuleResponseHeaderAction),
+    RouteConfigurationOverride(DeliveryRuleRouteConfigurationOverrideAction),
+    OriginGroupOverride(OriginGroupOverrideAction),
+    UrlRedirect(UrlRedirectAction),
+    UrlRewrite(UrlRewriteAction),
+    UrlSigning(UrlSigningAction),
 }
 #[doc = "Defines the cache expiration action for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleCacheExpirationAction {
-    #[serde(flatten)]
-    pub delivery_rule_action: DeliveryRuleAction,
     #[doc = "Defines the parameters for the cache expiration action."]
     pub parameters: CacheExpirationActionParameters,
 }
 impl DeliveryRuleCacheExpirationAction {
-    pub fn new(delivery_rule_action: DeliveryRuleAction, parameters: CacheExpirationActionParameters) -> Self {
-        Self {
-            delivery_rule_action,
-            parameters,
-        }
+    pub fn new(parameters: CacheExpirationActionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the cache-key query string action for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleCacheKeyQueryStringAction {
-    #[serde(flatten)]
-    pub delivery_rule_action: DeliveryRuleAction,
     #[doc = "Defines the parameters for the cache-key query string action."]
     pub parameters: CacheKeyQueryStringActionParameters,
 }
 impl DeliveryRuleCacheKeyQueryStringAction {
-    pub fn new(delivery_rule_action: DeliveryRuleAction, parameters: CacheKeyQueryStringActionParameters) -> Self {
-        Self {
-            delivery_rule_action,
-            parameters,
-        }
+    pub fn new(parameters: CacheKeyQueryStringActionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the ClientPort condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleClientPortCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for ClientPort match conditions"]
     pub parameters: ClientPortMatchConditionParameters,
 }
 impl DeliveryRuleClientPortCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: ClientPortMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: ClientPortMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
-#[doc = "A condition for the delivery rule."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct DeliveryRuleCondition {
-    #[doc = "The name of the condition for the delivery rule."]
-    pub name: delivery_rule_condition::Name,
-}
-impl DeliveryRuleCondition {
-    pub fn new(name: delivery_rule_condition::Name) -> Self {
-        Self { name }
-    }
-}
-pub mod delivery_rule_condition {
-    use super::*;
-    #[doc = "The name of the condition for the delivery rule."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Name")]
-    pub enum Name {
-        RemoteAddress,
-        RequestMethod,
-        QueryString,
-        PostArgs,
-        RequestUri,
-        RequestHeader,
-        RequestBody,
-        RequestScheme,
-        UrlPath,
-        UrlFileExtension,
-        UrlFileName,
-        HttpVersion,
-        Cookies,
-        IsDevice,
-        SocketAddr,
-        ClientPort,
-        ServerPort,
-        HostName,
-        SslProtocol,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Name {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Name {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Name {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::RemoteAddress => serializer.serialize_unit_variant("Name", 0u32, "RemoteAddress"),
-                Self::RequestMethod => serializer.serialize_unit_variant("Name", 1u32, "RequestMethod"),
-                Self::QueryString => serializer.serialize_unit_variant("Name", 2u32, "QueryString"),
-                Self::PostArgs => serializer.serialize_unit_variant("Name", 3u32, "PostArgs"),
-                Self::RequestUri => serializer.serialize_unit_variant("Name", 4u32, "RequestUri"),
-                Self::RequestHeader => serializer.serialize_unit_variant("Name", 5u32, "RequestHeader"),
-                Self::RequestBody => serializer.serialize_unit_variant("Name", 6u32, "RequestBody"),
-                Self::RequestScheme => serializer.serialize_unit_variant("Name", 7u32, "RequestScheme"),
-                Self::UrlPath => serializer.serialize_unit_variant("Name", 8u32, "UrlPath"),
-                Self::UrlFileExtension => serializer.serialize_unit_variant("Name", 9u32, "UrlFileExtension"),
-                Self::UrlFileName => serializer.serialize_unit_variant("Name", 10u32, "UrlFileName"),
-                Self::HttpVersion => serializer.serialize_unit_variant("Name", 11u32, "HttpVersion"),
-                Self::Cookies => serializer.serialize_unit_variant("Name", 12u32, "Cookies"),
-                Self::IsDevice => serializer.serialize_unit_variant("Name", 13u32, "IsDevice"),
-                Self::SocketAddr => serializer.serialize_unit_variant("Name", 14u32, "SocketAddr"),
-                Self::ClientPort => serializer.serialize_unit_variant("Name", 15u32, "ClientPort"),
-                Self::ServerPort => serializer.serialize_unit_variant("Name", 16u32, "ServerPort"),
-                Self::HostName => serializer.serialize_unit_variant("Name", 17u32, "HostName"),
-                Self::SslProtocol => serializer.serialize_unit_variant("Name", 18u32, "SslProtocol"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "The name of the condition for the delivery rule."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "name")]
+pub enum DeliveryRuleConditionUnion {
+    ClientPort(DeliveryRuleClientPortCondition),
+    Cookies(DeliveryRuleCookiesCondition),
+    HostName(DeliveryRuleHostNameCondition),
+    HttpVersion(DeliveryRuleHttpVersionCondition),
+    IsDevice(DeliveryRuleIsDeviceCondition),
+    PostArgs(DeliveryRulePostArgsCondition),
+    QueryString(DeliveryRuleQueryStringCondition),
+    RemoteAddress(DeliveryRuleRemoteAddressCondition),
+    RequestBody(DeliveryRuleRequestBodyCondition),
+    RequestHeader(DeliveryRuleRequestHeaderCondition),
+    RequestMethod(DeliveryRuleRequestMethodCondition),
+    RequestScheme(DeliveryRuleRequestSchemeCondition),
+    RequestUri(DeliveryRuleRequestUriCondition),
+    ServerPort(DeliveryRuleServerPortCondition),
+    SocketAddr(DeliveryRuleSocketAddrCondition),
+    SslProtocol(DeliveryRuleSslProtocolCondition),
+    UrlFileExtension(DeliveryRuleUrlFileExtensionCondition),
+    UrlFileName(DeliveryRuleUrlFileNameCondition),
+    UrlPath(DeliveryRuleUrlPathCondition),
 }
 #[doc = "Defines the Cookies condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleCookiesCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for Cookies match conditions"]
     pub parameters: CookiesMatchConditionParameters,
 }
 impl DeliveryRuleCookiesCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: CookiesMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: CookiesMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the HostName condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleHostNameCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for HostName match conditions"]
     pub parameters: HostNameMatchConditionParameters,
 }
 impl DeliveryRuleHostNameCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: HostNameMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: HostNameMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the HttpVersion condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleHttpVersionCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for HttpVersion match conditions"]
     pub parameters: HttpVersionMatchConditionParameters,
 }
 impl DeliveryRuleHttpVersionCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: HttpVersionMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: HttpVersionMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the IsDevice condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleIsDeviceCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for IsDevice match conditions"]
     pub parameters: IsDeviceMatchConditionParameters,
 }
 impl DeliveryRuleIsDeviceCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: IsDeviceMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: IsDeviceMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the PostArgs condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRulePostArgsCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for PostArgs match conditions"]
     pub parameters: PostArgsMatchConditionParameters,
 }
 impl DeliveryRulePostArgsCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: PostArgsMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: PostArgsMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the QueryString condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleQueryStringCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for QueryString match conditions"]
     pub parameters: QueryStringMatchConditionParameters,
 }
 impl DeliveryRuleQueryStringCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: QueryStringMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: QueryStringMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the RemoteAddress condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleRemoteAddressCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for RemoteAddress match conditions"]
     pub parameters: RemoteAddressMatchConditionParameters,
 }
 impl DeliveryRuleRemoteAddressCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: RemoteAddressMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: RemoteAddressMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the RequestBody condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleRequestBodyCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for RequestBody match conditions"]
     pub parameters: RequestBodyMatchConditionParameters,
 }
 impl DeliveryRuleRequestBodyCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: RequestBodyMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: RequestBodyMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the request header action for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleRequestHeaderAction {
-    #[serde(flatten)]
-    pub delivery_rule_action: DeliveryRuleAction,
     #[doc = "Defines the parameters for the request header action."]
     pub parameters: HeaderActionParameters,
 }
 impl DeliveryRuleRequestHeaderAction {
-    pub fn new(delivery_rule_action: DeliveryRuleAction, parameters: HeaderActionParameters) -> Self {
-        Self {
-            delivery_rule_action,
-            parameters,
-        }
+    pub fn new(parameters: HeaderActionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the RequestHeader condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleRequestHeaderCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for RequestHeader match conditions"]
     pub parameters: RequestHeaderMatchConditionParameters,
 }
 impl DeliveryRuleRequestHeaderCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: RequestHeaderMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: RequestHeaderMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the RequestMethod condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleRequestMethodCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for RequestMethod match conditions"]
     pub parameters: RequestMethodMatchConditionParameters,
 }
 impl DeliveryRuleRequestMethodCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: RequestMethodMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: RequestMethodMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the RequestScheme condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleRequestSchemeCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for RequestScheme match conditions "]
     pub parameters: RequestSchemeMatchConditionParameters,
 }
 impl DeliveryRuleRequestSchemeCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: RequestSchemeMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: RequestSchemeMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the RequestUri condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleRequestUriCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for RequestUri match conditions"]
     pub parameters: RequestUriMatchConditionParameters,
 }
 impl DeliveryRuleRequestUriCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: RequestUriMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: RequestUriMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the response header action for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleResponseHeaderAction {
-    #[serde(flatten)]
-    pub delivery_rule_action: DeliveryRuleAction,
     #[doc = "Defines the parameters for the request header action."]
     pub parameters: HeaderActionParameters,
 }
 impl DeliveryRuleResponseHeaderAction {
-    pub fn new(delivery_rule_action: DeliveryRuleAction, parameters: HeaderActionParameters) -> Self {
-        Self {
-            delivery_rule_action,
-            parameters,
-        }
+    pub fn new(parameters: HeaderActionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the route configuration override action for the delivery rule. Only applicable to Frontdoor Standard/Premium Profiles."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleRouteConfigurationOverrideAction {
-    #[serde(flatten)]
-    pub delivery_rule_action: DeliveryRuleAction,
     #[doc = "Defines the parameters for the route configuration override action."]
     pub parameters: RouteConfigurationOverrideActionParameters,
 }
 impl DeliveryRuleRouteConfigurationOverrideAction {
-    pub fn new(delivery_rule_action: DeliveryRuleAction, parameters: RouteConfigurationOverrideActionParameters) -> Self {
-        Self {
-            delivery_rule_action,
-            parameters,
-        }
+    pub fn new(parameters: RouteConfigurationOverrideActionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the ServerPort condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleServerPortCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for ServerPort match conditions"]
     pub parameters: ServerPortMatchConditionParameters,
 }
 impl DeliveryRuleServerPortCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: ServerPortMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: ServerPortMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the SocketAddress condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleSocketAddrCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for SocketAddress match conditions"]
     pub parameters: SocketAddrMatchConditionParameters,
 }
 impl DeliveryRuleSocketAddrCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: SocketAddrMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: SocketAddrMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the SslProtocol condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleSslProtocolCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for SslProtocol match conditions"]
     pub parameters: SslProtocolMatchConditionParameters,
 }
 impl DeliveryRuleSslProtocolCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: SslProtocolMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: SslProtocolMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the UrlFileExtension condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleUrlFileExtensionCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for UrlFileExtension match conditions"]
     pub parameters: UrlFileExtensionMatchConditionParameters,
 }
 impl DeliveryRuleUrlFileExtensionCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: UrlFileExtensionMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: UrlFileExtensionMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the UrlFileName condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleUrlFileNameCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for UrlFilename match conditions"]
     pub parameters: UrlFileNameMatchConditionParameters,
 }
 impl DeliveryRuleUrlFileNameCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: UrlFileNameMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: UrlFileNameMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the UrlPath condition for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DeliveryRuleUrlPathCondition {
-    #[serde(flatten)]
-    pub delivery_rule_condition: DeliveryRuleCondition,
     #[doc = "Defines the parameters for UrlPath match conditions"]
     pub parameters: UrlPathMatchConditionParameters,
 }
 impl DeliveryRuleUrlPathCondition {
-    pub fn new(delivery_rule_condition: DeliveryRuleCondition, parameters: UrlPathMatchConditionParameters) -> Self {
-        Self {
-            delivery_rule_condition,
-            parameters,
-        }
+    pub fn new(parameters: UrlPathMatchConditionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Type of operation: get, read, delete, etc."]
@@ -3448,7 +3173,7 @@ pub struct EdgenodeResult {
 impl azure_core::Continuable for EdgenodeResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EdgenodeResult {
@@ -3490,7 +3215,7 @@ pub struct EndpointListResult {
 impl azure_core::Continuable for EndpointListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl EndpointListResult {
@@ -4546,8 +4271,6 @@ impl ManagedCertificate {
 #[doc = "Managed Certificate used for https"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedCertificateParameters {
-    #[serde(flatten)]
-    pub secret_parameters: SecretParameters,
     #[doc = "Subject name in the certificate."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub subject: Option<String>,
@@ -4556,9 +4279,8 @@ pub struct ManagedCertificateParameters {
     pub expiration_date: Option<String>,
 }
 impl ManagedCertificateParameters {
-    pub fn new(secret_parameters: SecretParameters) -> Self {
+    pub fn new() -> Self {
         Self {
-            secret_parameters,
             subject: None,
             expiration_date: None,
         }
@@ -4750,7 +4472,7 @@ pub struct ManagedRuleSetDefinitionList {
 impl azure_core::Continuable for ManagedRuleSetDefinitionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ManagedRuleSetDefinitionList {
@@ -5314,7 +5036,7 @@ pub struct OperationsListResult {
 impl azure_core::Continuable for OperationsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationsListResult {
@@ -5410,7 +5132,7 @@ pub struct OriginGroupListResult {
 impl azure_core::Continuable for OriginGroupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OriginGroupListResult {
@@ -5478,17 +5200,12 @@ pub mod origin_group_override {
 #[doc = "Defines the origin group override action for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OriginGroupOverrideAction {
-    #[serde(flatten)]
-    pub delivery_rule_action: DeliveryRuleAction,
     #[doc = "Defines the parameters for the origin group override action."]
     pub parameters: OriginGroupOverrideActionParameters,
 }
 impl OriginGroupOverrideAction {
-    pub fn new(delivery_rule_action: DeliveryRuleAction, parameters: OriginGroupOverrideActionParameters) -> Self {
-        Self {
-            delivery_rule_action,
-            parameters,
-        }
+    pub fn new(parameters: OriginGroupOverrideActionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the parameters for the origin group override action."]
@@ -5680,7 +5397,7 @@ pub struct OriginListResult {
 impl azure_core::Continuable for OriginListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OriginListResult {
@@ -6062,7 +5779,7 @@ pub struct ProfileListResult {
 impl azure_core::Continuable for ProfileListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProfileListResult {
@@ -7098,7 +6815,7 @@ pub struct ResourceUsageListResult {
 impl azure_core::Continuable for ResourceUsageListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ResourceUsageListResult {
@@ -7224,7 +6941,7 @@ pub struct RouteListResult {
 impl azure_core::Continuable for RouteListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RouteListResult {
@@ -7524,7 +7241,7 @@ pub struct RuleListResult {
 impl azure_core::Continuable for RuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RuleListResult {
@@ -7579,7 +7296,7 @@ pub struct RuleSetListResult {
 impl azure_core::Continuable for RuleSetListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl RuleSetListResult {
@@ -7628,14 +7345,14 @@ pub struct RuleUpdatePropertiesParameters {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub conditions: Vec<DeliveryRuleCondition>,
+    pub conditions: Vec<DeliveryRuleConditionUnion>,
     #[doc = "A list of actions that are executed when all the conditions of a rule are satisfied."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub actions: Vec<DeliveryRuleAction>,
+    pub actions: Vec<DeliveryRuleActionUnion>,
     #[doc = "If this rule is a match should the rules engine continue running the remaining rules or stop. If not present, defaults to Continue."]
     #[serde(rename = "matchProcessingBehavior", default, skip_serializing_if = "Option::is_none")]
     pub match_processing_behavior: Option<rule_update_properties_parameters::MatchProcessingBehavior>,
@@ -7721,7 +7438,7 @@ pub struct SecretListResult {
 impl azure_core::Continuable for SecretListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecretListResult {
@@ -7729,17 +7446,14 @@ impl SecretListResult {
         Self::default()
     }
 }
-#[doc = "The json object containing secret parameters"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretParameters {
-    #[doc = "The type of the secret resource."]
-    #[serde(rename = "type")]
-    pub type_: SecretType,
-}
-impl SecretParameters {
-    pub fn new(type_: SecretType) -> Self {
-        Self { type_ }
-    }
+#[doc = "The type of the secret resource."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum SecretParametersUnion {
+    AzureFirstPartyManagedCertificate(AzureFirstPartyManagedCertificateParameters),
+    CustomerCertificate(CustomerCertificateParameters),
+    ManagedCertificate(ManagedCertificateParameters),
+    UrlSigningKey(UrlSigningKeyParameters),
 }
 #[doc = "The JSON object that contains the properties of the Secret to create."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -7751,7 +7465,7 @@ pub struct SecretProperties {
     pub profile_name: Option<String>,
     #[doc = "The json object containing secret parameters"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<SecretParameters>,
+    pub parameters: Option<SecretParametersUnion>,
 }
 impl SecretProperties {
     pub fn new() -> Self {
@@ -7832,7 +7546,7 @@ pub struct SecurityPolicyListResult {
 impl azure_core::Continuable for SecurityPolicyListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SecurityPolicyListResult {
@@ -7850,62 +7564,18 @@ pub struct SecurityPolicyProperties {
     pub profile_name: Option<String>,
     #[doc = "The json object containing security policy parameters"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<SecurityPolicyPropertiesParameters>,
+    pub parameters: Option<SecurityPolicyPropertiesParametersUnion>,
 }
 impl SecurityPolicyProperties {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "The json object containing security policy parameters"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecurityPolicyPropertiesParameters {
-    #[doc = "The type of the Security policy to create."]
-    #[serde(rename = "type")]
-    pub type_: security_policy_properties_parameters::Type,
-}
-impl SecurityPolicyPropertiesParameters {
-    pub fn new(type_: security_policy_properties_parameters::Type) -> Self {
-        Self { type_ }
-    }
-}
-pub mod security_policy_properties_parameters {
-    use super::*;
-    #[doc = "The type of the Security policy to create."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        WebApplicationFirewall,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::WebApplicationFirewall => serializer.serialize_unit_variant("Type", 0u32, "WebApplicationFirewall"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "The type of the Security policy to create."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum SecurityPolicyPropertiesParametersUnion {
+    WebApplicationFirewall(SecurityPolicyWebApplicationFirewallParameters),
 }
 #[doc = "The JSON object containing security policy update parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -7924,7 +7594,7 @@ impl SecurityPolicyUpdateParameters {
 pub struct SecurityPolicyUpdateProperties {
     #[doc = "The json object containing security policy parameters"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<SecurityPolicyPropertiesParameters>,
+    pub parameters: Option<SecurityPolicyPropertiesParametersUnion>,
 }
 impl SecurityPolicyUpdateProperties {
     pub fn new() -> Self {
@@ -7958,8 +7628,6 @@ impl SecurityPolicyWebApplicationFirewallAssociation {
 #[doc = "The json object containing security policy waf parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecurityPolicyWebApplicationFirewallParameters {
-    #[serde(flatten)]
-    pub security_policy_properties_parameters: SecurityPolicyPropertiesParameters,
     #[doc = "Reference to another resource."]
     #[serde(rename = "wafPolicy", default, skip_serializing_if = "Option::is_none")]
     pub waf_policy: Option<ResourceReference>,
@@ -7972,9 +7640,8 @@ pub struct SecurityPolicyWebApplicationFirewallParameters {
     pub associations: Vec<SecurityPolicyWebApplicationFirewallAssociation>,
 }
 impl SecurityPolicyWebApplicationFirewallParameters {
-    pub fn new(security_policy_properties_parameters: SecurityPolicyPropertiesParameters) -> Self {
+    pub fn new() -> Self {
         Self {
-            security_policy_properties_parameters,
             waf_policy: None,
             associations: Vec::new(),
         }
@@ -8864,17 +8531,12 @@ pub mod url_path_match_condition_parameters {
 #[doc = "Defines the url redirect action for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlRedirectAction {
-    #[serde(flatten)]
-    pub delivery_rule_action: DeliveryRuleAction,
     #[doc = "Defines the parameters for the url redirect action."]
     pub parameters: UrlRedirectActionParameters,
 }
 impl UrlRedirectAction {
-    pub fn new(delivery_rule_action: DeliveryRuleAction, parameters: UrlRedirectActionParameters) -> Self {
-        Self {
-            delivery_rule_action,
-            parameters,
-        }
+    pub fn new(parameters: UrlRedirectActionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the parameters for the url redirect action."]
@@ -9004,17 +8666,12 @@ pub mod url_redirect_action_parameters {
 #[doc = "Defines the url rewrite action for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlRewriteAction {
-    #[serde(flatten)]
-    pub delivery_rule_action: DeliveryRuleAction,
     #[doc = "Defines the parameters for the url rewrite action."]
     pub parameters: UrlRewriteActionParameters,
 }
 impl UrlRewriteAction {
-    pub fn new(delivery_rule_action: DeliveryRuleAction, parameters: UrlRewriteActionParameters) -> Self {
-        Self {
-            delivery_rule_action,
-            parameters,
-        }
+    pub fn new(parameters: UrlRewriteActionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the parameters for the url rewrite action."]
@@ -9051,17 +8708,12 @@ pub mod url_rewrite_action_parameters {
 #[doc = "Defines the url signing action for the delivery rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlSigningAction {
-    #[serde(flatten)]
-    pub delivery_rule_action: DeliveryRuleAction,
     #[doc = "Defines the parameters for the Url Signing action."]
     pub parameters: UrlSigningActionParameters,
 }
 impl UrlSigningAction {
-    pub fn new(delivery_rule_action: DeliveryRuleAction, parameters: UrlSigningActionParameters) -> Self {
-        Self {
-            delivery_rule_action,
-            parameters,
-        }
+    pub fn new(parameters: UrlSigningActionParameters) -> Self {
+        Self { parameters }
     }
 }
 #[doc = "Defines the parameters for the Url Signing action."]
@@ -9154,8 +8806,6 @@ impl UrlSigningKey {
 #[doc = "Url signing key parameters"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UrlSigningKeyParameters {
-    #[serde(flatten)]
-    pub secret_parameters: SecretParameters,
     #[doc = "Defines the customer defined key Id. This id will exist in the incoming request to indicate the key used to form the hash."]
     #[serde(rename = "keyId")]
     pub key_id: String,
@@ -9167,9 +8817,8 @@ pub struct UrlSigningKeyParameters {
     pub secret_version: Option<String>,
 }
 impl UrlSigningKeyParameters {
-    pub fn new(secret_parameters: SecretParameters, key_id: String, secret_source: ResourceReference) -> Self {
+    pub fn new(key_id: String, secret_source: ResourceReference) -> Self {
         Self {
-            secret_parameters,
             key_id,
             secret_source,
             secret_version: None,
@@ -9333,7 +8982,7 @@ pub struct UsagesListResult {
 impl azure_core::Continuable for UsagesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl UsagesListResult {

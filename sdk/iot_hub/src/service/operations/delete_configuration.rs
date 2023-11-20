@@ -13,7 +13,7 @@ azure_core::operation! {
 
 impl DeleteConfigurationBuilder {
     /// Execute the request to delete the configuration.
-    pub fn into_future(mut self) -> DeleteConfiguration {
+    pub fn into_future(self) -> DeleteConfiguration {
         Box::pin(async move {
             let uri = format!(
                 "https://{}.azure-devices.net/configurations/{}?api-version={}",
@@ -25,7 +25,7 @@ impl DeleteConfigurationBuilder {
 
             request.set_body(azure_core::EMPTY_BODY);
 
-            self.client.send(&mut self.context, &mut request).await?;
+            self.client.send(&self.context, &mut request).await?;
 
             Ok(())
         })

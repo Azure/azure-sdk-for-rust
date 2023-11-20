@@ -8,9 +8,6 @@ use std::str::FromStr;
 pub struct Activity {
     #[doc = "Activity name."]
     pub name: String,
-    #[doc = "Type of activity."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Activity description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -24,15 +21,18 @@ pub struct Activity {
     pub depends_on: Vec<ActivityDependency>,
 }
 impl Activity {
-    pub fn new(name: String, type_: String) -> Self {
+    pub fn new(name: String) -> Self {
         Self {
             name,
-            type_,
             description: None,
             depends_on: Vec::new(),
         }
     }
 }
+#[doc = "Type of activity."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ActivityUnion {}
 #[doc = "Activity dependency information."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActivityDependency {
@@ -110,7 +110,7 @@ pub struct ActivityRunsListResponse {
 impl azure_core::Continuable for ActivityRunsListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ActivityRunsListResponse {
@@ -121,8 +121,6 @@ impl ActivityRunsListResponse {
 #[doc = "Azure Key Vault secret reference."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureKeyVaultSecretReference {
-    #[serde(flatten)]
-    pub secret_base: SecretBase,
     #[doc = "Linked service reference type."]
     pub store: LinkedServiceReference,
     #[doc = "The name of the secret in Azure Key Vault. Type: string (or Expression with resultType string)."]
@@ -133,9 +131,8 @@ pub struct AzureKeyVaultSecretReference {
     pub secret_version: Option<serde_json::Value>,
 }
 impl AzureKeyVaultSecretReference {
-    pub fn new(secret_base: SecretBase, store: LinkedServiceReference, secret_name: serde_json::Value) -> Self {
+    pub fn new(store: LinkedServiceReference, secret_name: serde_json::Value) -> Self {
         Self {
-            secret_base,
             store,
             secret_name,
             secret_version: None,
@@ -157,9 +154,6 @@ impl CreateRunResponse {
 #[doc = "The Azure Data Factory nested object which identifies data within different data stores, such as tables, files, folders, and documents."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Dataset {
-    #[doc = "Type of dataset."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Dataset description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -181,9 +175,8 @@ pub struct Dataset {
     pub annotations: Vec<serde_json::Value>,
 }
 impl Dataset {
-    pub fn new(type_: String, linked_service_name: LinkedServiceReference) -> Self {
+    pub fn new(linked_service_name: LinkedServiceReference) -> Self {
         Self {
-            type_,
             description: None,
             structure: None,
             linked_service_name,
@@ -192,6 +185,10 @@ impl Dataset {
         }
     }
 }
+#[doc = "Type of dataset."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum DatasetUnion {}
 #[doc = "A list of dataset resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DatasetListResponse {
@@ -204,7 +201,7 @@ pub struct DatasetListResponse {
 impl azure_core::Continuable for DatasetListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DatasetListResponse {
@@ -248,10 +245,10 @@ pub struct DatasetResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     #[doc = "The Azure Data Factory nested object which identifies data within different data stores, such as tables, files, folders, and documents."]
-    pub properties: Dataset,
+    pub properties: DatasetUnion,
 }
 impl DatasetResource {
-    pub fn new(properties: Dataset) -> Self {
+    pub fn new(properties: DatasetUnion) -> Self {
         Self {
             sub_resource: SubResource::default(),
             properties,
@@ -373,7 +370,7 @@ pub struct FactoryListResponse {
 impl azure_core::Continuable for FactoryListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FactoryListResponse {
@@ -468,18 +465,19 @@ impl FactoryVstsConfiguration {
 #[doc = "Azure Data Factory nested object which serves as a compute resource for activities."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntime {
-    #[doc = "The type of integration runtime."]
-    #[serde(rename = "type")]
-    pub type_: IntegrationRuntimeType,
     #[doc = "Integration runtime description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
 impl IntegrationRuntime {
-    pub fn new(type_: IntegrationRuntimeType) -> Self {
-        Self { type_, description: None }
+    pub fn new() -> Self {
+        Self { description: None }
     }
 }
+#[doc = "The type of integration runtime."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum IntegrationRuntimeUnion {}
 #[doc = "The integration runtime authentication keys."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeAuthKeys {
@@ -571,7 +569,7 @@ pub struct IntegrationRuntimeListResponse {
 impl azure_core::Continuable for IntegrationRuntimeListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl IntegrationRuntimeListResponse {
@@ -745,10 +743,10 @@ pub struct IntegrationRuntimeResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     #[doc = "Azure Data Factory nested object which serves as a compute resource for activities."]
-    pub properties: IntegrationRuntime,
+    pub properties: IntegrationRuntimeUnion,
 }
 impl IntegrationRuntimeResource {
-    pub fn new(properties: IntegrationRuntime) -> Self {
+    pub fn new(properties: IntegrationRuntimeUnion) -> Self {
         Self {
             sub_resource: SubResource::default(),
             properties,
@@ -809,9 +807,6 @@ impl Serialize for IntegrationRuntimeState {
 #[doc = "Integration runtime status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IntegrationRuntimeStatus {
-    #[doc = "The type of integration runtime."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<IntegrationRuntimeType>,
     #[doc = "The data factory name which the integration runtime belong to."]
     #[serde(rename = "dataFactoryName", default, skip_serializing_if = "Option::is_none")]
     pub data_factory_name: Option<String>,
@@ -824,6 +819,10 @@ impl IntegrationRuntimeStatus {
         Self::default()
     }
 }
+#[doc = "The type of integration runtime."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum IntegrationRuntimeStatusUnion {}
 #[doc = "A list of integration runtime status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct IntegrationRuntimeStatusListResponse {
@@ -845,10 +844,10 @@ pub struct IntegrationRuntimeStatusResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[doc = "Integration runtime status."]
-    pub properties: IntegrationRuntimeStatus,
+    pub properties: IntegrationRuntimeStatusUnion,
 }
 impl IntegrationRuntimeStatusResponse {
-    pub fn new(properties: IntegrationRuntimeStatus) -> Self {
+    pub fn new(properties: IntegrationRuntimeStatusUnion) -> Self {
         Self { name: None, properties }
     }
 }
@@ -892,9 +891,6 @@ impl Serialize for IntegrationRuntimeType {
 #[doc = "The Azure Data Factory nested object which contains the information and credential which can be used to connect with related store or compute resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedService {
-    #[doc = "Type of linked service."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Integration runtime reference type."]
     #[serde(rename = "connectVia", default, skip_serializing_if = "Option::is_none")]
     pub connect_via: Option<IntegrationRuntimeReference>,
@@ -913,9 +909,8 @@ pub struct LinkedService {
     pub annotations: Vec<serde_json::Value>,
 }
 impl LinkedService {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             connect_via: None,
             description: None,
             parameters: None,
@@ -923,6 +918,10 @@ impl LinkedService {
         }
     }
 }
+#[doc = "Type of linked service."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum LinkedServiceUnion {}
 #[doc = "A list of linked service resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LinkedServiceListResponse {
@@ -935,7 +934,7 @@ pub struct LinkedServiceListResponse {
 impl azure_core::Continuable for LinkedServiceListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LinkedServiceListResponse {
@@ -979,10 +978,10 @@ pub struct LinkedServiceResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     #[doc = "The Azure Data Factory nested object which contains the information and credential which can be used to connect with related store or compute resource."]
-    pub properties: LinkedService,
+    pub properties: LinkedServiceUnion,
 }
 impl LinkedServiceResource {
-    pub fn new(properties: LinkedService) -> Self {
+    pub fn new(properties: LinkedServiceUnion) -> Self {
         Self {
             sub_resource: SubResource::default(),
             properties,
@@ -1259,7 +1258,7 @@ pub struct Pipeline {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub activities: Vec<Activity>,
+    pub activities: Vec<ActivityUnion>,
     #[doc = "Definition of all parameters for an entity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parameters: Option<ParameterDefinitionSpecification>,
@@ -1291,7 +1290,7 @@ pub struct PipelineListResponse {
 impl azure_core::Continuable for PipelineListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PipelineListResponse {
@@ -1672,29 +1671,22 @@ impl Resource {
         Self::default()
     }
 }
-#[doc = "The base definition of a secret type."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct SecretBase {
-    #[doc = "Type of the secret."]
-    #[serde(rename = "type")]
-    pub type_: String,
-}
-impl SecretBase {
-    pub fn new(type_: String) -> Self {
-        Self { type_ }
-    }
+#[doc = "Type of the secret."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum SecretBaseUnion {
+    AzureKeyVaultSecret(AzureKeyVaultSecretReference),
+    SecureString(SecureString),
 }
 #[doc = "Azure Data Factory secure string definition. The string value will be masked with asterisks '*' during Get or List API calls."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SecureString {
-    #[serde(flatten)]
-    pub secret_base: SecretBase,
     #[doc = "Value of secure string."]
     pub value: String,
 }
 impl SecureString {
-    pub fn new(secret_base: SecretBase, value: String) -> Self {
-        Self { secret_base, value }
+    pub fn new(value: String) -> Self {
+        Self { value }
     }
 }
 #[doc = "Properties of Self-hosted integration runtime node."]
@@ -1871,9 +1863,6 @@ impl SubResource {
 #[doc = "Azure data factory nested object which contains information about creating pipeline run"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Trigger {
-    #[doc = "Trigger type."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "Trigger description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -1882,14 +1871,17 @@ pub struct Trigger {
     pub runtime_state: Option<TriggerRuntimeState>,
 }
 impl Trigger {
-    pub fn new(type_: String) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             description: None,
             runtime_state: None,
         }
     }
 }
+#[doc = "Trigger type."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum TriggerUnion {}
 #[doc = "A list of trigger resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TriggerListResponse {
@@ -1902,7 +1894,7 @@ pub struct TriggerListResponse {
 impl azure_core::Continuable for TriggerListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TriggerListResponse {
@@ -1931,10 +1923,10 @@ pub struct TriggerResource {
     #[serde(flatten)]
     pub sub_resource: SubResource,
     #[doc = "Azure data factory nested object which contains information about creating pipeline run"]
-    pub properties: Trigger,
+    pub properties: TriggerUnion,
 }
 impl TriggerResource {
-    pub fn new(properties: Trigger) -> Self {
+    pub fn new(properties: TriggerUnion) -> Self {
         Self {
             sub_resource: SubResource::default(),
             properties,
@@ -2028,7 +2020,7 @@ pub struct TriggerRunListResponse {
 impl azure_core::Continuable for TriggerRunListResponse {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TriggerRunListResponse {

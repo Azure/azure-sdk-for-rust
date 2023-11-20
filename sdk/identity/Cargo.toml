@@ -1,6 +1,6 @@
 [package]
 name = "azure_identity"
-version = "0.12.0"
+version = "0.17.0"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure identity helper crate"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -13,8 +13,8 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.12" }
-async-lock = "2.5"
+azure_core = { path = "../core", version = "0.17" }
+async-lock = "3.0"
 oauth2 = { version = "4.0.0", default-features = false }
 url = "2.2"
 futures = "0.3"
@@ -25,16 +25,18 @@ log = "0.4"
 async-trait = "0.1"
 openssl = { version = "0.10.46",  optional=true }
 uuid = { version = "1.0",  features = ["v4"] }
-# work around https://github.com/rust-lang/rust/issues/63033
-fix-hidden-lifetime-bug = "0.2"
 pin-project = "1.0"
+
+[target.'cfg(unix)'.dependencies]
+tz-rs = "0.6"
 
 [dev-dependencies]
 reqwest = { version = "0.11", features = ["json"], default-features = false }
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 env_logger = "0.10"
 serde_test = "1"
-azure_security_keyvault = { path = "../security_keyvault", default_features = false }
+azure_security_keyvault = { path = "../security_keyvault", default-features = false }
+serial_test = "2.0"
 
 [features]
 default = ["development", "enable_reqwest"]

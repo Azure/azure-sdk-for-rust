@@ -693,7 +693,7 @@ pub struct InnerError {
     pub error_detail: Option<String>,
     #[doc = "An object containing more specific information than the current object about the error."]
     #[serde(rename = "innerError", default, skip_serializing_if = "Option::is_none")]
-    pub inner_error: Box<Option<InnerError>>,
+    pub inner_error: Option<Box<InnerError>>,
 }
 impl InnerError {
     pub fn new(code: String) -> Self {
@@ -701,7 +701,7 @@ impl InnerError {
             code,
             message: None,
             error_detail: None,
-            inner_error: Box::new(None),
+            inner_error: None,
         }
     }
 }
@@ -864,7 +864,7 @@ pub struct PageableListOfDeploymentDeviceStates {
 impl azure_core::Continuable for PageableListOfDeploymentDeviceStates {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfDeploymentDeviceStates {
@@ -889,7 +889,7 @@ pub struct PageableListOfDeployments {
 impl azure_core::Continuable for PageableListOfDeployments {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfDeployments {
@@ -914,7 +914,7 @@ pub struct PageableListOfDeviceClasses {
 impl azure_core::Continuable for PageableListOfDeviceClasses {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfDeviceClasses {
@@ -939,7 +939,7 @@ pub struct PageableListOfDeviceTags {
 impl azure_core::Continuable for PageableListOfDeviceTags {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfDeviceTags {
@@ -964,7 +964,7 @@ pub struct PageableListOfDevices {
 impl azure_core::Continuable for PageableListOfDevices {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfDevices {
@@ -989,7 +989,7 @@ pub struct PageableListOfGroups {
 impl azure_core::Continuable for PageableListOfGroups {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfGroups {
@@ -1014,7 +1014,7 @@ pub struct PageableListOfOperations {
 impl azure_core::Continuable for PageableListOfOperations {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfOperations {
@@ -1039,7 +1039,7 @@ pub struct PageableListOfStrings {
 impl azure_core::Continuable for PageableListOfStrings {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfStrings {
@@ -1064,7 +1064,7 @@ pub struct PageableListOfUpdatableDevices {
 impl azure_core::Continuable for PageableListOfUpdatableDevices {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfUpdatableDevices {
@@ -1089,7 +1089,7 @@ pub struct PageableListOfUpdateIds {
 impl azure_core::Continuable for PageableListOfUpdateIds {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageableListOfUpdateIds {

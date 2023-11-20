@@ -105,7 +105,7 @@ impl<'de> Visitor<'de> for RequestVisitor {
             url,
             Method::from_str(method.1).expect("expected a valid HTTP method"),
         );
-        for (k, v) in headers.1.into_iter() {
+        for (k, v) in headers.1 {
             req.insert_header(k.to_owned(), v);
         }
 
@@ -136,6 +136,7 @@ impl<'a> Serialize for RequestSerializer<'a> {
             FIELDS[3],
             &match &self.0.body() {
                 Body::Bytes(bytes) => base64::encode(bytes as &[u8]),
+                #[cfg(not(target_arch = "wasm32"))]
                 Body::SeekableStream(_) => unimplemented!(),
             },
         )?;

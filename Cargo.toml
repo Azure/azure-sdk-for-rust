@@ -3,3 +3,4 @@ members = [
   "sdk/*",
   "./eng/test/mock_transport"
 ]
+resolver = "2"

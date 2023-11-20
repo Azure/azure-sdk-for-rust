@@ -3,70 +3,23 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "Action to be applied."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct Action {
-    #[doc = "Action that should be applied."]
-    #[serde(rename = "actionType")]
-    pub action_type: action::ActionType,
-}
-impl Action {
-    pub fn new(action_type: action::ActionType) -> Self {
-        Self { action_type }
-    }
-}
-pub mod action {
-    use super::*;
-    #[doc = "Action that should be applied."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ActionType")]
-    pub enum ActionType {
-        AddActionGroups,
-        RemoveAllActionGroups,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ActionType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ActionType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ActionType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::AddActionGroups => serializer.serialize_unit_variant("ActionType", 0u32, "AddActionGroups"),
-                Self::RemoveAllActionGroups => serializer.serialize_unit_variant("ActionType", 1u32, "RemoveAllActionGroups"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Action that should be applied."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "actionType")]
+pub enum ActionUnion {
+    AddActionGroups(AddActionGroups),
+    RemoveAllActionGroups(RemoveAllActionGroups),
 }
 #[doc = "Add action groups to alert processing rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddActionGroups {
-    #[serde(flatten)]
-    pub action: Action,
     #[doc = "List of action group Ids to add to alert processing rule."]
     #[serde(rename = "actionGroupIds")]
     pub action_group_ids: Vec<String>,
 }
 impl AddActionGroups {
-    pub fn new(action: Action, action_group_ids: Vec<String>) -> Self {
-        Self { action, action_group_ids }
+    pub fn new(action_group_ids: Vec<String>) -> Self {
+        Self { action_group_ids }
     }
 }
 #[doc = "Alert processing rule object containing target scopes, conditions and scheduling logic."]
@@ -102,7 +55,7 @@ pub struct AlertProcessingRuleProperties {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schedule: Option<Schedule>,
     #[doc = "Actions to be applied."]
-    pub actions: Vec<Action>,
+    pub actions: Vec<ActionUnion>,
     #[doc = "Description of alert processing rule."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
@@ -111,7 +64,7 @@ pub struct AlertProcessingRuleProperties {
     pub enabled: Option<bool>,
 }
 impl AlertProcessingRuleProperties {
-    pub fn new(scopes: Scopes, actions: Vec<Action>) -> Self {
+    pub fn new(scopes: Scopes, actions: Vec<ActionUnion>) -> Self {
         Self {
             scopes,
             conditions: None,
@@ -139,7 +92,7 @@ pub struct AlertProcessingRulesList {
 impl azure_core::Continuable for AlertProcessingRulesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertProcessingRulesList {
@@ -365,17 +318,12 @@ impl MonitorServiceDetails {
 #[doc = "Monitor service details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MonitorServiceList {
-    #[serde(flatten)]
-    pub alerts_meta_data_properties: AlertsMetaDataProperties,
     #[doc = "Array of operations"]
     pub data: Vec<MonitorServiceDetails>,
 }
 impl MonitorServiceList {
-    pub fn new(alerts_meta_data_properties: AlertsMetaDataProperties, data: Vec<MonitorServiceDetails>) -> Self {
-        Self {
-            alerts_meta_data_properties,
-            data,
-        }
+    pub fn new(data: Vec<MonitorServiceDetails>) -> Self {
+        Self { data }
     }
 }
 #[doc = "Monthly recurrence object."]
@@ -422,9 +370,6 @@ impl PatchProperties {
 #[doc = "Recurrence object."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Recurrence {
-    #[doc = "Specifies when the recurrence should be applied."]
-    #[serde(rename = "recurrenceType")]
-    pub recurrence_type: recurrence::RecurrenceType,
     #[doc = "Start time for recurrence."]
     #[serde(rename = "startTime", default, skip_serializing_if = "Option::is_none")]
     pub start_time: Option<String>,
@@ -433,65 +378,27 @@ pub struct Recurrence {
     pub end_time: Option<String>,
 }
 impl Recurrence {
-    pub fn new(recurrence_type: recurrence::RecurrenceType) -> Self {
+    pub fn new() -> Self {
         Self {
-            recurrence_type,
             start_time: None,
             end_time: None,
         }
     }
 }
-pub mod recurrence {
-    use super::*;
-    #[doc = "Specifies when the recurrence should be applied."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "RecurrenceType")]
-    pub enum RecurrenceType {
-        Daily,
-        Weekly,
-        Monthly,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for RecurrenceType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for RecurrenceType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for RecurrenceType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Daily => serializer.serialize_unit_variant("RecurrenceType", 0u32, "Daily"),
-                Self::Weekly => serializer.serialize_unit_variant("RecurrenceType", 1u32, "Weekly"),
-                Self::Monthly => serializer.serialize_unit_variant("RecurrenceType", 2u32, "Monthly"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "Specifies when the recurrence should be applied."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "recurrenceType")]
+pub enum RecurrenceUnion {
+    Daily(DailyRecurrence),
+    Monthly(MonthlyRecurrence),
+    Weekly(WeeklyRecurrence),
 }
 #[doc = "Indicates if all action groups should be removed."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RemoveAllActionGroups {
-    #[serde(flatten)]
-    pub action: Action,
-}
+pub struct RemoveAllActionGroups {}
 impl RemoveAllActionGroups {
-    pub fn new(action: Action) -> Self {
-        Self { action }
+    pub fn new() -> Self {
+        Self {}
     }
 }
 #[doc = "An azure resource object"]
@@ -530,7 +437,7 @@ pub struct Schedule {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub recurrences: Vec<Recurrence>,
+    pub recurrences: Vec<RecurrenceUnion>,
 }
 impl Schedule {
     pub fn new() -> Self {
@@ -700,7 +607,7 @@ pub struct AlertsList {
 impl azure_core::Continuable for AlertsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AlertsList {
@@ -713,63 +620,17 @@ impl AlertsList {
 pub struct AlertsMetaData {
     #[doc = "alert meta data property bag"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AlertsMetaDataProperties>,
+    pub properties: Option<AlertsMetaDataPropertiesUnion>,
 }
 impl AlertsMetaData {
     pub fn new() -> Self {
         Self::default()
     }
 }
-#[doc = "alert meta data property bag"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct AlertsMetaDataProperties {
-    #[doc = "Identification of the information to be retrieved by API call"]
-    #[serde(rename = "metadataIdentifier")]
-    pub metadata_identifier: alerts_meta_data_properties::MetadataIdentifier,
-}
-impl AlertsMetaDataProperties {
-    pub fn new(metadata_identifier: alerts_meta_data_properties::MetadataIdentifier) -> Self {
-        Self { metadata_identifier }
-    }
-}
-pub mod alerts_meta_data_properties {
-    use super::*;
-    #[doc = "Identification of the information to be retrieved by API call"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "MetadataIdentifier")]
-    pub enum MetadataIdentifier {
-        MonitorServiceList,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for MetadataIdentifier {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for MetadataIdentifier {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for MetadataIdentifier {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::MonitorServiceList => serializer.serialize_unit_variant("MetadataIdentifier", 0u32, "MonitorServiceList"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
+#[doc = "Identification of the information to be retrieved by API call"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "metadataIdentifier")]
+pub enum AlertsMetaDataPropertiesUnion {}
 #[doc = "Summary of alerts based on the input filters and 'groupby' parameters."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AlertsSummary {
@@ -1247,7 +1108,7 @@ pub struct OperationsList {
 impl azure_core::Continuable for OperationsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationsList {
@@ -1548,7 +1409,7 @@ pub struct SmartGroupsList {
 impl azure_core::Continuable for SmartGroupsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SmartGroupsList {

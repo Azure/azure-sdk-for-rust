@@ -162,7 +162,7 @@ pub struct JobInfoListResult {
 impl azure_core::Continuable for JobInfoListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobInfoListResult {
@@ -228,10 +228,10 @@ pub struct JobInformation {
     #[serde(rename = "hierarchyQueueNode", default, skip_serializing_if = "Option::is_none")]
     pub hierarchy_queue_node: Option<String>,
     #[doc = "The common Data Lake Analytics job properties."]
-    pub properties: JobProperties,
+    pub properties: JobPropertiesUnion,
 }
 impl JobInformation {
-    pub fn new(name: String, type_: job_information::Type, properties: JobProperties) -> Self {
+    pub fn new(name: String, type_: job_information::Type, properties: JobPropertiesUnion) -> Self {
         Self {
             job_id: None,
             name,
@@ -342,18 +342,21 @@ pub struct JobProperties {
     pub runtime_version: Option<String>,
     #[doc = "Gets or sets the U-SQL script to run"]
     pub script: String,
-    #[doc = "Gets or sets the job type of the current job (i.e. Hive or U-SQL)."]
-    #[serde(rename = "type")]
-    pub type_: String,
 }
 impl JobProperties {
-    pub fn new(script: String, type_: String) -> Self {
+    pub fn new(script: String) -> Self {
         Self {
             runtime_version: None,
             script,
-            type_,
         }
     }
+}
+#[doc = "Gets or sets the job type of the current job (i.e. Hive or U-SQL)."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum JobPropertiesUnion {
+    Hive(HiveJobProperties),
+    USql(USqlJobProperties),
 }
 #[doc = "The Data Lake Analytics U-SQL job resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

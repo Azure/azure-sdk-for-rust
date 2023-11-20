@@ -211,7 +211,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -260,17 +260,18 @@ impl TrackedResource {
 #[doc = "Model that represents the base action model."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Action {
-    #[doc = "Enum that discriminates between action models."]
-    #[serde(rename = "type")]
-    pub type_: String,
     #[doc = "String that represents a URN."]
     pub name: Urn,
 }
 impl Action {
-    pub fn new(type_: String, name: Urn) -> Self {
-        Self { type_, name }
+    pub fn new(name: Urn) -> Self {
+        Self { name }
     }
 }
+#[doc = "Enum that discriminates between action models."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ActionUnion {}
 #[doc = "Model that represents the an action and its status."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ActionStatus {
@@ -308,10 +309,10 @@ pub struct Branch {
     #[doc = "String of the branch name."]
     pub name: String,
     #[doc = "List of actions."]
-    pub actions: Vec<Action>,
+    pub actions: Vec<ActionUnion>,
 }
 impl Branch {
-    pub fn new(name: String, actions: Vec<Action>) -> Self {
+    pub fn new(name: String, actions: Vec<ActionUnion>) -> Self {
         Self { name, actions }
     }
 }
@@ -374,7 +375,7 @@ pub struct CapabilityListResult {
 impl azure_core::Continuable for CapabilityListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CapabilityListResult {
@@ -443,7 +444,7 @@ pub struct CapabilityTypeListResult {
 impl azure_core::Continuable for CapabilityTypeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CapabilityTypeListResult {
@@ -615,7 +616,7 @@ pub struct ExperimentExecutionDetailsListResult {
 impl azure_core::Continuable for ExperimentExecutionDetailsListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExperimentExecutionDetailsListResult {
@@ -692,7 +693,7 @@ pub struct ExperimentListResult {
 impl azure_core::Continuable for ExperimentListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExperimentListResult {
@@ -773,7 +774,7 @@ pub struct ExperimentStatusListResult {
 impl azure_core::Continuable for ExperimentStatusListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExperimentStatusListResult {
@@ -1048,7 +1049,7 @@ pub struct TargetListResult {
 impl azure_core::Continuable for TargetListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TargetListResult {
@@ -1127,7 +1128,7 @@ pub struct TargetTypeListResult {
 impl azure_core::Continuable for TargetTypeListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl TargetTypeListResult {

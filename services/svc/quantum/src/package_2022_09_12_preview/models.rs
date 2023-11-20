@@ -68,9 +68,6 @@ pub struct ItemDetails {
     pub provider_id: String,
     #[doc = "The target identifier to run the job."]
     pub target: String,
-    #[doc = "The type of item."]
-    #[serde(rename = "itemType")]
-    pub item_type: item_details::ItemType,
     #[doc = "The creation time of the item."]
     #[serde(rename = "creationTime", default, with = "azure_core::date::rfc3339::option")]
     pub creation_time: Option<time::OffsetDateTime>,
@@ -88,13 +85,12 @@ pub struct ItemDetails {
     pub error_data: Option<ErrorData>,
 }
 impl ItemDetails {
-    pub fn new(id: String, name: String, provider_id: String, target: String, item_type: item_details::ItemType) -> Self {
+    pub fn new(id: String, name: String, provider_id: String, target: String) -> Self {
         Self {
             id,
             name,
             provider_id,
             target,
-            item_type,
             creation_time: None,
             begin_execution_time: None,
             end_execution_time: None,
@@ -103,50 +99,17 @@ impl ItemDetails {
         }
     }
 }
-pub mod item_details {
-    use super::*;
-    #[doc = "The type of item."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ItemType")]
-    pub enum ItemType {
-        Job,
-        Session,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ItemType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ItemType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ItemType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Job => serializer.serialize_unit_variant("ItemType", 0u32, "Job"),
-                Self::Session => serializer.serialize_unit_variant("ItemType", 1u32, "Session"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "The type of item."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "itemType")]
+pub enum ItemDetailsUnion {
+    Job(JobDetails),
+    Session(SessionDetails),
 }
 #[doc = "List of item details."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ItemDetailsList {
-    pub value: Vec<ItemDetails>,
+    pub value: Vec<ItemDetailsUnion>,
     #[doc = "Link to the next page of results."]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
@@ -154,11 +117,11 @@ pub struct ItemDetailsList {
 impl azure_core::Continuable for ItemDetailsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ItemDetailsList {
-    pub fn new(value: Vec<ItemDetails>) -> Self {
+    pub fn new(value: Vec<ItemDetailsUnion>) -> Self {
         Self { value, next_link: None }
     }
 }
@@ -332,7 +295,7 @@ pub struct JobDetailsList {
 impl azure_core::Continuable for JobDetailsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl JobDetailsList {
@@ -498,7 +461,7 @@ pub struct ProviderStatusList {
 impl azure_core::Continuable for ProviderStatusList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ProviderStatusList {
@@ -641,7 +604,7 @@ pub struct QuotaList {
 impl azure_core::Continuable for QuotaList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl QuotaList {
@@ -806,7 +769,7 @@ pub struct SessionDetailsList {
 impl azure_core::Continuable for SessionDetailsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SessionDetailsList {

@@ -24,52 +24,57 @@ azure_core::operation! {
 impl CreateOrUpdateConfigurationBuilder {
     /// Sets the device content for the configuration
     /// The content cannot be updated once it has been created.
+    #[must_use]
     pub fn device_content(mut self, device_content: serde_json::Value) -> Self {
-        let content = self.content.get_or_insert(Default::default());
+        let content = self.content.get_or_insert(ConfigurationContent::default());
         content.device_content = Some(device_content);
         self
     }
 
     /// Sets the module content for the configuration.
     /// The content cannot be updated once it has been created.
+    #[must_use]
     pub fn module_content(mut self, module_content: serde_json::Value) -> Self {
-        let content = self.content.get_or_insert(Default::default());
+        let content = self.content.get_or_insert(ConfigurationContent::default());
         content.module_content = Some(module_content);
         self
     }
 
     /// Sets the module content for the configuration
     /// The content cannot be updated once it has been created.
+    #[must_use]
     pub fn modules_content(mut self, modules_content: serde_json::Value) -> Self {
-        let content = self.content.get_or_insert(Default::default());
+        let content = self.content.get_or_insert(ConfigurationContent::default());
         content.modules_content = Some(modules_content);
         self
     }
 
     /// Add a metric to the configuration
+    #[must_use]
     pub fn metric<S, T>(mut self, key: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<String>,
     {
-        let metrics = self.metrics.get_or_insert(Default::default());
+        let metrics = self.metrics.get_or_insert(HashMap::default());
         metrics.insert(key.into(), value.into());
         self
     }
 
     /// Add a label to the configuration.
+    #[must_use]
     pub fn label<S, T>(mut self, key: S, value: T) -> Self
     where
         S: Into<String>,
         T: Into<String>,
     {
-        let labels = self.labels.get_or_insert(Default::default());
+        let labels = self.labels.get_or_insert(HashMap::default());
         labels.insert(key.into(), value.into());
         self
     }
 
     /// Performs the create or update request on the device identity
-    pub fn into_future(mut self) -> CreateOrUpdateConfiguration {
+    pub fn into_future(self) -> CreateOrUpdateConfiguration {
         Box::pin(async move {
             let uri = format!(
                 "https://{}.azure-devices.net/configurations/{}?api-version={}",
@@ -101,7 +106,7 @@ impl CreateOrUpdateConfigurationBuilder {
             let body = azure_core::to_json(&body)?;
             request.set_body(body);
 
-            let response = self.client.send(&mut self.context, &mut request).await?;
+            let response = self.client.send(&self.context, &mut request).await?;
 
             CreateOrUpdateConfigurationResponse::try_from(response).await
         })

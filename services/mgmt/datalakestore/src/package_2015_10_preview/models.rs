@@ -77,7 +77,7 @@ pub struct DataLakeStoreAccountListResult {
 impl azure_core::Continuable for DataLakeStoreAccountListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataLakeStoreAccountListResult {
@@ -176,7 +176,7 @@ pub struct DataLakeStoreFirewallRuleListResult {
 impl azure_core::Continuable for DataLakeStoreFirewallRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DataLakeStoreFirewallRuleListResult {

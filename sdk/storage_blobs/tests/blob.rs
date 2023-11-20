@@ -1,4 +1,4 @@
-#![cfg(all(test, feature = "test_e2e"))]
+#![cfg(all(test, feature = "test_e2e", feature = "md5"))]
 #[macro_use]
 extern crate log;
 
@@ -418,7 +418,7 @@ async fn put_block_blob_and_get_properties() -> azure_core::Result<()> {
 
     assert_eq!(blob_properties.blob.properties.content_length, 6);
 
-    let _ = requires_send_future(blob.get_properties().into_future());
+    requires_send_future(blob.get_properties().into_future()).await?;
     container.delete().await?;
     Ok(())
 }
@@ -550,7 +550,7 @@ async fn set_blobtier() {
     println!("container {} deleted!", container_name);
 }
 
-#[allow(dead_code)]
+#[allow(dead_code, clippy::let_underscore_future)]
 fn send_check() {
     let client = initialize();
     let blob = client.container_client("a").blob_client("b");
@@ -568,6 +568,6 @@ fn initialize() -> BlobServiceClient {
     let access_key =
         std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
 
-    let storage_credentials = StorageCredentials::Key(account.clone(), access_key);
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
     BlobServiceClient::new(account, storage_credentials)
 }

@@ -1,4 +1,4 @@
-use crate::error::{Error, ErrorKind, HttpError};
+use crate::error::{Error, ErrorKind, HttpError, ResultExt};
 use crate::policies::{Policy, PolicyResult, Request};
 use crate::sleep::sleep;
 use crate::{Context, StatusCode};
@@ -60,6 +60,12 @@ where
         let mut start = None;
 
         loop {
+            if retry_count > 0 {
+                request.body.reset().await.context(
+                    ErrorKind::Other,
+                    "failed to reset body stream before retrying request",
+                )?;
+            }
             let result = next[0].send(ctx, request, &next[1..]).await;
             // only start keeping track of time after the first request is made
             let start = start.get_or_insert_with(OffsetDateTime::now_utc);

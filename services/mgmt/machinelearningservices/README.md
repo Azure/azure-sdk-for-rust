@@ -6,12 +6,12 @@ https://github.com/Azure/azure-rest-api-specs/blob/main/specification/machinelea
 
 To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The default tag is `package-preview-2023-04`.
+The default tag is `package-2023-10`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
-- `package-preview-2023-04` has 206 operations from 1 API versions: `2023-04-01-preview`. Use crate feature `package-preview-2023-04` to enable. The operations will be in the `package_preview_2023_04` module.
-- `package-preview-2023-02` has 195 operations from 1 API versions: `2023-02-01-preview`. Use crate feature `package-preview-2023-02` to enable. The operations will be in the `package_preview_2023_02` module.
-- `package-preview-2022-12` has 166 operations from 1 API versions: `2022-12-01-preview`. Use crate feature `package-preview-2022-12` to enable. The operations will be in the `package_preview_2022_12` module.
-- `package-preview-2022-10` has 166 operations from 1 API versions: `2022-10-01-preview`. Use crate feature `package-preview-2022-10` to enable. The operations will be in the `package_preview_2022_10` module.
-- `package-preview-2022-06` has 128 operations from 1 API versions: `2022-06-01-preview`. Use crate feature `package-preview-2022-06` to enable. The operations will be in the `package_preview_2022_06` module.
+- `package-2023-10` has 200 operations from 1 API versions: `2023-10-01`. Use crate feature `package-2023-10` to enable. The operations will be in the `package_2023_10` module.
+- `package-2023-04` has 170 operations from 1 API versions: `2023-04-01`. Use crate feature `package-2023-04` to enable. The operations will be in the `package_2023_04` module.
+- `package-2022-10` has 119 operations from 1 API versions: `2022-10-01`. Use crate feature `package-2022-10` to enable. The operations will be in the `package_2022_10` module.
+- `package-2022-05-01` has 115 operations from 1 API versions: `2022-05-01`. Use crate feature `package-2022-05-01` to enable. The operations will be in the `package_2022_05_01` module.
+- `package-2021-07-01` has 40 operations from 1 API versions: `2021-07-01`. Use crate feature `package-2021-07-01` to enable. The operations will be in the `package_2021_07_01` module.

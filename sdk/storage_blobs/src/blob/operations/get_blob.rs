@@ -15,6 +15,7 @@ operation! {
     ?blob_versioning: BlobVersioning,
     ?lease_id: LeaseId,
     ?chunk_size: u64,
+    ?encryption_key: CPKInfo,
     ?if_modified_since: IfModifiedSinceCondition,
     ?if_match: IfMatchCondition,
     ?if_tags: IfTags,
@@ -43,13 +44,13 @@ impl GetBlobBuilder {
                 }
 
                 headers.add(this.lease_id);
+                headers.add(this.encryption_key.as_ref());
                 headers.add(this.if_modified_since);
                 headers.add(this.if_match.clone());
                 headers.add(this.if_tags.clone());
 
                 let mut request =
-                    this.client
-                        .finalize_request(url, azure_core::Method::Get, headers, None)?;
+                    BlobClient::finalize_request(url, azure_core::Method::Get, headers, None)?;
 
                 let response = this.client.send(&mut ctx, &mut request).await?;
 

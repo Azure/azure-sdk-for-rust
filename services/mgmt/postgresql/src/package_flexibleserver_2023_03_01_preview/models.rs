@@ -70,7 +70,7 @@ pub struct AdministratorListResult {
 impl azure_core::Continuable for AdministratorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AdministratorListResult {
@@ -421,7 +421,7 @@ pub struct CapabilitiesListResult {
 impl azure_core::Continuable for CapabilitiesListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CapabilitiesListResult {
@@ -574,7 +574,7 @@ pub struct ConfigurationListResult {
 impl azure_core::Continuable for ConfigurationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ConfigurationListResult {
@@ -843,7 +843,7 @@ pub struct DatabaseListResult {
 impl azure_core::Continuable for DatabaseListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DatabaseListResult {
@@ -1031,7 +1031,7 @@ pub struct FirewallRuleListResult {
 impl azure_core::Continuable for FirewallRuleListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl FirewallRuleListResult {
@@ -1404,7 +1404,7 @@ pub struct FlexibleServerEditionCapability {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub supported_server_skus: Vec<ServerSku>,
+    pub supported_server_skus: Vec<ServerSkuCapability>,
 }
 impl FlexibleServerEditionCapability {
     pub fn new() -> Self {
@@ -1552,7 +1552,7 @@ pub struct LogFileListResult {
 impl azure_core::Continuable for LogFileListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LogFileListResult {
@@ -1774,7 +1774,7 @@ pub struct LtrServerBackupOperationList {
 impl azure_core::Continuable for LtrServerBackupOperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl LtrServerBackupOperationList {
@@ -1994,7 +1994,7 @@ pub struct MigrationResourceListResult {
 impl azure_core::Continuable for MigrationResourceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl MigrationResourceListResult {
@@ -2058,7 +2058,7 @@ pub struct MigrationResourceProperties {
         skip_serializing_if = "Option::is_none"
     )]
     pub setup_logical_replication_on_source_db_if_needed: Option<migration_resource_properties::SetupLogicalReplicationOnSourceDbIfNeeded>,
-    #[doc = "Indicates whether the databases on the target server can be overwritten, if already present. If set to Disabled, the migration workflow will wait for a confirmation, if it detects that the database already exists."]
+    #[doc = "Indicates whether the databases on the target server can be overwritten, if already present. If set to False, the migration workflow will wait for a confirmation, if it detects that the database already exists."]
     #[serde(rename = "overwriteDbsInTarget", default, skip_serializing_if = "Option::is_none")]
     pub overwrite_dbs_in_target: Option<migration_resource_properties::OverwriteDbsInTarget>,
     #[doc = "Start time in UTC for migration window"]
@@ -2070,10 +2070,10 @@ pub struct MigrationResourceProperties {
     #[doc = "Indicates whether the data migration should start right away"]
     #[serde(rename = "startDataMigration", default, skip_serializing_if = "Option::is_none")]
     pub start_data_migration: Option<migration_resource_properties::StartDataMigration>,
-    #[doc = "To trigger cutover for entire migration we need to send this flag as Enabled"]
+    #[doc = "To trigger cutover for entire migration we need to send this flag as True"]
     #[serde(rename = "triggerCutover", default, skip_serializing_if = "Option::is_none")]
     pub trigger_cutover: Option<migration_resource_properties::TriggerCutover>,
-    #[doc = "When you want to trigger cutover for specific databases send triggerCutover flag as Enabled and database names in this array"]
+    #[doc = "When you want to trigger cutover for specific databases send triggerCutover flag as True and database names in this array"]
     #[serde(
         rename = "dbsToTriggerCutoverOn",
         default,
@@ -2081,10 +2081,10 @@ pub struct MigrationResourceProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dbs_to_trigger_cutover_on: Vec<String>,
-    #[doc = "To trigger cancel for entire migration we need to send this flag as Enabled"]
+    #[doc = "To trigger cancel for entire migration we need to send this flag as True"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cancel: Option<migration_resource_properties::Cancel>,
-    #[doc = "When you want to trigger cancel for specific databases send cancel flag as Enabled and database names in this array"]
+    #[doc = "When you want to trigger cancel for specific databases send cancel flag as True and database names in this array"]
     #[serde(
         rename = "dbsToCancelMigrationOn",
         default,
@@ -2104,8 +2104,8 @@ pub mod migration_resource_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "SetupLogicalReplicationOnSourceDbIfNeeded")]
     pub enum SetupLogicalReplicationOnSourceDbIfNeeded {
-        Enabled,
-        Disabled,
+        True,
+        False,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -2131,18 +2131,18 @@ pub mod migration_resource_properties {
             S: Serializer,
         {
             match self {
-                Self::Enabled => serializer.serialize_unit_variant("SetupLogicalReplicationOnSourceDbIfNeeded", 0u32, "Enabled"),
-                Self::Disabled => serializer.serialize_unit_variant("SetupLogicalReplicationOnSourceDbIfNeeded", 1u32, "Disabled"),
+                Self::True => serializer.serialize_unit_variant("SetupLogicalReplicationOnSourceDbIfNeeded", 0u32, "True"),
+                Self::False => serializer.serialize_unit_variant("SetupLogicalReplicationOnSourceDbIfNeeded", 1u32, "False"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
     }
-    #[doc = "Indicates whether the databases on the target server can be overwritten, if already present. If set to Disabled, the migration workflow will wait for a confirmation, if it detects that the database already exists."]
+    #[doc = "Indicates whether the databases on the target server can be overwritten, if already present. If set to False, the migration workflow will wait for a confirmation, if it detects that the database already exists."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "OverwriteDbsInTarget")]
     pub enum OverwriteDbsInTarget {
-        Enabled,
-        Disabled,
+        True,
+        False,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -2168,8 +2168,8 @@ pub mod migration_resource_properties {
             S: Serializer,
         {
             match self {
-                Self::Enabled => serializer.serialize_unit_variant("OverwriteDbsInTarget", 0u32, "Enabled"),
-                Self::Disabled => serializer.serialize_unit_variant("OverwriteDbsInTarget", 1u32, "Disabled"),
+                Self::True => serializer.serialize_unit_variant("OverwriteDbsInTarget", 0u32, "True"),
+                Self::False => serializer.serialize_unit_variant("OverwriteDbsInTarget", 1u32, "False"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -2178,8 +2178,8 @@ pub mod migration_resource_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "StartDataMigration")]
     pub enum StartDataMigration {
-        Enabled,
-        Disabled,
+        True,
+        False,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -2205,18 +2205,18 @@ pub mod migration_resource_properties {
             S: Serializer,
         {
             match self {
-                Self::Enabled => serializer.serialize_unit_variant("StartDataMigration", 0u32, "Enabled"),
-                Self::Disabled => serializer.serialize_unit_variant("StartDataMigration", 1u32, "Disabled"),
+                Self::True => serializer.serialize_unit_variant("StartDataMigration", 0u32, "True"),
+                Self::False => serializer.serialize_unit_variant("StartDataMigration", 1u32, "False"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
     }
-    #[doc = "To trigger cutover for entire migration we need to send this flag as Enabled"]
+    #[doc = "To trigger cutover for entire migration we need to send this flag as True"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "TriggerCutover")]
     pub enum TriggerCutover {
-        Enabled,
-        Disabled,
+        True,
+        False,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -2242,18 +2242,18 @@ pub mod migration_resource_properties {
             S: Serializer,
         {
             match self {
-                Self::Enabled => serializer.serialize_unit_variant("TriggerCutover", 0u32, "Enabled"),
-                Self::Disabled => serializer.serialize_unit_variant("TriggerCutover", 1u32, "Disabled"),
+                Self::True => serializer.serialize_unit_variant("TriggerCutover", 0u32, "True"),
+                Self::False => serializer.serialize_unit_variant("TriggerCutover", 1u32, "False"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
     }
-    #[doc = "To trigger cancel for entire migration we need to send this flag as Enabled"]
+    #[doc = "To trigger cancel for entire migration we need to send this flag as True"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Cancel")]
     pub enum Cancel {
-        Enabled,
-        Disabled,
+        True,
+        False,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -2279,8 +2279,8 @@ pub mod migration_resource_properties {
             S: Serializer,
         {
             match self {
-                Self::Enabled => serializer.serialize_unit_variant("Cancel", 0u32, "Enabled"),
-                Self::Disabled => serializer.serialize_unit_variant("Cancel", 1u32, "Disabled"),
+                Self::True => serializer.serialize_unit_variant("Cancel", 0u32, "True"),
+                Self::False => serializer.serialize_unit_variant("Cancel", 1u32, "False"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -2325,7 +2325,7 @@ pub struct MigrationResourcePropertiesForPatch {
     )]
     pub setup_logical_replication_on_source_db_if_needed:
         Option<migration_resource_properties_for_patch::SetupLogicalReplicationOnSourceDbIfNeeded>,
-    #[doc = "Indicates whether the databases on the target server can be overwritten, if already present. If set to Disabled, the migration workflow will wait for a confirmation, if it detects that the database already exists."]
+    #[doc = "Indicates whether the databases on the target server can be overwritten, if already present. If set to False, the migration workflow will wait for a confirmation, if it detects that the database already exists."]
     #[serde(rename = "overwriteDbsInTarget", default, skip_serializing_if = "Option::is_none")]
     pub overwrite_dbs_in_target: Option<migration_resource_properties_for_patch::OverwriteDbsInTarget>,
     #[doc = "Start time in UTC for migration window"]
@@ -2334,10 +2334,10 @@ pub struct MigrationResourcePropertiesForPatch {
     #[doc = "Indicates whether the data migration should start right away"]
     #[serde(rename = "startDataMigration", default, skip_serializing_if = "Option::is_none")]
     pub start_data_migration: Option<migration_resource_properties_for_patch::StartDataMigration>,
-    #[doc = "To trigger cutover for entire migration we need to send this flag as Enabled"]
+    #[doc = "To trigger cutover for entire migration we need to send this flag as True"]
     #[serde(rename = "triggerCutover", default, skip_serializing_if = "Option::is_none")]
     pub trigger_cutover: Option<migration_resource_properties_for_patch::TriggerCutover>,
-    #[doc = "When you want to trigger cutover for specific databases send triggerCutover flag as Enabled and database names in this array"]
+    #[doc = "When you want to trigger cutover for specific databases send triggerCutover flag as True and database names in this array"]
     #[serde(
         rename = "dbsToTriggerCutoverOn",
         default,
@@ -2345,10 +2345,10 @@ pub struct MigrationResourcePropertiesForPatch {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub dbs_to_trigger_cutover_on: Vec<String>,
-    #[doc = "To trigger cancel for entire migration we need to send this flag as Enabled"]
+    #[doc = "To trigger cancel for entire migration we need to send this flag as True"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cancel: Option<migration_resource_properties_for_patch::Cancel>,
-    #[doc = "When you want to trigger cancel for specific databases send cancel flag as Enabled and database names in this array"]
+    #[doc = "When you want to trigger cancel for specific databases send cancel flag as True and database names in this array"]
     #[serde(
         rename = "dbsToCancelMigrationOn",
         default,
@@ -2371,8 +2371,8 @@ pub mod migration_resource_properties_for_patch {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "SetupLogicalReplicationOnSourceDbIfNeeded")]
     pub enum SetupLogicalReplicationOnSourceDbIfNeeded {
-        Enabled,
-        Disabled,
+        True,
+        False,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -2398,18 +2398,18 @@ pub mod migration_resource_properties_for_patch {
             S: Serializer,
         {
             match self {
-                Self::Enabled => serializer.serialize_unit_variant("SetupLogicalReplicationOnSourceDbIfNeeded", 0u32, "Enabled"),
-                Self::Disabled => serializer.serialize_unit_variant("SetupLogicalReplicationOnSourceDbIfNeeded", 1u32, "Disabled"),
+                Self::True => serializer.serialize_unit_variant("SetupLogicalReplicationOnSourceDbIfNeeded", 0u32, "True"),
+                Self::False => serializer.serialize_unit_variant("SetupLogicalReplicationOnSourceDbIfNeeded", 1u32, "False"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
     }
-    #[doc = "Indicates whether the databases on the target server can be overwritten, if already present. If set to Disabled, the migration workflow will wait for a confirmation, if it detects that the database already exists."]
+    #[doc = "Indicates whether the databases on the target server can be overwritten, if already present. If set to False, the migration workflow will wait for a confirmation, if it detects that the database already exists."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "OverwriteDbsInTarget")]
     pub enum OverwriteDbsInTarget {
-        Enabled,
-        Disabled,
+        True,
+        False,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -2435,8 +2435,8 @@ pub mod migration_resource_properties_for_patch {
             S: Serializer,
         {
             match self {
-                Self::Enabled => serializer.serialize_unit_variant("OverwriteDbsInTarget", 0u32, "Enabled"),
-                Self::Disabled => serializer.serialize_unit_variant("OverwriteDbsInTarget", 1u32, "Disabled"),
+                Self::True => serializer.serialize_unit_variant("OverwriteDbsInTarget", 0u32, "True"),
+                Self::False => serializer.serialize_unit_variant("OverwriteDbsInTarget", 1u32, "False"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -2445,8 +2445,8 @@ pub mod migration_resource_properties_for_patch {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "StartDataMigration")]
     pub enum StartDataMigration {
-        Enabled,
-        Disabled,
+        True,
+        False,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -2472,18 +2472,18 @@ pub mod migration_resource_properties_for_patch {
             S: Serializer,
         {
             match self {
-                Self::Enabled => serializer.serialize_unit_variant("StartDataMigration", 0u32, "Enabled"),
-                Self::Disabled => serializer.serialize_unit_variant("StartDataMigration", 1u32, "Disabled"),
+                Self::True => serializer.serialize_unit_variant("StartDataMigration", 0u32, "True"),
+                Self::False => serializer.serialize_unit_variant("StartDataMigration", 1u32, "False"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
     }
-    #[doc = "To trigger cutover for entire migration we need to send this flag as Enabled"]
+    #[doc = "To trigger cutover for entire migration we need to send this flag as True"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "TriggerCutover")]
     pub enum TriggerCutover {
-        Enabled,
-        Disabled,
+        True,
+        False,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -2509,18 +2509,18 @@ pub mod migration_resource_properties_for_patch {
             S: Serializer,
         {
             match self {
-                Self::Enabled => serializer.serialize_unit_variant("TriggerCutover", 0u32, "Enabled"),
-                Self::Disabled => serializer.serialize_unit_variant("TriggerCutover", 1u32, "Disabled"),
+                Self::True => serializer.serialize_unit_variant("TriggerCutover", 0u32, "True"),
+                Self::False => serializer.serialize_unit_variant("TriggerCutover", 1u32, "False"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
     }
-    #[doc = "To trigger cancel for entire migration we need to send this flag as Enabled"]
+    #[doc = "To trigger cancel for entire migration we need to send this flag as True"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "Cancel")]
     pub enum Cancel {
-        Enabled,
-        Disabled,
+        True,
+        False,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -2546,8 +2546,8 @@ pub mod migration_resource_properties_for_patch {
             S: Serializer,
         {
             match self {
-                Self::Enabled => serializer.serialize_unit_variant("Cancel", 0u32, "Enabled"),
-                Self::Disabled => serializer.serialize_unit_variant("Cancel", 1u32, "Disabled"),
+                Self::True => serializer.serialize_unit_variant("Cancel", 0u32, "True"),
+                Self::False => serializer.serialize_unit_variant("Cancel", 1u32, "False"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -2559,10 +2559,20 @@ pub struct MigrationSecretParameters {
     #[doc = "Server admin credentials."]
     #[serde(rename = "adminCredentials")]
     pub admin_credentials: AdminCredentials,
+    #[doc = "Gets or sets the username for the source server. This user need not be an admin."]
+    #[serde(rename = "sourceServerUsername", default, skip_serializing_if = "Option::is_none")]
+    pub source_server_username: Option<String>,
+    #[doc = "Gets or sets the username for the target server. This user need not be an admin."]
+    #[serde(rename = "targetServerUsername", default, skip_serializing_if = "Option::is_none")]
+    pub target_server_username: Option<String>,
 }
 impl MigrationSecretParameters {
     pub fn new(admin_credentials: AdminCredentials) -> Self {
-        Self { admin_credentials }
+        Self {
+            admin_credentials,
+            source_server_username: None,
+            target_server_username: None,
+        }
     }
 }
 #[doc = "Migration state."]
@@ -2722,16 +2732,16 @@ impl NameAvailability {
         Self::default()
     }
 }
-#[doc = "Network properties of a server"]
+#[doc = "Network properties of a server."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Network {
     #[doc = "public network access is enabled or not"]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<network::PublicNetworkAccess>,
-    #[doc = "delegated subnet arm resource id."]
+    #[doc = "Delegated subnet arm resource id. This is required to be passed during create, in case we want the server to be VNET injected, i.e. Private access server. During update, pass this only if we want to update the value for Private DNS zone."]
     #[serde(rename = "delegatedSubnetResourceId", default, skip_serializing_if = "Option::is_none")]
     pub delegated_subnet_resource_id: Option<String>,
-    #[doc = "private dns zone arm resource id."]
+    #[doc = "Private dns zone arm resource id. This is required to be passed during create, in case we want the server to be VNET injected, i.e. Private access server. During update, pass this only if we want to update the value for Private DNS zone."]
     #[serde(rename = "privateDnsZoneArmResourceId", default, skip_serializing_if = "Option::is_none")]
     pub private_dns_zone_arm_resource_id: Option<String>,
 }
@@ -3084,7 +3094,7 @@ pub struct ServerBackupListResult {
 impl azure_core::Continuable for ServerBackupListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerBackupListResult {
@@ -3185,7 +3195,7 @@ pub struct ServerListResult {
 impl azure_core::Continuable for ServerListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ServerListResult {
@@ -3226,7 +3236,7 @@ pub struct ServerProperties {
     #[doc = "Backup properties of a server"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub backup: Option<Backup>,
-    #[doc = "Network properties of a server"]
+    #[doc = "Network properties of a server."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub network: Option<Network>,
     #[doc = "High availability properties of a server"]
@@ -3388,6 +3398,9 @@ pub struct ServerPropertiesForUpdate {
     #[doc = "Used to indicate role of the server in replication set."]
     #[serde(rename = "replicationRole", default, skip_serializing_if = "Option::is_none")]
     pub replication_role: Option<ReplicationRole>,
+    #[doc = "Network properties of a server."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub network: Option<Network>,
 }
 impl ServerPropertiesForUpdate {
     pub fn new() -> Self {
@@ -3434,9 +3447,64 @@ pub mod server_properties_for_update {
         }
     }
 }
+#[doc = "Sku information related properties of a server."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerSku {
+    #[doc = "The name of the sku, typically, tier + family + cores, e.g. Standard_D4s_v3."]
+    pub name: String,
+    #[doc = "The tier of the particular SKU, e.g. Burstable."]
+    pub tier: server_sku::Tier,
+}
+impl ServerSku {
+    pub fn new(name: String, tier: server_sku::Tier) -> Self {
+        Self { name, tier }
+    }
+}
+pub mod server_sku {
+    use super::*;
+    #[doc = "The tier of the particular SKU, e.g. Burstable."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Tier")]
+    pub enum Tier {
+        Burstable,
+        GeneralPurpose,
+        MemoryOptimized,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Tier {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Tier {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Tier {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Burstable => serializer.serialize_unit_variant("Tier", 0u32, "Burstable"),
+                Self::GeneralPurpose => serializer.serialize_unit_variant("Tier", 1u32, "GeneralPurpose"),
+                Self::MemoryOptimized => serializer.serialize_unit_variant("Tier", 2u32, "MemoryOptimized"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "Sku capability"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ServerSku {
+pub struct ServerSkuCapability {
     #[serde(flatten)]
     pub capability_base: CapabilityBase,
     #[doc = "Sku name"]
@@ -3468,7 +3536,7 @@ pub struct ServerSku {
     )]
     pub supported_ha_mode: Vec<String>,
 }
-impl ServerSku {
+impl ServerSkuCapability {
     pub fn new() -> Self {
         Self::default()
     }
@@ -3608,8 +3676,8 @@ pub struct Storage {
     #[serde(rename = "autoGrow", default, skip_serializing_if = "Option::is_none")]
     pub auto_grow: Option<storage::AutoGrow>,
     #[doc = "Name of storage tier for IOPS."]
-    #[serde(rename = "iopsTier", default, skip_serializing_if = "Option::is_none")]
-    pub iops_tier: Option<storage::IopsTier>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<storage::Tier>,
     #[doc = "Storage tier IOPS quantity."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub iops: Option<i32>,
@@ -3660,8 +3728,8 @@ pub mod storage {
     }
     #[doc = "Name of storage tier for IOPS."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "IopsTier")]
-    pub enum IopsTier {
+    #[serde(remote = "Tier")]
+    pub enum Tier {
         P1,
         P2,
         P3,
@@ -3679,13 +3747,13 @@ pub mod storage {
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
-    impl FromStr for IopsTier {
+    impl FromStr for Tier {
         type Err = value::Error;
         fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
             Self::deserialize(s.into_deserializer())
         }
     }
-    impl<'de> Deserialize<'de> for IopsTier {
+    impl<'de> Deserialize<'de> for Tier {
         fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
         where
             D: Deserializer<'de>,
@@ -3695,26 +3763,26 @@ pub mod storage {
             Ok(deserialized)
         }
     }
-    impl Serialize for IopsTier {
+    impl Serialize for Tier {
         fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
         where
             S: Serializer,
         {
             match self {
-                Self::P1 => serializer.serialize_unit_variant("IopsTier", 0u32, "P1"),
-                Self::P2 => serializer.serialize_unit_variant("IopsTier", 1u32, "P2"),
-                Self::P3 => serializer.serialize_unit_variant("IopsTier", 2u32, "P3"),
-                Self::P4 => serializer.serialize_unit_variant("IopsTier", 3u32, "P4"),
-                Self::P6 => serializer.serialize_unit_variant("IopsTier", 4u32, "P6"),
-                Self::P10 => serializer.serialize_unit_variant("IopsTier", 5u32, "P10"),
-                Self::P15 => serializer.serialize_unit_variant("IopsTier", 6u32, "P15"),
-                Self::P20 => serializer.serialize_unit_variant("IopsTier", 7u32, "P20"),
-                Self::P30 => serializer.serialize_unit_variant("IopsTier", 8u32, "P30"),
-                Self::P40 => serializer.serialize_unit_variant("IopsTier", 9u32, "P40"),
-                Self::P50 => serializer.serialize_unit_variant("IopsTier", 10u32, "P50"),
-                Self::P60 => serializer.serialize_unit_variant("IopsTier", 11u32, "P60"),
-                Self::P70 => serializer.serialize_unit_variant("IopsTier", 12u32, "P70"),
-                Self::P80 => serializer.serialize_unit_variant("IopsTier", 13u32, "P80"),
+                Self::P1 => serializer.serialize_unit_variant("Tier", 0u32, "P1"),
+                Self::P2 => serializer.serialize_unit_variant("Tier", 1u32, "P2"),
+                Self::P3 => serializer.serialize_unit_variant("Tier", 2u32, "P3"),
+                Self::P4 => serializer.serialize_unit_variant("Tier", 3u32, "P4"),
+                Self::P6 => serializer.serialize_unit_variant("Tier", 4u32, "P6"),
+                Self::P10 => serializer.serialize_unit_variant("Tier", 5u32, "P10"),
+                Self::P15 => serializer.serialize_unit_variant("Tier", 6u32, "P15"),
+                Self::P20 => serializer.serialize_unit_variant("Tier", 7u32, "P20"),
+                Self::P30 => serializer.serialize_unit_variant("Tier", 8u32, "P30"),
+                Self::P40 => serializer.serialize_unit_variant("Tier", 9u32, "P40"),
+                Self::P50 => serializer.serialize_unit_variant("Tier", 10u32, "P50"),
+                Self::P60 => serializer.serialize_unit_variant("Tier", 11u32, "P60"),
+                Self::P70 => serializer.serialize_unit_variant("Tier", 12u32, "P70"),
+                Self::P80 => serializer.serialize_unit_variant("Tier", 13u32, "P80"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -3819,12 +3887,16 @@ pub struct UserAssignedIdentity {
     #[doc = "the types of identities associated with this resource; currently restricted to 'None and UserAssigned'"]
     #[serde(rename = "type")]
     pub type_: user_assigned_identity::Type,
+    #[doc = "Tenant id of the server."]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
 }
 impl UserAssignedIdentity {
     pub fn new(type_: user_assigned_identity::Type) -> Self {
         Self {
             user_assigned_identities: None,
             type_,
+            tenant_id: None,
         }
     }
 }

@@ -41,7 +41,7 @@ pub struct CloudConnectionListResult {
 impl azure_core::Continuable for CloudConnectionListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CloudConnectionListResult {
@@ -111,7 +111,7 @@ pub struct CloudConnectorListResult {
 impl azure_core::Continuable for CloudConnectorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CloudConnectorListResult {

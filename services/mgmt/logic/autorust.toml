@@ -1,4 +1,0 @@
-[properties]
-boxed = [
-    ["../../../azure-rest-api-specs/specification/logic/resource-manager/Microsoft.Logic/stable/2019-05-01/logic.json", "SwaggerSchema", "items"],
-]

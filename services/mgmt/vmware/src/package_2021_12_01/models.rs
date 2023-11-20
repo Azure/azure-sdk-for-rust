@@ -10,7 +10,7 @@ pub struct Addon {
     pub resource: Resource,
     #[doc = "The properties of an addon"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<AddonProperties>,
+    pub properties: Option<AddonPropertiesUnion>,
 }
 impl Addon {
     pub fn new() -> Self {
@@ -47,7 +47,7 @@ pub struct AddonList {
 impl azure_core::Continuable for AddonList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl AddonList {
@@ -58,65 +58,17 @@ impl AddonList {
 #[doc = "The properties of an addon"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AddonProperties {
-    #[doc = "The type of private cloud addon"]
-    #[serde(rename = "addonType")]
-    pub addon_type: addon_properties::AddonType,
     #[doc = "The state of the addon provisioning"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<addon_properties::ProvisioningState>,
 }
 impl AddonProperties {
-    pub fn new(addon_type: addon_properties::AddonType) -> Self {
-        Self {
-            addon_type,
-            provisioning_state: None,
-        }
+    pub fn new() -> Self {
+        Self { provisioning_state: None }
     }
 }
 pub mod addon_properties {
     use super::*;
-    #[doc = "The type of private cloud addon"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "AddonType")]
-    pub enum AddonType {
-        #[serde(rename = "SRM")]
-        Srm,
-        #[serde(rename = "VR")]
-        Vr,
-        #[serde(rename = "HCX")]
-        Hcx,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for AddonType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for AddonType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for AddonType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Srm => serializer.serialize_unit_variant("AddonType", 0u32, "SRM"),
-                Self::Vr => serializer.serialize_unit_variant("AddonType", 1u32, "VR"),
-                Self::Hcx => serializer.serialize_unit_variant("AddonType", 2u32, "HCX"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
     #[doc = "The state of the addon provisioning"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ProvisioningState")]
@@ -162,6 +114,17 @@ pub mod addon_properties {
             }
         }
     }
+}
+#[doc = "The type of private cloud addon"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "addonType")]
+pub enum AddonPropertiesUnion {
+    #[serde(rename = "HCX")]
+    Hcx(AddonHcxProperties),
+    #[serde(rename = "SRM")]
+    Srm(AddonSrmProperties),
+    #[serde(rename = "VR")]
+    Vr(AddonVrProperties),
 }
 #[doc = "The properties of a Site Recovery Manager (SRM) addon"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -383,7 +346,7 @@ pub struct CloudLinkList {
 impl azure_core::Continuable for CloudLinkList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl CloudLinkList {
@@ -489,7 +452,7 @@ pub struct ClusterList {
 impl azure_core::Continuable for ClusterList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ClusterList {
@@ -638,7 +601,7 @@ pub struct DatastoreList {
 impl azure_core::Continuable for DatastoreList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl DatastoreList {
@@ -1090,7 +1053,7 @@ pub struct ExpressRouteAuthorizationList {
 impl azure_core::Continuable for ExpressRouteAuthorizationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ExpressRouteAuthorizationList {
@@ -1192,7 +1155,7 @@ pub struct GlobalReachConnectionList {
 impl azure_core::Continuable for GlobalReachConnectionList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl GlobalReachConnectionList {
@@ -1339,7 +1302,7 @@ pub struct HcxEnterpriseSiteList {
 impl azure_core::Continuable for HcxEnterpriseSiteList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl HcxEnterpriseSiteList {
@@ -1675,7 +1638,7 @@ pub struct OperationList {
 impl azure_core::Continuable for OperationList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationList {
@@ -1733,7 +1696,7 @@ pub struct PlacementPoliciesList {
 impl azure_core::Continuable for PlacementPoliciesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PlacementPoliciesList {
@@ -1748,7 +1711,7 @@ pub struct PlacementPolicy {
     pub resource: Resource,
     #[doc = "Abstract placement policy properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PlacementPolicyProperties>,
+    pub properties: Option<PlacementPolicyPropertiesUnion>,
 }
 impl PlacementPolicy {
     pub fn new() -> Self {
@@ -1758,9 +1721,6 @@ impl PlacementPolicy {
 #[doc = "Abstract placement policy properties"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct PlacementPolicyProperties {
-    #[doc = "placement policy type"]
-    #[serde(rename = "type")]
-    pub type_: placement_policy_properties::Type,
     #[doc = "Whether the placement policy is enabled or disabled"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub state: Option<placement_policy_properties::State>,
@@ -1772,9 +1732,8 @@ pub struct PlacementPolicyProperties {
     pub provisioning_state: Option<placement_policy_properties::ProvisioningState>,
 }
 impl PlacementPolicyProperties {
-    pub fn new(type_: placement_policy_properties::Type) -> Self {
+    pub fn new() -> Self {
         Self {
-            type_,
             state: None,
             display_name: None,
             provisioning_state: None,
@@ -1783,43 +1742,6 @@ impl PlacementPolicyProperties {
 }
 pub mod placement_policy_properties {
     use super::*;
-    #[doc = "placement policy type"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        VmVm,
-        VmHost,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::VmVm => serializer.serialize_unit_variant("Type", 0u32, "VmVm"),
-                Self::VmHost => serializer.serialize_unit_variant("Type", 1u32, "VmHost"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
     #[doc = "Whether the placement policy is enabled or disabled"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "State")]
@@ -1900,6 +1822,13 @@ pub mod placement_policy_properties {
             }
         }
     }
+}
+#[doc = "placement policy type"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum PlacementPolicyPropertiesUnion {
+    VmHost(VmHostPlacementPolicyProperties),
+    VmVm(VmVmPlacementPolicyProperties),
 }
 #[doc = "An update of a DRS placement policy resource"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -2080,7 +2009,7 @@ pub struct PrivateCloudList {
 impl azure_core::Continuable for PrivateCloudList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PrivateCloudList {
@@ -2445,7 +2374,7 @@ pub struct ScriptCmdletsList {
 impl azure_core::Continuable for ScriptCmdletsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScriptCmdletsList {
@@ -2472,56 +2401,19 @@ impl ScriptExecution {
 pub struct ScriptExecutionParameter {
     #[doc = "The parameter name"]
     pub name: String,
-    #[doc = "The type of execution parameter"]
-    #[serde(rename = "type")]
-    pub type_: script_execution_parameter::Type,
 }
 impl ScriptExecutionParameter {
-    pub fn new(name: String, type_: script_execution_parameter::Type) -> Self {
-        Self { name, type_ }
+    pub fn new(name: String) -> Self {
+        Self { name }
     }
 }
-pub mod script_execution_parameter {
-    use super::*;
-    #[doc = "The type of execution parameter"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Type")]
-    pub enum Type {
-        Value,
-        SecureValue,
-        Credential,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Type {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Type {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Type {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Value => serializer.serialize_unit_variant("Type", 0u32, "Value"),
-                Self::SecureValue => serializer.serialize_unit_variant("Type", 1u32, "SecureValue"),
-                Self::Credential => serializer.serialize_unit_variant("Type", 2u32, "Credential"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
+#[doc = "The type of execution parameter"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum ScriptExecutionParameterUnion {
+    Credential(PsCredentialExecutionParameter),
+    SecureValue(ScriptSecureStringExecutionParameter),
+    Value(ScriptStringExecutionParameter),
 }
 #[doc = "Properties of a user-invoked script"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -2535,7 +2427,7 @@ pub struct ScriptExecutionProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub parameters: Vec<ScriptExecutionParameter>,
+    pub parameters: Vec<ScriptExecutionParameterUnion>,
     #[doc = "Parameters that will be hidden/not visible to ARM, such as passwords and credentials"]
     #[serde(
         rename = "hiddenParameters",
@@ -2543,7 +2435,7 @@ pub struct ScriptExecutionProperties {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub hidden_parameters: Vec<ScriptExecutionParameter>,
+    pub hidden_parameters: Vec<ScriptExecutionParameterUnion>,
     #[doc = "Error message if the script was able to run, but if the script itself had errors or powershell threw an exception"]
     #[serde(rename = "failureReason", default, skip_serializing_if = "Option::is_none")]
     pub failure_reason: Option<String>,
@@ -2684,7 +2576,7 @@ pub struct ScriptExecutionsList {
 impl azure_core::Continuable for ScriptExecutionsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScriptExecutionsList {
@@ -2738,7 +2630,7 @@ pub struct ScriptPackagesList {
 impl azure_core::Continuable for ScriptPackagesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ScriptPackagesList {
@@ -3137,7 +3029,7 @@ pub struct VirtualMachinesList {
 impl azure_core::Continuable for VirtualMachinesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl VirtualMachinesList {
@@ -3203,7 +3095,7 @@ pub struct WorkloadNetworkDhcp {
     pub proxy_resource: ProxyResource,
     #[doc = "Base class for WorkloadNetworkDhcpServer and WorkloadNetworkDhcpRelay to inherit from"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<WorkloadNetworkDhcpEntity>,
+    pub properties: Option<WorkloadNetworkDhcpEntityUnion>,
 }
 impl WorkloadNetworkDhcp {
     pub fn new() -> Self {
@@ -3213,9 +3105,6 @@ impl WorkloadNetworkDhcp {
 #[doc = "Base class for WorkloadNetworkDhcpServer and WorkloadNetworkDhcpRelay to inherit from"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct WorkloadNetworkDhcpEntity {
-    #[doc = "Type of DHCP: SERVER or RELAY."]
-    #[serde(rename = "dhcpType")]
-    pub dhcp_type: workload_network_dhcp_entity::DhcpType,
     #[doc = "Display name of the DHCP entity."]
     #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
     pub display_name: Option<String>,
@@ -3234,9 +3123,8 @@ pub struct WorkloadNetworkDhcpEntity {
     pub revision: Option<i64>,
 }
 impl WorkloadNetworkDhcpEntity {
-    pub fn new(dhcp_type: workload_network_dhcp_entity::DhcpType) -> Self {
+    pub fn new() -> Self {
         Self {
-            dhcp_type,
             display_name: None,
             segments: Vec::new(),
             provisioning_state: None,
@@ -3246,45 +3134,6 @@ impl WorkloadNetworkDhcpEntity {
 }
 pub mod workload_network_dhcp_entity {
     use super::*;
-    #[doc = "Type of DHCP: SERVER or RELAY."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "DhcpType")]
-    pub enum DhcpType {
-        #[serde(rename = "SERVER")]
-        Server,
-        #[serde(rename = "RELAY")]
-        Relay,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for DhcpType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for DhcpType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for DhcpType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Server => serializer.serialize_unit_variant("DhcpType", 0u32, "SERVER"),
-                Self::Relay => serializer.serialize_unit_variant("DhcpType", 1u32, "RELAY"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
     #[doc = "The provisioning state"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ProvisioningState")]
@@ -3329,6 +3178,15 @@ pub mod workload_network_dhcp_entity {
         }
     }
 }
+#[doc = "Type of DHCP: SERVER or RELAY."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "dhcpType")]
+pub enum WorkloadNetworkDhcpEntityUnion {
+    #[serde(rename = "RELAY")]
+    Relay(WorkloadNetworkDhcpRelay),
+    #[serde(rename = "SERVER")]
+    Server(WorkloadNetworkDhcpServer),
+}
 #[doc = "A list of NSX dhcp entities"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct WorkloadNetworkDhcpList {
@@ -3346,7 +3204,7 @@ pub struct WorkloadNetworkDhcpList {
 impl azure_core::Continuable for WorkloadNetworkDhcpList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkloadNetworkDhcpList {
@@ -3599,7 +3457,7 @@ pub struct WorkloadNetworkDnsServicesList {
 impl azure_core::Continuable for WorkloadNetworkDnsServicesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkloadNetworkDnsServicesList {
@@ -3723,7 +3581,7 @@ pub struct WorkloadNetworkDnsZonesList {
 impl azure_core::Continuable for WorkloadNetworkDnsZonesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkloadNetworkDnsZonesList {
@@ -3762,7 +3620,7 @@ pub struct WorkloadNetworkGatewayList {
 impl azure_core::Continuable for WorkloadNetworkGatewayList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkloadNetworkGatewayList {
@@ -3816,7 +3674,7 @@ pub struct WorkloadNetworkPortMirroringList {
 impl azure_core::Continuable for WorkloadNetworkPortMirroringList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkloadNetworkPortMirroringList {
@@ -4079,7 +3937,7 @@ pub struct WorkloadNetworkPublicIPsList {
 impl azure_core::Continuable for WorkloadNetworkPublicIPsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkloadNetworkPublicIPsList {
@@ -4270,7 +4128,7 @@ pub struct WorkloadNetworkSegmentsList {
 impl azure_core::Continuable for WorkloadNetworkSegmentsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkloadNetworkSegmentsList {
@@ -4422,7 +4280,7 @@ pub struct WorkloadNetworkVmGroupsList {
 impl azure_core::Continuable for WorkloadNetworkVmGroupsList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkloadNetworkVmGroupsList {
@@ -4521,7 +4379,7 @@ pub struct WorkloadNetworkVirtualMachinesList {
 impl azure_core::Continuable for WorkloadNetworkVirtualMachinesList {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl WorkloadNetworkVirtualMachinesList {

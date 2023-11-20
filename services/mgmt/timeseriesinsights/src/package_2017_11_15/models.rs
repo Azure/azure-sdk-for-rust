@@ -508,30 +508,22 @@ impl EventSourceCommonProperties {
 pub struct EventSourceCreateOrUpdateParameters {
     #[serde(flatten)]
     pub create_or_update_tracked_resource_properties: CreateOrUpdateTrackedResourceProperties,
-    #[doc = "The kind of the event source."]
-    pub kind: event_source_create_or_update_parameters::Kind,
 }
 impl EventSourceCreateOrUpdateParameters {
-    pub fn new(
-        create_or_update_tracked_resource_properties: CreateOrUpdateTrackedResourceProperties,
-        kind: event_source_create_or_update_parameters::Kind,
-    ) -> Self {
+    pub fn new(create_or_update_tracked_resource_properties: CreateOrUpdateTrackedResourceProperties) -> Self {
         Self {
             create_or_update_tracked_resource_properties,
-            kind,
         }
     }
 }
-pub mod event_source_create_or_update_parameters {
-    use super::*;
-    #[doc = "The kind of the event source."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "Microsoft.EventHub")]
-        MicrosoftEventHub,
-        #[serde(rename = "Microsoft.IoTHub")]
-        MicrosoftIoTHub,
-    }
+#[doc = "The kind of the event source."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EventSourceCreateOrUpdateParametersUnion {
+    #[serde(rename = "Microsoft.EventHub")]
+    MicrosoftEventHub(EventHubEventSourceCreateOrUpdateParameters),
+    #[serde(rename = "Microsoft.IoTHub")]
+    MicrosoftIoTHub(IoTHubEventSourceCreateOrUpdateParameters),
 }
 #[doc = "The response of the List EventSources operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -542,7 +534,7 @@ pub struct EventSourceListResponse {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub value: Vec<EventSourceResource>,
+    pub value: Vec<EventSourceResourceUnion>,
 }
 impl EventSourceListResponse {
     pub fn new() -> Self {
@@ -569,24 +561,20 @@ impl EventSourceMutableProperties {
 pub struct EventSourceResource {
     #[serde(flatten)]
     pub tracked_resource: TrackedResource,
-    #[doc = "The kind of the event source."]
-    pub kind: event_source_resource::Kind,
 }
 impl EventSourceResource {
-    pub fn new(tracked_resource: TrackedResource, kind: event_source_resource::Kind) -> Self {
-        Self { tracked_resource, kind }
+    pub fn new(tracked_resource: TrackedResource) -> Self {
+        Self { tracked_resource }
     }
 }
-pub mod event_source_resource {
-    use super::*;
-    #[doc = "The kind of the event source."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Kind {
-        #[serde(rename = "Microsoft.EventHub")]
-        MicrosoftEventHub,
-        #[serde(rename = "Microsoft.IoTHub")]
-        MicrosoftIoTHub,
-    }
+#[doc = "The kind of the event source."]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum EventSourceResourceUnion {
+    #[serde(rename = "Microsoft.EventHub")]
+    MicrosoftEventHub(EventHubEventSourceResource),
+    #[serde(rename = "Microsoft.IotHub")]
+    MicrosoftIotHub(IoTHubEventSourceResource),
 }
 #[doc = "Parameters supplied to the Update Event Source operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -843,7 +831,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {

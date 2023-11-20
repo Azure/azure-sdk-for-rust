@@ -122,7 +122,7 @@ pub struct ActiveDirectoryConnectorListResult {
 impl azure_core::Continuable for ActiveDirectoryConnectorListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ActiveDirectoryConnectorListResult {
@@ -259,7 +259,7 @@ pub struct ArcSqlServerDatabaseListResult {
 impl azure_core::Continuable for ArcSqlServerDatabaseListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl ArcSqlServerDatabaseListResult {
@@ -707,7 +707,7 @@ pub struct OperationListResult {
 impl azure_core::Continuable for OperationListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl OperationListResult {
@@ -732,7 +732,7 @@ pub struct PageOfDataControllerResource {
 impl azure_core::Continuable for PageOfDataControllerResource {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PageOfDataControllerResource {
@@ -781,7 +781,7 @@ pub struct PostgresInstanceListResult {
 impl azure_core::Continuable for PostgresInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl PostgresInstanceListResult {
@@ -958,7 +958,7 @@ pub struct SqlManagedInstanceListResult {
 impl azure_core::Continuable for SqlManagedInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlManagedInstanceListResult {
@@ -1362,7 +1362,7 @@ pub struct SqlServerInstanceListResult {
 impl azure_core::Continuable for SqlServerInstanceListResult {
     type Continuation = String;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone()
+        self.next_link.clone().filter(|value| !value.is_empty())
     }
 }
 impl SqlServerInstanceListResult {

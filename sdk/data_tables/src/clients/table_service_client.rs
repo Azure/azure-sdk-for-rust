@@ -12,46 +12,61 @@ use super::TableClient;
 pub struct TableServiceClientBuilder {
     cloud_location: CloudLocation,
     options: ClientOptions,
+    credentials: StorageCredentials,
 }
 
 impl TableServiceClientBuilder {
-    /// Create a new instance of `BlobServiceClientBuilder`.
+    /// Create a new instance of `TableServiceClientBuilder`.
     #[must_use]
-    pub fn new(account: impl Into<String>, credentials: impl Into<StorageCredentials>) -> Self {
-        Self::with_location(CloudLocation::Public {
-            account: account.into(),
-            credentials: credentials.into(),
-        })
+    pub fn new<A, C>(account: A, credentials: C) -> Self
+    where
+        A: Into<String>,
+        C: Into<StorageCredentials>,
+    {
+        Self::with_location(
+            CloudLocation::Public {
+                account: account.into(),
+            },
+            credentials,
+        )
     }
 
     /// Create a new instance of `BlobServiceClientBuilder` with a cloud location.
     #[must_use]
-    pub fn with_location(cloud_location: CloudLocation) -> Self {
+    pub fn with_location<C>(cloud_location: CloudLocation, credentials: C) -> Self
+    where
+        C: Into<StorageCredentials>,
+    {
         Self {
             options: ClientOptions::default(),
             cloud_location,
+            credentials: credentials.into(),
         }
     }
 
     /// Use the emulator with default settings
     #[must_use]
     pub fn emulator() -> Self {
-        Self::with_location(CloudLocation::Emulator {
-            address: "127.0.0.1".to_owned(),
-            port: 10002,
-        })
+        Self::with_location(
+            CloudLocation::Emulator {
+                address: "127.0.0.1".to_owned(),
+                port: 10002,
+            },
+            StorageCredentials::emulator(),
+        )
     }
 
     /// Convert the builder into a `TableServiceClient` instance.
     #[must_use]
     pub fn build(self) -> TableServiceClient {
-        let credentials = self.cloud_location.credentials();
+        let Self {
+            cloud_location,
+            options,
+            credentials,
+        } = self;
         TableServiceClient {
-            pipeline: azure_storage::clients::new_pipeline_from_options(
-                self.options,
-                credentials.clone(),
-            ),
-            cloud_location: self.cloud_location,
+            pipeline: azure_storage::clients::new_pipeline_from_options(options, credentials),
+            cloud_location,
         }
     }
 
@@ -112,7 +127,6 @@ impl TableServiceClient {
     }
 
     pub(crate) fn finalize_request(
-        &self,
         url: Url,
         method: Method,
         headers: Headers,
