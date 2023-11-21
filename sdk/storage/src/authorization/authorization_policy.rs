@@ -1,10 +1,10 @@
-use crate::{clients::ServiceType, StorageCredentials, StorageCredentialsInner};
+use crate::{clients::ServiceType, StorageCredentials};
 use azure_core::{
     error::{ErrorKind, ResultExt},
     headers::*,
     Context, Method, Policy, PolicyResult, Request,
 };
-use std::{borrow::Cow, ops::Deref, sync::Arc};
+use std::{borrow::Cow, sync::Arc};
 use url::Url;
 
 const STORAGE_TOKEN_SCOPE: &str = "https://storage.azure.com/";
@@ -36,8 +36,8 @@ impl Policy for AuthorizationPolicy {
             "Authorization policies cannot be the last policy of a pipeline"
         );
 
-        match self.credentials.0.deref() {
-            StorageCredentialsInner::Key(account, key) => {
+        match &self.credentials {
+            StorageCredentials::Key(account, key) => {
                 if !request.url().query_pairs().any(|(k, _)| &*k == "sig") {
                     let auth = generate_authorization(
                         request.headers(),
@@ -51,7 +51,7 @@ impl Policy for AuthorizationPolicy {
                     request.insert_header(AUTHORIZATION, auth);
                 }
             }
-            StorageCredentialsInner::SASToken(query_pairs) => {
+            StorageCredentials::SASToken(query_pairs) => {
                 // Ensure the signature param is not already present
                 if !request.url().query_pairs().any(|(k, _)| &*k == "sig") {
                     request
@@ -60,10 +60,10 @@ impl Policy for AuthorizationPolicy {
                         .extend_pairs(query_pairs);
                 }
             }
-            StorageCredentialsInner::BearerToken(token) => {
+            StorageCredentials::BearerToken(token) => {
                 request.insert_header(AUTHORIZATION, format!("Bearer {token}"));
             }
-            StorageCredentialsInner::TokenCredential(token_credential) => {
+            StorageCredentials::TokenCredential(token_credential) => {
                 let bearer_token = token_credential
                     .get_token(STORAGE_TOKEN_SCOPE)
                     .await
@@ -74,7 +74,7 @@ impl Policy for AuthorizationPolicy {
                     format!("Bearer {}", bearer_token.token.secret()),
                 );
             }
-            StorageCredentialsInner::Anonymous => {}
+            StorageCredentials::Anonymous => {}
         }
 
         next[0].send(ctx, request, &next[1..]).await

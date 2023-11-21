@@ -1,5 +1,5 @@
 use crate::{
-    authorization::{AuthorizationPolicy, StorageCredentialsInner},
+    authorization::AuthorizationPolicy,
     shared_access_signature::account_sas::{
         AccountSasPermissions, AccountSasResource, AccountSasResourceType,
         AccountSharedAccessSignature,
@@ -12,7 +12,7 @@ use azure_core::{
     headers::*,
     Body, ClientOptions, Method, Pipeline, Request,
 };
-use std::{ops::Deref, sync::Arc};
+use std::sync::Arc;
 use time::OffsetDateTime;
 use url::Url;
 
@@ -54,7 +54,7 @@ pub async fn shared_access_signature(
     expiry: OffsetDateTime,
     permissions: AccountSasPermissions,
 ) -> Result<AccountSharedAccessSignature, Error> {
-    let StorageCredentialsInner::Key(account, key) = storage_credentials.0.deref() else {
+    let StorageCredentials::Key(account, key) = &storage_credentials else {
         return Err(Error::message(
             ErrorKind::Credential,
             "Shared access signature generation - SAS can be generated with access_key clients",
