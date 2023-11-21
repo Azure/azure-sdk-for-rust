@@ -61,6 +61,7 @@ pub struct AzureauthCliCredential {
     tenant_id: String,
     client_id: ClientId,
     modes: Vec<AzureauthCliMode>,
+    prompt_hint: Option<String>,
 }
 
 impl AzureauthCliCredential {
@@ -84,6 +85,14 @@ impl AzureauthCliCredential {
 
     pub fn with_modes(mut self, modes: Vec<AzureauthCliMode>) -> Self {
         self.modes = modes;
+        self
+    }
+
+    pub fn with_prompt_hint<S>(mut self, hint: S) -> Self
+    where
+        S: Into<String>,
+    {
+        self.prompt_hint = Some(hint.into());
         self
     }
 
@@ -113,6 +122,10 @@ impl AzureauthCliCredential {
             "--output",
             "json",
         ]);
+
+        if let Some(prompt_hint) = &self.prompt_hint {
+            cmd.args(["--prompt-hint", prompt_hint]);
+        }
 
         for mode in &self.modes {
             cmd.arg("--mode");
