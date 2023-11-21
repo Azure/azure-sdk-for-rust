@@ -13,7 +13,6 @@ use azure_storage::{
     },
     CloudLocation, StorageCredentials, StorageCredentialsInner,
 };
-use std::ops::Deref;
 use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]
@@ -123,8 +122,8 @@ impl ContainerClient {
         permissions: BlobSasPermissions,
         expiry: OffsetDateTime,
     ) -> azure_core::Result<BlobSharedAccessSignature> {
-        let creds = self.service_client.credentials().0.lock().await;
-        let StorageCredentialsInner::Key(account, key) = creds.deref() else {
+        let creds = self.service_client.credentials().0.as_ref();
+        let StorageCredentialsInner::Key(account, key) = creds else {
             return Err(Error::message(
                 ErrorKind::Credential,
                 "Shared access signature generation - SAS can be generated with access_key clients",

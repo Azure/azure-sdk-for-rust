@@ -36,51 +36,46 @@ impl Policy for AuthorizationPolicy {
             "Authorization policies cannot be the last policy of a pipeline"
         );
 
-        // lock the credentials within a scope so that it is released as soon as possible
-        {
-            let creds = self.credentials.0.lock().await;
-
-            match creds.deref() {
-                StorageCredentialsInner::Key(account, key) => {
-                    if !request.url().query_pairs().any(|(k, _)| &*k == "sig") {
-                        let auth = generate_authorization(
-                            request.headers(),
-                            request.url(),
-                            *request.method(),
-                            account,
-                            key,
-                            *ctx.get()
-                                .expect("ServiceType must be in the Context at this point"),
-                        )?;
-                        request.insert_header(AUTHORIZATION, auth);
-                    }
+        match self.credentials.0.deref() {
+            StorageCredentialsInner::Key(account, key) => {
+                if !request.url().query_pairs().any(|(k, _)| &*k == "sig") {
+                    let auth = generate_authorization(
+                        request.headers(),
+                        request.url(),
+                        *request.method(),
+                        account,
+                        key,
+                        *ctx.get()
+                            .expect("ServiceType must be in the Context at this point"),
+                    )?;
+                    request.insert_header(AUTHORIZATION, auth);
                 }
-                StorageCredentialsInner::SASToken(query_pairs) => {
-                    // Ensure the signature param is not already present
-                    if !request.url().query_pairs().any(|(k, _)| &*k == "sig") {
-                        request
-                            .url_mut()
-                            .query_pairs_mut()
-                            .extend_pairs(query_pairs);
-                    }
-                }
-                StorageCredentialsInner::BearerToken(token) => {
-                    request.insert_header(AUTHORIZATION, format!("Bearer {token}"));
-                }
-                StorageCredentialsInner::TokenCredential(token_credential) => {
-                    let bearer_token = token_credential
-                        .get_token(STORAGE_TOKEN_SCOPE)
-                        .await
-                        .context(ErrorKind::Credential, "failed to get bearer token")?;
-
-                    request.insert_header(
-                        AUTHORIZATION,
-                        format!("Bearer {}", bearer_token.token.secret()),
-                    );
-                }
-                StorageCredentialsInner::Anonymous => {}
             }
-        };
+            StorageCredentialsInner::SASToken(query_pairs) => {
+                // Ensure the signature param is not already present
+                if !request.url().query_pairs().any(|(k, _)| &*k == "sig") {
+                    request
+                        .url_mut()
+                        .query_pairs_mut()
+                        .extend_pairs(query_pairs);
+                }
+            }
+            StorageCredentialsInner::BearerToken(token) => {
+                request.insert_header(AUTHORIZATION, format!("Bearer {token}"));
+            }
+            StorageCredentialsInner::TokenCredential(token_credential) => {
+                let bearer_token = token_credential
+                    .get_token(STORAGE_TOKEN_SCOPE)
+                    .await
+                    .context(ErrorKind::Credential, "failed to get bearer token")?;
+
+                request.insert_header(
+                    AUTHORIZATION,
+                    format!("Bearer {}", bearer_token.token.secret()),
+                );
+            }
+            StorageCredentialsInner::Anonymous => {}
+        }
 
         next[0].send(ctx, request, &next[1..]).await
     }

@@ -6,12 +6,7 @@ use azure_core::{
     auth::TokenCredential,
     error::{ErrorKind, ResultExt},
 };
-use futures::lock::Mutex;
-use std::{
-    mem::replace,
-    ops::{Deref, DerefMut},
-    sync::Arc,
-};
+use std::sync::Arc;
 use url::Url;
 
 /// Credentials for accessing a storage account.
@@ -25,7 +20,7 @@ use url::Url;
 /// azure_storage::StorageCredentials::access_key("my_account", "SOMEACCESSKEY");
 /// ```
 #[derive(Clone)]
-pub struct StorageCredentials(pub Arc<Mutex<StorageCredentialsInner>>);
+pub struct StorageCredentials(pub Arc<StorageCredentialsInner>);
 
 #[derive(Clone)]
 pub enum StorageCredentialsInner {
@@ -39,7 +34,7 @@ pub enum StorageCredentialsInner {
 impl StorageCredentials {
     /// Create a new `StorageCredentials` from a `StorageCredentialsInner`
     fn wrap(inner: StorageCredentialsInner) -> Self {
-        Self(Arc::new(Mutex::new(inner)))
+        Self(Arc::new(inner))
     }
 
     /// Create an Access Key based credential
@@ -136,52 +131,35 @@ impl StorageCredentials {
     ///
     /// This method is useful for updating credentials that are used by multiple
     /// clients at once.
-    pub async fn replace(&self, other: Self) -> azure_core::Result<()> {
-        if Arc::ptr_eq(&self.0, &other.0) {
-            return Ok(());
-        }
-
-        let mut creds = self.0.lock().await;
-        let other = other.0.lock().await;
-        let creds = creds.deref_mut();
-        let other = other.deref().clone();
-        let _old_creds = replace(creds, other);
-
+    pub async fn replace(&mut self, other: Self) -> azure_core::Result<()> {
+        self.0 = other.0;
         Ok(())
     }
 }
 
 impl std::fmt::Debug for StorageCredentials {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let creds = self.0.try_lock();
-
-        match creds.as_deref() {
-            None => f
+        match self.0.as_ref() {
+            StorageCredentialsInner::Key(_, _) => f
                 .debug_struct("StorageCredentials")
-                .field("credential", &"locked")
+                .field("credential", &"Key")
                 .finish(),
-            Some(inner) => match &inner {
-                StorageCredentialsInner::Key(_, _) => f
-                    .debug_struct("StorageCredentials")
-                    .field("credential", &"Key")
-                    .finish(),
-                StorageCredentialsInner::SASToken(_) => f
-                    .debug_struct("StorageCredentials")
-                    .field("credential", &"SASToken")
-                    .finish(),
-                StorageCredentialsInner::BearerToken(_) => f
-                    .debug_struct("StorageCredentials")
-                    .field("credential", &"BearerToken")
-                    .finish(),
-                StorageCredentialsInner::TokenCredential(_) => f
-                    .debug_struct("StorageCredentials")
-                    .field("credential", &"TokenCredential")
-                    .finish(),
-                StorageCredentialsInner::Anonymous => f
-                    .debug_struct("StorageCredentials")
-                    .field("credential", &"Anonymous")
-                    .finish(),
-            },
+            StorageCredentialsInner::SASToken(_) => f
+                .debug_struct("StorageCredentials")
+                .field("credential", &"SASToken")
+                .finish(),
+            StorageCredentialsInner::BearerToken(_) => f
+                .debug_struct("StorageCredentials")
+                .field("credential", &"BearerToken")
+                .finish(),
+            StorageCredentialsInner::TokenCredential(_) => f
+                .debug_struct("StorageCredentials")
+                .field("credential", &"TokenCredential")
+                .finish(),
+            StorageCredentialsInner::Anonymous => f
+                .debug_struct("StorageCredentials")
+                .field("credential", &"Anonymous")
+                .finish(),
         }
     }
 }
@@ -232,22 +210,15 @@ mod tests {
 
     #[tokio::test]
     async fn test_replacement() -> azure_core::Result<()> {
-        let base = StorageCredentials::anonymous();
+        let mut base = StorageCredentials::anonymous();
         let other = StorageCredentials::bearer_token("foo");
 
         base.replace(other).await?;
 
         // check that the value was updated
-        {
-            let inner = base.0.lock().await;
-            let inner_locked = inner.deref();
-            assert!(
-                matches!(&inner_locked, &StorageCredentialsInner::BearerToken(value) if value == "foo")
-            );
-        }
-
-        // updating with the same StorageCredentials shouldn't deadlock
-        base.replace(base.clone()).await?;
+        assert!(
+            matches!(base.0.as_ref(), StorageCredentialsInner::BearerToken(value) if value == "foo")
+        );
 
         Ok(())
     }

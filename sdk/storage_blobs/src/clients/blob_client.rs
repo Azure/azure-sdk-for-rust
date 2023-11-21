@@ -18,7 +18,6 @@ use azure_storage::{
     StorageCredentialsInner,
 };
 use futures::StreamExt;
-use std::ops::Deref;
 use time::OffsetDateTime;
 use url::Url;
 
@@ -235,8 +234,8 @@ impl BlobClient {
         permissions: BlobSasPermissions,
         expiry: OffsetDateTime,
     ) -> azure_core::Result<BlobSharedAccessSignature> {
-        let creds = self.container_client.credentials().0.lock().await;
-        let StorageCredentialsInner::Key(account, key) = creds.deref() else {
+        let creds = &self.container_client.credentials().0;
+        let StorageCredentialsInner::Key(account, key) = creds.as_ref() else {
             return Err(Error::message(
                 ErrorKind::Credential,
                 "Shared access signature generation - SAS can be generated with access_key clients",
@@ -347,26 +346,13 @@ mod tests {
         assert_eq!(blob_client.blob_name(), path);
         assert_eq!(blob_client.container_client().container_name(), container);
 
-        let creds = blob_client
-            .container_client
-            .credentials()
-            .0
-            .try_lock()
-            .expect("creds should be unlocked at this point");
-        assert!(matches!(
-            creds.deref(),
-            StorageCredentialsInner::SASToken(_)
-        ));
+        let creds = blob_client.container_client.credentials().0.as_ref();
+        assert!(matches!(creds, StorageCredentialsInner::SASToken(_)));
 
         let url = Url::parse("https://accountname.blob.core.windows.net/mycontainer/myblob")?;
         let blob_client = BlobClient::from_sas_url(&url)?;
-        let creds = blob_client
-            .container_client
-            .credentials()
-            .0
-            .try_lock()
-            .expect("creds should be unlocked at this point");
-        assert!(matches!(creds.deref(), StorageCredentialsInner::Anonymous));
+        let creds = blob_client.container_client.credentials().0.as_ref();
+        assert!(matches!(creds, StorageCredentialsInner::Anonymous));
 
         let url = Url::parse("https://accountname.blob.core.windows.net/mycontainer?token=1")?;
         assert!(BlobClient::from_sas_url(&url).is_err(), "missing path");

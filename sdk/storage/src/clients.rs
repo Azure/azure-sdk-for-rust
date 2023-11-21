@@ -54,8 +54,7 @@ pub async fn shared_access_signature(
     expiry: OffsetDateTime,
     permissions: AccountSasPermissions,
 ) -> Result<AccountSharedAccessSignature, Error> {
-    let creds = storage_credentials.0.lock().await;
-    let StorageCredentialsInner::Key(account, key) = creds.deref() else {
+    let StorageCredentialsInner::Key(account, key) = storage_credentials.0.deref() else {
         return Err(Error::message(
             ErrorKind::Credential,
             "Shared access signature generation - SAS can be generated with access_key clients",
