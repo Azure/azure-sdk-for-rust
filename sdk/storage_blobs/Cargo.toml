@@ -43,6 +43,7 @@ default = ["enable_reqwest"]
 test_e2e = []
 test_integration = []
 azurite_workaround = ["azure_core/azurite_workaround"]
+enable_openssl_sign = ["azure_storage/enable_openssl_sign"]
 enable_reqwest = ["azure_core/enable_reqwest", "azure_storage/enable_reqwest"]
 enable_reqwest_rustls = [
   "azure_core/enable_reqwest_rustls",

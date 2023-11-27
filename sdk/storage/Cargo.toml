@@ -27,6 +27,7 @@ bytes = "1.0"
 RustyXML = "0.3"
 hmac = "0.12"
 sha2 = "0.10"
+openssl = { version = "0.10", optional=true }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
@@ -40,5 +41,6 @@ azure_identity = { path = "../identity", default-features = false }
 default = ["enable_reqwest"]
 test_e2e = []
 test_integration = []
+enable_openssl_sign = ["dep:openssl"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
