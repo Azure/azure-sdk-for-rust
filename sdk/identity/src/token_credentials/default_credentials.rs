@@ -76,6 +76,7 @@ impl DefaultAzureCredentialBuilder {
 }
 
 /// Types of `TokenCredential` supported by `DefaultAzureCredential`
+#[derive(Debug)]
 pub enum DefaultAzureCredentialEnum {
     /// `TokenCredential` from environment variable.
     Environment(super::EnvironmentCredential),
@@ -128,6 +129,7 @@ impl TokenCredential for DefaultAzureCredentialEnum {
 /// - `ManagedIdentityCredential`
 /// - `AzureCliCredential`
 /// Consult the documentation of these credential types for more information on how they attempt authentication.
+#[derive(Debug)]
 pub struct DefaultAzureCredential {
     sources: Vec<DefaultAzureCredentialEnum>,
 }

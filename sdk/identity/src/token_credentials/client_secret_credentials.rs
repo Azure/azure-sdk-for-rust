@@ -1,5 +1,5 @@
 use crate::oauth2_http_client::Oauth2HttpClient;
-use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
+use azure_core::auth::{Secret, TokenCredential, TokenResponse};
 use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::HttpClient;
 use oauth2::{basic::BasicClient, AuthType, AuthUrl, Scope, TokenUrl};
@@ -66,6 +66,7 @@ pub mod tenant_ids {
 ///
 /// More information on how to configure a client secret can be found here:
 /// <https://docs.microsoft.com/azure/active-directory/develop/quickstart-configure-app-access-web-apis#add-credentials-to-your-web-application>
+#[derive(Debug)]
 pub struct ClientSecretCredential {
     http_client: Arc<dyn HttpClient>,
     tenant_id: String,
@@ -147,7 +148,7 @@ impl TokenCredential for ClientSecretCredential {
             .map(|r| {
                 use oauth2::TokenResponse as _;
                 TokenResponse::new(
-                    AccessToken::new(r.access_token().secret().to_owned()),
+                    Secret::new(r.access_token().secret().to_owned()),
                     OffsetDateTime::now_utc() + r.expires_in().unwrap_or_default(),
                 )
             })

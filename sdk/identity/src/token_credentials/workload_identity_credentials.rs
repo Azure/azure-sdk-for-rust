@@ -1,4 +1,4 @@
-use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
+use azure_core::auth::{Secret, TokenCredential, TokenResponse};
 use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::HttpClient;
 use std::str;
@@ -12,27 +12,32 @@ use crate::{federated_credentials_flow, TokenCredentialOptions};
 ///
 /// More information on how to configure a client secret can be found here:
 /// <https://docs.microsoft.com/azure/active-directory/develop/quickstart-configure-app-access-web-apis#add-credentials-to-your-web-application>
+
+#[derive(Debug)]
 pub struct WorkloadIdentityCredential {
     http_client: Arc<dyn HttpClient>,
     tenant_id: String,
     client_id: String,
-    token: String,
+    token: Secret,
     options: TokenCredentialOptions,
 }
 
 impl WorkloadIdentityCredential {
     /// Create a new `WorkloadIdentityCredential`
-    pub fn new(
+    pub fn new<T>(
         http_client: Arc<dyn HttpClient>,
         tenant_id: String,
         client_id: String,
-        token: String,
-    ) -> Self {
+        token: T,
+    ) -> Self
+    where
+        T: Into<Secret>,
+    {
         Self {
             http_client,
             tenant_id,
             client_id,
-            token,
+            token: token.into(),
             options: TokenCredentialOptions::default(),
         }
     }
@@ -50,7 +55,7 @@ impl TokenCredential for WorkloadIdentityCredential {
         let res: TokenResponse = federated_credentials_flow::perform(
             self.http_client.clone(),
             &self.client_id,
-            &self.token,
+            self.token.secret(),
             &[&format!("{resource}/.default")],
             &self.tenant_id,
             self.options.authority_host(),
@@ -58,7 +63,7 @@ impl TokenCredential for WorkloadIdentityCredential {
         .await
         .map(|r| {
             TokenResponse::new(
-                AccessToken::new(r.access_token().secret().to_owned()),
+                r.access_token().clone(),
                 OffsetDateTime::now_utc() + Duration::from_secs(r.expires_in),
             )
         })
