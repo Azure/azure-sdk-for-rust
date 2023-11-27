@@ -75,6 +75,7 @@ impl AzureauthCliCredential {
             tenant_id: tenant_id.into(),
             client_id: client_id.into(),
             modes: Vec::new(),
+            prompt_hint: None,
         }
     }
 
