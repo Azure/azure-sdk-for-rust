@@ -4,7 +4,8 @@ use crate::{
     error::{ErrorKind, ResultExt},
 };
 
-#[cfg(feature = "hmac_rust")]
+// if both hmac_rust and hmac_openssl are enabled, use hmac_openssl
+#[cfg(all(feature = "hmac_rust", not(feature = "hmac_openssl")))]
 pub fn hmac_sha256(data: &str, key: &str) -> crate::Result<String> {
     use hmac::{Hmac, Mac};
     use sha2::Sha256;
