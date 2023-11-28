@@ -28,8 +28,7 @@ async fn main() -> azure_core::Result<()> {
     // errors, plus Azure specific ones. For example if a REST call returns the
     // unexpected result (ie NotFound instead of Ok) we return an Err telling
     // you that.
-    let authorization_token =
-        permission::AuthorizationToken::primary_from_base64(&args.primary_key)?;
+    let authorization_token = permission::AuthorizationToken::primary_key(args.primary_key)?;
 
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a

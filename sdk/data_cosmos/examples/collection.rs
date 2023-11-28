@@ -19,7 +19,7 @@ async fn main() -> azure_core::Result<()> {
     let args = Args::parse();
 
     // This is how you construct an authorization token.
-    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
+    let authorization_token = AuthorizationToken::primary_key(args.primary_key)?;
 
     // Once we have an authorization token you can create a client instance. You can change the
     // authorization token at later time if you need, for example, to escalate the privileges for a

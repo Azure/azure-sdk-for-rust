@@ -1,7 +1,5 @@
-use crate::{
-    hmac,
-    shared_access_signature::{format_date, SasProtocol, SasToken},
-};
+use crate::shared_access_signature::{format_date, SasProtocol, SasToken};
+use azure_core::hmac::hmac_sha256;
 use std::fmt;
 use time::OffsetDateTime;
 use url::form_urlencoded;
@@ -157,7 +155,7 @@ impl BlobSharedAccessSignature {
             String::new(), // rsct
         ];
 
-        hmac::sign(&content.join("\n"), &self.key).expect("HMAC signing failed")
+        hmac_sha256(&content.join("\n"), &self.key).expect("HMAC signing failed")
     }
 }
 

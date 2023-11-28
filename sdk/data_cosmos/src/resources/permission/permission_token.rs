@@ -17,9 +17,9 @@ pub struct PermissionToken {
 
 impl PartialEq for PermissionToken {
     fn eq(&self, other: &Self) -> bool {
-        use AuthorizationToken::{Primary, Resource};
+        use AuthorizationToken::{PrimaryKey, Resource};
         match (&self.token, &other.token) {
-            (Primary(a), Primary(b)) => a == b,
+            (PrimaryKey(a), PrimaryKey(b)) => a == b,
             (Resource(a), Resource(b)) => a == b,
             _ => false,
         }
@@ -42,7 +42,7 @@ impl std::fmt::Display for PermissionToken {
         use std::borrow::Cow;
         let (permission_type, signature) = match &self.token {
             AuthorizationToken::Resource(s) => ("resource", Cow::Borrowed(s)),
-            AuthorizationToken::Primary(s) => ("master", Cow::Owned(base64::encode(s))),
+            AuthorizationToken::PrimaryKey(s) => ("master", Cow::Owned(base64::encode(s))),
             AuthorizationToken::TokenCredential(_) => {
                 panic!("TokenCredential not supported for PermissionToken")
             }
@@ -86,10 +86,7 @@ impl std::convert::TryFrom<&str> for PermissionToken {
         let permission_type = try_get_item(s, &parts, PERMISSION_TYPE_PREFIX)?;
         let signature = try_get_item(s, &parts, SIGNATURE_PREFIX)?.to_owned();
         let token = match permission_type {
-            "master" => AuthorizationToken::Primary(
-                base64::decode(signature)
-                    .map_err(PermissionTokenParseError::InvalidBase64Encoding)?,
-            ),
+            "master" => AuthorizationToken::PrimaryKey(signature),
             "resource" => AuthorizationToken::Resource(signature),
             _ => {
                 return Err(PermissionTokenParseError::UnrecognizedPermissionType {
