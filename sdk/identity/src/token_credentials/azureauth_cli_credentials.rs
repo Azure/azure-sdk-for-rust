@@ -130,7 +130,9 @@ impl AzureauthCliCredential {
 
         for mode in &self.modes {
             match mode {
-                AzureauthCliMode::All => cmd.args(["--mode", "all"]),
+                AzureauthCliMode::All => {
+                    cmd.args(["--mode", "all"]);
+                }
                 AzureauthCliMode::IntegratedWindowsAuth => {
                     if use_windows_features {
                         cmd.args(["--mode", "iwa"]);
@@ -141,7 +143,9 @@ impl AzureauthCliCredential {
                         cmd.args(["--mode", "broker"]);
                     }
                 }
-                AzureauthCliMode::Web => cmd.args(["--mode", "web"]),
+                AzureauthCliMode::Web => {
+                    cmd.args(["--mode", "web"]);
+                }
             };
         }
 
