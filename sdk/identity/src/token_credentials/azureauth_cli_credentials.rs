@@ -50,7 +50,6 @@ struct CliTokenResponse {
 #[derive(Debug, Clone, Copy)]
 pub enum AzureauthCliMode {
     All,
-    #[cfg(target_os = "windows")]
     IntegratedWindowsAuth,
     Broker,
     Web,
@@ -100,15 +99,15 @@ impl AzureauthCliCredential {
     fn get_access_token(&self, resource: &str) -> azure_core::Result<CliTokenResponse> {
         // try using azureauth.exe first, such that azureauth through WSL is
         // used first if possible.
-        let cmd_name = if Command::new("azureauth.exe")
+        let (cmd_name, use_windows_features) = if Command::new("azureauth.exe")
             .arg("--version")
             .output()
             .map(|x| x.status.success())
             .unwrap_or(false)
         {
-            "azureauth.exe"
+            ("azureauth.exe", true)
         } else {
-            "azureauth"
+            ("azureauth", false)
         };
 
         let mut cmd = Command::new(cmd_name);
@@ -130,13 +129,19 @@ impl AzureauthCliCredential {
         }
 
         for mode in &self.modes {
-            cmd.arg("--mode");
             match mode {
-                AzureauthCliMode::All => cmd.arg("all"),
-                #[cfg(target_os = "windows")]
-                AzureauthCliMode::IntegratedWindowsAuth => cmd.arg("iwa"),
-                AzureauthCliMode::Broker => cmd.arg("broker"),
-                AzureauthCliMode::Web => cmd.arg("web"),
+                AzureauthCliMode::All => cmd.args(["--mode", "all"]),
+                AzureauthCliMode::IntegratedWindowsAuth => {
+                    if use_windows_features {
+                        cmd.args(["--mode", "iwa"]);
+                    }
+                }
+                AzureauthCliMode::Broker => {
+                    if use_windows_features {
+                        cmd.args(["--mode", "broker"]);
+                    }
+                }
+                AzureauthCliMode::Web => cmd.args(["--mode", "web"]),
             };
         }
 
