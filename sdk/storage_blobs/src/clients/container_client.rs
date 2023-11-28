@@ -133,7 +133,7 @@ impl ContainerClient {
 
         let canonicalized_resource = format!("/blob/{}/{}", account, self.container_name(),);
         Ok(BlobSharedAccessSignature::new(
-            key.to_string(),
+            key.clone(),
             canonicalized_resource,
             permissions,
             expiry,

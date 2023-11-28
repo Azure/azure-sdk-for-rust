@@ -250,7 +250,7 @@ impl BlobClient {
             self.blob_name()
         );
         Ok(BlobSharedAccessSignature::new(
-            key.to_string(),
+            key.clone(),
             canonicalized_resource,
             permissions,
             expiry,
