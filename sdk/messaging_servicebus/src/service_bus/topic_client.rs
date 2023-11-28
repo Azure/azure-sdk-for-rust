@@ -7,7 +7,6 @@ use crate::{
     },
     utils::body_bytes_to_utf8,
 };
-use ring::hmac::Key;
 use std::time::Duration;
 
 use azure_core::{error::Error, HttpClient};
@@ -19,7 +18,7 @@ pub struct TopicClient {
     namespace: String,
     topic: String,
     policy_name: String,
-    signing_key: Key,
+    signing_key: String,
 }
 
 #[derive(Debug, Clone)]
@@ -40,22 +39,20 @@ impl TopicClient {
         namespace: N,
         topic: T,
         policy_name: P,
-        policy_key: K,
+        signing_key: K,
     ) -> Result<TopicClient, Error>
     where
         N: Into<String>,
         T: Into<String>,
         P: Into<String>,
-        K: AsRef<str>,
+        K: Into<String>,
     {
-        let signing_key = Key::new(ring::hmac::HMAC_SHA256, policy_key.as_ref().as_bytes());
-
         Ok(Self {
             http_client,
             namespace: namespace.into(),
             topic: topic.into(),
             policy_name: policy_name.into(),
-            signing_key,
+            signing_key: signing_key.into(),
         })
     }
 
