@@ -22,7 +22,7 @@ use url::Url;
 ///
 /// For example, to use an account name and access key:
 /// ```rust
-/// azure_storage::StorageCredentials::access_key("my_account", "SOMEACCESSKEY");
+/// azure_storage::StorageCredentials::access_key("my_account", azure_core::auth::Secret::new("SOMEACCESSKEY"));
 /// ```
 #[derive(Clone)]
 pub struct StorageCredentials(pub Arc<Mutex<StorageCredentialsInner>>);
