@@ -224,6 +224,13 @@ impl BlobServiceClient {
         .await
     }
 
+    pub async fn update_credentials(
+        &self,
+        new_credentials: StorageCredentials,
+    ) -> azure_core::Result<()> {
+        self.credentials.replace(new_credentials).await
+    }
+
     pub(crate) fn credentials(&self) -> &StorageCredentials {
         &self.credentials
     }
@@ -245,5 +252,36 @@ impl BlobServiceClient {
         self.pipeline
             .send(context.insert(ServiceType::Blob), request)
             .await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use azure_storage::{StorageCredentials, StorageCredentialsInner};
+    use std::ops::Deref;
+
+    #[tokio::test]
+    async fn update_credentials() -> azure_core::Result<()> {
+        let account = "test";
+
+        let keyed = StorageCredentials::access_key(account, "test");
+        let anonymous = StorageCredentials::anonymous();
+
+        let service_client = BlobServiceClient::new(account, keyed);
+        let container_client = service_client.container_client("test");
+        let blob_client = container_client.blob_client("test");
+
+        service_client.update_credentials(anonymous).await?;
+
+        // check that the update occurred
+        let credentials = blob_client.container_client().credentials();
+        let locked = credentials.0.lock().await;
+        assert!(matches!(
+            locked.deref(),
+            &StorageCredentialsInner::Anonymous
+        ));
+
+        Ok(())
     }
 }
