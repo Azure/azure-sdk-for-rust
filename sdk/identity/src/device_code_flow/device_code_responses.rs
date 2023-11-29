@@ -1,4 +1,4 @@
-use azure_core::auth::AccessToken;
+use azure_core::auth::Secret;
 use serde::Deserialize;
 use std::fmt;
 
@@ -34,26 +34,26 @@ pub struct DeviceCodeAuthorization {
     pub expires_in: u64,
     /// Issued for the scopes that were requested.
     /// Format: Opaque string
-    access_token: AccessToken,
+    access_token: Secret,
     /// Issued if the original scope parameter included offline_access.
     /// Format: JWT
-    refresh_token: Option<AccessToken>,
+    refresh_token: Option<Secret>,
     /// Issued if the original scope parameter included the openid scope.
     /// Format: Opaque string
-    id_token: Option<AccessToken>,
+    id_token: Option<Secret>,
 }
 
 impl DeviceCodeAuthorization {
     /// Get the access token
-    pub fn access_token(&self) -> &AccessToken {
+    pub fn access_token(&self) -> &Secret {
         &self.access_token
     }
     /// Get the refresh token
-    pub fn refresh_token(&self) -> Option<&AccessToken> {
+    pub fn refresh_token(&self) -> Option<&Secret> {
         self.refresh_token.as_ref()
     }
     /// Get the id token
-    pub fn id_token(&self) -> Option<&AccessToken> {
+    pub fn id_token(&self) -> Option<&Secret> {
         self.id_token.as_ref()
     }
 }

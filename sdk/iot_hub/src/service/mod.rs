@@ -1,4 +1,5 @@
 use crate::authorization_policy::AuthorizationPolicy;
+use azure_core::auth::Secret;
 use azure_core::error::{Error, ErrorKind, ResultExt};
 use azure_core::hmac::hmac_sha256;
 use azure_core::request_options::ContentType;
@@ -107,7 +108,7 @@ impl ServiceClient {
     fn generate_sas_token(
         iot_hub_name: &str,
         key_name: &str,
-        private_key: &str,
+        private_key: &Secret,
         expires_in_seconds: u64,
     ) -> azure_core::Result<String> {
         let expiry_date = OffsetDateTime::now_utc() + Duration::from_secs(expires_in_seconds);
@@ -135,10 +136,11 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_iot_hub::service::ServiceClient;
+    /// use azure_core::auth::Secret;
     ///
     /// let iot_hub_name = "iot-hub";
     /// let key_name = "iot_hubowner";
-    /// let private_key = "YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let private_key = Secret::new("YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==");
     ///
     /// let result = ServiceClient::new_private_key(iot_hub_name, key_name, private_key, 3600);
     /// assert!(result.is_ok());
@@ -152,14 +154,15 @@ impl ServiceClient {
     where
         S: Into<String>,
         T: AsRef<str>,
-        U: AsRef<str>,
+        U: Into<Secret>,
     {
         let iot_hub_name_str = iot_hub_name.into();
+        let private_key = private_key.into();
 
         let sas_token = Self::generate_sas_token(
             iot_hub_name_str.as_str(),
             key_name.as_ref(),
-            private_key.as_ref(),
+            &private_key,
             expires_in_seconds,
         )?;
 
@@ -196,7 +199,7 @@ impl ServiceClient {
         let parts: Vec<&str> = connection_string.as_ref().split(';').collect();
         let mut iot_hub_name: Option<&str> = None;
         let mut key_name: Option<&str> = None;
-        let mut primary_key: Option<&str> = None;
+        let mut primary_key: Option<Secret> = None;
 
         if parts.len() != 3 {
             return Err(Error::message(
@@ -223,7 +226,7 @@ impl ServiceClient {
             }
 
             if val.contains("SharedAccessKey=") {
-                primary_key = Some(&val[start..]);
+                primary_key = Some(Secret::new(val[start..].to_owned()));
             }
         }
 
@@ -249,7 +252,7 @@ impl ServiceClient {
         })?;
 
         let sas_token =
-            Self::generate_sas_token(iot_hub_name, key_name, primary_key, expires_in_seconds)
+            Self::generate_sas_token(iot_hub_name, key_name, &primary_key, expires_in_seconds)
                 .context(ErrorKind::Other, "generate SAS token error")?;
 
         let pipeline = new_pipeline_from_options(

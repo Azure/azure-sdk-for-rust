@@ -1,5 +1,5 @@
 use azure_core::{
-    auth::{AccessToken, TokenCredential, TokenResponse},
+    auth::{Secret, TokenCredential, TokenResponse},
     error::{Error, ErrorKind, ResultExt},
     HttpClient, Method, Request, StatusCode,
 };
@@ -21,6 +21,7 @@ const MSI_API_VERSION: &str = "2019-08-01";
 /// This authentication type works in Azure VMs, App Service and Azure Functions applications, as well as the Azure Cloud Shell
 ///
 /// Built up from docs at [https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol](https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol)
+#[derive(Debug)]
 pub struct ImdsManagedIdentityCredential {
     http_client: Arc<dyn HttpClient>,
     object_id: Option<String>,
@@ -171,7 +172,7 @@ where
 #[derive(Debug, Clone, Deserialize)]
 #[allow(unused)]
 struct MsiTokenResponse {
-    pub access_token: AccessToken,
+    pub access_token: Secret,
     #[serde(deserialize_with = "expires_on_string")]
     pub expires_on: OffsetDateTime,
     pub token_type: String,

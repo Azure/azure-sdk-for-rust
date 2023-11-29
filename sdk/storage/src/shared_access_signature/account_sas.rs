@@ -1,5 +1,5 @@
 use crate::shared_access_signature::{format_date, SasProtocol, SasToken};
-use azure_core::hmac::hmac_sha256;
+use azure_core::{auth::Secret, hmac::hmac_sha256};
 use std::fmt;
 use time::OffsetDateTime;
 use url::form_urlencoded;
@@ -130,7 +130,7 @@ impl fmt::Display for AccountSasPermissions {
 
 pub struct AccountSharedAccessSignature {
     account: String,
-    key: String,
+    key: Secret,
     version: AccountSasVersion,
     resource: AccountSasResource,
     resource_type: AccountSasResourceType,
@@ -144,7 +144,7 @@ pub struct AccountSharedAccessSignature {
 impl AccountSharedAccessSignature {
     pub fn new(
         account: String,
-        key: String,
+        key: Secret,
         resource: AccountSasResource,
         resource_type: AccountSasResourceType,
         expiry: OffsetDateTime,

@@ -1,3 +1,4 @@
+use azure_core::auth::Secret;
 use azure_core::hmac::hmac_sha256;
 use azure_core::{
     error::Error, headers, CollectedResponse, HttpClient, Method, Request, StatusCode, Url,
@@ -26,7 +27,7 @@ fn finalize_request(
     method: azure_core::Method,
     body: Option<String>,
     policy_name: &str,
-    signing_key: &str,
+    signing_key: &Secret,
 ) -> azure_core::Result<Request> {
     // generate sas auth
     let sas = generate_signature(
@@ -56,7 +57,7 @@ fn finalize_request(
 /// Generates a SAS signature
 fn generate_signature(
     policy_name: &str,
-    signing_key: &str,
+    signing_key: &Secret,
     url: &str,
     ttl: Duration,
 ) -> azure_core::Result<String> {
@@ -85,7 +86,7 @@ async fn send_message(
     namespace: &str,
     queue_or_topic: &str,
     policy_name: &str,
-    signing_key: &str,
+    signing_key: &Secret,
     msg: &str,
 ) -> azure_core::Result<()> {
     let url = format!("https://{namespace}.servicebus.windows.net/{queue_or_topic}/messages");
@@ -111,7 +112,7 @@ async fn receive_and_delete_message(
     namespace: &str,
     queue_or_topic: &str,
     policy_name: &str,
-    signing_key: &str,
+    signing_key: &Secret,
     subscription: Option<&str>,
 ) -> azure_core::Result<CollectedResponse> {
     let url = get_head_url(namespace, queue_or_topic, subscription);
@@ -136,7 +137,7 @@ async fn peek_lock_message(
     namespace: &str,
     queue_or_topic: &str,
     policy_name: &str,
-    signing_key: &str,
+    signing_key: &Secret,
     lock_expiry: Option<Duration>,
     subscription: Option<&str>,
 ) -> azure_core::Result<CollectedResponse> {
@@ -159,7 +160,7 @@ async fn peek_lock_message2(
     namespace: &str,
     queue_or_topic: &str,
     policy_name: &str,
-    signing_key: &str,
+    signing_key: &Secret,
     lock_expiry: Option<Duration>,
     subscription: Option<&str>,
 ) -> azure_core::Result<PeekLockResponse> {
@@ -200,7 +201,7 @@ pub struct PeekLockResponse {
     status: StatusCode,
     http_client: Arc<dyn HttpClient>,
     policy_name: String,
-    signing_key: String,
+    signing_key: Secret,
 }
 
 impl PeekLockResponse {

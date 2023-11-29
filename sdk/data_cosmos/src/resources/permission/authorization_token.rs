@@ -1,5 +1,5 @@
 use super::PermissionToken;
-use azure_core::auth::TokenCredential;
+use azure_core::auth::{Secret, TokenCredential};
 use std::fmt;
 use std::sync::Arc;
 
@@ -9,7 +9,7 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub enum AuthorizationToken {
     /// Used for administrative resources: database accounts, databases, users, and permissions
-    PrimaryKey(String),
+    PrimaryKey(Secret),
     /// Used for application resources: containers, documents, attachments, stored procedures, triggers, and UDFs
     Resource(String),
     /// AAD token credential
@@ -24,7 +24,7 @@ impl AuthorizationToken {
     where
         S: Into<String>,
     {
-        Ok(AuthorizationToken::PrimaryKey(key.into()))
+        Ok(AuthorizationToken::PrimaryKey(Secret::new(key.into())))
     }
 
     /// Create a resource `AuthorizationToken` for the given resource.

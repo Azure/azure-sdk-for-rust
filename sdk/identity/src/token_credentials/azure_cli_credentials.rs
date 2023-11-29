@@ -1,4 +1,4 @@
-use azure_core::auth::{AccessToken, TokenCredential, TokenResponse};
+use azure_core::auth::{Secret, TokenCredential, TokenResponse};
 use azure_core::error::{Error, ErrorKind, ResultExt};
 use serde::Deserialize;
 use std::process::Command;
@@ -94,7 +94,7 @@ mod az_cli_date_format {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct CliTokenResponse {
-    pub access_token: AccessToken,
+    pub access_token: Secret,
     #[serde(with = "az_cli_date_format")]
     pub expires_on: OffsetDateTime,
     pub subscription: String,
@@ -104,7 +104,7 @@ struct CliTokenResponse {
 }
 
 /// Enables authentication to Azure Active Directory using Azure CLI to obtain an access token.
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct AzureCliCredential {
     _private: (),
 }

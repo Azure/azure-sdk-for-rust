@@ -9,7 +9,7 @@ use crate::{
 };
 use std::time::Duration;
 
-use azure_core::{error::Error, HttpClient};
+use azure_core::{auth::Secret, error::Error, HttpClient};
 
 /// Client object that allows interaction with the `ServiceBus` API
 #[derive(Debug, Clone)]
@@ -18,7 +18,7 @@ pub struct QueueClient {
     namespace: String,
     queue: String,
     policy_name: String,
-    signing_key: String,
+    signing_key: Secret,
 }
 
 impl QueueClient {
@@ -34,7 +34,7 @@ impl QueueClient {
         N: Into<String>,
         Q: Into<String>,
         P: Into<String>,
-        K: Into<String>,
+        K: Into<Secret>,
     {
         Ok(QueueClient {
             http_client,

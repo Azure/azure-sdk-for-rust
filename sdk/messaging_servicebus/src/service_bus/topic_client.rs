@@ -9,7 +9,7 @@ use crate::{
 };
 use std::time::Duration;
 
-use azure_core::{error::Error, HttpClient};
+use azure_core::{auth::Secret, error::Error, HttpClient};
 
 /// Client object that allows interaction with the `ServiceBus` API
 #[derive(Debug, Clone)]
@@ -18,7 +18,7 @@ pub struct TopicClient {
     namespace: String,
     topic: String,
     policy_name: String,
-    signing_key: String,
+    signing_key: Secret,
 }
 
 #[derive(Debug, Clone)]
@@ -45,7 +45,7 @@ impl TopicClient {
         N: Into<String>,
         T: Into<String>,
         P: Into<String>,
-        K: Into<String>,
+        K: Into<Secret>,
     {
         Ok(Self {
             http_client,

@@ -1,5 +1,8 @@
 use crate::StorageCredentials;
-use azure_core::error::{Error, ErrorKind};
+use azure_core::{
+    auth::Secret,
+    error::{Error, ErrorKind},
+};
 
 // Key names.
 pub const ACCOUNT_KEY_KEY_NAME: &str = "AccountKey";
@@ -193,7 +196,7 @@ impl<'a> ConnectionString<'a> {
                 account_name: Some(account),
                 account_key: Some(key),
                 ..
-            } =>  Ok(StorageCredentials::access_key(*account, *key)),
+            } =>  Ok(StorageCredentials::access_key(*account, Secret::new(key.to_string()))),
            _ => {
                 Err(Error::message(ErrorKind::Credential,
                     "Could not create a `StorageCredentail` from the provided connection string. Please validate that you have specified a means of authentication (key, SAS, etc.)."

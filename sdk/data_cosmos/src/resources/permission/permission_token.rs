@@ -1,5 +1,5 @@
 use super::AuthorizationToken;
-use azure_core::base64;
+use azure_core::{auth::Secret, base64};
 
 const PERMISSION_TYPE_PREFIX: &str = "type=";
 const VERSION_PREFIX: &str = "ver=";
@@ -42,7 +42,7 @@ impl std::fmt::Display for PermissionToken {
         use std::borrow::Cow;
         let (permission_type, signature) = match &self.token {
             AuthorizationToken::Resource(s) => ("resource", Cow::Borrowed(s)),
-            AuthorizationToken::PrimaryKey(s) => ("master", Cow::Owned(base64::encode(s))),
+            AuthorizationToken::PrimaryKey(s) => ("master", Cow::Owned(base64::encode(s.secret()))),
             AuthorizationToken::TokenCredential(_) => {
                 panic!("TokenCredential not supported for PermissionToken")
             }
@@ -86,7 +86,7 @@ impl std::convert::TryFrom<&str> for PermissionToken {
         let permission_type = try_get_item(s, &parts, PERMISSION_TYPE_PREFIX)?;
         let signature = try_get_item(s, &parts, SIGNATURE_PREFIX)?.to_owned();
         let token = match permission_type {
-            "master" => AuthorizationToken::PrimaryKey(signature),
+            "master" => AuthorizationToken::PrimaryKey(Secret::new(signature)),
             "resource" => AuthorizationToken::Resource(signature),
             _ => {
                 return Err(PermissionTokenParseError::UnrecognizedPermissionType {
