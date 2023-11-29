@@ -1,11 +1,11 @@
 use async_lock::RwLock;
-use azure_core::auth::{TokenCredential, TokenResponse};
+use azure_core::auth::{AccessToken, TokenCredential};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 use time::OffsetDateTime;
 
-fn is_expired(token: &TokenResponse) -> bool {
+fn is_expired(token: &AccessToken) -> bool {
     token.expires_on < OffsetDateTime::now_utc() + Duration::from_secs(20)
 }
 
@@ -14,7 +14,7 @@ fn is_expired(token: &TokenResponse) -> bool {
 pub struct AutoRefreshingTokenCredential {
     credential: Arc<dyn TokenCredential>,
     // Tokens are specific to a resource, so we cache tokens by resource.
-    token_cache: Arc<RwLock<HashMap<String, TokenResponse>>>,
+    token_cache: Arc<RwLock<HashMap<String, AccessToken>>>,
 }
 
 impl std::fmt::Debug for AutoRefreshingTokenCredential {
@@ -39,7 +39,7 @@ impl AutoRefreshingTokenCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for AutoRefreshingTokenCredential {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
         // if the current cached token for this resource is good, return it.
         let token_cache = self.token_cache.read().await;
         if let Some(token) = token_cache.get(resource) {
@@ -80,12 +80,12 @@ mod tests {
 
     #[derive(Debug)]
     struct MockCredential {
-        token: TokenResponse,
+        token: AccessToken,
         get_token_call_count: Mutex<usize>,
     }
 
     impl MockCredential {
-        fn new(token: TokenResponse) -> Self {
+        fn new(token: AccessToken) -> Self {
             Self {
                 token,
                 get_token_call_count: Mutex::new(0),
@@ -96,11 +96,11 @@ mod tests {
     #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
     #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
     impl TokenCredential for MockCredential {
-        async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
+        async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
             // Include an incrementing counter in the token to track how many times the token has been refreshed
             let mut call_count = self.get_token_call_count.lock().unwrap();
             *call_count += 1;
-            Ok(TokenResponse {
+            Ok(AccessToken {
                 token: Secret::new(format!(
                     "{}-{}:{}",
                     resource,
@@ -119,18 +119,18 @@ mod tests {
     async fn test_get_token_different_resources() -> azure_core::Result<()> {
         let resource1 = STORAGE_TOKEN_SCOPE;
         let resource2 = IOTHUB_TOKEN_SCOPE;
-        let access_token = "test-token";
+        let secret_string = "test-token";
         let expires_on = OffsetDateTime::now_utc() + Duration::from_secs(300);
-        let token_response = TokenResponse::new(Secret::new(access_token), expires_on);
+        let access_token = AccessToken::new(Secret::new(secret_string), expires_on);
 
-        let mock_credential = MockCredential::new(token_response);
+        let mock_credential = MockCredential::new(access_token);
         let auto_refreshing_credential =
             AutoRefreshingTokenCredential::new(Arc::new(mock_credential));
 
         // Test that querying a token for the same resource twice returns the same (cached) token on the second call
         let token1 = auto_refreshing_credential.get_token(resource1).await?;
         let token2 = auto_refreshing_credential.get_token(resource1).await?;
-        let expected_token = format!("{}-{}:1", resource1, access_token);
+        let expected_token = format!("{}-{}:1", resource1, secret_string);
         assert_eq!(token1.token.secret(), expected_token);
         assert_eq!(token2.token.secret(), expected_token);
 
@@ -138,7 +138,7 @@ mod tests {
         // Also test that the same token is the returned (cached) on a second call.
         let token3 = auto_refreshing_credential.get_token(resource2).await?;
         let token4 = auto_refreshing_credential.get_token(resource2).await?;
-        let expected_token = format!("{}-{}:2", resource2, access_token);
+        let expected_token = format!("{}-{}:2", resource2, secret_string);
         assert_eq!(token3.token.secret(), expected_token);
         assert_eq!(token4.token.secret(), expected_token);
 
@@ -150,7 +150,7 @@ mod tests {
         let resource = STORAGE_TOKEN_SCOPE;
         let access_token = "test-token";
         let expires_on = OffsetDateTime::now_utc();
-        let token_response = TokenResponse::new(Secret::new(access_token), expires_on);
+        let token_response = AccessToken::new(Secret::new(access_token), expires_on);
 
         let mock_credential = MockCredential::new(token_response);
         let auto_refreshing_credential =

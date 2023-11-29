@@ -1,4 +1,4 @@
-use azure_core::auth::{Secret, TokenCredential, TokenResponse};
+use azure_core::auth::{AccessToken, Secret, TokenCredential};
 use azure_core::error::{Error, ErrorKind, ResultExt};
 use serde::Deserialize;
 use std::process::Command;
@@ -142,9 +142,9 @@ impl AzureCliCredential {
             Ok(az_output) if az_output.status.success() => {
                 let output = str::from_utf8(&az_output.stdout)?;
 
-                let token_response = serde_json::from_str::<CliTokenResponse>(output)
+                let access_token = serde_json::from_str::<CliTokenResponse>(output)
                     .map_kind(ErrorKind::DataConversion)?;
-                Ok(token_response)
+                Ok(access_token)
             }
             Ok(az_output) => {
                 let output = String::from_utf8_lossy(&az_output.stderr);
@@ -179,9 +179,9 @@ impl AzureCliCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for AzureCliCredential {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
         let tr = Self::get_access_token(Some(resource))?;
-        Ok(TokenResponse::new(tr.access_token, tr.expires_on))
+        Ok(AccessToken::new(tr.access_token, tr.expires_on))
     }
 }
 

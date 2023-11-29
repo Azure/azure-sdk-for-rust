@@ -1,5 +1,5 @@
 use crate::oauth2_http_client::Oauth2HttpClient;
-use azure_core::auth::{Secret, TokenCredential, TokenResponse};
+use azure_core::auth::{AccessToken, Secret, TokenCredential};
 use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::HttpClient;
 use oauth2::{basic::BasicClient, AuthType, AuthUrl, Scope, TokenUrl};
@@ -101,7 +101,7 @@ impl ClientSecretCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ClientSecretCredential {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
         let options = self.options();
         let authority_host = options.authority_host();
 
@@ -147,7 +147,7 @@ impl TokenCredential for ClientSecretCredential {
             .await
             .map(|r| {
                 use oauth2::TokenResponse as _;
-                TokenResponse::new(
+                AccessToken::new(
                     Secret::new(r.access_token().secret().to_owned()),
                     OffsetDateTime::now_utc() + r.expires_in().unwrap_or_default(),
                 )

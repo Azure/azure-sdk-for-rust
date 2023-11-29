@@ -1,4 +1,4 @@
-use azure_core::auth::{Secret, TokenCredential, TokenResponse};
+use azure_core::auth::{AccessToken, Secret, TokenCredential};
 use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::HttpClient;
 use std::str;
@@ -51,8 +51,8 @@ impl WorkloadIdentityCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for WorkloadIdentityCredential {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
-        let res: TokenResponse = federated_credentials_flow::perform(
+    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
+        let res: AccessToken = federated_credentials_flow::perform(
             self.http_client.clone(),
             &self.client_id,
             self.token.secret(),
@@ -62,7 +62,7 @@ impl TokenCredential for WorkloadIdentityCredential {
         )
         .await
         .map(|r| {
-            TokenResponse::new(
+            AccessToken::new(
                 r.access_token().clone(),
                 OffsetDateTime::now_utc() + Duration::from_secs(r.expires_in),
             )
