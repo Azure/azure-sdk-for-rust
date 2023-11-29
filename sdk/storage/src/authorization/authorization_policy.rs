@@ -40,7 +40,7 @@ impl Policy for AuthorizationPolicy {
 
         // lock the credentials within a scope so that it is released as soon as possible
         {
-            let creds = self.credentials.0.lock().await;
+            let creds = self.credentials.0.read().await;
 
             match creds.deref() {
                 StorageCredentialsInner::Key(account, key) => {

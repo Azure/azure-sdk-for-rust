@@ -44,6 +44,12 @@ impl From<String> for Secret {
     }
 }
 
+impl From<&'static str> for Secret {
+    fn from(access_token: &'static str) -> Self {
+        Self::new(access_token)
+    }
+}
+
 impl Debug for Secret {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_tuple("Secret").field(&"<REDACTED>").finish()
