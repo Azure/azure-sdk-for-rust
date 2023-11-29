@@ -50,6 +50,7 @@ development = []
 test_e2e = []
 client_certificate = ["openssl"]
 vendored_openssl = ["openssl/vendored"]
+azureauth_cli = []
 
 [[example]]
 name="client_certificate_credentials"

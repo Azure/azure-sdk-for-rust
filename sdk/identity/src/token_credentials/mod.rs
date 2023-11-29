@@ -7,6 +7,8 @@
 //! * Client secret
 mod auto_refreshing_credentials;
 mod azure_cli_credentials;
+#[cfg(feature = "azureauth-cli")]
+mod azureauth_cli_credentials;
 #[cfg(feature = "client_certificate")]
 mod client_certificate_credentials;
 mod client_secret_credentials;
@@ -17,6 +19,8 @@ mod workload_identity_credentials;
 
 pub use auto_refreshing_credentials::*;
 pub use azure_cli_credentials::*;
+#[cfg(feature = "azureauth-cli")]
+pub use azureauth_cli_credentials::*;
 #[cfg(feature = "client_certificate")]
 pub use client_certificate_credentials::*;
 pub use client_secret_credentials::*;
