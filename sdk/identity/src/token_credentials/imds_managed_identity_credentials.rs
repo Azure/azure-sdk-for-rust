@@ -1,5 +1,5 @@
 use azure_core::{
-    auth::{Secret, TokenCredential, TokenResponse},
+    auth::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
     HttpClient, Method, Request, StatusCode,
 };
@@ -93,7 +93,7 @@ impl ImdsManagedIdentityCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ImdsManagedIdentityCredential {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
         let msi_endpoint = std::env::var(MSI_ENDPOINT_ENV_KEY)
             .unwrap_or_else(|_| "http://169.254.169.254/metadata/identity/oauth2/token".to_owned());
 
@@ -151,7 +151,7 @@ impl TokenCredential for ImdsManagedIdentityCredential {
         }
 
         let token_response: MsiTokenResponse = serde_json::from_slice(&rsp_body)?;
-        Ok(TokenResponse::new(
+        Ok(AccessToken::new(
             token_response.access_token,
             token_response.expires_on,
         ))

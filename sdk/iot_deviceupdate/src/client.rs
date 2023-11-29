@@ -1,5 +1,5 @@
 use azure_core::{
-    auth::{TokenCredential, TokenResponse},
+    auth::{AccessToken, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
 };
 use azure_identity::AutoRefreshingTokenCredential;
@@ -59,7 +59,7 @@ impl DeviceUpdateClient {
         Ok(client)
     }
 
-    async fn get_token(&self) -> azure_core::Result<TokenResponse> {
+    async fn get_token(&self) -> azure_core::Result<AccessToken> {
         self.token_credential
             .get_token(&self.endpoint)
             .await

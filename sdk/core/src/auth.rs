@@ -52,14 +52,14 @@ impl Debug for Secret {
 
 /// Represents an Azure service bearer access token with expiry information.
 #[derive(Debug, Clone)]
-pub struct TokenResponse {
+pub struct AccessToken {
     /// Get the access token value.
     pub token: Secret,
     /// Gets the time when the provided token expires.
     pub expires_on: OffsetDateTime,
 }
 
-impl TokenResponse {
+impl AccessToken {
     /// Create a new `TokenResponse`.
     pub fn new<T>(token: T, expires_on: OffsetDateTime) -> Self
     where
@@ -77,5 +77,5 @@ impl TokenResponse {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait TokenCredential: Send + Sync + Debug {
     /// Gets a `TokenResponse` for the specified resource
-    async fn get_token(&self, resource: &str) -> crate::Result<TokenResponse>;
+    async fn get_token(&self, resource: &str) -> crate::Result<AccessToken>;
 }

@@ -1,5 +1,5 @@
 use super::{ClientSecretCredential, TokenCredentialOptions, WorkloadIdentityCredential};
-use azure_core::auth::{TokenCredential, TokenResponse};
+use azure_core::auth::{AccessToken, TokenCredential};
 use azure_core::error::{Error, ErrorKind, ResultExt};
 use azure_core::HttpClient;
 use std::sync::Arc;
@@ -60,7 +60,7 @@ impl EnvironmentCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for EnvironmentCredential {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
         let tenant_id = std::env::var(AZURE_TENANT_ID_ENV_KEY)
             .with_context(ErrorKind::Credential, || {
                 format!("missing tenant id set in {AZURE_TENANT_ID_ENV_KEY} environment variable")
