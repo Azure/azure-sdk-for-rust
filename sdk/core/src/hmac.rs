@@ -1,6 +1,6 @@
+use crate::auth::Secret;
 #[cfg(any(feature = "hmac_rust", feature = "hmac_openssl"))]
 use crate::{
-    auth::Secret,
     base64,
     error::{ErrorKind, ResultExt},
 };
@@ -38,7 +38,7 @@ pub fn hmac_sha256(data: &str, key: &Secret) -> crate::Result<String> {
 }
 
 #[cfg(not(any(feature = "hmac_rust", feature = "hmac_openssl")))]
-pub fn hmac_sha256(_data: &str, _key: &str) -> crate::Result<String> {
+pub fn hmac_sha256(_data: &str, _key: &Secret) -> crate::Result<String> {
     unimplemented!("An HMAC signing request was called without an hmac implementation.  Make sure to enable either the `hmac_rust` or `hmac_openssl` feature");
 }
 
