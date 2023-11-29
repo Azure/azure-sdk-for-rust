@@ -136,10 +136,11 @@ impl ServiceClient {
     /// ```
     /// use std::sync::Arc;
     /// use azure_iot_hub::service::ServiceClient;
+    /// use azure_core::auth::Secret;
     ///
     /// let iot_hub_name = "iot-hub";
     /// let key_name = "iot_hubowner";
-    /// let private_key = "YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let private_key = Secret::new("YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==");
     ///
     /// let result = ServiceClient::new_private_key(iot_hub_name, key_name, private_key, 3600);
     /// assert!(result.is_ok());
@@ -153,14 +154,15 @@ impl ServiceClient {
     where
         S: Into<String>,
         T: AsRef<str>,
-        U: AsRef<Secret>,
+        U: Into<Secret>,
     {
         let iot_hub_name_str = iot_hub_name.into();
+        let private_key = private_key.into();
 
         let sas_token = Self::generate_sas_token(
             iot_hub_name_str.as_str(),
             key_name.as_ref(),
-            private_key.as_ref(),
+            &private_key,
             expires_in_seconds,
         )?;
 
