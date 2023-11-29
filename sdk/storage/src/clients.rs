@@ -54,7 +54,7 @@ pub async fn shared_access_signature(
     expiry: OffsetDateTime,
     permissions: AccountSasPermissions,
 ) -> Result<AccountSharedAccessSignature, Error> {
-    let creds = storage_credentials.0.lock().await;
+    let creds = storage_credentials.0.read().await;
     let StorageCredentialsInner::Key(account, key) = creds.deref() else {
         return Err(Error::message(
             ErrorKind::Credential,

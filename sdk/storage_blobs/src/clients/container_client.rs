@@ -123,7 +123,7 @@ impl ContainerClient {
         permissions: BlobSasPermissions,
         expiry: OffsetDateTime,
     ) -> azure_core::Result<BlobSharedAccessSignature> {
-        let creds = self.service_client.credentials().0.lock().await;
+        let creds = self.service_client.credentials().0.read().await;
         let StorageCredentialsInner::Key(account, key) = creds.deref() else {
             return Err(Error::message(
                 ErrorKind::Credential,
