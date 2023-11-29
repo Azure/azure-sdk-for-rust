@@ -7,7 +7,6 @@ use crate::{
     },
     utils::body_bytes_to_utf8,
 };
-use ring::hmac::Key;
 use std::time::Duration;
 
 use azure_core::{error::Error, HttpClient};
@@ -19,7 +18,7 @@ pub struct QueueClient {
     namespace: String,
     queue: String,
     policy_name: String,
-    signing_key: Key,
+    signing_key: String,
 }
 
 impl QueueClient {
@@ -29,22 +28,20 @@ impl QueueClient {
         namespace: N,
         queue: Q,
         policy_name: P,
-        policy_key: K,
+        signing_key: K,
     ) -> Result<QueueClient, Error>
     where
         N: Into<String>,
         Q: Into<String>,
         P: Into<String>,
-        K: AsRef<str>,
+        K: Into<String>,
     {
-        let signing_key = Key::new(ring::hmac::HMAC_SHA256, policy_key.as_ref().as_bytes());
-
         Ok(QueueClient {
             http_client,
             namespace: namespace.into(),
             queue: queue.into(),
             policy_name: policy_name.into(),
-            signing_key,
+            signing_key: signing_key.into(),
         })
     }
 

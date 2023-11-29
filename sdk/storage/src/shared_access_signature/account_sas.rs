@@ -1,7 +1,5 @@
-use crate::{
-    hmac::sign,
-    shared_access_signature::{format_date, SasProtocol, SasToken},
-};
+use crate::shared_access_signature::{format_date, SasProtocol, SasToken};
+use azure_core::hmac::hmac_sha256;
 use std::fmt;
 use time::OffsetDateTime;
 use url::form_urlencoded;
@@ -192,7 +190,7 @@ impl AccountSharedAccessSignature {
                     self.version,
                 );
 
-                sign(&string_to_sign, &self.key).unwrap()
+                hmac_sha256(&string_to_sign, &self.key).unwrap()
             }
             _ => {
                 // TODO: support other version tags?

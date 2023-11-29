@@ -32,7 +32,6 @@ mod connection_string;
 mod connection_string_builder;
 mod copy_id;
 mod copy_progress;
-pub mod hmac;
 mod macros;
 pub mod prelude;
 pub mod shared_access_signature;
