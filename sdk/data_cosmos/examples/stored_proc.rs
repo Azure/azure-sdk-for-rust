@@ -31,7 +31,7 @@ const FUNCTION_BODY: &str = r#"
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
     let args = Args::parse();
-    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
+    let authorization_token = AuthorizationToken::primary_key(args.primary_key)?;
 
     let collection = CosmosClient::new(args.account.clone(), authorization_token)
         .database_client(args.database_name)

@@ -20,7 +20,7 @@ async fn main() -> azure_core::Result<()> {
     // First we retrieve the account name and access key from environment variables, and
     // create an authorization token.
     let args = Args::parse();
-    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
+    let authorization_token = AuthorizationToken::primary_key(args.primary_key)?;
 
     // Create a new Cosmos client.
     let client = CosmosClient::new(args.account, authorization_token);

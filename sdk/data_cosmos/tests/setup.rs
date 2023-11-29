@@ -17,5 +17,5 @@ fn get_authorization_token() -> azure_core::Result<AuthorizationToken> {
     let key =
         std::env::var("COSMOS_PRIMARY_KEY").expect("Set env variable COSMOS_PRIMARY_KEY first!");
 
-    AuthorizationToken::primary_from_base64(&key)
+    AuthorizationToken::primary_key(key)
 }

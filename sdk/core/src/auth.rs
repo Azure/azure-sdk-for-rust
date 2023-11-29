@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, fmt::Debug};
 use time::OffsetDateTime;
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize, Eq)]
 pub struct Secret(Cow<'static, str>);
 
 impl Secret {
@@ -17,6 +17,24 @@ impl Secret {
 
     pub fn secret(&self) -> &str {
         &self.0
+    }
+}
+
+// NOTE: this is a constant time compare, however LLVM may (and probably will)
+// optimize this in unexpected ways.
+impl PartialEq for Secret {
+    fn eq(&self, other: &Self) -> bool {
+        let a = self.secret();
+        let b = other.secret();
+
+        if a.len() != b.len() {
+            return false;
+        }
+
+        a.bytes()
+            .zip(b.bytes())
+            .fold(0, |acc, (a, b)| acc | (a ^ b))
+            == 0
     }
 }
 

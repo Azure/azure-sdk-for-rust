@@ -1,7 +1,8 @@
+use azure_core::auth::Secret;
+use azure_core::hmac::hmac_sha256;
 use azure_core::{
-    base64, error::Error, headers, CollectedResponse, HttpClient, Method, Request, StatusCode, Url,
+    error::Error, headers, CollectedResponse, HttpClient, Method, Request, StatusCode, Url,
 };
-use ring::hmac;
 use serde::Deserialize;
 use std::str::FromStr;
 use std::time::Duration;
@@ -26,7 +27,7 @@ fn finalize_request(
     method: azure_core::Method,
     body: Option<String>,
     policy_name: &str,
-    signing_key: &hmac::Key,
+    signing_key: &Secret,
 ) -> azure_core::Result<Request> {
     // generate sas auth
     let sas = generate_signature(
@@ -34,7 +35,7 @@ fn finalize_request(
         signing_key,
         url,
         Duration::from_secs(DEFAULT_SAS_DURATION),
-    );
+    )?;
 
     // create request builder
     let mut request = Request::new(Url::parse(url)?, method);
@@ -56,26 +57,27 @@ fn finalize_request(
 /// Generates a SAS signature
 fn generate_signature(
     policy_name: &str,
-    signing_key: &hmac::Key,
+    signing_key: &Secret,
     url: &str,
     ttl: Duration,
-) -> String {
+) -> azure_core::Result<String> {
     let sr: String = form_urlencoded::byte_serialize(url.as_bytes()).collect(); // <namespace>.servicebus.windows.net
     let se = OffsetDateTime::now_utc().add(ttl).unix_timestamp(); // token expiry instant
 
     let str_to_sign = format!("{sr}\n{se}");
-    let sig = hmac::sign(signing_key, str_to_sign.as_bytes()); // shared access key
+    let sig = hmac_sha256(&str_to_sign, signing_key)?;
 
     // shadow sig
     let sig = {
-        let sig = base64::encode(sig.as_ref());
         let mut ser = Serializer::new(String::new());
         ser.append_pair("sig", &sig);
         ser.finish()
     };
 
     // format sas
-    format!("SharedAccessSignature sr={sr}&{sig}&se={se}&skn={policy_name}")
+    Ok(format!(
+        "SharedAccessSignature sr={sr}&{sig}&se={se}&skn={policy_name}"
+    ))
 }
 
 /// Sends a message to the queue or topic
@@ -84,7 +86,7 @@ async fn send_message(
     namespace: &str,
     queue_or_topic: &str,
     policy_name: &str,
-    signing_key: &hmac::Key,
+    signing_key: &Secret,
     msg: &str,
 ) -> azure_core::Result<()> {
     let url = format!("https://{namespace}.servicebus.windows.net/{queue_or_topic}/messages");
@@ -110,7 +112,7 @@ async fn receive_and_delete_message(
     namespace: &str,
     queue_or_topic: &str,
     policy_name: &str,
-    signing_key: &hmac::Key,
+    signing_key: &Secret,
     subscription: Option<&str>,
 ) -> azure_core::Result<CollectedResponse> {
     let url = get_head_url(namespace, queue_or_topic, subscription);
@@ -135,7 +137,7 @@ async fn peek_lock_message(
     namespace: &str,
     queue_or_topic: &str,
     policy_name: &str,
-    signing_key: &hmac::Key,
+    signing_key: &Secret,
     lock_expiry: Option<Duration>,
     subscription: Option<&str>,
 ) -> azure_core::Result<CollectedResponse> {
@@ -158,7 +160,7 @@ async fn peek_lock_message2(
     namespace: &str,
     queue_or_topic: &str,
     policy_name: &str,
-    signing_key: &hmac::Key,
+    signing_key: &Secret,
     lock_expiry: Option<Duration>,
     subscription: Option<&str>,
 ) -> azure_core::Result<PeekLockResponse> {
@@ -199,7 +201,7 @@ pub struct PeekLockResponse {
     status: StatusCode,
     http_client: Arc<dyn HttpClient>,
     policy_name: String,
-    signing_key: hmac::Key,
+    signing_key: Secret,
 }
 
 impl PeekLockResponse {

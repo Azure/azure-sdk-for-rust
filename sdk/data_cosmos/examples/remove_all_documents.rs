@@ -24,7 +24,7 @@ struct Args {
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
     let args = Args::parse();
-    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
+    let authorization_token = AuthorizationToken::primary_key(args.primary_key)?;
 
     // Next we will create a Cosmos client.
     let client = CosmosClient::new(args.account, authorization_token);

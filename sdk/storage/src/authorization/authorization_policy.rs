@@ -3,6 +3,7 @@ use azure_core::{
     auth::Secret,
     error::{ErrorKind, ResultExt},
     headers::*,
+    hmac::hmac_sha256,
     Context, Method, Policy, PolicyResult, Request,
 };
 use std::{borrow::Cow, ops::Deref, sync::Arc};
@@ -96,7 +97,7 @@ fn generate_authorization(
     service_type: ServiceType,
 ) -> azure_core::Result<String> {
     let str_to_sign = string_to_sign(h, u, method, account, service_type);
-    let auth = crate::hmac::sign(&str_to_sign, key).context(
+    let auth = hmac_sha256(&str_to_sign, key).context(
         azure_core::error::ErrorKind::Credential,
         "failed to sign the hmac",
     )?;

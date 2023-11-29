@@ -51,7 +51,7 @@ async fn main() -> azure_core::Result<()> {
     // First, we create an authorization token. There are two types of tokens, master and resource
     // constrained. Please check the Azure documentation for details. You can change tokens
     // at will and it's a good practice to raise your privileges only when needed.
-    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
+    let authorization_token = AuthorizationToken::primary_key(args.primary_key)?;
 
     // Next we will create a Cosmos client. You need an authorization_token but you can later
     // change it if needed.

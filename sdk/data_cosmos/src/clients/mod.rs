@@ -13,7 +13,7 @@
 //!
 //! let account: String = todo!("Get Cosmos account name from the Azure Portal");
 //! let primary_key: String = todo!("Get Cosmos primary key from the Azure Portal");
-//! let authorization_token = AuthorizationToken::primary_from_base64(&primary_key).unwrap();
+//! let authorization_token = AuthorizationToken::primary_key(&primary_key).unwrap();
 //! let database_name: String = todo!("Think of some database name");
 //!
 //! // Create an http client, then a `CosmosClient`, and then a `DatabaseClient`

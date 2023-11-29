@@ -30,7 +30,7 @@ fn get_authorization_token() -> AuthorizationToken {
         let key = std::env::var("COSMOS_PRIMARY_KEY")
             .expect("Set env variable COSMOS_PRIMARY_KEY first!");
 
-        AuthorizationToken::primary_from_base64(&key).ok()
+        AuthorizationToken::primary_key(key).ok()
     })
     .flatten()
     .unwrap_or_else(|| AuthorizationToken::new_resource(String::from("MOCK_RESOURCE")))

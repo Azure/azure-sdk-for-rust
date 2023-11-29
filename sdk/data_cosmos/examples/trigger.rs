@@ -52,7 +52,7 @@ function updateMetadata() {
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
     let args = Args::parse();
-    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
+    let authorization_token = AuthorizationToken::primary_key(args.primary_key)?;
 
     let client = CosmosClient::new(args.account, authorization_token);
     let database = client.database_client(args.database_name);
