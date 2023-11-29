@@ -20,6 +20,7 @@ mod constants;
 mod context;
 pub mod date;
 pub mod error;
+pub mod hmac;
 mod http_client;
 mod models;
 mod options;

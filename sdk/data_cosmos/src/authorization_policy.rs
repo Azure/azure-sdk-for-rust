@@ -1,10 +1,8 @@
 use crate::resources::permission::AuthorizationToken;
 use crate::resources::ResourceType;
-use azure_core::base64;
 use azure_core::headers::{HeaderValue, AUTHORIZATION, MS_DATE, VERSION};
+use azure_core::hmac::hmac_sha256;
 use azure_core::{date, Context, Policy, PolicyResult, Request, Url};
-use hmac::{Hmac, Mac};
-use sha2::Sha256;
 use std::borrow::Cow;
 use std::sync::Arc;
 use time::OffsetDateTime;
@@ -157,13 +155,10 @@ async fn generate_authorization(
     time_nonce: OffsetDateTime,
 ) -> azure_core::Result<String> {
     let (authorization_type, signature) = match auth_token {
-        AuthorizationToken::Primary(key) => {
+        AuthorizationToken::PrimaryKey(key) => {
             let string_to_sign =
                 string_to_sign(http_method, resource_type, resource_link, time_nonce);
-            (
-                "master",
-                Cow::Owned(encode_str_to_sign(&string_to_sign, key)),
-            )
+            ("master", Cow::Owned(hmac_sha256(&string_to_sign, key)?))
         }
         AuthorizationToken::Resource(key) => ("resource", Cow::Borrowed(key)),
         AuthorizationToken::TokenCredential(token_credential) => (
@@ -245,18 +240,6 @@ fn string_to_sign(
     )
 }
 
-/// This function `HMAC_SHA256` signs the passed string, given the supplied key. The passed string
-/// will be encoded as per its UTF-8 representation. The resulting byte array is then base64
-/// encoded and returned to the caller. Possible optimization: profile if the HMAC struct
-/// initialization is expensive and, if so, cache it somehow to avoid recreating it at every
-/// request.
-fn encode_str_to_sign(data: &str, key: &[u8]) -> String {
-    let mut hmac = Hmac::<Sha256>::new_from_slice(key).unwrap();
-    hmac.update(data.as_bytes());
-    let signature = hmac.finalize().into_bytes();
-    base64::encode(signature)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -287,7 +270,7 @@ mon, 01 jan 1900 01:00:00 gmt
     async fn generate_authorization_00() {
         let time = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
 
-        let auth_token = AuthorizationToken::primary_from_base64(
+        let auth_token = AuthorizationToken::primary_key(
             "8F8xXXOptJxkblM1DBXW7a6NMI5oE8NnwPGYBmwxLCKfejOK7B7yhcCHMGvN3PBrlMLIOeol1Hv9RCdzAZR5sg==",
         )
         .unwrap();
@@ -315,7 +298,7 @@ mon, 01 jan 1900 01:00:00 gmt
     async fn generate_authorization_01() {
         let time = date::parse_rfc3339("2017-04-27T00:51:12.000000000+00:00").unwrap();
 
-        let auth_token = AuthorizationToken::primary_from_base64(
+        let auth_token = AuthorizationToken::primary_key(
             "dsZQi3KtZmCv1ljt3VNWNm7sQUF1y5rJfC6kv5JiwvW0EndXdDku/dkKBp8/ufDToSxL",
         )
         .unwrap();

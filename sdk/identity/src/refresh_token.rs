@@ -2,7 +2,7 @@
 
 use azure_core::Method;
 use azure_core::{
-    auth::AccessToken,
+    auth::Secret,
     content_type,
     error::{Error, ErrorKind, ResultExt},
     headers, HttpClient, Request,
@@ -18,7 +18,7 @@ pub async fn exchange(
     tenant_id: &str,
     client_id: &str,
     client_secret: Option<&str>,
-    refresh_token: &AccessToken,
+    refresh_token: &Secret,
 ) -> azure_core::Result<RefreshTokenResponse> {
     let encoded = {
         let mut encoded = &mut form_urlencoded::Serializer::new(String::new());
@@ -66,8 +66,8 @@ pub struct RefreshTokenResponse {
     scopes: Vec<String>,
     expires_in: u64,
     ext_expires_in: u64,
-    access_token: AccessToken,
-    refresh_token: AccessToken,
+    access_token: Secret,
+    refresh_token: Secret,
 }
 
 impl RefreshTokenResponse {
@@ -84,11 +84,11 @@ impl RefreshTokenResponse {
         self.expires_in
     }
     /// Issued for the scopes that were requested.
-    pub fn access_token(&self) -> &AccessToken {
+    pub fn access_token(&self) -> &Secret {
         &self.access_token
     }
     /// The new refresh token and should replace old refresh token.
-    pub fn refresh_token(&self) -> &AccessToken {
+    pub fn refresh_token(&self) -> &Secret {
         &self.refresh_token
     }
     /// Indicates the extended lifetime of an `access_token`.
@@ -147,7 +147,7 @@ mod tests {
             "UNUSED",
             "UNUSED",
             None,
-            &AccessToken::new("UNUSED"),
+            &Secret::new("UNUSED"),
         ));
     }
 }

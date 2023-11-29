@@ -1,6 +1,6 @@
 use super::authority_hosts;
 use azure_core::{
-    auth::{AccessToken, TokenCredential, TokenResponse},
+    auth::{AccessToken, Secret, TokenCredential},
     base64, content_type,
     error::{Error, ErrorKind},
     headers, new_http_client, HttpClient, Method, Request,
@@ -75,29 +75,34 @@ impl CertificateCredentialOptions {
 ///
 /// In order to use subject name validation `send_cert_chain` option must be set to true
 /// The certificate is expected to be in base64 encoded PKCS12 format
+#[derive(Debug)]
 pub struct ClientCertificateCredential {
     tenant_id: String,
     client_id: String,
-    client_certificate: String,
-    client_certificate_pass: String,
+    client_certificate: Secret,
+    client_certificate_pass: Secret,
     http_client: Arc<dyn HttpClient>,
     options: CertificateCredentialOptions,
 }
 
 impl ClientCertificateCredential {
     /// Create a new `ClientCertificateCredential`
-    pub fn new(
+    pub fn new<C, P>(
         tenant_id: String,
         client_id: String,
-        client_certificate: String,
-        client_certificate_pass: String,
+        client_certificate: C,
+        client_certificate_pass: P,
         options: CertificateCredentialOptions,
-    ) -> ClientCertificateCredential {
+    ) -> ClientCertificateCredential
+    where
+        C: Into<Secret>,
+        P: Into<Secret>,
+    {
         ClientCertificateCredential {
             tenant_id,
             client_id,
-            client_certificate,
-            client_certificate_pass,
+            client_certificate: client_certificate.into(),
+            client_certificate_pass: client_certificate_pass.into(),
             http_client: new_http_client(),
             options,
         }
@@ -147,7 +152,7 @@ fn openssl_error(err: ErrorStack) -> azure_core::error::Error {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ClientCertificateCredential {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
         let options = self.options();
         let url = &format!(
             "{}/{}/oauth2/v2.0/token",
@@ -155,11 +160,11 @@ impl TokenCredential for ClientCertificateCredential {
             self.tenant_id
         );
 
-        let certificate = base64::decode(&self.client_certificate)
+        let certificate = base64::decode(self.client_certificate.secret())
             .map_err(|_| Error::message(ErrorKind::Credential, "Base64 decode failed"))?;
         let certificate = Pkcs12::from_der(&certificate)
             .map_err(openssl_error)?
-            .parse2(&self.client_certificate_pass)
+            .parse2(self.client_certificate_pass.secret())
             .map_err(openssl_error)?;
 
         let Some(cert) = certificate.cert.as_ref() else {
@@ -249,8 +254,8 @@ impl TokenCredential for ClientCertificateCredential {
         }
 
         let response: AadTokenResponse = serde_json::from_slice(&rsp_body)?;
-        Ok(TokenResponse::new(
-            AccessToken::new(response.access_token.to_string()),
+        Ok(AccessToken::new(
+            response.access_token,
             OffsetDateTime::now_utc() + Duration::from_secs(response.expires_in),
         ))
     }

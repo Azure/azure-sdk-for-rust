@@ -7545,6 +7545,10 @@ impl UserSourceInfo {
 pub enum UserSourceInfoUnion {
     BuildResult(BuildResultUserSourceInfo),
     Container(CustomContainerUserSourceInfo),
+    Jar(JarUploadedUserSourceInfo),
+    NetCoreZip(NetCoreZipUploadedUserSourceInfo),
+    Source(SourceUploadedUserSourceInfo),
+    War(WarUploadedUserSourceInfo),
 }
 #[doc = "Validate messages of the configuration service git repositories"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]

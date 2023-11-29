@@ -55,7 +55,7 @@ async fn main() -> azure_core::Result<()> {
     // There are two types of tokens: primary and resource constrained. The SDK supports both, but
     // we'll use a primary token. Please check the Azure documentation for details or the examples folder
     // on how to create and use token-based permissions.
-    let authorization_token = AuthorizationToken::primary_from_base64(&args.primary_key)?;
+    let authorization_token = AuthorizationToken::primary_key(args.primary_key)?;
 
     // Next we will create a Cosmos client.
     let client = CosmosClient::new(args.account, authorization_token);

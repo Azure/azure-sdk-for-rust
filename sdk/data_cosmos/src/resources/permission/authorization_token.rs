@@ -1,9 +1,5 @@
 use super::PermissionToken;
-use azure_core::auth::TokenCredential;
-use azure_core::{
-    base64,
-    error::{Error, ErrorKind},
-};
+use azure_core::auth::{Secret, TokenCredential};
 use std::fmt;
 use std::sync::Arc;
 
@@ -13,7 +9,7 @@ use std::sync::Arc;
 #[derive(Clone)]
 pub enum AuthorizationToken {
     /// Used for administrative resources: database accounts, databases, users, and permissions
-    Primary(Vec<u8>),
+    PrimaryKey(Secret),
     /// Used for application resources: containers, documents, attachments, stored procedures, triggers, and UDFs
     Resource(String),
     /// AAD token credential
@@ -24,12 +20,11 @@ impl AuthorizationToken {
     /// Create a primary `AuthorizationToken` from base64 encoded data
     ///
     /// The token is *not* verified to be valid.
-    pub fn primary_from_base64(base64_encoded: &str) -> azure_core::Result<AuthorizationToken> {
-        let key = base64::decode(base64_encoded).map_err(|e|
-            Error::full(ErrorKind::Credential, e, "failed to base64 decode the primary credential - ensure that the credential is properly base64 encoded")
-        )?;
-
-        Ok(AuthorizationToken::Primary(key))
+    pub fn primary_key<S>(key: S) -> azure_core::Result<AuthorizationToken>
+    where
+        S: Into<String>,
+    {
+        Ok(AuthorizationToken::PrimaryKey(Secret::new(key.into())))
     }
 
     /// Create a resource `AuthorizationToken` for the given resource.
@@ -50,7 +45,7 @@ impl fmt::Debug for AuthorizationToken {
             f,
             "AuthorizationToken::{}(***hidden***)",
             match self {
-                AuthorizationToken::Primary(_) => "Master",
+                AuthorizationToken::PrimaryKey(_) => "Master",
                 AuthorizationToken::Resource(_) => "Resource",
                 AuthorizationToken::TokenCredential(_) => "TokenCredential",
             }

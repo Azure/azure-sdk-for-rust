@@ -1,7 +1,9 @@
 use crate::{clients::ServiceType, StorageCredentials, StorageCredentialsInner};
 use azure_core::{
+    auth::Secret,
     error::{ErrorKind, ResultExt},
     headers::*,
+    hmac::hmac_sha256,
     Context, Method, Policy, PolicyResult, Request,
 };
 use std::{borrow::Cow, ops::Deref, sync::Arc};
@@ -65,7 +67,7 @@ impl Policy for AuthorizationPolicy {
                     }
                 }
                 StorageCredentialsInner::BearerToken(token) => {
-                    request.insert_header(AUTHORIZATION, format!("Bearer {token}"));
+                    request.insert_header(AUTHORIZATION, format!("Bearer {}", token.secret()));
                 }
                 StorageCredentialsInner::TokenCredential(token_credential) => {
                     let bearer_token = token_credential
@@ -91,11 +93,11 @@ fn generate_authorization(
     u: &Url,
     method: Method,
     account: &str,
-    key: &str,
+    key: &Secret,
     service_type: ServiceType,
 ) -> azure_core::Result<String> {
     let str_to_sign = string_to_sign(h, u, method, account, service_type);
-    let auth = crate::hmac::sign(&str_to_sign, key).context(
+    let auth = hmac_sha256(&str_to_sign, key).context(
         azure_core::error::ErrorKind::Credential,
         "failed to sign the hmac",
     )?;

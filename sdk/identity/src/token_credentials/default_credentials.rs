@@ -3,7 +3,7 @@ use crate::{
     {AzureCliCredential, ImdsManagedIdentityCredential},
 };
 use azure_core::{
-    auth::{TokenCredential, TokenResponse},
+    auth::{AccessToken, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
 };
 use std::time::Duration;
@@ -76,6 +76,7 @@ impl DefaultAzureCredentialBuilder {
 }
 
 /// Types of `TokenCredential` supported by `DefaultAzureCredential`
+#[derive(Debug)]
 pub enum DefaultAzureCredentialEnum {
     /// `TokenCredential` from environment variable.
     Environment(super::EnvironmentCredential),
@@ -88,7 +89,7 @@ pub enum DefaultAzureCredentialEnum {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for DefaultAzureCredentialEnum {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
         match self {
             DefaultAzureCredentialEnum::Environment(credential) => {
                 credential.get_token(resource).await.context(
@@ -128,6 +129,7 @@ impl TokenCredential for DefaultAzureCredentialEnum {
 /// - `ManagedIdentityCredential`
 /// - `AzureCliCredential`
 /// Consult the documentation of these credential types for more information on how they attempt authentication.
+#[derive(Debug)]
 pub struct DefaultAzureCredential {
     sources: Vec<DefaultAzureCredentialEnum>,
 }
@@ -151,7 +153,7 @@ impl Default for DefaultAzureCredential {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for DefaultAzureCredential {
     /// Try to fetch a token using each of the credential sources until one succeeds
-    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
         let mut errors = Vec::new();
         for source in &self.sources {
             let token_res = source.get_token(resource).await;

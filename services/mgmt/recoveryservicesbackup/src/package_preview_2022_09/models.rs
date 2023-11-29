@@ -9100,11 +9100,23 @@ pub mod protected_item {
 #[serde(tag = "protectedItemType")]
 pub enum ProtectedItemUnion {
     AzureFileShareProtectedItem(AzureFileshareProtectedItem),
+    #[serde(rename = "Microsoft.ClassicCompute/virtualMachines")]
+    MicrosoftClassicComputeVirtualMachines(AzureIaaSClassicComputeVmProtectedItem),
+    #[serde(rename = "Microsoft.Compute/virtualMachines")]
+    MicrosoftComputeVirtualMachines(AzureIaaSComputeVmProtectedItem),
     #[serde(rename = "AzureIaaSVMProtectedItem")]
     AzureIaaSvmProtectedItem(AzureIaaSvmProtectedItem),
     #[serde(rename = "Microsoft.Sql/servers/databases")]
     MicrosoftSqlServersDatabases(AzureSqlProtectedItem),
     AzureVmWorkloadProtectedItem(AzureVmWorkloadProtectedItem),
+    #[serde(rename = "AzureVmWorkloadSAPAseDatabase")]
+    AzureVmWorkloadSapAseDatabase(AzureVmWorkloadSapAseDatabaseProtectedItem),
+    #[serde(rename = "AzureVmWorkloadSAPHanaDBInstance")]
+    AzureVmWorkloadSapHanaDbInstance(AzureVmWorkloadSapHanaDbInstanceProtectedItem),
+    #[serde(rename = "AzureVmWorkloadSAPHanaDatabase")]
+    AzureVmWorkloadSapHanaDatabase(AzureVmWorkloadSapHanaDatabaseProtectedItem),
+    #[serde(rename = "AzureVmWorkloadSQLDatabase")]
+    AzureVmWorkloadSqlDatabase(AzureVmWorkloadSqlDatabaseProtectedItem),
     #[serde(rename = "DPMProtectedItem")]
     DpmProtectedItem(DpmProtectedItem),
     GenericProtectedItem(GenericProtectedItem),
@@ -9445,8 +9457,17 @@ pub mod protection_container {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "containerType")]
 pub enum ProtectionContainerUnion {
+    AzureBackupServerContainer(AzureBackupServerContainer),
+    #[serde(rename = "Microsoft.ClassicCompute/virtualMachines")]
+    MicrosoftClassicComputeVirtualMachines(AzureIaaSClassicComputeVmContainer),
+    #[serde(rename = "Microsoft.Compute/virtualMachines")]
+    MicrosoftComputeVirtualMachines(AzureIaaSComputeVmContainer),
+    #[serde(rename = "SQLAGWorkLoadContainer")]
+    SqlagWorkLoadContainer(AzureSqlagWorkloadContainerProtectionContainer),
     AzureSqlContainer(AzureSqlContainer),
     StorageContainer(AzureStorageContainer),
+    #[serde(rename = "VMAppContainer")]
+    VmAppContainer(AzureVmAppContainerProtectionContainer),
     AzureWorkloadContainer(AzureWorkloadContainer),
     #[serde(rename = "DPMContainer")]
     DpmContainer(DpmContainer),
@@ -9629,7 +9650,10 @@ pub mod protection_intent {
 pub enum ProtectionIntentUnion {
     RecoveryServiceVaultItem(AzureRecoveryServiceVaultProtectionIntent),
     AzureResourceItem(AzureResourceProtectionIntent),
+    AzureWorkloadAutoProtectionIntent(AzureWorkloadAutoProtectionIntent),
     AzureWorkloadContainerAutoProtectionIntent(AzureWorkloadContainerAutoProtectionIntent),
+    #[serde(rename = "AzureWorkloadSQLAutoProtectionIntent")]
+    AzureWorkloadSqlAutoProtectionIntent(AzureWorkloadSqlAutoProtectionIntent),
 }
 #[doc = "Filters to list protection intent."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -10014,7 +10038,16 @@ impl ProtectionPolicyResourceList {
 #[serde(tag = "objectType")]
 pub enum RecoveryPointUnion {
     AzureFileShareRecoveryPoint(AzureFileShareRecoveryPoint),
+    AzureWorkloadPointInTimeRecoveryPoint(AzureWorkloadPointInTimeRecoveryPoint),
     AzureWorkloadRecoveryPoint(AzureWorkloadRecoveryPoint),
+    #[serde(rename = "AzureWorkloadSAPHanaPointInTimeRecoveryPoint")]
+    AzureWorkloadSapHanaPointInTimeRecoveryPoint(AzureWorkloadSapHanaPointInTimeRecoveryPoint),
+    #[serde(rename = "AzureWorkloadSAPHanaRecoveryPoint")]
+    AzureWorkloadSapHanaRecoveryPoint(AzureWorkloadSapHanaRecoveryPoint),
+    #[serde(rename = "AzureWorkloadSQLPointInTimeRecoveryPoint")]
+    AzureWorkloadSqlPointInTimeRecoveryPoint(AzureWorkloadSqlPointInTimeRecoveryPoint),
+    #[serde(rename = "AzureWorkloadSQLRecoveryPoint")]
+    AzureWorkloadSqlRecoveryPoint(AzureWorkloadSqlRecoveryPoint),
     GenericRecoveryPoint(GenericRecoveryPoint),
     #[serde(rename = "IaasVMRecoveryPoint")]
     IaasVmRecoveryPoint(IaasVmRecoveryPoint),
@@ -10459,9 +10492,28 @@ impl RestoreFileSpecs {
 #[serde(tag = "objectType")]
 pub enum RestoreRequestUnion {
     AzureFileShareRestoreRequest(AzureFileShareRestoreRequest),
+    AzureWorkloadPointInTimeRestoreRequest(AzureWorkloadPointInTimeRestoreRequest),
     AzureWorkloadRestoreRequest(AzureWorkloadRestoreRequest),
+    #[serde(rename = "AzureWorkloadSAPHanaPointInTimeRestoreRequest")]
+    AzureWorkloadSapHanaPointInTimeRestoreRequest(AzureWorkloadSapHanaPointInTimeRestoreRequest),
+    #[serde(rename = "AzureWorkloadSAPHanaPointInTimeRestoreWithRehydrateRequest")]
+    AzureWorkloadSapHanaPointInTimeRestoreWithRehydrateRequest(AzureWorkloadSapHanaPointInTimeRestoreWithRehydrateRequest),
+    #[serde(rename = "AzureWorkloadSAPHanaRestoreRequest")]
+    AzureWorkloadSapHanaRestoreRequest(AzureWorkloadSapHanaRestoreRequest),
+    #[serde(rename = "AzureWorkloadSAPHanaRestoreWithRehydrateRequest")]
+    AzureWorkloadSapHanaRestoreWithRehydrateRequest(AzureWorkloadSapHanaRestoreWithRehydrateRequest),
+    #[serde(rename = "AzureWorkloadSQLPointInTimeRestoreRequest")]
+    AzureWorkloadSqlPointInTimeRestoreRequest(AzureWorkloadSqlPointInTimeRestoreRequest),
+    #[serde(rename = "AzureWorkloadSQLPointInTimeRestoreWithRehydrateRequest")]
+    AzureWorkloadSqlPointInTimeRestoreWithRehydrateRequest(AzureWorkloadSqlPointInTimeRestoreWithRehydrateRequest),
+    #[serde(rename = "AzureWorkloadSQLRestoreRequest")]
+    AzureWorkloadSqlRestoreRequest(AzureWorkloadSqlRestoreRequest),
+    #[serde(rename = "AzureWorkloadSQLRestoreWithRehydrateRequest")]
+    AzureWorkloadSqlRestoreWithRehydrateRequest(AzureWorkloadSqlRestoreWithRehydrateRequest),
     #[serde(rename = "IaasVMRestoreRequest")]
     IaasVmRestoreRequest(IaasVmRestoreRequest),
+    #[serde(rename = "IaasVMRestoreWithRehydrationRequest")]
+    IaasVmRestoreWithRehydrationRequest(IaasVmRestoreWithRehydrationRequest),
 }
 #[doc = "Base class for restore request. Workload-specific restore requests are derived from this class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -11281,6 +11333,8 @@ impl ValidateIaasVmRestoreOperationRequest {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "objectType")]
 pub enum ValidateOperationRequestUnion {
+    #[serde(rename = "ValidateIaasVMRestoreOperationRequest")]
+    ValidateIaasVmRestoreOperationRequest(ValidateIaasVmRestoreOperationRequest),
     ValidateRestoreOperationRequest(ValidateRestoreOperationRequest),
 }
 #[doc = "Base class for validate operation response."]
@@ -11573,6 +11627,18 @@ pub mod workload_item {
 #[serde(tag = "workloadItemType")]
 pub enum WorkloadItemUnion {
     AzureVmWorkloadItem(AzureVmWorkloadItem),
+    #[serde(rename = "SAPAseDatabase")]
+    SapAseDatabase(AzureVmWorkloadSapAseDatabaseWorkloadItem),
+    #[serde(rename = "SAPAseSystem")]
+    SapAseSystem(AzureVmWorkloadSapAseSystemWorkloadItem),
+    #[serde(rename = "SAPHanaDatabase")]
+    SapHanaDatabase(AzureVmWorkloadSapHanaDatabaseWorkloadItem),
+    #[serde(rename = "SAPHanaSystem")]
+    SapHanaSystem(AzureVmWorkloadSapHanaSystemWorkloadItem),
+    #[serde(rename = "SQLDataBase")]
+    SqlDataBase(AzureVmWorkloadSqlDatabaseWorkloadItem),
+    #[serde(rename = "SQLInstance")]
+    SqlInstance(AzureVmWorkloadSqlInstanceWorkloadItem),
 }
 #[doc = "Base class for backup item. Workload-specific backup items are derived from this class."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -11689,7 +11755,27 @@ pub mod workload_protectable_item {
 #[serde(tag = "protectableItemType")]
 pub enum WorkloadProtectableItemUnion {
     AzureFileShare(AzureFileShareProtectableItem),
+    #[serde(rename = "Microsoft.ClassicCompute/virtualMachines")]
+    MicrosoftClassicComputeVirtualMachines(AzureIaaSClassicComputeVmProtectableItem),
+    #[serde(rename = "Microsoft.Compute/virtualMachines")]
+    MicrosoftComputeVirtualMachines(AzureIaaSComputeVmProtectableItem),
     AzureVmWorkloadProtectableItem(AzureVmWorkloadProtectableItem),
+    #[serde(rename = "SAPAseSystem")]
+    SapAseSystem(AzureVmWorkloadSapAseSystemProtectableItem),
+    #[serde(rename = "SAPHanaDBInstance")]
+    SapHanaDbInstance(AzureVmWorkloadSapHanaDbInstance),
+    #[serde(rename = "SAPHanaDatabase")]
+    SapHanaDatabase(AzureVmWorkloadSapHanaDatabaseProtectableItem),
+    #[serde(rename = "SAPHanaHSR")]
+    SapHanaHsr(AzureVmWorkloadSapHanaHsr),
+    #[serde(rename = "SAPHanaSystem")]
+    SapHanaSystem(AzureVmWorkloadSapHanaSystemProtectableItem),
+    #[serde(rename = "SQLAvailabilityGroupContainer")]
+    SqlAvailabilityGroupContainer(AzureVmWorkloadSqlAvailabilityGroupProtectableItem),
+    #[serde(rename = "SQLDataBase")]
+    SqlDataBase(AzureVmWorkloadSqlDatabaseProtectableItem),
+    #[serde(rename = "SQLInstance")]
+    SqlInstance(AzureVmWorkloadSqlInstanceProtectableItem),
     #[serde(rename = "IaaSVMProtectableItem")]
     IaaSvmProtectableItem(IaaSvmProtectableItem),
 }

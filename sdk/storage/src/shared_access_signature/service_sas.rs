@@ -1,7 +1,5 @@
-use crate::{
-    hmac,
-    shared_access_signature::{format_date, SasProtocol, SasToken},
-};
+use crate::shared_access_signature::{format_date, SasProtocol, SasToken};
+use azure_core::{auth::Secret, hmac::hmac_sha256};
 use std::fmt;
 use time::OffsetDateTime;
 use url::form_urlencoded;
@@ -93,7 +91,7 @@ impl fmt::Display for BlobSasPermissions {
 }
 
 pub struct BlobSharedAccessSignature {
-    key: String,
+    key: Secret,
     canonicalized_resource: String,
     resource: BlobSignedResource,
     permissions: BlobSasPermissions, // sp
@@ -107,7 +105,7 @@ pub struct BlobSharedAccessSignature {
 
 impl BlobSharedAccessSignature {
     pub fn new(
-        key: String,
+        key: Secret,
         canonicalized_resource: String,
         permissions: BlobSasPermissions,
         expiry: OffsetDateTime,
@@ -157,7 +155,7 @@ impl BlobSharedAccessSignature {
             String::new(), // rsct
         ];
 
-        hmac::sign(&content.join("\n"), &self.key).expect("HMAC signing failed")
+        hmac_sha256(&content.join("\n"), &self.key).expect("HMAC signing failed")
     }
 }
 
@@ -209,7 +207,7 @@ mod test {
             ..Default::default()
         };
         let signed_token = BlobSharedAccessSignature::new(
-            String::from(MOCK_SECRET_KEY),
+            Secret::new(MOCK_SECRET_KEY),
             String::from(MOCK_CANONICALIZED_RESOURCE),
             permissions,
             OffsetDateTime::UNIX_EPOCH + Duration::days(7),
@@ -235,7 +233,7 @@ mod test {
             ..Default::default()
         };
         let signed_token = BlobSharedAccessSignature::new(
-            String::from(MOCK_SECRET_KEY),
+            Secret::new(MOCK_SECRET_KEY),
             String::from(MOCK_CANONICALIZED_RESOURCE),
             permissions,
             OffsetDateTime::UNIX_EPOCH + Duration::days(7),

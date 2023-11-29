@@ -3,7 +3,7 @@ mod authorization_policy;
 pub(crate) use self::authorization_policy::AuthorizationPolicy;
 use crate::clients::{EMULATOR_ACCOUNT, EMULATOR_ACCOUNT_KEY};
 use azure_core::{
-    auth::TokenCredential,
+    auth::{Secret, TokenCredential},
     error::{ErrorKind, ResultExt},
 };
 use futures::lock::Mutex;
@@ -22,16 +22,16 @@ use url::Url;
 ///
 /// For example, to use an account name and access key:
 /// ```rust
-/// azure_storage::StorageCredentials::access_key("my_account", "SOMEACCESSKEY");
+/// azure_storage::StorageCredentials::access_key("my_account", azure_core::auth::Secret::new("SOMEACCESSKEY"));
 /// ```
 #[derive(Clone)]
 pub struct StorageCredentials(pub Arc<Mutex<StorageCredentialsInner>>);
 
 #[derive(Clone)]
 pub enum StorageCredentialsInner {
-    Key(String, String),
+    Key(String, Secret),
     SASToken(Vec<(String, String)>),
-    BearerToken(String),
+    BearerToken(Secret),
     TokenCredential(Arc<dyn TokenCredential>),
     Anonymous,
 }
@@ -53,7 +53,7 @@ impl StorageCredentials {
     pub fn access_key<A, K>(account: A, key: K) -> Self
     where
         A: Into<String>,
-        K: Into<String>,
+        K: Into<Secret>,
     {
         Self::wrap(StorageCredentialsInner::Key(account.into(), key.into()))
     }
@@ -86,7 +86,7 @@ impl StorageCredentials {
     /// ref: <https://docs.microsoft.com/rest/api/storageservices/authorize-with-azure-active-directory>
     pub fn bearer_token<T>(token: T) -> Self
     where
-        T: Into<String>,
+        T: Into<Secret>,
     {
         Self::wrap(StorageCredentialsInner::BearerToken(token.into()))
     }
@@ -129,7 +129,7 @@ impl StorageCredentials {
 
     /// Create an Access Key credential for use with the Azure Storage emulator
     pub fn emulator() -> Self {
-        Self::access_key(EMULATOR_ACCOUNT, EMULATOR_ACCOUNT_KEY)
+        Self::access_key(EMULATOR_ACCOUNT, Secret::new(EMULATOR_ACCOUNT_KEY))
     }
 
     /// Replace the current credentials with new credentials
@@ -233,7 +233,7 @@ mod tests {
     #[tokio::test]
     async fn test_replacement() -> azure_core::Result<()> {
         let base = StorageCredentials::anonymous();
-        let other = StorageCredentials::bearer_token("foo");
+        let other = StorageCredentials::bearer_token(Secret::new("foo"));
 
         base.replace(other).await?;
 
@@ -242,7 +242,7 @@ mod tests {
             let inner = base.0.lock().await;
             let inner_locked = inner.deref();
             assert!(
-                matches!(&inner_locked, &StorageCredentialsInner::BearerToken(value) if value == "foo")
+                matches!(&inner_locked, &StorageCredentialsInner::BearerToken(value) if value.secret() == "foo")
             );
         }
 
