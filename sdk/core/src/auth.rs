@@ -60,7 +60,7 @@ pub struct AccessToken {
 }
 
 impl AccessToken {
-    /// Create a new `TokenResponse`.
+    /// Create a new `AccessToken`.
     pub fn new<T>(token: T, expires_on: OffsetDateTime) -> Self
     where
         T: Into<Secret>,
@@ -76,6 +76,6 @@ impl AccessToken {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait TokenCredential: Send + Sync + Debug {
-    /// Gets a `TokenResponse` for the specified resource
+    /// Gets a `AccessToken` for the specified resource
     async fn get_token(&self, resource: &str) -> crate::Result<AccessToken>;
 }

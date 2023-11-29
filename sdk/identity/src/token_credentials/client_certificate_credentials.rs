@@ -1,6 +1,6 @@
 use super::authority_hosts;
 use azure_core::{
-    auth::{Secret, TokenCredential, TokenResponse},
+    auth::{AccessToken, Secret, TokenCredential},
     base64, content_type,
     error::{Error, ErrorKind},
     headers, new_http_client, HttpClient, Method, Request,
@@ -152,7 +152,7 @@ fn openssl_error(err: ErrorStack) -> azure_core::error::Error {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ClientCertificateCredential {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
         let options = self.options();
         let url = &format!(
             "{}/{}/oauth2/v2.0/token",
@@ -254,7 +254,7 @@ impl TokenCredential for ClientCertificateCredential {
         }
 
         let response: AadTokenResponse = serde_json::from_slice(&rsp_body)?;
-        Ok(TokenResponse::new(
+        Ok(AccessToken::new(
             response.access_token,
             OffsetDateTime::now_utc() + Duration::from_secs(response.expires_in),
         ))
