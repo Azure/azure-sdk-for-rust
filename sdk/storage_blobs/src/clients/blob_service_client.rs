@@ -276,7 +276,7 @@ mod tests {
 
         // check that the update occurred
         let credentials = blob_client.container_client().credentials();
-        let locked = credentials.0.lock().await;
+        let locked = credentials.0.read().await;
         assert!(matches!(
             locked.deref(),
             &StorageCredentialsInner::Anonymous
