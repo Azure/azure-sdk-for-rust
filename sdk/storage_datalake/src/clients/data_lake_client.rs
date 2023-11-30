@@ -1,9 +1,10 @@
-use crate::clients::FileSystemClient;
-use crate::operations::ListFileSystemsBuilder;
-use azure_core::{ClientOptions, Pipeline};
-use azure_storage::clients::{new_pipeline_from_options, ServiceType};
-use azure_storage::prelude::StorageCredentials;
-use azure_storage::CloudLocation;
+use crate::{clients::FileSystemClient, operations::ListFileSystemsBuilder};
+use azure_core::{ClientOptions, Pipeline, Url};
+use azure_storage::{
+    clients::{new_pipeline_from_options, ServiceType},
+    prelude::StorageCredentials,
+    CloudLocation,
+};
 
 /// A builder for the blob service client.
 #[derive(Debug, Clone)]
@@ -107,7 +108,7 @@ impl DataLakeClient {
         DataLakeClientBuilder::new(account, credentials)
     }
 
-    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
+    pub(crate) fn url(&self) -> azure_core::Result<Url> {
         self.cloud_location.url(ServiceType::DataLake)
     }
 

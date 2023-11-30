@@ -1,7 +1,8 @@
 //! Request properties used in datalake rest api operations
-use azure_core::AppendToUrlQuery;
-use azure_core::Header;
+
+use azure_core::{AppendToUrlQuery, Header, Url};
 use azure_storage::headers;
+use url::form_urlencoded;
 
 #[derive(Debug, Clone)]
 pub enum ResourceType {
@@ -11,7 +12,7 @@ pub enum ResourceType {
 }
 
 impl AppendToUrlQuery for ResourceType {
-    fn append_to_url_query(&self, url: &mut url::Url) {
+    fn append_to_url_query(&self, url: &mut Url) {
         let resource = match self {
             Self::File => "file",
             Self::Directory => "directory",
@@ -28,7 +29,7 @@ pub enum PathRenameMode {
 }
 
 impl AppendToUrlQuery for PathRenameMode {
-    fn append_to_url_query(&self, url: &mut url::Url) {
+    fn append_to_url_query(&self, url: &mut Url) {
         let mode = match self {
             Self::Legacy => "legacy",
             Self::Posix => "posix",
@@ -45,7 +46,7 @@ pub enum PathGetPropertiesAction {
 }
 
 impl AppendToUrlQuery for PathGetPropertiesAction {
-    fn append_to_url_query(&self, url: &mut url::Url) {
+    fn append_to_url_query(&self, url: &mut Url) {
         let action = match self {
             Self::CheckAccess => "checkAccess",
             Self::GetAccessControl => "getAccessControl",
@@ -59,7 +60,7 @@ impl AppendToUrlQuery for PathGetPropertiesAction {
 pub struct Recursive(bool);
 
 impl AppendToUrlQuery for Recursive {
-    fn append_to_url_query(&self, url: &mut url::Url) {
+    fn append_to_url_query(&self, url: &mut Url) {
         let recursive = if self.0 { "true" } else { "false" };
         url.query_pairs_mut().append_pair("recursive", recursive);
     }
@@ -75,7 +76,7 @@ impl From<bool> for Recursive {
 pub struct Upn(bool);
 
 impl AppendToUrlQuery for Upn {
-    fn append_to_url_query(&self, url: &mut url::Url) {
+    fn append_to_url_query(&self, url: &mut Url) {
         let upn = if self.0 { "true" } else { "false" };
         url.query_pairs_mut().append_pair("upn", upn);
     }
@@ -97,7 +98,7 @@ pub enum PathUpdateAction {
 }
 
 impl AppendToUrlQuery for PathUpdateAction {
-    fn append_to_url_query(&self, url: &mut url::Url) {
+    fn append_to_url_query(&self, url: &mut Url) {
         let action = match self {
             Self::Append => "append",
             Self::Flush => "flush",
@@ -125,7 +126,7 @@ impl From<i64> for Position {
 }
 
 impl AppendToUrlQuery for Position {
-    fn append_to_url_query(&self, url: &mut url::Url) {
+    fn append_to_url_query(&self, url: &mut Url) {
         url.query_pairs_mut()
             .append_pair("position", &self.0.to_string());
     }
@@ -147,7 +148,7 @@ impl From<bool> for Close {
 }
 
 impl AppendToUrlQuery for Close {
-    fn append_to_url_query(&self, url: &mut url::Url) {
+    fn append_to_url_query(&self, url: &mut Url) {
         let close = if self.0 { "true" } else { "false" };
         url.query_pairs_mut().append_pair("close", close);
     }
@@ -169,7 +170,7 @@ impl From<bool> for RetainUncommittedData {
 }
 
 impl AppendToUrlQuery for RetainUncommittedData {
-    fn append_to_url_query(&self, url: &mut url::Url) {
+    fn append_to_url_query(&self, url: &mut Url) {
         let retain = if self.0 { "true" } else { "false" };
         url.query_pairs_mut()
             .append_pair("retainUncommittedData", retain);
@@ -194,7 +195,7 @@ impl Header for RenameSource {
     }
 
     fn value(&self) -> azure_core::headers::HeaderValue {
-        url::form_urlencoded::byte_serialize(self.0.as_bytes())
+        form_urlencoded::byte_serialize(self.0.as_bytes())
             .collect::<String>()
             .into()
     }

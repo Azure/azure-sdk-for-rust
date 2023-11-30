@@ -1,5 +1,7 @@
-use crate::headers::{self, Headers};
-use crate::AppendToUrlQuery;
+use crate::{
+    headers::{self, Headers},
+    AppendToUrlQuery, Url,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -22,7 +24,7 @@ impl NextMarker {
         &self.0
     }
 
-    pub fn append_to_url_query_as_continuation(&self, url: &mut url::Url) {
+    pub fn append_to_url_query_as_continuation(&self, url: &mut Url) {
         url.query_pairs_mut().append_pair("continuation", &self.0);
     }
 
@@ -36,7 +38,7 @@ impl NextMarker {
 }
 
 impl AppendToUrlQuery for NextMarker {
-    fn append_to_url_query(&self, url: &mut url::Url) {
+    fn append_to_url_query(&self, url: &mut Url) {
         url.query_pairs_mut().append_pair("marker", &self.0);
     }
 }

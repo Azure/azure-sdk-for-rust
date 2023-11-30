@@ -39,7 +39,7 @@ impl BlobLeaseClient {
         &self.blob_client
     }
 
-    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
+    pub(crate) fn url(&self) -> azure_core::Result<Url> {
         self.blob_client.url()
     }
 

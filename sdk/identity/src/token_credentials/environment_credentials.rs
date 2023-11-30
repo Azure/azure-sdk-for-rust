@@ -1,9 +1,10 @@
 use super::{ClientSecretCredential, TokenCredentialOptions, WorkloadIdentityCredential};
-use azure_core::auth::{AccessToken, TokenCredential};
-use azure_core::error::{Error, ErrorKind, ResultExt};
-use azure_core::HttpClient;
+use azure_core::{
+    auth::{AccessToken, TokenCredential},
+    error::{Error, ErrorKind, ResultExt},
+    HttpClient, Url,
+};
 use std::sync::Arc;
-use url::Url;
 
 const AZURE_TENANT_ID_ENV_KEY: &str = "AZURE_TENANT_ID";
 const AZURE_CLIENT_ID_ENV_KEY: &str = "AZURE_CLIENT_ID";

@@ -1,7 +1,6 @@
 use crate::{operations::*, prelude::*};
-use azure_core::{headers::Headers, Body, Context, Method, Request, Response};
+use azure_core::{headers::Headers, Body, Context, Method, Request, Response, Url};
 use serde::{de::DeserializeOwned, Serialize};
-use url::Url;
 
 #[derive(Debug, Clone)]
 pub struct EntityClient {

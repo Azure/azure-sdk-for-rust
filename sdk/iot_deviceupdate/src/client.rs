@@ -1,12 +1,12 @@
 use azure_core::{
     auth::{AccessToken, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
+    Url,
 };
 use azure_identity::AutoRefreshingTokenCredential;
 use const_format::formatcp;
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
-use url::Url;
 
 pub(crate) const API_VERSION: &str = "2021-06-01-preview";
 pub(crate) const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSION);

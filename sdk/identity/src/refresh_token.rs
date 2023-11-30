@@ -5,12 +5,12 @@ use azure_core::{
     auth::Secret,
     content_type,
     error::{Error, ErrorKind, ResultExt},
-    headers, HttpClient, Request,
+    headers, HttpClient, Request, Url,
 };
 use serde::Deserialize;
 use std::fmt;
 use std::sync::Arc;
-use url::{form_urlencoded, Url};
+use url::form_urlencoded;
 
 /// Exchange a refresh token for a new access token and refresh token
 pub async fn exchange(

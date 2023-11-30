@@ -10,11 +10,10 @@ use azure_core::{
     date,
     error::{Error, ErrorKind},
     headers::*,
-    Body, ClientOptions, Method, Pipeline, Request,
+    Body, ClientOptions, Method, Pipeline, Request, Url,
 };
 use std::{ops::Deref, sync::Arc};
 use time::OffsetDateTime;
-use url::Url;
 
 /// The well-known account used by Azurite and the legacy Azure Storage Emulator.
 /// <https://docs.microsoft.com/azure/storage/common/storage-use-azurite#well-known-storage-account-and-key>

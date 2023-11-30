@@ -1,9 +1,8 @@
 use crate::operations::ListTablesBuilder;
 use azure_core::{
-    headers::Headers, Body, ClientOptions, Context, Method, Pipeline, Request, Response,
+    headers::Headers, Body, ClientOptions, Context, Method, Pipeline, Request, Response, Url,
 };
 use azure_storage::{clients::ServiceType, prelude::StorageCredentials, CloudLocation};
-use url::Url;
 
 use super::TableClient;
 

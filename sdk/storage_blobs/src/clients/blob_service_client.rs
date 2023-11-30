@@ -192,7 +192,7 @@ impl BlobServiceClient {
         ListContainersBuilder::new(self.clone())
     }
 
-    pub fn url(&self) -> azure_core::Result<url::Url> {
+    pub fn url(&self) -> azure_core::Result<Url> {
         self.cloud_location.url(ServiceType::Blob)
     }
 

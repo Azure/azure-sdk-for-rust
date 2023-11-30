@@ -31,7 +31,7 @@ impl ContainerLeaseClient {
         &self.container_client
     }
 
-    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
+    pub(crate) fn url(&self) -> azure_core::Result<Url> {
         self.container_client.url()
     }
 

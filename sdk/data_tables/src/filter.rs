@@ -1,4 +1,4 @@
-use azure_core::AppendToUrlQuery;
+use azure_core::{AppendToUrlQuery, Url};
 use std::borrow::Cow;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -11,7 +11,7 @@ impl Filter {
 }
 
 impl AppendToUrlQuery for Filter {
-    fn append_to_url_query(&self, url: &mut url::Url) {
+    fn append_to_url_query(&self, url: &mut Url) {
         url.query_pairs_mut()
             .append_pair("$filter", self.0.as_ref());
     }

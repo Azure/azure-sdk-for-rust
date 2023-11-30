@@ -5,11 +5,10 @@ use azure_core::{
     error::{Error, ErrorKind},
     headers::*,
     prelude::*,
-    Body, Context, Method, Pipeline, Request, Response,
+    Body, Context, Method, Pipeline, Request, Response, Url,
 };
 use std::sync::Arc;
 use time::OffsetDateTime;
-use url::Url;
 
 pub const API_VERSION: &str = "7.0";
 const API_VERSION_PARAM: &str = "api-version";

@@ -1,8 +1,7 @@
-use crate::operations::*;
-use crate::request_options::*;
-use crate::{clients::FileSystemClient, prelude::PathClient, Properties};
-use azure_core::prelude::IfMatchCondition;
-use url::Url;
+use crate::{
+    clients::FileSystemClient, operations::*, prelude::PathClient, request_options::*, Properties,
+};
+use azure_core::{prelude::IfMatchCondition, Url};
 
 #[derive(Debug, Clone)]
 pub struct DirectoryClient {

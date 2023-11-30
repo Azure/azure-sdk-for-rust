@@ -6,13 +6,13 @@ use async_lock::RwLock;
 use azure_core::{
     auth::{Secret, TokenCredential},
     error::{ErrorKind, ResultExt},
+    Url,
 };
 use std::{
     mem::replace,
     ops::{Deref, DerefMut},
     sync::Arc,
 };
-use url::Url;
 
 /// Credentials for accessing a storage account.
 ///
@@ -205,9 +205,9 @@ impl TryFrom<&Url> for StorageCredentials {
 fn get_sas_token_parms(sas_token: &str) -> azure_core::Result<Vec<(String, String)>> {
     // Any base url will do: we just need to parse the SAS token
     // to get its query pairs.
-    let base_url = url::Url::parse("https://blob.core.windows.net").unwrap();
+    let base_url = Url::parse("https://blob.core.windows.net").unwrap();
 
-    let url = url::Url::options().base_url(Some(&base_url));
+    let url = Url::options().base_url(Some(&base_url));
 
     // this code handles the leading ?
     // we support both with or without

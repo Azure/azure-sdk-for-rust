@@ -48,7 +48,7 @@ impl PartitionKeyClient {
         self.table_client.send(context, request).await
     }
 
-    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
+    pub(crate) fn url(&self) -> azure_core::Result<Url> {
         self.table_client.url()
     }
 }

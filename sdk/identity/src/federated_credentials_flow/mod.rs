@@ -1,9 +1,8 @@
 //! Authorize using the OAuth 2.0 client credentials flow with federated credentials.
 //!
 //! ```no_run
-//! use azure_core::authority_hosts::AZURE_PUBLIC_CLOUD;
+//! use azure_core::{authority_hosts::AZURE_PUBLIC_CLOUD, Url};
 //! use azure_identity::{federated_credentials_flow};
-//! use url::Url;
 //!
 //! use std::env;
 //! use std::error::Error;
@@ -40,12 +39,12 @@ use azure_core::Method;
 use azure_core::{
     content_type,
     error::{ErrorKind, ResultExt},
-    headers, HttpClient, Request,
+    headers, HttpClient, Request, Url,
 };
 use log::{debug, error};
 use login_response::LoginResponse;
 use std::sync::Arc;
-use url::{form_urlencoded, Url};
+use url::form_urlencoded;
 
 /// Perform the client credentials flow
 pub async fn perform(
