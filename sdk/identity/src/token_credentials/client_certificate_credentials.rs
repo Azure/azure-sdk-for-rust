@@ -235,7 +235,7 @@ impl TokenCredential for ClientCertificateCredential {
             let mut encoded = &mut form_urlencoded::Serializer::new(String::new());
             encoded = encoded
                 .append_pair("client_id", self.client_id.as_str())
-                .append_pair("scope", resource)
+                .append_pair("scope", &resource)
                 .append_pair(
                     "client_assertion_type",
                     "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
