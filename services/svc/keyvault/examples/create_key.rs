@@ -9,7 +9,7 @@ you want to create.
 cargo run --package azure_svc_keyvault --example create_key <YourKeyVaultName> <KeyName>
 */
 
-use azure_core::date;
+use azure_core::{date, Url};
 use azure_identity::AzureCliCredential;
 use azure_svc_keyvault::models::{key_create_parameters::Kty, Attributes, KeyAttributes, KeyCreateParameters};
 use std::sync::Arc;
@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = Arc::new(AzureCliCredential::new());
     let keyvault_name = std::env::args().nth(1).expect("please specify an existing keyvault");
     let key_name = std::env::args().nth(2).expect("please specify the name of the key to create");
-    let endpoint = format!("https://{keyvault_name}.vault.azure.net");
+    let endpoint = Url::parse(&format!("https://{keyvault_name}.vault.azure.net"))?;
     let scopes = &["https://vault.azure.net"];
     let client = azure_svc_keyvault::Client::builder(credential)
         .endpoint(endpoint)

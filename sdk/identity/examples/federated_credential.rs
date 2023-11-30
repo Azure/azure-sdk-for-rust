@@ -1,4 +1,5 @@
-use azure_identity::{authority_hosts, federated_credentials_flow};
+use azure_core::authority_hosts::AZURE_PUBLIC_CLOUD;
+use azure_identity::federated_credentials_flow;
 use std::{
     env::{args, var},
     error::Error,
@@ -23,7 +24,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         &token,
         &["https://vault.azure.net/.default"],
         &tenant_id,
-        authority_hosts::AZURE_PUBLIC_CLOUD,
+        &AZURE_PUBLIC_CLOUD,
     )
     .await
     .expect("federated_credentials_flow failed");

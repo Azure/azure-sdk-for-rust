@@ -110,11 +110,20 @@ impl AzureauthCliCredential {
             ("azureauth", false)
         };
 
+        let mut resource = resource.to_owned();
+        if !resource.ends_with("/.default") {
+            if resource.ends_with('/') {
+                resource.push_str(".default");
+            } else {
+                resource.push_str("/.default");
+            }
+        }
+
         let mut cmd = Command::new(cmd_name);
         cmd.args([
             "aad",
             "--scope",
-            &format!("{resource}/.default"),
+            &resource,
             resource,
             "--client",
             self.client_id.as_str(),

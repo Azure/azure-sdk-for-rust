@@ -23,6 +23,7 @@ bytes = "1.3"
 futures = "0.3"
 time = "0.3"
 log = "0.4"
+once_cell = "1.18"
 
 [dev-dependencies]
 azure_identity = { path = "../../../sdk/identity" }

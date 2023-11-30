@@ -3,6 +3,7 @@ use azure_core::auth::{AccessToken, TokenCredential};
 use azure_core::error::{Error, ErrorKind, ResultExt};
 use azure_core::HttpClient;
 use std::sync::Arc;
+use url::Url;
 
 const AZURE_TENANT_ID_ENV_KEY: &str = "AZURE_TENANT_ID";
 const AZURE_CLIENT_ID_ENV_KEY: &str = "AZURE_CLIENT_ID";
@@ -79,7 +80,7 @@ impl TokenCredential for EnvironmentCredential {
         let authority_host = std::env::var(AZURE_AUTHORITY_HOST);
 
         let options: TokenCredentialOptions = if let Ok(authority_host) = authority_host {
-            TokenCredentialOptions::new(authority_host)
+            TokenCredentialOptions::new(Url::parse(&authority_host)?)
         } else {
             self.options.clone()
         };

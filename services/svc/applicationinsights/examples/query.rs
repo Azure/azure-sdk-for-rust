@@ -22,7 +22,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let query = std::env::args().nth(2).expect("please specify query");
     let timespan = std::env::args().nth(3);
 
-    let endpoint = format!("{ENDPOINT}/v1");
+    let endpoint = azure_core::Url::parse(&format!("{ENDPOINT}/v1"))?;
     let credential = Arc::new(AzureCliCredential::new());
     let client = azure_svc_applicationinsights::Client::builder(credential)
         .endpoint(endpoint)

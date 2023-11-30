@@ -1,6 +1,6 @@
-use super::authority_hosts;
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
+    authority_hosts::AZURE_PUBLIC_CLOUD,
     base64, content_type,
     error::{Error, ErrorKind},
     headers, new_http_client, HttpClient, Method, Request,
@@ -26,14 +26,14 @@ const DEFAULT_REFRESH_TIME: i64 = 300;
 /// requests to Azure Active Directory.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CertificateCredentialOptions {
-    authority_host: String,
+    authority_host: Url,
     send_certificate_chain: bool,
 }
 
 impl Default for CertificateCredentialOptions {
     fn default() -> Self {
         Self {
-            authority_host: authority_hosts::AZURE_PUBLIC_CLOUD.to_owned(),
+            authority_host: AZURE_PUBLIC_CLOUD.to_owned(),
             send_certificate_chain: false,
         }
     }
@@ -41,20 +41,20 @@ impl Default for CertificateCredentialOptions {
 
 impl CertificateCredentialOptions {
     /// Create a new `TokenCredentialsOptions`. default() may also be used.
-    pub fn new(authority_host: String, send_certificate_chain: bool) -> Self {
+    pub fn new(authority_host: Url, send_certificate_chain: bool) -> Self {
         Self {
             authority_host,
             send_certificate_chain,
         }
     }
     /// Set the authority host for authentication requests.
-    pub fn set_authority_host(&mut self, authority_host: String) {
+    pub fn set_authority_host(&mut self, authority_host: Url) {
         self.authority_host = authority_host;
     }
 
     /// The authority host to use for authentication requests.  The default is
     /// <https://login.microsoftonline.com>.
-    pub fn authority_host(&self) -> &str {
+    pub fn authority_host(&self) -> &Url {
         &self.authority_host
     }
 
@@ -154,11 +154,10 @@ fn openssl_error(err: ErrorStack) -> azure_core::error::Error {
 impl TokenCredential for ClientCertificateCredential {
     async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
         let options = self.options();
-        let url = &format!(
-            "{}/{}/oauth2/v2.0/token",
-            options.authority_host(),
-            self.tenant_id
-        );
+
+        let url = options
+            .authority_host()
+            .join(&format!("{}/oauth2/v2.0/token", self.tenant_id))?;
 
         let certificate = base64::decode(self.client_certificate.secret())
             .map_err(|_| Error::message(ErrorKind::Credential, "Base64 decode failed"))?;
@@ -223,11 +222,20 @@ impl TokenCredential for ClientCertificateCredential {
         let sig = ClientCertificateCredential::as_jwt_part(&signature);
         let client_assertion = format!("{}.{}", jwt, sig);
 
+        let mut resource = resource.to_owned();
+        if !resource.ends_with("/.default") {
+            if resource.ends_with('/') {
+                resource.push_str(".default");
+            } else {
+                resource.push_str("/.default");
+            }
+        }
+
         let encoded = {
             let mut encoded = &mut form_urlencoded::Serializer::new(String::new());
             encoded = encoded
                 .append_pair("client_id", self.client_id.as_str())
-                .append_pair("scope", format!("{}/.default", resource).as_str())
+                .append_pair("scope", &resource)
                 .append_pair(
                     "client_assertion_type",
                     "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
@@ -237,7 +245,6 @@ impl TokenCredential for ClientCertificateCredential {
             encoded.finish()
         };
 
-        let url = Url::parse(url)?;
         let mut req = Request::new(url, Method::Post);
         req.insert_header(
             headers::CONTENT_TYPE,

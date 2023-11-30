@@ -54,14 +54,14 @@ pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<Token
     }
 
     let public_cloud = quote! {
-        pub const DEFAULT_ENDPOINT: &str = azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD;
+        pub use azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD as DEFAULT_ENDPOINT;
     };
     let default_endpoint_code = if let Some(endpoint) = endpoint {
         if endpoint == "https://management.azure.com" {
             public_cloud
         } else {
             quote! {
-                pub const DEFAULT_ENDPOINT: &str = #endpoint;
+                azure_core::static_url!(DEFAULT_ENDPOINT, #endpoint);
             }
         }
     } else {
@@ -73,7 +73,7 @@ pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<Token
 
         #[derive(Clone)]
         pub struct Client {
-            endpoint: String,
+            endpoint: azure_core::Url,
             credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>,
             scopes: Vec<String>,
             pipeline: azure_core::Pipeline,
@@ -82,7 +82,7 @@ pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<Token
         #[derive(Clone)]
         pub struct ClientBuilder {
             credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>,
-            endpoint: Option<String>,
+            endpoint: Option<azure_core::Url>,
             scopes: Option<Vec<String>>,
             options: azure_core::ClientOptions,
         }
@@ -103,7 +103,7 @@ pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<Token
 
             #[doc = "Set the endpoint."]
             #[must_use]
-            pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+            pub fn endpoint(mut self, endpoint: impl Into<azure_core::Url>) -> Self {
                 self.endpoint = Some(endpoint.into());
                 self
             }
@@ -133,14 +133,14 @@ pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<Token
             #[must_use]
             pub fn build(self) -> Client {
                 let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
-                let scopes = self.scopes.unwrap_or_else(|| vec![format!("{endpoint}/")]);
+                let scopes = self.scopes.unwrap_or_else(|| vec![endpoint.to_string()]);
                 Client::new(endpoint, self.credential, scopes, self.options)
             }
         }
 
         impl Client {
-            pub(crate) fn endpoint(&self) -> &str {
-                self.endpoint.as_str()
+            pub(crate) fn endpoint(&self) -> &azure_core::Url {
+                &self.endpoint
             }
             pub(crate) fn token_credential(&self) -> &dyn azure_core::auth::TokenCredential {
                 self.credential.as_ref()
@@ -161,7 +161,7 @@ pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<Token
 
             #[doc = "Create a new `Client`."]
             #[must_use]
-            pub fn new(endpoint: impl Into<String>, credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>, scopes: Vec<String>, options: azure_core::ClientOptions) -> Self {
+            pub fn new(endpoint: impl Into<azure_core::Url>, credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>, scopes: Vec<String>, options: azure_core::ClientOptions) -> Self {
                 let endpoint = endpoint.into();
                 let pipeline = azure_core::Pipeline::new(
                     option_env!("CARGO_PKG_NAME"),

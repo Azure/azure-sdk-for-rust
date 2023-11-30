@@ -480,6 +480,19 @@ macro_rules! create_enum {
     )
 }
 
+// once Rust's `lazy_cell` feature lands, this should be replaced with that.
+// ref: https://github.com/rust-lang/rust/issues/109736
+
+#[macro_export]
+macro_rules! static_url {
+    ( $(#[$outer:meta])* $name:ident, $value:expr) => {
+        $(#[$outer])*
+        pub static $name: once_cell::sync::Lazy<$crate::Url> = once_cell::sync::Lazy::new(|| {
+            $crate::Url::parse($value).expect("hardcoded URL must parse")
+        });
+    };
+}
+
 #[cfg(test)]
 mod test {
     create_enum!(Colors, (Black, "Black"), (White, "White"), (Red, "Red"));

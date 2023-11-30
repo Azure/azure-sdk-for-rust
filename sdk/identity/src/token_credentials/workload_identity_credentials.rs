@@ -52,11 +52,20 @@ impl WorkloadIdentityCredential {
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for WorkloadIdentityCredential {
     async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
+        let mut resource = resource.to_owned();
+        if !resource.ends_with("/.default") {
+            if resource.ends_with('/') {
+                resource.push_str(".default");
+            } else {
+                resource.push_str("/.default");
+            }
+        }
+
         let res: AccessToken = federated_credentials_flow::perform(
             self.http_client.clone(),
             &self.client_id,
             self.token.secret(),
-            &[&format!("{resource}/.default")],
+            &[&resource],
             &self.tenant_id,
             self.options.authority_host(),
         )

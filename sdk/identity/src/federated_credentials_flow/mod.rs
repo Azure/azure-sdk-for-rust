@@ -1,7 +1,8 @@
 //! Authorize using the OAuth 2.0 client credentials flow with federated credentials.
 //!
 //! ```no_run
-//! use azure_identity::{authority_hosts, federated_credentials_flow};
+//! use azure_core::authority_hosts::AZURE_PUBLIC_CLOUD;
+//! use azure_identity::{federated_credentials_flow};
 //! use url::Url;
 //!
 //! use std::env;
@@ -24,8 +25,7 @@
 //!         &token,
 //!         &["https://management.azure.com/"],
 //!         &tenant_id,
-//!         authority_hosts::AZURE_PUBLIC_CLOUD.clone(),
-//!
+//!         &AZURE_PUBLIC_CLOUD,
 //!     )
 //!     .await?;
 //!     Ok(())
@@ -54,7 +54,7 @@ pub async fn perform(
     client_assertion: &str,
     scopes: &[&str],
     tenant_id: &str,
-    host: &str,
+    host: &Url,
 ) -> azure_core::Result<LoginResponse> {
     let encoded: String = form_urlencoded::Serializer::new(String::new())
         .append_pair("client_id", client_id)
@@ -67,7 +67,8 @@ pub async fn perform(
         .append_pair("grant_type", "client_credentials")
         .finish();
 
-    let url = Url::parse(&format!("{host}/{tenant_id}/oauth2/v2.0/token"))
+    let url = host
+        .join(&format!("/{tenant_id}/oauth2/v2.0/token"))
         .with_context(ErrorKind::DataConversion, || {
             format!("The supplied tenant id could not be url encoded: {tenant_id}")
         })?;

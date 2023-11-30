@@ -3531,22 +3531,6 @@ jobs:
         cd services
         cargo check --all-features -p azure_mgmt_storagesync
 
-  azure_mgmt_storagetasks:
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        profile: minimal
-        override: true
-    - uses: Swatinem/rust-cache@v2
-    - name: check all features
-      run: |
-        cd services
-        cargo check --all-features -p azure_mgmt_storagetasks
-
   azure_mgmt_storsimple1200series:
     if: always()
     runs-on: ubuntu-latest

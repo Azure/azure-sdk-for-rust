@@ -6,6 +6,7 @@ This is similar to `az storage container list --account-name $STORAGE_ACCOUNT_NA
 https://docs.microsoft.com/cli/azure/storage/container?view=azure-cli-latest#az-storage-container-list
 */
 
+use azure_core::Url;
 use azure_identity::AzureCliCredential;
 use azure_svc_blobstorage::Client;
 use futures::stream::StreamExt;
@@ -17,7 +18,7 @@ async fn main() -> azure_core::Result<()> {
 
     let account_name = std::env::args().nth(1).expect("please specify storage account");
 
-    let endpoint = format!("https://{account_name}.blob.core.windows.net");
+    let endpoint = Url::parse(&format!("https://{account_name}.blob.core.windows.net"))?;
     let scopes = &["https://storage.azure.com/"];
     let credential = Arc::new(AzureCliCredential::new());
     let client = Client::builder(credential).endpoint(endpoint).scopes(scopes).build();

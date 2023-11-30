@@ -220,7 +220,6 @@ members = [
   "mgmt/storagemover",
   "mgmt/storagepool",
   "mgmt/storagesync",
-  "mgmt/storagetasks",
   "mgmt/storsimple1200series",
   "mgmt/storsimple8000series",
   "mgmt/streamanalytics",
