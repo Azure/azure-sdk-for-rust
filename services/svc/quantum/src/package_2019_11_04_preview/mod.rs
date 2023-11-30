@@ -5,7 +5,7 @@
 pub mod models;
 #[derive(Clone)]
 pub struct Client {
-    endpoint: String,
+    endpoint: azure_core::Url,
     credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>,
     scopes: Vec<String>,
     pipeline: azure_core::Pipeline,
@@ -13,11 +13,11 @@ pub struct Client {
 #[derive(Clone)]
 pub struct ClientBuilder {
     credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>,
-    endpoint: Option<String>,
+    endpoint: Option<azure_core::Url>,
     scopes: Option<Vec<String>>,
     options: azure_core::ClientOptions,
 }
-pub const DEFAULT_ENDPOINT: &str = "https://quantum.azure.com";
+azure_core::static_url!(DEFAULT_ENDPOINT, "https://quantum.azure.com");
 impl ClientBuilder {
     #[doc = "Create a new instance of `ClientBuilder`."]
     #[must_use]
@@ -31,7 +31,7 @@ impl ClientBuilder {
     }
     #[doc = "Set the endpoint."]
     #[must_use]
-    pub fn endpoint(mut self, endpoint: impl Into<String>) -> Self {
+    pub fn endpoint(mut self, endpoint: impl Into<azure_core::Url>) -> Self {
         self.endpoint = Some(endpoint.into());
         self
     }
@@ -57,13 +57,13 @@ impl ClientBuilder {
     #[must_use]
     pub fn build(self) -> Client {
         let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
-        let scopes = self.scopes.unwrap_or_else(|| vec![format!("{endpoint}/")]);
+        let scopes = self.scopes.unwrap_or_else(|| vec![endpoint.to_string()]);
         Client::new(endpoint, self.credential, scopes, self.options)
     }
 }
 impl Client {
-    pub(crate) fn endpoint(&self) -> &str {
-        self.endpoint.as_str()
+    pub(crate) fn endpoint(&self) -> &azure_core::Url {
+        &self.endpoint
     }
     pub(crate) fn token_credential(&self) -> &dyn azure_core::auth::TokenCredential {
         self.credential.as_ref()
@@ -83,7 +83,7 @@ impl Client {
     #[doc = "Create a new `Client`."]
     #[must_use]
     pub fn new(
-        endpoint: impl Into<String>,
+        endpoint: impl Into<azure_core::Url>,
         credential: std::sync::Arc<dyn azure_core::auth::TokenCredential>,
         scopes: Vec<String>,
         options: azure_core::ClientOptions,

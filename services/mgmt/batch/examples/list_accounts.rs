@@ -11,6 +11,8 @@ use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
+
     let credential = Arc::new(AzureCliCredential::new());
     let subscription_id = AzureCliCredential::get_subscription()?;
     let client = azure_mgmt_batch::Client::builder(credential).build();
