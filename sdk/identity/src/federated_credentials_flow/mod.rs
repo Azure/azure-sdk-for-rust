@@ -1,7 +1,8 @@
 //! Authorize using the OAuth 2.0 client credentials flow with federated credentials.
 //!
 //! ```no_run
-//! use azure_identity::{authority_hosts, federated_credentials_flow};
+//! use azure_core::authority_hosts::AZURE_PUBLIC_CLOUD;
+//! use azure_identity::{federated_credentials_flow};
 //! use url::Url;
 //!
 //! use std::env;
@@ -24,8 +25,7 @@
 //!         &token,
 //!         &["https://management.azure.com/"],
 //!         &tenant_id,
-//!         authority_hosts::AZURE_PUBLIC_CLOUD.clone(),
-//!
+//!         &AZURE_PUBLIC_CLOUD,
 //!     )
 //!     .await?;
 //!     Ok(())
