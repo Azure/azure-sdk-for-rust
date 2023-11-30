@@ -1,5 +1,6 @@
 use crate::oauth2_http_client::Oauth2HttpClient;
 use azure_core::auth::{AccessToken, Secret, TokenCredential};
+use azure_core::authority_hosts::AZURE_PUBLIC_CLOUD;
 use azure_core::error::{ErrorKind, ResultExt};
 use azure_core::HttpClient;
 use oauth2::{basic::BasicClient, AuthType, AuthUrl, Scope, TokenUrl};
@@ -12,44 +13,32 @@ use url::Url;
 /// requests to Azure Active Directory.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TokenCredentialOptions {
-    authority_host: String,
+    authority_host: Url,
 }
 
 impl Default for TokenCredentialOptions {
     fn default() -> Self {
         Self {
-            authority_host: authority_hosts::AZURE_PUBLIC_CLOUD.to_owned(),
+            authority_host: AZURE_PUBLIC_CLOUD.to_owned(),
         }
     }
 }
 
 impl TokenCredentialOptions {
     /// Create a new `TokenCredentialsOptions`. `default()` may also be used.
-    pub fn new(authority_host: String) -> Self {
+    pub fn new(authority_host: Url) -> Self {
         Self { authority_host }
     }
     /// Set the authority host for authentication requests.
-    pub fn set_authority_host(&mut self, authority_host: String) {
+    pub fn set_authority_host(&mut self, authority_host: Url) {
         self.authority_host = authority_host;
     }
 
     /// The authority host to use for authentication requests.  The default is
     /// `https://login.microsoftonline.com`.
-    pub fn authority_host(&self) -> &str {
+    pub fn authority_host(&self) -> &Url {
         &self.authority_host
     }
-}
-
-/// A list of known Azure authority hosts
-pub mod authority_hosts {
-    /// China-based Azure Authority Host
-    pub const AZURE_CHINA: &str = "https://login.chinacloudapi.cn";
-    /// Germany-based Azure Authority Host
-    pub const AZURE_GERMANY: &str = "https://login.microsoftonline.de";
-    /// US Government Azure Authority Host
-    pub const AZURE_GOVERNMENT: &str = "https://login.microsoftonline.us";
-    /// Public Cloud Azure Authority Host
-    pub const AZURE_PUBLIC_CLOUD: &str = "https://login.microsoftonline.com";
 }
 
 /// A list of tenant IDs
@@ -139,10 +128,19 @@ impl TokenCredential for ClientSecretCredential {
         )
         .set_auth_type(AuthType::RequestBody);
 
+        let mut resource = resource.to_owned();
+        if !resource.ends_with("/.default") {
+            if resource.ends_with('/') {
+                resource.push_str(".default");
+            } else {
+                resource.push_str("/.default");
+            }
+        }
+
         let oauth_http_client = Oauth2HttpClient::new(self.http_client.clone());
         let token_result = client
             .exchange_client_credentials()
-            .add_scope(Scope::new(format!("{resource}/.default")))
+            .add_scope(Scope::new(resource))
             .request_async(|request| oauth_http_client.request(request))
             .await
             .map(|r| {

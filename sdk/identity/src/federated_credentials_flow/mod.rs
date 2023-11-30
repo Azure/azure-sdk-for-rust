@@ -54,7 +54,7 @@ pub async fn perform(
     client_assertion: &str,
     scopes: &[&str],
     tenant_id: &str,
-    host: &str,
+    host: &Url,
 ) -> azure_core::Result<LoginResponse> {
     let encoded: String = form_urlencoded::Serializer::new(String::new())
         .append_pair("client_id", client_id)
@@ -67,7 +67,8 @@ pub async fn perform(
         .append_pair("grant_type", "client_credentials")
         .finish();
 
-    let url = Url::parse(&format!("{host}/{tenant_id}/oauth2/v2.0/token"))
+    let url = host
+        .join(&format!("/{tenant_id}/oauth2/v2.0/token"))
         .with_context(ErrorKind::DataConversion, || {
             format!("The supplied tenant id could not be url encoded: {tenant_id}")
         })?;
