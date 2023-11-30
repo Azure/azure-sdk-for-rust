@@ -1,7 +1,7 @@
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
-    HttpClient, Method, Request, StatusCode,
+    HttpClient, Method, Request, StatusCode, Url,
 };
 use serde::{
     de::{self, Deserializer},
@@ -10,7 +10,6 @@ use serde::{
 use std::str;
 use std::sync::Arc;
 use time::OffsetDateTime;
-use url::Url;
 
 const MSI_ENDPOINT_ENV_KEY: &str = "IDENTITY_ENDPOINT";
 const MSI_SECRET_ENV_KEY: &str = "IDENTITY_HEADER";

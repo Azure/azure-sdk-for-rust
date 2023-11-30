@@ -4,7 +4,7 @@
 //!
 //! ```no_run
 //! use azure_identity::client_credentials_flow;
-//! use url::Url;
+//! use azure_core::Url;
 //!
 //! use std::env;
 //! use std::error::Error;
@@ -41,11 +41,11 @@ use azure_core::Method;
 use azure_core::{
     content_type,
     error::{ErrorKind, ResultExt},
-    headers, HttpClient, Request,
+    headers, HttpClient, Request, Url,
 };
 use login_response::LoginResponse;
 use std::sync::Arc;
-use url::{form_urlencoded, Url};
+use url::form_urlencoded;
 
 /// Perform the client credentials flow
 pub async fn perform(

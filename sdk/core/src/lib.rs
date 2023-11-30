@@ -85,14 +85,14 @@ pub const EMPTY_BODY: bytes::Bytes = bytes::Bytes::new();
 
 /// Add a new query pair into the target URL's query string.
 pub trait AppendToUrlQuery {
-    fn append_to_url_query(&self, url: &mut url::Url);
+    fn append_to_url_query(&self, url: &mut crate::Url);
 }
 
 impl<T> AppendToUrlQuery for &T
 where
     T: AppendToUrlQuery,
 {
-    fn append_to_url_query(&self, url: &mut url::Url) {
+    fn append_to_url_query(&self, url: &mut crate::Url) {
         (*self).append_to_url_query(url);
     }
 }
@@ -101,7 +101,7 @@ impl<T> AppendToUrlQuery for Option<T>
 where
     T: AppendToUrlQuery,
 {
-    fn append_to_url_query(&self, url: &mut url::Url) {
+    fn append_to_url_query(&self, url: &mut crate::Url) {
         if let Some(i) = self {
             i.append_to_url_query(url);
         }

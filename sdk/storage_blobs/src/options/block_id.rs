@@ -1,4 +1,4 @@
-use azure_core::{base64, AppendToUrlQuery};
+use azure_core::{base64, AppendToUrlQuery, Url};
 use bytes::Bytes;
 
 /// Struct wrapping the bytes of a block blob block-id,
@@ -24,7 +24,7 @@ impl BlockId {
 }
 
 impl AppendToUrlQuery for BlockId {
-    fn append_to_url_query(&self, url: &mut url::Url) {
+    fn append_to_url_query(&self, url: &mut Url) {
         url.query_pairs_mut()
             .append_pair("blockid", &base64::encode(&self.0));
     }

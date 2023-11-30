@@ -1,6 +1,6 @@
 use crate::clients::ServiceType;
+use azure_core::Url;
 use std::convert::TryFrom;
-use url::Url;
 
 /// The cloud with which you want to interact.
 // TODO: Other govt clouds?
@@ -39,7 +39,7 @@ impl CloudLocation {
                 format!("http://{address}:{port}/{EMULATOR_ACCOUNT}")
             }
         };
-        Ok(url::Url::parse(&url)?)
+        Ok(Url::parse(&url)?)
     }
 }
 

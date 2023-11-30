@@ -40,7 +40,7 @@ impl TableClient {
         Ok(InsertEntityBuilder::new(self.clone(), body))
     }
 
-    pub(crate) fn url(&self) -> azure_core::Result<url::Url> {
+    pub(crate) fn url(&self) -> azure_core::Result<Url> {
         self.table_service_client.url()
     }
 

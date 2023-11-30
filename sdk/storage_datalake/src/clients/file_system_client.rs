@@ -1,7 +1,6 @@
 use super::{DataLakeClient, DirectoryClient, FileClient};
-use crate::operations::*;
-use crate::Properties;
-use url::Url;
+use crate::{operations::*, Properties};
+use azure_core::Url;
 
 #[derive(Debug, Clone)]
 pub struct FileSystemClient {

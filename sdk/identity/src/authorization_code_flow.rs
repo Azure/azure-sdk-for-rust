@@ -3,12 +3,13 @@
 //! You can learn more about the `OAuth2` authorization code flow [here](https://docs.microsoft.com/azure/active-directory/develop/v2-oauth2-auth-code-flow).
 
 use crate::oauth2_http_client::Oauth2HttpClient;
-use azure_core::error::{ErrorKind, ResultExt};
-use azure_core::HttpClient;
+use azure_core::{
+    error::{ErrorKind, ResultExt},
+    HttpClient, Url,
+};
 use oauth2::basic::BasicClient;
 use oauth2::{ClientId, ClientSecret};
 use std::sync::Arc;
-use url::Url;
 
 /// Start an authorization code flow.
 ///

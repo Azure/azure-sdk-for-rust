@@ -1,6 +1,8 @@
-use azure_core::error::{Error, ErrorKind, ResultExt};
+use azure_core::{
+    error::{Error, ErrorKind, ResultExt},
+    Url,
+};
 use std::time::Duration;
-use url::Url;
 
 pub fn craft_peek_lock_url(
     namespace: &str,

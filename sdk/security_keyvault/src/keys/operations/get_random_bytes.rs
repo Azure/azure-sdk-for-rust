@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::{headers::Headers, CollectedResponse, Method};
+use azure_core::{headers::Headers, CollectedResponse, Method, Url};
 use serde_json::{Map, Value};
 
 operation! {
@@ -14,7 +14,7 @@ impl GetRandomBytesBuilder {
         Box::pin(async move {
             // POST {HSMBaseUrl}//rng?api-version=7.4
             let vault_url = format!("https://{}.managedhsm.azure.net/", self.hsm_name);
-            let mut uri = url::Url::parse(&vault_url)?;
+            let mut uri = Url::parse(&vault_url)?;
             let path = "rng".to_string();
 
             uri.set_path(&path);

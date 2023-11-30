@@ -4,10 +4,9 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     headers::*,
     hmac::hmac_sha256,
-    Context, Method, Policy, PolicyResult, Request,
+    Context, Method, Policy, PolicyResult, Request, Url,
 };
 use std::{borrow::Cow, ops::Deref, sync::Arc};
-use url::Url;
 
 const STORAGE_TOKEN_SCOPE: &str = "https://storage.azure.com/";
 

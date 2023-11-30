@@ -23,12 +23,11 @@ use crate::EntityWithMetadata;
 use azure_core::{
     error::{Error, ErrorKind},
     headers::{self, etag_from_headers, HeaderName},
-    CollectedResponse, Etag,
+    CollectedResponse, Etag, Url,
 };
 use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::de::DeserializeOwned;
 use std::convert::{TryFrom, TryInto};
-use url::Url;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum InsertOperation {

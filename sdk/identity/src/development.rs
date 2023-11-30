@@ -2,12 +2,16 @@
 //!
 //! These utilities should not be used in production
 use crate::authorization_code_flow::AuthorizationCodeFlow;
-use azure_core::error::{Error, ErrorKind};
+use azure_core::{
+    error::{Error, ErrorKind},
+    Url,
+};
 use log::debug;
 use oauth2::{AuthorizationCode, CsrfToken};
-use std::io::{BufRead, BufReader, Write};
-use std::net::TcpListener;
-use url::Url;
+use std::{
+    io::{BufRead, BufReader, Write},
+    net::TcpListener,
+};
 
 /// A very naive implementation of a redirect server.
 ///

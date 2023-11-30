@@ -1,6 +1,5 @@
 use crate::prelude::*;
-use azure_core::{error::Error, headers::Headers, CollectedResponse, Method, Pageable};
-use url::Url;
+use azure_core::{error::Error, headers::Headers, CollectedResponse, Method, Pageable, Url};
 
 operation! {
     #[stream]

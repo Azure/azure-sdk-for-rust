@@ -10,6 +10,7 @@ use azure_core::{
 use std::sync::Arc;
 use std::time::Duration;
 use time::OffsetDateTime;
+use url::form_urlencoded;
 
 /// Contains any operation that the `IoT` Hub service client can perform.
 pub mod operations;
@@ -120,7 +121,7 @@ impl ServiceClient {
 
         let sas_token = hmac_sha256(&data, private_key)?;
 
-        let encoded: String = url::form_urlencoded::Serializer::new(String::new())
+        let encoded: String = form_urlencoded::Serializer::new(String::new())
             .append_pair("sr", &format!("{iot_hub_name}.azure-devices.net"))
             .append_pair("sig", &sas_token)
             .append_pair("skn", key_name)

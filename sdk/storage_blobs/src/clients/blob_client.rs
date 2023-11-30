@@ -7,7 +7,7 @@ use azure_core::{
     error::{Error, ErrorKind},
     headers::Headers,
     prelude::*,
-    Body, Method, Request, Response, StatusCode,
+    Body, Method, Request, Response, StatusCode, Url,
 };
 use azure_storage::{
     prelude::*,
@@ -20,7 +20,6 @@ use azure_storage::{
 use futures::StreamExt;
 use std::ops::Deref;
 use time::OffsetDateTime;
-use url::Url;
 
 /// A client for handling blobs
 ///
@@ -259,7 +258,7 @@ impl BlobClient {
     }
 
     /// Create a signed blob url
-    pub fn generate_signed_blob_url<T>(&self, signature: &T) -> azure_core::Result<url::Url>
+    pub fn generate_signed_blob_url<T>(&self, signature: &T) -> azure_core::Result<Url>
     where
         T: SasToken,
     {
@@ -303,7 +302,7 @@ impl BlobClient {
     }
 
     /// Full URL for the blob.
-    pub fn url(&self) -> azure_core::Result<url::Url> {
+    pub fn url(&self) -> azure_core::Result<Url> {
         let mut url = self.container_client().url()?;
         let parts = self.blob_name().trim_matches('/').split('/');
         url.path_segments_mut()
@@ -394,7 +393,7 @@ mod tests {
         }
     }
 
-    fn build_url(container_name: &str, blob_name: &str, sas: &FakeSas) -> url::Url {
+    fn build_url(container_name: &str, blob_name: &str, sas: &FakeSas) -> Url {
         let blob_client = ClientBuilder::emulator().blob_client(container_name, blob_name);
         blob_client
             .generate_signed_blob_url(sas)

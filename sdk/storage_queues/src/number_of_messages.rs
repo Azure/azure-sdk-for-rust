@@ -1,4 +1,4 @@
-use azure_core::AppendToUrlQuery;
+use azure_core::{AppendToUrlQuery, Url};
 
 #[derive(Debug, Clone)]
 pub struct NumberOfMessages(u8);
@@ -10,7 +10,7 @@ impl NumberOfMessages {
 }
 
 impl AppendToUrlQuery for NumberOfMessages {
-    fn append_to_url_query(&self, url: &mut url::Url) {
+    fn append_to_url_query(&self, url: &mut Url) {
         url.query_pairs_mut()
             .append_pair("numofmessages", &self.0.to_string());
     }

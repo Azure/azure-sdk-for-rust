@@ -1,13 +1,13 @@
 use crate::oauth2_http_client::Oauth2HttpClient;
-use azure_core::auth::{AccessToken, Secret, TokenCredential};
-use azure_core::authority_hosts::AZURE_PUBLIC_CLOUD;
-use azure_core::error::{ErrorKind, ResultExt};
-use azure_core::HttpClient;
+use azure_core::{
+    auth::{AccessToken, Secret, TokenCredential},
+    authority_hosts::AZURE_PUBLIC_CLOUD,
+    error::{ErrorKind, ResultExt},
+    HttpClient, Url,
+};
 use oauth2::{basic::BasicClient, AuthType, AuthUrl, Scope, TokenUrl};
-use std::str;
-use std::sync::Arc;
+use std::{str, sync::Arc};
 use time::OffsetDateTime;
-use url::Url;
 
 /// Provides options to configure how the Identity library makes authentication
 /// requests to Azure Active Directory.

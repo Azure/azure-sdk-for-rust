@@ -6,9 +6,8 @@ This crate provides mechanisms for several ways to authenticate against Azure
 For example, to authenticate using the recommended `DefaultAzureCredential`, you can do the following:
 
 ```rust
-use azure_core::auth::TokenCredential;
+use azure_core::{auth::TokenCredential, Url};
 use azure_identity::{DefaultAzureCredential};
-use url::Url;
 
 use std::env;
 use std::error::Error;

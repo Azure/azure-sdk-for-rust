@@ -343,7 +343,7 @@ macro_rules! request_query {
     ($(#[$outer:meta])* $name:ident, $option:expr) => {
         $crate::request_option!($(#[$outer])* $name);
         impl $crate::AppendToUrlQuery for $name {
-            fn append_to_url_query(&self, url: &mut url::Url) {
+            fn append_to_url_query(&self, url: &mut $crate::Url) {
                 url.query_pairs_mut().append_pair($option, &self.0);
             }
         }

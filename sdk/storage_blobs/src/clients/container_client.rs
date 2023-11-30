@@ -141,7 +141,7 @@ impl ContainerClient {
         ))
     }
 
-    pub fn generate_signed_container_url<T>(&self, signature: &T) -> azure_core::Result<url::Url>
+    pub fn generate_signed_container_url<T>(&self, signature: &T) -> azure_core::Result<Url>
     where
         T: SasToken,
     {
@@ -151,7 +151,7 @@ impl ContainerClient {
     }
 
     /// Full URL for the container.
-    pub fn url(&self) -> azure_core::Result<url::Url> {
+    pub fn url(&self) -> azure_core::Result<Url> {
         let mut url = self.service_client.url()?;
         url.path_segments_mut()
             .map_err(|()| Error::message(ErrorKind::DataConversion, "Invalid url"))?

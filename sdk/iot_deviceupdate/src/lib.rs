@@ -8,15 +8,17 @@ use crate::device_update::UpdateOperation;
 
 #[cfg(test)]
 mod tests {
-    use azure_core::auth::{AccessToken, TokenCredential};
-    use azure_core::date;
+    use azure_core::{
+        auth::{AccessToken, TokenCredential},
+        date, Url,
+    };
     use azure_identity::AutoRefreshingTokenCredential;
     use std::sync::Arc;
     use time::OffsetDateTime;
 
     pub(crate) fn mock_client(server_url: String) -> crate::client::DeviceUpdateClient {
         crate::client::DeviceUpdateClient {
-            device_update_url: url::Url::parse(&server_url).unwrap(),
+            device_update_url: Url::parse(&server_url).unwrap(),
             endpoint: String::new(),
             token_credential: AutoRefreshingTokenCredential::new(Arc::new(MockCredential)),
         }

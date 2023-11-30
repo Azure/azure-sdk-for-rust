@@ -243,7 +243,7 @@ fn string_to_sign(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core::date;
+    use azure_core::{date, Url};
 
     #[test]
     fn string_to_sign_00() {
@@ -275,7 +275,7 @@ mon, 01 jan 1900 01:00:00 gmt
         )
         .unwrap();
 
-        let url = azure_core::Url::parse("https://.documents.azure.com/dbs/ToDoList").unwrap();
+        let url = Url::parse("https://.documents.azure.com/dbs/ToDoList").unwrap();
 
         let ret = generate_authorization(
             &auth_token,
@@ -303,7 +303,7 @@ mon, 01 jan 1900 01:00:00 gmt
         )
         .unwrap();
 
-        let url = azure_core::Url::parse("https://.documents.azure.com/dbs/ToDoList").unwrap();
+        let url = Url::parse("https://.documents.azure.com/dbs/ToDoList").unwrap();
 
         let ret = generate_authorization(
             &auth_token,
@@ -330,7 +330,7 @@ mon, 01 jan 1900 01:00:00 gmt
     #[test]
     fn generate_resource_link_00() {
         let request = Request::new(
-            reqwest::Url::parse("https://.documents.azure.com/dbs/second").unwrap(),
+            Url::parse("https://.documents.azure.com/dbs/second").unwrap(),
             azure_core::Method::Get,
         );
         assert_eq!(&generate_resource_link(&request), "dbs/second");
@@ -339,7 +339,7 @@ mon, 01 jan 1900 01:00:00 gmt
     #[test]
     fn generate_resource_link_01() {
         let request = Request::new(
-            reqwest::Url::parse("https://.documents.azure.com/dbs").unwrap(),
+            Url::parse("https://.documents.azure.com/dbs").unwrap(),
             azure_core::Method::Get,
         );
         assert_eq!(&generate_resource_link(&request), "");
@@ -348,7 +348,7 @@ mon, 01 jan 1900 01:00:00 gmt
     #[test]
     fn generate_resource_link_02() {
         let request = Request::new(
-            reqwest::Url::parse("https://.documents.azure.com/colls/second/third").unwrap(),
+            Url::parse("https://.documents.azure.com/colls/second/third").unwrap(),
             azure_core::Method::Get,
         );
         assert_eq!(&generate_resource_link(&request), "colls/second/third");
@@ -357,7 +357,7 @@ mon, 01 jan 1900 01:00:00 gmt
     #[test]
     fn generate_resource_link_03() {
         let request = Request::new(
-            reqwest::Url::parse("https://.documents.azure.com/dbs/test_db/colls").unwrap(),
+            Url::parse("https://.documents.azure.com/dbs/test_db/colls").unwrap(),
             azure_core::Method::Get,
         );
         assert_eq!(&generate_resource_link(&request), "dbs/test_db");
@@ -365,9 +365,8 @@ mon, 01 jan 1900 01:00:00 gmt
 
     #[test]
     fn scope_from_url_01() {
-        let scope = scope_from_url(
-            &azure_core::Url::parse("https://.documents.azure.com/dbs/test_db/colls").unwrap(),
-        );
+        let scope =
+            scope_from_url(&Url::parse("https://.documents.azure.com/dbs/test_db/colls").unwrap());
         assert_eq!(scope, "https://.documents.azure.com");
     }
 }

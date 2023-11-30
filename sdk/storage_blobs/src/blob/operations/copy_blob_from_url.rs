@@ -2,13 +2,12 @@ use crate::{
     blob::{copy_status_from_headers, CopyStatus, SourceContentMD5},
     prelude::*,
 };
-use azure_core::{headers::*, prelude::*, RequestId};
+use azure_core::{headers::*, prelude::*, RequestId, Url};
 use azure_storage::{
     copy_id_from_headers, headers::content_md5_from_headers_optional, ConsistencyMD5, CopyId,
 };
 use std::convert::{TryFrom, TryInto};
 use time::OffsetDateTime;
-use url::Url;
 
 operation! {
     CopyBlobFromUrl,

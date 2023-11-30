@@ -1,8 +1,7 @@
 use super::{FileSystemClient, PathClient};
 use crate::{operations::*, request_options::*, Properties};
-use azure_core::prelude::IfMatchCondition;
+use azure_core::{prelude::IfMatchCondition, Url};
 use bytes::Bytes;
-use url::Url;
 
 #[derive(Debug, Clone)]
 pub struct FileClient {

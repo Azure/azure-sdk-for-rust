@@ -1,5 +1,5 @@
 use crate::{operations::*, QueueClient, QueueServiceProperties};
-use azure_core::{ClientOptions, Context, Pipeline, Request, Response};
+use azure_core::{ClientOptions, Context, Pipeline, Request, Response, Url};
 use azure_storage::{
     clients::{new_pipeline_from_options, ServiceType},
     prelude::StorageCredentials,
@@ -142,12 +142,12 @@ impl QueueServiceClient {
         QueueClient::new(self.clone(), queue_name.into())
     }
 
-    pub fn url(&self) -> azure_core::Result<url::Url> {
+    pub fn url(&self) -> azure_core::Result<Url> {
         self.cloud_location.url(ServiceType::Queue)
     }
 
     pub(crate) fn finalize_request(
-        url: url::Url,
+        url: Url,
         method: azure_core::Method,
         headers: azure_core::headers::Headers,
         request_body: Option<azure_core::Body>,

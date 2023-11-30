@@ -1,10 +1,11 @@
-use crate::headers::{AsHeaders, Headers};
-use crate::Method;
 #[cfg(not(target_arch = "wasm32"))]
 use crate::SeekableStream;
+use crate::{
+    headers::{AsHeaders, Headers},
+    Method, Url,
+};
 use bytes::Bytes;
 use std::fmt::Debug;
-use url::Url;
 
 /// An HTTP Body.
 #[derive(Debug, Clone)]

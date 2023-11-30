@@ -1,7 +1,7 @@
 use crate::{
     operations::*, PopReceipt, PopReceiptClient, QueueServiceClient, QueueStoredAccessPolicy,
 };
-use azure_core::{prelude::*, Context, Request, Response};
+use azure_core::{prelude::*, Context, Request, Response, Url};
 use std::fmt::Debug;
 
 #[derive(Debug, Clone)]
@@ -94,7 +94,7 @@ impl QueueClient {
         &self.queue_name
     }
 
-    pub fn url(&self) -> azure_core::Result<url::Url> {
+    pub fn url(&self) -> azure_core::Result<Url> {
         let mut url = self.service_client.url()?;
         url.path_segments_mut()
             .expect("invalid base url")
@@ -102,7 +102,7 @@ impl QueueClient {
         Ok(url)
     }
 
-    pub(crate) fn messages_url(&self) -> azure_core::Result<url::Url> {
+    pub(crate) fn messages_url(&self) -> azure_core::Result<Url> {
         let mut url = self.url()?;
         url.path_segments_mut()
             .expect("invalid base url")
@@ -111,7 +111,7 @@ impl QueueClient {
     }
 
     pub(crate) fn finalize_request(
-        url: url::Url,
+        url: Url,
         method: azure_core::Method,
         headers: azure_core::headers::Headers,
         request_body: Option<azure_core::Body>,

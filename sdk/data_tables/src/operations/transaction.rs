@@ -6,12 +6,11 @@ use azure_core::{
     error::{Error, ErrorKind},
     headers::*,
     prelude::*,
-    CollectedResponse, Etag, Method, Request, StatusCode,
+    CollectedResponse, Etag, Method, Request, StatusCode, Url,
 };
 use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::Serialize;
 use std::convert::{TryFrom, TryInto};
-use url::Url;
 
 operation! {
     Transaction,

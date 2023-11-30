@@ -1,7 +1,6 @@
-use crate::event_grid_request_builder::EventGridRequestBuilder;
-use crate::Event;
+use crate::{event_grid_request_builder::EventGridRequestBuilder, Event};
+use azure_core::Url;
 use serde::ser::Serialize;
-use url::Url;
 
 #[derive(Clone)]
 pub struct EventGridClient {

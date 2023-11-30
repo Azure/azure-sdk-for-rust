@@ -8,13 +8,13 @@ mod device_code_responses;
 use azure_core::{
     content_type,
     error::{Error, ErrorKind},
-    headers, sleep, HttpClient, Method, Request, Response,
+    headers, sleep, HttpClient, Method, Request, Response, Url,
 };
 pub use device_code_responses::*;
 use futures::stream::unfold;
 use serde::Deserialize;
 use std::{borrow::Cow, pin::Pin, sync::Arc, time::Duration};
-use url::{form_urlencoded, Url};
+use url::form_urlencoded;
 
 /// Start the device authorization grant flow.
 /// The user has only 15 minutes to sign in (the usual value for `expires_in`).

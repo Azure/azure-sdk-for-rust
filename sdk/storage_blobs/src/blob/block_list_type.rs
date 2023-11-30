@@ -1,4 +1,4 @@
-use azure_core::AppendToUrlQuery;
+use azure_core::{AppendToUrlQuery, Url};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BlockListType {
@@ -18,7 +18,7 @@ impl BlockListType {
 }
 
 impl AppendToUrlQuery for BlockListType {
-    fn append_to_url_query(&self, url: &mut url::Url) {
+    fn append_to_url_query(&self, url: &mut Url) {
         url.query_pairs_mut()
             .append_pair("blocklisttype", self.to_str());
     }
