@@ -60,7 +60,7 @@ async fn main() -> azure_core::Result<()> {
             .await?
             .start(now)
             .protocol(SasProtocol::HttpHttps);
-        println!("token: '{}'", sas.token());
+        println!("token: '{}'", sas.token()?);
 
         source_blob.generate_signed_blob_url(&sas)?
     };

@@ -13,10 +13,19 @@ pub enum CloudLocation {
     /// Use the well-known emulator
     Emulator { address: String, port: u16 },
     /// A custom base URL
-    Custom { uri: String },
+    Custom { account: String, uri: String },
 }
 
 impl CloudLocation {
+    pub fn account(&self) -> &str {
+        match self {
+            CloudLocation::Public { account, .. } => account,
+            CloudLocation::China { account, .. } => account,
+            CloudLocation::Emulator { .. } => EMULATOR_ACCOUNT,
+            CloudLocation::Custom { account, .. } => account,
+        }
+    }
+
     /// the base URL for a given cloud location
     pub fn url(&self, service_type: ServiceType) -> azure_core::Result<Url> {
         let url = match self {

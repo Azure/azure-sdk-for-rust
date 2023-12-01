@@ -12,7 +12,7 @@ use azure_core::{
 use azure_storage::{
     prelude::*,
     shared_access_signature::{
-        service_sas::{BlobSharedAccessSignature, BlobSignedResource},
+        service_sas::{BlobSharedAccessSignature, BlobSignedResource, UserDeligationKey},
         SasToken,
     },
     StorageCredentialsInner,
@@ -228,6 +228,38 @@ impl BlobClient {
         ClearPageBuilder::new(self.clone(), ba512_range)
     }
 
+    pub async fn user_delegation_shared_access_signature(
+        &self,
+        permissions: BlobSasPermissions,
+        user_delegation_key: &UserDeligationKey,
+    ) -> azure_core::Result<BlobSharedAccessSignature> {
+        let creds = self.container_client.credentials().0.read().await;
+        if !matches!(creds.deref(), StorageCredentialsInner::TokenCredential(_)) {
+            return Err(Error::message(
+                ErrorKind::Credential,
+                "User delegation access signature generation requires Token authentication",
+            ));
+        };
+
+        let service_client = self.container_client().service_client();
+
+        let account = service_client.account();
+
+        let canonicalized_resource = format!(
+            "/blob/{}/{}/{}",
+            account,
+            self.container_client.container_name(),
+            self.blob_name()
+        );
+        Ok(BlobSharedAccessSignature::new(
+            user_delegation_key.clone(),
+            canonicalized_resource,
+            permissions,
+            user_delegation_key.signed_expiry,
+            BlobSignedResource::Blob,
+        ))
+    }
+
     /// Create a shared access signature.
     pub async fn shared_access_signature(
         &self,
@@ -263,7 +295,7 @@ impl BlobClient {
         T: SasToken,
     {
         let mut url = self.url()?;
-        url.set_query(Some(&signature.token()));
+        url.set_query(Some(&signature.token()?));
         Ok(url)
     }
 
@@ -388,8 +420,8 @@ mod tests {
         token: String,
     }
     impl SasToken for FakeSas {
-        fn token(&self) -> String {
-            self.token.clone()
+        fn token(&self) -> azure_core::Result<String> {
+            Ok(self.token.clone())
         }
     }
 

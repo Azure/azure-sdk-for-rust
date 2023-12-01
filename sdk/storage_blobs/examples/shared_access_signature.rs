@@ -42,7 +42,7 @@ async fn main() -> azure_core::Result<()> {
         .start(now)
         .protocol(SasProtocol::Https);
 
-    println!("blob account level token: '{}'", sas.token());
+    println!("blob account level token: '{}'", sas.token()?);
     let url = blob_client.generate_signed_blob_url(&sas)?;
     println!("blob account level url: '{url}'");
 
@@ -56,7 +56,7 @@ async fn main() -> azure_core::Result<()> {
         )
         .await?
         .start(now);
-    println!("blob service token: {}", sas.token());
+    println!("blob service token: {}", sas.token()?);
     let url = blob_client.generate_signed_blob_url(&sas)?;
     println!("blob service level url: '{url}'");
 
@@ -74,7 +74,7 @@ async fn main() -> azure_core::Result<()> {
         .start(now)
         .protocol(SasProtocol::HttpHttps);
 
-    println!("container sas token: {}", sas.token());
+    println!("container sas token: {}", sas.token()?);
     let url = container_client.generate_signed_container_url(&sas)?;
     println!("container level url: '{url}'");
 
