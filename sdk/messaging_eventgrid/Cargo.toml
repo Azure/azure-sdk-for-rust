@@ -23,4 +23,9 @@ uuid = { version = "1.0", features = ["v4"] }
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 
 [features]
-default = ["azure_core/enable_reqwest"]
+default = ["enable_reqwest"]
+enable_reqwest = ["azure_core/enable_reqwest"]
+enable_request_rustls = ["azure_core/enable_reqwest_rustls"]
+
+[package.metadata.docs.rs]
+features = ["enable_reqwest", "enable_reqwest_rustls"]
