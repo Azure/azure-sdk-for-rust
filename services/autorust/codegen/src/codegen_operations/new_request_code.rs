@@ -3,7 +3,6 @@ use quote::{quote, ToTokens};
 
 use crate::spec::WebVerb;
 
-use super::auth_code::AuthCode;
 /// Calls `azure_core::Request::new` and set the authentication.
 pub struct NewRequestCode {
     pub auth: AuthCode,
@@ -18,6 +17,23 @@ impl ToTokens for NewRequestCode {
         tokens.extend(quote! {
             let mut req = azure_core::Request::new(url, #verb);
             #auth
+        })
+    }
+}
+
+/// Sets the authentication.
+/// Only bearer token authentication is supported right now.
+/// TODO: move authentication within generated crates to use policies instead of adding to requests.
+pub(crate) struct AuthCode {}
+
+impl ToTokens for AuthCode {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        tokens.extend(quote! {
+            let credential = this.client.token_credential();
+            let token_response = credential
+                .get_token(&this.client.scopes().join(" "))
+                .await?;
+            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
         })
     }
 }

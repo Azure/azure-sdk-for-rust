@@ -1,10 +1,16 @@
 use crate::{content_type, CodeGen, Result};
 
 use super::{
-    auth_code::AuthCode, function_code::ClientFunctionCode, function_params::FunctionParams, new_request_code::NewRequestCode,
-    operation_module::OperationModuleCode, request_builder_into_future::RequestBuilderIntoFutureCode,
-    request_builder_send::RequestBuilderSendCode, request_builder_setter::RequestBuilderSettersCode,
-    request_builder_struct::RequestBuilderStructCode, response_code::ResponseCode, set_request_code::SetRequestCode,
+    function_code::ClientFunctionCode,
+    function_params::FunctionParams,
+    new_request_code::{AuthCode, NewRequestCode},
+    operation_module::OperationModuleCode,
+    request_builder_into_future::RequestBuilderIntoFutureCode,
+    request_builder_send::RequestBuilderSendCode,
+    request_builder_setter::RequestBuilderSettersCode,
+    request_builder_struct::RequestBuilderStructCode,
+    response_code::ResponseCode,
+    set_request_code::SetRequestCode,
     web_operation_gen::WebOperationGen,
 };
 pub struct OperationCode {

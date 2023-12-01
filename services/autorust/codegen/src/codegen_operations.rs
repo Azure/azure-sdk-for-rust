@@ -1,4 +1,3 @@
-mod auth_code;
 mod create_client_and_builder;
 mod function_code;
 mod function_params;
