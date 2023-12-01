@@ -25,7 +25,7 @@ use quote::{quote, ToTokens};
 use std::collections::BTreeSet;
 
 use self::create_client_and_builder::create_client;
-use self::operations::{create_operation_code, OperationCode};
+use self::operations::OperationCode;
 use self::web_operation_gen::WebOperationGen;
 
 pub const API_VERSION: &str = "api-version";
@@ -63,7 +63,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
 
     for operation in operations {
         let module_name = operation.rust_module_name();
-        let code = create_operation_code(cg, &operation)?;
+        let code = OperationCode::new(cg, &operation)?;
         // append code to existing module if it already exists
         match operations_code.get_mut(&module_name) {
             Some(operation_code) => {
