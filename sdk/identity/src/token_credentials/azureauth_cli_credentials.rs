@@ -190,7 +190,7 @@ impl AzureauthCliCredential {
 
     /// Clear the azureauth cache as well as the internal cache
     fn clear_cache(&self) -> azure_core::Result<CliTokenResponse> {
-        let resoures = { self.cache.read().await.keys().cloned().collect::<Vec<_>>() };
+        let resources = { self.cache.read().await.keys().cloned().collect::<Vec<_>>() };
 
         // try using azureauth.exe first, such that azureauth through WSL is
         // used first if possible.
@@ -205,7 +205,7 @@ impl AzureauthCliCredential {
             "azureauth"
         };
 
-        for resource in resoures {
+        for resource in resources {
             let mut resource = resource.to_owned();
             if !resource.ends_with("/.default") {
                 if resource.ends_with('/') {
