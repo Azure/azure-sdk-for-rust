@@ -2,18 +2,18 @@
   "status": 200,
   "headers": {
     "content-length": "0",
-    "date": "Thu, 07 Sep 2023 19:20:13 GMT",
-    "etag": "\"0x8DBAFD776A72E8E\"",
-    "last-modified": "Thu, 07 Sep 2023 19:20:14 GMT",
+    "date": "Fri, 01 Dec 2023 01:17:32 GMT",
+    "etag": "\"0x8DBF20B4BC697FE\"",
+    "last-modified": "Fri, 01 Dec 2023 01:17:33 GMT",
     "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
-    "x-ms-creation-time": "Thu, 07 Sep 2023 19:20:14 GMT",
+    "x-ms-creation-time": "Fri, 01 Dec 2023 01:17:33 GMT",
     "x-ms-group": "$superuser",
     "x-ms-owner": "$superuser",
     "x-ms-permissions": "rw-r-----",
-    "x-ms-request-id": "b04cf72e-c01f-0053-22c0-e16139000000",
+    "x-ms-request-id": "62deb3e0-801f-0028-39f4-23bec7000000",
     "x-ms-resource-type": "file",
     "x-ms-server-encrypted": "true",
-    "x-ms-version": "2020-10-02"
+    "x-ms-version": "2022-11-02"
   },
   "body": ""
 }
