@@ -17,7 +17,7 @@ mod set_request_param_code;
 mod web_operation_gen;
 
 use crate::Result;
-use crate::{identifier::parse_ident, spec::WebVerb, CodeGen};
+use crate::{identifier::parse_ident, CodeGen};
 use heck::ToPascalCase;
 use indexmap::IndexMap;
 use proc_macro2::{Ident, TokenStream};
@@ -136,59 +136,4 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
         }
     }
     Ok(file)
-}
-
-/// Creating a function name from the path and verb when an operationId is not specified.
-/// All azure-rest-api-specs operations should have an operationId.
-fn create_function_name(verb: &WebVerb, path: &str) -> String {
-    let mut path = path.split('/').filter(|&x| !x.is_empty()).collect::<Vec<_>>();
-    path.insert(0, verb.as_str());
-    path.join("_")
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::WebOperation;
-
-    use super::*;
-
-    #[test]
-    fn test_create_function_name() {
-        assert_eq!(create_function_name(&WebVerb::Get, "/pets"), "get_pets");
-    }
-
-    #[test]
-    fn test_function_name_from_operation_id() {
-        let operation = WebOperationGen(WebOperation {
-            id: Some("PrivateClouds_CreateOrUpdate".to_owned()),
-            path: "/horse".to_owned(),
-            verb: WebVerb::Get,
-            ..Default::default()
-        });
-        assert_eq!(Some("private_clouds".to_owned()), operation.rust_module_name());
-        assert_eq!("create_or_update", operation.rust_function_name());
-    }
-
-    #[test]
-    fn test_function_name_from_verb_and_path() {
-        let operation = WebOperationGen(WebOperation {
-            path: "/horse".to_owned(),
-            verb: WebVerb::Get,
-            ..Default::default()
-        });
-        assert_eq!(None, operation.rust_module_name());
-        assert_eq!("get_horse", operation.rust_function_name());
-    }
-
-    #[test]
-    fn test_function_name_with_no_module_name() {
-        let operation = WebOperationGen(WebOperation {
-            id: Some("PerformConnectivityCheck".to_owned()),
-            path: "/horse".to_owned(),
-            verb: WebVerb::Put,
-            ..Default::default()
-        });
-        assert_eq!(None, operation.rust_module_name());
-        assert_eq!("perform_connectivity_check", operation.rust_function_name());
-    }
 }
