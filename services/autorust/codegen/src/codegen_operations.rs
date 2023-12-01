@@ -33,6 +33,7 @@ pub const X_MS_VERSION: &str = "x-ms-version";
 
 pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
     let mut file = TokenStream::new();
+    // See https://github.com/Azure/azure-sdk-for-rust/issues/553
     file.extend(quote! {
 
         #![allow(unused_mut)]
