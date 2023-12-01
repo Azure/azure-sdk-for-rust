@@ -3,8 +3,7 @@ use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 
 use super::{
-    function_call_params::FunctionCallParamsCode,
-    function_params::{FunctionParam, FunctionParams},
+    function_params::{FunctionCallParamsCode, FunctionParam, FunctionParams},
     web_operation_gen::WebOperationGen,
 };
 /// Create the client function that produces the request builder instance.

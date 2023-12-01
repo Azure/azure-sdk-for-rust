@@ -1,6 +1,5 @@
 mod auth_code;
 mod create_client_and_builder;
-mod function_call_params;
 mod function_code;
 mod function_params;
 mod new_request_code;
