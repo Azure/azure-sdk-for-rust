@@ -1,12 +1,12 @@
+use heck::ToSnakeCase;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 
+use crate::codegen::PARAM_RE;
 use crate::Result;
 use crate::{codegen::parse_path_params, identifier::SnakeCaseIdent};
 
-use super::{
-    format_path, get_continuable_param, new_request_code::NewRequestCode, response_code::ResponseCode, set_request_code::SetRequestCode,
-};
+use super::{new_request_code::NewRequestCode, response_code::ResponseCode, set_request_code::SetRequestCode};
 /// The `send` function of the request builder.
 pub struct RequestBuilderSendCode {
     new_request_code: NewRequestCode,
@@ -209,4 +209,26 @@ impl ToTokens for RequestBuilderSendCode {
         tokens.extend(fut);
         tokens.extend(urlfn)
     }
+}
+
+fn format_path(path: &str) -> String {
+    PARAM_RE.replace_all(path, "{}").to_string()
+}
+
+fn get_continuable_param(next_link_name: &str, request_builder: &SetRequestCode) -> Option<String> {
+    let next_link_name = next_link_name.to_snake_case();
+    let link_name = next_link_name.strip_prefix("next_");
+
+    for param in request_builder.parameters.params() {
+        let param_name = param.variable_name.to_string();
+        if param_name == next_link_name {
+            return Some(param_name);
+        }
+        if let Some(link_name) = link_name {
+            if param_name == link_name {
+                return Some(param_name);
+            }
+        }
+    }
+    None
 }

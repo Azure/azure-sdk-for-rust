@@ -10,8 +10,7 @@ use crate::{
     WebOperation,
 };
 
-use super::{create_function_name, API_VERSION};
-use super::{Pageable, X_MS_VERSION};
+use super::{create_function_name, API_VERSION, X_MS_VERSION};
 
 pub struct WebOperationGen(pub WebOperation);
 
@@ -124,4 +123,9 @@ impl WebOperationGen {
             .find(|(status_code, _)| !crate::status_codes::is_default(status_code))
             .map(|(_status_code, response)| response)
     }
+}
+
+#[derive(Clone)]
+pub struct Pageable {
+    pub next_link_name: Option<String>,
 }

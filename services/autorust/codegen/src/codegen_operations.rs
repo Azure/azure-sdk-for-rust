@@ -17,10 +17,9 @@ mod set_request_param_code;
 mod web_operation_gen;
 
 use crate::Result;
-use crate::{codegen::PARAM_RE, identifier::parse_ident, spec::WebVerb, CodeGen};
+use crate::{identifier::parse_ident, spec::WebVerb, CodeGen};
 use autorust_openapi::ParameterIn;
 use heck::ToPascalCase;
-use heck::ToSnakeCase;
 use indexmap::IndexMap;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
@@ -28,7 +27,6 @@ use std::collections::BTreeSet;
 
 use self::create_client_and_builder::create_client;
 use self::operations::{create_operation_code, OperationCode};
-use self::set_request_code::SetRequestCode;
 use self::web_operation_gen::WebOperationGen;
 
 pub const API_VERSION: &str = "api-version";
@@ -147,33 +145,6 @@ fn create_function_name(verb: &WebVerb, path: &str) -> String {
     let mut path = path.split('/').filter(|&x| !x.is_empty()).collect::<Vec<_>>();
     path.insert(0, verb.as_str());
     path.join("_")
-}
-
-#[derive(Clone)]
-pub struct Pageable {
-    next_link_name: Option<String>,
-}
-
-fn get_continuable_param(next_link_name: &str, request_builder: &SetRequestCode) -> Option<String> {
-    let next_link_name = next_link_name.to_snake_case();
-    let link_name = next_link_name.strip_prefix("next_");
-
-    for param in request_builder.parameters.params() {
-        let param_name = param.variable_name.to_string();
-        if param_name == next_link_name {
-            return Some(param_name);
-        }
-        if let Some(link_name) = link_name {
-            if param_name == link_name {
-                return Some(param_name);
-            }
-        }
-    }
-    None
-}
-
-fn format_path(path: &str) -> String {
-    PARAM_RE.replace_all(path, "{}").to_string()
 }
 
 #[derive(PartialEq, Eq, Clone)]

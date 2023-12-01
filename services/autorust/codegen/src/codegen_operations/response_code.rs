@@ -8,7 +8,7 @@ use crate::{content_type, Result};
 
 use super::function_call_params::create_response_type;
 use super::response_headers::{HeaderCode, HeadersCode};
-use super::{web_operation_gen::WebOperationGen, Pageable};
+use super::web_operation_gen::{Pageable, WebOperationGen};
 /// The response for an operation.
 /// An operation may have multiple valid status codes.
 #[derive(Clone)]
