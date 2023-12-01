@@ -1,16 +1,16 @@
 {
   "status": 200,
   "headers": {
-    "date": "Thu, 07 Sep 2023 19:20:11 GMT",
-    "etag": "\"0x8DBAFD774A99DF6\"",
-    "last-modified": "Thu, 07 Sep 2023 19:20:11 GMT",
+    "date": "Fri, 01 Dec 2023 01:17:28 GMT",
+    "etag": "\"0x8DBF20B4926A831\"",
+    "last-modified": "Fri, 01 Dec 2023 01:17:28 GMT",
     "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
     "x-ms-default-encryption-scope": "$account-encryption-key",
     "x-ms-deny-encryption-scope-override": "false",
     "x-ms-namespace-enabled": "true",
     "x-ms-properties": "AddedVia=QXp1cmUgU0RLIGZvciBSdXN0,ModifiedBy=SW90YQ==",
-    "x-ms-request-id": "2169e291-301f-0035-43c0-e12e19000000",
-    "x-ms-version": "2020-10-02"
+    "x-ms-request-id": "0bfe441c-d01f-000a-45f4-237bd8000000",
+    "x-ms-version": "2022-11-02"
   },
   "body": ""
 }

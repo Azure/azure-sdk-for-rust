@@ -5,7 +5,7 @@ pub mod account_sas;
 pub mod service_sas;
 
 pub trait SasToken {
-    fn token(&self) -> String;
+    fn token(&self) -> azure_core::Result<String>;
 }
 
 /// Converts an `OffsetDateTime` to an RFC3339 formatted string after truncating
@@ -24,7 +24,7 @@ pub(crate) fn format_date(d: OffsetDateTime) -> String {
 }
 
 /// Specifies the protocol permitted for a request made with the SAS ([Azure documentation](https://docs.microsoft.com/rest/api/storageservices/create-service-sas#specifying-the-http-protocol)).
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum SasProtocol {
     Https,
     HttpHttps,

@@ -24,7 +24,7 @@ pub const EMULATOR_ACCOUNT: &str = "devstoreaccount1";
 pub const EMULATOR_ACCOUNT_KEY: &str =
     "Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==";
 
-const AZURE_VERSION: HeaderValue = HeaderValue::from_static("2020-10-02");
+const AZURE_VERSION: HeaderValue = HeaderValue::from_static("2022-11-02");
 
 #[derive(Debug, Clone, Copy)]
 pub enum ServiceType {

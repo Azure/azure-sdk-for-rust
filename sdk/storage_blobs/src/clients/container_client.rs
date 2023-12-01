@@ -8,7 +8,7 @@ use azure_core::{
 use azure_storage::{
     prelude::BlobSasPermissions,
     shared_access_signature::{
-        service_sas::{BlobSharedAccessSignature, BlobSignedResource},
+        service_sas::{BlobSharedAccessSignature, BlobSignedResource, UserDeligationKey},
         SasToken,
     },
     CloudLocation, StorageCredentials, StorageCredentialsInner,
@@ -113,8 +113,39 @@ impl ContainerClient {
         BlobClient::new(self.clone(), blob_name.into())
     }
 
+    pub fn service_client(&self) -> BlobServiceClient {
+        self.service_client.clone()
+    }
+
     pub fn container_name(&self) -> &str {
         &self.container_name
+    }
+
+    pub async fn user_delegation_shared_access_signature(
+        &self,
+        permissions: BlobSasPermissions,
+        user_delegation_key: &UserDeligationKey,
+    ) -> azure_core::Result<BlobSharedAccessSignature> {
+        let creds = self.credentials().0.read().await;
+        if !matches!(creds.deref(), StorageCredentialsInner::TokenCredential(_)) {
+            return Err(Error::message(
+                ErrorKind::Credential,
+                "User delegation access signature generation requires Token authentication",
+            ));
+        };
+
+        let service_client = self.service_client();
+
+        let account = service_client.account();
+
+        let canonicalized_resource = format!("/blob/{}/{}", account, self.container_name());
+        Ok(BlobSharedAccessSignature::new(
+            user_delegation_key.clone(),
+            canonicalized_resource,
+            permissions,
+            user_delegation_key.signed_expiry,
+            BlobSignedResource::Container,
+        ))
     }
 
     /// Create a shared access signature.
@@ -131,7 +162,7 @@ impl ContainerClient {
             ));
         };
 
-        let canonicalized_resource = format!("/blob/{}/{}", account, self.container_name(),);
+        let canonicalized_resource = format!("/blob/{}/{}", account, self.container_name());
         Ok(BlobSharedAccessSignature::new(
             key.clone(),
             canonicalized_resource,
@@ -146,7 +177,7 @@ impl ContainerClient {
         T: SasToken,
     {
         let mut url = self.url()?;
-        url.set_query(Some(&signature.token()));
+        url.set_query(Some(&signature.token()?));
         Ok(url)
     }
 
