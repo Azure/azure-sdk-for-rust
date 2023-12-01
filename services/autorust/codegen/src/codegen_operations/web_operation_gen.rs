@@ -15,30 +15,37 @@ use super::{API_VERSION, X_MS_VERSION};
 pub struct WebOperationGen(pub WebOperation);
 
 impl WebOperationGen {
+    #[allow(dead_code)]
     pub fn new(operation: WebOperation) -> Self {
         Self(operation)
     }
 
+    #[allow(dead_code)]
     pub fn verb(&self) -> &WebVerb {
         &self.0.verb
     }
 
+    #[allow(dead_code)]
     pub fn path(&self) -> &str {
         &self.0.path
     }
 
+    #[allow(dead_code)]
     pub fn id(&self) -> Option<&str> {
         self.0.id.as_deref()
     }
 
+    #[allow(dead_code)]
     pub fn examples(&self) -> &IndexMap<String, ReferenceOr<Operation>> {
         &self.0.examples
     }
 
+    #[allow(dead_code)]
     pub fn long_running_operation(&self) -> bool {
         self.0.long_running_operation
     }
 
+    #[allow(dead_code)]
     pub fn parameters(&self) -> Vec<&WebParameter> {
         self.0
             .parameters()
@@ -47,6 +54,7 @@ impl WebOperationGen {
             .collect()
     }
 
+    #[allow(dead_code)]
     pub fn body_parameter(&self) -> Option<&WebParameter> {
         self.0.parameters().into_iter().find(|p| p.in_body())
     }
@@ -108,6 +116,7 @@ impl WebOperationGen {
             .collect()
     }
 
+    #[allow(dead_code)]
     pub fn error_responses(&self) -> IndexMap<&StatusCode, &Response> {
         self.0
             .responses
@@ -116,6 +125,7 @@ impl WebOperationGen {
             .collect()
     }
 
+    #[allow(dead_code)]
     pub fn default_response(&self) -> Option<&Response> {
         self.0
             .responses
