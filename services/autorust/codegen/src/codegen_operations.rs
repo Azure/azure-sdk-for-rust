@@ -31,26 +31,6 @@ use self::web_operation_gen::WebOperationGen;
 pub const API_VERSION: &str = "api-version";
 pub const X_MS_VERSION: &str = "x-ms-version";
 
-fn error_variant(operation: &WebOperationGen) -> Result<Ident> {
-    let function = operation.rust_function_name().to_pascal_case();
-    if let Some(module) = operation.rust_module_name() {
-        let module = module.to_pascal_case();
-        parse_ident(&format!("{module}_{function}"))
-    } else {
-        parse_ident(&function)
-    }
-}
-
-fn error_fqn(operation: &WebOperationGen) -> Result<TokenStream> {
-    let function = parse_ident(&operation.rust_function_name())?;
-    if let Some(module) = operation.rust_module_name() {
-        let module = parse_ident(&module)?;
-        Ok(quote! { #module::#function::Error })
-    } else {
-        Ok(quote! { #function::Error })
-    }
-}
-
 pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
     let mut file = TokenStream::new();
     file.extend(quote! {
@@ -69,6 +49,7 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
     let module_names: Vec<_> = module_names.into_iter().collect();
     file.extend(create_client(&module_names, cg.spec.endpoint().as_deref())?);
 
+    // TODO: this never gets added to the main tokenstream - in effect it achieves nothing
     let mut errors = TokenStream::new();
     for operation in &operations {
         let variant = error_variant(operation)?;
@@ -136,4 +117,24 @@ pub fn create_operations(cg: &CodeGen) -> Result<TokenStream> {
         }
     }
     Ok(file)
+}
+
+fn error_variant(operation: &WebOperationGen) -> Result<Ident> {
+    let function = operation.rust_function_name().to_pascal_case();
+    if let Some(module) = operation.rust_module_name() {
+        let module = module.to_pascal_case();
+        parse_ident(&format!("{module}_{function}"))
+    } else {
+        parse_ident(&function)
+    }
+}
+
+fn error_fqn(operation: &WebOperationGen) -> Result<TokenStream> {
+    let function = parse_ident(&operation.rust_function_name())?;
+    if let Some(module) = operation.rust_module_name() {
+        let module = parse_ident(&module)?;
+        Ok(quote! { #module::#function::Error })
+    } else {
+        Ok(quote! { #function::Error })
+    }
 }
