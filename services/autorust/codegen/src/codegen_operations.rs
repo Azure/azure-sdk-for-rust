@@ -18,7 +18,6 @@ mod web_operation_gen;
 
 use crate::Result;
 use crate::{identifier::parse_ident, spec::WebVerb, CodeGen};
-use autorust_openapi::ParameterIn;
 use heck::ToPascalCase;
 use indexmap::IndexMap;
 use proc_macro2::{Ident, TokenStream};
@@ -145,27 +144,6 @@ fn create_function_name(verb: &WebVerb, path: &str) -> String {
     let mut path = path.split('/').filter(|&x| !x.is_empty()).collect::<Vec<_>>();
     path.insert(0, verb.as_str());
     path.join("_")
-}
-
-#[derive(PartialEq, Eq, Clone)]
-enum ParamKind {
-    Path,
-    Query,
-    Header,
-    Body,
-    FormData,
-}
-
-impl From<&ParameterIn> for ParamKind {
-    fn from(pt: &ParameterIn) -> Self {
-        match pt {
-            ParameterIn::Path => Self::Path,
-            ParameterIn::Query => Self::Query,
-            ParameterIn::Header => Self::Header,
-            ParameterIn::Body => Self::Body,
-            ParameterIn::FormData => Self::FormData,
-        }
-    }
 }
 
 #[cfg(test)]

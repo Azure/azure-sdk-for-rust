@@ -2,10 +2,7 @@ use autorust_openapi::CollectionFormat;
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 
-use super::{
-    function_params::{FunctionParam, FunctionParams},
-    ParamKind,
-};
+use super::function_params::{FunctionParam, FunctionParams, ParamKind};
 
 /// Sets all of the request parameters.
 pub struct SetRequestParamsCode {

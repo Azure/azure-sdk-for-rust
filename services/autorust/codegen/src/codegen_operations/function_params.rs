@@ -1,4 +1,4 @@
-use autorust_openapi::CollectionFormat;
+use autorust_openapi::{CollectionFormat, ParameterIn};
 use proc_macro2::Ident;
 
 use crate::codegen::{parse_query_params, TypeNameCode};
@@ -7,7 +7,7 @@ use crate::spec::WebParameter;
 use crate::{CodeGen, Result};
 
 use super::web_operation_gen::WebOperationGen;
-use super::{ParamKind, API_VERSION, X_MS_VERSION};
+use super::{API_VERSION, X_MS_VERSION};
 
 #[derive(Clone)]
 pub struct FunctionParams {
@@ -99,5 +99,26 @@ impl FunctionParam {
     }
     pub fn is_string(&self) -> bool {
         self.type_name.is_string()
+    }
+}
+
+#[derive(PartialEq, Eq, Clone)]
+pub enum ParamKind {
+    Path,
+    Query,
+    Header,
+    Body,
+    FormData,
+}
+
+impl From<&ParameterIn> for ParamKind {
+    fn from(pt: &ParameterIn) -> Self {
+        match pt {
+            ParameterIn::Path => Self::Path,
+            ParameterIn::Query => Self::Query,
+            ParameterIn::Header => Self::Header,
+            ParameterIn::Body => Self::Body,
+            ParameterIn::FormData => Self::FormData,
+        }
     }
 }
