@@ -63,3 +63,6 @@ test_e2e = []
 azurite_workaround = []
 xml = ["quick-xml"]
 tokio-fs = ["tokio/fs", "tokio/io-util"]
+
+[package.metadata.docs.rs]
+features = ["xml", "tokio-fs", "enable_reqwest", "enable_reqwest_gzip", "enable_reqwest_rustls", "hmac_rust", "hmac_openssl", "xml"]
