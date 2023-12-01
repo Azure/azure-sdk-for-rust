@@ -1,12 +1,15 @@
 {
-  "uri": "/test-container-put-block-blob-and-snapshot/test-container-put-block-blob-and-snapshot?comp=snapshot",
+  "uri": "/test-container-put-block-blob-and-snapshot/test-container-put-block-blob-and-snapshot",
   "method": "PUT",
   "headers": {
     "authorization": "<<STRIPPED>>",
-    "content-length": "0",
-    "user-agent": "azsdk-rust-storage/0.14.0 (1.72.0; linux; x86_64)",
-    "x-ms-date": "Thu, 07 Sep 2023 18:25:52 GMT",
-    "x-ms-version": "2020-10-02"
+    "content-length": "6",
+    "content-md5": "6AtQFwmJUPxYqtg8jBSXjg==",
+    "user-agent": "azsdk-rust-storage/0.17.0 (1.74.0; linux; x86_64)",
+    "x-ms-blob-content-type": "text/plain",
+    "x-ms-blob-type": "BlockBlob",
+    "x-ms-date": "Fri, 01 Dec 2023 00:54:57 GMT",
+    "x-ms-version": "2022-11-02"
   },
-  "body": ""
+  "body": "YWJjZGVm"
 }

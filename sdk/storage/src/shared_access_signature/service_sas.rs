@@ -1,10 +1,11 @@
 use crate::shared_access_signature::{format_date, SasProtocol, SasToken};
-use azure_core::{auth::Secret, hmac::hmac_sha256};
+use azure_core::{auth::Secret, date::iso8601, hmac::hmac_sha256};
 use std::fmt;
 use time::OffsetDateTime;
 use url::form_urlencoded;
+use uuid::Uuid;
 
-const SERVICE_SAS_VERSION: &str = "2020-06-12";
+const SERVICE_SAS_VERSION: &str = "2022-11-02";
 
 pub enum BlobSignedResource {
     Blob,         // b
@@ -90,8 +91,39 @@ impl fmt::Display for BlobSasPermissions {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+#[serde(rename_all = "PascalCase")]
+pub struct UserDeligationKey {
+    pub signed_oid: Uuid,
+    pub signed_tid: Uuid,
+    #[serde(with = "iso8601")]
+    pub signed_start: OffsetDateTime,
+    #[serde(with = "iso8601")]
+    pub signed_expiry: OffsetDateTime,
+    pub signed_service: String,
+    pub signed_version: String,
+    pub value: Secret,
+}
+
+pub enum SasKey {
+    Key(Secret),
+    UserDelegationKey(UserDeligationKey),
+}
+
+impl From<Secret> for SasKey {
+    fn from(key: Secret) -> Self {
+        Self::Key(key)
+    }
+}
+
+impl From<UserDeligationKey> for SasKey {
+    fn from(key: UserDeligationKey) -> Self {
+        Self::UserDelegationKey(key)
+    }
+}
+
 pub struct BlobSharedAccessSignature {
-    key: Secret,
+    key: SasKey,
     canonicalized_resource: String,
     resource: BlobSignedResource,
     permissions: BlobSasPermissions, // sp
@@ -104,15 +136,18 @@ pub struct BlobSharedAccessSignature {
 }
 
 impl BlobSharedAccessSignature {
-    pub fn new(
-        key: Secret,
+    pub fn new<K>(
+        key: K,
         canonicalized_resource: String,
         permissions: BlobSasPermissions,
         expiry: OffsetDateTime,
         resource: BlobSignedResource,
-    ) -> Self {
+    ) -> Self
+    where
+        K: Into<SasKey>,
+    {
         Self {
-            key,
+            key: key.into(),
             canonicalized_resource,
             resource,
             permissions,
@@ -133,35 +168,73 @@ impl BlobSharedAccessSignature {
         signed_directory_depth: usize => Some(signed_directory_depth),
     }
 
-    fn sign(&self) -> String {
-        let content = vec![
+    fn sign(&self) -> azure_core::Result<String> {
+        let mut content = vec![
             self.permissions.to_string(),
             self.start.map_or(String::new(), format_date),
             format_date(self.expiry),
             self.canonicalized_resource.clone(),
-            self.identifier
-                .as_ref()
-                .unwrap_or(&String::new())
-                .to_string(),
+        ];
+
+        let key = match &self.key {
+            SasKey::Key(key) => {
+                content.extend([self
+                    .identifier
+                    .as_ref()
+                    .unwrap_or(&String::new())
+                    .to_string()]);
+                key
+            }
+            SasKey::UserDelegationKey(key) => {
+                let user_delegated = [
+                    key.signed_oid.to_string(),
+                    key.signed_tid.to_string(),
+                    format_date(key.signed_start),
+                    format_date(key.signed_expiry),
+                    key.signed_service.to_string(),
+                    key.signed_version.to_string(),
+                    "".to_string(), // SIGNED AUTHORIZED_OID
+                    "".to_string(), // SIGNED UNAUTHORIZED_OID
+                    "".to_owned(),  // SIGNED CORRELATION ID
+                ];
+
+                content.extend(user_delegated);
+                &key.value
+            }
+        };
+
+        content.extend([
             self.ip.as_ref().unwrap_or(&String::new()).to_string(),
             self.protocol.map(|x| x.to_string()).unwrap_or_default(),
             SERVICE_SAS_VERSION.to_string(),
             self.resource.to_string(),
             String::new(), // snapshot time
-            String::new(), // rscd
-            String::new(), // rscc
-            String::new(), // rsce
-            String::new(), // rscl
-            String::new(), // rsct
-        ];
+            String::new(), // SIGNED ENCRYPTION SCOPE
+            String::new(), // SIGNED CACHE CONTROL
+            String::new(), // SIGNED CONTENT DISPOSITION
+            String::new(), // SIGNED CONTENT ENCODING
+            String::new(), // SIGNED CONTENT LANGUAGE
+            String::new(), // SIGNED CONTENT TYPE
+        ]);
 
-        hmac_sha256(&content.join("\n"), &self.key).expect("HMAC signing failed")
+        hmac_sha256(&content.join("\n"), key)
     }
 }
 
 impl SasToken for BlobSharedAccessSignature {
-    fn token(&self) -> String {
+    fn token(&self) -> azure_core::Result<String> {
         let mut form = form_urlencoded::Serializer::new(String::new());
+
+        if let SasKey::UserDelegationKey(key) = &self.key {
+            form.extend_pairs(&[
+                ("skoid", &key.signed_oid.to_string()),
+                ("sktid", &key.signed_tid.to_string()),
+                ("skt", &format_date(key.signed_start)),
+                ("ske", &format_date(key.signed_expiry)),
+                ("sks", &key.signed_service),
+                ("skv", &key.signed_version),
+            ]);
+        }
 
         form.extend_pairs(&[
             ("sv", SERVICE_SAS_VERSION),
@@ -186,9 +259,9 @@ impl SasToken for BlobSharedAccessSignature {
             form.append_pair("sdd", &signed_directory_depth.to_string());
         }
 
-        let sig = self.sign();
+        let sig = self.sign()?;
         form.append_pair("sig", &sig);
-        form.finish()
+        Ok(form.finish())
     }
 }
 
@@ -201,7 +274,7 @@ mod test {
     const MOCK_CANONICALIZED_RESOURCE: &str = "/blob/STORAGE_ACCOUNT_NAME/CONTAINER_NAME/";
 
     #[test]
-    fn test_blob_scoped_sas_token() {
+    fn test_blob_scoped_sas_token() -> azure_core::Result<()> {
         let permissions = BlobSasPermissions {
             read: true,
             ..Default::default()
@@ -213,9 +286,9 @@ mod test {
             OffsetDateTime::UNIX_EPOCH + Duration::days(7),
             BlobSignedResource::Blob,
         )
-        .token();
+        .token()?;
 
-        assert_eq!(signed_token, "sv=2020-06-12&sp=r&sr=b&se=1970-01-08T00%3A00%3A00Z&sig=alEGfKjtiLs5LO%2FyrfPkzjQBHbk4Uda9XOezbRyKwEM%3D");
+        assert_eq!(signed_token, "sv=2022-11-02&sp=r&sr=b&se=1970-01-08T00%3A00%3A00Z&sig=VRZjVZ1c%2FLz7IXCp17Sdx9%2BR9JDrnJdzE3NW56DMjNs%3D");
 
         let mut parsed = url::form_urlencoded::parse(&signed_token.as_bytes());
 
@@ -224,10 +297,11 @@ mod test {
 
         // signed_directory_depth NOT set
         assert!(parsed.find(|(k, _)| k == "sdd").is_none());
+        Ok(())
     }
 
     #[test]
-    fn test_directory_scoped_sas_token() {
+    fn test_directory_scoped_sas_token() -> azure_core::Result<()> {
         let permissions = BlobSasPermissions {
             read: true,
             ..Default::default()
@@ -240,16 +314,17 @@ mod test {
             BlobSignedResource::Directory,
         )
         .signed_directory_depth(2_usize)
-        .token();
+        .token()?;
 
-        assert_eq!(signed_token, "sv=2020-06-12&sp=r&sr=d&se=1970-01-08T00%3A00%3A00Z&sdd=2&sig=e0eoY169%2Bex4AnI9ZAOiOaX49snoJiuvyJ22XV6qW2k%3D");
+        assert_eq!(signed_token, "sv=2022-11-02&sp=r&sr=d&se=1970-01-08T00%3A00%3A00Z&sdd=2&sig=zVN%2FRgDWllHZH6%2FqWt5gFrV89vzp4EU6ULDTdYoHils%3D");
 
         let mut parsed = url::form_urlencoded::parse(&signed_token.as_bytes());
 
         // BlobSignedResource::Directory
         assert!(parsed.find(|(k, v)| k == "sr" && v == "d").is_some());
 
-        // signed_directory_depth NOT set
+        // signed_directory_depth set
         assert!(parsed.find(|(k, v)| k == "sdd" && v == "2").is_some());
+        Ok(())
     }
 }

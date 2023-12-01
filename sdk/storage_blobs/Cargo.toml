@@ -31,7 +31,6 @@ url = "2.2"
 tokio = {version = "1.0", features = ["macros", "rt-multi-thread", "io-util"]}
 env_logger = "0.10"
 azure_identity = { path = "../identity", default-features = false }
-reqwest = "0.11"
 mock_transport = { path = "../../eng/test/mock_transport" }
 md5 = "0.7"
 async-trait = "0.1"
@@ -46,6 +45,8 @@ azurite_workaround = ["azure_core/azurite_workaround"]
 enable_reqwest = ["azure_core/enable_reqwest", "azure_storage/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls", "azure_storage/enable_reqwest_rustls"]
 md5 = ["dep:md5"]
+hmac_rust = ["azure_core/hmac_rust"]
+hmac_openssl = ["azure_core/hmac_openssl"]
 
 [package.metadata.docs.rs]
 features = ["enable_reqwest", "enable_reqwest_rustls", "hmac_rust", "hmac_openssl", "md5", "azurite_workaround"]

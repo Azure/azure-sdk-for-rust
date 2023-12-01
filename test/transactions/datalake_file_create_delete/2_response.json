@@ -3,11 +3,11 @@
   "headers": {
     "content-length": "168",
     "content-type": "application/json;charset=utf-8",
-    "date": "Thu, 07 Sep 2023 19:20:13 GMT",
+    "date": "Fri, 01 Dec 2023 01:17:32 GMT",
     "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
     "x-ms-error-code": "PathAlreadyExists",
-    "x-ms-request-id": "e1ea9c65-501f-001c-12c0-e1106d000000",
-    "x-ms-version": "2020-10-02"
+    "x-ms-request-id": "2569fd1e-101f-0077-67f4-230afb000000",
+    "x-ms-version": "2022-11-02"
   },
-  "body": "eyJlcnJvciI6eyJjb2RlIjoiUGF0aEFscmVhZHlFeGlzdHMiLCJtZXNzYWdlIjoiVGhlIHNwZWNpZmllZCBwYXRoIGFscmVhZHkgZXhpc3RzLlxuUmVxdWVzdElkOmUxZWE5YzY1LTUwMWYtMDAxYy0xMmMwLWUxMTA2ZDAwMDAwMFxuVGltZToyMDIzLTA5LTA3VDE5OjIwOjE0Ljc5OTY4OTdaIn19"
+  "body": "eyJlcnJvciI6eyJjb2RlIjoiUGF0aEFscmVhZHlFeGlzdHMiLCJtZXNzYWdlIjoiVGhlIHNwZWNpZmllZCBwYXRoIGFscmVhZHkgZXhpc3RzLlxuUmVxdWVzdElkOjI1NjlmZDFlLTEwMWYtMDA3Ny02N2Y0LTIzMGFmYjAwMDAwMFxuVGltZToyMDIzLTEyLTAxVDAxOjE3OjMyLjgwMTY5NzNaIn19"
 }

@@ -4,18 +4,18 @@
     "accept-ranges": "bytes",
     "content-length": "9",
     "content-type": "application/octet-stream",
-    "date": "Thu, 07 Sep 2023 19:20:14 GMT",
-    "etag": "\"0x8DBAFD776B88CAF\"",
-    "last-modified": "Thu, 07 Sep 2023 19:20:14 GMT",
+    "date": "Fri, 01 Dec 2023 01:17:32 GMT",
+    "etag": "\"0x8DBF20B4B85A690\"",
+    "last-modified": "Fri, 01 Dec 2023 01:17:32 GMT",
     "server": "Windows-Azure-HDFS/1.0 Microsoft-HTTPAPI/2.0",
     "x-ms-content-crc64": "AAAAAAAAAAA=",
     "x-ms-lease-state": "available",
     "x-ms-lease-status": "unlocked",
     "x-ms-properties": "",
-    "x-ms-request-id": "8c142860-901f-0003-5bc0-e1a369000000",
+    "x-ms-request-id": "180d668e-101f-0067-40f4-23cf93000000",
     "x-ms-resource-type": "file",
     "x-ms-server-encrypted": "true",
-    "x-ms-version": "2020-10-02"
+    "x-ms-version": "2022-11-02"
   },
   "body": "c29tZSBkYXRh"
 }

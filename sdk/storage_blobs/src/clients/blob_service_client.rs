@@ -177,6 +177,10 @@ impl BlobServiceClient {
         ClientBuilder::new(account, credentials)
     }
 
+    pub fn account(&self) -> &str {
+        self.cloud_location.account()
+    }
+
     /// Get information about the blob storage account
     pub fn get_account_information(&self) -> GetAccountInformationBuilder {
         GetAccountInformationBuilder::new(self.clone())

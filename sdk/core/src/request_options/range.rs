@@ -2,25 +2,49 @@ use crate::error::{Error, ErrorKind, ResultExt};
 use crate::headers::{self, AsHeaders, HeaderName, HeaderValue};
 use std::convert::From;
 use std::fmt;
+use std::ops::{Range as StdRange, RangeFrom};
 use std::str::FromStr;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct Range {
-    pub start: u64,
-    pub end: u64,
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Range {
+    Range(StdRange<u64>),
+    RangeFrom(RangeFrom<u64>),
 }
 
 impl Range {
     pub fn new(start: u64, end: u64) -> Range {
-        Range { start, end }
+        (start..end).into()
     }
 
-    pub fn len(&self) -> u64 {
-        self.end - self.start
+    fn optional_len(&self) -> Option<u64> {
+        match self {
+            Range::Range(r) => Some(r.end - r.start),
+            Range::RangeFrom(_) => None,
+        }
     }
+}
 
-    pub fn is_empty(&self) -> bool {
-        self.end == self.start
+impl From<StdRange<u64>> for Range {
+    fn from(r: StdRange<u64>) -> Self {
+        Self::Range(r)
+    }
+}
+
+impl From<RangeFrom<u64>> for Range {
+    fn from(r: RangeFrom<u64>) -> Self {
+        Self::RangeFrom(r)
+    }
+}
+
+impl From<StdRange<usize>> for Range {
+    fn from(r: StdRange<usize>) -> Self {
+        (r.start as u64..r.end as u64).into()
+    }
+}
+
+impl From<RangeFrom<usize>> for Range {
+    fn from(r: RangeFrom<usize>) -> Self {
+        (r.start as u64..).into()
     }
 }
 
@@ -29,40 +53,15 @@ impl AsHeaders for Range {
 
     fn as_headers(&self) -> Self::Iter {
         let mut headers = vec![(headers::MS_RANGE, format!("{self}").into())];
-        if self.len() < 1024 * 1024 * 4 {
-            headers.push((
-                headers::RANGE_GET_CONTENT_CRC64,
-                HeaderValue::from_static("true"),
-            ));
+        if let Some(len) = self.optional_len() {
+            if len < 1024 * 1024 * 4 {
+                headers.push((
+                    headers::RANGE_GET_CONTENT_CRC64,
+                    HeaderValue::from_static("true"),
+                ));
+            }
         }
         headers.into_iter()
-    }
-}
-
-impl From<std::ops::Range<u64>> for Range {
-    fn from(r: std::ops::Range<u64>) -> Self {
-        Self {
-            start: r.start,
-            end: r.end,
-        }
-    }
-}
-
-impl From<std::ops::Range<i32>> for Range {
-    fn from(r: std::ops::Range<i32>) -> Self {
-        Self {
-            start: r.start as u64,
-            end: r.end as u64,
-        }
-    }
-}
-
-impl From<std::ops::Range<usize>> for Range {
-    fn from(r: std::ops::Range<usize>) -> Self {
-        Self {
-            start: r.start as u64,
-            end: r.end as u64,
-        }
     }
 }
 
@@ -82,16 +81,16 @@ impl FromStr for Range {
         let cp_start = v[0].parse::<u64>().map_kind(ErrorKind::DataConversion)?;
         let cp_end = v[1].parse::<u64>().map_kind(ErrorKind::DataConversion)? + 1;
 
-        Ok(Range {
-            start: cp_start,
-            end: cp_end,
-        })
+        Ok((cp_start..cp_end).into())
     }
 }
 
 impl fmt::Display for Range {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "bytes={}-{}", self.start, self.end - 1)
+        match self {
+            Range::Range(r) => write!(f, "bytes={}-{}", r.start, r.end - 1),
+            Range::RangeFrom(r) => write!(f, "bytes={}-", r.start),
+        }
     }
 }
 
@@ -102,9 +101,7 @@ mod test {
     #[test]
     fn test_range_parse() {
         let range = "1000/2000".parse::<Range>().unwrap();
-
-        assert_eq!(range.start, 1000);
-        assert_eq!(range.end, 2001);
+        assert_eq!(range, Range::new(1000, 2001));
     }
 
     #[test]
@@ -119,13 +116,8 @@ mod test {
 
     #[test]
     fn test_range_display() {
-        let range = Range {
-            start: 100,
-            end: 501,
-        };
-
+        let range = Range::new(100, 501);
         let txt = format!("{range}");
-
         assert_eq!(txt, "bytes=100-500");
     }
 }

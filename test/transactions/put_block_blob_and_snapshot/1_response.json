@@ -2,15 +2,12 @@
   "status": 201,
   "headers": {
     "content-length": "0",
-    "content-md5": "6AtQFwmJUPxYqtg8jBSXjg==",
-    "date": "Thu, 07 Sep 2023 18:25:52 GMT",
-    "etag": "\"0x8DBAFCFDEAA2281\"",
-    "last-modified": "Thu, 07 Sep 2023 18:25:53 GMT",
+    "date": "Fri, 01 Dec 2023 00:54:55 GMT",
+    "etag": "\"0x8DBF208232F2007\"",
+    "last-modified": "Fri, 01 Dec 2023 00:54:56 GMT",
     "server": "Windows-Azure-Blob/1.0 Microsoft-HTTPAPI/2.0",
-    "x-ms-content-crc64": "IGNTdOktpz0=",
-    "x-ms-request-id": "f83ea9c6-a01e-0061-29b8-e1d3c5000000",
-    "x-ms-request-server-encrypted": "true",
-    "x-ms-version": "2020-10-02"
+    "x-ms-request-id": "d1d93a96-d01e-0032-1cf1-234c48000000",
+    "x-ms-version": "2022-11-02"
   },
   "body": ""
 }
