@@ -12,7 +12,6 @@ mod tests {
         auth::{AccessToken, TokenCredential},
         date, Url,
     };
-    use azure_identity::AutoRefreshingTokenCredential;
     use std::sync::Arc;
     use time::OffsetDateTime;
 
@@ -20,7 +19,7 @@ mod tests {
         crate::client::DeviceUpdateClient {
             device_update_url: Url::parse(&server_url).unwrap(),
             endpoint: String::new(),
-            token_credential: AutoRefreshingTokenCredential::new(Arc::new(MockCredential)),
+            token_credential: Arc::new(MockCredential),
         }
     }
 
@@ -38,6 +37,10 @@ mod tests {
                 "TOKEN".to_owned(),
                 OffsetDateTime::now_utc() + date::duration_from_days(14),
             ))
+        }
+
+        async fn clear_cache(&self) -> azure_core::Result<()> {
+            Ok(())
         }
     }
 }

@@ -14,7 +14,7 @@ edition = "2021"
 
 [dependencies]
 azure_core = { path = "../core", version = "0.17" }
-async-lock = "3.0"
+async-lock = "3.1.2"
 oauth2 = { version = "4.0.0", default-features = false }
 url = "2.2"
 futures = "0.3"
@@ -39,7 +39,7 @@ azure_security_keyvault = { path = "../security_keyvault", default-features = fa
 serial_test = "2.0"
 
 [features]
-default = ["development", "enable_reqwest"]
+default = ["development", "enable_reqwest", "azureauth_cli"]
 enable_reqwest = [
   "azure_core/enable_reqwest",
 ]

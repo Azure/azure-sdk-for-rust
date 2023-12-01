@@ -131,4 +131,10 @@ impl TokenCredential for EnvironmentCredential {
             "no valid environment credential providers",
         ))
     }
+
+    // TODO: This implementation _always_ creates new instances of the
+    // underlying implementation, which means this never caches the results
+    async fn clear_cache(&self) -> azure_core::Result<()> {
+        Ok(())
+    }
 }

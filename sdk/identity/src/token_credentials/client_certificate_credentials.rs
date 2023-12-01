@@ -1,3 +1,4 @@
+use crate::token_credentials::cache::TokenCache;
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
     authority_hosts::AZURE_PUBLIC_CLOUD,
@@ -14,8 +15,7 @@ use openssl::{
     x509::X509,
 };
 use serde::Deserialize;
-use std::time::Duration;
-use std::{str, sync::Arc};
+use std::{str, sync::Arc, time::Duration};
 use time::OffsetDateTime;
 use url::{form_urlencoded, Url};
 
@@ -83,6 +83,7 @@ pub struct ClientCertificateCredential {
     client_certificate_pass: Secret,
     http_client: Arc<dyn HttpClient>,
     options: CertificateCredentialOptions,
+    cache: TokenCache,
 }
 
 impl ClientCertificateCredential {
@@ -105,6 +106,7 @@ impl ClientCertificateCredential {
             client_certificate_pass: client_certificate_pass.into(),
             http_client: new_http_client(),
             options,
+            cache: TokenCache::new(),
         }
     }
 
@@ -127,31 +129,7 @@ impl ClientCertificateCredential {
     fn as_jwt_part(part: &[u8]) -> String {
         base64::encode_url_safe(part)
     }
-}
 
-#[derive(Deserialize, Debug, Default)]
-#[serde(default)]
-struct AadTokenResponse {
-    token_type: String,
-    expires_in: u64,
-    ext_expires_in: u64,
-    access_token: String,
-}
-
-fn get_encoded_cert(cert: &X509) -> azure_core::Result<String> {
-    Ok(format!(
-        "\"{}\"",
-        base64::encode(cert.to_pem().map_err(openssl_error)?)
-    ))
-}
-
-fn openssl_error(err: ErrorStack) -> azure_core::error::Error {
-    Error::new(ErrorKind::Credential, err)
-}
-
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl TokenCredential for ClientCertificateCredential {
     async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
         let options = self.options();
 
@@ -265,5 +243,39 @@ impl TokenCredential for ClientCertificateCredential {
             response.access_token,
             OffsetDateTime::now_utc() + Duration::from_secs(response.expires_in),
         ))
+    }
+}
+
+#[derive(Deserialize, Debug, Default)]
+#[serde(default)]
+struct AadTokenResponse {
+    token_type: String,
+    expires_in: u64,
+    ext_expires_in: u64,
+    access_token: String,
+}
+
+fn get_encoded_cert(cert: &X509) -> azure_core::Result<String> {
+    Ok(format!(
+        "\"{}\"",
+        base64::encode(cert.to_pem().map_err(openssl_error)?)
+    ))
+}
+
+fn openssl_error(err: ErrorStack) -> azure_core::error::Error {
+    Error::new(ErrorKind::Credential, err)
+}
+
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+impl TokenCredential for ClientCertificateCredential {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
+        self.cache
+            .get_token(resource, self.get_token(resource))
+            .await
+    }
+
+    async fn clear_cache(&self) -> azure_core::Result<()> {
+        self.cache.clear().await
     }
 }

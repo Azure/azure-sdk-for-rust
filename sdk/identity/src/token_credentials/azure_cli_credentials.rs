@@ -1,3 +1,4 @@
+use crate::token_credentials::cache::TokenCache;
 use azure_core::auth::{AccessToken, Secret, TokenCredential};
 use azure_core::error::{Error, ErrorKind, ResultExt};
 use serde::Deserialize;
@@ -104,15 +105,23 @@ struct CliTokenResponse {
 }
 
 /// Enables authentication to Azure Active Directory using Azure CLI to obtain an access token.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct AzureCliCredential {
-    _private: (),
+    cache: TokenCache,
+}
+
+impl Default for AzureCliCredential {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl AzureCliCredential {
     /// Create a new `AzureCliCredential`
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            cache: TokenCache::new(),
+        }
     }
 
     /// Get an access token for an optional resource
@@ -137,6 +146,11 @@ impl AzureCliCredential {
             args.push("--resource");
             args.push(resource);
         }
+
+        log::trace!(
+            "fetching credential via Azure CLI: {program} {}",
+            args.join(" "),
+        );
 
         match Command::new(program).args(args).output() {
             Ok(az_output) if az_output.status.success() => {
@@ -174,14 +188,25 @@ impl AzureCliCredential {
         let tr = Self::get_access_token(None)?;
         Ok(tr.tenant)
     }
+
+    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
+        let tr = Self::get_access_token(Some(resource))?;
+        Ok(AccessToken::new(tr.access_token, tr.expires_on))
+    }
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for AzureCliCredential {
     async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
-        let tr = Self::get_access_token(Some(resource))?;
-        Ok(AccessToken::new(tr.access_token, tr.expires_on))
+        self.cache
+            .get_token(resource, self.get_token(resource))
+            .await
+    }
+
+    /// Clear the credential's cache.
+    async fn clear_cache(&self) -> azure_core::Result<()> {
+        self.cache.clear().await
     }
 }
 

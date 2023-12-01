@@ -1,3 +1,4 @@
+use crate::token_credentials::cache::TokenCache;
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
@@ -7,8 +8,7 @@ use serde::{
     de::{self, Deserializer},
     Deserialize,
 };
-use std::str;
-use std::sync::Arc;
+use std::{str, sync::Arc};
 use time::OffsetDateTime;
 
 const MSI_ENDPOINT_ENV_KEY: &str = "IDENTITY_ENDPOINT";
@@ -26,6 +26,7 @@ pub struct ImdsManagedIdentityCredential {
     object_id: Option<String>,
     client_id: Option<String>,
     msi_res_id: Option<String>,
+    cache: TokenCache,
 }
 
 impl Default for ImdsManagedIdentityCredential {
@@ -43,6 +44,7 @@ impl ImdsManagedIdentityCredential {
             object_id: None,
             client_id: None,
             msi_res_id: None,
+            cache: TokenCache::new(),
         }
     }
 
@@ -87,11 +89,7 @@ impl ImdsManagedIdentityCredential {
         self.client_id = None;
         self
     }
-}
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl TokenCredential for ImdsManagedIdentityCredential {
     async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
         let msi_endpoint = std::env::var(MSI_ENDPOINT_ENV_KEY)
             .unwrap_or_else(|_| "http://169.254.169.254/metadata/identity/oauth2/token".to_owned());
@@ -154,6 +152,20 @@ impl TokenCredential for ImdsManagedIdentityCredential {
             token_response.access_token,
             token_response.expires_on,
         ))
+    }
+}
+
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+impl TokenCredential for ImdsManagedIdentityCredential {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
+        self.cache
+            .get_token(resource, self.get_token(resource))
+            .await
+    }
+
+    async fn clear_cache(&self) -> azure_core::Result<()> {
+        self.cache.clear().await
     }
 }
 

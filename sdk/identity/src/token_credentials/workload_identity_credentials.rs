@@ -1,12 +1,13 @@
-use azure_core::auth::{AccessToken, Secret, TokenCredential};
-use azure_core::error::{ErrorKind, ResultExt};
-use azure_core::HttpClient;
-use std::str;
-use std::sync::Arc;
-use std::time::Duration;
+use crate::{
+    federated_credentials_flow, token_credentials::cache::TokenCache, TokenCredentialOptions,
+};
+use azure_core::{
+    auth::{AccessToken, Secret, TokenCredential},
+    error::{ErrorKind, ResultExt},
+    HttpClient,
+};
+use std::{str, sync::Arc, time::Duration};
 use time::OffsetDateTime;
-
-use crate::{federated_credentials_flow, TokenCredentialOptions};
 
 /// Enables authentication to Azure Active Directory using a client secret that was generated for an App Registration.
 ///
@@ -20,6 +21,7 @@ pub struct WorkloadIdentityCredential {
     client_id: String,
     token: Secret,
     options: TokenCredentialOptions,
+    cache: TokenCache,
 }
 
 impl WorkloadIdentityCredential {
@@ -39,6 +41,7 @@ impl WorkloadIdentityCredential {
             client_id,
             token: token.into(),
             options: TokenCredentialOptions::default(),
+            cache: TokenCache::new(),
         }
     }
 
@@ -46,11 +49,7 @@ impl WorkloadIdentityCredential {
     pub fn set_options(&mut self, options: TokenCredentialOptions) {
         self.options = options;
     }
-}
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl TokenCredential for WorkloadIdentityCredential {
     async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
         let mut resource = resource.to_owned();
         if !resource.ends_with("/.default") {
@@ -78,5 +77,19 @@ impl TokenCredential for WorkloadIdentityCredential {
         })
         .context(ErrorKind::Credential, "request token error")?;
         Ok(res)
+    }
+}
+
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+impl TokenCredential for WorkloadIdentityCredential {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
+        self.cache
+            .get_token(resource, self.get_token(resource))
+            .await
+    }
+
+    async fn clear_cache(&self) -> azure_core::Result<()> {
+        self.cache.clear().await
     }
 }

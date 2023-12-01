@@ -3,7 +3,6 @@ use azure_core::{
     error::{Error, ErrorKind, ResultExt},
     Url,
 };
-use azure_identity::AutoRefreshingTokenCredential;
 use const_format::formatcp;
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
@@ -26,7 +25,7 @@ pub(crate) const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSI
 pub struct DeviceUpdateClient {
     pub(crate) device_update_url: Url,
     pub(crate) endpoint: String,
-    pub(crate) token_credential: AutoRefreshingTokenCredential,
+    pub(crate) token_credential: Arc<dyn TokenCredential>,
 }
 
 impl DeviceUpdateClient {
@@ -49,7 +48,6 @@ impl DeviceUpdateClient {
                 format!("failed to parse update url: {device_update_url}")
             })?;
         let endpoint = extract_endpoint(&device_update_url)?;
-        let token_credential = AutoRefreshingTokenCredential::new(token_credential);
 
         let client = DeviceUpdateClient {
             device_update_url,
