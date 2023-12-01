@@ -1,12 +1,13 @@
+use autorust_openapi::Response;
 use indexmap::IndexMap;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 
+use crate::spec::get_type_name_for_schema_ref;
 use crate::status_codes::get_status_code_ident;
 use crate::{codegen::TypeNameCode, CodeGen};
 use crate::{content_type, Result};
 
-use super::function_call_params::create_response_type;
 use super::response_headers::{HeaderCode, HeadersCode};
 use super::web_operation_gen::{Pageable, WebOperationGen};
 /// The response for an operation.
@@ -143,5 +144,16 @@ impl ToTokens for ResponseCode {
             }
         });
         tokens.extend(self.headers.to_token_stream());
+    }
+}
+
+fn create_response_type(cg: &CodeGen, rsp: &Response) -> Result<Option<TypeNameCode>> {
+    if let Some(schema) = &rsp.schema {
+        let mut type_name = TypeNameCode::new(&get_type_name_for_schema_ref(schema)?)?;
+        type_name.qualify_models(true);
+        cg.set_if_union_type(&mut type_name);
+        Ok(Some(type_name))
+    } else {
+        Ok(None)
     }
 }
