@@ -1,3 +1,7 @@
+# UNRELEASED
+
+- Removed AutoRefreshingTokenCredential, instead all token credentials now implement caching
+
 # 0.3.0 (2022-05)
 
 - [#756](https://github.com/Azure/azure-sdk-for-rust/pull/756) Export credentials from azure_identity

@@ -1,4 +1,5 @@
 use crate::oauth2_http_client::Oauth2HttpClient;
+use crate::token_credentials::cache::TokenCache;
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
     authority_hosts::AZURE_PUBLIC_CLOUD,
@@ -62,6 +63,7 @@ pub struct ClientSecretCredential {
     client_id: oauth2::ClientId,
     client_secret: Option<oauth2::ClientSecret>,
     options: TokenCredentialOptions,
+    cache: TokenCache,
 }
 
 impl ClientSecretCredential {
@@ -79,17 +81,14 @@ impl ClientSecretCredential {
             client_id: oauth2::ClientId::new(client_id),
             client_secret: Some(oauth2::ClientSecret::new(client_secret)),
             options,
+            cache: TokenCache::new(),
         }
     }
 
     fn options(&self) -> &TokenCredentialOptions {
         &self.options
     }
-}
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl TokenCredential for ClientSecretCredential {
     async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
         let options = self.options();
         let authority_host = options.authority_host();
@@ -153,5 +152,19 @@ impl TokenCredential for ClientSecretCredential {
             .context(ErrorKind::Credential, "request token error")?;
 
         Ok(token_result)
+    }
+}
+
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+impl TokenCredential for ClientSecretCredential {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
+        self.cache
+            .get_token(resource, self.get_token(resource))
+            .await
+    }
+    /// Clear the credential's cache.
+    async fn clear_cache(&self) -> azure_core::Result<()> {
+        self.cache.clear().await
     }
 }

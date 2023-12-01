@@ -84,4 +84,7 @@ impl AccessToken {
 pub trait TokenCredential: Send + Sync + Debug {
     /// Gets a `AccessToken` for the specified resource
     async fn get_token(&self, resource: &str) -> crate::Result<AccessToken>;
+
+    /// Clear the credential's cache.
+    async fn clear_cache(&self) -> crate::Result<()>;
 }

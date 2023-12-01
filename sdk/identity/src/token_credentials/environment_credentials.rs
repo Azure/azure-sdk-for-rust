@@ -1,4 +1,6 @@
-use super::{ClientSecretCredential, TokenCredentialOptions, WorkloadIdentityCredential};
+use crate::token_credentials::{
+    cache::TokenCache, ClientSecretCredential, TokenCredentialOptions, WorkloadIdentityCredential,
+};
 use azure_core::{
     auth::{AccessToken, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
@@ -33,10 +35,11 @@ const AZURE_AUTHORITY_HOST: &str = "AZURE_AUTHORITY_HOST";
 /// This credential ultimately uses a or `WorkloadIdentityCredential` a`ClientSecretCredential` to perform the authentication using
 /// these details.
 /// Please consult the documentation of that class for more details.
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct EnvironmentCredential {
     http_client: Arc<dyn HttpClient>,
     options: TokenCredentialOptions,
+    cache: TokenCache,
 }
 
 impl Default for EnvironmentCredential {
@@ -55,13 +58,10 @@ impl EnvironmentCredential {
         Self {
             http_client,
             options,
+            cache: TokenCache::new(),
         }
     }
-}
 
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl TokenCredential for EnvironmentCredential {
     async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
         let tenant_id = std::env::var(AZURE_TENANT_ID_ENV_KEY)
             .with_context(ErrorKind::Credential, || {
@@ -130,5 +130,19 @@ impl TokenCredential for EnvironmentCredential {
             ErrorKind::Credential,
             "no valid environment credential providers",
         ))
+    }
+}
+
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+impl TokenCredential for EnvironmentCredential {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
+        self.cache
+            .get_token(resource, self.get_token(resource))
+            .await
+    }
+
+    async fn clear_cache(&self) -> azure_core::Result<()> {
+        self.cache.clear().await
     }
 }

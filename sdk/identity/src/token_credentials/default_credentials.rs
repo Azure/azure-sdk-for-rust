@@ -120,6 +120,17 @@ impl TokenCredential for DefaultAzureCredentialEnum {
             }
         }
     }
+
+    /// Clear the credential's cache.
+    async fn clear_cache(&self) -> azure_core::Result<()> {
+        match self {
+            DefaultAzureCredentialEnum::Environment(credential) => credential.clear_cache().await,
+            DefaultAzureCredentialEnum::ManagedIdentity(credential) => {
+                credential.clear_cache().await
+            }
+            DefaultAzureCredentialEnum::AzureCli(credential) => credential.clear_cache().await,
+        }
+    }
 }
 
 /// Provides a default `TokenCredential` authentication flow for applications that will be deployed to Azure.
@@ -169,6 +180,14 @@ impl TokenCredential for DefaultAzureCredential {
                 format_aggregate_error(&errors)
             )
         }))
+    }
+
+    /// Clear the credential's cache.
+    async fn clear_cache(&self) -> azure_core::Result<()> {
+        for source in &self.sources {
+            source.clear_cache().await?;
+        }
+        Ok(())
     }
 }
 
