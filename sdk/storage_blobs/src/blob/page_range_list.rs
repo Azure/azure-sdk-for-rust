@@ -66,10 +66,8 @@ mod test {
 
         let prl = PageRangeList::try_from_xml(page_list).unwrap();
         assert!(prl.ranges.len() == 2);
-        assert!(prl.ranges[0].start == 0);
-        assert!(prl.ranges[0].end == 511);
-        assert!(prl.ranges[1].start == 1024);
-        assert!(prl.ranges[1].end == 1535);
+        assert!(prl.ranges[0] == Range::new(0, 511));
+        assert!(prl.ranges[1] == Range::new(1024, 1535));
 
         let page_list = "<?xml version=\"1.0\" encoding=\"utf-8\"?><PageList></PageList>";
         let prl = PageRangeList::try_from_xml(page_list).unwrap();

@@ -31,9 +31,10 @@ impl GetBlobBuilder {
 
                 let range = match continuation {
                     Some(range) => range,
-                    None => {
-                        initial_range(this.chunk_size.unwrap_or(DEFAULT_CHUNK_SIZE), this.range)
-                    }
+                    None => initial_range(
+                        this.chunk_size.unwrap_or(DEFAULT_CHUNK_SIZE),
+                        this.range.clone(),
+                    ),
                 };
 
                 this.blob_versioning.append_to_url_query(&mut url);
@@ -105,17 +106,18 @@ impl GetBlobResponse {
 impl Continuable for GetBlobResponse {
     type Continuation = Range;
     fn continuation(&self) -> Option<Self::Continuation> {
-        self.remaining_range
+        self.remaining_range.clone()
     }
 }
 
 // calculate the first Range for use at the beginning of the Pageable.
 fn initial_range(chunk_size: u64, request_range: Option<Range>) -> Range {
     match request_range {
-        Some(range) => {
-            let len = std::cmp::min(range.len(), chunk_size);
-            Range::new(range.start, range.start + len)
+        Some(Range::Range(x)) => {
+            let len = std::cmp::min(x.end - x.start, chunk_size);
+            (x.start..x.start + len).into()
         }
+        Some(Range::RangeFrom(x)) => (x.start..x.start + chunk_size).into(),
         None => Range::new(0, chunk_size),
     }
 }
@@ -152,19 +154,22 @@ fn remaining_range(
     // if the response said the end of the blob was downloaded, we're done
     // Note, we add + 1, as we don't need to re-fetch the last
     // byte of the previous request.
-    if content_range.end() + 1 >= requested_range.end {
-        return None;
-    }
+    let after = content_range.end() + 1;
 
-    // if the user specified range is smaller than the blob, truncate the
-    // requested range.  Note, we add + 1, as we don't need to re-fetch the last
-    // byte of the previous request.
-    let start = content_range.end() + 1;
-    let remaining_size = requested_range.end - start;
+    let remaining_size = match requested_range {
+        Range::Range(x) => {
+            if after >= x.end {
+                return None;
+            }
+            x.end - after
+        }
+        // no requested end
+        Range::RangeFrom(_) => after,
+    };
 
     let size = std::cmp::min(remaining_size, chunk_size);
 
-    Some(Range::new(start, start + size))
+    Some(Range::new(after, after + size))
 }
 
 #[cfg(test)]
