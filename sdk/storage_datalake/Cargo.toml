@@ -38,3 +38,6 @@ enable_reqwest = ["azure_core/enable_reqwest", "azure_storage/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
+
+[package.metadata.docs.rs]
+features = ["enable_reqwest", "enable_reqwest_rustls", "hmac_rust", "hmac_openssl"]

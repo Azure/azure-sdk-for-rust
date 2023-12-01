@@ -33,3 +33,6 @@ async-trait = "0.1"
 default = ["enable_reqwest", "azure_identity/default"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["reqwest/rustls-tls"]
+
+[package.metadata.docs.rs]
+features = ["enable_reqwest", "enable_reqwest_rustls"]

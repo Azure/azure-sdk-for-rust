@@ -40,17 +40,16 @@ serial_test = "2.0"
 
 [features]
 default = ["development", "enable_reqwest"]
-enable_reqwest = [
-  "azure_core/enable_reqwest",
-]
-enable_reqwest_rustls = [
-  "azure_core/enable_reqwest_rustls",
-]
+enable_reqwest = ["azure_core/enable_reqwest"]
+enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 development = []
 test_e2e = []
 client_certificate = ["openssl"]
 vendored_openssl = ["openssl/vendored"]
 azureauth_cli = []
+
+[package.metadata.docs.rs]
+features = ["enable_reqwest", "enable_reqwest_rustls", "hmac_rust", "hmac_openssl", "development", "client_certificate", "azureauth_cli"]
 
 [[example]]
 name="client_certificate_credentials"
