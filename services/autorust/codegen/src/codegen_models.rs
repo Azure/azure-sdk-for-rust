@@ -1,5 +1,6 @@
 use crate::{
     codegen::TypeNameCode,
+    doc_comment::DocCommentCode,
     identifier::{CamelCaseIdent, SnakeCaseIdent},
     spec::{self, get_schema_array_items, get_type_name_for_schema, get_type_name_for_schema_ref},
     CodeGen, PropertyName, ResolvedSchema, Spec,
@@ -1341,37 +1342,6 @@ impl ToTokens for SerdeCode {
         if !attributes.is_empty() {
             tokens.extend(quote! {
                 #[serde(#(#attributes),*)]
-            });
-        }
-    }
-}
-
-#[derive(Default)]
-pub struct DocCommentCode {
-    description: Option<String>,
-}
-
-impl From<&str> for DocCommentCode {
-    fn from(description: &str) -> Self {
-        Self {
-            description: Some(description.to_string()),
-        }
-    }
-}
-
-impl From<&Option<String>> for DocCommentCode {
-    fn from(description: &Option<String>) -> Self {
-        Self {
-            description: description.clone(),
-        }
-    }
-}
-
-impl ToTokens for DocCommentCode {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        if let Some(description) = &self.description {
-            tokens.extend(quote! {
-                #[doc = #description]
             });
         }
     }

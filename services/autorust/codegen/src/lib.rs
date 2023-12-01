@@ -6,6 +6,7 @@ pub mod codegen_operations;
 pub mod config_parser;
 pub mod content_type;
 pub mod crates;
+mod doc_comment;
 mod error;
 pub mod gen;
 pub mod identifier;

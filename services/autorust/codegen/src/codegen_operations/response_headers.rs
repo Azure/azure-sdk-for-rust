@@ -2,8 +2,7 @@ use autorust_openapi::Header;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 
-use super::doc_comment::DocCommentCode;
-use crate::{codegen::TypeNameCode, identifier::SnakeCaseIdent, spec::TypeName, Error, ErrorKind, Result};
+use crate::{codegen::TypeNameCode, doc_comment::DocCommentCode, identifier::SnakeCaseIdent, spec::TypeName, Error, ErrorKind, Result};
 
 /// Code for a function to get a header value from the http response.
 #[derive(Clone)]

@@ -1,9 +1,8 @@
-use crate::Result;
+use crate::{doc_comment::DocCommentCode, Result};
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
 
 use super::{
-    doc_comment::DocCommentCode,
     function_call_params::FunctionCallParamsCode,
     function_params::{FunctionParam, FunctionParams},
     web_operation_gen::WebOperationGen,

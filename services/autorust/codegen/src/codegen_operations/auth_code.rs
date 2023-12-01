@@ -1,7 +1,9 @@
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
+
 /// Sets the authentication.
 /// Only bearer token authentication is supported right now.
+/// TODO: move authentication within generated crates to use policies instead of adding to requests.
 pub(crate) struct AuthCode {}
 
 impl ToTokens for AuthCode {

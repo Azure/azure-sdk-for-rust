@@ -61,7 +61,6 @@ impl FunctionParams {
     pub fn optional_params(&self) -> Vec<&FunctionParam> {
         self.params.iter().filter(|p| p.type_name.is_optional()).collect()
     }
-    #[allow(dead_code)]
     fn params_of_kind(&self, kind: &ParamKind) -> Vec<&FunctionParam> {
         self.params.iter().filter(|p| &p.kind == kind).collect()
     }
