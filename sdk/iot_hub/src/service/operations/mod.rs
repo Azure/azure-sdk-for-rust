@@ -9,6 +9,7 @@ mod get_identity;
 mod get_twin;
 mod invoke_method;
 mod query;
+mod send_c2d_message;
 mod update_or_replace_twin;
 
 pub use apply_on_edge_device::ApplyOnEdgeDeviceBuilder;
@@ -22,4 +23,5 @@ pub use get_identity::GetIdentityBuilder;
 pub use get_twin::GetTwinBuilder;
 pub use invoke_method::InvokeMethodBuilder;
 pub use query::QueryBuilder;
+pub use send_c2d_message::Cloud2DeviceMessageBuilder;
 pub use update_or_replace_twin::UpdateOrReplaceTwinBuilder;
