@@ -1,3 +1,4 @@
+mod c2d_message_response;
 mod configuration_response;
 mod device_identity_response;
 mod device_twin_response;
@@ -6,6 +7,7 @@ mod module_identity_response;
 mod module_twin_response;
 mod query_response;
 
+pub use c2d_message_response::Cloud2DeviceMessageResponse;
 pub use configuration_response::{ConfigurationResponse, MultipleConfigurationResponse};
 pub use device_identity_response::{CreateOrUpdateDeviceIdentityResponse, DeviceIdentityResponse};
 pub use device_twin_response::DeviceTwinResponse;
