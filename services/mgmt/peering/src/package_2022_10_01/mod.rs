@@ -54,14 +54,22 @@ impl ClientBuilder {
         self
     }
     #[doc = "Convert the builder into a `Client` instance."]
-    #[must_use]
-    pub fn build(self) -> Client {
+    pub fn build(self) -> azure_core::Result<Client> {
         let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
-        let scopes = self.scopes.unwrap_or_else(|| vec![endpoint.to_string()]);
-        Client::new(endpoint, self.credential, scopes, self.options)
+        let scopes = if let Some(scopes) = self.scopes {
+            scopes
+        } else {
+            vec![endpoint.join(azure_core::auth::DEFALT_SCOPE_SUFFIX)?.to_string()]
+        };
+        Ok(Client::new(endpoint, self.credential, scopes, self.options))
     }
 }
 impl Client {
+    pub(crate) async fn bearer_token(&self) -> azure_core::Result<azure_core::auth::Secret> {
+        let credential = self.token_credential();
+        let response = credential.get_token(&self.scopes()).await?;
+        Ok(response.token)
+    }
     pub(crate) fn endpoint(&self) -> &azure_core::Url {
         &self.endpoint
     }
@@ -242,12 +250,8 @@ pub mod cdn_peering_prefixes {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -261,12 +265,8 @@ pub mod cdn_peering_prefixes {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let peering_location = &this.peering_location;
                                 req.url_mut().query_pairs_mut().append_pair("peeringLocation", peering_location);
                                 let req_body = azure_core::EMPTY_BODY;
@@ -386,12 +386,8 @@ pub mod check_service_provider_availability {
                 async move {
                     let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                    let credential = this.client.token_credential();
-                    let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                    req.insert_header(
-                        azure_core::headers::AUTHORIZATION,
-                        format!("Bearer {}", token_response.token.secret()),
-                    );
+                    let bearer_token = this.client.bearer_token().await?;
+                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.check_service_provider_availability_input)?;
                     req.set_body(req_body);
@@ -535,12 +531,8 @@ pub mod legacy_peerings {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -554,12 +546,8 @@ pub mod legacy_peerings {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let peering_location = &this.peering_location;
                                 req.url_mut().query_pairs_mut().append_pair("peeringLocation", peering_location);
                                 let kind = &this.kind;
@@ -708,12 +696,8 @@ pub mod looking_glass {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let command = &this.command;
                         req.url_mut().query_pairs_mut().append_pair("command", command);
                         let source_type = &this.source_type;
@@ -834,12 +818,8 @@ pub mod operations {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -853,12 +833,8 @@ pub mod operations {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -1016,12 +992,8 @@ pub mod peer_asns {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -1123,12 +1095,8 @@ pub mod peer_asns {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.peer_asn)?;
                         req.set_body(req_body);
@@ -1225,12 +1193,8 @@ pub mod peer_asns {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -1318,12 +1282,8 @@ pub mod peer_asns {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -1337,12 +1297,8 @@ pub mod peer_asns {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -1470,12 +1426,8 @@ pub mod peering_locations {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -1489,12 +1441,8 @@ pub mod peering_locations {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let kind = &this.kind;
                                 req.url_mut().query_pairs_mut().append_pair("kind", kind);
                                 if let Some(direct_peering_type) = &this.direct_peering_type {
@@ -1700,12 +1648,8 @@ pub mod registered_asns {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -1811,12 +1755,8 @@ pub mod registered_asns {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.registered_asn)?;
                         req.set_body(req_body);
@@ -1917,12 +1857,8 @@ pub mod registered_asns {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -2014,12 +1950,8 @@ pub mod registered_asns {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -2033,12 +1965,8 @@ pub mod registered_asns {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -2261,12 +2189,8 @@ pub mod registered_prefixes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -2372,12 +2296,8 @@ pub mod registered_prefixes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.registered_prefix)?;
                         req.set_body(req_body);
@@ -2478,12 +2398,8 @@ pub mod registered_prefixes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -2575,12 +2491,8 @@ pub mod registered_prefixes {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -2594,12 +2506,8 @@ pub mod registered_prefixes {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -2702,12 +2610,8 @@ pub mod registered_prefixes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -2930,12 +2834,8 @@ pub mod peerings {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -3039,12 +2939,8 @@ pub mod peerings {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.peering)?;
                         req.set_body(req_body);
@@ -3149,12 +3045,8 @@ pub mod peerings {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.tags)?;
                         req.set_body(req_body);
@@ -3253,12 +3145,8 @@ pub mod peerings {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -3348,12 +3236,8 @@ pub mod peerings {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -3367,12 +3251,8 @@ pub mod peerings {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -3471,12 +3351,8 @@ pub mod peerings {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -3490,12 +3366,8 @@ pub mod peerings {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -3659,12 +3531,8 @@ pub mod received_routes {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -3678,12 +3546,8 @@ pub mod received_routes {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 if let Some(prefix) = &this.prefix {
                                     req.url_mut().query_pairs_mut().append_pair("prefix", prefix);
                                 }
@@ -3903,12 +3767,8 @@ pub mod connection_monitor_tests {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -4014,12 +3874,8 @@ pub mod connection_monitor_tests {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.connection_monitor_test)?;
                         req.set_body(req_body);
@@ -4120,12 +3976,8 @@ pub mod connection_monitor_tests {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -4217,12 +4069,8 @@ pub mod connection_monitor_tests {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -4236,12 +4084,8 @@ pub mod connection_monitor_tests {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -4361,12 +4205,8 @@ pub mod peering_service_countries {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -4380,12 +4220,8 @@ pub mod peering_service_countries {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -4510,12 +4346,8 @@ pub mod peering_service_locations {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -4529,12 +4361,8 @@ pub mod peering_service_locations {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 if let Some(country) = &this.country {
                                     req.url_mut().query_pairs_mut().append_pair("country", country);
                                 }
@@ -4744,12 +4572,8 @@ pub mod prefixes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(expand) = &this.expand {
                             req.url_mut().query_pairs_mut().append_pair("$expand", expand);
                         }
@@ -4858,12 +4682,8 @@ pub mod prefixes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.peering_service_prefix)?;
                         req.set_body(req_body);
@@ -4964,12 +4784,8 @@ pub mod prefixes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -5067,12 +4883,8 @@ pub mod prefixes {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -5086,12 +4898,8 @@ pub mod prefixes {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 if let Some(expand) = &this.expand {
                                     req.url_mut().query_pairs_mut().append_pair("$expand", expand);
                                 }
@@ -5214,12 +5022,8 @@ pub mod peering_service_providers {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -5233,12 +5037,8 @@ pub mod peering_service_providers {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -5466,12 +5266,8 @@ pub mod peering_services {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -5575,12 +5371,8 @@ pub mod peering_services {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.peering_service)?;
                         req.set_body(req_body);
@@ -5685,12 +5477,8 @@ pub mod peering_services {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.tags)?;
                         req.set_body(req_body);
@@ -5789,12 +5577,8 @@ pub mod peering_services {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -5884,12 +5668,8 @@ pub mod peering_services {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -5903,12 +5683,8 @@ pub mod peering_services {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -6007,12 +5783,8 @@ pub mod peering_services {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -6026,12 +5798,8 @@ pub mod peering_services {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -6124,12 +5892,8 @@ pub mod peering_services {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -6255,12 +6019,8 @@ pub mod rp_unbilled_prefixes {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -6274,12 +6034,8 @@ pub mod rp_unbilled_prefixes {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 if let Some(consolidate) = &this.consolidate {
                                     req.url_mut().query_pairs_mut().append_pair("consolidate", &consolidate.to_string());
                                 }

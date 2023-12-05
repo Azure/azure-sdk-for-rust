@@ -54,14 +54,22 @@ impl ClientBuilder {
         self
     }
     #[doc = "Convert the builder into a `Client` instance."]
-    #[must_use]
-    pub fn build(self) -> Client {
+    pub fn build(self) -> azure_core::Result<Client> {
         let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
-        let scopes = self.scopes.unwrap_or_else(|| vec![endpoint.to_string()]);
-        Client::new(endpoint, self.credential, scopes, self.options)
+        let scopes = if let Some(scopes) = self.scopes {
+            scopes
+        } else {
+            vec![endpoint.join(azure_core::auth::DEFALT_SCOPE_SUFFIX)?.to_string()]
+        };
+        Ok(Client::new(endpoint, self.credential, scopes, self.options))
     }
 }
 impl Client {
+    pub(crate) async fn bearer_token(&self) -> azure_core::Result<azure_core::auth::Secret> {
+        let credential = self.token_credential();
+        let response = credential.get_token(&self.scopes()).await?;
+        Ok(response.token)
+    }
     pub(crate) fn endpoint(&self) -> &azure_core::Url {
         &self.endpoint
     }
@@ -308,12 +316,8 @@ pub mod publish_event_grid_events {
                 async move {
                     let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                    let credential = this.client.token_credential();
-                    let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                    req.insert_header(
-                        azure_core::headers::AUTHORIZATION,
-                        format!("Bearer {}", token_response.token.secret()),
-                    );
+                    let bearer_token = this.client.bearer_token().await?;
+                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.events)?;
                     req.set_body(req_body);
@@ -398,12 +402,8 @@ pub mod publish_cloud_event_events {
                 async move {
                     let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                    let credential = this.client.token_credential();
-                    let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                    req.insert_header(
-                        azure_core::headers::AUTHORIZATION,
-                        format!("Bearer {}", token_response.token.secret()),
-                    );
+                    let bearer_token = this.client.bearer_token().await?;
+                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                     req.insert_header("content-type", "application/cloudevents-batch+json; charset=utf-8");
                     let req_body = azure_core::to_json(&this.events)?;
                     if let Some(aeg_channel_name) = &this.aeg_channel_name {
@@ -485,12 +485,8 @@ pub mod publish_custom_event_events {
                 async move {
                     let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                    let credential = this.client.token_credential();
-                    let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                    req.insert_header(
-                        azure_core::headers::AUTHORIZATION,
-                        format!("Bearer {}", token_response.token.secret()),
-                    );
+                    let bearer_token = this.client.bearer_token().await?;
+                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.events)?;
                     req.set_body(req_body);
@@ -575,12 +571,8 @@ pub mod publish_cloud_events {
                 async move {
                     let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                    let credential = this.client.token_credential();
-                    let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                    req.insert_header(
-                        azure_core::headers::AUTHORIZATION,
-                        format!("Bearer {}", token_response.token.secret()),
-                    );
+                    let bearer_token = this.client.bearer_token().await?;
+                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                     req.insert_header("content-type", "application/cloudevents-batch+json; charset=utf-8");
                     let req_body = azure_core::to_json(&this.events)?;
                     req.set_body(req_body);
@@ -689,12 +681,8 @@ pub mod receive_cloud_events {
                 async move {
                     let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                    let credential = this.client.token_credential();
-                    let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                    req.insert_header(
-                        azure_core::headers::AUTHORIZATION,
-                        format!("Bearer {}", token_response.token.secret()),
-                    );
+                    let bearer_token = this.client.bearer_token().await?;
+                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                     if let Some(max_events) = &this.max_events {
                         req.url_mut().query_pairs_mut().append_pair("maxEvents", &max_events.to_string());
                     }
@@ -805,12 +793,8 @@ pub mod acknowledge_cloud_events {
                 async move {
                     let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                    let credential = this.client.token_credential();
-                    let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                    req.insert_header(
-                        azure_core::headers::AUTHORIZATION,
-                        format!("Bearer {}", token_response.token.secret()),
-                    );
+                    let bearer_token = this.client.bearer_token().await?;
+                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.acknowledge_options)?;
                     req.set_body(req_body);
@@ -919,12 +903,8 @@ pub mod release_cloud_events {
                 async move {
                     let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                    let credential = this.client.token_credential();
-                    let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                    req.insert_header(
-                        azure_core::headers::AUTHORIZATION,
-                        format!("Bearer {}", token_response.token.secret()),
-                    );
+                    let bearer_token = this.client.bearer_token().await?;
+                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                     if let Some(release_delay_in_seconds) = &this.release_delay_in_seconds {
                         req.url_mut()
                             .query_pairs_mut()
@@ -1032,12 +1012,8 @@ pub mod reject_cloud_events {
                 async move {
                     let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                    let credential = this.client.token_credential();
-                    let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                    req.insert_header(
-                        azure_core::headers::AUTHORIZATION,
-                        format!("Bearer {}", token_response.token.secret()),
-                    );
+                    let bearer_token = this.client.bearer_token().await?;
+                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.reject_options)?;
                     req.set_body(req_body);
@@ -1140,12 +1116,8 @@ pub mod renew_cloud_event_locks {
                 async move {
                     let url = this.url()?;
                     let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                    let credential = this.client.token_credential();
-                    let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                    req.insert_header(
-                        azure_core::headers::AUTHORIZATION,
-                        format!("Bearer {}", token_response.token.secret()),
-                    );
+                    let bearer_token = this.client.bearer_token().await?;
+                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                     req.insert_header("content-type", "application/json");
                     let req_body = azure_core::to_json(&this.renew_lock_options)?;
                     req.set_body(req_body);

@@ -54,14 +54,22 @@ impl ClientBuilder {
         self
     }
     #[doc = "Convert the builder into a `Client` instance."]
-    #[must_use]
-    pub fn build(self) -> Client {
+    pub fn build(self) -> azure_core::Result<Client> {
         let endpoint = self.endpoint.unwrap_or_else(|| DEFAULT_ENDPOINT.to_owned());
-        let scopes = self.scopes.unwrap_or_else(|| vec![endpoint.to_string()]);
-        Client::new(endpoint, self.credential, scopes, self.options)
+        let scopes = if let Some(scopes) = self.scopes {
+            scopes
+        } else {
+            vec![endpoint.join(azure_core::auth::DEFALT_SCOPE_SUFFIX)?.to_string()]
+        };
+        Ok(Client::new(endpoint, self.credential, scopes, self.options))
     }
 }
 impl Client {
+    pub(crate) async fn bearer_token(&self) -> azure_core::Result<azure_core::auth::Secret> {
+        let credential = self.token_credential();
+        let response = credential.get_token(&self.scopes()).await?;
+        Ok(response.token)
+    }
     pub(crate) fn endpoint(&self) -> &azure_core::Url {
         &self.endpoint
     }
@@ -223,12 +231,8 @@ pub mod operations {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -440,12 +444,8 @@ pub mod net_app_resource {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -548,12 +548,8 @@ pub mod net_app_resource {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -656,12 +652,8 @@ pub mod net_app_resource {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -763,12 +755,8 @@ pub mod net_app_resource {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -870,12 +858,8 @@ pub mod net_app_resource {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -986,12 +970,8 @@ pub mod net_app_resource {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -1043,12 +1023,8 @@ pub mod net_app_resource {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -1063,12 +1039,8 @@ pub mod net_app_resource {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -1201,12 +1173,8 @@ pub mod net_app_resource_quota_limits {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -1296,12 +1264,8 @@ pub mod net_app_resource_quota_limits {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -1542,12 +1506,8 @@ pub mod accounts {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -1561,12 +1521,8 @@ pub mod accounts {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -1665,12 +1621,8 @@ pub mod accounts {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -1684,12 +1636,8 @@ pub mod accounts {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -1790,12 +1738,8 @@ pub mod accounts {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -1898,12 +1842,8 @@ pub mod accounts {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -1956,12 +1896,8 @@ pub mod accounts {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -1976,12 +1912,8 @@ pub mod accounts {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -2070,12 +2002,8 @@ pub mod accounts {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -2128,12 +2056,8 @@ pub mod accounts {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -2148,12 +2072,8 @@ pub mod accounts {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -2236,12 +2156,8 @@ pub mod accounts {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -2326,12 +2242,8 @@ pub mod accounts {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -2551,12 +2463,8 @@ pub mod pools {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -2570,12 +2478,8 @@ pub mod pools {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -2678,12 +2582,8 @@ pub mod pools {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -2788,12 +2688,8 @@ pub mod pools {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -2847,12 +2743,8 @@ pub mod pools {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -2867,12 +2759,8 @@ pub mod pools {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -2962,12 +2850,8 @@ pub mod pools {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -3021,12 +2905,8 @@ pub mod pools {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -3041,12 +2921,8 @@ pub mod pools {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -3130,12 +3006,8 @@ pub mod pools {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -3832,12 +3704,8 @@ pub mod volumes {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -3851,12 +3719,8 @@ pub mod volumes {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -3961,12 +3825,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -4073,12 +3933,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -4133,12 +3989,8 @@ pub mod volumes {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -4153,12 +4005,8 @@ pub mod volumes {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -4249,12 +4097,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -4309,12 +4153,8 @@ pub mod volumes {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -4329,12 +4169,8 @@ pub mod volumes {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -4425,12 +4261,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         if let Some(force_delete) = &this.force_delete {
                             req.url_mut()
                                 .query_pairs_mut()
@@ -4538,12 +4370,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -4590,12 +4418,8 @@ pub mod volumes {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -4610,12 +4434,8 @@ pub mod volumes {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -4701,12 +4521,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -4796,12 +4612,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -4898,12 +4710,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = if let Some(body) = &this.body {
                             req.insert_header("content-type", "application/json");
                             azure_core::to_json(body)?
@@ -5004,12 +4812,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -5056,12 +4860,8 @@ pub mod volumes {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -5076,12 +4876,8 @@ pub mod volumes {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -5172,12 +4968,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = if let Some(body) = &this.body {
                             req.insert_header("content-type", "application/json");
                             azure_core::to_json(body)?
@@ -5264,12 +5056,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -5357,12 +5145,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -5463,12 +5247,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -5550,12 +5330,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -5637,12 +5413,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -5725,12 +5497,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -5812,12 +5580,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -5900,12 +5664,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -5993,12 +5753,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = if let Some(body) = &this.body {
                             req.insert_header("content-type", "application/json");
                             azure_core::to_json(body)?
@@ -6084,12 +5840,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -6171,12 +5923,8 @@ pub mod volumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -6456,12 +6204,8 @@ pub mod snapshots {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -6549,12 +6293,8 @@ pub mod snapshots {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -6654,12 +6394,8 @@ pub mod snapshots {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -6706,12 +6442,8 @@ pub mod snapshots {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -6726,12 +6458,8 @@ pub mod snapshots {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -6823,12 +6551,8 @@ pub mod snapshots {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -6875,12 +6599,8 @@ pub mod snapshots {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -6895,12 +6615,8 @@ pub mod snapshots {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -6986,12 +6702,8 @@ pub mod snapshots {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -7074,12 +6786,8 @@ pub mod snapshots {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -7313,12 +7021,8 @@ pub mod snapshot_policies {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -7410,12 +7114,8 @@ pub mod snapshot_policies {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -7521,12 +7221,8 @@ pub mod snapshot_policies {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -7632,12 +7328,8 @@ pub mod snapshot_policies {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -7691,12 +7383,8 @@ pub mod snapshot_policies {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -7711,12 +7399,8 @@ pub mod snapshot_policies {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -7800,12 +7484,8 @@ pub mod snapshot_policies {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -7898,12 +7578,8 @@ pub mod snapshot_policies {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -8045,12 +7721,8 @@ pub mod backups {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -8277,12 +7949,8 @@ pub mod backup_policies {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -8374,12 +8042,8 @@ pub mod backup_policies {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -8484,12 +8148,8 @@ pub mod backup_policies {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -8543,12 +8203,8 @@ pub mod backup_policies {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -8563,12 +8219,8 @@ pub mod backup_policies {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -8658,12 +8310,8 @@ pub mod backup_policies {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -8717,12 +8365,8 @@ pub mod backup_policies {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -8737,12 +8381,8 @@ pub mod backup_policies {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -8826,12 +8466,8 @@ pub mod backup_policies {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -9085,12 +8721,8 @@ pub mod volume_quota_rules {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -9178,12 +8810,8 @@ pub mod volume_quota_rules {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -9283,12 +8911,8 @@ pub mod volume_quota_rules {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -9335,12 +8959,8 @@ pub mod volume_quota_rules {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -9355,12 +8975,8 @@ pub mod volume_quota_rules {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -9452,12 +9068,8 @@ pub mod volume_quota_rules {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -9504,12 +9116,8 @@ pub mod volume_quota_rules {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -9524,12 +9132,8 @@ pub mod volume_quota_rules {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -9615,12 +9219,8 @@ pub mod volume_quota_rules {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -9809,12 +9409,8 @@ pub mod volume_groups {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -9906,12 +9502,8 @@ pub mod volume_groups {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -10016,12 +9608,8 @@ pub mod volume_groups {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -10149,12 +9737,8 @@ pub mod volume_groups {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -10435,12 +10019,8 @@ pub mod subvolumes {
                                 url.set_path("");
                                 url = url.join(&value)?;
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let has_api_version_already =
                                     req.url_mut().query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                                 if !has_api_version_already {
@@ -10454,12 +10034,8 @@ pub mod subvolumes {
                             }
                             None => {
                                 let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                                let credential = this.client.token_credential();
-                                let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                                req.insert_header(
-                                    azure_core::headers::AUTHORIZATION,
-                                    format!("Bearer {}", token_response.token.secret()),
-                                );
+                                let bearer_token = this.client.bearer_token().await?;
+                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
                                 this.client.send(&mut req).await?
@@ -10558,12 +10134,8 @@ pub mod subvolumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -10663,12 +10235,8 @@ pub mod subvolumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Put);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -10715,12 +10283,8 @@ pub mod subvolumes {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -10735,12 +10299,8 @@ pub mod subvolumes {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -10832,12 +10392,8 @@ pub mod subvolumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Patch);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.body)?;
                         req.set_body(req_body);
@@ -10884,12 +10440,8 @@ pub mod subvolumes {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -10904,12 +10456,8 @@ pub mod subvolumes {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }
@@ -10995,12 +10543,8 @@ pub mod subvolumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Delete);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -11087,12 +10631,8 @@ pub mod subvolumes {
                     async move {
                         let url = this.url()?;
                         let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let credential = this.client.token_credential();
-                        let token_response = credential.get_token(&this.client.scopes().join(" ")).await?;
-                        req.insert_header(
-                            azure_core::headers::AUTHORIZATION,
-                            format!("Bearer {}", token_response.token.secret()),
-                        );
+                        let bearer_token = this.client.bearer_token().await?;
+                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         let req_body = azure_core::EMPTY_BODY;
                         req.insert_header(azure_core::headers::CONTENT_LENGTH, "0");
                         req.set_body(req_body);
@@ -11139,12 +10679,8 @@ pub mod subvolumes {
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                            let credential = self.client.token_credential();
-                            let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                            req.insert_header(
-                                azure_core::headers::AUTHORIZATION,
-                                format!("Bearer {}", token_response.token.secret()),
-                            );
+                            let bearer_token = self.client.bearer_token().await?;
+                            req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                             let response = self.client.send(&mut req).await?;
                             let headers = response.headers();
                             let retry_after = get_retry_after(headers);
@@ -11159,12 +10695,8 @@ pub mod subvolumes {
                             match provisioning_state {
                                 LroStatus::Succeeded => {
                                     let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                    let credential = self.client.token_credential();
-                                    let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                    req.insert_header(
-                                        azure_core::headers::AUTHORIZATION,
-                                        format!("Bearer {}", token_response.token.secret()),
-                                    );
+                                    let bearer_token = self.client.bearer_token().await?;
+                                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                     let response = self.client.send(&mut req).await?;
                                     return Response(response).into_body().await;
                                 }

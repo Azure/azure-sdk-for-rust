@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = Arc::new(AzureCliCredential::new());
     let subscription_id = AzureCliCredential::get_subscription()?;
     let tenant_id = AzureCliCredential::get_tenant()?;
-    let client = Client::builder(credential).build();
+    let client = Client::builder(credential).build()?;
 
     let sku = Sku::new(Family::A, Name::Standard);
     let mut properties = VaultProperties::new(tenant_id.clone(), sku);

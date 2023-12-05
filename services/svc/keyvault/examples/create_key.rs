@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = azure_svc_keyvault::Client::builder(credential)
         .endpoint(endpoint)
         .scopes(scopes)
-        .build();
+        .build()?;
 
     // Configure the not-before (nbf) and expiration (exp) dates
     let nbf = OffsetDateTime::now_utc();

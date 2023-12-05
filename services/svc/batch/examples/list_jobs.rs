@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = azure_svc_batch::Client::builder(credential)
         .endpoint(endpoint)
         .scopes(scopes)
-        .build();
+        .build()?;
 
     let mut stream = client.job_client().list().into_stream();
     while let Some(jobs) = stream.next().await {
