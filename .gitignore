@@ -13,11 +13,5 @@ sample/
 *.swp
 *.swo
 *.vim
-__azurite*.json
-__blobstorage__
-__queuestorage__
 .idea/
-*.iml
-*.bat
-*.ps1
 .env
