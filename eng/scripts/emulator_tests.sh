@@ -19,9 +19,9 @@ function subprocesses {
 # stop all of the subprocesses for a given set of pids
 function stop_subprocesses {
     # sort pids numerically, and in reverse
-    PIDS=$(subprocesses $@ | sort -nr)
+    PIDS=$(subprocesses $$ | sort -nr)
     for P in ${PIDS}; do
-        if [ ${P} == ${1} ]; then
+        if [ ${P} == $$ ]; then
             continue
         fi
         kill -9 ${P} || echo "stopping ${P} failed"
@@ -32,7 +32,7 @@ function stop_subprocesses {
 # subprocesses (azurite)
 TMP=$(mktemp -d)
 function cleanup {
-    stop_subprocesses $$ || true
+    stop_subprocesses || true
     rm -rf ${TMP} || true
 }
 trap cleanup EXIT
