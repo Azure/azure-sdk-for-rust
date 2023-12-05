@@ -16,7 +16,7 @@ use std::error::Error;
 async fn main() -> Result<(), Box<dyn Error>> {
     let credential = DefaultAzureCredential::default();
     let response = credential
-        .get_token("https://management.azure.com")
+        .get_token(&["https://management.azure.com/.default"])
         .await?;
 
     let subscription_id = env::var("AZURE_SUBSCRIPTION_ID")?;
