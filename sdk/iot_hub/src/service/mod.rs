@@ -20,7 +20,7 @@ pub mod resources;
 pub mod responses;
 
 use crate::service::operations::{
-    ApplyOnEdgeDeviceBuilder, CreateOrUpdateConfigurationBuilder,
+    ApplyOnEdgeDeviceBuilder, Cloud2DeviceMessageBuilder, CreateOrUpdateConfigurationBuilder,
     CreateOrUpdateDeviceIdentityBuilder, CreateOrUpdateModuleIdentityBuilder,
     DeleteConfigurationBuilder, DeleteIdentityBuilder, GetIdentityBuilder, GetTwinBuilder,
     InvokeMethodBuilder, QueryBuilder, UpdateOrReplaceTwinBuilder,
@@ -814,6 +814,25 @@ impl ServiceClient {
         T: Into<String>,
     {
         DeleteConfigurationBuilder::new(self.clone(), if_match.into(), configuration_id.into())
+    }
+
+    /// Send a cloud-to-device message.
+    ///
+    /// ```
+    /// use azure_iot_hub::service::ServiceClient;
+    /// use std::collections::HashMap;
+    ///
+    /// # let connection_string = "HostName=cool-iot-hub.azure-devices.net;SharedAccessKeyName=iot_hubowner;SharedAccessKey=YSB2ZXJ5IHNlY3VyZSBrZXkgaXMgaW1wb3J0YW50Cg==";
+    /// let iot_hub = ServiceClient::new_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
+    /// let c2d_message = iot_hub.send_c2d_message("some-device")
+    ///     .message_body(serde_json::json!({"key": "value"}))
+    ///     .properties(HashMap::from([("key".to_string(), "value".to_string())]));
+    /// ```
+    pub fn send_c2d_message<S>(&self, device_id: S) -> Cloud2DeviceMessageBuilder
+    where
+        S: Into<String>,
+    {
+        Cloud2DeviceMessageBuilder::new(self.clone(), device_id.into())
     }
 
     /// Prepares a request that can be used by any request builders.
