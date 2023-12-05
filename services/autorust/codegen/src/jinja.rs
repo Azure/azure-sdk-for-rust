@@ -50,7 +50,7 @@ impl<'a> CheckAllServicesYml<'a> {
 #[template(path = "Cargo.toml.jinja")]
 pub struct CargoToml<'a> {
     pub package_name: &'a str,
-    pub default_feature: &'a str,
+    pub default_tag: &'a str,
     pub features: Vec<String>,
     pub azure_core_features: Vec<&'a str>,
 }
