@@ -152,17 +152,17 @@ mod tests {
     #[test]
     fn can_extract_endpoint() {
         let suffix = build_scope(&Url::parse("https://myvault.vault.azure.net").unwrap()).unwrap();
-        assert_eq!(suffix, "https://vault.azure.net");
+        assert_eq!(suffix, "https://vault.azure.net/.default");
 
         let suffix =
             build_scope(&Url::parse("https://myvault.mycustom.vault.server.net").unwrap()).unwrap();
-        assert_eq!(suffix, "https://mycustom.vault.server.net");
+        assert_eq!(suffix, "https://mycustom.vault.server.net/.default");
 
         let suffix = build_scope(&Url::parse("https://myvault.internal").unwrap()).unwrap();
-        assert_eq!(suffix, "https://internal");
+        assert_eq!(suffix, "https://internal/.default");
 
         let suffix =
             build_scope(&Url::parse("some-scheme://myvault.vault.azure.net").unwrap()).unwrap();
-        assert_eq!(suffix, "some-scheme://vault.azure.net");
+        assert_eq!(suffix, "some-scheme://vault.azure.net/.default");
     }
 }
