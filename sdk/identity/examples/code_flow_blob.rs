@@ -30,7 +30,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Some(client_secret),
         &tenant_id,
         Url::parse("http://localhost:3003/redirect").unwrap(),
-        &format!("https://{storage_account_name}.blob.core.windows.net/user_impersonation"),
+        &[&format!(
+            "https://{storage_account_name}.blob.core.windows.net/user_impersonation"
+        )],
     );
 
     println!("c == {c:?}");

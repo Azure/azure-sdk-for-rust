@@ -90,11 +90,13 @@ impl ImdsManagedIdentityCredential {
         self
     }
 
-    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+        let scope = scopes.join(" ");
+
         let msi_endpoint = std::env::var(MSI_ENDPOINT_ENV_KEY)
             .unwrap_or_else(|_| "http://169.254.169.254/metadata/identity/oauth2/token".to_owned());
 
-        let mut query_items = vec![("api-version", MSI_API_VERSION), ("resource", resource)];
+        let mut query_items = vec![("api-version", MSI_API_VERSION), ("resource", &scope)];
 
         match (
             self.object_id.as_ref(),
@@ -158,10 +160,8 @@ impl ImdsManagedIdentityCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ImdsManagedIdentityCredential {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
-        self.cache
-            .get_token(resource, self.get_token(resource))
-            .await
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+        self.cache.get_token(scopes, self.get_token(scopes)).await
     }
 
     async fn clear_cache(&self) -> azure_core::Result<()> {

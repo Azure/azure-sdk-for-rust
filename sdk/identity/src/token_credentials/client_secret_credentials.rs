@@ -89,7 +89,7 @@ impl ClientSecretCredential {
         &self.options
     }
 
-    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         let options = self.options();
         let authority_host = options.authority_host();
 
@@ -127,19 +127,11 @@ impl ClientSecretCredential {
         )
         .set_auth_type(AuthType::RequestBody);
 
-        let mut resource = resource.to_owned();
-        if !resource.ends_with("/.default") {
-            if resource.ends_with('/') {
-                resource.push_str(".default");
-            } else {
-                resource.push_str("/.default");
-            }
-        }
-
+        let scopes = scopes.iter().map(|x| Scope::new(x.to_string()));
         let oauth_http_client = Oauth2HttpClient::new(self.http_client.clone());
         let token_result = client
             .exchange_client_credentials()
-            .add_scope(Scope::new(resource))
+            .add_scopes(scopes)
             .request_async(|request| oauth_http_client.request(request))
             .await
             .map(|r| {
@@ -158,10 +150,8 @@ impl ClientSecretCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ClientSecretCredential {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
-        self.cache
-            .get_token(resource, self.get_token(resource))
-            .await
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+        self.cache.get_token(scopes, self.get_token(scopes)).await
     }
     /// Clear the credential's cache.
     async fn clear_cache(&self) -> azure_core::Result<()> {

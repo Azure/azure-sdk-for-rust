@@ -7,7 +7,9 @@ use url::Url;
 async fn main() -> Result<(), Box<dyn Error>> {
     let sub_id = var("AZURE_SUBSCRIPTION_ID")?;
     let creds = EnvironmentCredential::default();
-    let res = creds.get_token("https://management.azure.com/").await?;
+    let res = creds
+        .get_token(&["https://management.azure.com/.default"])
+        .await?;
     eprintln!("Azure cli response == {res:?}");
     // Let's enumerate the Azure storage accounts
     // in the subscription. Note: this way of calling the REST API

@@ -43,7 +43,7 @@ impl Policy for AuthorizationPolicy {
 
         let bearer_token = self
             .credentials
-            .get_token(&self.scope)
+            .get_token(&[&self.scope])
             .await
             .context(ErrorKind::Credential, "failed to get bearer token")?;
 

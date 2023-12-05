@@ -31,7 +31,7 @@ mod tests {
     impl TokenCredential for MockCredential {
         async fn get_token(
             &self,
-            _resource: &str,
+            _scopes: &[&str],
         ) -> Result<AccessToken, azure_core::error::Error> {
             Ok(AccessToken::new(
                 "TOKEN".to_owned(),

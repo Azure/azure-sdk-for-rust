@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Some(client_secret),
         &tenant_id,
         Url::parse("http://localhost:3003/redirect").unwrap(),
-        "https://management.azure.com/user_impersonation",
+        &["https://management.azure.com/user_impersonation"],
     );
 
     println!("c == {code_flow:?}");
