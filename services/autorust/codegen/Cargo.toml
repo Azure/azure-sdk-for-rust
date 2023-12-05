@@ -29,4 +29,4 @@ qstring = "0.7"
 
 [dev-dependencies]
 thiserror = "1.0"
-crates_io_api = "0.8"
+crates_io_api = "0.9"
