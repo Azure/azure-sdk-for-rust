@@ -23,6 +23,7 @@ operation! {
     ?include_deleted: bool,
     ?include_tags: bool,
     ?include_versions: bool,
+    ?marker: NextMarker,
 }
 
 impl ListBlobsBuilder {
@@ -36,7 +37,7 @@ impl ListBlobsBuilder {
                 url.query_pairs_mut().append_pair("restype", "container");
                 url.query_pairs_mut().append_pair("comp", "list");
 
-                if let Some(next_marker) = continuation {
+                if let Some(next_marker) = continuation.or(this.marker) {
                     next_marker.append_to_url_query(&mut url);
                 }
 
