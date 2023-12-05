@@ -100,7 +100,7 @@ jobs:
         if: ${{ always() }}
 
   test-integration:
-    name: Integration Tests
+    name: Emulator Tests
     runs-on: ubuntu-20.04
     needs:
       - msrv
