@@ -1,5 +1,6 @@
 use crate::{
     timeout::TimeoutExt,
+    token_credentials::cache::TokenCache,
     {AzureCliCredential, ImdsManagedIdentityCredential},
 };
 use azure_core::{
@@ -143,6 +144,7 @@ impl TokenCredential for DefaultAzureCredentialEnum {
 #[derive(Debug)]
 pub struct DefaultAzureCredential {
     sources: Vec<DefaultAzureCredentialEnum>,
+    cache: TokenCache,
 }
 
 impl DefaultAzureCredential {
@@ -150,19 +152,12 @@ impl DefaultAzureCredential {
     ///
     /// These sources will be tried in the order provided in the `TokenCredential` authentication flow.
     pub fn with_sources(sources: Vec<DefaultAzureCredentialEnum>) -> Self {
-        DefaultAzureCredential { sources }
+        DefaultAzureCredential {
+            sources,
+            cache: TokenCache::new(),
+        }
     }
-}
 
-impl Default for DefaultAzureCredential {
-    fn default() -> Self {
-        DefaultAzureCredentialBuilder::new().build()
-    }
-}
-
-#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
-#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl TokenCredential for DefaultAzureCredential {
     /// Try to fetch a token using each of the credential sources until one succeeds
     async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
         let mut errors = Vec::new();
@@ -181,12 +176,32 @@ impl TokenCredential for DefaultAzureCredential {
             )
         }))
     }
+}
+
+impl Default for DefaultAzureCredential {
+    fn default() -> Self {
+        DefaultAzureCredentialBuilder::new().build()
+    }
+}
+
+#[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
+#[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
+impl TokenCredential for DefaultAzureCredential {
+    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
+        self.cache
+            .get_token(resource, self.get_token(resource))
+            .await
+    }
 
     /// Clear the credential's cache.
     async fn clear_cache(&self) -> azure_core::Result<()> {
+        // clear the internal cache as well as each of the underlying providers
+        self.cache.clear().await?;
+
         for source in &self.sources {
             source.clear_cache().await?;
         }
+
         Ok(())
     }
 }
