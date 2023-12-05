@@ -5,21 +5,21 @@
 #![allow(clippy::derive_partial_eq_without_eq)]
 #[cfg(feature = "package-preview-2021-11")]
 pub mod package_preview_2021_11;
-#[cfg(all(feature = "package-preview-2021-11", not(feature = "no-default-tag")))]
+#[cfg(all(feature = "package-preview-2021-11", not(feature = "without_tag_import")))]
 pub use package_preview_2021_11::*;
 #[cfg(feature = "package-2022-05-01-preview")]
 pub mod package_2022_05_01_preview;
-#[cfg(all(feature = "package-2022-05-01-preview", not(feature = "no-default-tag")))]
+#[cfg(all(feature = "package-2022-05-01-preview", not(feature = "without_tag_import")))]
 pub use package_2022_05_01_preview::*;
 #[cfg(feature = "package-2022-04-01")]
 pub mod package_2022_04_01;
-#[cfg(all(feature = "package-2022-04-01", not(feature = "no-default-tag")))]
+#[cfg(all(feature = "package-2022-04-01", not(feature = "without_tag_import")))]
 pub use package_2022_04_01::*;
 #[cfg(feature = "package-2020-10-01-preview")]
 pub mod package_2020_10_01_preview;
-#[cfg(all(feature = "package-2020-10-01-preview", not(feature = "no-default-tag")))]
+#[cfg(all(feature = "package-2020-10-01-preview", not(feature = "without_tag_import")))]
 pub use package_2020_10_01_preview::*;
 #[cfg(feature = "package-2020-08-01-preview")]
 pub mod package_2020_08_01_preview;
-#[cfg(all(feature = "package-2020-08-01-preview", not(feature = "no-default-tag")))]
+#[cfg(all(feature = "package-2020-08-01-preview", not(feature = "without_tag_import")))]
 pub use package_2020_08_01_preview::*;

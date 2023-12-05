@@ -5,5 +5,5 @@
 #![allow(clippy::derive_partial_eq_without_eq)]
 #[cfg(feature = "package-2020-12-preview")]
 pub mod package_2020_12_preview;
-#[cfg(all(feature = "package-2020-12-preview", not(feature = "no-default-tag")))]
+#[cfg(all(feature = "package-2020-12-preview", not(feature = "without_tag_import")))]
 pub use package_2020_12_preview::*;
