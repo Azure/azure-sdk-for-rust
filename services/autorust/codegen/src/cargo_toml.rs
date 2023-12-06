@@ -3,7 +3,7 @@ use crate::{config_parser::Tag, jinja::CargoToml};
 use camino::Utf8Path;
 
 pub fn create(package_name: &str, tags: &[&Tag], default_tag: &Tag, has_xml: bool, path: &Utf8Path) -> Result<()> {
-    let default_feature = &default_tag.rust_feature_name();
+    let default_tag = &default_tag.rust_feature_name();
 
     // https://docs.rs/about/metadata
     // let docs_rs_features = docs_rs_features(tags, &default_feature);
@@ -12,7 +12,7 @@ pub fn create(package_name: &str, tags: &[&Tag], default_tag: &Tag, has_xml: boo
     let azure_core_features = if has_xml { vec!["xml"] } else { Vec::new() };
     let cargo_toml = CargoToml {
         package_name,
-        default_feature,
+        default_tag,
         features,
         azure_core_features,
     };

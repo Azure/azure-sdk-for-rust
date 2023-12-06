@@ -193,9 +193,13 @@ impl TokenCredential for DefaultAzureCredential {
 
     /// Clear the credential's cache.
     async fn clear_cache(&self) -> azure_core::Result<()> {
+        // clear the internal cache as well as each of the underlying providers
+        self.cache.clear().await?;
+
         for source in &self.sources {
             source.clear_cache().await?;
         }
+
         Ok(())
     }
 }

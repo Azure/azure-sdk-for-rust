@@ -35,10 +35,11 @@ anyhow = "1.0"
 all-features = true
 
 [features]
-default = ["package-2022-05-13-ledger", "enable_reqwest"]
+default = ["default_tag", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-no-default-tag = []
+without_tag_import = []
+default_tag = ["package-2022-05-13-ledger"]
 "package-2023-06-01-preview-mccf" = []
 "package-2023-01-18-preview-ledger" = []
 "package-2023-01-18-preview-identity" = []
