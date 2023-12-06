@@ -21,7 +21,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let keyvault_name = std::env::args().nth(1).expect("please specify an existing keyvault");
     let key_name = std::env::args().nth(2).expect("please specify the name of the key to create");
     let endpoint = Url::parse(&format!("https://{keyvault_name}.vault.azure.net"))?;
-    let scopes = &["https://vault.azure.net"];
+    let scopes = &["https://vault.azure.net/.default"];
     let client = azure_svc_keyvault::Client::builder(credential)
         .endpoint(endpoint)
         .scopes(scopes)
