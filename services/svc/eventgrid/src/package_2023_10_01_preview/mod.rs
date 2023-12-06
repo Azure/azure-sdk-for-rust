@@ -160,6 +160,22 @@ impl Client {
             events,
         }
     }
+    #[doc = "Publish Single Cloud Event to namespace topic. In case of success, the server responds with an HTTP 200 status code with an empty JSON object in response. Otherwise, the server can return various error codes. For example, 401: which indicates authorization failure, 403: which indicates quota exceeded or message is too large, 410: which indicates that specific topic is not found, 400: for bad request, and 500: for internal server error. "]
+    #[doc = ""]
+    #[doc = "Arguments:"]
+    #[doc = "* `topic_name`: Topic Name."]
+    #[doc = "* `event`: Single Cloud Event being published."]
+    pub fn publish_cloud_event(
+        &self,
+        topic_name: impl Into<String>,
+        event: impl Into<models::CloudEvent>,
+    ) -> publish_cloud_event::RequestBuilder {
+        publish_cloud_event::RequestBuilder {
+            client: self.clone(),
+            topic_name: topic_name.into(),
+            event: event.into(),
+        }
+    }
     #[doc = "Receive Batch of Cloud Events from the Event Subscription."]
     #[doc = ""]
     #[doc = "Arguments:"]
@@ -575,6 +591,108 @@ pub mod publish_cloud_events {
                     req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                     req.insert_header("content-type", "application/cloudevents-batch+json; charset=utf-8");
                     let req_body = azure_core::to_json(&this.events)?;
+                    req.set_body(req_body);
+                    Ok(Response(this.client.send(&mut req).await?))
+                }
+            })
+        }
+        fn url(&self) -> azure_core::Result<azure_core::Url> {
+            let mut url = azure_core::Url::parse(&format!(
+                "{}/topics/{}:publish?_overload=publishCloudEvents",
+                self.client.endpoint(),
+                &self.topic_name
+            ))?;
+            let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
+            if !has_api_version_already {
+                url.query_pairs_mut()
+                    .append_pair(azure_core::query_param::API_VERSION, "2023-10-01-preview");
+            }
+            Ok(url)
+        }
+    }
+    impl std::future::IntoFuture for RequestBuilder {
+        type Output = azure_core::Result<models::PublishResult>;
+        type IntoFuture = BoxFuture<'static, azure_core::Result<models::PublishResult>>;
+        #[doc = "Returns a future that sends the request and returns the parsed response body."]
+        #[doc = ""]
+        #[doc = "You should not normally call this method directly, simply invoke `.await` which implicitly calls `IntoFuture::into_future`."]
+        #[doc = ""]
+        #[doc = "See [IntoFuture documentation](https://doc.rust-lang.org/std/future/trait.IntoFuture.html) for more details."]
+        fn into_future(self) -> Self::IntoFuture {
+            Box::pin(async move { self.send().await?.into_body().await })
+        }
+    }
+}
+pub mod publish_cloud_event {
+    use super::models;
+    #[cfg(not(target_arch = "wasm32"))]
+    use futures::future::BoxFuture;
+    #[cfg(target_arch = "wasm32")]
+    use futures::future::LocalBoxFuture as BoxFuture;
+    #[derive(Debug)]
+    pub struct Response(azure_core::Response);
+    impl Response {
+        pub async fn into_body(self) -> azure_core::Result<models::PublishResult> {
+            let bytes = self.0.into_body().collect().await?;
+            let body: models::PublishResult = serde_json::from_slice(&bytes)?;
+            Ok(body)
+        }
+        pub fn into_raw_response(self) -> azure_core::Response {
+            self.0
+        }
+        pub fn as_raw_response(&self) -> &azure_core::Response {
+            &self.0
+        }
+    }
+    impl From<Response> for azure_core::Response {
+        fn from(rsp: Response) -> Self {
+            rsp.into_raw_response()
+        }
+    }
+    impl AsRef<azure_core::Response> for Response {
+        fn as_ref(&self) -> &azure_core::Response {
+            self.as_raw_response()
+        }
+    }
+    #[derive(Clone)]
+    #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
+    #[doc = r""]
+    #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
+    #[doc = r" parameters can be chained."]
+    #[doc = r""]
+    #[doc = r" To finalize and submit the request, invoke `.await`, which"]
+    #[doc = r" which will convert the [`RequestBuilder`] into a future"]
+    #[doc = r" executes the request and returns a `Result` with the parsed"]
+    #[doc = r" response."]
+    #[doc = r""]
+    #[doc = r" In order to execute the request without polling the service"]
+    #[doc = r" until the operation completes, use `.send().await` instead."]
+    #[doc = r""]
+    #[doc = r" If you need lower-level access to the raw response details"]
+    #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
+    #[doc = r" can finalize the request using the"]
+    #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
+    #[doc = r" that resolves to a lower-level [`Response`] value."]
+    pub struct RequestBuilder {
+        pub(crate) client: super::Client,
+        pub(crate) topic_name: String,
+        pub(crate) event: models::CloudEvent,
+    }
+    impl RequestBuilder {
+        #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
+        #[doc = ""]
+        #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
+        #[doc = "However, this function can provide more flexibility when required."]
+        pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
+            Box::pin({
+                let this = self.clone();
+                async move {
+                    let url = this.url()?;
+                    let mut req = azure_core::Request::new(url, azure_core::Method::Post);
+                    let bearer_token = this.client.bearer_token().await?;
+                    req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
+                    req.insert_header("content-type", "application/cloudevents+json; charset=utf-8");
+                    let req_body = azure_core::to_json(&this.event)?;
                     req.set_body(req_body);
                     Ok(Response(this.client.send(&mut req).await?))
                 }

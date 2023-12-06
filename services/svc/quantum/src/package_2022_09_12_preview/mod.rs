@@ -17,7 +17,7 @@ pub struct ClientBuilder {
     scopes: Option<Vec<String>>,
     options: azure_core::ClientOptions,
 }
-azure_core::static_url!(DEFAULT_ENDPOINT, "https://quantum.azure.com");
+pub use azure_core::resource_manager_endpoint::AZURE_PUBLIC_CLOUD as DEFAULT_ENDPOINT;
 impl ClientBuilder {
     #[doc = "Create a new instance of `ClientBuilder`."]
     #[must_use]

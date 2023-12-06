@@ -19010,83 +19010,6 @@ impl NetworkVirtualAppliance {
         Self::default()
     }
 }
-#[doc = "NetworkVirtualApplianceConnection resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct NetworkVirtualApplianceConnection {
-    #[serde(flatten)]
-    pub sub_resource: SubResource,
-    #[doc = "Properties of the NetworkVirtualApplianceConnection subresource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<NetworkVirtualApplianceConnectionProperties>,
-    #[doc = "The name of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-impl NetworkVirtualApplianceConnection {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "NetworkVirtualApplianceConnection list."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct NetworkVirtualApplianceConnectionList {
-    #[doc = "The list of NetworkVirtualAppliance connections."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<NetworkVirtualApplianceConnection>,
-    #[doc = "URL to get the next set of results."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for NetworkVirtualApplianceConnectionList {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone().filter(|value| !value.is_empty())
-    }
-}
-impl NetworkVirtualApplianceConnectionList {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Properties of the NetworkVirtualApplianceConnection subresource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct NetworkVirtualApplianceConnectionProperties {
-    #[doc = "The name of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[doc = "The current provisioning state."]
-    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<ProvisioningState>,
-    #[doc = "Network Virtual Appliance ASN."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub asn: Option<i64>,
-    #[doc = "Unique identifier for the connection."]
-    #[serde(rename = "tunnelIdentifier", default, skip_serializing_if = "Option::is_none")]
-    pub tunnel_identifier: Option<i64>,
-    #[doc = "List of bgpPeerAddresses for the NVA instances"]
-    #[serde(
-        rename = "bgpPeerAddress",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub bgp_peer_address: Vec<String>,
-    #[doc = "Enable internet security."]
-    #[serde(rename = "enableInternetSecurity", default, skip_serializing_if = "Option::is_none")]
-    pub enable_internet_security: Option<bool>,
-    #[doc = "NFV version of Routing Configuration indicating the associated and propagated route tables for this connection."]
-    #[serde(rename = "routingConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub routing_configuration: Option<RoutingConfigurationNfv>,
-}
-impl NetworkVirtualApplianceConnectionProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Response for ListNetworkVirtualAppliances API service call."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkVirtualApplianceListResult {
@@ -19173,14 +19096,6 @@ pub struct NetworkVirtualAppliancePropertiesFormat {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub virtual_appliance_sites: Vec<SubResource>,
-    #[doc = "List of references to VirtualApplianceConnections."]
-    #[serde(
-        rename = "virtualApplianceConnections",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub virtual_appliance_connections: Vec<SubResource>,
     #[doc = "List of references to InboundSecurityRules."]
     #[serde(
         rename = "inboundSecurityRules",
@@ -21745,29 +21660,6 @@ impl PropagatedRouteTable {
         Self::default()
     }
 }
-#[doc = "Nfv version of the list of RouteTables to advertise the routes to."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PropagatedRouteTableNfv {
-    #[doc = "The list of labels."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub labels: Vec<String>,
-    #[doc = "The list of resource ids of all the RouteTables."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub ids: Vec<RoutingConfigurationNfvSubResource>,
-}
-impl PropagatedRouteTableNfv {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Configuration of the protocol."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProtocolConfiguration {
@@ -23449,39 +23341,6 @@ pub struct RoutingConfiguration {
     pub outbound_route_map: Option<SubResource>,
 }
 impl RoutingConfiguration {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "NFV version of Routing Configuration indicating the associated and propagated route tables for this connection."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct RoutingConfigurationNfv {
-    #[doc = "Reference to RouteTableV3 associated with the connection."]
-    #[serde(rename = "associatedRouteTable", default, skip_serializing_if = "Option::is_none")]
-    pub associated_route_table: Option<RoutingConfigurationNfvSubResource>,
-    #[doc = "Nfv version of the list of RouteTables to advertise the routes to."]
-    #[serde(rename = "propagatedRouteTables", default, skip_serializing_if = "Option::is_none")]
-    pub propagated_route_tables: Option<PropagatedRouteTableNfv>,
-    #[doc = "Reference to RouteTableV3 associated with the connection."]
-    #[serde(rename = "inboundRouteMap", default, skip_serializing_if = "Option::is_none")]
-    pub inbound_route_map: Option<RoutingConfigurationNfvSubResource>,
-    #[doc = "Reference to RouteTableV3 associated with the connection."]
-    #[serde(rename = "outboundRouteMap", default, skip_serializing_if = "Option::is_none")]
-    pub outbound_route_map: Option<RoutingConfigurationNfvSubResource>,
-}
-impl RoutingConfigurationNfv {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Reference to RouteTableV3 associated with the connection."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct RoutingConfigurationNfvSubResource {
-    #[doc = "Resource ID."]
-    #[serde(rename = "resourceUri", default, skip_serializing_if = "Option::is_none")]
-    pub resource_uri: Option<String>,
-}
-impl RoutingConfigurationNfvSubResource {
     pub fn new() -> Self {
         Self::default()
     }

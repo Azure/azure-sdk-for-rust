@@ -6,9 +6,10 @@ https://github.com/Azure/azure-rest-api-specs/blob/main/specification/agrifood/d
 
 To get started with these generated service crates, see the [examples](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/README.md#examples).
 
-The default tag is `package-2023-07-01-preview`.
+The default tag is `package-2023-11-01-preview`.
 
 The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/services/tags.md) are available:
 
+- `package-2023-11-01-preview` has 186 operations from 1 API versions: `2023-11-01-preview`. Use crate feature `package-2023-11-01-preview` to enable. The operations will be in the `package_2023_11_01_preview` module.
 - `package-2023-07-01-preview` has 173 operations from 1 API versions: `2023-07-01-preview`. Use crate feature `package-2023-07-01-preview` to enable. The operations will be in the `package_2023_07_01_preview` module.
 - `package-2023-06-01-preview` has 196 operations from 1 API versions: `2023-06-01-preview`. Use crate feature `package-2023-06-01-preview` to enable. The operations will be in the `package_2023_06_01_preview` module.

@@ -227,9 +227,13 @@ pub mod agreement_properties {
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "AcceptanceMode")]
     pub enum AcceptanceMode {
+        Other,
         ClickToAccept,
         ESignEmbedded,
         ESignOffline,
+        PhysicalSign,
+        Offline,
+        Implicit,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -255,9 +259,13 @@ pub mod agreement_properties {
             S: Serializer,
         {
             match self {
-                Self::ClickToAccept => serializer.serialize_unit_variant("AcceptanceMode", 0u32, "ClickToAccept"),
-                Self::ESignEmbedded => serializer.serialize_unit_variant("AcceptanceMode", 1u32, "ESignEmbedded"),
-                Self::ESignOffline => serializer.serialize_unit_variant("AcceptanceMode", 2u32, "ESignOffline"),
+                Self::Other => serializer.serialize_unit_variant("AcceptanceMode", 0u32, "Other"),
+                Self::ClickToAccept => serializer.serialize_unit_variant("AcceptanceMode", 1u32, "ClickToAccept"),
+                Self::ESignEmbedded => serializer.serialize_unit_variant("AcceptanceMode", 2u32, "ESignEmbedded"),
+                Self::ESignOffline => serializer.serialize_unit_variant("AcceptanceMode", 3u32, "ESignOffline"),
+                Self::PhysicalSign => serializer.serialize_unit_variant("AcceptanceMode", 4u32, "PhysicalSign"),
+                Self::Offline => serializer.serialize_unit_variant("AcceptanceMode", 5u32, "Offline"),
+                Self::Implicit => serializer.serialize_unit_variant("AcceptanceMode", 6u32, "Implicit"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

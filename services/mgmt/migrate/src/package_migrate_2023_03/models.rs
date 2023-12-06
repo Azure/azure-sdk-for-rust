@@ -60,9 +60,61 @@ impl Serialize for ApiVersions {
         }
     }
 }
-#[doc = "Assessed Disk."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AssessedDisk {
+    #[doc = "Cloud Suitability for Azure."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub suitability: Option<CloudSuitability>,
+    #[serde(rename = "suitabilityExplanation", default, skip_serializing_if = "Option::is_none")]
+    pub suitability_explanation: Option<AzureDiskSuitabilityExplanation>,
+    #[serde(rename = "suitabilityDetail", default, skip_serializing_if = "Option::is_none")]
+    pub suitability_detail: Option<AzureDiskSuitabilityDetail>,
+    #[serde(rename = "recommendedDiskSize", default, skip_serializing_if = "Option::is_none")]
+    pub recommended_disk_size: Option<AzureDiskSize>,
+    #[serde(rename = "recommendedDiskType", default, skip_serializing_if = "Option::is_none")]
+    pub recommended_disk_type: Option<AzureDiskType>,
+    #[doc = "Gets the recommended disk size."]
+    #[serde(rename = "gigabytesForRecommendedDiskSize", default, skip_serializing_if = "Option::is_none")]
+    pub gigabytes_for_recommended_disk_size: Option<i32>,
+    #[doc = "Gets the recommended disk throughput."]
+    #[serde(rename = "recommendDiskThroughputInMbps", default, skip_serializing_if = "Option::is_none")]
+    pub recommend_disk_throughput_in_mbps: Option<f32>,
+    #[doc = "Gets the recommended disk iops."]
+    #[serde(rename = "recommendedDiskIops", default, skip_serializing_if = "Option::is_none")]
+    pub recommended_disk_iops: Option<f32>,
+    #[doc = "Gets the monthly storage cost."]
+    #[serde(rename = "monthlyStorageCost", default, skip_serializing_if = "Option::is_none")]
+    pub monthly_storage_cost: Option<f32>,
+    #[doc = "Gets the name."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Gets the machine display name."]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[doc = "Gets the gigabytes provisioned."]
+    #[serde(rename = "gigabytesProvisioned", default, skip_serializing_if = "Option::is_none")]
+    pub gigabytes_provisioned: Option<f32>,
+    #[doc = "Gets the megabytes per second of read."]
+    #[serde(rename = "megabytesPerSecondOfRead", default, skip_serializing_if = "Option::is_none")]
+    pub megabytes_per_second_of_read: Option<f32>,
+    #[doc = "Gets the megabytes per second of write."]
+    #[serde(rename = "megabytesPerSecondOfWrite", default, skip_serializing_if = "Option::is_none")]
+    pub megabytes_per_second_of_write: Option<f32>,
+    #[doc = "Gets the number of read operations per second."]
+    #[serde(rename = "numberOfReadOperationsPerSecond", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_read_operations_per_second: Option<f32>,
+    #[doc = "Gets the number of write operations per second."]
+    #[serde(rename = "numberOfWriteOperationsPerSecond", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_write_operations_per_second: Option<f32>,
+}
+impl AssessedDisk {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Assessed Disk data. Used in Assessed SQL machine DTO."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AssessedDiskData {
     #[doc = "Cloud Suitability for Azure."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub suitability: Option<CloudSuitability>,
@@ -108,7 +160,7 @@ pub struct AssessedDisk {
     #[serde(rename = "numberOfWriteOperationsPerSecond", default, skip_serializing_if = "Option::is_none")]
     pub number_of_write_operations_per_second: Option<f32>,
 }
-impl AssessedDisk {
+impl AssessedDiskData {
     pub fn new() -> Self {
         Self::default()
     }

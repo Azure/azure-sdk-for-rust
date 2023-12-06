@@ -15998,6 +15998,8 @@ pub struct Workspace {
     #[doc = "Managed service identity (system assigned and/or user assigned identities)"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub identity: Option<ManagedServiceIdentity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
     #[doc = "Specifies the location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,

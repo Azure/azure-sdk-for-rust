@@ -3,6 +3,10 @@
 #![allow(clippy::ptr_arg)]
 #![allow(clippy::large_enum_variant)]
 #![allow(clippy::derive_partial_eq_without_eq)]
+#[cfg(feature = "package-2024-02")]
+pub mod package_2024_02;
+#[cfg(all(feature = "package-2024-02", not(feature = "without_tag_import")))]
+pub use package_2024_02::*;
 #[cfg(feature = "package-2023-08")]
 pub mod package_2023_08;
 #[cfg(all(feature = "package-2023-08", not(feature = "without_tag_import")))]
@@ -19,7 +23,3 @@ pub use package_2022_11::*;
 pub mod package_2021_12;
 #[cfg(all(feature = "package-2021-12", not(feature = "without_tag_import")))]
 pub use package_2021_12::*;
-#[cfg(feature = "package-2021-06")]
-pub mod package_2021_06;
-#[cfg(all(feature = "package-2021-06", not(feature = "without_tag_import")))]
-pub use package_2021_06::*;

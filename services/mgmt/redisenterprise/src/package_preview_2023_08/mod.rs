@@ -129,9 +129,6 @@ impl Client {
     pub fn redis_enterprise_client(&self) -> redis_enterprise::Client {
         redis_enterprise::Client(self.clone())
     }
-    pub fn skus_client(&self) -> skus::Client {
-        skus::Client(self.clone())
-    }
 }
 pub mod operations {
     use super::models;
@@ -3446,120 +3443,6 @@ pub mod private_link_resources {
                     &self.subscription_id,
                     &self.resource_group_name,
                     &self.cluster_name
-                ))?;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-08-01-preview");
-                }
-                Ok(url)
-            }
-        }
-    }
-}
-pub mod skus {
-    use super::models;
-    #[cfg(not(target_arch = "wasm32"))]
-    use futures::future::BoxFuture;
-    #[cfg(target_arch = "wasm32")]
-    use futures::future::LocalBoxFuture as BoxFuture;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Gets information about skus in specified location for the given subscription id"]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
-        #[doc = "* `location`: The name of Azure region."]
-        pub fn list(&self, subscription_id: impl Into<String>, location: impl Into<String>) -> list::RequestBuilder {
-            list::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                location: location.into(),
-            }
-        }
-    }
-    pub mod list {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub async fn into_body(self) -> azure_core::Result<models::RegionSkuDetails> {
-                let bytes = self.0.into_body().collect().await?;
-                let body: models::RegionSkuDetails = serde_json::from_slice(&bytes)?;
-                Ok(body)
-            }
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the [`RequestBuilder`] into a future"]
-        #[doc = r" executes the request and returns a `Result` with the parsed"]
-        #[doc = r" response."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use `.send().await` instead."]
-        #[doc = r""]
-        #[doc = r" If you need lower-level access to the raw response details"]
-        #[doc = r" (e.g. to inspect response headers or raw body data) then you"]
-        #[doc = r" can finalize the request using the"]
-        #[doc = r" [`RequestBuilder::send()`] method which returns a future"]
-        #[doc = r" that resolves to a lower-level [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) location: String,
-        }
-        impl RequestBuilder {
-            #[doc = "Only the first response will be fetched as the continuation token is not part of the response schema"]
-            #[doc = ""]
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Get);
-                        let bearer_token = this.client.bearer_token().await?;
-                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        let req_body = azure_core::EMPTY_BODY;
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core::Url::parse(&format!(
-                    "{}/subscriptions/{}/providers/Microsoft.Cache/locations/{}/skus",
-                    self.client.endpoint(),
-                    &self.subscription_id,
-                    &self.location
                 ))?;
                 let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
                 if !has_api_version_already {
