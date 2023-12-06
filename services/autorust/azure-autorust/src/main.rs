@@ -93,7 +93,7 @@ fn gen_crates(only_packages: &[&str]) -> Result<()> {
 
     if !errors.is_empty() {
         for error in &errors {
-            eprintln!("{error:?}");
+            eprintln!("{error:#?}");
         }
         return Err(Error::new(ErrorKind::CodeGen, "Failed to generate some crates"));
     }
