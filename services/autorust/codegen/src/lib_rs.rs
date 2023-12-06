@@ -38,7 +38,7 @@ impl ToTokens for BodyCode {
             cfgs.extend(quote! {
                 #[cfg(feature = #feature_name)]
                 pub mod #mod_name;
-                #[cfg(all(feature = #feature_name, not(feature = "no-default-tag")))]
+                #[cfg(all(feature = #feature_name, not(feature = "without_tag_import")))]
                 pub use #mod_name::*;
             });
         }

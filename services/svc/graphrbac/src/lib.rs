@@ -5,5 +5,5 @@
 #![allow(clippy::derive_partial_eq_without_eq)]
 #[cfg(feature = "1_6")]
 pub mod v1_6;
-#[cfg(all(feature = "1_6", not(feature = "no-default-tag")))]
+#[cfg(all(feature = "1_6", not(feature = "without_tag_import")))]
 pub use v1_6::*;

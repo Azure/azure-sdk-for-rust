@@ -5,9 +5,9 @@
 #![allow(clippy::derive_partial_eq_without_eq)]
 #[cfg(feature = "package-2019-05")]
 pub mod package_2019_05;
-#[cfg(all(feature = "package-2019-05", not(feature = "no-default-tag")))]
+#[cfg(all(feature = "package-2019-05", not(feature = "without_tag_import")))]
 pub use package_2019_05::*;
 #[cfg(feature = "package-2018-07-preview")]
 pub mod package_2018_07_preview;
-#[cfg(all(feature = "package-2018-07-preview", not(feature = "no-default-tag")))]
+#[cfg(all(feature = "package-2018-07-preview", not(feature = "without_tag_import")))]
 pub use package_2018_07_preview::*;
