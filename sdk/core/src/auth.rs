@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, fmt::Debug};
 use time::OffsetDateTime;
 
-pub static DEFALT_SCOPE_SUFFIX: &str = "/.default";
+pub static DEFAULT_SCOPE_SUFFIX: &str = "/.default";
 
 #[derive(Clone, Deserialize, Serialize, Eq)]
 pub struct Secret(Cow<'static, str>);

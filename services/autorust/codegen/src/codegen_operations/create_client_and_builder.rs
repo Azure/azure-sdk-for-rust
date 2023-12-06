@@ -96,7 +96,7 @@ pub fn create_client(modules: &[String], endpoint: Option<&str>) -> Result<Token
                 let scopes = if let Some(scopes) = self.scopes {
                     scopes
                 } else {
-                    vec![endpoint.join(azure_core::auth::DEFALT_SCOPE_SUFFIX)?.to_string()]
+                    vec![endpoint.join(azure_core::auth::DEFAULT_SCOPE_SUFFIX)?.to_string()]
                 };
                 Ok(Client::new(endpoint, self.credential, scopes, self.options))
             }
