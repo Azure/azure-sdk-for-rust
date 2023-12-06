@@ -57,9 +57,8 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                                 if let Some(url) = location {
                                     loop {
                                         let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
-                                        let credential = self.client.token_credential();
-                                        let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                        let bearer_token = self.client.bearer_token().await?;
+                                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                         let response = self.client.send(&mut req).await?;
                                         let headers = response.headers();
                                         let retry_after = get_retry_after(headers);
@@ -71,9 +70,8 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                                         match provisioning_state {
                                             LroStatus::Succeeded => {
                                                 let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
-                                                let credential = self.client.token_credential();
-                                                let token_response = credential.get_token(&self.client.scopes().join(" ")).await?;
-                                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", token_response.token.secret()));
+                                                let bearer_token = self.client.bearer_token().await?;
+                                                req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                                 let response = self.client.send(&mut req).await?;
                                                 return Response(response).into_body().await
                                             }

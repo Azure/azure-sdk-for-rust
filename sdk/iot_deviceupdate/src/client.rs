@@ -59,7 +59,7 @@ impl DeviceUpdateClient {
 
     async fn get_token(&self) -> azure_core::Result<AccessToken> {
         self.token_credential
-            .get_token(&self.endpoint)
+            .get_token(&[&self.endpoint])
             .await
             .context(ErrorKind::Credential, "get token failed")
     }

@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = Arc::new(AzureCliCredential::new());
     let subscription_id = AzureCliCredential::get_subscription()?;
     let client = azure_mgmt_compute::Client::builder(credential)
-        .build()
+        .build()?
         .virtual_machine_images_client();
 
     let mut publishers = client

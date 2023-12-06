@@ -54,8 +54,8 @@ impl KeyvaultClient {
         token_credential: Arc<dyn TokenCredential>,
     ) -> azure_core::Result<Self> {
         let vault_url = Url::parse(vault_url)?;
-        let endpoint = extract_endpoint(&vault_url)?;
-        let pipeline = new_pipeline_from_options(token_credential.clone(), endpoint);
+        let scope = build_scope(&vault_url)?;
+        let pipeline = new_pipeline_from_options(token_credential.clone(), scope);
         let client = Self {
             vault_url,
             pipeline,
@@ -127,7 +127,7 @@ impl KeyvaultClient {
 
 /// Helper to get vault endpoint with a scheme and a trailing slash
 /// ex. `https://vault.azure.net/` where the full client url is `https://myvault.vault.azure.net`
-fn extract_endpoint(url: &Url) -> azure_core::Result<String> {
+fn build_scope(url: &Url) -> azure_core::Result<String> {
     let endpoint = url
         .host_str()
         .ok_or_else(|| {
@@ -142,7 +142,7 @@ fn extract_endpoint(url: &Url) -> azure_core::Result<String> {
                 format!("failed to extract endpoint from url. url: {url}")
             })
         })?;
-    Ok(format!("{}://{}", url.scheme(), endpoint))
+    Ok(format!("{}://{}/.default", url.scheme(), endpoint))
 }
 
 #[cfg(test)]
@@ -151,21 +151,18 @@ mod tests {
 
     #[test]
     fn can_extract_endpoint() {
-        let suffix =
-            extract_endpoint(&Url::parse("https://myvault.vault.azure.net").unwrap()).unwrap();
-        assert_eq!(suffix, "https://vault.azure.net");
+        let suffix = build_scope(&Url::parse("https://myvault.vault.azure.net").unwrap()).unwrap();
+        assert_eq!(suffix, "https://vault.azure.net/.default");
 
         let suffix =
-            extract_endpoint(&Url::parse("https://myvault.mycustom.vault.server.net").unwrap())
-                .unwrap();
-        assert_eq!(suffix, "https://mycustom.vault.server.net");
+            build_scope(&Url::parse("https://myvault.mycustom.vault.server.net").unwrap()).unwrap();
+        assert_eq!(suffix, "https://mycustom.vault.server.net/.default");
 
-        let suffix = extract_endpoint(&Url::parse("https://myvault.internal").unwrap()).unwrap();
-        assert_eq!(suffix, "https://internal");
+        let suffix = build_scope(&Url::parse("https://myvault.internal").unwrap()).unwrap();
+        assert_eq!(suffix, "https://internal/.default");
 
         let suffix =
-            extract_endpoint(&Url::parse("some-scheme://myvault.vault.azure.net").unwrap())
-                .unwrap();
-        assert_eq!(suffix, "some-scheme://vault.azure.net");
+            build_scope(&Url::parse("some-scheme://myvault.vault.azure.net").unwrap()).unwrap();
+        assert_eq!(suffix, "some-scheme://vault.azure.net/.default");
     }
 }

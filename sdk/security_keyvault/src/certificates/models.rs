@@ -1,3 +1,4 @@
+use azure_core::auth::Secret;
 use serde::Deserialize;
 use time::OffsetDateTime;
 
@@ -36,7 +37,7 @@ pub struct KeyVaultGetCertificateResponse {
     #[serde(rename = "sid")]
     pub secret_id: String,
     pub x5t: String,
-    pub cer: String,
+    pub cer: Secret,
     pub id: String,
     pub attributes: KeyVaultGetCertificateResponseAttributes,
     pub policy: KeyVaultGetCertificateResponsePolicy,

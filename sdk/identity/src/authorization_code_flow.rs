@@ -7,7 +7,7 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     HttpClient, Url,
 };
-use oauth2::basic::BasicClient;
+use oauth2::{basic::BasicClient, Scope};
 use oauth2::{ClientId, ClientSecret};
 use std::sync::Arc;
 
@@ -20,7 +20,7 @@ pub fn start(
     client_secret: Option<ClientSecret>,
     tenant_id: &str,
     redirect_url: Url,
-    resource: &str,
+    scopes: &[&str],
 ) -> AuthorizationCodeFlow {
     let auth_url = oauth2::AuthUrl::from_url(
         Url::parse(&format!(
@@ -46,10 +46,12 @@ pub fn start(
     // Create a PKCE code verifier and SHA-256 encode it as a code challenge.
     let (pkce_code_challenge, pkce_code_verifier) = oauth2::PkceCodeChallenge::new_random_sha256();
 
+    let scopes = scopes.iter().map(|s| Scope::new(s.to_string()));
+
     // Generate the authorization URL to which we'll redirect the user.
     let (authorize_url, csrf_state) = client
         .authorize_url(oauth2::CsrfToken::new_random)
-        .add_extra_param("scope", resource)
+        .add_scopes(scopes)
         .set_pkce_challenge(pkce_code_challenge)
         .url();
 

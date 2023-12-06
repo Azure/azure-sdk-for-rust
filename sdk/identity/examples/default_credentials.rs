@@ -9,11 +9,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let sub_id = var("AZURE_SUBSCRIPTION_ID")?;
     let creds = DefaultAzureCredentialBuilder::new()
-        .exclude_azure_cli_credential() // disable using CLI for credentials (just as an example)
+        .exclude_environment_credential() // disable using environment variables for credentials (just as an example)
         .build();
 
     let res = creds
-        .get_token("https://management.azure.com/")
+        .get_token(&["https://management.azure.com/.default"])
         .await
         .unwrap();
     eprintln!("Azure token response == {res:?}");

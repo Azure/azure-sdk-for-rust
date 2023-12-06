@@ -16,12 +16,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let region = std::env::args().nth(2).expect("please specify region");
 
     let endpoint = azure_core::Url::parse(&format!("https://{account_name}.{region}.batch.azure.com"))?;
-    let scopes = &["https://batch.core.windows.net/"];
+    let scopes = &["https://batch.core.windows.net/.default"];
     let credential = Arc::new(AzureCliCredential::new());
     let client = azure_svc_batch::Client::builder(credential)
         .endpoint(endpoint)
         .scopes(scopes)
-        .build();
+        .build()?;
 
     let mut stream = client.job_client().list().into_stream();
     while let Some(jobs) = stream.next().await {

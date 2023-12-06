@@ -70,7 +70,7 @@ impl Policy for AuthorizationPolicy {
                 }
                 StorageCredentialsInner::TokenCredential(token_credential) => {
                     let bearer_token = token_credential
-                        .get_token(STORAGE_TOKEN_SCOPE)
+                        .get_token(&[STORAGE_TOKEN_SCOPE])
                         .await
                         .context(ErrorKind::Credential, "failed to get bearer token")?;
 

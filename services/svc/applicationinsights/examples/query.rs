@@ -26,7 +26,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let credential = Arc::new(AzureCliCredential::new());
     let client = azure_svc_applicationinsights::Client::builder(credential)
         .endpoint(endpoint)
-        .build();
+        .build()?;
 
     let body = QueryBody {
         query,

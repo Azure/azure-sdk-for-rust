@@ -62,7 +62,7 @@ impl EnvironmentCredential {
         }
     }
 
-    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         let tenant_id = std::env::var(AZURE_TENANT_ID_ENV_KEY)
             .with_context(ErrorKind::Credential, || {
                 format!("missing tenant id set in {AZURE_TENANT_ID_ENV_KEY} environment variable")
@@ -95,7 +95,7 @@ impl EnvironmentCredential {
             );
             credential.set_options(options);
 
-            return credential.get_token(resource).await;
+            return credential.get_token(scopes).await;
         } else if let Ok(file) = federated_token_file {
             let token = std::fs::read_to_string(file.clone())
                 .with_context(ErrorKind::Credential, || {
@@ -109,7 +109,7 @@ impl EnvironmentCredential {
             );
             credential.set_options(options);
 
-            return credential.get_token(resource).await;
+            return credential.get_token(scopes).await;
         } else if let Ok(client_secret) = client_secret {
             let credential = ClientSecretCredential::new(
                 self.http_client.clone(),
@@ -118,7 +118,7 @@ impl EnvironmentCredential {
                 client_secret,
                 options,
             );
-            return credential.get_token(resource).await;
+            return credential.get_token(scopes).await;
         } else if username.is_ok() && password.is_ok() {
             // Could use multiple if-let with #![feature(let_chains)] once stabilised - see https://github.com/rust-lang/rust/issues/53667
             // TODO: username & password credential
@@ -136,10 +136,8 @@ impl EnvironmentCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for EnvironmentCredential {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
-        self.cache
-            .get_token(resource, self.get_token(resource))
-            .await
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+        self.cache.get_token(scopes, self.get_token(scopes)).await
     }
 
     async fn clear_cache(&self) -> azure_core::Result<()> {

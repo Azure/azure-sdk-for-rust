@@ -125,7 +125,7 @@ impl AzureCliCredential {
     }
 
     /// Get an access token for an optional resource
-    fn get_access_token(resource: Option<&str>) -> azure_core::Result<CliTokenResponse> {
+    fn get_access_token(scopes: Option<&[&str]>) -> azure_core::Result<CliTokenResponse> {
         // on window az is a cmd and it should be called like this
         // see https://doc.rust-lang.org/nightly/std/process/struct.Command.html
         let program = if cfg!(target_os = "windows") {
@@ -142,9 +142,12 @@ impl AzureCliCredential {
         args.push("get-access-token");
         args.push("--output");
         args.push("json");
-        if let Some(resource) = resource {
-            args.push("--resource");
-            args.push(resource);
+
+        let scopes = scopes.map(|x| x.join(" "));
+
+        if let Some(scopes) = &scopes {
+            args.push("--scope");
+            args.push(scopes);
         }
 
         log::trace!(
@@ -189,8 +192,8 @@ impl AzureCliCredential {
         Ok(tr.tenant)
     }
 
-    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
-        let tr = Self::get_access_token(Some(resource))?;
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+        let tr = Self::get_access_token(Some(scopes))?;
         Ok(AccessToken::new(tr.access_token, tr.expires_on))
     }
 }
@@ -198,10 +201,8 @@ impl AzureCliCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for AzureCliCredential {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
-        self.cache
-            .get_token(resource, self.get_token(resource))
-            .await
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+        self.cache.get_token(scopes, self.get_token(scopes)).await
     }
 
     /// Clear the credential's cache.

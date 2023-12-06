@@ -90,10 +90,10 @@ pub enum DefaultAzureCredentialEnum {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for DefaultAzureCredentialEnum {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         match self {
             DefaultAzureCredentialEnum::Environment(credential) => {
-                credential.get_token(resource).await.context(
+                credential.get_token(scopes).await.context(
                     ErrorKind::Credential,
                     "error getting environment credential",
                 )
@@ -101,7 +101,7 @@ impl TokenCredential for DefaultAzureCredentialEnum {
             DefaultAzureCredentialEnum::ManagedIdentity(credential) => {
                 // IMSD timeout is only limited to 1 second when used in DefaultAzureCredential
                 credential
-                    .get_token(resource)
+                    .get_token(scopes)
                     .timeout(Duration::from_secs(1))
                     .await
                     .context(
@@ -114,7 +114,7 @@ impl TokenCredential for DefaultAzureCredentialEnum {
                     )
             }
             DefaultAzureCredentialEnum::AzureCli(credential) => {
-                credential.get_token(resource).await.context(
+                credential.get_token(scopes).await.context(
                     ErrorKind::Credential,
                     "error getting token credential from Azure CLI",
                 )
@@ -159,10 +159,10 @@ impl DefaultAzureCredential {
     }
 
     /// Try to fetch a token using each of the credential sources until one succeeds
-    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         let mut errors = Vec::new();
         for source in &self.sources {
-            let token_res = source.get_token(resource).await;
+            let token_res = source.get_token(scopes).await;
 
             match token_res {
                 Ok(token) => return Ok(token),
@@ -187,10 +187,8 @@ impl Default for DefaultAzureCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for DefaultAzureCredential {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
-        self.cache
-            .get_token(resource, self.get_token(resource))
-            .await
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+        self.cache.get_token(scopes, self.get_token(scopes)).await
     }
 
     /// Clear the credential's cache.

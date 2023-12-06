@@ -15,7 +15,7 @@ async fn main() -> azure_core::Result<()> {
     let credential = Arc::new(AzureCliCredential::new());
     let tenant_id = AzureCliCredential::get_tenant()?;
 
-    let client = ClientBuilder::new(credential).build().deleted_applications_client();
+    let client = ClientBuilder::new(credential).build()?.deleted_applications_client();
 
     let mut stream = client.list(&tenant_id).filter(filter).into_stream();
     while let Some(apps) = stream.next().await {

@@ -130,7 +130,21 @@ impl ClientCertificateCredential {
         base64::encode_url_safe(part)
     }
 
-    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+        if scopes.len() != 1 {
+            return Err(Error::message(
+                ErrorKind::Credential,
+                "only one scope is supported for IMDS authentication",
+            ));
+        }
+
+        let Some(scope) = scopes.first() else {
+            return Err(Error::message(
+                ErrorKind::Credential,
+                "no scopes were provided",
+            ));
+        };
+
         let options = self.options();
 
         let url = options
@@ -139,19 +153,20 @@ impl ClientCertificateCredential {
 
         let certificate = base64::decode(self.client_certificate.secret())
             .map_err(|_| Error::message(ErrorKind::Credential, "Base64 decode failed"))?;
-        let certificate = Pkcs12::from_der(&certificate)
+
+        let pkcs12_certificate = Pkcs12::from_der(&certificate)
             .map_err(openssl_error)?
             .parse2(self.client_certificate_pass.secret())
             .map_err(openssl_error)?;
 
-        let Some(cert) = certificate.cert.as_ref() else {
+        let Some(cert) = pkcs12_certificate.cert.as_ref() else {
             return Err(Error::message(
                 ErrorKind::Credential,
                 "Certificate not found",
             ));
         };
 
-        let Some(pkey) = certificate.pkey.as_ref() else {
+        let Some(pkey) = pkcs12_certificate.pkey.as_ref() else {
             return Err(Error::message(
                 ErrorKind::Credential,
                 "Private key not found",
@@ -169,7 +184,7 @@ impl ClientCertificateCredential {
         let header = match options.send_certificate_chain {
             true => {
                 let base_signature = get_encoded_cert(cert)?;
-                let x5c = match certificate.ca {
+                let x5c = match pkcs12_certificate.ca {
                     Some(chain) => {
                         let chain = chain
                             .into_iter()
@@ -200,20 +215,11 @@ impl ClientCertificateCredential {
         let sig = ClientCertificateCredential::as_jwt_part(&signature);
         let client_assertion = format!("{}.{}", jwt, sig);
 
-        let mut resource = resource.to_owned();
-        if !resource.ends_with("/.default") {
-            if resource.ends_with('/') {
-                resource.push_str(".default");
-            } else {
-                resource.push_str("/.default");
-            }
-        }
-
         let encoded = {
             let mut encoded = &mut form_urlencoded::Serializer::new(String::new());
             encoded = encoded
                 .append_pair("client_id", self.client_id.as_str())
-                .append_pair("scope", &resource)
+                .append_pair("scope", scope)
                 .append_pair(
                     "client_assertion_type",
                     "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
@@ -269,10 +275,8 @@ fn openssl_error(err: ErrorStack) -> azure_core::error::Error {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ClientCertificateCredential {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
-        self.cache
-            .get_token(resource, self.get_token(resource))
-            .await
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+        self.cache.get_token(scopes, self.get_token(scopes)).await
     }
 
     async fn clear_cache(&self) -> azure_core::Result<()> {

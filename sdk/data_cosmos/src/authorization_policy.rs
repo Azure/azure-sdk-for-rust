@@ -165,7 +165,7 @@ async fn generate_authorization(
             "aad",
             Cow::Owned(
                 token_credential
-                    .get_token(&scope_from_url(url))
+                    .get_token(&[&scope_from_url(url)])
                     .await?
                     .token
                     .secret()

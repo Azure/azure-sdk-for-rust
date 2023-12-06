@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let credential = Arc::new(AzureCliCredential::new());
     let subscription_id = AzureCliCredential::get_subscription()?;
-    let client = azure_mgmt_web::Client::builder(credential).build();
+    let client = azure_mgmt_web::Client::builder(credential).build()?;
 
     let config = client
         .web_apps_client()

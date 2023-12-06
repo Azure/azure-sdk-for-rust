@@ -90,11 +90,13 @@ impl ImdsManagedIdentityCredential {
         self
     }
 
-    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+        let resource = scopes_to_resource(scopes)?;
+
         let msi_endpoint = std::env::var(MSI_ENDPOINT_ENV_KEY)
             .unwrap_or_else(|_| "http://169.254.169.254/metadata/identity/oauth2/token".to_owned());
 
-        let mut query_items = vec![("api-version", MSI_API_VERSION), ("resource", resource)];
+        let mut query_items = vec![("api-version", MSI_API_VERSION), ("resource", &resource)];
 
         match (
             self.object_id.as_ref(),
@@ -158,10 +160,8 @@ impl ImdsManagedIdentityCredential {
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for ImdsManagedIdentityCredential {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<AccessToken> {
-        self.cache
-            .get_token(resource, self.get_token(resource))
-            .await
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
+        self.cache.get_token(scopes, self.get_token(scopes)).await
     }
 
     async fn clear_cache(&self) -> azure_core::Result<()> {
@@ -176,6 +176,28 @@ where
     let v = String::deserialize(deserializer)?;
     let as_i64 = v.parse::<i64>().map_err(de::Error::custom)?;
     OffsetDateTime::from_unix_timestamp(as_i64).map_err(de::Error::custom)
+}
+
+/// Convert a AADv2 scope to an AADv1 resource
+///
+/// Directly based on the `azure-sdk-for-python` implementation:
+/// ref: <https://github.com/Azure/azure-sdk-for-python/blob/d6aeefef46c94b056419613f1a5cc9eaa3af0d22/sdk/identity/azure-identity/azure/identity/_internal/__init__.py#L22>
+fn scopes_to_resource<'a>(scopes: &'a [&'a str]) -> azure_core::Result<&'a str> {
+    if scopes.len() != 1 {
+        return Err(Error::message(
+            ErrorKind::Credential,
+            "only one scope is supported for IMDS authentication",
+        ));
+    }
+
+    let Some(scope) = scopes.first() else {
+        return Err(Error::message(
+            ErrorKind::Credential,
+            "no scopes were provided",
+        ));
+    };
+
+    Ok(scope.strip_suffix("/.default").unwrap_or(*scope))
 }
 
 // NOTE: expires_on is a String version of unix epoch time, not an integer.

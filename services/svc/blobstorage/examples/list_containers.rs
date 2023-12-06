@@ -7,7 +7,7 @@ https://docs.microsoft.com/cli/azure/storage/container?view=azure-cli-latest#az-
 */
 
 use azure_core::Url;
-use azure_identity::AzureCliCredential;
+use azure_identity::ImdsManagedIdentityCredential;
 use azure_svc_blobstorage::Client;
 use futures::stream::StreamExt;
 use std::sync::Arc;
@@ -19,9 +19,9 @@ async fn main() -> azure_core::Result<()> {
     let account_name = std::env::args().nth(1).expect("please specify storage account");
 
     let endpoint = Url::parse(&format!("https://{account_name}.blob.core.windows.net"))?;
-    let scopes = &["https://storage.azure.com/"];
-    let credential = Arc::new(AzureCliCredential::new());
-    let client = Client::builder(credential).endpoint(endpoint).scopes(scopes).build();
+    let scopes = &["https://storage.azure.com/.default"];
+    let credential = Arc::new(ImdsManagedIdentityCredential::default());
+    let client = Client::builder(credential).endpoint(endpoint).scopes(scopes).build()?;
 
     let mut pages = client.service_client().list_containers_segment().maxresults(1).into_stream();
     while let Some(page) = pages.next().await {
