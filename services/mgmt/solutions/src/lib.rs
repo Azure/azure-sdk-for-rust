@@ -3,6 +3,7 @@
 #![allow(clippy::ptr_arg)]
 #![allow(clippy::large_enum_variant)]
 #![allow(clippy::derive_partial_eq_without_eq)]
+#![allow(clippy::new_without_default)]
 #[cfg(feature = "package-managedapplications-2021-07")]
 pub mod package_managedapplications_2021_07;
 #[cfg(all(feature = "package-managedapplications-2021-07", not(feature = "without_tag_import")))]

@@ -3,6 +3,7 @@
 #![allow(clippy::ptr_arg)]
 #![allow(clippy::large_enum_variant)]
 #![allow(clippy::derive_partial_eq_without_eq)]
+#![allow(clippy::new_without_default)]
 #[cfg(feature = "8_2")]
 pub mod v8_2;
 #[cfg(all(feature = "8_2", not(feature = "without_tag_import")))]

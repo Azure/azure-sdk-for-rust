@@ -3,6 +3,7 @@
 #![allow(clippy::ptr_arg)]
 #![allow(clippy::large_enum_variant)]
 #![allow(clippy::derive_partial_eq_without_eq)]
+#![allow(clippy::new_without_default)]
 #[cfg(feature = "package-preview-2020-02")]
 pub mod package_preview_2020_02;
 #[cfg(all(feature = "package-preview-2020-02", not(feature = "without_tag_import")))]

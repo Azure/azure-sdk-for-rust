@@ -3,6 +3,7 @@
 #![allow(clippy::ptr_arg)]
 #![allow(clippy::large_enum_variant)]
 #![allow(clippy::derive_partial_eq_without_eq)]
+#![allow(clippy::new_without_default)]
 #[cfg(feature = "package-dotnet-sdk")]
 pub mod package_dotnet_sdk;
 #[cfg(all(feature = "package-dotnet-sdk", not(feature = "without_tag_import")))]

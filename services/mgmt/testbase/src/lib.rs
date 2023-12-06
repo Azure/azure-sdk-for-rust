@@ -3,6 +3,7 @@
 #![allow(clippy::ptr_arg)]
 #![allow(clippy::large_enum_variant)]
 #![allow(clippy::derive_partial_eq_without_eq)]
+#![allow(clippy::new_without_default)]
 #[cfg(feature = "package-2022-04-01-preview")]
 pub mod package_2022_04_01_preview;
 #[cfg(all(feature = "package-2022-04-01-preview", not(feature = "without_tag_import")))]
