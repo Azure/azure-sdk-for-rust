@@ -1,7 +1,7 @@
 use crate::{
     autorust_toml, cargo_toml, io, lib_rs,
     readme_md::{self, ReadmeMd},
-    run, CrateConfig, Error, Result, RunConfig, SpecReadme,
+    run, CrateConfig, Error, ErrorKind, Result, ResultExt, RunConfig, SpecReadme,
 };
 use std::{collections::HashMap, fs};
 
@@ -54,21 +54,26 @@ pub fn gen_crate(package_name: &str, spec: &SpecReadme, run_config: &RunConfig, 
     let mut api_versions = HashMap::new();
     let mut has_xml = false;
     for tag in tags {
-        generated_tags.push(tag.name().to_owned());
+        let name = tag.name();
+        generated_tags.push(name.to_owned());
         let output_folder = io::join(&src_folder, tag.rust_mod_name())?;
         let input_files: Result<Vec<_>> = tag
             .input_files()
             .iter()
             .map(|input_file| io::join(spec.readme(), input_file).map_err(Error::from))
             .collect();
-        let input_files = input_files?;
+        let input_files = input_files.with_context(ErrorKind::CodeGen, || format!("collecting input files for tag {name}"))?;
+
         let crate_config = &CrateConfig {
             run_config,
             output_folder,
             input_files,
         };
-        let cg = run(crate_config, &package_config)?;
-        let operations = cg.spec.operations()?;
+        let cg = run(crate_config, &package_config).with_context(ErrorKind::CodeGen, || format!("gen_crate run for tag {name}"))?;
+        let operations = cg
+            .spec
+            .operations()
+            .with_context(ErrorKind::CodeGen, || format!("gen_crate operations for tag {name}"))?;
         operation_totals.insert(tag.name(), operations.len());
         let mut versions = cg.spec.api_versions();
         versions.sort_unstable();
@@ -84,8 +89,8 @@ pub fn gen_crate(package_name: &str, spec: &SpecReadme, run_config: &RunConfig, 
     };
     let default_tag = cargo_toml::get_default_tag(tags, default_tag_name);
 
-    cargo_toml::create(package_name, tags, default_tag, has_xml, &cargo_toml_path)?;
-    lib_rs::create(tags, lib_rs_path, false)?;
+    cargo_toml::create(package_name, tags, default_tag, has_xml, &cargo_toml_path).context(ErrorKind::CodeGen, "cargo_toml::create")?;
+    lib_rs::create(tags, lib_rs_path, false).context(ErrorKind::CodeGen, "lib_rs::create")?;
     let readme = ReadmeMd {
         package_name,
         readme_url: readme_md::url(spec.readme().as_str()),
@@ -95,7 +100,7 @@ pub fn gen_crate(package_name: &str, spec: &SpecReadme, run_config: &RunConfig, 
         api_version_totals,
         api_versions,
     };
-    readme.create(&readme_path)?;
+    readme.create(&readme_path).context(ErrorKind::CodeGen, "readme::create")?;
 
     Ok(generated_tags)
 }

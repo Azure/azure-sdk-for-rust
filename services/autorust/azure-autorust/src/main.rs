@@ -6,7 +6,7 @@ use autorust_codegen::{
     crates::{list_crate_names, list_dirs},
     gen, get_mgmt_readmes, get_svc_readmes,
     jinja::{CheckAllServicesYml, PublishSdksYml, PublishServicesYml, WorkspaceCargoToml},
-    ErrorKind, Result, ResultExt, RunConfig, SpecReadme,
+    Error, ErrorKind, Result, ResultExt, RunConfig, SpecReadme,
 };
 use clap::Parser;
 use rayon::prelude::*;
@@ -68,14 +68,37 @@ fn gen_crates(only_packages: &[&str]) -> Result<()> {
     let mgmt = get_mgmt_readmes()?.into_iter().map(|x| ("mgmt".to_string(), x));
     let crate_iters = svc.chain(mgmt).collect::<Vec<_>>();
 
-    let results: Result<Vec<_>> = crate_iters
+    let results: Vec<Result<Option<(String, Vec<String>)>>> = crate_iters
         .par_iter()
         .map(|(crate_type, spec)| gen_crate(only_packages, crate_type, spec))
         .collect::<Vec<_>>()
         .into_iter()
         .collect();
 
-    (results?).into_iter().flatten().for_each(|(package_name, tags)| {
+    let mut errors = vec![];
+    let mut completed = vec![];
+
+    for result in results {
+        match result {
+            Ok(result) => {
+                if let Some(result) = result {
+                    completed.push(result);
+                }
+            }
+            Err(err) => {
+                errors.push(err);
+            }
+        }
+    }
+
+    if !errors.is_empty() {
+        for error in &errors {
+            eprintln!("{error:?}");
+        }
+        return Err(Error::new(ErrorKind::CodeGen, "Failed to generate some crates"));
+    }
+
+    for (package_name, tags) in completed {
         println!("{package_name}");
         if tags.is_empty() {
             println!("  No tags");
@@ -84,7 +107,7 @@ fn gen_crates(only_packages: &[&str]) -> Result<()> {
                 println!("- {tag}");
             }
         }
-    });
+    }
 
     Ok(())
 }
