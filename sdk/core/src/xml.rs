@@ -76,7 +76,7 @@ mod test {
     }
 
     #[test]
-    fn reading_xml() {
+    fn reading_xml() -> crate::Result<()> {
         #[derive(Deserialize, PartialEq, Debug)]
         #[serde(rename = "Foo")]
         struct Test {
@@ -86,15 +86,16 @@ mod test {
             x: "Hello, world!".into(),
         };
         let xml = br#"<?xml version="1.0" encoding="utf-8"?><Foo><x>Hello, world!</x></Foo>"#;
-        assert_eq!(test, read_xml(xml).unwrap());
+        assert_eq!(test, read_xml(xml)?);
 
         let error = read_xml::<Test>(&xml[..xml.len() - 2]).unwrap_err();
         assert!(format!("{error}").contains("reading_xml::Test"));
 
         let xml = r#"<?xml version="1.0" encoding="utf-8"?><Foo><x>Hello, world!</x></Foo>"#;
-        assert_eq!(test, read_xml_str(xml).unwrap());
+        assert_eq!(test, read_xml_str(xml)?);
 
         let error = read_xml_str::<Test>(&xml[..xml.len() - 2]).unwrap_err();
         assert!(format!("{error}").contains("reading_xml::Test"));
+        Ok(())
     }
 }

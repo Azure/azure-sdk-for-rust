@@ -137,8 +137,8 @@ pub fn diff(first: OffsetDateTime, second: OffsetDateTime) -> Duration {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::from_json;
     use serde::{Deserialize, Serialize};
-    use serde_json;
     use time::macros::datetime;
 
     #[derive(Serialize, Deserialize)]
@@ -207,7 +207,7 @@ mod tests {
             "created_time": "2021-07-01T10:45:02Z"
         }"#;
 
-        let state: ExampleState = serde_json::from_str(json_state).unwrap();
+        let state: ExampleState = from_json(json_state)?;
 
         assert_eq!(parse_rfc3339("2021-07-01T10:45:02Z")?, state.created_time);
         assert_eq!(state.deleted_time, None);
@@ -222,12 +222,12 @@ mod tests {
             "deleted_time": "2022-03-28T11:05:31Z"
         }"#;
 
-        let state: ExampleState = serde_json::from_str(json_state).unwrap();
+        let state: ExampleState = from_json(json_state)?;
 
         assert_eq!(parse_rfc3339("2021-07-01T10:45:02Z")?, state.created_time);
         assert_eq!(
             state.deleted_time,
-            Some(parse_rfc3339("2022-03-28T11:05:31Z").unwrap())
+            Some(parse_rfc3339("2022-03-28T11:05:31Z")?)
         );
 
         Ok(())
