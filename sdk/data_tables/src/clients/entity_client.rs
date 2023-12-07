@@ -122,6 +122,7 @@ impl EntityClient {
 #[cfg(feature = "test_integration")]
 mod integration_tests {
     use super::*;
+    use serde::Deserialize;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     struct TestEntity {

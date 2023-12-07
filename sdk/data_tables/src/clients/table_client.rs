@@ -71,6 +71,7 @@ impl TableClient {
 mod integration_tests {
     use super::*;
     use futures::StreamExt;
+    use serde::Deserialize;
 
     #[derive(Debug, Clone, Serialize, Deserialize)]
     struct TestEntity {
