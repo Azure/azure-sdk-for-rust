@@ -1,4 +1,7 @@
-use crate::service::operations::*;
+use crate::{
+    clients::{BlobClient, BlobLeaseClient, ContainerClient, ContainerLeaseClient},
+    service::operations::*,
+};
 use azure_core::{
     headers::Headers, request_options::LeaseId, Body, ClientOptions, Context, Method, Pipeline,
     Request, Response, Url,
@@ -10,8 +13,6 @@ use azure_storage::{
     CloudLocation, StorageCredentials,
 };
 use time::OffsetDateTime;
-
-use super::{BlobClient, BlobLeaseClient, ContainerClient, ContainerLeaseClient};
 
 /// A builder for the blob service client.
 #[derive(Debug, Clone)]
@@ -194,6 +195,10 @@ impl BlobServiceClient {
     /// List all the containers in the blob account
     pub fn list_containers(&self) -> ListContainersBuilder {
         ListContainersBuilder::new(self.clone())
+    }
+
+    pub fn get_properties(&self) -> GetBlobServicePropertiesBuilder {
+        GetBlobServicePropertiesBuilder::new(self.clone())
     }
 
     pub fn url(&self) -> azure_core::Result<Url> {
