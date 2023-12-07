@@ -453,7 +453,7 @@ pub mod service {
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("content-type", "application/xml");
-                        let req_body = azure_core::to_json(&this.storage_service_properties)?;
+                        let req_body = azure_core::xml::to_xml(&this.storage_service_properties)?;
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -864,7 +864,7 @@ pub mod service {
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         req.insert_header("content-type", "application/xml");
-                        let req_body = azure_core::to_json(&this.key_info)?;
+                        let req_body = azure_core::xml::to_xml(&this.key_info)?;
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -2556,7 +2556,7 @@ pub mod container {
                         req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         let req_body = if let Some(container_acl) = &this.container_acl {
                             req.insert_header("content-type", "application/xml");
-                            azure_core::to_json(container_acl)?
+                            azure_core::xml::to_xml(container_acl)?
                         } else {
                             azure_core::EMPTY_BODY
                         };
@@ -9802,7 +9802,7 @@ pub mod blob {
                         req.insert_header(azure_core::headers::VERSION, "2021-04-10");
                         let req_body = if let Some(query_request) = &this.query_request {
                             req.insert_header("content-type", "application/xml");
-                            azure_core::to_json(query_request)?
+                            azure_core::xml::to_xml(query_request)?
                         } else {
                             azure_core::EMPTY_BODY
                         };
@@ -10203,7 +10203,7 @@ pub mod blob {
                         }
                         let req_body = if let Some(tags) = &this.tags {
                             req.insert_header("content-type", "application/xml");
-                            azure_core::to_json(tags)?
+                            azure_core::xml::to_xml(tags)?
                         } else {
                             azure_core::EMPTY_BODY
                         };
@@ -16367,7 +16367,7 @@ pub mod block_blob {
                             req.insert_header("x-ms-if-tags", x_ms_if_tags);
                         }
                         req.insert_header("content-type", "application/xml");
-                        let req_body = azure_core::to_json(&this.blocks)?;
+                        let req_body = azure_core::xml::to_xml(&this.blocks)?;
                         if let Some(x_ms_client_request_id) = &this.x_ms_client_request_id {
                             req.insert_header("x-ms-client-request-id", x_ms_client_request_id);
                         }

@@ -363,7 +363,7 @@ pub mod service {
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header(azure_core::headers::VERSION, "2022-11-02");
                         req.insert_header("content-type", "application/xml");
-                        let req_body = azure_core::to_json(&this.storage_service_properties)?;
+                        let req_body = azure_core::xml::to_xml(&this.storage_service_properties)?;
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -2962,7 +2962,7 @@ pub mod share {
                         req.insert_header(azure_core::headers::VERSION, "2022-11-02");
                         let req_body = if let Some(share_acl) = &this.share_acl {
                             req.insert_header("content-type", "application/xml");
-                            azure_core::to_json(share_acl)?
+                            azure_core::xml::to_xml(share_acl)?
                         } else {
                             azure_core::EMPTY_BODY
                         };

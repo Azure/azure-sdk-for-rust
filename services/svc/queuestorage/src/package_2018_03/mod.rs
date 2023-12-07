@@ -389,7 +389,7 @@ pub mod service {
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         req.insert_header("content-type", "application/xml");
-                        let req_body = azure_core::to_json(&this.storage_service_properties)?;
+                        let req_body = azure_core::xml::to_xml(&this.storage_service_properties)?;
                         if let Some(timeout) = &this.timeout {
                             req.url_mut().query_pairs_mut().append_pair("timeout", &timeout.to_string());
                         }
@@ -1474,7 +1474,7 @@ pub mod queue {
                         req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         let req_body = if let Some(queue_acl) = &this.queue_acl {
                             req.insert_header("content-type", "application/xml");
-                            azure_core::to_json(queue_acl)?
+                            azure_core::xml::to_xml(queue_acl)?
                         } else {
                             azure_core::EMPTY_BODY
                         };
@@ -1822,7 +1822,7 @@ pub mod messages {
                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                         req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         req.insert_header("content-type", "application/xml");
-                        let req_body = azure_core::to_json(&this.queue_message)?;
+                        let req_body = azure_core::xml::to_xml(&this.queue_message)?;
                         if let Some(visibilitytimeout) = &this.visibilitytimeout {
                             req.url_mut()
                                 .query_pairs_mut()
@@ -2281,7 +2281,7 @@ pub mod message_id {
                         req.insert_header(azure_core::headers::VERSION, "2018-03-28");
                         let req_body = if let Some(queue_message) = &this.queue_message {
                             req.insert_header("content-type", "application/xml");
-                            azure_core::to_json(queue_message)?
+                            azure_core::xml::to_xml(queue_message)?
                         } else {
                             azure_core::EMPTY_BODY
                         };

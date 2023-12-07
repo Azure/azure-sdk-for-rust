@@ -109,17 +109,25 @@ impl ToTokens for SetRequestParamsCode {
                         quote! {}
                     };
 
+                    // TODO: more work needs to be done to ensure we're using
+                    // the right encoder.
+                    let encoder = if !self.params.has_content_type_header() && self.content_type.starts_with("application/xml") {
+                        quote! {azure_core::xml::to_xml}
+                    } else {
+                        quote! { azure_core::to_json }
+                    };
+
                     if !param.is_optional() || is_vec {
                         tokens.extend(quote! {
                             #set_content_type
-                            let req_body = azure_core::to_json(&this.#param_name_var)?;
+                            let req_body = #encoder(&this.#param_name_var)?;
                         });
                     } else {
                         tokens.extend(quote! {
                             let req_body =
                                 if let Some(#param_name_var) = &this.#param_name_var {
                                     #set_content_type
-                                    azure_core::to_json(#param_name_var)?
+                                    #encoder(#param_name_var)?
                                 } else {
                                     azure_core::EMPTY_BODY
                                 };

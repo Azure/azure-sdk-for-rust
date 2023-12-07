@@ -8,6 +8,7 @@ use azure_core::{
 use azure_storage::{
     headers::CommonStorageResponseHeaders, shared_access_signature::service_sas::UserDeligationKey,
 };
+use bytes::{Bytes, BytesMut};
 use time::OffsetDateTime;
 
 operation! {
@@ -29,7 +30,7 @@ impl GetUserDelegationKeyBuilder {
                 start: self.start_time,
                 expiry: self.expiry_time,
             }
-            .as_string()?;
+            .encode()?;
 
             let mut request = BlobServiceClient::finalize_request(
                 url,
@@ -57,11 +58,10 @@ struct GetUserDelegationKeyRequest {
 }
 
 impl GetUserDelegationKeyRequest {
-    pub fn as_string(&self) -> azure_core::Result<String> {
-        Ok(format!(
-            "<?xml version=\"1.0\" encoding=\"utf-8\"?>{}",
-            to_xml(self)?
-        ))
+    pub fn encode(&self) -> azure_core::Result<Bytes> {
+        let mut body = BytesMut::from("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+        body.extend(to_xml(self)?);
+        Ok(body.freeze())
     }
 }
 
@@ -89,7 +89,7 @@ mod test {
     use azure_core::auth::Secret;
     use uuid::Uuid;
 
-    const BASIC_REQUEST: &str = "<?xml version=\"1.0\" encoding=\"utf-8\"?><KeyInfo><Start>1970-01-01T00:00:00Z</Start><Expiry>1970-01-01T00:00:01Z</Expiry></KeyInfo>";
+    const BASIC_REQUEST: &[u8] = b"<?xml version=\"1.0\" encoding=\"utf-8\"?><KeyInfo><Start>1970-01-01T00:00:00Z</Start><Expiry>1970-01-01T00:00:01Z</Expiry></KeyInfo>";
     const BASIC_RESPONSE: &str = "
         <UserDeligationKey>
             <SignedOid>00000000-0000-0000-0000-000000000000</SignedOid>
@@ -108,7 +108,7 @@ mod test {
             start: OffsetDateTime::from_unix_timestamp(0).unwrap(),
             expiry: OffsetDateTime::from_unix_timestamp(1).unwrap(),
         }
-        .as_string()?;
+        .encode()?;
         assert_eq!(BASIC_REQUEST, request);
         Ok(())
     }
