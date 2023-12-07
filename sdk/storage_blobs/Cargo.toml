@@ -15,6 +15,7 @@ edition = "2021"
 [dependencies]
 azure_core = { path = "../core", version = "0.17", features = ["xml"] }
 azure_storage = { path = "../storage", version = "0.17", default-features = false }
+azure_svc_blobstorage = {path="../../services/svc/blobstorage", version="0.17", default-features=false, features=["default_tag"]}
 bytes = "1.0"
 time = "0.3.10"
 futures = "0.3"
@@ -38,12 +39,12 @@ clap = { version = "4.0", features = ["derive", "env"] }
 azure_core = {path = "../core", version = "0.17", features = ["tokio-fs"]}
 
 [features]
-default = ["enable_reqwest"]
+default = ["enable_reqwest", "hmac_rust"]
 test_e2e = []
 test_integration = []
 azurite_workaround = ["azure_core/azurite_workaround"]
-enable_reqwest = ["azure_core/enable_reqwest", "azure_storage/enable_reqwest"]
-enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls", "azure_storage/enable_reqwest_rustls"]
+enable_reqwest = ["azure_core/enable_reqwest", "azure_storage/enable_reqwest", "azure_svc_blobstorage/enable_reqwest"]
+enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls", "azure_storage/enable_reqwest_rustls", "azure_svc_blobstorage/enable_reqwest_rustls"]
 md5 = ["dep:md5"]
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
