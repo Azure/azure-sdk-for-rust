@@ -68,12 +68,12 @@ fn gen_crates(only_packages: &[&str]) -> Result<()> {
     let mgmt = get_mgmt_readmes()?.into_iter().map(|x| ("mgmt".to_string(), x));
     let crate_iters = svc.chain(mgmt).collect::<Vec<_>>();
 
-    let results: Vec<Result<Option<(String, Vec<String>)>>> = crate_iters
+    let results = crate_iters
         .par_iter()
         .map(|(crate_type, spec)| gen_crate(only_packages, crate_type, spec))
         .collect::<Vec<_>>()
         .into_iter()
-        .collect();
+        .collect::<Vec<_>>();
 
     let mut errors = vec![];
     let mut completed = vec![];
