@@ -58,6 +58,6 @@ pub use clients::*;
 pub use message_ttl::MessageTTL;
 pub use number_of_messages::NumberOfMessages;
 pub use pop_receipt::PopReceipt;
-pub use queue_service_properties::QueueServiceProperties;
+pub use queue_service_properties::{CorsRule, QueueServiceProperties};
 pub use queue_stored_access_policy::QueueStoredAccessPolicy;
 pub use visibility_timeout::VisibilityTimeout;

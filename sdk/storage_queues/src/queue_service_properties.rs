@@ -11,6 +11,7 @@ pub struct QueueServiceProperties {
 #[serde(rename_all = "PascalCase")]
 pub struct RetentionPolicy {
     pub enabled: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub days: Option<u64>,
 }
 
@@ -29,7 +30,7 @@ pub struct Logging {
 pub struct Metrics {
     pub version: String,
     pub enabled: bool,
-    #[serde(rename = "IncludeAPIs")]
+    #[serde(rename = "IncludeAPIs", skip_serializing_if = "Option::is_none")]
     pub include_apis: Option<bool>,
     pub retention_policy: RetentionPolicy,
 }
@@ -37,6 +38,7 @@ pub struct Metrics {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Cors {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub cors_rule: Option<Vec<CorsRule>>,
 }
 
