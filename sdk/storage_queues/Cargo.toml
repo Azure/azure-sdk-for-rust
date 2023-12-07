@@ -26,13 +26,16 @@ uuid = { version = "1.0", features = ["v4"] }
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 uuid = { version = "1.0", features = ["v4"] }
+env_logger = "0.10"
 
 [features]
-default = ["enable_reqwest"]
+default = ["enable_reqwest", "hmac_rust"]
 test_e2e = []
 enable_reqwest = ["azure_core/enable_reqwest", "azure_storage/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls", "azure_storage/enable_reqwest_rustls"]
 test_integration = []
+hmac_openssl = ["azure_core/hmac_openssl"]
+hmac_rust = ["azure_core/hmac_rust"]
 
 [package.metadata.docs.rs]
 features = ["enable_reqwest", "enable_reqwest_rustls", "hmac_rust", "hmac_openssl"]

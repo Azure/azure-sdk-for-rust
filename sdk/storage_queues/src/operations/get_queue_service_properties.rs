@@ -37,7 +37,7 @@ impl GetQueueServicePropertiesResponse {
         let (_, headers, body) = response.deconstruct();
         let body = body.collect().await?;
 
-        let queue_service_properties: QueueServiceProperties = read_xml(&body)?;
+        let queue_service_properties = read_xml(&body)?;
 
         Ok(GetQueueServicePropertiesResponse {
             common_storage_response_headers: (&headers).try_into()?,
