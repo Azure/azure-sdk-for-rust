@@ -1,5 +1,4 @@
 use azure_iot_hub::service::resources::AuthenticationMechanism;
-use azure_iot_hub::service::responses::ModuleIdentityResponse;
 use azure_iot_hub::service::ServiceClient;
 use std::error::Error;
 
@@ -58,7 +57,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
     let module = service_client
         .get_module_identity(module.device_id, module.module_id)
         .await?;
-    let module: ModuleIdentityResponse = module.try_into()?;
     println!("Identity is: {module:?}");
 
     println!(

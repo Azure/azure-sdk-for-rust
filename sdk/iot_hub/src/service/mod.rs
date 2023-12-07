@@ -22,12 +22,12 @@ pub mod responses;
 use crate::service::operations::{
     ApplyOnEdgeDeviceBuilder, CreateOrUpdateConfigurationBuilder,
     CreateOrUpdateDeviceIdentityBuilder, CreateOrUpdateModuleIdentityBuilder,
-    DeleteConfigurationBuilder, DeleteIdentityBuilder, GetIdentityBuilder, GetTwinBuilder,
-    InvokeMethodBuilder, QueryBuilder, UpdateOrReplaceTwinBuilder,
+    DeleteConfigurationBuilder, DeleteIdentityBuilder, GetTwinBuilder, InvokeMethodBuilder,
+    QueryBuilder, UpdateOrReplaceTwinBuilder,
 };
 use crate::service::resources::identity::IdentityOperation;
 
-use self::operations::GetConfigurationBuilder;
+use self::operations::{DeviceIdentityBuilder, GetConfigurationBuilder, ModuleIdentityBuilder};
 use self::resources::{AuthenticationMechanism, Status};
 
 /// The API version to use for any requests
@@ -468,11 +468,11 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::new_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iot_hub.get_device_identity("some-device");
     /// ```
-    pub fn get_device_identity<S>(&self, device_id: S) -> GetIdentityBuilder
+    pub fn get_device_identity<S>(&self, device_id: S) -> DeviceIdentityBuilder
     where
         S: Into<String>,
     {
-        GetIdentityBuilder::new(self.clone(), device_id.into())
+        DeviceIdentityBuilder::new(self.clone(), device_id.into())
     }
 
     /// Create a new device identity
@@ -564,12 +564,12 @@ impl ServiceClient {
     /// let iot_hub = ServiceClient::new_connection_string(connection_string, 3600).expect("Failed to create the ServiceClient!");
     /// let device = iot_hub.get_module_identity("some-device", "some-module");
     /// ```
-    pub fn get_module_identity<S, T>(&self, device_id: S, module_id: T) -> GetIdentityBuilder
+    pub fn get_module_identity<S, T>(&self, device_id: S, module_id: T) -> ModuleIdentityBuilder
     where
         S: Into<String>,
         T: Into<String>,
     {
-        GetIdentityBuilder::new(self.clone(), device_id.into()).module_id(module_id)
+        ModuleIdentityBuilder::new(self.clone(), device_id.into(), module_id.into())
     }
 
     /// Create a new module identity
