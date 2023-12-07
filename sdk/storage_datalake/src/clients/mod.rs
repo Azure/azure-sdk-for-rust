@@ -15,5 +15,5 @@ use std::fmt::Debug;
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 pub trait PathClient: Debug + Clone + Send + Sync {
     fn url(&self) -> azure_core::Result<Url>;
-    async fn send(&self, ctx: &mut Context, request: &mut Request) -> crate::Result<Response>;
+    async fn send(&self, ctx: &mut Context, request: &mut Request) -> azure_core::Result<Response>;
 }

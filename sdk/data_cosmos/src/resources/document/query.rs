@@ -73,7 +73,7 @@ mod tests {
     use serde_json;
 
     #[test]
-    fn tst_query() {
+    fn tst_query() -> azure_core::Result<()> {
         let v3 = Value::from(vec![1, 2, 3]);
         let query = Query::with_params(
             "SELECT * FROM t".into(),
@@ -90,5 +90,6 @@ mod tests {
             ser,
             r#"{"query":"SELECT * FROM t","parameters":[{"name":"p1","value":"string"},{"name":"p2","value":100},{"name":"p3","value":[1,2,3]}]}"#
         );
+        Ok(())
     }
 }

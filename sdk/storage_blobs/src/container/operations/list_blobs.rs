@@ -1,11 +1,9 @@
 use crate::{blob::Blob, prelude::*};
-use azure_core::Method;
 use azure_core::{
     error::Error,
     headers::{date_from_headers, request_id_from_headers, Headers},
     prelude::*,
-    xml::read_xml,
-    Pageable, RequestId, Response as AzureResponse,
+    Method, Pageable, RequestId, Response as AzureResponse,
 };
 use time::OffsetDateTime;
 
@@ -149,9 +147,7 @@ pub struct BlobPrefix {
 impl ListBlobsResponse {
     pub async fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
-
-        let list_blobs_response_internal: ListBlobsResponseInternal = read_xml(&body)?;
+        let list_blobs_response_internal: ListBlobsResponseInternal = body.xml().await?;
 
         let next_marker = match list_blobs_response_internal.next_marker {
             Some(ref nm) if nm.is_empty() => None,
@@ -180,6 +176,7 @@ impl Continuable for ListBlobsResponse {
 
 #[cfg(test)]
 mod tests {
+    use azure_core::xml::read_xml;
     use bytes::Bytes;
 
     use super::*;

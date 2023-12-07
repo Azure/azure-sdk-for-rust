@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::{headers::Headers, CollectedResponse, Method};
+use azure_core::{headers::Headers, Method};
 use serde_json::{Map, Value};
 
 operation! {
@@ -64,16 +64,13 @@ impl UnwrapKeyBuilder {
                 Some(Value::Object(request_body).to_string().into()),
             );
 
-            let response = self
+            let mut result: UnwrapKeyResult = self
                 .client
                 .keyvault_client
                 .send(&self.context, &mut request)
+                .await?
+                .json()
                 .await?;
-
-            let response = CollectedResponse::from_response(response).await?;
-            let body = response.body();
-
-            let mut result = serde_json::from_slice::<UnwrapKeyResult>(body)?;
             result.algorithm = algorithm;
             Ok(result)
         })

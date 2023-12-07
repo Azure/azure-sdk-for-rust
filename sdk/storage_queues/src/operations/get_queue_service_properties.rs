@@ -1,5 +1,5 @@
 use crate::{QueueServiceClient, QueueServiceProperties};
-use azure_core::{headers::Headers, xml::read_xml, Method, Response as AzureResponse};
+use azure_core::{headers::Headers, Method, Response as AzureResponse};
 use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
 
@@ -35,9 +35,7 @@ pub struct GetQueueServicePropertiesResponse {
 impl GetQueueServicePropertiesResponse {
     async fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
-
-        let queue_service_properties = read_xml(&body)?;
+        let queue_service_properties = body.xml().await?;
 
         Ok(GetQueueServicePropertiesResponse {
             common_storage_response_headers: (&headers).try_into()?,

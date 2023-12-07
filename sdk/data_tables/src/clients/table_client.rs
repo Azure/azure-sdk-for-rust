@@ -1,5 +1,5 @@
 use crate::{clients::*, operations::*};
-use azure_core::{headers::Headers, Body, Context, Method, Request, Response, Url};
+use azure_core::{headers::Headers, to_json, Body, Context, Method, Request, Response, Url};
 use serde::{de::DeserializeOwned, Serialize};
 
 #[derive(Debug, Clone)]
@@ -36,7 +36,7 @@ impl TableClient {
         &self,
         entity: E,
     ) -> azure_core::Result<InsertEntityBuilder<R>> {
-        let body = serde_json::to_string(&entity)?.into();
+        let body = to_json(&entity)?.into();
         Ok(InsertEntityBuilder::new(self.clone(), body))
     }
 

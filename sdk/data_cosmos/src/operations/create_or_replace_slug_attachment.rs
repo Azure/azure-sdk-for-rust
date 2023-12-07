@@ -1,15 +1,12 @@
-use crate::headers::from_headers::*;
-use crate::prelude::*;
-use crate::resources::Attachment;
-use crate::ResourceQuota;
-use azure_core::headers;
-use azure_core::headers::{
-    date_from_headers, etag_from_headers, session_token_from_headers, HeaderValue,
+use crate::{headers::from_headers::*, prelude::*, resources::Attachment, ResourceQuota};
+use azure_core::{
+    content_type,
+    headers::{
+        self, date_from_headers, etag_from_headers, session_token_from_headers, HeaderValue,
+    },
+    prelude::*,
+    Method, Response as HttpResponse, SessionToken,
 };
-use azure_core::Method;
-use azure_core::Response as HttpResponse;
-use azure_core::SessionToken;
-use azure_core::{content_type, prelude::*};
 use bytes::Bytes;
 use time::OffsetDateTime;
 
@@ -104,12 +101,9 @@ pub struct CreateOrReplaceSlugAttachmentResponse {
 impl CreateOrReplaceSlugAttachmentResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
-
-        let attachment: Attachment = serde_json::from_slice(&body)?;
 
         Ok(Self {
-            attachment,
+            attachment: body.json().await?,
             max_media_storage_usage_mb: max_media_storage_usage_mb_from_headers(&headers)?,
             media_storage_usage_mb: media_storage_usage_mb_from_headers(&headers)?,
             last_change: last_state_change_from_headers(&headers)?,

@@ -29,7 +29,7 @@ impl ReplaceStoredProcedureBuilder {
                 id: self.client.stored_procedure_name(),
             };
 
-            req.set_body(serde_json::to_vec(&body)?);
+            req.set_json(&body)?;
 
             let response = self
                 .client

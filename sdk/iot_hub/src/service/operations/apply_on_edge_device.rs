@@ -1,7 +1,7 @@
 use crate::service::{ServiceClient, API_VERSION};
-
 use azure_core::{operation, Method};
 use serde::Serialize;
+
 operation! {
     /// The ApplyOnEdgeDeviceBuilder is used to construct a new device identity
     /// or the update an existing one.
@@ -29,8 +29,7 @@ impl ApplyOnEdgeDeviceBuilder {
                 modules_content: self.modules_content.unwrap_or_default(),
             };
 
-            let body = azure_core::to_json(&body)?;
-            request.set_body(body);
+            request.set_json(&body)?;
 
             self.client.send(&self.context, &mut request).await?;
 

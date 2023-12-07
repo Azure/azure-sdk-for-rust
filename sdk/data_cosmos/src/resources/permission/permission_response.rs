@@ -1,9 +1,9 @@
-use crate::headers::from_headers::*;
-
-use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use azure_core::Response as HttpResponse;
-
 use super::Permission;
+use crate::headers::from_headers::*;
+use azure_core::{
+    headers::{etag_from_headers, session_token_from_headers},
+    Response as HttpResponse,
+};
 
 #[derive(Debug, Clone)]
 pub struct PermissionResponse {
@@ -19,10 +19,9 @@ pub struct PermissionResponse {
 impl PermissionResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<PermissionResponse> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
 
         Ok(Self {
-            permission: serde_json::from_slice(&body)?,
+            permission: body.json().await?,
             charge: request_charge_from_headers(&headers)?,
             activity_id: activity_id_from_headers(&headers)?,
             session_token: session_token_from_headers(&headers)?,

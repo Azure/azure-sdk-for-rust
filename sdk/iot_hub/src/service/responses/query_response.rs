@@ -1,5 +1,7 @@
-use azure_core::headers::{self, continuation_token_from_headers_optional};
-use azure_core::prelude::Continuation;
+use azure_core::{
+    headers::{self, continuation_token_from_headers_optional},
+    prelude::Continuation,
+};
 use serde_json::Value;
 
 /// The response for a query invocation
@@ -15,10 +17,10 @@ pub struct QueryResponse {
 impl QueryResponse {
     pub(crate) async fn try_from(response: azure_core::Response) -> azure_core::Result<Self> {
         let collected = azure_core::CollectedResponse::from_response(response).await?;
-        let body = collected.body();
+        let result = collected.json()?;
 
         Ok(QueryResponse {
-            result: serde_json::from_slice(body)?,
+            result,
             continuation_token: continuation_token_from_headers_optional(collected.headers())?,
             item_type: collected.headers().get_as(&headers::ITEM_TYPE)?,
         })

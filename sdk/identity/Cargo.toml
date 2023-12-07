@@ -20,7 +20,6 @@ url = "2.2"
 futures = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 time = { version = "0.3.10", features = ["local-offset"] }
-serde_json = "1.0"
 log = "0.4"
 async-trait = "0.1"
 openssl = { version = "0.10.46",  optional=true }

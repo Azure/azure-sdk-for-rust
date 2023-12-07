@@ -1,12 +1,10 @@
-use crate::headers::from_headers::*;
-use crate::prelude::*;
-use crate::resources::ResourceType;
-use crate::ResourceQuota;
-
-use azure_core::headers::item_count_from_headers;
-use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
-use azure_core::prelude::*;
-use azure_core::{Pageable, Response as HttpResponse};
+use crate::{headers::from_headers::*, prelude::*, resources::ResourceType, ResourceQuota};
+use azure_core::{
+    headers::item_count_from_headers,
+    headers::{continuation_token_from_headers_optional, session_token_from_headers},
+    prelude::*,
+    Pageable, Response as HttpResponse,
+};
 use time::OffsetDateTime;
 
 operation! {
@@ -88,19 +86,18 @@ pub struct ListTriggersResponse {
 impl ListTriggersResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
 
         #[derive(Debug, Deserialize)]
-        struct Response<'a> {
+        struct Response {
             #[serde(rename = "_rid")]
-            rid: &'a str,
+            rid: String,
             #[serde(rename = "Triggers")]
             triggers: Vec<Trigger>,
             #[serde(rename = "_count")]
             #[allow(unused)]
             count: u32,
         }
-        let response: Response = serde_json::from_slice(&body)?;
+        let response: Response = body.json().await?;
 
         Ok(Self {
             rid: response.rid.to_owned(),

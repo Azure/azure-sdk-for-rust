@@ -18,6 +18,5 @@ mod properties;
 pub mod request_options;
 mod util;
 
-pub use azure_core::error::{Error, Result};
 pub use file_system::FileSystem;
 pub use properties::Properties;

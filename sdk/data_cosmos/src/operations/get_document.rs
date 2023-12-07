@@ -5,7 +5,7 @@ use crate::prelude::*;
 use crate::resources::Document;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers, Headers};
-use azure_core::{prelude::*, StatusCode};
+use azure_core::{from_json, prelude::*, StatusCode};
 use azure_core::{Response as HttpResponse, SessionToken};
 use serde::de::DeserializeOwned;
 use time::OffsetDateTime;
@@ -153,8 +153,7 @@ where
 {
     async fn try_from(headers: &Headers, body: bytes::Bytes) -> azure_core::Result<Self> {
         Ok(Self {
-            document: serde_json::from_slice(&body)?,
-
+            document: from_json(&body)?,
             content_location: content_location_from_headers(headers)?,
             last_state_change: last_state_change_from_headers(headers)?,
             etag: etag_from_headers(headers)?,

@@ -1,5 +1,5 @@
 use crate::{operations::*, prelude::*};
-use azure_core::{headers::Headers, Body, Context, Method, Request, Response, Url};
+use azure_core::{headers::Headers, to_json, Body, Context, Method, Request, Response, Url};
 use serde::{de::DeserializeOwned, Serialize};
 
 #[derive(Debug, Clone)]
@@ -34,7 +34,7 @@ impl EntityClient {
         entity: E,
         if_match_condition: IfMatchCondition,
     ) -> azure_core::Result<UpdateOrMergeEntityBuilder> {
-        let body = serde_json::to_string(&entity)?.into();
+        let body = to_json(&entity)?.into();
         Ok(UpdateOrMergeEntityBuilder::new(
             self.clone(),
             body,
@@ -48,7 +48,7 @@ impl EntityClient {
         entity: E,
         if_match_condition: IfMatchCondition,
     ) -> azure_core::Result<UpdateOrMergeEntityBuilder> {
-        let body = serde_json::to_string(&entity)?.into();
+        let body = to_json(&entity)?.into();
         Ok(UpdateOrMergeEntityBuilder::new(
             self.clone(),
             body,
@@ -61,7 +61,7 @@ impl EntityClient {
         &self,
         entity: E,
     ) -> azure_core::Result<InsertOrReplaceOrMergeEntityBuilder> {
-        let body = serde_json::to_string(&entity)?.into();
+        let body = to_json(&entity)?.into();
         Ok(InsertOrReplaceOrMergeEntityBuilder::new(
             self.clone(),
             body,
@@ -73,7 +73,7 @@ impl EntityClient {
         &self,
         entity: E,
     ) -> azure_core::Result<InsertOrReplaceOrMergeEntityBuilder> {
-        let body = serde_json::to_string(&entity)?.into();
+        let body = to_json(&entity)?.into();
         Ok(InsertOrReplaceOrMergeEntityBuilder::new(
             self.clone(),
             body,

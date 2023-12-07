@@ -34,7 +34,6 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
     pub fn into_future(self) -> CreateDocument {
         Box::pin(async move {
             let document = self.document;
-            let serialized = serde_json::to_string(&document)?;
             let partition_key = match self.partition_key {
                 Some(s) => s,
                 None => serialize_partition_key(&document.partition_key())?,
@@ -64,7 +63,7 @@ impl<D: Serialize + CosmosEntity + Send + 'static> CreateDocumentBuilder<D> {
                     .unwrap_or(TentativeWritesAllowance::Deny),
             );
 
-            request.set_body(serialized);
+            request.set_json(&document)?;
             let response = self
                 .client
                 .pipeline()

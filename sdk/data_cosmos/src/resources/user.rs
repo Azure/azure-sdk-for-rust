@@ -3,6 +3,7 @@
 use super::Resource;
 use crate::headers::from_headers::*;
 use azure_core::{
+    from_json,
     headers::{etag_from_headers, session_token_from_headers},
     Response as HttpResponse,
 };
@@ -36,9 +37,9 @@ pub struct User {
 }
 
 impl std::convert::TryFrom<&[u8]> for User {
-    type Error = serde_json::Error;
+    type Error = azure_core::Error;
     fn try_from(body: &[u8]) -> Result<Self, Self::Error> {
-        serde_json::from_slice(body)
+        from_json(body)
     }
 }
 
@@ -67,10 +68,9 @@ impl UserResponse {
     /// Creates a `UserResponse` from an `HttpResponse`
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
 
         Ok(Self {
-            user: serde_json::from_slice(&body)?,
+            user: body.json().await?,
             charge: request_charge_from_headers(&headers)?,
             activity_id: activity_id_from_headers(&headers)?,
             session_token: session_token_from_headers(&headers)?,

@@ -1,6 +1,7 @@
 use super::PermissionToken;
 use crate::resources::Resource;
 
+use azure_core::from_json;
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 
@@ -90,16 +91,7 @@ impl std::convert::TryFrom<&[u8]> for Permission {
     type Error = azure_core::error::Error;
 
     fn try_from(slice: &[u8]) -> Result<Self, Self::Error> {
-        use azure_core::error::ResultExt;
-        serde_json::from_slice::<Self>(slice).with_context(
-            azure_core::error::ErrorKind::DataConversion,
-            || {
-                format!(
-                    "could not convert json '{}' into Permission",
-                    std::str::from_utf8(slice).unwrap_or("<NON-UTF8>")
-                )
-            },
-        )
+        from_json(slice)
     }
 }
 
@@ -120,8 +112,8 @@ mod tests {
 } "#;
 
     #[test]
-    fn parse_permission() {
-        let permission: Permission = serde_json::from_str(PERMISSION_JSON).unwrap();
+    fn parse_permission() -> azure_core::Result<()> {
+        let permission: Permission = from_json(PERMISSION_JSON)?;
 
         assert_eq!(
             permission.permission_token,
@@ -131,5 +123,6 @@ mod tests {
             permission.permission_mode,
             PermissionMode::Read(r#"dbs/volcanodb/colls/volcano1"#.into())
         );
+        Ok(())
     }
 }

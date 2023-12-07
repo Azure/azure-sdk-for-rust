@@ -23,7 +23,7 @@ impl CreateUserBuilder {
             let body = CreateUserBody {
                 id: self.client.user_name(),
             };
-            request.set_body(serde_json::to_vec(&body)?);
+            request.set_json(&body)?;
             let response = self
                 .client
                 .pipeline()

@@ -13,12 +13,12 @@ impl<S> TryFrom<CollectedResponse> for EntityWithMetadata<S>
 where
     S: DeserializeOwned,
 {
-    type Error = serde_json::Error;
+    type Error = azure_core::Error;
 
     fn try_from(response: CollectedResponse) -> Result<Self, Self::Error> {
         Ok(EntityWithMetadata {
-            metadata: serde_json::from_slice(response.body())?,
-            entity: serde_json::from_slice(response.body())?,
+            metadata: response.json()?,
+            entity: response.json()?,
         })
     }
 }

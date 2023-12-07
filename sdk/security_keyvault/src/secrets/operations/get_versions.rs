@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::{error::Error, headers::Headers, CollectedResponse, Method, Pageable, Url};
+use azure_core::{error::Error, headers::Headers, Method, Pageable, Url};
 
 operation! {
     #[stream]
@@ -24,13 +24,12 @@ impl GetSecretVersionsBuilder {
                 let headers = Headers::new();
                 let mut request = KeyvaultClient::finalize_request(uri, Method::Get, headers, None);
 
-                let response = this.client.keyvault_client.send(&ctx, &mut request).await?;
-
-                let response = CollectedResponse::from_response(response).await?;
-                let body = response.body();
-
-                let response = serde_json::from_slice::<KeyVaultGetSecretsResponse>(body)?;
-                Ok(response)
+                this.client
+                    .keyvault_client
+                    .send(&ctx, &mut request)
+                    .await?
+                    .json()
+                    .await
             }
         };
         Pageable::new(make_request)

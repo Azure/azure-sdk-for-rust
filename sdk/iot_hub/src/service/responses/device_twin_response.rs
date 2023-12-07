@@ -49,10 +49,6 @@ impl std::convert::TryFrom<crate::service::CollectedResponse> for DeviceTwinResp
     type Error = Error;
 
     fn try_from(response: crate::service::CollectedResponse) -> azure_core::Result<Self> {
-        let body = response.body();
-
-        let device_twin_response: DeviceTwinResponse = serde_json::from_slice(body)?;
-
-        Ok(device_twin_response)
+        response.json()
     }
 }

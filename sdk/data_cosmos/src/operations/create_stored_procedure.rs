@@ -1,9 +1,8 @@
-use crate::headers::from_headers::*;
-use crate::prelude::*;
-use crate::resources::StoredProcedure;
-use crate::ResourceQuota;
-use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use azure_core::Response as HttpResponse;
+use crate::{headers::from_headers::*, prelude::*, resources::StoredProcedure, ResourceQuota};
+use azure_core::{
+    headers::{etag_from_headers, session_token_from_headers},
+    Response as HttpResponse,
+};
 use time::OffsetDateTime;
 
 operation! {
@@ -34,7 +33,7 @@ impl CreateStoredProcedureBuilder {
                 id: self.client.stored_procedure_name(),
             };
 
-            req.set_body(serde_json::to_vec(&body)?);
+            req.set_json(&body)?;
 
             let response = self
                 .client
@@ -68,10 +67,9 @@ pub struct CreateStoredProcedureResponse {
 impl CreateStoredProcedureResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
 
         Ok(Self {
-            stored_procedure: serde_json::from_slice(&body)?,
+            stored_procedure: body.json().await?,
             charge: request_charge_from_headers(&headers)?,
             activity_id: activity_id_from_headers(&headers)?,
             etag: etag_from_headers(&headers)?,

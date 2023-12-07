@@ -18,7 +18,7 @@ impl ReplaceUserBuilder {
             let body = ReplaceUserBody {
                 id: &self.user_name,
             };
-            request.set_body(serde_json::to_vec(&body)?);
+            request.set_json(&body)?;
             let response = self
                 .client
                 .pipeline()

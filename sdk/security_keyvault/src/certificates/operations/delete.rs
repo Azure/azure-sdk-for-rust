@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::{headers::Headers, CollectedResponse, Method};
+use azure_core::{headers::Headers, Method};
 
 operation! {
     DeleteCertificate,
@@ -16,16 +16,12 @@ impl DeleteCertificateBuilder {
             let headers = Headers::new();
             let mut request = KeyvaultClient::finalize_request(uri, Method::Delete, headers, None);
 
-            let response = self
-                .client
+            self.client
                 .keyvault_client
                 .send(&self.context, &mut request)
-                .await?;
-
-            let response = CollectedResponse::from_response(response).await?;
-            let body = response.body();
-            let response = serde_json::from_slice::<KeyVaultGetCertificateResponse>(body)?;
-            Ok(response)
+                .await?
+                .json()
+                .await
         })
     }
 }

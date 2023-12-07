@@ -238,13 +238,13 @@ impl ClientCertificateCredential {
 
         let rsp = self.http_client.execute_request(&req).await?;
         let rsp_status = rsp.status();
-        let rsp_body = rsp.into_body().collect().await?;
 
         if !rsp_status.is_success() {
+            let rsp_body = rsp.into_body().collect().await?;
             return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
         }
 
-        let response: AadTokenResponse = serde_json::from_slice(&rsp_body)?;
+        let response: AadTokenResponse = rsp.json().await?;
         Ok(AccessToken::new(
             response.access_token,
             OffsetDateTime::now_utc() + Duration::from_secs(response.expires_in),

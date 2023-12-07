@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::{headers::*, prelude::*, xml::read_xml, RequestId};
+use azure_core::{headers::*, prelude::*, RequestId, ResponseBody};
 use time::OffsetDateTime;
 
 operation! {
@@ -29,9 +29,7 @@ impl GetTagsBuilder {
             let response = self.client.send(&mut self.context, &mut request).await?;
 
             let (_, headers, body) = response.deconstruct();
-            let body = body.collect().await?;
-
-            GetTagsResponse::from_response(&headers, &body)
+            GetTagsResponse::from_response(headers, body).await
         })
     }
 }
@@ -44,10 +42,13 @@ pub struct GetTagsResponse {
 }
 
 impl GetTagsResponse {
-    pub(crate) fn from_response(headers: &Headers, body: &[u8]) -> azure_core::Result<Self> {
-        let request_id = request_id_from_headers(headers)?;
-        let date = date_from_headers(headers)?;
-        let tags = read_xml(body)?;
+    pub(crate) async fn from_response(
+        headers: Headers,
+        body: ResponseBody,
+    ) -> azure_core::Result<Self> {
+        let request_id = request_id_from_headers(&headers)?;
+        let date = date_from_headers(&headers)?;
+        let tags = body.xml().await?;
 
         Ok(Self {
             request_id,

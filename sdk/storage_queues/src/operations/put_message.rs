@@ -1,12 +1,9 @@
 use crate::{prelude::*, queue_message::QueueMessageSubmit};
 use azure_core::{
-    date,
-    headers::Headers,
-    prelude::*,
-    xml::{read_xml, to_xml},
-    Method, Response as AzureResponse,
+    date, headers::Headers, prelude::*, xml::to_xml, Method, Response as AzureResponse,
 };
 use azure_storage::headers::CommonStorageResponseHeaders;
+use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
 use time::OffsetDateTime;
 
@@ -82,9 +79,7 @@ struct QueueMessageInternal {
 impl PutMessageResponse {
     async fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
-
-        let response: PutMessageResponseInternal = read_xml(&body)?;
+        let response: PutMessageResponseInternal = body.xml().await?;
         let queue_message = response.queue_message;
 
         let queue_message = QueueMessage {
