@@ -405,6 +405,9 @@ pub struct LedgerProperties {
     #[doc = "Object representing ProvisioningState for Confidential Ledger."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<ProvisioningState>,
+    #[doc = "SKU associated with the ledger resource"]
+    #[serde(rename = "ledgerSku", default, skip_serializing_if = "Option::is_none")]
+    pub ledger_sku: Option<LedgerSku>,
     #[doc = "Array of all AAD based Security Principals."]
     #[serde(
         rename = "aadBasedSecurityPrincipals",
@@ -462,6 +465,45 @@ impl Serialize for LedgerRoleName {
             Self::Reader => serializer.serialize_unit_variant("LedgerRoleName", 0u32, "Reader"),
             Self::Contributor => serializer.serialize_unit_variant("LedgerRoleName", 1u32, "Contributor"),
             Self::Administrator => serializer.serialize_unit_variant("LedgerRoleName", 2u32, "Administrator"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "SKU associated with the ledger resource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "LedgerSku")]
+pub enum LedgerSku {
+    Standard,
+    Basic,
+    Unknown,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for LedgerSku {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for LedgerSku {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for LedgerSku {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Standard => serializer.serialize_unit_variant("LedgerSku", 0u32, "Standard"),
+            Self::Basic => serializer.serialize_unit_variant("LedgerSku", 1u32, "Basic"),
+            Self::Unknown => serializer.serialize_unit_variant("LedgerSku", 2u32, "Unknown"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }

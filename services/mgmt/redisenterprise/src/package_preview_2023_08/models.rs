@@ -18,21 +18,6 @@ impl AccessKeys {
         Self::default()
     }
 }
-#[doc = "Information about the features the location supports"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct Capability {
-    #[doc = "Feature name"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[doc = "Indicates whether feature is supported or not"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<bool>,
-}
-impl Capability {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Parameters body to pass for resource name availability check."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CheckNameAvailabilityParameters {
@@ -718,25 +703,6 @@ pub mod linked_database {
         }
     }
 }
-#[doc = "Information about location (for example: features that it supports)"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct LocationInfo {
-    #[doc = "Location name"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[doc = "List of capabilities"]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub capabilities: Vec<Capability>,
-}
-impl LocationInfo {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Managed service identity (system assigned and/or user assigned identities)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ManagedServiceIdentity {
@@ -1419,46 +1385,6 @@ pub mod regenerate_key_parameters {
         Secondary,
     }
 }
-#[doc = "Details about the location requested and the available skus in the location"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct RegionSkuDetail {
-    #[doc = "Resource type which has the SKU, such as Microsoft.Cache/redisEnterprise"]
-    #[serde(rename = "resourceType", default, skip_serializing_if = "Option::is_none")]
-    pub resource_type: Option<String>,
-    #[doc = "Information about location (for example: features that it supports)"]
-    #[serde(rename = "locationInfo", default, skip_serializing_if = "Option::is_none")]
-    pub location_info: Option<LocationInfo>,
-    #[doc = "Information about Sku"]
-    #[serde(rename = "skuDetails", default, skip_serializing_if = "Option::is_none")]
-    pub sku_details: Option<SkuDetail>,
-}
-impl RegionSkuDetail {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "List of details about all the available SKUs"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct RegionSkuDetails {
-    #[doc = "List of Sku Detail"]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<RegionSkuDetail>,
-}
-impl azure_core::Continuable for RegionSkuDetails {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        None
-    }
-}
-impl RegionSkuDetails {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -1552,17 +1478,6 @@ pub struct Sku {
 impl Sku {
     pub fn new(name: SkuName) -> Self {
         Self { name, capacity: None }
-    }
-}
-#[doc = "Information about Sku"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SkuDetail {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<SkuName>,
-}
-impl SkuDetail {
-    pub fn new() -> Self {
-        Self::default()
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

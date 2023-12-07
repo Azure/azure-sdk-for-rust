@@ -347,6 +347,9 @@ pub struct AcsChatThreadCreatedWithUserEventData {
     #[doc = "The thread properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+    #[doc = "The thread metadata"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
     #[doc = "The list of properties of participants who are part of the thread"]
     #[serde(
         default,
@@ -420,6 +423,9 @@ pub struct AcsChatThreadParticipantProperties {
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
     #[serde(rename = "participantCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub participant_communication_identifier: Option<CommunicationIdentifierModel>,
+    #[doc = "The metadata of the user"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
 }
 impl AcsChatThreadParticipantProperties {
     pub fn new() -> Self {
@@ -440,6 +446,9 @@ pub struct AcsChatThreadPropertiesUpdatedEventData {
     #[doc = "The updated thread properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+    #[doc = "The thread metadata"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
 }
 impl AcsChatThreadPropertiesUpdatedEventData {
     pub fn new() -> Self {
@@ -457,6 +466,9 @@ pub struct AcsChatThreadPropertiesUpdatedPerUserEventData {
     #[doc = "The time at which the properties of the thread were updated"]
     #[serde(rename = "editTime", default, with = "azure_core::date::rfc3339::option")]
     pub edit_time: Option<time::OffsetDateTime>,
+    #[doc = "The thread metadata"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
     #[doc = "The updated thread properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,

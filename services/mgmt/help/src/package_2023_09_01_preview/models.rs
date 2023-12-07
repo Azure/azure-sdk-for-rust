@@ -170,7 +170,7 @@ impl DiagnosticResource {
 #[doc = "Diagnostic resource properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DiagnosticResourceProperties {
-    #[doc = "Global parameters that can be passed to all solutionIds."]
+    #[doc = "Global parameters is an optional map which can be used to add key and  value to request body to improve the diagnostics results"]
     #[serde(rename = "globalParameters", default, skip_serializing_if = "Option::is_none")]
     pub global_parameters: Option<serde_json::Value>,
     #[doc = "SolutionIds that are needed to be invoked."]
@@ -208,6 +208,7 @@ pub mod diagnostic_resource_properties {
         Succeeded,
         PartialComplete,
         Failed,
+        Running,
         Canceled,
         #[serde(skip_deserializing)]
         UnknownValue(String),
@@ -237,7 +238,8 @@ pub mod diagnostic_resource_properties {
                 Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Succeeded"),
                 Self::PartialComplete => serializer.serialize_unit_variant("ProvisioningState", 1u32, "PartialComplete"),
                 Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Failed"),
-                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Canceled"),
+                Self::Running => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Running"),
+                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Canceled"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -733,6 +735,47 @@ impl ProxyResource {
         Self::default()
     }
 }
+#[doc = "Type of Question"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "QuestionType")]
+pub enum QuestionType {
+    RadioButton,
+    Dropdown,
+    TextInput,
+    MultiLineInfoBox,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for QuestionType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for QuestionType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for QuestionType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::RadioButton => serializer.serialize_unit_variant("QuestionType", 0u32, "RadioButton"),
+            Self::Dropdown => serializer.serialize_unit_variant("QuestionType", 1u32, "Dropdown"),
+            Self::TextInput => serializer.serialize_unit_variant("QuestionType", 2u32, "TextInput"),
+            Self::MultiLineInfoBox => serializer.serialize_unit_variant("QuestionType", 3u32, "MultiLineInfoBox"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "Solution replacement maps."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ReplacementMaps {
@@ -1026,7 +1069,7 @@ impl SolutionMetadataResource {
         Self::default()
     }
 }
-#[doc = "Solution response."]
+#[doc = "Solution response"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SolutionPatchRequestBody {
     #[doc = "Solution result"]
@@ -1041,15 +1084,8 @@ impl SolutionPatchRequestBody {
 #[doc = "Solution response."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SolutionResource {
-    #[doc = "Full resource uri of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Type of resource."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[doc = "Resource name."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
     #[doc = "Solution result"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SolutionResourceProperties>,
@@ -1108,7 +1144,9 @@ pub mod solution_resource_properties {
     #[serde(remote = "ProvisioningState")]
     pub enum ProvisioningState {
         Succeeded,
+        PartialComplete,
         Failed,
+        Running,
         Canceled,
         #[serde(skip_deserializing)]
         UnknownValue(String),
@@ -1136,8 +1174,10 @@ pub mod solution_resource_properties {
         {
             match self {
                 Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Succeeded"),
-                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Failed"),
-                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Canceled"),
+                Self::PartialComplete => serializer.serialize_unit_variant("ProvisioningState", 1u32, "PartialComplete"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Failed"),
+                Self::Running => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Running"),
+                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Canceled"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -1435,9 +1475,9 @@ pub struct StepInput {
     #[doc = "Use Index as QuestionId."]
     #[serde(rename = "questionId", default, skip_serializing_if = "Option::is_none")]
     pub question_id: Option<String>,
-    #[doc = "Text Input. Will be a single line input."]
+    #[doc = "Type of Question"]
     #[serde(rename = "questionType", default, skip_serializing_if = "Option::is_none")]
-    pub question_type: Option<String>,
+    pub question_type: Option<QuestionType>,
     #[doc = "User question content."]
     #[serde(rename = "questionContent", default, skip_serializing_if = "Option::is_none")]
     pub question_content: Option<String>,
@@ -1659,9 +1699,9 @@ pub struct TroubleshooterResponse {
     #[doc = "id of the question."]
     #[serde(rename = "questionId", default, skip_serializing_if = "Option::is_none")]
     pub question_id: Option<String>,
-    #[doc = "Text Input. Will be a single line input."]
+    #[doc = "Type of Question"]
     #[serde(rename = "questionType", default, skip_serializing_if = "Option::is_none")]
-    pub question_type: Option<troubleshooter_response::QuestionType>,
+    pub question_type: Option<QuestionType>,
     #[doc = "Response key for SingleInput. For Multi-line test/open ended question it is free form text"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub response: Option<String>,
@@ -1669,50 +1709,6 @@ pub struct TroubleshooterResponse {
 impl TroubleshooterResponse {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-pub mod troubleshooter_response {
-    use super::*;
-    #[doc = "Text Input. Will be a single line input."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "QuestionType")]
-    pub enum QuestionType {
-        RadioButton,
-        Dropdown,
-        TextInput,
-        MultiLineInfoBox,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for QuestionType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for QuestionType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for QuestionType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::RadioButton => serializer.serialize_unit_variant("QuestionType", 0u32, "RadioButton"),
-                Self::Dropdown => serializer.serialize_unit_variant("QuestionType", 1u32, "Dropdown"),
-                Self::TextInput => serializer.serialize_unit_variant("QuestionType", 2u32, "TextInput"),
-                Self::MultiLineInfoBox => serializer.serialize_unit_variant("QuestionType", 3u32, "MultiLineInfoBox"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
     }
 }
 #[doc = "Video detail"]

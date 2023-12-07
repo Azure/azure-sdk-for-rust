@@ -796,7 +796,7 @@ pub struct AlertsSuppressionRuleProperties {
     #[doc = "The last time this rule was modified"]
     #[serde(rename = "lastModifiedUtc", default, with = "azure_core::date::rfc3339::option")]
     pub last_modified_utc: Option<time::OffsetDateTime>,
-    #[doc = "Expiration date of the rule, if value is not provided or provided as null this field will default to the maximum allowed expiration date."]
+    #[doc = "Expiration date of the rule, if value is not provided or provided as null there will no expiration at all"]
     #[serde(rename = "expirationDateUtc", default, with = "azure_core::date::rfc3339::option")]
     pub expiration_date_utc: Option<time::OffsetDateTime>,
     #[doc = "The reason for dismissing the alert"]

@@ -77,45 +77,38 @@ impl MetadataValue {
 #[doc = "The result data of a query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metric {
-    #[doc = "The metric Id."]
+    #[doc = "the metric Id."]
     pub id: String,
-    #[doc = "The localizable string class."]
-    pub name: LocalizableString,
-    #[doc = "Description of this metric"]
-    #[serde(rename = "displayDescription")]
-    pub display_description: String,
-    #[doc = "The resource type of the metric resource."]
+    #[doc = "the resource type of the metric resource."]
     #[serde(rename = "type")]
     pub type_: String,
-    #[doc = "The unit of the metric."]
-    pub unit: MetricUnit,
-    #[doc = "The time series returned when a data query is performed."]
-    pub timeseries: Vec<TimeSeriesElement>,
+    #[doc = "The localizable string class."]
+    pub name: LocalizableString,
+    #[doc = "Detailed description of this metric."]
+    #[serde(rename = "displayDescription", default, skip_serializing_if = "Option::is_none")]
+    pub display_description: Option<String>,
     #[doc = "'Success' or the error details on query failures for this metric."]
     #[serde(rename = "errorCode", default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
     #[doc = "Error message encountered querying this specific metric."]
     #[serde(rename = "errorMessage", default, skip_serializing_if = "Option::is_none")]
     pub error_message: Option<String>,
+    #[doc = "The unit of the metric."]
+    pub unit: Unit,
+    #[doc = "the time series returned when a data query is performed."]
+    pub timeseries: Vec<TimeSeriesElement>,
 }
 impl Metric {
-    pub fn new(
-        id: String,
-        name: LocalizableString,
-        display_description: String,
-        type_: String,
-        unit: MetricUnit,
-        timeseries: Vec<TimeSeriesElement>,
-    ) -> Self {
+    pub fn new(id: String, type_: String, name: LocalizableString, unit: Unit, timeseries: Vec<TimeSeriesElement>) -> Self {
         Self {
             id,
-            name,
-            display_description,
             type_,
-            unit,
-            timeseries,
+            name,
+            display_description: None,
             error_code: None,
             error_message: None,
+            unit,
+            timeseries,
         }
     }
 }
@@ -134,23 +127,6 @@ impl MetricResultsResponse {
     pub fn new() -> Self {
         Self::default()
     }
-}
-#[doc = "The unit of the metric."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub enum MetricUnit {
-    Count,
-    Bytes,
-    Seconds,
-    CountPerSecond,
-    BytesPerSecond,
-    Percent,
-    MilliSeconds,
-    ByteSeconds,
-    Unspecified,
-    Cores,
-    MilliCores,
-    NanoCores,
-    BitsPerSecond,
 }
 #[doc = "Represents a metric value."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -205,7 +181,7 @@ impl ResourceIdList {
 #[doc = "A time series result type. The discriminator value is always TimeSeries in this case."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeSeriesElement {
-    #[doc = "The metadata values returned if filter was specified in the call."]
+    #[doc = "the metadata values returned if $filter was specified in the call."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
@@ -223,5 +199,64 @@ pub struct TimeSeriesElement {
 impl TimeSeriesElement {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "The unit of the metric."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "Unit")]
+pub enum Unit {
+    Count,
+    Bytes,
+    Seconds,
+    CountPerSecond,
+    BytesPerSecond,
+    Percent,
+    MilliSeconds,
+    ByteSeconds,
+    Unspecified,
+    Cores,
+    MilliCores,
+    NanoCores,
+    BitsPerSecond,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for Unit {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for Unit {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for Unit {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Count => serializer.serialize_unit_variant("Unit", 0u32, "Count"),
+            Self::Bytes => serializer.serialize_unit_variant("Unit", 1u32, "Bytes"),
+            Self::Seconds => serializer.serialize_unit_variant("Unit", 2u32, "Seconds"),
+            Self::CountPerSecond => serializer.serialize_unit_variant("Unit", 3u32, "CountPerSecond"),
+            Self::BytesPerSecond => serializer.serialize_unit_variant("Unit", 4u32, "BytesPerSecond"),
+            Self::Percent => serializer.serialize_unit_variant("Unit", 5u32, "Percent"),
+            Self::MilliSeconds => serializer.serialize_unit_variant("Unit", 6u32, "MilliSeconds"),
+            Self::ByteSeconds => serializer.serialize_unit_variant("Unit", 7u32, "ByteSeconds"),
+            Self::Unspecified => serializer.serialize_unit_variant("Unit", 8u32, "Unspecified"),
+            Self::Cores => serializer.serialize_unit_variant("Unit", 9u32, "Cores"),
+            Self::MilliCores => serializer.serialize_unit_variant("Unit", 10u32, "MilliCores"),
+            Self::NanoCores => serializer.serialize_unit_variant("Unit", 11u32, "NanoCores"),
+            Self::BitsPerSecond => serializer.serialize_unit_variant("Unit", 12u32, "BitsPerSecond"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }

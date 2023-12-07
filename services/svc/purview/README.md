@@ -14,4 +14,4 @@ The following [tags](https://github.com/Azure/azure-sdk-for-rust/blob/main/servi
 - `package-preview-2022-08` has 107 operations from 1 API versions: `2022-08-01-preview`. Use crate feature `package-preview-2022-08` to enable. The operations will be in the `package_preview_2022_08` module.
 - `package-preview-2022-03` has 105 operations from 1 API versions: `2022-03-01-preview`. Use crate feature `package-preview-2022-03` to enable. The operations will be in the `package_preview_2022_03` module.
 - `package-2023-10-01-preview` has 15 operations from 1 API versions: `2023-10-01-preview`. Use crate feature `package-2023-10-01-preview` to enable. The operations will be in the `package_2023_10_01_preview` module.
-- `package-2023-09` has 96 operations from 1 API versions: `2023-09-01`. Use crate feature `package-2023-09` to enable. The operations will be in the `package_2023_09` module.
+- `package-2023-09` has 58 operations from 1 API versions: `2023-09-01`. Use crate feature `package-2023-09` to enable. The operations will be in the `package_2023_09` module.

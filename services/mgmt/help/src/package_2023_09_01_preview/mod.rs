@@ -264,7 +264,7 @@ pub mod check_name_availability {
         #[doc = "This API is used to check the uniqueness of a resource name used for a diagnostic, troubleshooter or solutions"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `scope`: This is an extension resource provider and only resource level extension is supported at the moment."]
+        #[doc = "* `scope`: scope = resourceUri of affected resource.<br/> For example: /subscriptions/0d0fcd2e-c4fd-4349-8497-200edb3923c6/resourcegroups/myresourceGroup/providers/Microsoft.KeyVault/vaults/test-keyvault-non-read "]
         pub fn post(&self, scope: impl Into<String>) -> post::RequestBuilder {
             post::RequestBuilder {
                 client: self.0.clone(),
@@ -399,7 +399,7 @@ pub mod diagnostics {
         #[doc = "Get the diagnostics using the 'diagnosticsResourceName' you chose while creating the diagnostic."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `scope`: This is an extension resource provider and only resource level extension is supported at the moment."]
+        #[doc = "* `scope`: scope = resourceUri of affected resource.<br/> For example: /subscriptions/0d0fcd2e-c4fd-4349-8497-200edb3923c6/resourcegroups/myresourceGroup/providers/Microsoft.KeyVault/vaults/test-keyvault-non-read "]
         #[doc = "* `diagnostics_resource_name`: Unique resource name for insight resources"]
         pub fn get(&self, scope: impl Into<String>, diagnostics_resource_name: impl Into<String>) -> get::RequestBuilder {
             get::RequestBuilder {
@@ -408,10 +408,10 @@ pub mod diagnostics {
                 diagnostics_resource_name: diagnostics_resource_name.into(),
             }
         }
-        #[doc = "Creates a diagnostic for the specific resource using solutionId and requiredInputs* from discovery solutions. <br/>Diagnostics tells you precisely the root cause of the issue and the steps to address it. You can get diagnostics once you discover the relevant solution for your Azure issue. <br/><br/> <b>Note: </b> requiredInputs’ from Discovery solutions response must be passed via ‘additionalParameters’ as an input to Diagnostics API."]
+        #[doc = "Creates a diagnostic for the specific resource using solutionId and requiredInputs* from discovery solutions. <br/>Diagnostics are powerful solutions that access product resources or other relevant data and provide the root cause of the issue and the steps to address the issue.<br/><br/> <b>Note: </b> ‘requiredInputs’ from Discovery solutions response must be passed via ‘additionalParameters’ as an input to Diagnostics API."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `scope`: This is an extension resource provider and only resource level extension is supported at the moment."]
+        #[doc = "* `scope`: scope = resourceUri of affected resource.<br/> For example: /subscriptions/0d0fcd2e-c4fd-4349-8497-200edb3923c6/resourcegroups/myresourceGroup/providers/Microsoft.KeyVault/vaults/test-keyvault-non-read "]
         #[doc = "* `diagnostics_resource_name`: Unique resource name for insight resources"]
         pub fn create(&self, scope: impl Into<String>, diagnostics_resource_name: impl Into<String>) -> create::RequestBuilder {
             create::RequestBuilder {
@@ -700,10 +700,10 @@ pub mod discovery_solution {
     use futures::future::LocalBoxFuture as BoxFuture;
     pub struct Client(pub(crate) super::Client);
     impl Client {
-        #[doc = "Lists the relevant Azure diagnostics and solutions using [problemClassification API](https://learn.microsoft.com/rest/api/support/problem-classifications/list?tabs=HTTP)) AND  resourceUri or resourceType.<br/> Discovery Solutions is the initial entry point within Help API, which identifies relevant Azure diagnostics and solutions. We will do our best to return the most effective solutions based on the type of inputs, in the request URL  <br/><br/> Mandatory input :  problemClassificationId (Use the [problemClassification API](https://learn.microsoft.com/rest/api/support/problem-classifications/list?tabs=HTTP)) <br/>Optional input: resourceUri OR resource Type <br/><br/> <b>Note: </b>  ‘requiredInputs’ from Discovery solutions response must be passed via ‘additionalParameters’ as an input to Diagnostics and Solutions API."]
+        #[doc = "Lists the relevant Azure diagnostics and solutions using [problemClassification API](https://learn.microsoft.com/rest/api/support/problem-classifications/list?tabs=HTTP)) AND  resourceUri or resourceType.<br/> Discovery Solutions is the initial entry point within Help API, which identifies relevant Azure diagnostics and solutions. <br/><br/> Required Input :  problemClassificationId (Use the [problemClassification API](https://learn.microsoft.com/rest/api/support/problem-classifications/list?tabs=HTTP)) <br/>Optional input: resourceUri OR resource Type <br/><br/> <b>Note: </b>  ‘requiredInputs’ from Discovery solutions response must be passed via ‘additionalParameters’ as an input to Diagnostics and Solutions API."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `scope`: This is an extension resource provider and only resource level extension is supported at the moment."]
+        #[doc = "* `scope`: scope = resourceUri of affected resource.<br/> For example: /subscriptions/0d0fcd2e-c4fd-4349-8497-200edb3923c6/resourcegroups/myresourceGroup/providers/Microsoft.KeyVault/vaults/test-keyvault-non-read "]
         pub fn list(&self, scope: impl Into<String>) -> list::RequestBuilder {
             list::RequestBuilder {
                 client: self.0.clone(),
@@ -770,7 +770,7 @@ pub mod discovery_solution {
             pub(crate) skiptoken: Option<String>,
         }
         impl RequestBuilder {
-            #[doc = "'ProblemClassificationId' or 'Id' is a mandatory filter to get solutions ids. It also supports optional 'ResourceType' and 'SolutionType' filters. The filter supports only 'and', 'or' and 'eq' operators. Example: $filter=ProblemClassificationId eq '1ddda5b4-cf6c-4d4f-91ad-bc38ab0e811e'"]
+            #[doc = "'ProblemClassificationId' is a mandatory filter to get solutions ids. It also supports optional 'ResourceType' and 'SolutionType' filters. The [$filter](https://learn.microsoft.com/en-us/odata/webapi/first-odata-api#filter) supports only 'and', 'or' and 'eq' operators. Example: $filter=ProblemClassificationId eq '1ddda5b4-cf6c-4d4f-91ad-bc38ab0e811e'"]
             pub fn filter(mut self, filter: impl Into<String>) -> Self {
                 self.filter = Some(filter.into());
                 self
@@ -857,7 +857,7 @@ pub mod solution {
         #[doc = "Get the solution using the applicable solutionResourceName while creating the solution."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `scope`: This is an extension resource provider and only resource level extension is supported at the moment."]
+        #[doc = "* `scope`: scope = resourceUri of affected resource.<br/> For example: /subscriptions/0d0fcd2e-c4fd-4349-8497-200edb3923c6/resourcegroups/myresourceGroup/providers/Microsoft.KeyVault/vaults/test-keyvault-non-read "]
         #[doc = "* `solution_resource_name`: Solution resource Name."]
         pub fn get(&self, scope: impl Into<String>, solution_resource_name: impl Into<String>) -> get::RequestBuilder {
             get::RequestBuilder {
@@ -866,10 +866,10 @@ pub mod solution {
                 solution_resource_name: solution_resource_name.into(),
             }
         }
-        #[doc = "Creates a solution for the specific Azure resource or subscription using the triggering criteria ‘solutionId and requiredInputs’ from discovery solutions.<br/> Solutions are a rich, insightful and a centralized self help experience that brings all the relevant content to troubleshoot an Azure issue into a unified experience. Solutions include the following components : Text, Diagnostics , Troubleshooters, Images , Video tutorials, Tables , custom charts, images , AzureKB, etc, with capabilities to support new solutions types in the future. Each solution type may require one or more ‘requiredParameters’ that are required to execute the individual solution component. In the absence of the ‘requiredParameters’ it is likely that some of the solutions might fail execution, and you might see an empty response. <br/><br/> <b>Note:</b>  <br/>1. ‘requiredInputs’ from Discovery solutions response must be passed via ‘parameters’ in the request body of Solutions API. <br/>2. ‘requiredParameters’ from the Solutions response is the same as ‘ additionalParameters’ in the request for diagnostics <br/>3. ‘requiredParameters’ from the Solutions response is the same as ‘properties.parameters’ in the request for Troubleshooters"]
+        #[doc = "Creates a solution for the specific Azure resource or subscription using the inputs ‘solutionId and requiredInputs’ from discovery solutions. <br/> Azure solutions comprise a comprehensive library of self-help resources that have been thoughtfully curated by Azure engineers to aid customers in resolving typical troubleshooting issues. These solutions encompass (1.) dynamic and context-aware diagnostics, guided troubleshooting wizards, and data visualizations, (2.) rich instructional video tutorials and illustrative diagrams and images, and (3.) thoughtfully assembled textual troubleshooting instructions. All these components are seamlessly converged into unified solutions tailored to address a specific support problem area. Each solution type may require one or more ‘requiredParameters’ that are required to execute the individual solution component. In the absence of the ‘requiredParameters’ it is likely that some of the solutions might fail execution, and you might see an empty response. <br/><br/> <b>Note:</b>  <br/>1. ‘requiredInputs’ from Discovery solutions response must be passed via ‘parameters’ in the request body of Solutions API. <br/>2. ‘requiredParameters’ from the Solutions response is the same as ‘ additionalParameters’ in the request for diagnostics <br/>3. ‘requiredParameters’ from the Solutions response is the same as ‘properties.parameters’ in the request for Troubleshooters"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `scope`: This is an extension resource provider and only resource level extension is supported at the moment."]
+        #[doc = "* `scope`: scope = resourceUri of affected resource.<br/> For example: /subscriptions/0d0fcd2e-c4fd-4349-8497-200edb3923c6/resourcegroups/myresourceGroup/providers/Microsoft.KeyVault/vaults/test-keyvault-non-read "]
         #[doc = "* `solution_resource_name`: Solution resource Name."]
         pub fn create(&self, scope: impl Into<String>, solution_resource_name: impl Into<String>) -> create::RequestBuilder {
             create::RequestBuilder {
@@ -882,7 +882,7 @@ pub mod solution {
         #[doc = "Update the requiredInputs or additional information needed to execute the solution "]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `scope`: This is an extension resource provider and only resource level extension is supported at the moment."]
+        #[doc = "* `scope`: scope = resourceUri of affected resource.<br/> For example: /subscriptions/0d0fcd2e-c4fd-4349-8497-200edb3923c6/resourcegroups/myresourceGroup/providers/Microsoft.KeyVault/vaults/test-keyvault-non-read "]
         #[doc = "* `solution_resource_name`: Solution resource Name."]
         pub fn update(&self, scope: impl Into<String>, solution_resource_name: impl Into<String>) -> update::RequestBuilder {
             update::RequestBuilder {
@@ -1350,7 +1350,7 @@ pub mod troubleshooters {
         #[doc = "Gets troubleshooter instance result which includes the step status/result of the troubleshooter resource name that is being executed.<br/> Get API is used to retrieve the result of a Troubleshooter instance, which includes the status and result of each step in the Troubleshooter workflow. This API requires the Troubleshooter resource name that was created using the Create API."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `scope`: This is an extension resource provider and only resource level extension is supported at the moment."]
+        #[doc = "* `scope`: scope = resourceUri of affected resource.<br/> For example: /subscriptions/0d0fcd2e-c4fd-4349-8497-200edb3923c6/resourcegroups/myresourceGroup/providers/Microsoft.KeyVault/vaults/test-keyvault-non-read "]
         #[doc = "* `troubleshooter_name`: Troubleshooter resource Name."]
         pub fn get(&self, scope: impl Into<String>, troubleshooter_name: impl Into<String>) -> get::RequestBuilder {
             get::RequestBuilder {
@@ -1359,10 +1359,10 @@ pub mod troubleshooters {
                 troubleshooter_name: troubleshooter_name.into(),
             }
         }
-        #[doc = "Creates the specific troubleshooter action under a resource or subscription using the ‘solutionId’ and  ‘properties.parameters’ as the trigger. <br/> Troubleshooters are step-by-step interactive guidance that scope the problem by collecting additional inputs from you in each stage while troubleshooting an Azure issue. You will be guided down decision tree style workflow and the best possible solution will be presented at the end of the workflow. <br/> Create API creates the Troubleshooter API using ‘parameters’ and ‘solutionId’ <br/> After creating the Troubleshooter instance, the following APIs can be used:<br/> CONTINUE API: to move to the next step in the flow <br/>GET API: to identify the next step after executing the CONTINUE API.   <br/><br/> <b>Note:</b> ‘requiredParameters’ from solutions response must be passed via ‘properties. parameters’ in the request body of Troubleshooters API."]
+        #[doc = "Creates the specific troubleshooter action under a resource or subscription using the ‘solutionId’ and  ‘properties.parameters’ as the trigger. <br/> Azure Troubleshooters help with hard to classify issues, reducing the gap between customer observed problems and solutions by guiding the user effortlessly through the troubleshooting process. Each Troubleshooter flow represents a problem area within Azure and has a complex tree-like structure that addresses many root causes. These flows are prepared with the help of Subject Matter experts and customer support engineers by carefully considering previous support requests raised by customers. Troubleshooters terminate at a well curated solution based off of resource backend signals and customer manual selections."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `scope`: This is an extension resource provider and only resource level extension is supported at the moment."]
+        #[doc = "* `scope`: scope = resourceUri of affected resource.<br/> For example: /subscriptions/0d0fcd2e-c4fd-4349-8497-200edb3923c6/resourcegroups/myresourceGroup/providers/Microsoft.KeyVault/vaults/test-keyvault-non-read "]
         #[doc = "* `troubleshooter_name`: Troubleshooter resource Name."]
         pub fn create(&self, scope: impl Into<String>, troubleshooter_name: impl Into<String>) -> create::RequestBuilder {
             create::RequestBuilder {
@@ -1375,7 +1375,7 @@ pub mod troubleshooters {
         #[doc = "Uses ‘stepId’ and ‘responses’ as the trigger to continue the troubleshooting steps for the respective troubleshooter resource name. <br/>Continue API is used to provide inputs that are required for the specific troubleshooter to progress into the next step in the process. This API is used after the Troubleshooter has been created using the Create API."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `scope`: This is an extension resource provider and only resource level extension is supported at the moment."]
+        #[doc = "* `scope`: scope = resourceUri of affected resource.<br/> For example: /subscriptions/0d0fcd2e-c4fd-4349-8497-200edb3923c6/resourcegroups/myresourceGroup/providers/Microsoft.KeyVault/vaults/test-keyvault-non-read "]
         #[doc = "* `troubleshooter_name`: Troubleshooter resource Name."]
         pub fn continue_(&self, scope: impl Into<String>, troubleshooter_name: impl Into<String>) -> continue_::RequestBuilder {
             continue_::RequestBuilder {
@@ -1388,7 +1388,7 @@ pub mod troubleshooters {
         #[doc = "Ends the troubleshooter action"]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `scope`: This is an extension resource provider and only resource level extension is supported at the moment."]
+        #[doc = "* `scope`: scope = resourceUri of affected resource.<br/> For example: /subscriptions/0d0fcd2e-c4fd-4349-8497-200edb3923c6/resourcegroups/myresourceGroup/providers/Microsoft.KeyVault/vaults/test-keyvault-non-read "]
         #[doc = "* `troubleshooter_name`: Troubleshooter resource Name."]
         pub fn end(&self, scope: impl Into<String>, troubleshooter_name: impl Into<String>) -> end::RequestBuilder {
             end::RequestBuilder {
@@ -1400,7 +1400,7 @@ pub mod troubleshooters {
         #[doc = "Restarts the troubleshooter API using applicable troubleshooter resource name as the input.<br/> It returns new resource name which should be used in subsequent request. The old resource name is obsolete after this API is invoked."]
         #[doc = ""]
         #[doc = "Arguments:"]
-        #[doc = "* `scope`: This is an extension resource provider and only resource level extension is supported at the moment."]
+        #[doc = "* `scope`: scope = resourceUri of affected resource.<br/> For example: /subscriptions/0d0fcd2e-c4fd-4349-8497-200edb3923c6/resourcegroups/myresourceGroup/providers/Microsoft.KeyVault/vaults/test-keyvault-non-read "]
         #[doc = "* `troubleshooter_name`: Troubleshooter resource Name."]
         pub fn restart(&self, scope: impl Into<String>, troubleshooter_name: impl Into<String>) -> restart::RequestBuilder {
             restart::RequestBuilder {

@@ -5381,14 +5381,14 @@ pub struct Usage {
     pub unit: usage::Unit,
     #[doc = "The current usage of the resource."]
     #[serde(rename = "currentValue")]
-    pub current_value: i32,
+    pub current_value: f32,
     #[doc = "The maximum permitted usage of the resource."]
-    pub limit: i64,
+    pub limit: f32,
     #[doc = "The Usage Names."]
     pub name: UsageName,
 }
 impl Usage {
-    pub fn new(unit: usage::Unit, current_value: i32, limit: i64, name: UsageName) -> Self {
+    pub fn new(unit: usage::Unit, current_value: f32, limit: f32, name: UsageName) -> Self {
         Self {
             unit,
             current_value,

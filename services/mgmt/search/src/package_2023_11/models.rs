@@ -3,7 +3,7 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "Response containing the primary and secondary admin API keys for a given Azure Cognitive Search service."]
+#[doc = "Response containing the primary and secondary admin API keys for a given search service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AdminKeyResult {
     #[doc = "The primary admin API key of the search service."]
@@ -196,10 +196,10 @@ impl CloudErrorBody {
         Self::default()
     }
 }
-#[doc = "Indicates that either the API key or an access token from Azure Active Directory can be used for authentication."]
+#[doc = "Indicates that either the API key or an access token from a Microsoft Entra ID tenant can be used for authentication."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataPlaneAadOrApiKeyAuthOption {
-    #[doc = "Describes what response the data plane API of a Search service would send for requests that failed authentication."]
+    #[doc = "Describes what response the data plane API of a search service would send for requests that failed authentication."]
     #[serde(rename = "aadAuthFailureMode", default, skip_serializing_if = "Option::is_none")]
     pub aad_auth_failure_mode: Option<data_plane_aad_or_api_key_auth_option::AadAuthFailureMode>,
 }
@@ -210,7 +210,7 @@ impl DataPlaneAadOrApiKeyAuthOption {
 }
 pub mod data_plane_aad_or_api_key_auth_option {
     use super::*;
-    #[doc = "Describes what response the data plane API of a Search service would send for requests that failed authentication."]
+    #[doc = "Describes what response the data plane API of a search service would send for requests that failed authentication."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum AadAuthFailureMode {
         #[serde(rename = "http403")]
@@ -219,13 +219,13 @@ pub mod data_plane_aad_or_api_key_auth_option {
         Http401WithBearerChallenge,
     }
 }
-#[doc = "Defines the options for how the data plane API of a Search service authenticates requests. This cannot be set if 'disableLocalAuth' is set to true."]
+#[doc = "Defines the options for how the search service authenticates a data plane request. This cannot be set if 'disableLocalAuth' is set to true."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct DataPlaneAuthOptions {
-    #[doc = "Indicates that only the API key needs to be used for authentication."]
+    #[doc = "Indicates that only the API key can be used for authentication."]
     #[serde(rename = "apiKeyOnly", default, skip_serializing_if = "Option::is_none")]
     pub api_key_only: Option<serde_json::Value>,
-    #[doc = "Indicates that either the API key or an access token from Azure Active Directory can be used for authentication."]
+    #[doc = "Indicates that either the API key or an access token from a Microsoft Entra ID tenant can be used for authentication."]
     #[serde(rename = "aadOrApiKey", default, skip_serializing_if = "Option::is_none")]
     pub aad_or_api_key: Option<DataPlaneAadOrApiKeyAuthOption>,
 }
@@ -234,13 +234,13 @@ impl DataPlaneAuthOptions {
         Self::default()
     }
 }
-#[doc = "Describes a policy that determines how resources within the search service are to be encrypted with Customer Managed Keys."]
+#[doc = "Describes a policy that determines how resources within the search service are to be encrypted with customer=managed keys."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct EncryptionWithCmk {
-    #[doc = "Describes how a search service should enforce having one or more non customer encrypted resources."]
+    #[doc = "Describes how a search service should enforce having one or more non-customer-encrypted resources."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enforcement: Option<encryption_with_cmk::Enforcement>,
-    #[doc = "Describes whether the search service is compliant or not with respect to having non customer encrypted resources. If a service has more than one non customer encrypted resource and 'Enforcement' is 'enabled' then the service will be marked as 'nonCompliant'."]
+    #[doc = "Describes whether the search service is compliant or not with respect to having non-customer-encrypted resources. If a service has more than one non-customer-encrypted resource and 'Enforcement' is 'enabled' then the service will be marked as 'nonCompliant'."]
     #[serde(rename = "encryptionComplianceStatus", default, skip_serializing_if = "Option::is_none")]
     pub encryption_compliance_status: Option<encryption_with_cmk::EncryptionComplianceStatus>,
 }
@@ -251,14 +251,14 @@ impl EncryptionWithCmk {
 }
 pub mod encryption_with_cmk {
     use super::*;
-    #[doc = "Describes how a search service should enforce having one or more non customer encrypted resources."]
+    #[doc = "Describes how a search service should enforce having one or more non-customer-encrypted resources."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Enforcement {
         Disabled,
         Enabled,
         Unspecified,
     }
-    #[doc = "Describes whether the search service is compliant or not with respect to having non customer encrypted resources. If a service has more than one non customer encrypted resource and 'Enforcement' is 'enabled' then the service will be marked as 'nonCompliant'."]
+    #[doc = "Describes whether the search service is compliant or not with respect to having non-customer-encrypted resources. If a service has more than one non-customer-encrypted resource and 'Enforcement' is 'enabled' then the service will be marked as 'nonCompliant'."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum EncryptionComplianceStatus {
         Compliant,
@@ -296,10 +296,10 @@ pub mod identity {
         SystemAssigned,
     }
 }
-#[doc = "The IP restriction rule of the Azure Cognitive Search service."]
+#[doc = "The IP restriction rule of the search service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct IpRule {
-    #[doc = "Value corresponding to a single IPv4 address (eg., 123.1.2.3) or an IP range in CIDR format (eg., 123.1.2.3/24) to be allowed."]
+    #[doc = "Value corresponding to a single IPv4 address (for example, 123.1.2.3) or an IP range in CIDR format (for example, 123.1.2.3/24) to be allowed."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
@@ -308,10 +308,10 @@ impl IpRule {
         Self::default()
     }
 }
-#[doc = "Response containing the query API keys for a given Azure Cognitive Search service."]
+#[doc = "Response containing the query API keys for a given search service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ListQueryKeysResult {
-    #[doc = "The query keys for the Azure Cognitive Search service."]
+    #[doc = "The query keys for the search service."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
@@ -333,10 +333,10 @@ impl ListQueryKeysResult {
         Self::default()
     }
 }
-#[doc = "Network specific rules that determine how the Azure Cognitive Search service may be reached."]
+#[doc = "Network-specific rules that determine how the search service can be reached."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct NetworkRuleSet {
-    #[doc = "A list of IP restriction rules that defines the inbound network(s) with allowing access to the search service endpoint. At the meantime, all other public IP networks are blocked by the firewall. These restriction rules are applied only when the 'publicNetworkAccess' of the search service is 'enabled'; otherwise, traffic over public interface is not allowed even with any public IP rules, and private endpoint connections would be the exclusive access method."]
+    #[doc = "A list of IP restriction rules used for an IP firewall. Any IPs that do not match the rules are blocked by the firewall. These rules are only applied when the 'publicNetworkAccess' of the search service is 'enabled'."]
     #[serde(
         rename = "ipRules",
         default,
@@ -389,7 +389,7 @@ pub mod operation {
         }
     }
 }
-#[doc = "The result of the request to list REST API operations. It contains a list of operations and a URL  to get the next set of results."]
+#[doc = "The result of the request to list REST API operations. It contains a list of operations and a URL to get the next set of results."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationListResult {
     #[doc = "The list of operations supported by the resource provider."]
@@ -414,12 +414,12 @@ impl OperationListResult {
         Self::default()
     }
 }
-#[doc = "Describes an existing Private Endpoint connection to the Azure Cognitive Search service."]
+#[doc = "Describes an existing private endpoint connection to the search service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnection {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "Describes the properties of an existing Private Endpoint connection to the Azure Cognitive Search service."]
+    #[doc = "Describes the properties of an existing Private Endpoint connection to the search service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateEndpointConnectionProperties>,
 }
@@ -453,7 +453,7 @@ impl PrivateEndpointConnectionListResult {
         Self::default()
     }
 }
-#[doc = "Describes the properties of an existing Private Endpoint connection to the Azure Cognitive Search service."]
+#[doc = "Describes the properties of an existing Private Endpoint connection to the search service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateEndpointConnectionProperties {
     #[doc = "The private endpoint resource from Microsoft.Network provider."]
@@ -465,7 +465,7 @@ pub struct PrivateEndpointConnectionProperties {
     #[doc = "The group id from the provider of resource the private link service connection is for."]
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
-    #[doc = "The provisioning state of the private link service connection. Can be Updating, Deleting, Failed, Succeeded, or Incomplete"]
+    #[doc = "The provisioning state of the private link service connection. Valid values are Updating, Deleting, Failed, Succeeded, or Incomplete"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<private_endpoint_connection_properties::ProvisioningState>,
 }
@@ -491,7 +491,7 @@ pub mod private_endpoint_connection_properties {
     #[doc = "Describes the current state of an existing Private Link Service connection to the Azure Private Endpoint."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct PrivateLinkServiceConnectionState {
-        #[doc = "Status of the the private link service connection. Can be Pending, Approved, Rejected, or Disconnected."]
+        #[doc = "Status of the the private link service connection. Valid values are Pending, Approved, Rejected, or Disconnected."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub status: Option<private_link_service_connection_state::Status>,
         #[doc = "The description for the private link service connection state."]
@@ -508,7 +508,7 @@ pub mod private_endpoint_connection_properties {
     }
     pub mod private_link_service_connection_state {
         use super::*;
-        #[doc = "Status of the the private link service connection. Can be Pending, Approved, Rejected, or Disconnected."]
+        #[doc = "Status of the the private link service connection. Valid values are Pending, Approved, Rejected, or Disconnected."]
         #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
         pub enum Status {
             Pending,
@@ -517,7 +517,7 @@ pub mod private_endpoint_connection_properties {
             Disconnected,
         }
     }
-    #[doc = "The provisioning state of the private link service connection. Can be Updating, Deleting, Failed, Succeeded, or Incomplete"]
+    #[doc = "The provisioning state of the private link service connection. Valid values are Updating, Deleting, Failed, Succeeded, or Incomplete"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "ProvisioningState")]
     pub enum ProvisioningState {
@@ -563,12 +563,12 @@ pub mod private_endpoint_connection_properties {
         }
     }
 }
-#[doc = "Describes a supported private link resource for the Azure Cognitive Search service."]
+#[doc = "Describes a supported private link resource for the search service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResource {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "Describes the properties of a supported private link resource for the Azure Cognitive Search service. For a given API version, this represents the 'supported' groupIds when creating a shared private link resource."]
+    #[doc = "Describes the properties of a supported private link resource for the search service. For a given API version, this represents the 'supported' groupIds when creating a shared private link resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<PrivateLinkResourceProperties>,
 }
@@ -577,7 +577,7 @@ impl PrivateLinkResource {
         Self::default()
     }
 }
-#[doc = "Describes the properties of a supported private link resource for the Azure Cognitive Search service. For a given API version, this represents the 'supported' groupIds when creating a shared private link resource."]
+#[doc = "Describes the properties of a supported private link resource for the search service. For a given API version, this represents the 'supported' groupIds when creating a shared private link resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct PrivateLinkResourceProperties {
     #[doc = "The group ID of the private link resource."]
@@ -599,7 +599,7 @@ pub struct PrivateLinkResourceProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub required_zone_names: Vec<String>,
-    #[doc = "The list of resources that are onboarded to private link service, that are supported by Azure Cognitive Search."]
+    #[doc = "The list of resources that are onboarded to private link service and that are supported by search."]
     #[serde(
         rename = "shareablePrivateLinkResourceTypes",
         default,
@@ -635,7 +635,7 @@ impl PrivateLinkResourcesResult {
         Self::default()
     }
 }
-#[doc = "Describes an API key for a given Azure Cognitive Search service that has permissions for query operations only."]
+#[doc = "Describes an API key for a given search service that has permissions for query operations only."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QueryKey {
     #[doc = "The name of the query API key; may be empty."]
@@ -650,22 +650,22 @@ impl QueryKey {
         Self::default()
     }
 }
-#[doc = "Describes the quota usage for a particular sku supported by Azure Cognitive Search."]
+#[doc = "Describes the quota usage for a particular SKU."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaUsageResult {
-    #[doc = "The resource id of the quota usage sku endpoint for Microsoft.Search provider."]
+    #[doc = "The resource ID of the quota usage SKU endpoint for Microsoft.Search provider."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "The unit of measurement for the search sku."]
+    #[doc = "The unit of measurement for the search SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub unit: Option<String>,
-    #[doc = "The currently used up value for the particular search sku."]
+    #[doc = "The currently used up value for the particular search SKU."]
     #[serde(rename = "currentValue", default, skip_serializing_if = "Option::is_none")]
     pub current_value: Option<i32>,
-    #[doc = "The quota limit for the particular search sku."]
+    #[doc = "The quota limit for the particular search SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i32>,
-    #[doc = "The name of the sku supported by Azure Cognitive Search."]
+    #[doc = "The name of the SKU supported by Azure AI Search."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<quota_usage_result::Name>,
 }
@@ -676,13 +676,13 @@ impl QuotaUsageResult {
 }
 pub mod quota_usage_result {
     use super::*;
-    #[doc = "The name of the sku supported by Azure Cognitive Search."]
+    #[doc = "The name of the SKU supported by Azure AI Search."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
     pub struct Name {
-        #[doc = "The sku name supported by Azure Cognitive Search."]
+        #[doc = "The SKU name supported by Azure AI Search."]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub value: Option<String>,
-        #[doc = "The localized string value for the sku supported by Azure Cognitive Search."]
+        #[doc = "The localized string value for the SKU name."]
         #[serde(rename = "localizedValue", default, skip_serializing_if = "Option::is_none")]
         pub localized_value: Option<String>,
     }
@@ -692,10 +692,10 @@ pub mod quota_usage_result {
         }
     }
 }
-#[doc = "Response containing the quota usage information for all the supported skus of Azure Cognitive Search service."]
+#[doc = "Response containing the quota usage information for all the supported SKUs of Azure AI Search."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct QuotaUsagesListResult {
-    #[doc = "The quota usages for the SKUs supported by Azure Cognitive Search."]
+    #[doc = "The quota usages for the SKUs supported by Azure AI Search."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
@@ -735,7 +735,7 @@ impl Resource {
         Self::default()
     }
 }
-#[doc = "Describes an Azure Cognitive Search service and its current state."]
+#[doc = "Describes a search service and its current state."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SearchService {
     #[serde(flatten)]
@@ -743,7 +743,7 @@ pub struct SearchService {
     #[doc = "Properties of the search service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SearchServiceProperties>,
-    #[doc = "Defines the SKU of an Azure Cognitive Search Service, which determines price tier and capacity limits."]
+    #[doc = "Defines the SKU of a search service, which determines billing rate and capacity limits."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
     #[doc = "Identity for the resource."]
@@ -760,10 +760,10 @@ impl SearchService {
         }
     }
 }
-#[doc = "Response containing a list of Azure Cognitive Search services."]
+#[doc = "Response containing a list of search services."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchServiceListResult {
-    #[doc = "The list of Search services."]
+    #[doc = "The list of search services."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
@@ -800,7 +800,7 @@ pub struct SearchServiceProperties {
     #[doc = "This value can be set to 'enabled' to avoid breaking changes on existing customer resources and templates. If set to 'disabled', traffic over public interface is not allowed, and private endpoint connections would be the exclusive access method."]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<search_service_properties::PublicNetworkAccess>,
-    #[doc = "The status of the search service. Possible values include: 'running': The search service is running and no provisioning operations are underway. 'provisioning': The search service is being provisioned or scaled up or down. 'deleting': The search service is being deleted. 'degraded': The search service is degraded. This can occur when the underlying search units are not healthy. The search service is most likely operational, but performance might be slow and some requests might be dropped. 'disabled': The search service is disabled. In this state, the service will reject all API requests. 'error': The search service is in an error state. If your service is in the degraded, disabled, or error states, it means the Azure Cognitive Search team is actively investigating the underlying issue. Dedicated services in these states are still chargeable based on the number of search units provisioned."]
+    #[doc = "The status of the search service. Possible values include: 'running': The search service is running and no provisioning operations are underway. 'provisioning': The search service is being provisioned or scaled up or down. 'deleting': The search service is being deleted. 'degraded': The search service is degraded. This can occur when the underlying search units are not healthy. The search service is most likely operational, but performance might be slow and some requests might be dropped. 'disabled': The search service is disabled. In this state, the service will reject all API requests. 'error': The search service is in an error state. If your service is in the degraded, disabled, or error states, Microsoft is actively investigating the underlying issue. Dedicated services in these states are still chargeable based on the number of search units provisioned."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<search_service_properties::Status>,
     #[doc = "The details of the search service status."]
@@ -809,19 +809,19 @@ pub struct SearchServiceProperties {
     #[doc = "The state of the last provisioning operation performed on the search service. Provisioning is an intermediate state that occurs while service capacity is being established. After capacity is set up, provisioningState changes to either 'succeeded' or 'failed'. Client applications can poll provisioning status (the recommended polling interval is from 30 seconds to one minute) by using the Get Search Service operation to see when an operation is completed. If you are using the free service, this value tends to come back as 'succeeded' directly in the call to Create search service. This is because the free service uses capacity that is already set up."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<search_service_properties::ProvisioningState>,
-    #[doc = "Network specific rules that determine how the Azure Cognitive Search service may be reached."]
+    #[doc = "Network-specific rules that determine how the search service can be reached."]
     #[serde(rename = "networkRuleSet", default, skip_serializing_if = "Option::is_none")]
     pub network_rule_set: Option<NetworkRuleSet>,
-    #[doc = "Describes a policy that determines how resources within the search service are to be encrypted with Customer Managed Keys."]
+    #[doc = "Describes a policy that determines how resources within the search service are to be encrypted with customer=managed keys."]
     #[serde(rename = "encryptionWithCmk", default, skip_serializing_if = "Option::is_none")]
     pub encryption_with_cmk: Option<EncryptionWithCmk>,
     #[doc = "When set to true, calls to the search service will not be permitted to utilize API keys for authentication. This cannot be set to true if 'dataPlaneAuthOptions' are defined."]
     #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
     pub disable_local_auth: Option<bool>,
-    #[doc = "Defines the options for how the data plane API of a Search service authenticates requests. This cannot be set if 'disableLocalAuth' is set to true."]
+    #[doc = "Defines the options for how the search service authenticates a data plane request. This cannot be set if 'disableLocalAuth' is set to true."]
     #[serde(rename = "authOptions", default, skip_serializing_if = "Option::is_none")]
     pub auth_options: Option<DataPlaneAuthOptions>,
-    #[doc = "The list of private endpoint connections to the Azure Cognitive Search service."]
+    #[doc = "The list of private endpoint connections to the search service."]
     #[serde(
         rename = "privateEndpointConnections",
         default,
@@ -829,10 +829,10 @@ pub struct SearchServiceProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
-    #[doc = "Sets options that control the availability of semantic search. This configuration is only possible for certain Azure Cognitive Search SKUs in certain locations."]
+    #[doc = "Sets options that control the availability of semantic ranking. This configuration is only possible for certain search SKUs in certain locations."]
     #[serde(rename = "semanticSearch", default, skip_serializing_if = "Option::is_none")]
     pub semantic_search: Option<SemanticSearch>,
-    #[doc = "The list of shared private link resources managed by the Azure Cognitive Search service."]
+    #[doc = "The list of shared private link resources managed by the search service."]
     #[serde(
         rename = "sharedPrivateLinkResources",
         default,
@@ -874,7 +874,7 @@ pub mod search_service_properties {
             Self::Enabled
         }
     }
-    #[doc = "The status of the search service. Possible values include: 'running': The search service is running and no provisioning operations are underway. 'provisioning': The search service is being provisioned or scaled up or down. 'deleting': The search service is being deleted. 'degraded': The search service is degraded. This can occur when the underlying search units are not healthy. The search service is most likely operational, but performance might be slow and some requests might be dropped. 'disabled': The search service is disabled. In this state, the service will reject all API requests. 'error': The search service is in an error state. If your service is in the degraded, disabled, or error states, it means the Azure Cognitive Search team is actively investigating the underlying issue. Dedicated services in these states are still chargeable based on the number of search units provisioned."]
+    #[doc = "The status of the search service. Possible values include: 'running': The search service is running and no provisioning operations are underway. 'provisioning': The search service is being provisioned or scaled up or down. 'deleting': The search service is being deleted. 'degraded': The search service is degraded. This can occur when the underlying search units are not healthy. The search service is most likely operational, but performance might be slow and some requests might be dropped. 'disabled': The search service is disabled. In this state, the service will reject all API requests. 'error': The search service is in an error state. If your service is in the degraded, disabled, or error states, Microsoft is actively investigating the underlying issue. Dedicated services in these states are still chargeable based on the number of search units provisioned."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         #[serde(rename = "running")]
@@ -901,7 +901,7 @@ pub mod search_service_properties {
         Failed,
     }
 }
-#[doc = "The parameters used to update an Azure Cognitive Search service."]
+#[doc = "The parameters used to update a search service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SearchServiceUpdate {
     #[serde(flatten)]
@@ -909,10 +909,10 @@ pub struct SearchServiceUpdate {
     #[doc = "Properties of the search service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SearchServiceProperties>,
-    #[doc = "Defines the SKU of an Azure Cognitive Search Service, which determines price tier and capacity limits."]
+    #[doc = "Defines the SKU of a search service, which determines billing rate and capacity limits."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
-    #[doc = "The geographic location of the resource. This must be one of the supported and registered Azure Geo Regions (for example, West US, East US, Southeast Asia, and so forth). This property is required when creating a new resource."]
+    #[doc = "The geographic location of the resource. This must be one of the supported and registered Azure geo regions (for example, West US, East US, Southeast Asia, and so forth). This property is required when creating a new resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
     #[doc = "Tags to help categorize the resource in the Azure portal."]
@@ -927,7 +927,7 @@ impl SearchServiceUpdate {
         Self::default()
     }
 }
-#[doc = "Sets options that control the availability of semantic search. This configuration is only possible for certain Azure Cognitive Search SKUs in certain locations."]
+#[doc = "Sets options that control the availability of semantic ranking. This configuration is only possible for certain search SKUs in certain locations."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(remote = "SemanticSearch")]
 pub enum SemanticSearch {
@@ -969,16 +969,16 @@ impl Serialize for SemanticSearch {
         }
     }
 }
-#[doc = "Describes the properties of a resource type that has been onboarded to private link service, supported by Azure Cognitive Search."]
+#[doc = "Describes the properties of a resource type that has been onboarded to private link service and that's supported by search."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareablePrivateLinkResourceProperties {
-    #[doc = "The resource provider type for the resource that has been onboarded to private link service, supported by Azure Cognitive Search."]
+    #[doc = "The resource provider type for the resource that has been onboarded to private link service and that's supported by search."]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[doc = "The resource provider group id for the resource that has been onboarded to private link service, supported by Azure Cognitive Search."]
+    #[doc = "The resource provider group id for the resource that has been onboarded to private link service and that's supported by search."]
     #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
     pub group_id: Option<String>,
-    #[doc = "The description of the resource type that has been onboarded to private link service, supported by Azure Cognitive Search."]
+    #[doc = "The description of the resource type that has been onboarded to private link service and that's supported by search."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 }
@@ -987,13 +987,13 @@ impl ShareablePrivateLinkResourceProperties {
         Self::default()
     }
 }
-#[doc = "Describes an resource type that has been onboarded to private link service, supported by Azure Cognitive Search."]
+#[doc = "Describes a resource type that has been onboarded to private link service and that's supported by search."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ShareablePrivateLinkResourceType {
-    #[doc = "The name of the resource type that has been onboarded to private link service, supported by Azure Cognitive Search."]
+    #[doc = "The name of the resource type that has been onboarded to private link service and that's supported by search."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[doc = "Describes the properties of a resource type that has been onboarded to private link service, supported by Azure Cognitive Search."]
+    #[doc = "Describes the properties of a resource type that has been onboarded to private link service and that's supported by search."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<ShareablePrivateLinkResourceProperties>,
 }
@@ -1002,12 +1002,12 @@ impl ShareablePrivateLinkResourceType {
         Self::default()
     }
 }
-#[doc = "Describes a Shared Private Link Resource managed by the Azure Cognitive Search service."]
+#[doc = "Describes a Shared Private Link Resource managed by the search service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedPrivateLinkResource {
     #[serde(flatten)]
     pub resource: Resource,
-    #[doc = "Describes the properties of an existing Shared Private Link Resource managed by the Azure Cognitive Search service."]
+    #[doc = "Describes the properties of an existing Shared Private Link Resource managed by the search service."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<SharedPrivateLinkResourceProperties>,
 }
@@ -1041,7 +1041,7 @@ impl SharedPrivateLinkResourceListResult {
         Self::default()
     }
 }
-#[doc = "Describes the properties of an existing Shared Private Link Resource managed by the Azure Cognitive Search service."]
+#[doc = "Describes the properties of an existing Shared Private Link Resource managed by the search service."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SharedPrivateLinkResourceProperties {
     #[doc = "The resource id of the resource the shared private link resource is for."]
@@ -1056,10 +1056,10 @@ pub struct SharedPrivateLinkResourceProperties {
     #[doc = "Optional. Can be used to specify the Azure Resource Manager location of the resource to which a shared private link is to be created. This is only required for those resources whose DNS configuration are regional (such as Azure Kubernetes Service)."]
     #[serde(rename = "resourceRegion", default, skip_serializing_if = "Option::is_none")]
     pub resource_region: Option<String>,
-    #[doc = "Status of the shared private link resource. Can be Pending, Approved, Rejected or Disconnected."]
+    #[doc = "Status of the shared private link resource. Valid values are Pending, Approved, Rejected or Disconnected."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<shared_private_link_resource_properties::Status>,
-    #[doc = "The provisioning state of the shared private link resource. Can be Updating, Deleting, Failed, Succeeded or Incomplete."]
+    #[doc = "The provisioning state of the shared private link resource. Valid values are Updating, Deleting, Failed, Succeeded or Incomplete."]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
     pub provisioning_state: Option<shared_private_link_resource_properties::ProvisioningState>,
 }
@@ -1070,7 +1070,7 @@ impl SharedPrivateLinkResourceProperties {
 }
 pub mod shared_private_link_resource_properties {
     use super::*;
-    #[doc = "Status of the shared private link resource. Can be Pending, Approved, Rejected or Disconnected."]
+    #[doc = "Status of the shared private link resource. Valid values are Pending, Approved, Rejected or Disconnected."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum Status {
         Pending,
@@ -1078,7 +1078,7 @@ pub mod shared_private_link_resource_properties {
         Rejected,
         Disconnected,
     }
-    #[doc = "The provisioning state of the shared private link resource. Can be Updating, Deleting, Failed, Succeeded or Incomplete."]
+    #[doc = "The provisioning state of the shared private link resource. Valid values are Updating, Deleting, Failed, Succeeded or Incomplete."]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     pub enum ProvisioningState {
         Updating,
@@ -1088,7 +1088,7 @@ pub mod shared_private_link_resource_properties {
         Incomplete,
     }
 }
-#[doc = "Defines the SKU of an Azure Cognitive Search Service, which determines price tier and capacity limits."]
+#[doc = "Defines the SKU of a search service, which determines billing rate and capacity limits."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Sku {
     #[doc = "The SKU of the search service. Valid values include: 'free': Shared service. 'basic': Dedicated service with up to 3 replicas. 'standard': Dedicated service with up to 12 partitions and 12 replicas. 'standard2': Similar to standard, but with more capacity per search unit. 'standard3': The largest Standard offering with up to 12 partitions and 12 replicas (or up to 3 partitions with more indexes if you also set the hostingMode property to 'highDensity'). 'storage_optimized_l1': Supports 1TB per partition, up to 12 partitions. 'storage_optimized_l2': Supports 2TB per partition, up to 12 partitions.'"]

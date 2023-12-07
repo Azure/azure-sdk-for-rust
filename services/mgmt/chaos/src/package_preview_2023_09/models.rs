@@ -222,6 +222,8 @@ impl OperationListResult {
 #[doc = "The status of operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationStatus {
+    #[serde(flatten)]
+    pub error_response: ErrorResponse,
     #[doc = "The operation Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -237,9 +239,6 @@ pub struct OperationStatus {
     #[doc = "The status of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
-    #[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub error: Option<ErrorResponse>,
 }
 impl OperationStatus {
     pub fn new() -> Self {

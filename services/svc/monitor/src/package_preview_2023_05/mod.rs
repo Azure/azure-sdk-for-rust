@@ -111,11 +111,11 @@ impl Client {
             pipeline,
         }
     }
-    pub fn metrics_client(&self) -> metrics::Client {
-        metrics::Client(self.clone())
+    pub fn metrics_batch_client(&self) -> metrics_batch::Client {
+        metrics_batch::Client(self.clone())
     }
 }
-pub mod metrics {
+pub mod metrics_batch {
     use super::models;
     #[cfg(not(target_arch = "wasm32"))]
     use futures::future::BoxFuture;

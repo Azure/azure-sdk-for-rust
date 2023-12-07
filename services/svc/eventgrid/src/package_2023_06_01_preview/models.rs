@@ -347,6 +347,9 @@ pub struct AcsChatThreadCreatedWithUserEventData {
     #[doc = "The thread properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+    #[doc = "The thread metadata"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
     #[doc = "The list of properties of participants who are part of the thread"]
     #[serde(
         default,
@@ -420,6 +423,9 @@ pub struct AcsChatThreadParticipantProperties {
     #[doc = "Identifies a participant in Azure Communication services. A participant is, for example, a phone number or an Azure communication user. This model must be interpreted as a union: Apart from rawId, at most one further property may be set."]
     #[serde(rename = "participantCommunicationIdentifier", default, skip_serializing_if = "Option::is_none")]
     pub participant_communication_identifier: Option<CommunicationIdentifierModel>,
+    #[doc = "The metadata of the user"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
 }
 impl AcsChatThreadParticipantProperties {
     pub fn new() -> Self {
@@ -440,6 +446,9 @@ pub struct AcsChatThreadPropertiesUpdatedEventData {
     #[doc = "The updated thread properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+    #[doc = "The thread metadata"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
 }
 impl AcsChatThreadPropertiesUpdatedEventData {
     pub fn new() -> Self {
@@ -457,6 +466,9 @@ pub struct AcsChatThreadPropertiesUpdatedPerUserEventData {
     #[doc = "The time at which the properties of the thread were updated"]
     #[serde(rename = "editTime", default, with = "azure_core::date::rfc3339::option")]
     pub edit_time: Option<time::OffsetDateTime>,
+    #[doc = "The thread metadata"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Value>,
     #[doc = "The updated thread properties"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
@@ -5586,36 +5598,6 @@ impl ReleaseResult {
         }
     }
 }
-#[doc = "The result of the RenewLock operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RenewCloudEventLocksResult {
-    #[doc = "Array of FailedLockToken for failed cloud events. Each FailedLockToken includes the lock token along with the related error information (namely, the error code and description)."]
-    #[serde(rename = "failedLockTokens")]
-    pub failed_lock_tokens: Vec<FailedLockToken>,
-    #[doc = "Array of lock tokens for the successfully renewed locks."]
-    #[serde(rename = "succeededLockTokens")]
-    pub succeeded_lock_tokens: Vec<String>,
-}
-impl RenewCloudEventLocksResult {
-    pub fn new(failed_lock_tokens: Vec<FailedLockToken>, succeeded_lock_tokens: Vec<String>) -> Self {
-        Self {
-            failed_lock_tokens,
-            succeeded_lock_tokens,
-        }
-    }
-}
-#[doc = "Array of lock tokens for the corresponding received Cloud Events to be renewed."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct RenewLockOptions {
-    #[doc = "Array of lock tokens."]
-    #[serde(rename = "lockTokens")]
-    pub lock_tokens: Vec<String>,
-}
-impl RenewLockOptions {
-    pub fn new(lock_tokens: Vec<String>) -> Self {
-        Self { lock_tokens }
-    }
-}
 #[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.Resources.ResourceActionCancel event. This is raised when a resource action operation is canceled."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceActionCancelData {
@@ -5941,6 +5923,61 @@ impl ResourceNotificationsOperationalDetails {
         Self::default()
     }
 }
+#[doc = "Describes the schema of the properties under resource info which are common across all ARN system topic delete events"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceNotificationsResourceDeletedDetails {
+    #[doc = "id of the resource for which the event is being emitted"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "name of the resource for which the event is being emitted"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "the type of the resource for which the event is being emitted"]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+impl ResourceNotificationsResourceDeletedDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes the schema of the common properties across all ARN system topic delete events"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceNotificationsResourceDeletedEventData {
+    #[doc = "Describes the schema of the properties under resource info which are common across all ARN system topic delete events"]
+    #[serde(rename = "resourceInfo", default, skip_serializing_if = "Option::is_none")]
+    pub resource_info: Option<ResourceNotificationsResourceDeletedDetails>,
+    #[doc = "details of operational info"]
+    #[serde(rename = "operationalInfo", default, skip_serializing_if = "Option::is_none")]
+    pub operational_info: Option<ResourceNotificationsOperationalDetails>,
+}
+impl ResourceNotificationsResourceDeletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ResourceNotifications.Resources.CreatedOrUpdated event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceNotificationsResourceManagementCreatedOrUpdatedEventData {
+    #[serde(flatten)]
+    pub resource_notifications_resource_updated_event_data: ResourceNotificationsResourceUpdatedEventData,
+}
+impl ResourceNotificationsResourceManagementCreatedOrUpdatedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Schema of the Data property of an EventGridEvent for a Microsoft.ResourceNotifications.Resources.Deleted event."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceNotificationsResourceManagementDeletedEventData {
+    #[serde(flatten)]
+    pub resource_notifications_resource_deleted_event_data: ResourceNotificationsResourceDeletedEventData,
+}
+impl ResourceNotificationsResourceManagementDeletedEventData {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Describes the schema of the properties under resource info which are common across all ARN system topic events"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ResourceNotificationsResourceUpdatedDetails {
@@ -5958,7 +5995,7 @@ pub struct ResourceNotificationsResourceUpdatedDetails {
     pub location: Option<String>,
     #[doc = "the tags on the resource for which the event is being emitted"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tags: Option<String>,
+    pub tags: Option<serde_json::Value>,
     #[doc = "properties in the payload of the resource for which the event is being emitted"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,

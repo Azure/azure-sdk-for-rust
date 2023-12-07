@@ -9058,6 +9058,9 @@ pub struct ProtectedItem {
     #[doc = "Soft delete retention period in days"]
     #[serde(rename = "softDeleteRetentionPeriodInDays", default, skip_serializing_if = "Option::is_none")]
     pub soft_delete_retention_period_in_days: Option<i32>,
+    #[doc = "ID of the vault which protects this item"]
+    #[serde(rename = "vaultId", default, skip_serializing_if = "Option::is_none")]
+    pub vault_id: Option<String>,
 }
 impl ProtectedItem {
     pub fn new() -> Self {
@@ -9079,6 +9082,7 @@ impl ProtectedItem {
             is_archive_enabled: None,
             policy_name: None,
             soft_delete_retention_period_in_days: None,
+            vault_id: None,
         }
     }
 }

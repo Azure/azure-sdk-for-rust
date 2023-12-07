@@ -2895,7 +2895,7 @@ pub struct AzureFunctionActivityTypeProperties {
     #[doc = "Name of the Function that the Azure Function Activity will call. Type: string (or Expression with resultType string)"]
     #[serde(rename = "functionName")]
     pub function_name: serde_json::Value,
-    #[doc = "Represents the headers that will be sent to the request. For example, to set the language and type on a request: \"headers\" : { \"Accept-Language\": \"en-us\", \"Content-Type\": \"application/json\" }. Type: string (or Expression with resultType string)."]
+    #[doc = "Represents the headers that will be sent to the request. For example, to set the language and type on a request: \"headers\" : { \"Accept-Language\": \"en-us\", \"Content-Type\": \"application/json\" }. Type: dictionary (or Expression with resultType dictionary)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub headers: Option<serde_json::Value>,
     #[doc = "Represents the payload that will be sent to the endpoint. Required for POST/PUT method, not allowed for GET method Type: string (or Expression with resultType string)."]
@@ -2932,7 +2932,7 @@ impl AzureFunctionLinkedService {
 #[doc = "Azure Function linked service properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureFunctionLinkedServiceTypeProperties {
-    #[doc = "The endpoint of the Azure Function App. URL will be in the format https://<accountName>.azurewebsites.net."]
+    #[doc = "The endpoint of the Azure Function App. URL will be in the format https://<accountName>.azurewebsites.net. Type: string (or Expression with resultType string)."]
     #[serde(rename = "functionAppUrl")]
     pub function_app_url: serde_json::Value,
     #[doc = "The base definition of a secret type."]
@@ -2944,7 +2944,7 @@ pub struct AzureFunctionLinkedServiceTypeProperties {
     #[doc = "Credential reference type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credential: Option<CredentialReference>,
-    #[doc = "Allowed token audiences for azure function."]
+    #[doc = "Allowed token audiences for azure function. Type: string (or Expression with resultType string)."]
     #[serde(rename = "resourceId", default, skip_serializing_if = "Option::is_none")]
     pub resource_id: Option<serde_json::Value>,
     #[doc = "Type of authentication (Required to specify MSI) used to connect to AzureFunction. Type: string (or Expression with resultType string)."]
@@ -3089,7 +3089,7 @@ pub struct AzureMlExecutePipelineActivityTypeProperties {
     #[doc = "Key,Value pairs to be passed to the published Azure ML pipeline endpoint. Keys must match the names of pipeline parameters defined in the published pipeline. Values will be passed in the ParameterAssignments property of the published pipeline execution request. Type: object with key value pairs (or Expression with resultType object)."]
     #[serde(rename = "mlPipelineParameters", default, skip_serializing_if = "Option::is_none")]
     pub ml_pipeline_parameters: Option<serde_json::Value>,
-    #[doc = "Dictionary used for changing data path assignments without retraining. Values will be passed in the dataPathAssignments property of the published pipeline execution request. Type: object with key value pairs (or Expression with resultType object)."]
+    #[doc = "Dictionary used for changing data path assignments without retraining. Values will be passed in the dataPathAssignments property of the published pipeline execution request. Type: object (or Expression with resultType object)."]
     #[serde(rename = "dataPathAssignments", default, skip_serializing_if = "Option::is_none")]
     pub data_path_assignments: Option<serde_json::Value>,
     #[doc = "The parent Azure ML Service pipeline run id. This information will be passed in the ParentRunId property of the published pipeline execution request. Type: string (or Expression with resultType string)."]
@@ -4022,7 +4022,7 @@ pub struct AzureSqlSource {
     #[doc = "Which additional types to produce."]
     #[serde(rename = "produceAdditionalTypes", default, skip_serializing_if = "Option::is_none")]
     pub produce_additional_types: Option<serde_json::Value>,
-    #[doc = "The partition mechanism that will be used for Sql read in parallel. Possible values include: \"None\", \"PhysicalPartitionsOfTable\", \"DynamicRange\"."]
+    #[doc = "The partition mechanism that will be used for Sql read in parallel. Possible values include: \"None\", \"PhysicalPartitionsOfTable\", \"DynamicRange\". Type: string (or Expression with resultType string)."]
     #[serde(rename = "partitionOption", default, skip_serializing_if = "Option::is_none")]
     pub partition_option: Option<serde_json::Value>,
     #[doc = "The settings that will be leveraged for Sql source partitioning."]
@@ -4914,10 +4914,10 @@ impl CmdkeySetup {
 #[doc = "Cmdkey command custom setup type properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CmdkeySetupTypeProperties {
-    #[doc = "The server name of data source access."]
+    #[doc = "The server name of data source access. Type: string."]
     #[serde(rename = "targetName")]
     pub target_name: serde_json::Value,
-    #[doc = "The user name of data source access."]
+    #[doc = "The user name of data source access. Type: string."]
     #[serde(rename = "userName")]
     pub user_name: serde_json::Value,
     #[doc = "The base definition of a secret type."]
@@ -7112,6 +7112,7 @@ pub enum DatasetUnion {
     InformixTable(InformixTableDataset),
     JiraObject(JiraObjectDataset),
     Json(JsonDataset),
+    LakeHouseTable(LakeHouseTableDataset),
     MagentoObject(MagentoObjectDataset),
     #[serde(rename = "MariaDBTable")]
     MariaDbTable(MariaDbTableDataset),
@@ -10224,7 +10225,7 @@ impl GoogleAdWordsLinkedService {
 #[doc = "Google AdWords service linked service properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct GoogleAdWordsLinkedServiceTypeProperties {
-    #[doc = "Properties used to connect to GoogleAds. It is mutually exclusive with any other properties in the linked service. Type: object."]
+    #[doc = "(Deprecated) Properties used to connect to GoogleAds. It is mutually exclusive with any other properties in the linked service. Type: object."]
     #[serde(rename = "connectionProperties", default, skip_serializing_if = "Option::is_none")]
     pub connection_properties: Option<serde_json::Value>,
     #[doc = "The Client customer ID of the AdWords account that you want to fetch report data for. Type: string (or Expression with resultType string)."]
@@ -10248,15 +10249,27 @@ pub struct GoogleAdWordsLinkedServiceTypeProperties {
     #[doc = "The service account email ID that is used for ServiceAuthentication and can only be used on self-hosted IR. Type: string (or Expression with resultType string)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<serde_json::Value>,
-    #[doc = "The full path to the .p12 key file that is used to authenticate the service account email address and can only be used on self-hosted IR. Type: string (or Expression with resultType string)."]
+    #[doc = "(Deprecated) The full path to the .p12 key file that is used to authenticate the service account email address and can only be used on self-hosted IR. Type: string (or Expression with resultType string)."]
     #[serde(rename = "keyFilePath", default, skip_serializing_if = "Option::is_none")]
     pub key_file_path: Option<serde_json::Value>,
-    #[doc = "The full path of the .pem file containing trusted CA certificates for verifying the server when connecting over SSL. This property can only be set when using SSL on self-hosted IR. The default value is the cacerts.pem file installed with the IR. Type: string (or Expression with resultType string)."]
+    #[doc = "(Deprecated) The full path of the .pem file containing trusted CA certificates for verifying the server when connecting over SSL. This property can only be set when using SSL on self-hosted IR. The default value is the cacerts.pem file installed with the IR. Type: string (or Expression with resultType string)."]
     #[serde(rename = "trustedCertPath", default, skip_serializing_if = "Option::is_none")]
     pub trusted_cert_path: Option<serde_json::Value>,
-    #[doc = "Specifies whether to use a CA certificate from the system trust store or from a specified PEM file. The default value is false. Type: boolean (or Expression with resultType boolean)."]
+    #[doc = "(Deprecated) Specifies whether to use a CA certificate from the system trust store or from a specified PEM file. The default value is false. Type: boolean (or Expression with resultType boolean)."]
     #[serde(rename = "useSystemTrustStore", default, skip_serializing_if = "Option::is_none")]
     pub use_system_trust_store: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "privateKey", default, skip_serializing_if = "Option::is_none")]
+    pub private_key: Option<SecretBaseUnion>,
+    #[doc = "The customer ID of the Google Ads Manager account through which you want to fetch report data of specific Customer. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "loginCustomerID", default, skip_serializing_if = "Option::is_none")]
+    pub login_customer_id: Option<serde_json::Value>,
+    #[doc = "The Google Ads API major version such as v14. The supported major versions could be found on https://developers.google.com/google-ads/api/docs/release-notes. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "googleAdsApiVersion", default, skip_serializing_if = "Option::is_none")]
+    pub google_ads_api_version: Option<serde_json::Value>,
+    #[doc = "Specifies whether to use the legacy data type mappings, which maps float, int32 and int64 from Google to string. Do not set this to true unless you want to keep backward compatibility with legacy driver's data type mappings. Type: boolean (or Expression with resultType boolean)."]
+    #[serde(rename = "supportLegacyDataTypes", default, skip_serializing_if = "Option::is_none")]
+    pub support_legacy_data_types: Option<serde_json::Value>,
     #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string."]
     #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<String>,
@@ -11137,7 +11150,7 @@ impl HdInsightOnDemandLinkedService {
 #[doc = "HDInsight ondemand linked service properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HdInsightOnDemandLinkedServiceTypeProperties {
-    #[doc = "Number of worker/data nodes in the cluster. Suggestion value: 4. Type: string (or Expression with resultType string)."]
+    #[doc = "Number of worker/data nodes in the cluster. Suggestion value: 4. Type: int (or Expression with resultType int)."]
     #[serde(rename = "clusterSize")]
     pub cluster_size: serde_json::Value,
     #[doc = "The allowed idle time for the on-demand HDInsight cluster. Specifies how long the on-demand HDInsight cluster stays alive after completion of an activity run if there are no other active jobs in the cluster. The minimum value is 5 mins. Type: string (or Expression with resultType string)."]
@@ -12017,7 +12030,7 @@ pub struct HttpLinkedServiceTypeProperties {
     #[doc = "The base definition of a secret type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<SecretBaseUnion>,
-    #[doc = "The additional HTTP headers in the request to RESTful API used for authorization. Type: object (or Expression with resultType object)."]
+    #[doc = "The additional HTTP headers in the request to RESTful API used for authorization. Type: key value pairs (value should be string type)."]
     #[serde(rename = "authHeaders", default, skip_serializing_if = "Option::is_none")]
     pub auth_headers: Option<serde_json::Value>,
     #[doc = "Base64 encoded certificate data for ClientCertificate authentication. For on-premises copy with ClientCertificate authentication, either CertThumbprint or EmbeddedCertData/Password should be specified. Type: string (or Expression with resultType string)."]
@@ -13773,6 +13786,206 @@ impl JsonWriteSettings {
         Self { file_pattern: None }
     }
 }
+#[doc = "Microsoft Fabric LakeHouse linked service."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LakeHouseLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Microsoft Fabric LakeHouse linked service properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: LakeHouseLinkedServiceTypeProperties,
+}
+impl LakeHouseLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: LakeHouseLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Microsoft Fabric LakeHouse linked service properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct LakeHouseLinkedServiceTypeProperties {
+    #[doc = "The ID of Microsoft Fabric workspace. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
+    pub workspace_id: Option<serde_json::Value>,
+    #[doc = "The ID of Microsoft Fabric LakeHouse artifact. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "artifactId", default, skip_serializing_if = "Option::is_none")]
+    pub artifact_id: Option<serde_json::Value>,
+    #[doc = "The ID of the application used to authenticate against Microsoft Fabric LakeHouse. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "servicePrincipalId", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_id: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "servicePrincipalKey", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_key: Option<SecretBaseUnion>,
+    #[doc = "The name or ID of the tenant to which the service principal belongs. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant: Option<serde_json::Value>,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<String>,
+    #[doc = "The service principal credential type to use in Server-To-Server authentication. 'ServicePrincipalKey' for key/secret, 'ServicePrincipalCert' for certificate. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "servicePrincipalCredentialType", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential_type: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "servicePrincipalCredential", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential: Option<SecretBaseUnion>,
+}
+impl LakeHouseLinkedServiceTypeProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The location of Microsoft Fabric LakeHouse Files dataset."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LakeHouseLocation {
+    #[serde(flatten)]
+    pub dataset_location: DatasetLocation,
+}
+impl LakeHouseLocation {
+    pub fn new(dataset_location: DatasetLocation) -> Self {
+        Self { dataset_location }
+    }
+}
+#[doc = "Microsoft Fabric LakeHouse Files read settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LakeHouseReadSettings {
+    #[serde(flatten)]
+    pub store_read_settings: StoreReadSettings,
+    #[doc = "If true, files under the folder path will be read recursively. Default is true. Type: boolean (or Expression with resultType boolean)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recursive: Option<serde_json::Value>,
+    #[doc = "Microsoft Fabric LakeHouse Files wildcardFolderPath. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "wildcardFolderPath", default, skip_serializing_if = "Option::is_none")]
+    pub wildcard_folder_path: Option<serde_json::Value>,
+    #[doc = "Microsoft Fabric LakeHouse Files wildcardFileName. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "wildcardFileName", default, skip_serializing_if = "Option::is_none")]
+    pub wildcard_file_name: Option<serde_json::Value>,
+    #[doc = "Point to a text file that lists each file (relative path to the path configured in the dataset) that you want to copy. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "fileListPath", default, skip_serializing_if = "Option::is_none")]
+    pub file_list_path: Option<serde_json::Value>,
+    #[doc = "Indicates whether to enable partition discovery. Type: boolean (or Expression with resultType boolean)."]
+    #[serde(rename = "enablePartitionDiscovery", default, skip_serializing_if = "Option::is_none")]
+    pub enable_partition_discovery: Option<serde_json::Value>,
+    #[doc = "Specify the root path where partition discovery starts from. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "partitionRootPath", default, skip_serializing_if = "Option::is_none")]
+    pub partition_root_path: Option<serde_json::Value>,
+    #[doc = "Indicates whether the source files need to be deleted after copy completion. Default is false. Type: boolean (or Expression with resultType boolean)."]
+    #[serde(rename = "deleteFilesAfterCompletion", default, skip_serializing_if = "Option::is_none")]
+    pub delete_files_after_completion: Option<serde_json::Value>,
+    #[doc = "The start of file's modified datetime. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "modifiedDatetimeStart", default, skip_serializing_if = "Option::is_none")]
+    pub modified_datetime_start: Option<serde_json::Value>,
+    #[doc = "The end of file's modified datetime. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "modifiedDatetimeEnd", default, skip_serializing_if = "Option::is_none")]
+    pub modified_datetime_end: Option<serde_json::Value>,
+}
+impl LakeHouseReadSettings {
+    pub fn new(store_read_settings: StoreReadSettings) -> Self {
+        Self {
+            store_read_settings,
+            recursive: None,
+            wildcard_folder_path: None,
+            wildcard_file_name: None,
+            file_list_path: None,
+            enable_partition_discovery: None,
+            partition_root_path: None,
+            delete_files_after_completion: None,
+            modified_datetime_start: None,
+            modified_datetime_end: None,
+        }
+    }
+}
+#[doc = "Microsoft Fabric LakeHouse Table."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LakeHouseTableDataset {
+    #[serde(flatten)]
+    pub dataset: Dataset,
+    #[doc = "Microsoft Fabric LakeHouse Table dataset properties."]
+    #[serde(rename = "typeProperties", default, skip_serializing_if = "Option::is_none")]
+    pub type_properties: Option<LakeHouseTableDatasetTypeProperties>,
+}
+impl LakeHouseTableDataset {
+    pub fn new(dataset: Dataset) -> Self {
+        Self {
+            dataset,
+            type_properties: None,
+        }
+    }
+}
+#[doc = "Microsoft Fabric LakeHouse Table dataset properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct LakeHouseTableDatasetTypeProperties {
+    #[doc = "The name of Microsoft Fabric LakeHouse Table. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub table: Option<serde_json::Value>,
+}
+impl LakeHouseTableDatasetTypeProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A copy activity for Microsoft Fabric LakeHouse Table sink."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LakeHouseTableSink {
+    #[serde(flatten)]
+    pub copy_sink: CopySink,
+    #[doc = "The type of table action for LakeHouse Table sink. Possible values include: \"None\", \"Append\", \"Overwrite\"."]
+    #[serde(rename = "tableActionOption", default, skip_serializing_if = "Option::is_none")]
+    pub table_action_option: Option<serde_json::Value>,
+    #[doc = "Create partitions in folder structure based on one or multiple columns. Each distinct column value (pair) will be a new partition. Possible values include: \"None\", \"PartitionByKey\"."]
+    #[serde(rename = "partitionOption", default, skip_serializing_if = "Option::is_none")]
+    pub partition_option: Option<serde_json::Value>,
+    #[doc = "Specify the partition column names from sink columns. Type: array of objects (or Expression with resultType array of objects)."]
+    #[serde(rename = "partitionNameList", default, skip_serializing_if = "Option::is_none")]
+    pub partition_name_list: Option<serde_json::Value>,
+}
+impl LakeHouseTableSink {
+    pub fn new(copy_sink: CopySink) -> Self {
+        Self {
+            copy_sink,
+            table_action_option: None,
+            partition_option: None,
+            partition_name_list: None,
+        }
+    }
+}
+#[doc = "A copy activity source for Microsoft Fabric LakeHouse Table."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LakeHouseTableSource {
+    #[serde(flatten)]
+    pub copy_source: CopySource,
+    #[doc = "Query an older snapshot by timestamp. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "timestampAsOf", default, skip_serializing_if = "Option::is_none")]
+    pub timestamp_as_of: Option<serde_json::Value>,
+    #[doc = "Query an older snapshot by version. Type: integer (or Expression with resultType integer)."]
+    #[serde(rename = "versionAsOf", default, skip_serializing_if = "Option::is_none")]
+    pub version_as_of: Option<serde_json::Value>,
+    #[doc = "Specifies the additional columns to be added to source data. Type: array of objects(AdditionalColumns) (or Expression with resultType array of objects)."]
+    #[serde(rename = "additionalColumns", default, skip_serializing_if = "Option::is_none")]
+    pub additional_columns: Option<serde_json::Value>,
+}
+impl LakeHouseTableSource {
+    pub fn new(copy_source: CopySource) -> Self {
+        Self {
+            copy_source,
+            timestamp_as_of: None,
+            version_as_of: None,
+            additional_columns: None,
+        }
+    }
+}
+#[doc = "Microsoft Fabric LakeHouse Files write settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct LakeHouseWriteSettings {
+    #[serde(flatten)]
+    pub store_write_settings: StoreWriteSettings,
+}
+impl LakeHouseWriteSettings {
+    pub fn new(store_write_settings: StoreWriteSettings) -> Self {
+        Self { store_write_settings }
+    }
+}
 #[doc = "Installation of licensed component setup type properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct LicensedComponentSetupTypeProperties {
@@ -13970,6 +14183,7 @@ pub enum LinkedServiceUnion {
     Impala(ImpalaLinkedService),
     Informix(InformixLinkedService),
     Jira(JiraLinkedService),
+    LakeHouse(LakeHouseLinkedService),
     Magento(MagentoLinkedService),
     #[serde(rename = "MariaDB")]
     MariaDb(MariaDbLinkedService),
@@ -16260,7 +16474,7 @@ pub struct ODataLinkedServiceTypeProperties {
     #[doc = "The base definition of a secret type."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<SecretBaseUnion>,
-    #[doc = "The additional HTTP headers in the request to RESTful API used for authorization. Type: object (or Expression with resultType object)."]
+    #[doc = "The additional HTTP headers in the request to RESTful API used for authorization. Type: key value pairs (value should be string type)."]
     #[serde(rename = "authHeaders", default, skip_serializing_if = "Option::is_none")]
     pub auth_headers: Option<serde_json::Value>,
     #[doc = "Specify the tenant information (domain name or tenant ID) under which your application resides. Type: string (or Expression with resultType string)."]
@@ -17591,6 +17805,20 @@ impl ParquetFormat {
         Self { dataset_storage_format }
     }
 }
+#[doc = "Parquet read settings."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ParquetReadSettings {
+    #[doc = "Compression read settings."]
+    #[serde(rename = "compressionProperties", default, skip_serializing_if = "Option::is_none")]
+    pub compression_properties: Option<CompressionReadSettingsUnion>,
+}
+impl ParquetReadSettings {
+    pub fn new() -> Self {
+        Self {
+            compression_properties: None,
+        }
+    }
+}
 #[doc = "A copy activity Parquet sink."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ParquetSink {
@@ -17620,6 +17848,9 @@ pub struct ParquetSource {
     #[doc = "Connector read setting."]
     #[serde(rename = "storeSettings", default, skip_serializing_if = "Option::is_none")]
     pub store_settings: Option<StoreReadSettingsUnion>,
+    #[doc = "Parquet read settings."]
+    #[serde(rename = "formatSettings", default, skip_serializing_if = "Option::is_none")]
+    pub format_settings: Option<ParquetReadSettings>,
     #[doc = "Specifies the additional columns to be added to source data. Type: array of objects(AdditionalColumns) (or Expression with resultType array of objects)."]
     #[serde(rename = "additionalColumns", default, skip_serializing_if = "Option::is_none")]
     pub additional_columns: Option<serde_json::Value>,
@@ -17629,6 +17860,7 @@ impl ParquetSource {
         Self {
             copy_source,
             store_settings: None,
+            format_settings: None,
             additional_columns: None,
         }
     }
@@ -19447,7 +19679,7 @@ pub struct RestSink {
     #[doc = "The HTTP method used to call the RESTful API. The default is POST. Type: string (or Expression with resultType string)."]
     #[serde(rename = "requestMethod", default, skip_serializing_if = "Option::is_none")]
     pub request_method: Option<serde_json::Value>,
-    #[doc = "The additional HTTP headers in the request to the RESTful API. Type: string (or Expression with resultType string)."]
+    #[doc = "The additional HTTP headers in the request to the RESTful API. Type: key value pairs (value should be string type)."]
     #[serde(rename = "additionalHeaders", default, skip_serializing_if = "Option::is_none")]
     pub additional_headers: Option<serde_json::Value>,
     #[doc = "The timeout (TimeSpan) to get an HTTP response. It is the timeout to get a response, not the timeout to read response data. Default value: 00:01:40. Type: string (or Expression with resultType string), pattern: ((\\d+)\\.)?(\\d\\d):(60|([0-5][0-9])):(60|([0-5][0-9]))."]
@@ -19456,7 +19688,7 @@ pub struct RestSink {
     #[doc = "The time to await before sending next request, in milliseconds "]
     #[serde(rename = "requestInterval", default, skip_serializing_if = "Option::is_none")]
     pub request_interval: Option<serde_json::Value>,
-    #[doc = "Http Compression Type to Send data in compressed format with Optimal Compression Level, Default is None. And The Only Supported option is Gzip. "]
+    #[doc = "Http Compression Type to Send data in compressed format with Optimal Compression Level, Default is None. And The Only Supported option is Gzip. Type: string (or Expression with resultType string)."]
     #[serde(rename = "httpCompressionType", default, skip_serializing_if = "Option::is_none")]
     pub http_compression_type: Option<serde_json::Value>,
 }
@@ -19495,7 +19727,7 @@ pub struct RestSource {
     #[doc = "The time to await before sending next page request. "]
     #[serde(rename = "requestInterval", default, skip_serializing_if = "Option::is_none")]
     pub request_interval: Option<serde_json::Value>,
-    #[doc = "Specifies the additional columns to be added to source data. Type: array of objects(AdditionalColumns) (or Expression with resultType array of objects)."]
+    #[doc = "Specifies the additional columns to be added to source data. Type: key value pairs (value should be string type)."]
     #[serde(rename = "additionalColumns", default, skip_serializing_if = "Option::is_none")]
     pub additional_columns: Option<serde_json::Value>,
 }
@@ -23490,7 +23722,7 @@ pub struct SqlDwSource {
     #[doc = "Specifies the transaction locking behavior for the SQL source. Allowed values: ReadCommitted/ReadUncommitted/RepeatableRead/Serializable/Snapshot. The default value is ReadCommitted. Type: string (or Expression with resultType string)."]
     #[serde(rename = "isolationLevel", default, skip_serializing_if = "Option::is_none")]
     pub isolation_level: Option<serde_json::Value>,
-    #[doc = "The partition mechanism that will be used for Sql read in parallel. Possible values include: \"None\", \"PhysicalPartitionsOfTable\", \"DynamicRange\"."]
+    #[doc = "The partition mechanism that will be used for Sql read in parallel. Possible values include: \"None\", \"PhysicalPartitionsOfTable\", \"DynamicRange\". Type: string (or Expression with resultType string)."]
     #[serde(rename = "partitionOption", default, skip_serializing_if = "Option::is_none")]
     pub partition_option: Option<serde_json::Value>,
     #[doc = "The settings that will be leveraged for Sql source partitioning."]
@@ -23588,7 +23820,7 @@ pub struct SqlMiSink {
     #[doc = "Whether to use table lock during bulk copy. Type: boolean (or Expression with resultType boolean)."]
     #[serde(rename = "sqlWriterUseTableLock", default, skip_serializing_if = "Option::is_none")]
     pub sql_writer_use_table_lock: Option<serde_json::Value>,
-    #[doc = "White behavior when copying data into azure SQL MI. Type: SqlWriteBehaviorEnum (or Expression with resultType SqlWriteBehaviorEnum)"]
+    #[doc = "White behavior when copying data into azure SQL MI. Type: string (or Expression with resultType string)"]
     #[serde(rename = "writeBehavior", default, skip_serializing_if = "Option::is_none")]
     pub write_behavior: Option<serde_json::Value>,
     #[doc = "Sql upsert option settings"]
@@ -23631,7 +23863,7 @@ pub struct SqlMiSource {
     #[doc = "Which additional types to produce."]
     #[serde(rename = "produceAdditionalTypes", default, skip_serializing_if = "Option::is_none")]
     pub produce_additional_types: Option<serde_json::Value>,
-    #[doc = "The partition mechanism that will be used for Sql read in parallel. Possible values include: \"None\", \"PhysicalPartitionsOfTable\", \"DynamicRange\"."]
+    #[doc = "The partition mechanism that will be used for Sql read in parallel. Possible values include: \"None\", \"PhysicalPartitionsOfTable\", \"DynamicRange\". Type: string (or Expression with resultType string)."]
     #[serde(rename = "partitionOption", default, skip_serializing_if = "Option::is_none")]
     pub partition_option: Option<serde_json::Value>,
     #[doc = "The settings that will be leveraged for Sql source partitioning."]
@@ -23782,7 +24014,7 @@ pub struct SqlServerSink {
     #[doc = "Whether to use table lock during bulk copy. Type: boolean (or Expression with resultType boolean)."]
     #[serde(rename = "sqlWriterUseTableLock", default, skip_serializing_if = "Option::is_none")]
     pub sql_writer_use_table_lock: Option<serde_json::Value>,
-    #[doc = "Write behavior when copying data into sql server. Type: SqlWriteBehaviorEnum (or Expression with resultType SqlWriteBehaviorEnum)"]
+    #[doc = "Write behavior when copying data into sql server. Type: string (or Expression with resultType string)."]
     #[serde(rename = "writeBehavior", default, skip_serializing_if = "Option::is_none")]
     pub write_behavior: Option<serde_json::Value>,
     #[doc = "Sql upsert option settings"]
@@ -23825,7 +24057,7 @@ pub struct SqlServerSource {
     #[doc = "Which additional types to produce."]
     #[serde(rename = "produceAdditionalTypes", default, skip_serializing_if = "Option::is_none")]
     pub produce_additional_types: Option<serde_json::Value>,
-    #[doc = "The partition mechanism that will be used for Sql read in parallel. Possible values include: \"None\", \"PhysicalPartitionsOfTable\", \"DynamicRange\"."]
+    #[doc = "The partition mechanism that will be used for Sql read in parallel. Possible values include: \"None\", \"PhysicalPartitionsOfTable\", \"DynamicRange\". Type: string (or Expression with resultType string)."]
     #[serde(rename = "partitionOption", default, skip_serializing_if = "Option::is_none")]
     pub partition_option: Option<serde_json::Value>,
     #[doc = "The settings that will be leveraged for Sql source partitioning."]
@@ -23942,7 +24174,7 @@ pub struct SqlSink {
     #[doc = "Whether to use table lock during bulk copy. Type: boolean (or Expression with resultType boolean)."]
     #[serde(rename = "sqlWriterUseTableLock", default, skip_serializing_if = "Option::is_none")]
     pub sql_writer_use_table_lock: Option<serde_json::Value>,
-    #[doc = "Write behavior when copying data into sql. Type: SqlWriteBehaviorEnum (or Expression with resultType SqlWriteBehaviorEnum)"]
+    #[doc = "Write behavior when copying data into sql. Type: string (or Expression with resultType string)."]
     #[serde(rename = "writeBehavior", default, skip_serializing_if = "Option::is_none")]
     pub write_behavior: Option<serde_json::Value>,
     #[doc = "Sql upsert option settings"]
@@ -23982,7 +24214,7 @@ pub struct SqlSource {
     #[doc = "Specifies the transaction locking behavior for the SQL source. Allowed values: ReadCommitted/ReadUncommitted/RepeatableRead/Serializable/Snapshot. The default value is ReadCommitted. Type: string (or Expression with resultType string)."]
     #[serde(rename = "isolationLevel", default, skip_serializing_if = "Option::is_none")]
     pub isolation_level: Option<serde_json::Value>,
-    #[doc = "The partition mechanism that will be used for Sql read in parallel. Possible values include: \"None\", \"PhysicalPartitionsOfTable\", \"DynamicRange\"."]
+    #[doc = "The partition mechanism that will be used for Sql read in parallel. Possible values include: \"None\", \"PhysicalPartitionsOfTable\", \"DynamicRange\". Type: string (or Expression with resultType string)."]
     #[serde(rename = "partitionOption", default, skip_serializing_if = "Option::is_none")]
     pub partition_option: Option<serde_json::Value>,
     #[doc = "The settings that will be leveraged for Sql source partitioning."]
@@ -26659,7 +26891,7 @@ pub struct WebActivityTypeProperties {
     pub method: WebActivityMethod,
     #[doc = "Web activity target endpoint and path. Type: string (or Expression with resultType string)."]
     pub url: serde_json::Value,
-    #[doc = "Represents the headers that will be sent to the request. For example, to set the language and type on a request: \"headers\" : { \"Accept-Language\": \"en-us\", \"Content-Type\": \"application/json\" }. Type: string (or Expression with resultType string)."]
+    #[doc = "Represents the headers that will be sent to the request. For example, to set the language and type on a request: \"headers\" : { \"Accept-Language\": \"en-us\", \"Content-Type\": \"application/json\" }. Type: dictionary (or Expression with resultType dictionary)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub headers: Option<serde_json::Value>,
     #[doc = "Represents the payload that will be sent to the endpoint. Required for POST/PUT method, not allowed for GET method Type: string (or Expression with resultType string)."]
@@ -26671,6 +26903,12 @@ pub struct WebActivityTypeProperties {
     #[doc = "When set to true, Certificate validation will be disabled."]
     #[serde(rename = "disableCertValidation", default, skip_serializing_if = "Option::is_none")]
     pub disable_cert_validation: Option<bool>,
+    #[doc = "Timeout for the HTTP request to get a response. Format is in TimeSpan (hh:mm:ss). This value is the timeout to get a response, not the activity timeout. The default value is 00:01:00 (1 minute). The range is from 1 to 10 minutes"]
+    #[serde(rename = "httpRequestTimeout", default, skip_serializing_if = "Option::is_none")]
+    pub http_request_timeout: Option<serde_json::Value>,
+    #[doc = "Option to disable invoking HTTP GET on location given in response header of a HTTP 202 Response. If set true, it stops invoking HTTP GET on http location given in response header. If set false then continues to invoke HTTP GET call on location given in http response headers."]
+    #[serde(rename = "turnOffAsync", default, skip_serializing_if = "Option::is_none")]
+    pub turn_off_async: Option<bool>,
     #[doc = "List of datasets passed to web endpoint."]
     #[serde(
         default,
@@ -26699,6 +26937,8 @@ impl WebActivityTypeProperties {
             body: None,
             authentication: None,
             disable_cert_validation: None,
+            http_request_timeout: None,
+            turn_off_async: None,
             datasets: Vec::new(),
             linked_services: Vec::new(),
             connect_via: None,
@@ -26831,7 +27071,7 @@ pub struct WebHookActivityTypeProperties {
     #[doc = "The timeout within which the webhook should be called back. If there is no value specified, it defaults to 10 minutes. Type: string. Pattern: ((\\d+)\\.)?(\\d\\d):(60|([0-5][0-9])):(60|([0-5][0-9]))."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout: Option<String>,
-    #[doc = "Represents the headers that will be sent to the request. For example, to set the language and type on a request: \"headers\" : { \"Accept-Language\": \"en-us\", \"Content-Type\": \"application/json\" }. Type: string (or Expression with resultType string)."]
+    #[doc = "Represents the headers that will be sent to the request. For example, to set the language and type on a request: \"headers\" : { \"Accept-Language\": \"en-us\", \"Content-Type\": \"application/json\" }. Type: dictionary (or Expression with resultType dictionary)."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub headers: Option<serde_json::Value>,
     #[doc = "Represents the payload that will be sent to the endpoint. Required for POST/PUT method, not allowed for GET method Type: string (or Expression with resultType string)."]
