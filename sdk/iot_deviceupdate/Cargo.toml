@@ -1,6 +1,6 @@
 [package]
 name = "azure_iot_deviceupdate"
-version = "0.17.0"
+version = "0.18.0"
 authors = ["roland.erk@conplement.de"]
 description = "Rust wrapper around Microsoft Azure REST APIs for Azure Device Update"
 repository = "https://github.com/azure/azure-sdk-for-rust"
@@ -20,9 +20,9 @@ const_format = "0.2"
 serde_json = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 getset = "0.1"
-azure_core = { path = "../core", version = "0.17", default-features = false }
+azure_core = { path = "../core", version = "0.18", default-features = false }
 log = "0.4"
-azure_identity = { path = "../identity", version = "0.17", default-features = false }
+azure_identity = { path = "../identity", version = "0.18", default-features = false }
 
 [dev-dependencies]
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
