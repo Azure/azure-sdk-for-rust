@@ -29,7 +29,7 @@ pub fn hmac_sha256(data: &str, key: &Secret) -> crate::Result<String> {
         let pkey = PKey::hmac(&dkey)?;
         let mut signer = Signer::new(MessageDigest::sha256(), &pkey)?;
         signer.update(data.as_bytes())?;
-        Ok(signer.sign_to_vec()?)
+        signer.sign_to_vec()
     }()
     .with_context(ErrorKind::DataConversion, || {
         "failed to create hmac from key"
