@@ -59,7 +59,7 @@ impl Header for Properties {
 }
 
 impl TryFrom<&Headers> for Properties {
-    type Error = crate::Error;
+    type Error = azure_core::Error;
 
     fn try_from(headers: &Headers) -> Result<Self, Self::Error> {
         let header_value = headers.get_str(&PROPERTIES)?;
@@ -68,7 +68,7 @@ impl TryFrom<&Headers> for Properties {
 }
 
 impl TryFrom<&str> for Properties {
-    type Error = crate::Error;
+    type Error = azure_core::Error;
 
     fn try_from(header_value: &str) -> Result<Self, Self::Error> {
         let mut properties = Self::new();
@@ -103,14 +103,14 @@ impl TryFrom<&str> for Properties {
                 // we do not check if there are more entries. We just ignore them.
                 Ok((key, value))
             })
-            .collect::<crate::Result<Vec<(&str, &str)>>>()? // if we have an error, return error
+            .collect::<azure_core::Result<Vec<(&str, &str)>>>()? // if we have an error, return error
             .into_iter()
             .map(|(key, value)| {
                 // the value is base64 encoded se we decode it
                 let value = String::from_utf8(base64::decode(value)?)?;
                 Ok((key, value))
             })
-            .collect::<crate::Result<Vec<(&str, String)>>>()? // if we have an error, return error
+            .collect::<azure_core::Result<Vec<(&str, String)>>>()? // if we have an error, return error
             .into_iter()
             .for_each(|(key, value)| {
                 properties.insert(key.to_owned(), value); // finally store the key and value into the properties

@@ -1,5 +1,4 @@
 use azure_iot_hub::service::resources::{AuthenticationMechanism, DesiredCapability, Status};
-use azure_iot_hub::service::responses::DeviceIdentityResponse;
 use azure_iot_hub::service::ServiceClient;
 use std::error::Error;
 
@@ -46,7 +45,6 @@ async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
 
     println!("Getting device identity of '{}'", device.device_id);
     let device = service_client.get_device_identity(device.device_id).await?;
-    let device: DeviceIdentityResponse = device.try_into()?;
     println!("Identity is: {device:?}");
 
     println!("Deleting device '{}'", device.device_id);

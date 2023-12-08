@@ -1,22 +1,23 @@
-use azure_core::auth::Secret;
-use azure_core::hmac::hmac_sha256;
-use azure_core::{
-    error::Error, headers, CollectedResponse, HttpClient, Method, Request, StatusCode, Url,
-};
-use serde::Deserialize;
-use std::str::FromStr;
-use std::time::Duration;
-use std::{ops::Add, sync::Arc};
-use time::OffsetDateTime;
-use url::form_urlencoded::{self, Serializer};
-
 mod queue_client;
 mod topic_client;
 
+pub use self::{
+    queue_client::QueueClient,
+    topic_client::{SubscriptionReceiver, TopicClient, TopicSender},
+};
 use crate::utils::{craft_peek_lock_url, get_head_url};
-
-pub use self::queue_client::QueueClient;
-pub use self::topic_client::{SubscriptionReceiver, TopicClient, TopicSender};
+use azure_core::{
+    auth::Secret, error::Error, from_json, headers, hmac::hmac_sha256, CollectedResponse,
+    HttpClient, Method, Request, StatusCode, Url,
+};
+use serde::Deserialize;
+use std::{
+    str::FromStr,
+    time::Duration,
+    {ops::Add, sync::Arc},
+};
+use time::OffsetDateTime;
+use url::form_urlencoded::{self, Serializer};
 
 /// Default duration for the SAS token in days — We might want to make this configurable at some point
 const DEFAULT_SAS_DURATION: u64 = 3_600; // seconds = 1 hour
@@ -304,9 +305,9 @@ impl BrokerProperties {
 }
 
 impl FromStr for BrokerProperties {
-    type Err = serde_json::Error;
+    type Err = azure_core::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        serde_json::from_str(s)
+        from_json(s)
     }
 }

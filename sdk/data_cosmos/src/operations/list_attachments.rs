@@ -1,14 +1,15 @@
-use crate::headers::from_headers::*;
-use crate::prelude::*;
-use crate::resources::Attachment;
-use crate::resources::ResourceType;
-use crate::ResourceQuota;
-
-use azure_core::headers::{
-    continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
+use crate::{
+    headers::from_headers::*, prelude::*, resources::Attachment, resources::ResourceType,
+    ResourceQuota,
 };
-use azure_core::prelude::*;
-use azure_core::{Pageable, Response as HttpResponse, SessionToken};
+use azure_core::{
+    headers::{
+        continuation_token_from_headers_optional, item_count_from_headers,
+        session_token_from_headers,
+    },
+    prelude::*,
+    Pageable, Response as HttpResponse, SessionToken,
+};
 use time::OffsetDateTime;
 
 operation! {
@@ -107,9 +108,7 @@ pub struct ListAttachmentsResponse {
 impl ListAttachmentsResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
-
-        let json: JsonListAttachmentResponse = serde_json::from_slice(&body)?;
+        let json: JsonListAttachmentResponse = body.json().await?;
 
         Ok(Self {
             rid: json.rid,

@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::{headers::Headers, CollectedResponse, Method, Url};
+use azure_core::{headers::Headers, Method, Url};
 use serde_json::{Map, Value};
 
 operation! {
@@ -30,17 +30,12 @@ impl GetRandomBytesBuilder {
                 Some(Value::Object(request_body).to_string().into()),
             );
 
-            let response = self
-                .client
+            self.client
                 .keyvault_client
                 .send(&self.context, &mut request)
-                .await?;
-
-            let response = CollectedResponse::from_response(response).await?;
-            let body = response.body();
-
-            let result = serde_json::from_slice::<GetRandomBytesResult>(body)?;
-            Ok(result)
+                .await?
+                .json()
+                .await
         })
     }
 }

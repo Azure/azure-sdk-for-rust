@@ -1,11 +1,10 @@
-use crate::headers::from_headers::*;
-use crate::prelude::*;
-use crate::resources::trigger::*;
-use crate::resources::Trigger;
-use crate::ResourceQuota;
-
-use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use azure_core::Response as HttpResponse;
+use crate::{
+    headers::from_headers::*, prelude::*, resources::trigger::*, resources::Trigger, ResourceQuota,
+};
+use azure_core::{
+    headers::{etag_from_headers, session_token_from_headers},
+    Response as HttpResponse,
+};
 use time::OffsetDateTime;
 
 operation! {
@@ -48,7 +47,7 @@ impl CreateOrReplaceTriggerBuilder {
                 body: &self.body,
             };
 
-            request.set_body(serde_json::to_vec(&request_body)?);
+            request.set_json(&request_body)?;
             let response = self
                 .client
                 .pipeline()
@@ -95,10 +94,9 @@ pub struct CreateOrReplaceTriggerResponse {
 impl CreateOrReplaceTriggerResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
 
         Ok(Self {
-            trigger: serde_json::from_slice(&body)?,
+            trigger: body.json().await?,
             server: server_from_headers(&headers)?,
             last_state_change: last_state_change_from_headers(&headers)?,
             etag: etag_from_headers(&headers)?,

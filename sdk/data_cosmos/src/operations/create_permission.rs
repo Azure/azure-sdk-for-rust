@@ -1,6 +1,8 @@
-use crate::prelude::*;
-use crate::resources::permission::{
-    ExpirySeconds, PermissionMode, PermissionResponse as CreatePermissionResponse,
+use crate::{
+    prelude::*,
+    resources::permission::{
+        ExpirySeconds, PermissionMode, PermissionResponse as CreatePermissionResponse,
+    },
 };
 
 operation! {
@@ -42,7 +44,7 @@ impl CreatePermissionBuilder {
                 resource: self.permission_mode.resource(),
             };
 
-            request.set_body(serde_json::to_vec(&request_body)?);
+            request.set_json(&request_body)?;
             let response = self
                 .client
                 .pipeline()

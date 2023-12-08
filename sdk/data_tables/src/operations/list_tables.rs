@@ -3,6 +3,7 @@ use azure_core::{
     error::Error, headers::*, prelude::*, AppendToUrlQuery, CollectedResponse, Method, Pageable,
 };
 use azure_storage::headers::CommonStorageResponseHeaders;
+use serde::{Deserialize, Serialize};
 use std::convert::{TryFrom, TryInto};
 
 operation! {
@@ -75,8 +76,7 @@ impl TryFrom<CollectedResponse> for ListTablesResponse {
     type Error = Error;
 
     fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
-        let list_tables_response_internal: ListTablesResponseInternal =
-            serde_json::from_slice(response.body())?;
+        let list_tables_response_internal: ListTablesResponseInternal = response.json()?;
 
         let continuation_next_table_name = response
             .headers()

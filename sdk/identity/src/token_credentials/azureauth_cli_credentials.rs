@@ -178,10 +178,8 @@ impl AzureauthCliCredential {
             }));
         }
 
-        let output = String::from_utf8(output.stdout)?;
+        let token_response: CliTokenResponse = from_json(output.stdout)?;
 
-        let token_response = serde_json::from_str::<CliTokenResponse>(&output)
-            .map_kind(ErrorKind::DataConversion)?;
         Ok(TokenResponse::new(
             token_response.token,
             token_response.expiration_date,
@@ -303,7 +301,7 @@ mod tests {
             "expiration_date": "1700166595"
         }"#;
 
-        let response: CliTokenResponse = serde_json::from_str(src)?;
+        let response: CliTokenResponse = from_json(src)?;
         assert_eq!(response.token.secret(), "security token here");
         assert_eq!(
             response.expiration_date,

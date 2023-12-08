@@ -24,8 +24,6 @@ impl TransactionBuilder {
     ///
     /// ref: <https://docs.microsoft.com/en-us/rest/api/storageservices/insert-entity>
     pub fn insert<E: Serialize>(mut self, entity: E) -> azure_core::Result<Self> {
-        let body = serde_json::to_string(&entity)?;
-
         let mut url = self.client.table_client().url()?;
         url.path_segments_mut()
             .map_err(|()| Error::message(ErrorKind::Other, "invalid table URL"))?
@@ -35,7 +33,7 @@ impl TransactionBuilder {
         let mut request = Request::new(url, Method::Post);
         request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
         request.insert_headers(&ContentType::APPLICATION_JSON);
-        request.set_body(body);
+        request.set_json(&entity)?;
 
         self.transaction.add(TransactionOperation::new(request));
 
@@ -155,14 +153,13 @@ impl TransactionBuilder {
         method: Method,
         match_condition: Option<IfMatchCondition>,
     ) -> azure_core::Result<Self> {
-        let body = serde_json::to_string(&entity)?;
         let entity_client = self.client.entity_client(row_key);
         let url = entity_client.url()?;
 
         let mut request = Request::new(url, method);
         request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
         request.insert_headers(&ContentType::APPLICATION_JSON);
-        request.set_body(body);
+        request.set_json(&entity)?;
         request.add_optional_header(&match_condition);
 
         self.transaction.add(TransactionOperation::new(request));

@@ -1,11 +1,8 @@
-use crate::headers::from_headers::*;
-use crate::prelude::*;
-use crate::resources::Attachment;
-use crate::ResourceQuota;
-
-use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use azure_core::Response as HttpResponse;
-use azure_core::SessionToken;
+use crate::{headers::from_headers::*, prelude::*, resources::Attachment, ResourceQuota};
+use azure_core::{
+    headers::{etag_from_headers, session_token_from_headers},
+    Response as HttpResponse, SessionToken,
+};
 use time::OffsetDateTime;
 
 operation! {
@@ -42,13 +39,11 @@ impl CreateOrReplaceAttachmentBuilder {
                 pub media: &'r str,
             }
 
-            let body = azure_core::to_json(&Request {
+            req.set_json(&Request {
                 id: self.client.attachment_name(),
                 content_type: &self.content_type,
                 media: &self.media,
             })?;
-
-            req.set_body(body);
 
             let response = self
                 .client
@@ -94,12 +89,9 @@ pub struct CreateOrReplaceAttachmentResponse {
 impl CreateOrReplaceAttachmentResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
-
-        let attachment: Attachment = serde_json::from_slice(&body)?;
 
         Ok(Self {
-            attachment,
+            attachment: body.json().await?,
             max_media_storage_usage_mb: max_media_storage_usage_mb_from_headers(&headers)?,
             media_storage_usage_mb: media_storage_usage_mb_from_headers(&headers)?,
             last_change: last_state_change_from_headers(&headers)?,

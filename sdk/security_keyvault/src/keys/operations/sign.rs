@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::{headers::Headers, CollectedResponse, Method};
+use azure_core::{headers::Headers, Method};
 use serde_json::{Map, Value};
 
 operation! {
@@ -31,16 +31,13 @@ impl SignBuilder {
                 Some(Value::Object(request_body).to_string().into()),
             );
 
-            let response = self
+            let mut result: SignResult = self
                 .client
                 .keyvault_client
                 .send(&self.context, &mut request)
+                .await?
+                .json()
                 .await?;
-
-            let response = CollectedResponse::from_response(response).await?;
-            let body = response.body();
-
-            let mut result = serde_json::from_slice::<SignResult>(body)?;
             result.algorithm = self.algorithm;
             Ok(result)
         })

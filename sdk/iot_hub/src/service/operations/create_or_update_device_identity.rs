@@ -64,12 +64,13 @@ impl CreateOrUpdateDeviceIdentityBuilder {
                 etag: self.etag,
             };
 
-            let body = azure_core::to_json(&body)?;
-            request.set_body(body);
+            request.set_json(&body)?;
 
-            let response = self.client.send(&self.context, &mut request).await?;
-
-            CreateOrUpdateDeviceIdentityResponse::try_from(response).await
+            self.client
+                .send(&self.context, &mut request)
+                .await?
+                .json()
+                .await
         })
     }
 }

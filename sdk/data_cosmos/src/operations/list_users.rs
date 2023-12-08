@@ -1,13 +1,14 @@
-use crate::headers::from_headers::{activity_id_from_headers, request_charge_from_headers};
-use crate::prelude::*;
-use crate::resources::User;
-use azure_core::prelude::Continuation;
+use crate::{
+    headers::from_headers::{activity_id_from_headers, request_charge_from_headers},
+    prelude::*,
+    resources::User,
+};
 use azure_core::{
     headers::{continuation_token_from_headers_optional, session_token_from_headers},
+    prelude::Continuation,
     prelude::MaxItemCount,
-    Response as HttpResponse, SessionToken,
+    Continuable, Pageable, Response as HttpResponse, SessionToken,
 };
-use azure_core::{Continuable, Pageable};
 
 operation! {
     #[stream]
@@ -66,7 +67,6 @@ pub struct ListUsersResponse {
 impl ListUsersResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
 
         #[derive(Deserialize, Debug)]
         pub struct Response {
@@ -78,7 +78,7 @@ impl ListUsersResponse {
             pub count: u32,
         }
 
-        let response: Response = serde_json::from_slice(&body)?;
+        let response: Response = body.json().await?;
 
         Ok(Self {
             users: response.users,

@@ -3,10 +3,10 @@ use azure_core::{
     date,
     error::{ErrorKind, ResultExt},
     headers::Headers,
-    xml::read_xml,
     Method, Response as AzureResponse,
 };
 use azure_storage::headers::CommonStorageResponseHeaders;
+use serde::Deserialize;
 use std::convert::TryInto;
 use time::OffsetDateTime;
 
@@ -64,9 +64,7 @@ struct GeoReplication {
 impl GetQueueServiceStatsResponse {
     async fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
-
-        let response: GetQueueServiceStatsResponseInternal = read_xml(&body)?;
+        let response: GetQueueServiceStatsResponseInternal = body.xml().await?;
 
         Ok(GetQueueServiceStatsResponse {
             common_storage_response_headers: (&headers).try_into()?,

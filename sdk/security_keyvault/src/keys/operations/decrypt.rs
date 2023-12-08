@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::{base64, headers::Headers, CollectedResponse, Method};
+use azure_core::{base64, headers::Headers, Method};
 use serde_json::{Map, Value};
 
 operation! {
@@ -64,16 +64,14 @@ impl DecryptBuilder {
                 Some(Value::Object(request_body).to_string().into()),
             );
 
-            let response = self
+            let mut result: DecryptResponse = self
                 .client
                 .keyvault_client
                 .send(&self.context, &mut request)
+                .await?
+                .json()
                 .await?;
 
-            let response = CollectedResponse::from_response(response).await?;
-            let body = response.body();
-
-            let mut result = serde_json::from_slice::<DecryptResult>(body)?;
             result.algorithm = algorithm;
             Ok(result)
         })

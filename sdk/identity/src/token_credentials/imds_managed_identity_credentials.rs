@@ -2,7 +2,7 @@ use crate::token_credentials::cache::TokenCache;
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
-    HttpClient, Method, Request, StatusCode, Url,
+    from_json, HttpClient, Method, Request, StatusCode, Url,
 };
 use serde::{
     de::{self, Deserializer},
@@ -149,7 +149,7 @@ impl ImdsManagedIdentityCredential {
             }
         }
 
-        let token_response: MsiTokenResponse = serde_json::from_slice(&rsp_body)?;
+        let token_response: MsiTokenResponse = from_json(&rsp_body)?;
         Ok(AccessToken::new(
             token_response.access_token,
             token_response.expires_on,
@@ -215,6 +215,7 @@ struct MsiTokenResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use azure_core::from_json;
     use time::macros::datetime;
 
     #[derive(Debug, Deserialize)]
@@ -224,11 +225,11 @@ mod tests {
     }
 
     #[test]
-    fn check_expires_on_string() {
+    fn check_expires_on_string() -> azure_core::Result<()> {
         let as_string = r#"{"date": "1586984735"}"#;
         let expected = datetime!(2020-4-15 21:5:35 UTC);
-        let parsed: TestExpires =
-            serde_json::from_str(as_string).expect("deserialize should succeed");
+        let parsed: TestExpires = from_json(as_string)?;
         assert_eq!(expected, parsed.date);
+        Ok(())
     }
 }

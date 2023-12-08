@@ -1,9 +1,8 @@
-use crate::headers::from_headers::*;
-use crate::prelude::*;
-use crate::resources::Database;
-use crate::ResourceQuota;
-use azure_core::headers::{etag_from_headers, session_token_from_headers};
-use azure_core::Response as HttpResponse;
+use crate::{headers::from_headers::*, prelude::*, resources::Database, ResourceQuota};
+use azure_core::{
+    headers::{etag_from_headers, session_token_from_headers},
+    Response as HttpResponse,
+};
 use time::OffsetDateTime;
 
 operation! {
@@ -29,7 +28,7 @@ impl CreateDatabaseBuilder {
             if let Some(cl) = &self.consistency_level {
                 request.insert_headers(cl);
             }
-            request.set_body(serde_json::to_vec(&body)?);
+            request.set_json(&body)?;
 
             let response = self
                 .client
@@ -61,10 +60,10 @@ pub struct CreateDatabaseResponse {
 impl CreateDatabaseResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
+        let database = body.json().await?;
 
         Ok(Self {
-            database: serde_json::from_slice(&body)?,
+            database,
             charge: request_charge_from_headers(&headers)?,
             etag: etag_from_headers(&headers)?,
             session_token: session_token_from_headers(&headers)?,

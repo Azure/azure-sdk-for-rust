@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use azure_core::{headers::*, AppendToUrlQuery, Context, Etag, Method, Response};
 use azure_storage::headers::CommonStorageResponseHeaders;
-use serde::de::DeserializeOwned;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::{convert::TryInto, marker::PhantomData};
 
 #[derive(Debug, Clone)]
@@ -83,10 +83,8 @@ where
 {
     async fn try_from(response: Response) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
 
-        let get_entity_response_internal: GetEntityResponseInternal<T> =
-            serde_json::from_slice(&body)?;
+        let get_entity_response_internal: GetEntityResponseInternal<T> = body.json().await?;
 
         Ok(GetEntityResponse {
             common_storage_response_headers: (&headers).try_into()?,

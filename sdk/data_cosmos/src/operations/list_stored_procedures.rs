@@ -1,12 +1,12 @@
-use crate::headers::from_headers::*;
-use crate::prelude::*;
-use crate::resources::ResourceType;
-use crate::resources::StoredProcedure;
-use crate::ResourceQuota;
-
-use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
-use azure_core::prelude::*;
-use azure_core::{Pageable, Response as HttpResponse};
+use crate::{
+    headers::from_headers::*, prelude::*, resources::ResourceType, resources::StoredProcedure,
+    ResourceQuota,
+};
+use azure_core::{
+    headers::{continuation_token_from_headers_optional, session_token_from_headers},
+    prelude::*,
+    Pageable, Response as HttpResponse,
+};
 use time::OffsetDateTime;
 
 operation! {
@@ -73,8 +73,6 @@ pub struct ListStoredProceduresResponse {
 impl ListStoredProceduresResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
-
         #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
         struct Response {
             pub _rid: String,
@@ -83,8 +81,9 @@ impl ListStoredProceduresResponse {
             pub _count: u64,
         }
 
+        let response: Response = body.json().await?;
         Ok(Self {
-            stored_procedures: serde_json::from_slice::<Response>(&body)?.stored_procedures,
+            stored_procedures: response.stored_procedures,
             charge: request_charge_from_headers(&headers)?,
             activity_id: activity_id_from_headers(&headers)?,
             session_token: session_token_from_headers(&headers)?,

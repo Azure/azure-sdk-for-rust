@@ -39,13 +39,13 @@ impl InvokeMethodBuilder {
                 response_timeout_in_seconds: self.response_time_out.unwrap_or(15),
             };
 
-            let body = azure_core::to_json(&method)?;
+            request.set_json(&method)?;
 
-            request.set_body(body);
-
-            let response = self.client.send(&self.context, &mut request).await?;
-
-            InvokeMethodResponse::try_from(response).await
+            self.client
+                .send(&self.context, &mut request)
+                .await?
+                .json()
+                .await
         })
     }
 }

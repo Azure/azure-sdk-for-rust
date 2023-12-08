@@ -1,8 +1,9 @@
-use crate::headers::from_headers::*;
-use crate::prelude::*;
-use crate::resources::ResourceType;
-use azure_core::headers::{item_count_from_headers, session_token_from_headers};
-use azure_core::{prelude::*, Response as HttpResponse};
+use crate::{headers::from_headers::*, prelude::*, resources::ResourceType};
+use azure_core::{
+    headers::{item_count_from_headers, session_token_from_headers},
+    prelude::*,
+    Response as HttpResponse,
+};
 use time::OffsetDateTime;
 
 operation! {
@@ -74,7 +75,6 @@ pub struct GetPartitionKeyRangesResponse {
 impl GetPartitionKeyRangesResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
 
         #[derive(Debug, Deserialize)]
         struct Response {
@@ -84,7 +84,7 @@ impl GetPartitionKeyRangesResponse {
             pub partition_key_ranges: Vec<PartitionKeyRange>,
         }
 
-        let r: Response = serde_json::from_slice(&body)?;
+        let r: Response = body.json().await?;
 
         Ok(Self {
             rid: r.rid,

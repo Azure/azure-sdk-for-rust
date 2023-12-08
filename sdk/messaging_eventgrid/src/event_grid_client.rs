@@ -27,11 +27,11 @@ impl EventGridClient {
 
     /// Publishes events to a topic.
     /// REST API Spec: https://docs.microsoft.com/rest/api/eventgrid/dataplane/publishevents/publishevents
-    pub async fn publish_events<T>(&self, events: &[Event<T>]) -> Result<(), azure_core::Error>
+    pub async fn publish_events<T>(&self, events: &[Event<T>]) -> azure_core::Result<()>
     where
         T: Serialize,
     {
-        let body = serde_json::to_string(&events).unwrap();
+        let body = from_json(&events)?;
         EventGridRequestBuilder::new(Method::Post, &self.events_url()?)
             .sas_key(&self.topic_key)
             .body(Some(&body), Some("application/json"))?

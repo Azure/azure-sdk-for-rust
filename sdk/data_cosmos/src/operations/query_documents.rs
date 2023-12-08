@@ -1,19 +1,18 @@
-use crate::headers::from_headers::*;
-use crate::prelude::*;
-use crate::resources::document::Query;
-use crate::resources::ResourceType;
-use crate::ResourceQuota;
-
-use azure_core::headers;
-use azure_core::headers::HeaderValue;
-use azure_core::headers::{
-    continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
+use crate::{
+    headers::from_headers::*,
+    prelude::*,
+    resources::{document::Query, ResourceType},
+    ResourceQuota,
 };
-use azure_core::prelude::*;
-use azure_core::Method;
-use azure_core::Pageable;
-use azure_core::Response as HttpResponse;
-use azure_core::SessionToken;
+use azure_core::{
+    from_json, headers,
+    headers::{
+        continuation_token_from_headers_optional, item_count_from_headers,
+        session_token_from_headers, HeaderValue,
+    },
+    prelude::*,
+    Method, Pageable, Response as HttpResponse, SessionToken,
+};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use time::OffsetDateTime;
@@ -78,7 +77,7 @@ impl QueryDocumentsBuilder {
                 request.insert_headers(&this.query_cross_partition.unwrap_or_default());
                 request.insert_headers(&this.partition_range_id);
 
-                request.set_body(serde_json::to_vec(&this.query)?);
+                request.set_json(&this.query)?;
                 if let Some(partition_key_serialized) = this.partition_key_serialized.as_ref() {
                     crate::cosmos_entity::add_as_partition_key_header_serialized(
                         partition_key_serialized,
@@ -151,7 +150,7 @@ where
         let (_status_code, headers, body) = response.deconstruct();
         let body = body.collect().await?;
 
-        let inner: Value = serde_json::from_slice(&body)?;
+        let inner: Value = from_json(&body)?;
         let results = if let Value::Array(documents) = &inner["Documents"] {
             documents
                 .iter()
@@ -196,7 +195,7 @@ where
             gateway_version: gateway_version_from_headers(&headers)?,
             continuation_token: continuation_token_from_headers_optional(&headers)?,
             date: date_from_headers(&headers)?,
-            query_response_meta: serde_json::from_slice(&body)?,
+            query_response_meta: from_json(&body)?,
         })
     }
 }

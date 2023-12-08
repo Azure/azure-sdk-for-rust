@@ -1,12 +1,12 @@
 //! Refresh token utilities
 
-use azure_core::Method;
 use azure_core::{
     auth::Secret,
     content_type,
     error::{Error, ErrorKind, ResultExt},
     headers, HttpClient, Request, Url,
 };
+use azure_core::{from_json, Method};
 use serde::Deserialize;
 use std::fmt;
 use std::sync::Arc;
@@ -46,16 +46,15 @@ pub async fn exchange(
 
     let rsp = http_client.execute_request(&req).await?;
     let rsp_status = rsp.status();
-    let rsp_body = rsp.into_body().collect().await?;
 
-    if !rsp_status.is_success() {
-        if let Ok(token_error) = serde_json::from_slice::<RefreshTokenError>(&rsp_body) {
-            return Err(Error::new(ErrorKind::Credential, token_error));
-        }
-        return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
+    if rsp_status.is_success() {
+        rsp.json().await.map_kind(ErrorKind::Credential)
+    } else {
+        let rsp_body = rsp.into_body().collect().await?;
+        let token_error: RefreshTokenError = from_json(&rsp_body)
+            .map_err(|_| ErrorKind::http_response_from_body(rsp_status, &rsp_body))?;
+        Err(Error::new(ErrorKind::Credential, token_error))
     }
-
-    serde_json::from_slice::<RefreshTokenResponse>(&rsp_body).map_kind(ErrorKind::Credential)
 }
 
 /// A refresh token

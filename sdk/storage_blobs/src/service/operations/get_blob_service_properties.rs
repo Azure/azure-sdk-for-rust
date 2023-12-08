@@ -38,9 +38,7 @@ impl GetBlobServicePropertiesResponse {
         response: Response,
     ) -> azure_core::Result<GetBlobServicePropertiesResponse> {
         let common = CommonStorageResponseHeaders::try_from(response.headers())?;
-        let body = response.into_body().collect().await?;
-        println!("body {body:?}");
-        let properties = azure_core::xml::read_xml(&body)?;
+        let properties = response.xml().await?;
 
         Ok(GetBlobServicePropertiesResponse { common, properties })
     }

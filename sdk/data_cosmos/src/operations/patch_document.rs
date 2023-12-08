@@ -1,11 +1,7 @@
-use crate::headers::from_headers::*;
-use crate::prelude::*;
-use crate::resources::document::DocumentAttributes;
-use crate::ResourceQuota;
-
-use azure_core::headers::session_token_from_headers;
-use azure_core::Response as HttpResponse;
-use azure_core::SessionToken;
+use crate::{
+    headers::from_headers::*, prelude::*, resources::document::DocumentAttributes, ResourceQuota,
+};
+use azure_core::{headers::session_token_from_headers, Response as HttpResponse, SessionToken};
 use serde::Serialize;
 use serde_json::Value;
 use time::OffsetDateTime;
@@ -32,8 +28,7 @@ impl PatchDocumentBuilder {
                 operations: self.operations,
             };
 
-            let serialized = azure_core::to_json(&patch_request)?;
-            request.set_body(serialized);
+            request.set_json(&patch_request)?;
 
             let response = self
                 .client
@@ -153,10 +148,8 @@ pub struct PatchDocumentResponse {
 impl PatchDocumentResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
-        let document_attributes = serde_json::from_slice(&body)?;
-
         Ok(Self {
+            document_attributes: body.json().await?,
             content_location: content_location_from_headers(&headers)?,
             last_state_change: last_state_change_from_headers(&headers)?,
             resource_quota: resource_quota_from_headers(&headers)?,
@@ -180,7 +173,6 @@ impl PatchDocumentResponse {
             activity_id: activity_id_from_headers(&headers)?,
             gateway_version: gateway_version_from_headers(&headers)?,
             date: date_from_headers(&headers)?,
-            document_attributes,
         })
     }
 }

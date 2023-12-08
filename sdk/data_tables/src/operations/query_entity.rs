@@ -6,7 +6,7 @@ use azure_core::{
     AppendToUrlQuery, CollectedResponse, Method, Pageable,
 };
 use azure_storage::headers::CommonStorageResponseHeaders;
-use serde::de::DeserializeOwned;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use std::convert::{TryFrom, TryInto};
 
 operation! {
@@ -107,8 +107,7 @@ impl<E: DeserializeOwned + Send + Sync> TryFrom<CollectedResponse> for QueryEnti
     type Error = Error;
 
     fn try_from(response: CollectedResponse) -> azure_core::Result<Self> {
-        let query_entity_response_internal: QueryEntityResponseInternal<E> =
-            serde_json::from_slice(response.body())?;
+        let query_entity_response_internal: QueryEntityResponseInternal<E> = response.json()?;
 
         let headers = response.headers();
 

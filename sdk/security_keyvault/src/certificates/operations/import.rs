@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::{headers::Headers, CollectedResponse, Method};
+use azure_core::{headers::Headers, to_json, Method};
 use serde::Serialize;
 use std::collections::HashMap;
 use time::OffsetDateTime;
@@ -52,22 +52,18 @@ impl ImportCertificateBuilder {
                 tags: self.tags,
             };
 
-            let body = serde_json::to_string(&request)?;
+            let body = to_json(&request)?;
 
             let headers = Headers::new();
             let mut request =
                 KeyvaultClient::finalize_request(uri, Method::Post, headers, Some(body.into()));
 
-            let response = self
-                .client
+            self.client
                 .keyvault_client
                 .send(&self.context, &mut request)
-                .await?;
-
-            let response = CollectedResponse::from_response(response).await?;
-            let body = response.body();
-            let response = serde_json::from_slice::<KeyVaultGetCertificateResponse>(body)?;
-            Ok(response)
+                .await?
+                .json()
+                .await
         })
     }
 }

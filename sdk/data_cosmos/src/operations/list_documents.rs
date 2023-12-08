@@ -6,7 +6,7 @@ use crate::ResourceQuota;
 use azure_core::headers::{
     continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
 };
-use azure_core::{prelude::*, Pageable};
+use azure_core::{from_json, prelude::*, Pageable};
 use azure_core::{Response, SessionToken};
 use serde::de::DeserializeOwned;
 use time::OffsetDateTime;
@@ -126,8 +126,8 @@ where
         // 2- Deserialize the result a type T. The extra fields will be ignored.
         // 3- Zip 1 and 2 in the resulting structure.
         // There is a lot of data movement here, let's hope the compiler is smarter than me :)
-        let document_attributes: ListDocumentsResponseAttributes = serde_json::from_slice(&body)?;
-        let entries: ListDocumentsResponseEntities<T> = serde_json::from_slice(&body)?;
+        let document_attributes: ListDocumentsResponseAttributes = from_json(&body)?;
+        let entries: ListDocumentsResponseEntities<T> = from_json(&body)?;
 
         let documents = document_attributes
             .documents
@@ -218,11 +218,10 @@ mod tests {
     }
 
     #[test]
-    fn test_list_document() {
-        let _document_attributes =
-            serde_json::from_slice::<ListDocumentsResponseAttributes>(BODY.as_bytes()).unwrap();
-        let _entries =
-            serde_json::from_slice::<ListDocumentsResponseEntities<MyStruct>>(BODY.as_bytes())
-                .unwrap();
+    fn test_list_document() -> azure_core::Result<()> {
+        let _document_attributes: ListDocumentsResponseAttributes = from_json(BODY)?;
+        let _entries: ListDocumentsResponseEntities<MyStruct> = from_json(BODY)?;
+
+        Ok(())
     }
 }

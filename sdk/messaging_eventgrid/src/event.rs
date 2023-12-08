@@ -63,6 +63,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use azure_core::to_json;
     use serde::{self, Serialize};
     use time::macros::datetime;
 
@@ -72,7 +73,7 @@ mod tests {
     }
 
     #[test]
-    fn create_and_serialize() {
+    fn create_and_serialize() -> azure_core::Result<()> {
         let mut event = Event::<Data>::new(
             Some(String::from("an id")),
             "ACME.Data.DataPointCreated",
@@ -83,8 +84,9 @@ mod tests {
         event.event_time = datetime!(2020-12-21 14:53:41 UTC);
 
         assert_eq!(
-            serde_json::to_string(&event).unwrap(),
+            to_json(&event)?,
             "{\"topic\":null,\"id\":\"an id\",\"eventType\":\"ACME.Data.DataPointCreated\",\"subject\":\"/acme/data\",\"eventTime\":\"2020-12-21T14:53:41Z\",\"data\":{\"number\":42},\"dataVersion\":\"1.0\",\"metadataVersion\":null}"
         );
+        Ok(())
     }
 }

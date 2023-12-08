@@ -1,13 +1,15 @@
-use crate::headers::from_headers::*;
-use crate::prelude::*;
-use crate::resources::ResourceType;
-use crate::resources::UserDefinedFunction;
-use crate::ResourceQuota;
-
-use azure_core::headers::{
-    continuation_token_from_headers_optional, item_count_from_headers, session_token_from_headers,
+use crate::{
+    headers::from_headers::*, prelude::*, resources::ResourceType, resources::UserDefinedFunction,
+    ResourceQuota,
 };
-use azure_core::{prelude::*, Pageable, Response as HttpResponse};
+use azure_core::{
+    headers::{
+        continuation_token_from_headers_optional, item_count_from_headers,
+        session_token_from_headers,
+    },
+    prelude::*,
+    Pageable, Response as HttpResponse,
+};
 use time::OffsetDateTime;
 
 operation! {
@@ -92,22 +94,21 @@ pub struct ListUserDefinedFunctionsResponse {
 impl ListUserDefinedFunctionsResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
 
         #[derive(Debug, Deserialize)]
-        struct Response<'a> {
+        struct Response {
             #[serde(rename = "_rid")]
-            rid: &'a str,
+            rid: String,
             #[serde(rename = "UserDefinedFunctions")]
             user_defined_functions: Vec<UserDefinedFunction>,
             #[serde(rename = "_count")]
             #[allow(unused)]
             count: u32,
         }
-        let response: Response = serde_json::from_slice(&body)?;
+        let response: Response = body.json().await?;
 
         Ok(Self {
-            rid: response.rid.to_owned(),
+            rid: response.rid,
             user_defined_functions: response.user_defined_functions,
             content_location: content_location_from_headers(&headers)?,
             server: server_from_headers(&headers)?,

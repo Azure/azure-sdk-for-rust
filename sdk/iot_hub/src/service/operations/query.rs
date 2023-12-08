@@ -30,12 +30,11 @@ impl QueryBuilder {
             );
 
             let query_body = QueryBody { query: self.query };
-            let body = azure_core::to_json(&query_body)?;
 
             let mut request = self.client.finalize_request(&uri, Method::Post)?;
             request.add_optional_header(&self.continuation);
             request.add_mandatory_header(&self.max_item_count.unwrap_or_default());
-            request.set_body(body);
+            request.set_json(&query_body)?;
 
             let response = self.client.send(&self.context, &mut request).await?;
 

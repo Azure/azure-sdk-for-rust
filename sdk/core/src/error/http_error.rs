@@ -1,5 +1,6 @@
-use crate::{headers, Response, StatusCode};
+use crate::{from_json, headers, Response, StatusCode};
 use bytes::Bytes;
+use serde::Deserialize;
 use std::collections::HashMap;
 
 /// An unsuccessful HTTP response
@@ -103,24 +104,31 @@ fn get_error_code_from_header(headers: &HashMap<String, String>) -> Option<Strin
     headers.get(headers::ERROR_CODE.as_str()).cloned()
 }
 
+#[derive(Deserialize)]
+struct NestedError {
+    message: Option<String>,
+    code: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct ErrorBody {
+    error: Option<NestedError>,
+    message: Option<String>,
+    code: Option<String>,
+}
+
 /// Gets the error code if it's present in the body
 ///
 /// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
 pub(crate) fn get_error_code_from_body(body: &[u8]) -> Option<String> {
-    let json = serde_json::from_slice::<serde_json::Value>(body).ok()?;
-    let nested = || json.get("error")?.get("code")?.as_str();
-    let top_level = || json.get("code")?.as_str();
-    let code = nested().or_else(top_level);
-    code.map(ToOwned::to_owned)
+    let decoded: ErrorBody = from_json(body).ok()?;
+    decoded.error.and_then(|e| e.code).or(decoded.code)
 }
 
 /// Gets the error message if it's present in the body
 ///
 /// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
 pub(crate) fn get_error_message_from_body(body: &[u8]) -> Option<String> {
-    let json = serde_json::from_slice::<serde_json::Value>(body).ok()?;
-    let nested = || json.get("error")?.get("message")?.as_str();
-    let top_level = || json.get("message")?.as_str();
-    let code = nested().or_else(top_level);
-    code.map(ToOwned::to_owned)
+    let decoded: ErrorBody = from_json(body).ok()?;
+    decoded.error.and_then(|e| e.message).or(decoded.message)
 }

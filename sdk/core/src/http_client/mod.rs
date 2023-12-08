@@ -10,7 +10,7 @@ use self::reqwest::new_reqwest_client;
 use crate::error::ErrorKind;
 use async_trait::async_trait;
 use bytes::Bytes;
-use serde::Serialize;
+use serde::{de::DeserializeOwned, Serialize};
 use std::sync::Arc;
 
 /// Construct a new `HttpClient`
@@ -60,4 +60,13 @@ where
     T: ?Sized + Serialize,
 {
     Ok(Bytes::from(serde_json::to_vec(value)?))
+}
+
+/// Reads the XML from bytes.
+pub fn from_json<S, T>(body: S) -> crate::Result<T>
+where
+    S: AsRef<[u8]>,
+    T: DeserializeOwned,
+{
+    serde_json::from_slice(body.as_ref()).map_err(|e| e.into())
 }

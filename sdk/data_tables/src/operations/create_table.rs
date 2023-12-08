@@ -1,6 +1,7 @@
 use crate::prelude::*;
-use azure_core::{headers::*, prelude::*, Method, Response};
+use azure_core::{headers::*, prelude::*, to_json, Method, Response};
 use azure_storage::headers::CommonStorageResponseHeaders;
+use serde::Serialize;
 use std::convert::TryInto;
 
 operation! {
@@ -19,7 +20,7 @@ impl CreateTableBuilder {
                 table_name: &'a str,
             }
 
-            let body = serde_json::to_string(&RequestBody {
+            let body = to_json(&RequestBody {
                 table_name: self.client.table_name(),
             })?
             .into();
@@ -48,11 +49,9 @@ pub struct CreateTableResponse {
 impl CreateTableResponse {
     async fn try_from(response: Response) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
-
         Ok(CreateTableResponse {
             common_storage_response_headers: (&headers).try_into()?,
-            table: serde_json::from_slice(&body)?,
+            table: body.json().await?,
         })
     }
 }

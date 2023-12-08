@@ -12,7 +12,7 @@ use super::Resource;
 use crate::headers;
 
 use azure_core::headers::{AsHeaders, HeaderName, HeaderValue, Headers};
-use azure_core::Header;
+use azure_core::{from_json, Header};
 use serde::de::DeserializeOwned;
 
 /// User-defined content in JSON format.
@@ -45,16 +45,7 @@ where
 {
     type Error = azure_core::error::Error;
     fn try_from((_, body): (&Headers, &[u8])) -> Result<Self, Self::Error> {
-        use azure_core::error::ResultExt;
-        serde_json::from_slice::<Self>(body).with_context(
-            azure_core::error::ErrorKind::DataConversion,
-            || {
-                format!(
-                    "could not convert json '{}' into Permission",
-                    std::str::from_utf8(body).unwrap_or("<NON-UTF8>")
-                )
-            },
-        )
+        from_json(body)
     }
 }
 

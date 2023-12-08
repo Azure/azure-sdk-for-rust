@@ -37,12 +37,12 @@
 
 mod login_response;
 
-use azure_core::Method;
 use azure_core::{
     content_type,
     error::{ErrorKind, ResultExt},
     headers, HttpClient, Request, Url,
 };
+use azure_core::{from_json, Method};
 use login_response::LoginResponse;
 use std::sync::Arc;
 use url::form_urlencoded;
@@ -81,5 +81,5 @@ pub async fn perform(
     if !rsp_status.is_success() {
         return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
     }
-    serde_json::from_slice(&rsp_body).map_kind(ErrorKind::DataConversion)
+    from_json(&rsp_body)
 }

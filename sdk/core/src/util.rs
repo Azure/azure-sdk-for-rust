@@ -30,6 +30,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::from_json;
     use serde::Serialize;
 
     #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -54,7 +55,7 @@ mod tests {
     #[test]
     fn deserialize_empty() -> crate::Result<()> {
         let bytes = br#"{}"#;
-        let site_config: SiteConfig = serde_json::from_slice(bytes)?;
+        let site_config: SiteConfig = from_json(bytes)?;
         assert_eq!(Vec::<NameValuePair>::default(), site_config.app_settings);
         Ok(())
     }
@@ -62,7 +63,7 @@ mod tests {
     #[test]
     fn deserialize_null() -> crate::Result<()> {
         let bytes = br#"{ "appSettings": null }"#;
-        let site_config: SiteConfig = serde_json::from_slice(bytes)?;
+        let site_config: SiteConfig = from_json(bytes)?;
         assert_eq!(Vec::<NameValuePair>::default(), site_config.app_settings);
         Ok(())
     }

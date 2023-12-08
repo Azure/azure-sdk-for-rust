@@ -35,11 +35,10 @@
 
 mod login_response;
 
-use azure_core::Method;
 use azure_core::{
     content_type,
     error::{ErrorKind, ResultExt},
-    headers, HttpClient, Request, Url,
+    headers, HttpClient, Method, Request, Url,
 };
 use log::{debug, error};
 use login_response::LoginResponse;
@@ -81,11 +80,12 @@ pub async fn perform(
     let rsp = http_client.execute_request(&req).await?;
     let rsp_status = rsp.status();
     debug!("rsp_status == {:?}", rsp_status);
-    let rsp_body = rsp.into_body().collect().await?;
     if !rsp_status.is_success() {
+        let rsp_body = rsp.into_body().collect().await?;
         let text = std::str::from_utf8(&rsp_body)?;
         error!("rsp_body == {:?}", text);
-        return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
+        Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error())
+    } else {
+        rsp.json().await
     }
-    serde_json::from_slice(&rsp_body).map_kind(ErrorKind::DataConversion)
 }

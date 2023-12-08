@@ -1,13 +1,12 @@
-use crate::headers::from_headers::*;
-use crate::prelude::*;
-use crate::resources::document::IndexingDirective;
-use crate::resources::Attachment;
-use crate::ResourceQuota;
-use azure_core::headers::{
-    content_type_from_headers, etag_from_headers, session_token_from_headers,
+use crate::{
+    headers::from_headers::*, prelude::*, resources::document::IndexingDirective,
+    resources::Attachment, ResourceQuota,
 };
-use azure_core::SessionToken;
-use azure_core::{prelude::*, Response as HttpResponse};
+use azure_core::{
+    headers::{content_type_from_headers, etag_from_headers, session_token_from_headers},
+    prelude::*,
+    Response as HttpResponse, SessionToken,
+};
 use time::OffsetDateTime;
 
 operation! {
@@ -76,10 +75,9 @@ pub struct GetAttachmentResponse {
 impl GetAttachmentResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
 
         Ok(Self {
-            attachment: serde_json::from_slice(&body)?,
+            attachment: body.json().await?,
             content_type: content_type_from_headers(&headers)?,
             content_location: content_location_from_headers(&headers)?,
             last_change: last_state_change_from_headers(&headers)?,

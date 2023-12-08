@@ -29,9 +29,11 @@ impl GetConfigurationBuilder {
             let mut request = self.client.finalize_request(&uri, Method::Get)?;
             request.set_body(azure_core::EMPTY_BODY);
 
-            let response = self.client.send(&self.context, &mut request).await?;
-
-            GetConfigurationResponse::try_from(response).await
+            self.client
+                .send(&self.context, &mut request)
+                .await?
+                .json()
+                .await
         })
     }
 }

@@ -1,7 +1,7 @@
 use crate::{
     clients::FileSystemClient, operations::*, prelude::PathClient, request_options::*, Properties,
 };
-use azure_core::{prelude::IfMatchCondition, Url};
+use azure_core::{prelude::IfMatchCondition, Response, Url};
 
 #[derive(Debug, Clone)]
 pub struct DirectoryClient {
@@ -22,7 +22,7 @@ impl PathClient for DirectoryClient {
         &self,
         ctx: &mut azure_core::Context,
         request: &mut azure_core::Request,
-    ) -> crate::Result<azure_core::Response> {
+    ) -> azure_core::Result<Response> {
         self.file_system_client.send(ctx, request).await
     }
 }

@@ -1,10 +1,9 @@
-use crate::headers::from_headers::*;
-use crate::prelude::*;
-use crate::resources::Database;
-use crate::ResourceQuota;
-
-use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
-use azure_core::{prelude::*, Pageable, Response};
+use crate::{headers::from_headers::*, prelude::*, resources::Database, ResourceQuota};
+use azure_core::{
+    headers::{continuation_token_from_headers_optional, session_token_from_headers},
+    prelude::*,
+    Pageable, Response,
+};
 use time::OffsetDateTime;
 
 operation! {
@@ -64,7 +63,6 @@ pub struct ListDatabasesResponse {
 impl ListDatabasesResponse {
     pub(crate) async fn try_from(response: Response) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
 
         #[derive(Deserialize, Debug)]
         pub struct Response {
@@ -76,7 +74,7 @@ impl ListDatabasesResponse {
             pub count: u32,
         }
 
-        let response: Response = serde_json::from_slice(&body)?;
+        let response: Response = body.json().await?;
 
         Ok(Self {
             rid: response.rid,

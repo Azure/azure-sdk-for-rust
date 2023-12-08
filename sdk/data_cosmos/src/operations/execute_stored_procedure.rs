@@ -1,14 +1,10 @@
-use std::marker::PhantomData;
-
-use crate::headers::from_headers::*;
-use crate::prelude::*;
-use crate::resources::stored_procedure::Parameters;
-
-use azure_core::headers::session_token_from_headers;
-use azure_core::prelude::*;
-use azure_core::{Response as HttpResponse, SessionToken};
+use crate::{headers::from_headers::*, prelude::*, resources::stored_procedure::Parameters};
+use azure_core::{
+    headers::session_token_from_headers, prelude::*, Response as HttpResponse, SessionToken,
+};
 use bytes::Bytes;
 use serde::de::DeserializeOwned;
+use std::marker::PhantomData;
 use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]
@@ -134,10 +130,9 @@ where
 {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
 
         Ok(Self {
-            payload: serde_json::from_slice(&body)?,
+            payload: body.json().await?,
             last_state_change: last_state_change_from_headers(&headers)?,
             schema_version: schema_version_from_headers(&headers)?,
             alt_content_path: alt_content_path_from_headers(&headers)?,

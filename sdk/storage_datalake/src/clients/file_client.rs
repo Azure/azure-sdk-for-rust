@@ -22,7 +22,7 @@ impl PathClient for FileClient {
         &self,
         ctx: &mut azure_core::Context,
         request: &mut azure_core::Request,
-    ) -> crate::Result<azure_core::Response> {
+    ) -> azure_core::Result<azure_core::Response> {
         self.file_system_client.send(ctx, request).await
     }
 }

@@ -1,7 +1,7 @@
 use azure_core::{
     auth::{AccessToken, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
-    Url,
+    from_json, Url,
 };
 use const_format::formatcp;
 use serde::de::DeserializeOwned;
@@ -80,10 +80,7 @@ impl DeviceUpdateClient {
         let body = resp.bytes().await.with_context(ErrorKind::Io, || {
             format!("failed to read response body text. uri: {uri}")
         })?;
-        serde_json::from_slice(&body).context(
-            ErrorKind::DataConversion,
-            "failed to deserialize json response body",
-        )
+        from_json(&body)
     }
 
     pub(crate) async fn post(

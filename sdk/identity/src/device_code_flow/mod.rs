@@ -8,7 +8,7 @@ mod device_code_responses;
 use azure_core::{
     content_type,
     error::{Error, ErrorKind},
-    headers, sleep, HttpClient, Method, Request, Response, Url,
+    from_json, headers, sleep, HttpClient, Method, Request, Response, Url,
 };
 pub use device_code_responses::*;
 use futures::stream::unfold;
@@ -41,7 +41,7 @@ where
     if !rsp_status.is_success() {
         return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
     }
-    let device_code_response: DeviceCodePhaseOneResponse = serde_json::from_slice(&rsp_body)?;
+    let device_code_response: DeviceCodePhaseOneResponse = from_json(&rsp_body)?;
 
     // we need to capture some variables that will be useful in
     // the second phase (the client, the tenant_id and the client_id)
@@ -131,20 +131,14 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                                     Err(e) => return Some((Err(e), NextState::Finish)),
                                 };
                                 if rsp_status.is_success() {
-                                    match serde_json::from_slice::<DeviceCodeAuthorization>(
-                                        &rsp_body,
-                                    ) {
+                                    match from_json::<_, DeviceCodeAuthorization>(&rsp_body) {
                                         Ok(authorization) => {
                                             Some((Ok(authorization), NextState::Finish))
                                         }
-                                        Err(error) => {
-                                            Some((Err(Error::from(error)), NextState::Finish))
-                                        }
+                                        Err(error) => Some((Err(error), NextState::Finish)),
                                     }
                                 } else {
-                                    match serde_json::from_slice::<DeviceCodeErrorResponse>(
-                                        &rsp_body,
-                                    ) {
+                                    match from_json::<_, DeviceCodeErrorResponse>(&rsp_body) {
                                         Ok(error_rsp) => {
                                             let next_state =
                                                 if error_rsp.error == "authorization_pending" {
@@ -157,9 +151,7 @@ impl<'a> DeviceCodePhaseOneResponse<'a> {
                                                 next_state,
                                             ))
                                         }
-                                        Err(error) => {
-                                            Some((Err(Error::from(error)), NextState::Finish))
-                                        }
+                                        Err(error) => Some((Err(error), NextState::Finish)),
                                     }
                                 }
                             }

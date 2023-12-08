@@ -1,11 +1,9 @@
-use crate::headers::from_headers::*;
-use crate::prelude::*;
-use crate::resources::Permission;
-use crate::resources::ResourceType;
-
-use azure_core::headers::{continuation_token_from_headers_optional, session_token_from_headers};
-use azure_core::prelude::*;
-use azure_core::{Pageable, Response as HttpResponse};
+use crate::{headers::from_headers::*, prelude::*, resources::Permission, resources::ResourceType};
+use azure_core::{
+    headers::{continuation_token_from_headers_optional, session_token_from_headers},
+    prelude::*,
+    Pageable, Response as HttpResponse,
+};
 
 operation! {
     #[stream]
@@ -66,7 +64,6 @@ pub struct ListPermissionsResponse {
 impl ListPermissionsResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
 
         #[derive(Debug, Deserialize)]
         struct Response {
@@ -76,7 +73,7 @@ impl ListPermissionsResponse {
             _count: u32,
         }
 
-        let response: Response = serde_json::from_slice(&body)?;
+        let response: Response = body.json().await?;
         let permissions = response.permissions;
 
         Ok(Self {

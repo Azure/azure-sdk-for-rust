@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use azure_core::{headers::Headers, Method};
+use azure_core::{headers::Headers, to_json, Method};
 use serde::Serialize;
 use std::collections::HashMap;
 use time::OffsetDateTime;
@@ -55,7 +55,7 @@ impl UpdateSecretBuilder {
                 tags: self.tags,
             };
 
-            let body = serde_json::to_string(&request)?;
+            let body = to_json(&request)?;
 
             let headers = Headers::new();
             let mut request =

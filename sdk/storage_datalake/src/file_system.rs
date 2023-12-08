@@ -1,4 +1,4 @@
-use azure_core::Etag;
+use azure_core::{from_json, Etag};
 use bytes::Bytes;
 use serde::{self, Deserialize, Deserializer};
 use std::convert::TryFrom;
@@ -20,10 +20,10 @@ pub(crate) struct FileSystemList {
 }
 
 impl TryFrom<Bytes> for FileSystemList {
-    type Error = crate::Error;
+    type Error = azure_core::Error;
 
     fn try_from(response: Bytes) -> Result<Self, Self::Error> {
-        Ok(serde_json::from_slice::<FileSystemList>(response.as_ref())?)
+        from_json(response)
     }
 }
 
@@ -52,7 +52,7 @@ impl TryFrom<Bytes> for PathList {
     type Error = azure_core::error::Error;
 
     fn try_from(response: Bytes) -> Result<Self, Self::Error> {
-        Ok(serde_json::from_slice(response.as_ref())?)
+        from_json(response)
     }
 }
 
@@ -95,7 +95,7 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn test_path_serialization() {
+    fn test_path_serialization() -> azure_core::Result<()> {
         let payload = json!({
             "contentLength": 100_i64,
             "etag": "etag",
@@ -107,7 +107,7 @@ mod tests {
             "owner": "owner"
         });
 
-        let path: Path = serde_json::from_slice(payload.to_string().as_ref()).unwrap();
+        let path: Path = from_json(payload.to_string())?;
         assert_eq!(path.content_length, 100);
         assert!(path.is_directory);
 
@@ -122,8 +122,10 @@ mod tests {
             "owner": "owner"
         });
 
-        let path: Path = serde_json::from_slice(payload_str.to_string().as_ref()).unwrap();
+        let path: Path = from_json(payload_str.to_string())?;
         assert_eq!(path.content_length, 100);
         assert!(path.is_directory);
+
+        Ok(())
     }
 }

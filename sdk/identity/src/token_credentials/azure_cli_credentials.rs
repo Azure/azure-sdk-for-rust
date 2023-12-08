@@ -1,9 +1,11 @@
 use crate::token_credentials::cache::TokenCache;
-use azure_core::auth::{AccessToken, Secret, TokenCredential};
-use azure_core::error::{Error, ErrorKind, ResultExt};
+use azure_core::{
+    auth::{AccessToken, Secret, TokenCredential},
+    error::{Error, ErrorKind},
+    from_json,
+};
 use serde::Deserialize;
-use std::process::Command;
-use std::str;
+use std::{process::Command, str};
 use time::OffsetDateTime;
 
 mod az_cli_date_format {
@@ -159,8 +161,7 @@ impl AzureCliCredential {
             Ok(az_output) if az_output.status.success() => {
                 let output = str::from_utf8(&az_output.stdout)?;
 
-                let access_token = serde_json::from_str::<CliTokenResponse>(output)
-                    .map_kind(ErrorKind::DataConversion)?;
+                let access_token = from_json(output)?;
                 Ok(access_token)
             }
             Ok(az_output) => {

@@ -2,9 +2,10 @@
 use crate::SeekableStream;
 use crate::{
     headers::{AsHeaders, Headers},
-    Method, Url,
+    to_json, Method, Url,
 };
 use bytes::Bytes;
+use serde::Serialize;
 use std::fmt::Debug;
 
 /// An HTTP Body.
@@ -114,6 +115,14 @@ impl Request {
 
     pub fn body(&self) -> &Body {
         &self.body
+    }
+
+    pub fn set_json<T>(&mut self, data: &T) -> crate::Result<()>
+    where
+        T: ?Sized + Serialize,
+    {
+        self.set_body(to_json(data)?);
+        Ok(())
     }
 
     pub fn set_body(&mut self, body: impl Into<Body>) {

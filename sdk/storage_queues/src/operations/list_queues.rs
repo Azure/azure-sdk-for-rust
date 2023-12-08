@@ -1,9 +1,9 @@
 use crate::QueueServiceClient;
 use azure_core::{
-    error::Error, headers::Headers, prelude::*, xml::read_xml, Method, Pageable,
-    Response as AzureResponse,
+    error::Error, headers::Headers, prelude::*, Method, Pageable, Response as AzureResponse,
 };
 use azure_storage::headers::CommonStorageResponseHeaders;
+use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
 
 operation! {
@@ -71,9 +71,7 @@ impl Continuable for ListQueuesResponse {
 impl ListQueuesResponse {
     async fn try_from(response: AzureResponse) -> azure_core::Result<Self> {
         let (_, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
-
-        let mut response: ListQueuesResponseInternal = read_xml(&body)?;
+        let mut response: ListQueuesResponseInternal = body.xml().await?;
 
         if let Some("") = response.next_marker.as_deref() {
             response.next_marker = None;
@@ -120,13 +118,15 @@ pub struct Queue {
 #[cfg(test)]
 mod test {
     use super::*;
+    use azure_core::xml::read_xml;
 
     #[test]
-    fn try_parse() {
+    fn try_parse() -> azure_core::Result<()> {
         let range = "<?xml version=\"1.0\" encoding=\"utf-8\"?><EnumerationResults ServiceEndpoint=\"https://azureskdforrust.queue.core.windows.net/\"><Prefix>a</Prefix><MaxResults>2</MaxResults><Queues><Queue><Name>azureiscool</Name></Queue><Queue><Name>azurerocks</Name></Queue></Queues><NextMarker /></EnumerationResults>";
 
-        let response: ListQueuesResponseInternal = read_xml(range.as_bytes()).unwrap();
+        let response: ListQueuesResponseInternal = read_xml(range.as_bytes())?;
 
         assert_eq!(response.queues.queues.len(), 2);
+        Ok(())
     }
 }

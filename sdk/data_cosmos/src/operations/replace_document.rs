@@ -1,13 +1,13 @@
-use crate::cosmos_entity::{add_as_partition_key_header_serialized, serialize_partition_key};
-use crate::headers::from_headers::*;
-use crate::prelude::*;
-use crate::resources::document::DocumentAttributes;
-use crate::ResourceQuota;
-
-use azure_core::headers::session_token_from_headers;
-use azure_core::prelude::*;
-use azure_core::Response as HttpResponse;
-use azure_core::SessionToken;
+use crate::{
+    cosmos_entity::{add_as_partition_key_header_serialized, serialize_partition_key},
+    headers::from_headers::*,
+    prelude::*,
+    resources::document::DocumentAttributes,
+    ResourceQuota,
+};
+use azure_core::{
+    headers::session_token_from_headers, prelude::*, Response as HttpResponse, SessionToken,
+};
 use serde::Serialize;
 use time::OffsetDateTime;
 
@@ -48,8 +48,7 @@ impl<D: Serialize + Send + 'static> ReplaceDocumentBuilder<D> {
             }
             request.insert_headers(&self.allow_tentative_writes.unwrap_or_default());
 
-            let serialized = azure_core::to_json(&self.document)?;
-            request.set_body(serialized);
+            request.set_json(&self.document)?;
 
             let response = self
                 .client
@@ -97,10 +96,8 @@ pub struct ReplaceDocumentResponse {
 impl ReplaceDocumentResponse {
     pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, body) = response.deconstruct();
-        let body = body.collect().await?;
-        let document_attributes = serde_json::from_slice(&body)?;
-
         Ok(Self {
+            document_attributes: body.json().await?,
             content_location: content_location_from_headers(&headers)?,
             last_state_change: last_state_change_from_headers(&headers)?,
             resource_quota: resource_quota_from_headers(&headers)?,
@@ -124,7 +121,6 @@ impl ReplaceDocumentResponse {
             activity_id: activity_id_from_headers(&headers)?,
             gateway_version: gateway_version_from_headers(&headers)?,
             date: date_from_headers(&headers)?,
-            document_attributes,
         })
     }
 }
