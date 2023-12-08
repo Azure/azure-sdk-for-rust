@@ -208,6 +208,12 @@ impl From<syn::Error> for Error {
     }
 }
 
+impl From<cargo_toml::Error> for Error {
+    fn from(error: cargo_toml::Error) -> Self {
+        Self::new(ErrorKind::Parse, error)
+    }
+}
+
 impl From<autorust_openapi::Error> for Error {
     fn from(error: autorust_openapi::Error) -> Self {
         Self::new(ErrorKind::Parse, error)
