@@ -3,9 +3,10 @@ use crate::{ErrorKind, Result, ResultExt};
 use camino::Utf8Path;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
+use std::convert::{TryFrom, TryInto};
 
-pub fn create(tags: &[&Tag], path: &Utf8Path, print_writing_file: bool) -> Result<()> {
-    write_file(path, &create_body(tags)?.into_token_stream(), print_writing_file)
+pub fn create(tags: &[&Tag], default_tag: &Tag, path: &Utf8Path, print_writing_file: bool) -> Result<()> {
+    write_file(path, &create_body(tags, default_tag)?.into_token_stream(), print_writing_file)
 }
 
 struct Feature {
@@ -13,32 +14,43 @@ struct Feature {
     pub mod_name: Ident,
 }
 
+impl TryFrom<&&Tag> for Feature {
+    type Error = crate::Error;
+    fn try_from(tag: &&Tag) -> Result<Self> {
+        let feature_name = tag.rust_feature_name();
+        let mod_name = parse_ident(&tag.rust_mod_name()).context(ErrorKind::Parse, "mod name")?;
+        Ok(Feature { feature_name, mod_name })
+    }
+}
+
 struct BodyCode {
+    pub default: Feature,
     pub features: Vec<Feature>,
 }
 
-fn create_body(tags: &[&Tag]) -> Result<BodyCode> {
-    let features: Vec<Feature> = tags
-        .iter()
-        .map(|tag| {
-            let feature_name = tag.rust_feature_name();
-            let mod_name = parse_ident(&tag.rust_mod_name()).context(ErrorKind::Parse, "mod name")?;
-            Ok(Feature { feature_name, mod_name })
-        })
-        .collect::<Result<_>>()?;
-    Ok(BodyCode { features })
+fn create_body(tags: &[&Tag], default_tag: &Tag) -> Result<BodyCode> {
+    let features: Vec<Feature> = tags.iter().map(|tag| tag.try_into()).collect::<Result<_>>()?;
+    let default = (&default_tag).try_into()?;
+
+    Ok(BodyCode { features, default })
 }
 
 impl ToTokens for BodyCode {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         let mut cfgs = TokenStream::new();
+
         for feature in &self.features {
-            let feature_name = &feature.feature_name;
-            let mod_name = &feature.mod_name;
+            let Feature { feature_name, mod_name } = feature;
             cfgs.extend(quote! {
                 #[cfg(feature = #feature_name)]
                 pub mod #mod_name;
-                #[cfg(all(feature = #feature_name, not(feature = "without_tag_import")))]
+            });
+        }
+
+        {
+            let Feature { feature_name, mod_name } = &self.default;
+            cfgs.extend(quote! {
+                #[cfg(all(feature="default_tag", feature = #feature_name))]
                 pub use #mod_name::*;
             });
         }

@@ -9,5 +9,5 @@
 #![allow(rustdoc::broken_intra_doc_links)]
 #[cfg(feature = "package-2021-03-25-preview")]
 pub mod package_2021_03_25_preview;
-#[cfg(all(feature = "package-2021-03-25-preview", not(feature = "without_tag_import")))]
+#[cfg(all(feature = "default_tag", feature = "package-2021-03-25-preview"))]
 pub use package_2021_03_25_preview::*;

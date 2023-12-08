@@ -9,5 +9,5 @@
 #![allow(rustdoc::broken_intra_doc_links)]
 #[cfg(feature = "1_6")]
 pub mod v1_6;
-#[cfg(all(feature = "1_6", not(feature = "without_tag_import")))]
+#[cfg(all(feature = "default_tag", feature = "1_6"))]
 pub use v1_6::*;

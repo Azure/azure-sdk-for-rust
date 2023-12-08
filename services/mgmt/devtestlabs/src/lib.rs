@@ -7,15 +7,11 @@
 #![allow(rustdoc::bare_urls)]
 #![allow(rustdoc::invalid_html_tags)]
 #![allow(rustdoc::broken_intra_doc_links)]
-#[cfg(feature = "package-2018-09")]
-pub mod package_2018_09;
-#[cfg(all(feature = "package-2018-09", not(feature = "without_tag_import")))]
-pub use package_2018_09::*;
-#[cfg(feature = "package-2016-05")]
-pub mod package_2016_05;
-#[cfg(all(feature = "package-2016-05", not(feature = "without_tag_import")))]
-pub use package_2016_05::*;
 #[cfg(feature = "package-2015-05-preview")]
 pub mod package_2015_05_preview;
-#[cfg(all(feature = "package-2015-05-preview", not(feature = "without_tag_import")))]
-pub use package_2015_05_preview::*;
+#[cfg(feature = "package-2016-05")]
+pub mod package_2016_05;
+#[cfg(feature = "package-2018-09")]
+pub mod package_2018_09;
+#[cfg(all(feature = "default_tag", feature = "package-2018-09"))]
+pub use package_2018_09::*;

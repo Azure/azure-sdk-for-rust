@@ -9,5 +9,5 @@
 #![allow(rustdoc::broken_intra_doc_links)]
 #[cfg(feature = "package-2020-07-31")]
 pub mod package_2020_07_31;
-#[cfg(all(feature = "package-2020-07-31", not(feature = "without_tag_import")))]
+#[cfg(all(feature = "default_tag", feature = "package-2020-07-31"))]
 pub use package_2020_07_31::*;

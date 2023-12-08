@@ -9,5 +9,5 @@
 #![allow(rustdoc::broken_intra_doc_links)]
 #[cfg(feature = "package-2019-06-01-preview")]
 pub mod package_2019_06_01_preview;
-#[cfg(all(feature = "package-2019-06-01-preview", not(feature = "without_tag_import")))]
+#[cfg(all(feature = "default_tag", feature = "package-2019-06-01-preview"))]
 pub use package_2019_06_01_preview::*;
