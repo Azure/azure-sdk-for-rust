@@ -1,4 +1,5 @@
 use crate::error::{ErrorKind, ResultExt};
+use bytes::Bytes;
 pub use quick_xml::serde_helpers::text_content;
 use quick_xml::{
     de::{from_reader, from_str},
@@ -32,24 +33,27 @@ where
     })
 }
 
-pub fn to_xml<T>(value: &T) -> crate::Result<String>
+pub fn to_xml<T>(value: &T) -> crate::Result<Bytes>
 where
     T: serde::Serialize,
 {
-    to_string(value).with_context(ErrorKind::DataConversion, || {
+    let value = to_string(value).with_context(ErrorKind::DataConversion, || {
         let t = core::any::type_name::<T>();
         format!("failed to serialize {t} into xml")
-    })
+    })?;
+    Ok(Bytes::from(value))
 }
 
-pub fn to_xml_with_root<T>(root_tag: &str, value: &T) -> crate::Result<String>
+pub fn to_xml_with_root<T>(root_tag: &str, value: &T) -> crate::Result<Bytes>
 where
     T: serde::Serialize,
 {
-    to_string_with_root(root_tag, value).with_context(ErrorKind::DataConversion, || {
-        let t = core::any::type_name::<T>();
-        format!("failed to serialize {t} into xml")
-    })
+    let value =
+        to_string_with_root(root_tag, value).with_context(ErrorKind::DataConversion, || {
+            let t = core::any::type_name::<T>();
+            format!("failed to serialize {t} into xml")
+        })?;
+    Ok(Bytes::from(value))
 }
 
 /// Returns bytes without the UTF-8 BOM.
