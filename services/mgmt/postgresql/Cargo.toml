@@ -38,7 +38,6 @@ all-features = true
 default = ["default_tag", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-without_tag_import = []
 default_tag = ["package-flexibleserver-2022-12-01"]
 "package-preview-2023-06" = []
 "package-flexibleserver-2023-03-01-preview" = []

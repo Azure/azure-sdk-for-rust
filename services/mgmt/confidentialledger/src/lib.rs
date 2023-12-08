@@ -7,23 +7,15 @@
 #![allow(rustdoc::bare_urls)]
 #![allow(rustdoc::invalid_html_tags)]
 #![allow(rustdoc::broken_intra_doc_links)]
-#[cfg(feature = "package-preview-2023-06")]
-pub mod package_preview_2023_06;
-#[cfg(all(feature = "package-preview-2023-06", not(feature = "without_tag_import")))]
-pub use package_preview_2023_06::*;
-#[cfg(feature = "package-preview-2023-01")]
-pub mod package_preview_2023_01;
-#[cfg(all(feature = "package-preview-2023-01", not(feature = "without_tag_import")))]
-pub use package_preview_2023_01::*;
-#[cfg(feature = "package-2022-09-08-preview")]
-pub mod package_2022_09_08_preview;
-#[cfg(all(feature = "package-2022-09-08-preview", not(feature = "without_tag_import")))]
-pub use package_2022_09_08_preview::*;
-#[cfg(feature = "package-2022-05-13")]
-pub mod package_2022_05_13;
-#[cfg(all(feature = "package-2022-05-13", not(feature = "without_tag_import")))]
-pub use package_2022_05_13::*;
 #[cfg(feature = "package-2021-05-13-preview")]
 pub mod package_2021_05_13_preview;
-#[cfg(all(feature = "package-2021-05-13-preview", not(feature = "without_tag_import")))]
-pub use package_2021_05_13_preview::*;
+#[cfg(feature = "package-2022-05-13")]
+pub mod package_2022_05_13;
+#[cfg(feature = "package-2022-09-08-preview")]
+pub mod package_2022_09_08_preview;
+#[cfg(feature = "package-preview-2023-01")]
+pub mod package_preview_2023_01;
+#[cfg(feature = "package-preview-2023-06")]
+pub mod package_preview_2023_06;
+#[cfg(all(feature = "default_tag", feature = "package-2022-05-13"))]
+pub use package_2022_05_13::*;

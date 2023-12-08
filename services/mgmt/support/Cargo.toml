@@ -38,7 +38,6 @@ all-features = true
 default = ["default_tag", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-without_tag_import = []
 default_tag = ["package-2020-04"]
 "package-preview-2022-09" = []
 "package-preview-2021-06" = []

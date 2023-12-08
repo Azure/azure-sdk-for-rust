@@ -7,23 +7,15 @@
 #![allow(rustdoc::bare_urls)]
 #![allow(rustdoc::invalid_html_tags)]
 #![allow(rustdoc::broken_intra_doc_links)]
-#[cfg(feature = "8_2")]
-pub mod v8_2;
-#[cfg(all(feature = "8_2", not(feature = "without_tag_import")))]
-pub use v8_2::*;
-#[cfg(feature = "8_1")]
-pub mod v8_1;
-#[cfg(all(feature = "8_1", not(feature = "without_tag_import")))]
-pub use v8_1::*;
-#[cfg(feature = "8_0")]
-pub mod v8_0;
-#[cfg(all(feature = "8_0", not(feature = "without_tag_import")))]
-pub use v8_0::*;
-#[cfg(feature = "7_2")]
-pub mod v7_2;
-#[cfg(all(feature = "7_2", not(feature = "without_tag_import")))]
-pub use v7_2::*;
 #[cfg(feature = "7_1")]
 pub mod v7_1;
-#[cfg(all(feature = "7_1", not(feature = "without_tag_import")))]
-pub use v7_1::*;
+#[cfg(feature = "7_2")]
+pub mod v7_2;
+#[cfg(feature = "8_0")]
+pub mod v8_0;
+#[cfg(feature = "8_1")]
+pub mod v8_1;
+#[cfg(feature = "8_2")]
+pub mod v8_2;
+#[cfg(all(feature = "default_tag", feature = "8_1"))]
+pub use v8_1::*;

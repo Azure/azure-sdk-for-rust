@@ -7,11 +7,9 @@
 #![allow(rustdoc::bare_urls)]
 #![allow(rustdoc::invalid_html_tags)]
 #![allow(rustdoc::broken_intra_doc_links)]
-#[cfg(feature = "package-preview-2021-11")]
-pub mod package_preview_2021_11;
-#[cfg(all(feature = "package-preview-2021-11", not(feature = "without_tag_import")))]
-pub use package_preview_2021_11::*;
 #[cfg(feature = "package-2021-05-01-preview")]
 pub mod package_2021_05_01_preview;
-#[cfg(all(feature = "package-2021-05-01-preview", not(feature = "without_tag_import")))]
-pub use package_2021_05_01_preview::*;
+#[cfg(feature = "package-preview-2021-11")]
+pub mod package_preview_2021_11;
+#[cfg(all(feature = "default_tag", feature = "package-preview-2021-11"))]
+pub use package_preview_2021_11::*;

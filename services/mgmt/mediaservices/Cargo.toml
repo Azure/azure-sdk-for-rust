@@ -38,7 +38,6 @@ all-features = true
 default = ["default_tag", "enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
-without_tag_import = []
 default_tag = ["package-metadata-2023-01"]
 "package-streaming-2022-11" = []
 "package-metadata-2023-01" = []

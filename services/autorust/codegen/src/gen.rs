@@ -90,7 +90,7 @@ pub fn gen_crate(package_name: &str, spec: &SpecReadme, run_config: &RunConfig, 
     let default_tag = cargo_toml::get_default_tag(tags, default_tag_name);
 
     cargo_toml::create(package_name, tags, default_tag, has_xml, &cargo_toml_path).context(ErrorKind::CodeGen, "cargo_toml::create")?;
-    lib_rs::create(tags, lib_rs_path, false).context(ErrorKind::CodeGen, "lib_rs::create")?;
+    lib_rs::create(tags, default_tag, lib_rs_path, false).context(ErrorKind::CodeGen, "lib_rs::create")?;
     let readme = ReadmeMd {
         package_name,
         readme_url: readme_md::url(spec.readme().as_str()),

@@ -7,15 +7,11 @@
 #![allow(rustdoc::bare_urls)]
 #![allow(rustdoc::invalid_html_tags)]
 #![allow(rustdoc::broken_intra_doc_links)]
-#[cfg(feature = "package-2022-05-preview")]
-pub mod package_2022_05_preview;
-#[cfg(all(feature = "package-2022-05-preview", not(feature = "without_tag_import")))]
-pub use package_2022_05_preview::*;
-#[cfg(feature = "package-2021-12")]
-pub mod package_2021_12;
-#[cfg(all(feature = "package-2021-12", not(feature = "without_tag_import")))]
-pub use package_2021_12::*;
 #[cfg(feature = "package-2020-12-preview")]
 pub mod package_2020_12_preview;
-#[cfg(all(feature = "package-2020-12-preview", not(feature = "without_tag_import")))]
-pub use package_2020_12_preview::*;
+#[cfg(feature = "package-2021-12")]
+pub mod package_2021_12;
+#[cfg(feature = "package-2022-05-preview")]
+pub mod package_2022_05_preview;
+#[cfg(all(feature = "default_tag", feature = "package-2021-12"))]
+pub use package_2021_12::*;
