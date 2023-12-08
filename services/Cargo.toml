@@ -258,7 +258,6 @@ members = [
   "svc/attestation",
   "svc/batch",
   "svc/blobstorage",
-  "svc/codesigning",
   "svc/confidentialledger",
   "svc/containerregistry",
   "svc/datalakeanalytics",

@@ -3,13 +3,14 @@
 // cargo run --release -p azure-autorust -- -p azure_svc_queuestorage
 
 use autorust_codegen::{
-    crates::{list_crate_names, list_dirs},
+    crates::list_crates,
     gen, get_mgmt_readmes, get_svc_readmes,
     jinja::{CheckAllServicesYml, PublishSdksYml, PublishServicesYml, WorkspaceCargoToml},
     Error, ErrorKind, Result, ResultExt, RunConfig, SpecReadme,
 };
 use clap::Parser;
 use rayon::prelude::*;
+use std::{collections::BTreeSet, path::PathBuf};
 
 #[derive(Debug, clap::Parser)]
 struct Args {
@@ -35,15 +36,34 @@ impl Args {
 fn main() -> Result<()> {
     let args = Args::parse();
     let packages = &args.packages();
-    gen_crates(packages)?;
-    gen_services_workspace(packages)?;
+
+    let existing_crates = list_crates(&PathBuf::from("../"))?;
+    let generated = gen_crates(packages)?;
+    gen_services_workspace(&generated)?;
+
     if packages.is_empty() {
-        gen_workflow_check_all_services()?;
+        gen_workflow_check_all_services(&generated)?;
         if args.publish {
             gen_workflow_publish_sdks()?;
-            gen_workflow_publish_services()?;
+            gen_workflow_publish_services(&generated)?;
+        }
+
+        let removed = existing_crates.difference(&generated).collect::<Vec<_>>();
+        let added = generated.difference(&existing_crates).collect::<Vec<_>>();
+        if !removed.is_empty() {
+            println!("the following crates are no longer generated:");
+            for name in removed {
+                println!("- {name}");
+            }
+        }
+        if !added.is_empty() {
+            println!("the following crates are newly generated:");
+            for name in added {
+                println!("- {name}");
+            }
         }
     }
+
     Ok(())
 }
 
@@ -63,7 +83,7 @@ fn gen_crate(only_packages: &[&str], crate_type: &str, spec: &SpecReadme) -> Res
     }
 }
 
-fn gen_crates(only_packages: &[&str]) -> Result<()> {
+fn gen_crates(only_packages: &[&str]) -> Result<BTreeSet<String>> {
     let svc = get_svc_readmes()?.into_iter().map(|x| ("svc".to_string(), x));
     let mgmt = get_mgmt_readmes()?.into_iter().map(|x| ("mgmt".to_string(), x));
     let crate_iters = svc.chain(mgmt).collect::<Vec<_>>();
@@ -77,12 +97,17 @@ fn gen_crates(only_packages: &[&str]) -> Result<()> {
 
     let mut errors = vec![];
     let mut completed = vec![];
+    let mut skipped = vec![];
 
     for result in results {
         match result {
             Ok(result) => {
-                if let Some(result) = result {
-                    completed.push(result);
+                if let Some((name, tags)) = result {
+                    if tags.is_empty() {
+                        skipped.push(name);
+                    } else {
+                        completed.push((name, tags));
+                    }
                 }
             }
             Err(err) => {
@@ -98,40 +123,34 @@ fn gen_crates(only_packages: &[&str]) -> Result<()> {
         return Err(Error::new(ErrorKind::CodeGen, "Failed to generate some crates"));
     }
 
-    for (package_name, tags) in completed {
+    for (package_name, tags) in &completed {
         println!("{package_name}");
-        if tags.is_empty() {
-            println!("  No tags");
-        } else {
-            for tag in tags {
-                println!("- {tag}");
-            }
+        for tag in tags {
+            println!("- {tag}");
         }
     }
 
-    Ok(())
+    if !skipped.is_empty() {
+        println!("the following crates were not generated due to configuration:");
+        for name in &skipped {
+            println!("- {name}");
+        }
+    }
+
+    Ok(completed.into_iter().map(|(package_name, _)| package_name).collect())
 }
 
-fn gen_services_workspace(only_packages: &[&str]) -> Result<()> {
-    let dirs: Vec<String> = if only_packages.is_empty() {
-        list_dirs()?
-            .iter()
-            .map(|dir| dir.as_str().replace('\\', "/").replace("../", ""))
-            .collect()
-    } else {
-        only_packages
-            .iter()
-            .map(|p| p.replace("azure_mgmt_", "mgmt/").replace("azure_svc_", "svc/"))
-            .collect()
-    };
-
+fn gen_services_workspace(only_packages: &BTreeSet<String>) -> Result<()> {
+    let dirs = only_packages
+        .iter()
+        .map(|p| p.replace("azure_mgmt_", "mgmt/").replace("azure_svc_", "svc/"))
+        .collect();
     let toml = WorkspaceCargoToml { dirs };
     toml.create("../Cargo.toml")?;
     Ok(())
 }
 
-fn gen_workflow_check_all_services() -> Result<()> {
-    let packages = list_crate_names()?;
+fn gen_workflow_check_all_services(packages: &BTreeSet<String>) -> Result<()> {
     let packages = &packages.iter().map(String::as_str).collect();
 
     let yml = CheckAllServicesYml { packages };
@@ -159,8 +178,7 @@ fn gen_workflow_publish_sdks() -> Result<()> {
     Ok(())
 }
 
-fn gen_workflow_publish_services() -> Result<()> {
-    let packages = list_crate_names()?;
+fn gen_workflow_publish_services(packages: &BTreeSet<String>) -> Result<()> {
     let packages = &packages.iter().map(String::as_str).collect();
     let yml = PublishServicesYml { packages };
     yml.create("../../.github/workflows/publish-services.yml")?;
