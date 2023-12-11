@@ -1,6 +1,6 @@
 [package]
 name = "azure_identity"
-version = "0.18.0"
+version = "0.18.1"
 description = "Rust wrappers around Microsoft Azure REST APIs - Azure identity helper crate"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -48,7 +48,7 @@ vendored_openssl = ["openssl/vendored"]
 azureauth_cli = []
 
 [package.metadata.docs.rs]
-features = ["enable_reqwest", "enable_reqwest_rustls", "hmac_rust", "hmac_openssl", "development", "client_certificate", "azureauth_cli"]
+features = ["enable_reqwest", "enable_reqwest_rustls", "development", "client_certificate", "azureauth_cli"]
 
 [[example]]
 name="client_certificate_credentials"
