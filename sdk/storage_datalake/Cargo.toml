@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage_datalake"
-version = "0.18.0"
+version = "0.18.1"
 description = "Azure Data Lake Storage Gen2 crate from the Azure SDK for Rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -32,7 +32,7 @@ tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 mock_transport = { path = "../../eng/test/mock_transport" }
 
 [features]
-default = ["enable_reqwest"]
+default = ["enable_reqwest", "hmac_rust"]
 test_e2e = []
 enable_reqwest = ["azure_core/enable_reqwest", "azure_storage/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
