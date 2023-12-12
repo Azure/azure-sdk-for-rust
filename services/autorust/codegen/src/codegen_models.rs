@@ -57,6 +57,7 @@ pub struct SchemaGen {
     // resolved
     properties: Vec<PropertyGen>,
     all_of: Vec<SchemaGen>,
+    required: Vec<String>,
 }
 
 #[derive(Clone)]
@@ -78,6 +79,7 @@ impl EnumValue {
 impl SchemaGen {
     fn new(ref_key: Option<RefKey>, schema: Schema, doc_file: Utf8PathBuf) -> Self {
         Self {
+            required: schema.clone().required,
             ref_key,
             schema,
             doc_file,
@@ -154,11 +156,13 @@ impl SchemaGen {
     }
 
     fn required(&self) -> HashSet<&str> {
-        self.schema.required.iter().map(String::as_str).collect()
+        self.required.iter().map(String::as_str).collect()
+        // self.schema.required.iter().map(String::as_str).collect()
     }
 
     fn has_required(&self) -> bool {
-        !self.schema.required.is_empty()
+        !self.required.is_empty()
+        // !self.schema.required.is_empty()
     }
 
     fn all_of(&self) -> Vec<&SchemaGen> {
@@ -324,6 +328,53 @@ fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen,
     Ok(schema)
 }
 
+// Flattens/merges the subschemas from allOf references into the parent schema
+fn flatten_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen, spec: &Spec) -> Result<SchemaGen> {
+    // recursively apply to all properties, so this vec of schemas has all the properties we need from children
+    let flattened_schemas: Vec<_> = schema
+        .all_of
+        .iter()
+        .map(|schema| flatten_all_of(all_schemas, schema, spec))
+        .collect::<Result<_>>()?;
+
+    // we need to flatten things that need to be present in this flattened schema
+
+    // properties
+    let mut all_properties: IndexMap<_, _> = IndexMap::new();
+    for property in schema.properties.clone() {
+        all_properties.insert(property.name.clone(), property);
+    }
+
+    for schema in flattened_schemas.clone() {
+        for property in schema.properties {
+            all_properties.insert(property.name.clone(), property);
+        }
+    }
+
+    // required
+    let mut all_required: HashSet<String> = schema.required.clone().into_iter().collect();
+    for schema in flattened_schemas {
+        for required in schema.required {
+            all_required.insert(required.into());
+        }
+    }
+
+    let mut schema: SchemaGen = schema.clone();
+    schema.properties = all_properties.into_iter().map(|(_, property)| property).collect();
+    schema.required = all_required.clone().into_iter().collect();
+    Ok(schema)
+}
+
+fn flatten_all_all_of(schemas: &IndexMap<RefKey, SchemaGen>, spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>> {
+    let mut flattened: IndexMap<RefKey, SchemaGen> = IndexMap::new();
+    for (ref_key, schema) in schemas {
+        flattened.insert(ref_key.clone(), schema.clone()); // order properties after
+        let schema = flatten_all_of(schemas, schema, spec)?;
+        flattened.insert(ref_key.clone(), schema);
+    }
+    Ok(flattened)
+}
+
 fn all_schemas(spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>> {
     let mut all_schemas: IndexMap<RefKey, SchemaGen> = IndexMap::new();
 
@@ -386,6 +437,8 @@ pub fn all_schemas_resolved(spec: &Spec) -> Result<Vec<(RefKey, SchemaGen)>> {
     let schemas = all_schemas(spec)?;
     let schemas = resolve_all_schema_properties(&schemas, spec)?;
     let schemas = resolve_all_all_of(&schemas, spec)?;
+    let schemas = flatten_all_all_of(&schemas, spec)?;
+
     // sort schemas by name
     let mut schemas: Vec<_> = schemas.into_iter().collect();
     schemas.sort_by(|a, b| a.0.name.cmp(&b.0.name));
