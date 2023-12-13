@@ -345,9 +345,14 @@ fn flatten_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen,
         all_properties.insert(property.name.clone(), property);
     }
 
-    for schema in flattened_schemas.clone() {
-        for property in schema.properties {
-            all_properties.insert(property.name.clone(), property);
+    for flattened_schema in flattened_schemas.clone() {
+        for property in flattened_schema.properties {
+            let _x = all_properties.insert(property.name.clone(), property);
+            // if let Some(x) = x {
+            //     println!("{:?}", schema.ref_key);
+            //     println!("inner all of: {:?}", flattened_schema.ref_key);
+            //     println!("property already in schema - so a duplicate: {}", x.name)
+            // }
         }
     }
 
