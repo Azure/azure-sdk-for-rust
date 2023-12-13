@@ -1029,28 +1029,28 @@ fn create_struct(
     // println!("struct: {} {:?}", struct_name_code, pageable);
     needs_boxing.insert(struct_name.to_camel_case_ident()?.to_string());
 
-    for base_schema in schema.all_of() {
-        // skip empty base types
-        if !base_schema.has_fields() {
-            continue;
-        }
-        let schema_name = base_schema.name()?;
-        let mut type_name = TypeNameCode::from(schema_name.to_camel_case_ident()?);
-        type_name.union(false);
-        let field_name = schema_name.to_snake_case_ident()?;
-        props.push(StructPropCode {
-            doc_comments: Vec::new(),
-            serde: SerdeCode::flatten(),
-            field_name: field_name.clone(),
-            field_type: type_name.clone(),
-        });
-        if base_schema.implement_default() {
-            new_fn_body.extend(quote! { #field_name: #type_name::default(), });
-        } else {
-            new_fn_params.push(quote! { #field_name: #type_name });
-            new_fn_body.extend(quote! { #field_name, });
-        }
-    }
+    // for base_schema in schema.all_of() {
+    //     // skip empty base types
+    //     if !base_schema.has_fields() {
+    //         continue;
+    //     }
+    //     let schema_name = base_schema.name()?;
+    //     let mut type_name = TypeNameCode::from(schema_name.to_camel_case_ident()?);
+    //     type_name.union(false);
+    //     let field_name = schema_name.to_snake_case_ident()?;
+    //     props.push(StructPropCode {
+    //         doc_comments: Vec::new(),
+    //         serde: SerdeCode::flatten(),
+    //         field_name: field_name.clone(),
+    //         field_type: type_name.clone(),
+    //     });
+    //     if base_schema.implement_default() {
+    //         new_fn_body.extend(quote! { #field_name: #type_name::default(), });
+    //     } else {
+    //         new_fn_params.push(quote! { #field_name: #type_name });
+    //         new_fn_body.extend(quote! { #field_name, });
+    //     }
+    // }
 
     let mut field_names = HashMap::new();
 
