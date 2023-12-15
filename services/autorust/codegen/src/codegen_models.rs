@@ -389,7 +389,6 @@ fn resolve_discriminators(
     all_schemas: &IndexMap<RefKey, SchemaGen>,
     ref_key: &RefKey,
     schema: &SchemaGen,
-    spec: &Spec,
 ) -> Result<(SchemaGen, HashSet<RefKey>)> {
     // No need to do anything if there is no discriminator
     if schema.discriminator().is_none() {
@@ -412,12 +411,12 @@ fn resolve_discriminators(
     Ok((new_schema.clone(), discriminator_children))
 }
 
-fn resolve_all_discriminators(schemas: &IndexMap<RefKey, SchemaGen>, spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>> {
+fn resolve_all_discriminators(schemas: &IndexMap<RefKey, SchemaGen>) -> Result<IndexMap<RefKey, SchemaGen>> {
     let mut resolved: IndexMap<RefKey, SchemaGen> = IndexMap::new();
     let mut children_map: HashMap<RefKey, HashSet<RefKey>> = HashMap::new();
 
     for (ref_key, schema) in schemas {
-        let (schema, children) = resolve_discriminators(schemas, ref_key, schema, spec)?;
+        let (schema, children) = resolve_discriminators(schemas, ref_key, schema)?;
         children_map.insert(ref_key.clone(), children);
         resolved.insert(ref_key.clone(), schema);
     }
@@ -504,7 +503,7 @@ pub fn all_schemas_resolved(spec: &Spec) -> Result<Vec<(RefKey, SchemaGen)>> {
     let schemas = resolve_all_schema_properties(&schemas, spec)?;
     let schemas = resolve_all_all_of(&schemas, spec)?;
     let schemas = flatten_all_all_of(&schemas, spec)?;
-    let schemas = resolve_all_discriminators(&schemas, spec)?;
+    let schemas = resolve_all_discriminators(&schemas)?;
 
     // sort schemas by name
     let mut schemas: Vec<_> = schemas.into_iter().collect();
@@ -706,21 +705,38 @@ impl UnionCode {
         all_schemas: &Vec<(RefKey, SchemaGen)>,
         description: Option<String>,
     ) -> Result<Self> {
-        let mut values = Vec::new();
-        for (child_ref_key, child_schema) in all_schemas {
-            if let Some(tag) = child_schema.discriminator_value() {
-                if Self::breadth_first_search_all_of(ref_key, child_schema) {
-                    let name = tag.to_camel_case_ident()?;
-                    let mut type_name = TypeNameCode::from(child_ref_key.name.to_camel_case_ident()?);
-                    cg.set_if_union_type(&mut type_name);
-                    values.push(UnionValueCode {
-                        tag: tag.to_string(),
-                        name,
-                        type_name,
-                    });
-                }
-            }
+        // TODO: create a map of all schemas - ideally we should push this up a level
+        let mut index_mapppp = IndexMap::new();
+        for (idx_ref_key, idx_schema) in all_schemas {
+            index_mapppp.insert(idx_ref_key, idx_schema);
         }
+
+        let this_schema = index_mapppp
+            .get(ref_key)
+            .ok_or_else(|| Error::message(ErrorKind::CodeGen, "ref key not found"))?;
+        let child_schemas = this_schema.discriminator_children.clone();
+
+        let mut child_ref_keys: Vec<_> = child_schemas.iter().collect();
+        child_ref_keys.sort_by(|a, b| a.name.cmp(&b.name));
+
+        let mut values = Vec::new();
+        for child_ref_key in child_ref_keys {
+            let child_schema = index_mapppp
+                .get(child_ref_key)
+                .ok_or_else(|| Error::message(ErrorKind::CodeGen, "ref key not found"))?;
+            let tag = child_schema
+                .discriminator_value()
+                .expect("discriminator value not found - when it should exist");
+            let name = tag.to_camel_case_ident()?;
+            let mut type_name = TypeNameCode::from(child_ref_key.name.to_camel_case_ident()?);
+            cg.set_if_union_type(&mut type_name);
+            values.push(UnionValueCode {
+                tag: tag.to_string(),
+                name,
+                type_name,
+            });
+        }
+
         let mut name = TypeNameCode::from(schema_name.to_camel_case_ident()?);
         name.union(true);
         Ok(Self {
