@@ -218,13 +218,17 @@ impl SchemaGen {
     /// If the type should implement Default
     fn implement_default(&self) -> bool {
         if self.has_required() {
+            if self.required().len() == 1 && self.discriminator_parent().is_some() {
+                // if there is only one required field, we can implement default
+                return true;
+            }
             return false;
         }
-        for schema in self.all_of() {
-            if !schema.implement_default() {
-                return false;
-            }
-        }
+        // for schema in self.all_of() {
+        //     if !schema.implement_default() {
+        //         return false;
+        //     }
+        // }
         true
     }
 
@@ -1149,7 +1153,7 @@ fn create_struct(
 
     let properties = if schema.discriminator_value().is_some() {
         // we should expect that the schema has a parent
-        let (parent_ref_key, discriminator_parent_property) = schema
+        let (_parent_ref_key, discriminator_parent_property) = schema
             .discriminator_parent()
             .clone()
             .expect("discriminator parent not found - when it should exist");
