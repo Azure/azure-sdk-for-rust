@@ -58,6 +58,8 @@ pub struct SchemaGen {
     properties: Vec<PropertyGen>,
     all_of: Vec<SchemaGen>,
     required: Vec<String>,
+    discriminator_children: HashSet<RefKey>,
+    discriminator_parent: Option<RefKey>,
 }
 
 #[derive(Clone)]
@@ -85,6 +87,8 @@ impl SchemaGen {
             doc_file,
             properties: Vec::new(),
             all_of: Vec::new(),
+            discriminator_children: HashSet::new(),
+            discriminator_parent: None,
         }
     }
 
@@ -380,6 +384,63 @@ fn flatten_all_all_of(schemas: &IndexMap<RefKey, SchemaGen>, spec: &Spec) -> Res
     Ok(flattened)
 }
 
+/// For a given schema, if this schema has a discriminator property, find all the schemas that are children of it - also return the child schemas so we can add a backwards reference
+fn resolve_discriminators(
+    all_schemas: &IndexMap<RefKey, SchemaGen>,
+    ref_key: &RefKey,
+    schema: &SchemaGen,
+    spec: &Spec,
+) -> Result<(SchemaGen, HashSet<RefKey>)> {
+    // No need to do anything if there is no discriminator
+    if schema.discriminator().is_none() {
+        return Ok((schema.clone(), HashSet::new()));
+    }
+
+    // if a class is a discriminator, it should know the child classes - so we resolve them here
+    let mut discriminator_children: HashSet<RefKey> = HashSet::new();
+    for (child_ref_key, child_schema) in all_schemas {
+        if let Some(_) = child_schema.discriminator_value() {
+            if UnionCode::breadth_first_search_all_of(ref_key, child_schema) {
+                discriminator_children.insert(child_ref_key.clone());
+            }
+        }
+    }
+
+    let mut new_schema = schema.clone();
+    new_schema.discriminator_children = discriminator_children.clone();
+
+    Ok((new_schema.clone(), discriminator_children))
+}
+
+fn resolve_all_discriminators(schemas: &IndexMap<RefKey, SchemaGen>, spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>> {
+    let mut resolved: IndexMap<RefKey, SchemaGen> = IndexMap::new();
+    let mut children_map: HashMap<RefKey, HashSet<RefKey>> = HashMap::new();
+
+    for (ref_key, schema) in schemas {
+        let (schema, children) = resolve_discriminators(schemas, ref_key, schema, spec)?;
+        children_map.insert(ref_key.clone(), children);
+        resolved.insert(ref_key.clone(), schema);
+    }
+
+    // add backwards references in children to the parents - add some validation that this is done at most once
+    for (ref_key, children) in children_map {
+        for child_of_ref_key in children {
+            let child_schema = resolved
+                .get_mut(&child_of_ref_key)
+                .expect("We should expect that the child schema is in the resolved map - otherwise we have a bug in the codegen");
+
+            if child_schema.discriminator_parent.is_some() {
+                return Err(Error::with_message(ErrorKind::CodeGen, || {
+                    format!("child schema has more than one parent: {:?}", child_of_ref_key)
+                }));
+            }
+            child_schema.discriminator_parent = Some(ref_key.clone());
+        }
+    }
+
+    Ok(resolved)
+}
+
 fn all_schemas(spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>> {
     let mut all_schemas: IndexMap<RefKey, SchemaGen> = IndexMap::new();
 
@@ -443,6 +504,7 @@ pub fn all_schemas_resolved(spec: &Spec) -> Result<Vec<(RefKey, SchemaGen)>> {
     let schemas = resolve_all_schema_properties(&schemas, spec)?;
     let schemas = resolve_all_all_of(&schemas, spec)?;
     let schemas = flatten_all_all_of(&schemas, spec)?;
+    let schemas = resolve_all_discriminators(&schemas, spec)?;
 
     // sort schemas by name
     let mut schemas: Vec<_> = schemas.into_iter().collect();
