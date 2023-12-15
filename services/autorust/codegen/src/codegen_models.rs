@@ -59,7 +59,8 @@ pub struct SchemaGen {
     all_of: Vec<SchemaGen>,
     required: Vec<String>,
     discriminator_children: HashSet<RefKey>,
-    discriminator_parent: Option<RefKey>,
+    // if this schema is a child of a discriminator, this will be set to the parent, second value in tuple is the discriminator property name
+    discriminator_parent: Option<(RefKey, String)>,
 }
 
 #[derive(Clone)]
@@ -233,6 +234,10 @@ impl SchemaGen {
 
     fn discriminator_value(&self) -> Option<&str> {
         self.schema.x_ms_discriminator_value.as_deref()
+    }
+
+    fn discriminator_parent(&self) -> &Option<(RefKey, String)> {
+        &self.discriminator_parent
     }
 }
 
@@ -413,11 +418,16 @@ fn resolve_discriminators(
 
 fn resolve_all_discriminators(schemas: &IndexMap<RefKey, SchemaGen>) -> Result<IndexMap<RefKey, SchemaGen>> {
     let mut resolved: IndexMap<RefKey, SchemaGen> = IndexMap::new();
-    let mut children_map: HashMap<RefKey, HashSet<RefKey>> = HashMap::new();
+    let mut children_map: HashMap<(RefKey, String), HashSet<RefKey>> = HashMap::new();
 
     for (ref_key, schema) in schemas {
         let (schema, children) = resolve_discriminators(schemas, ref_key, schema)?;
-        children_map.insert(ref_key.clone(), children);
+        match schema.discriminator() {
+            Some(discriminator) => {
+                children_map.insert((ref_key.clone(), discriminator.to_string()), children);
+            }
+            None => {}
+        }
         resolved.insert(ref_key.clone(), schema);
     }
 
@@ -1137,7 +1147,26 @@ fn create_struct(
 
     let mut field_names = HashMap::new();
 
-    for property in schema.properties() {
+    let properties = if schema.discriminator_value().is_some() {
+        // we should expect that the schema has a parent
+        let (parent_ref_key, discriminator_parent_property) = schema
+            .discriminator_parent()
+            .clone()
+            .expect("discriminator parent not found - when it should exist");
+
+        // get the parent schema and get the discriminator property itself - exclude it from the properties of this schema
+        // or as I've done in a rather ugly way here as the second property of the option
+
+        let mut properties = schema.properties();
+
+        properties.retain(|property| property.name() != discriminator_parent_property);
+
+        properties
+    } else {
+        schema.properties()
+    };
+
+    for property in properties {
         let property_name = if let Some(xml_name) = property.xml_name() {
             xml_name
         } else {
