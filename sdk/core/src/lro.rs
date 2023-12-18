@@ -1,5 +1,6 @@
-use crate::headers::{Headers, RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS};
+use crate::headers::Headers;
 use std::time::Duration;
+use time::OffsetDateTime;
 
 /// Default retry time for long running operations if no retry-after header is present
 ///
@@ -36,25 +37,8 @@ impl From<&str> for LroStatus {
     }
 }
 
-/// Get the duration to delay between polling attempts
-///
-/// This function will check for the following headers in order:
-/// * `Retry-After`
-/// * `retry-after-ms`
-/// * `x-ms-retry-after-ms`
-///
-/// If no header is provided, the default retry time will be returned.
 pub fn get_retry_after(headers: &Headers) -> Duration {
-    [RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS]
-        .iter()
-        .find_map(|header| {
-            headers
-                .get_str(header)
-                .ok()
-                .and_then(|v| v.parse::<u64>().ok())
-                .map(Duration::from_secs)
-        })
-        .unwrap_or(DEFAULT_RETRY_TIME)
+    crate::get_retry_after(headers, OffsetDateTime::now_utc).unwrap_or(DEFAULT_RETRY_TIME)
 }
 
 pub mod location {
