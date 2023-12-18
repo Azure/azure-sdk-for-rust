@@ -18,7 +18,7 @@ use std::{
     collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet},
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PropertyGen {
     name: String,
     schema: SchemaGen,
@@ -46,7 +46,7 @@ impl PropertyGen {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SchemaGen {
     ref_key: Option<RefKey>,
     schema: Schema,
@@ -160,14 +160,14 @@ impl SchemaGen {
         Ok(type_name)
     }
 
+    /// All the required properties for this schema
     fn required(&self) -> HashSet<&str> {
         self.required.iter().map(String::as_str).collect()
-        // self.schema.required.iter().map(String::as_str).collect()
     }
 
+    /// If this schema has any required fields
     fn has_required(&self) -> bool {
         !self.required.is_empty()
-        // !self.schema.required.is_empty()
     }
 
     fn all_of(&self) -> Vec<&SchemaGen> {
@@ -336,7 +336,7 @@ fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen,
     Ok(schema)
 }
 
-// Flattens/merges the subschemas from allOf references into the parent schema
+/// Flattens/merges the subschemas from `allOf` references into this schema
 fn flatten_all_of(schema: &SchemaGen) -> Result<SchemaGen> {
     // recursively apply to all properties, so this vec of schemas has all the properties we need from children
     let flattened_schemas: Vec<_> = schema.all_of.iter().map(flatten_all_of).collect::<Result<_>>()?;
@@ -344,7 +344,7 @@ fn flatten_all_of(schema: &SchemaGen) -> Result<SchemaGen> {
     // we need to flatten things that need to be present in this flattened schema
 
     // properties
-    let mut all_properties: IndexMap<_, _> = IndexMap::new();
+    let mut all_properties = IndexMap::new();
     for property in schema.properties.clone() {
         all_properties.insert(property.name.clone(), property);
     }
@@ -1101,45 +1101,21 @@ fn create_struct(
     // println!("struct: {} {:?}", struct_name_code, pageable);
     needs_boxing.insert(struct_name.to_camel_case_ident()?.to_string());
 
-    // for base_schema in schema.all_of() {
-    //     // skip empty base types
-    //     if !base_schema.has_fields() {
-    //         continue;
-    //     }
-    //     let schema_name = base_schema.name()?;
-    //     let mut type_name = TypeNameCode::from(schema_name.to_camel_case_ident()?);
-    //     type_name.union(false);
-    //     let field_name = schema_name.to_snake_case_ident()?;
-    //     props.push(StructPropCode {
-    //         doc_comments: Vec::new(),
-    //         serde: SerdeCode::flatten(),
-    //         field_name: field_name.clone(),
-    //         field_type: type_name.clone(),
-    //     });
-    //     if base_schema.implement_default() {
-    //         new_fn_body.extend(quote! { #field_name: #type_name::default(), });
-    //     } else {
-    //         new_fn_params.push(quote! { #field_name: #type_name });
-    //         new_fn_body.extend(quote! { #field_name, });
-    //     }
-    // }
-
     let mut field_names = HashMap::new();
 
     let properties = if schema.discriminator_value().is_some() {
-        // we should expect that the schema has a parent
-        let (_parent_ref_key, discriminator_parent_property) = schema
-            .discriminator_parent()
-            .clone()
-            .expect("discriminator parent not found - when it should exist");
+        let (_parent_ref_key, discriminator_parent_property) = schema.discriminator_parent().clone().ok_or_else(|| {
+            // TODO: this currently fails 5 API specs
+            Error::message(
+                ErrorKind::CodeGen,
+                format!("discriminator parent not found for {} - when it should exist", struct_name),
+            )
+        })?;
 
-        // get the parent schema and get the discriminator property itself - exclude it from the properties of this schema
+        // TODO: get the parent schema and get the discriminator property itself - exclude it from the properties of this schema
         // or as I've done in a rather ugly way here as the second property of the option
-
         let mut properties = schema.properties();
-
         properties.retain(|property| property.name() != discriminator_parent_property);
-
         properties
     } else {
         schema.properties()
@@ -1166,7 +1142,8 @@ fn create_struct(
         } = create_struct_field_code(
             cg,
             &ns.clone(),
-            &property.schema,
+            &property,
+            // &property.schema,
             property_name,
             lowercase_workaround,
             needs_boxing.clone(),
@@ -1543,11 +1520,14 @@ impl ToTokens for XmlWrappedCode {
 fn create_struct_field_code(
     cg: &CodeGen,
     namespace: &Ident,
-    property: &SchemaGen,
+    property: &PropertyGen,
+    // property: &SchemaGen,
     property_name: &str,
     lowercase_workaround: bool,
     needs_boxing: HashSet<String>,
 ) -> Result<NamedTypeCode> {
+    println!("property: {} {:#?}", property_name, property);
+    let property = property.schema();
     match &property.ref_key {
         Some(ref_key) => {
             let mut type_name = TypeNameCode::from(ref_key.name.to_camel_case_ident()?);
