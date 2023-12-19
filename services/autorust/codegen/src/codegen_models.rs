@@ -22,6 +22,8 @@ use std::{
 pub struct PropertyGen {
     name: String,
     schema: SchemaGen,
+    /// Optional ref key for the allOf parent
+    all_of_ref_key: Option<RefKey>,
 }
 
 impl PropertyGen {
@@ -43,6 +45,10 @@ impl PropertyGen {
 
     pub fn discriminator(&self) -> Option<&str> {
         self.schema.discriminator()
+    }
+
+    pub fn all_of_ref_key(&self) -> Option<&RefKey> {
+        self.all_of_ref_key.as_ref()
     }
 }
 
@@ -297,6 +303,7 @@ fn resolve_schema_property(
     Ok(PropertyGen {
         name: property_name,
         schema,
+        all_of_ref_key: None,
     })
 }
 
@@ -310,6 +317,7 @@ fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen,
             Ok(PropertyGen {
                 name: property.name.clone(),
                 schema,
+                all_of_ref_key: None,
             })
         })
         .collect::<Result<_>>()?;
@@ -337,15 +345,27 @@ fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen,
 }
 
 /// Flattens/merges the subschemas from `allOf` references into this schema
-fn flatten_all_of(schema: &SchemaGen) -> Result<SchemaGen> {
+fn flatten_all_of(schema: &SchemaGen, depth: usize) -> Result<SchemaGen> {
     // recursively apply to all properties, so this vec of schemas has all the properties we need from children
-    let flattened_schemas: Vec<_> = schema.all_of.iter().map(flatten_all_of).collect::<Result<_>>()?;
+    let flattened_schemas: Vec<_> = schema
+        .all_of
+        .iter()
+        .map(|schema| flatten_all_of(schema, depth + 1))
+        .collect::<Result<_>>()?;
 
     // we need to flatten things that need to be present in this flattened schema
 
     // properties
     let mut all_properties = IndexMap::new();
     for property in schema.properties.clone() {
+        let property = if depth != 0 {
+            // as it is a nested property, add an allof ref to this schema's ref key
+            let mut property = property.clone();
+            property.all_of_ref_key = schema.ref_key.clone();
+            property
+        } else {
+            property
+        };
         all_properties.insert(property.name.clone(), property);
     }
 
@@ -378,7 +398,7 @@ fn flatten_all_all_of(schemas: &IndexMap<RefKey, SchemaGen>) -> Result<IndexMap<
     let mut flattened: IndexMap<RefKey, SchemaGen> = IndexMap::new();
     for (ref_key, schema) in schemas {
         flattened.insert(ref_key.clone(), schema.clone()); // order properties after
-        let schema = flatten_all_of(schema)?;
+        let schema = flatten_all_of(schema, 0)?;
         flattened.insert(ref_key.clone(), schema);
     }
     Ok(flattened)
@@ -1527,44 +1547,51 @@ fn create_struct_field_code(
     needs_boxing: HashSet<String>,
 ) -> Result<NamedTypeCode> {
     println!("property: {} {:#?}", property_name, property);
-    let property = property.schema();
-    match &property.ref_key {
+    // let property = property.schema();
+    match &property.schema().ref_key {
         Some(ref_key) => {
             let mut type_name = TypeNameCode::from(ref_key.name.to_camel_case_ident()?);
             cg.set_if_union_type(&mut type_name);
             Ok(NamedTypeCode { type_name, code: None })
         }
         None => {
-            if property.is_local_enum() {
-                create_enum(Some(namespace), property, property_name, lowercase_workaround)
-            } else if property.is_local_struct() {
-                let id = property_name.to_camel_case_ident()?;
-                let type_name = TypeNameCode::from(vec![namespace.clone(), id]);
-                let code = create_struct(cg, property, property_name, None, needs_boxing)?;
-                Ok(NamedTypeCode {
-                    type_name,
-                    code: Some(TypeCode::Struct(code)),
-                })
-            } else if property.xml_wrapped() {
-                let id = property_name.to_camel_case_ident()?;
-                let struct_name = property
-                    .xml_name()
-                    .map(|name| name.to_camel_case_ident())
-                    .transpose()?
-                    .unwrap_or_else(|| id.clone());
-                let code = XmlWrappedCode {
-                    struct_name: struct_name.clone(),
-                    type_name: property.type_name(cg)?,
-                };
-                Ok(NamedTypeCode {
-                    type_name: TypeNameCode::from(vec![namespace.clone(), struct_name]),
-                    code: Some(TypeCode::XmlWrapped(code)),
-                })
+            if property.all_of_ref_key().is_some() && property.schema().is_local_enum() {
+                let namespace = property.all_of_ref_key().unwrap().name.to_snake_case_ident()?;
+                let type_name = TypeNameCode::from(vec![namespace, property_name.to_camel_case_ident()?]);
+                Ok(NamedTypeCode { type_name, code: None })
             } else {
-                Ok(NamedTypeCode {
-                    type_name: property.type_name(cg)?,
-                    code: None,
-                })
+                let property = property.schema();
+                if property.is_local_enum() {
+                    create_enum(Some(namespace), property, property_name, lowercase_workaround)
+                } else if property.is_local_struct() {
+                    let id = property_name.to_camel_case_ident()?;
+                    let type_name = TypeNameCode::from(vec![namespace.clone(), id]);
+                    let code = create_struct(cg, property, property_name, None, needs_boxing)?;
+                    Ok(NamedTypeCode {
+                        type_name,
+                        code: Some(TypeCode::Struct(code)),
+                    })
+                } else if property.xml_wrapped() {
+                    let id = property_name.to_camel_case_ident()?;
+                    let struct_name = property
+                        .xml_name()
+                        .map(|name| name.to_camel_case_ident())
+                        .transpose()?
+                        .unwrap_or_else(|| id.clone());
+                    let code = XmlWrappedCode {
+                        struct_name: struct_name.clone(),
+                        type_name: property.type_name(cg)?,
+                    };
+                    Ok(NamedTypeCode {
+                        type_name: TypeNameCode::from(vec![namespace.clone(), struct_name]),
+                        code: Some(TypeCode::XmlWrapped(code)),
+                    })
+                } else {
+                    Ok(NamedTypeCode {
+                        type_name: property.type_name(cg)?,
+                        code: None,
+                    })
+                }
             }
         }
     }
