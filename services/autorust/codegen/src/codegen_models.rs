@@ -353,13 +353,10 @@ fn flatten_all_of(schema: &SchemaGen, depth: usize) -> Result<SchemaGen> {
         .map(|schema| flatten_all_of(schema, depth + 1))
         .collect::<Result<_>>()?;
 
-    // we need to flatten things that need to be present in this flattened schema
-
-    // properties
     let mut all_properties = IndexMap::new();
     for property in schema.properties.clone() {
         let property = if depth != 0 {
-            // as it is a nested property, add an allof ref to this schema's ref key
+            // as it is a nested property, add an `allof` ref to this schema's ref key - that way we can refer to the original version of a reference where required
             let mut property = property.clone();
             property.all_of_ref_key = schema.ref_key.clone();
             property
@@ -380,7 +377,7 @@ fn flatten_all_of(schema: &SchemaGen, depth: usize) -> Result<SchemaGen> {
         }
     }
 
-    // required
+    // The required properties on a child schema include all of those of the parent schema, so we need to merge them all together
     let mut all_required: HashSet<String> = schema.required.clone().into_iter().collect();
     for schema in flattened_schemas {
         for required in schema.required {
@@ -390,18 +387,17 @@ fn flatten_all_of(schema: &SchemaGen, depth: usize) -> Result<SchemaGen> {
 
     let mut schema: SchemaGen = schema.clone();
     schema.properties = all_properties.into_iter().map(|(_, property)| property).collect();
-    schema.required = all_required.clone().into_iter().collect();
+    schema.required = all_required.into_iter().collect();
     Ok(schema)
 }
 
+/// Apply a flattening of properties of allOf schemas into inherited schemas
 fn flatten_all_all_of(schemas: &IndexMap<RefKey, SchemaGen>) -> Result<IndexMap<RefKey, SchemaGen>> {
-    let mut flattened: IndexMap<RefKey, SchemaGen> = IndexMap::new();
-    for (ref_key, schema) in schemas {
-        flattened.insert(ref_key.clone(), schema.clone()); // order properties after
+    schemas.iter().try_fold(IndexMap::new(), |mut flattened, (ref_key, schema)| {
         let schema = flatten_all_of(schema, 0)?;
         flattened.insert(ref_key.clone(), schema);
-    }
-    Ok(flattened)
+        Ok(flattened)
+    })
 }
 
 /// For a given schema, if this schema has a discriminator property, find all the schemas that are children of it - also return the child schemas so we can add a backwards reference
@@ -409,10 +405,10 @@ fn resolve_discriminators(
     all_schemas: &IndexMap<RefKey, SchemaGen>,
     ref_key: &RefKey,
     schema: &SchemaGen,
-) -> Result<(SchemaGen, BTreeSet<RefKey>)> {
+) -> (SchemaGen, BTreeSet<RefKey>) {
     // No need to do anything if there is no discriminator
     if schema.discriminator().is_none() {
-        return Ok((schema.clone(), BTreeSet::new()));
+        return (schema.clone(), BTreeSet::new());
     }
 
     // if a class is a discriminator, it should know the child classes - so we resolve them here
@@ -426,7 +422,7 @@ fn resolve_discriminators(
     let mut new_schema = schema.clone();
     new_schema.discriminator_children = discriminator_children.clone();
 
-    Ok((new_schema.clone(), discriminator_children))
+    (new_schema, discriminator_children)
 }
 
 fn resolve_all_discriminators(schemas: &IndexMap<RefKey, SchemaGen>) -> Result<IndexMap<RefKey, SchemaGen>> {
@@ -434,7 +430,7 @@ fn resolve_all_discriminators(schemas: &IndexMap<RefKey, SchemaGen>) -> Result<I
     let mut children_map: HashMap<(RefKey, String), BTreeSet<RefKey>> = HashMap::new();
 
     for (ref_key, schema) in schemas {
-        let (schema, children) = resolve_discriminators(schemas, ref_key, schema)?;
+        let (schema, children) = resolve_discriminators(schemas, ref_key, schema);
         if let Some(discriminator) = schema.discriminator() {
             children_map.insert((ref_key.clone(), discriminator.to_string()), children);
         }
@@ -619,7 +615,6 @@ pub fn create_models(cg: &mut CodeGen) -> Result<ModelsCode> {
     }
 
     for (ref_key, schema) in all_schemas {
-        // println!("ref_key: {:?}", ref_key.name);
         let doc_file = &ref_key.file_path;
         let schema_name = &ref_key.name;
         // println!("schema_name: {}", schema_name);
@@ -1159,15 +1154,7 @@ fn create_struct(
         let NamedTypeCode {
             mut type_name,
             code: field_code,
-        } = create_struct_field_code(
-            cg,
-            &ns.clone(),
-            &property,
-            // &property.schema,
-            property_name,
-            lowercase_workaround,
-            needs_boxing.clone(),
-        )?;
+        } = create_struct_field_code(cg, &ns.clone(), property, property_name, lowercase_workaround, needs_boxing.clone())?;
         mod_code.extend(field_code.into_token_stream());
         let mut doc_comments = Vec::new();
         // uncomment the next two lines to help identify entries that need boxed
@@ -1541,13 +1528,10 @@ fn create_struct_field_code(
     cg: &CodeGen,
     namespace: &Ident,
     property: &PropertyGen,
-    // property: &SchemaGen,
     property_name: &str,
     lowercase_workaround: bool,
     needs_boxing: HashSet<String>,
 ) -> Result<NamedTypeCode> {
-    // println!("property: {} {:#?}", property_name, property);
-    // let property = property.schema();
     match &property.schema().ref_key {
         Some(ref_key) => {
             let mut type_name = TypeNameCode::from(ref_key.name.to_camel_case_ident()?);
