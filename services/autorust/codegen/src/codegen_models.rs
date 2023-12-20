@@ -619,7 +619,7 @@ pub fn create_models(cg: &mut CodeGen) -> Result<ModelsCode> {
     }
 
     for (ref_key, schema) in all_schemas {
-        println!("ref_key: {:?}", ref_key.name);
+        // println!("ref_key: {:?}", ref_key.name);
         let doc_file = &ref_key.file_path;
         let schema_name = &ref_key.name;
         // println!("schema_name: {}", schema_name);
@@ -1546,7 +1546,7 @@ fn create_struct_field_code(
     lowercase_workaround: bool,
     needs_boxing: HashSet<String>,
 ) -> Result<NamedTypeCode> {
-    println!("property: {} {:#?}", property_name, property);
+    // println!("property: {} {:#?}", property_name, property);
     // let property = property.schema();
     match &property.schema().ref_key {
         Some(ref_key) => {
