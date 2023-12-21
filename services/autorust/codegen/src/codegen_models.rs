@@ -1123,19 +1123,9 @@ fn create_struct(
 
     let mut field_names = HashMap::new();
 
-    let properties = if schema.discriminator_value().is_some() {
-        let (_parent_ref_key, discriminator_parent_property) = schema.discriminator_parent().clone().ok_or_else(|| {
-            // TODO: this currently fails 5 API specs
-            Error::message(
-                ErrorKind::CodeGen,
-                format!("discriminator parent not found for {} - when it should exist", struct_name),
-            )
-        })?;
-
-        // TODO: get the parent schema and get the discriminator property itself - exclude it from the properties of this schema
-        // or as I've done in a rather ugly way here as the second property of the option
+    let properties = if let Some((_ref_key, property_to_remove)) = schema.discriminator_parent() {
         let mut properties = schema.properties();
-        properties.retain(|property| property.name() != discriminator_parent_property);
+        properties.retain(|property| property.name() != property_to_remove);
         properties
     } else {
         schema.properties()
