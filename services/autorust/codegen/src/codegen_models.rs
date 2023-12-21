@@ -223,12 +223,17 @@ impl SchemaGen {
     /// If the type should implement [Default]
     fn implement_default(&self) -> bool {
         if self.has_required() {
-            if self.required().len() == 1 && self.discriminator_parent().is_some() {
-                // if there is only one required field, we can implement default
-                return true;
-            } else {
-                return false;
+            if self.required().len() == 1 {
+                // if there is only one required field, we may be able to implement default dependent on discriminators
+                if self.discriminator_parent().is_some() {
+                    // if this is a child of a discriminator, we can implement default
+                    return self.required().contains(&self.discriminator_parent().as_ref().unwrap().1.as_str());
+                } else if self.discriminator().is_some() {
+                    // if this is a discriminator, we can implement default for the base class
+                    return self.required().contains(&self.discriminator().unwrap());
+                }
             }
+            return false;
         }
         true
     }
