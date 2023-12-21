@@ -45,7 +45,6 @@ use uuid::Uuid;
 #[cfg(feature = "xml")]
 pub mod xml;
 
-#[cfg(feature = "tokio")]
 pub mod tokio;
 
 pub mod base64;
