@@ -7,10 +7,8 @@ https://docs.microsoft.com/cli/azure/storage/container?view=azure-cli-latest#az-
 */
 
 use azure_core::Url;
-use azure_identity::ImdsManagedIdentityCredential;
 use azure_svc_blobstorage::Client;
 use futures::stream::StreamExt;
-use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
@@ -20,7 +18,7 @@ async fn main() -> azure_core::Result<()> {
 
     let endpoint = Url::parse(&format!("https://{account_name}.blob.core.windows.net"))?;
     let scopes = &["https://storage.azure.com/.default"];
-    let credential = Arc::new(ImdsManagedIdentityCredential::default());
+    let credential = azure_identity::new_credential();
     let client = Client::builder(credential).endpoint(endpoint).scopes(scopes).build()?;
 
     let mut pages = client.service_client().list_containers_segment().maxresults(1).into_stream();

@@ -1,19 +1,14 @@
-use azure_identity::DefaultAzureCredentialBuilder;
 use azure_security_keyvault::prelude::*;
-use std::{env, sync::Arc};
+use std::env;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let keyvault_url =
         env::var("KEYVAULT_URL").expect("Missing KEYVAULT_URL environment variable.");
 
-    let creds = Arc::new(
-        DefaultAzureCredentialBuilder::new()
-            .exclude_managed_identity_credential()
-            .build(),
-    );
+    let credential = azure_identity::new_credential();
 
-    let client = SecretClient::new(&keyvault_url, creds)?;
+    let client = SecretClient::new(&keyvault_url, credential)?;
 
     get_secret(&client).await?;
 

@@ -1,7 +1,6 @@
 use azure_core::date;
-use azure_identity::DefaultAzureCredentialBuilder;
 use azure_security_keyvault::prelude::*;
-use std::{env, sync::Arc};
+use std::env;
 use time::OffsetDateTime;
 
 #[tokio::main]
@@ -12,13 +11,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let secret_version =
         env::var("SECRET_VERSION").expect("Missing SECRET_VERSION environment variable.");
 
-    let creds = Arc::new(
-        DefaultAzureCredentialBuilder::new()
-            .exclude_managed_identity_credential()
-            .build(),
-    );
+    let credential = azure_identity::new_credential();
 
-    let client = SecretClient::new(&keyvault_url, creds)?;
+    let client = SecretClient::new(&keyvault_url, credential)?;
 
     // Disable secret.
     client

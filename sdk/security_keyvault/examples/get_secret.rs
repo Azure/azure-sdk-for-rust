@@ -1,7 +1,6 @@
-use azure_identity::DefaultAzureCredentialBuilder;
 use azure_security_keyvault::prelude::*;
 use futures::StreamExt;
-use std::{env, sync::Arc};
+use std::env;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -9,13 +8,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         env::var("KEYVAULT_URL").expect("Missing KEYVAULT_URL environment variable.");
     let secret_name = env::var("SECRET_NAME").expect("Missing SECRET_NAME environment variable.");
 
-    let creds = Arc::new(
-        DefaultAzureCredentialBuilder::new()
-            .exclude_managed_identity_credential()
-            .build(),
-    );
+    let credential = azure_identity::new_credential();
 
-    let client = SecretClient::new(&keyvault_url, creds)?;
+    let client = SecretClient::new(&keyvault_url, credential)?;
 
     let mut versions = client.get_versions(&secret_name).into_stream();
     while let Some(version) = versions.next().await {

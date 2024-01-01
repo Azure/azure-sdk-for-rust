@@ -1,9 +1,7 @@
-use azure_core::auth::TokenCredential;
-use azure_identity::DefaultAzureCredential;
 use azure_storage::{shared_access_signature::service_sas::BlobSasPermissions, StorageCredentials};
 use azure_storage_blobs::prelude::BlobServiceClient;
 use clap::Parser;
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 use time::OffsetDateTime;
 
 #[derive(Debug, Parser)]
@@ -25,7 +23,7 @@ async fn main() -> azure_core::Result<()> {
     env_logger::init();
     let args = Args::parse();
 
-    let default_creds: Arc<dyn TokenCredential> = Arc::new(DefaultAzureCredential::default());
+    let default_creds = azure_identity::new_credential();
     let credentials = StorageCredentials::token_credential(default_creds);
     let client = BlobServiceClient::new(&args.account, credentials);
 
