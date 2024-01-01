@@ -3,12 +3,9 @@
 /// authenticate the app. If you are using subject name validation for the app
 /// please make sure to set the `send_certificate_chain` option to true otherwise
 /// the authentication will fail.
-use azure_core::{
-    auth::{Secret, TokenCredential},
-    base64,
-};
+use azure_core::auth::{Secret, TokenCredential};
 use azure_identity::{
-    CertificateCredentialOptions, ClientCertificateCredential, DefaultAzureCredential,
+    ClientCertificateCredential, ClientCertificateCredentialOptions, DefaultAzureCredential,
 };
 use azure_security_keyvault::KeyvaultClient;
 use std::env::var;
@@ -39,7 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cert_name = var("CERT_NAME").expect("Missing CERT_NAME environment variable.");
     let cert = get_certficate(&keyvault_name, &cert_name).await?;
 
-    let mut options = CertificateCredentialOptions::default();
+    let mut options = ClientCertificateCredentialOptions::default();
     // set as true to to send certificate chain
     options.set_send_certificate_chain(true);
 
