@@ -108,7 +108,7 @@ struct CliTokenResponse {
     pub local_expires_on: OffsetDateTime,
     #[serde(rename = "expires_on")]
     /// The token's expiry time in seconds since the epoch, a unix timestamp.
-    /// Available in Azure CLI 2.54.0 or newer
+    /// Available in Azure CLI 2.54.0 or newer.
     pub expires_on: Option<i64>,
     pub subscription: String,
     pub tenant: String,
@@ -333,7 +333,7 @@ mod tests {
             token_response.tenant,
             "065e9f5e-870d-4ed1-af2b-1b58092353f3"
         );
-        assert_eq!(token_response.expires_on_timestamp, Some(1704158596));
+        assert_eq!(token_response.expires_on, Some(1704158596));
         assert_eq!(token_response.expires_on()?.unix_timestamp(), 1704158596);
         Ok(())
     }
