@@ -3,14 +3,8 @@ use async_trait::async_trait;
 #[derive(Debug)]
 pub struct NoopClient;
 
-impl NoopClient {
-    pub fn new() -> Self {
-        Self
-    }
-}
-
 pub fn new_noop_client() -> std::sync::Arc<dyn crate::HttpClient> {
-    std::sync::Arc::new(NoopClient::new())
+    std::sync::Arc::new(NoopClient)
 }
 
 // TODO(rylev): we probably don't want to limit this to wasm32
