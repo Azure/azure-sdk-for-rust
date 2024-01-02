@@ -76,7 +76,7 @@ impl DefaultAzureCredentialBuilder {
         self
     }
 
-    /// Inlucde using app service managed identity credential
+    /// Include using app service managed identity credential
     pub fn include_app_service_managed_identity_credentials(&mut self) -> &mut Self {
         self.include_app_service_managed_identity_credential = true;
         self
