@@ -1,5 +1,5 @@
 #[cfg(any(
-    feature = "unit_test",
+    feature = "noop_client",
     not(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))
 ))]
 mod noop;
@@ -7,7 +7,7 @@ mod noop;
 mod reqwest;
 
 #[cfg(any(
-    feature = "unit_test",
+    feature = "noop_client",
     not(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))
 ))]
 pub use self::noop::{new_noop_client, NoopClient};
