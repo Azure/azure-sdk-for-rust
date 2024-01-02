@@ -157,7 +157,7 @@ impl DefaultAzureCredentialBuilder {
     /// Create a `DefaultAzureCredential` from this builder.
     pub fn build(&self) -> DefaultAzureCredential {
         let included = self.included();
-        let sources = self.create(&included);
+        let sources = self.create_sources(&included);
         DefaultAzureCredential::with_sources(sources)
     }
 }
