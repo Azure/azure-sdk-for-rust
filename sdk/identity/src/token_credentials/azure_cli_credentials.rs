@@ -95,7 +95,7 @@ mod az_cli_date_format {
     }
 }
 
-/// The respnose from `az account get-access-token --output json`.
+/// The response from `az account get-access-token --output json`.
 #[derive(Debug, Clone, Deserialize)]
 struct CliTokenResponse {
     #[serde(rename = "accessToken")]
