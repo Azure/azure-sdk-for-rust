@@ -109,7 +109,9 @@ impl DefaultAzureCredentialBuilder {
         sources
     }
 
-    fn try_create(
+    /// Creates a list of `TokenCredential` instances from the included credential types.
+    /// The credentials created successfully are used as sources for getting a token.
+    fn create_sources(
         &self,
         included: &Vec<DefaultAzureCredentialType>,
     ) -> Vec<DefaultAzureCredentialEnum> {
@@ -155,7 +157,7 @@ impl DefaultAzureCredentialBuilder {
     /// Create a `DefaultAzureCredential` from this builder.
     pub fn build(&self) -> DefaultAzureCredential {
         let included = self.included();
-        let sources = self.try_create(&included);
+        let sources = self.create(&included);
         DefaultAzureCredential::with_sources(sources)
     }
 }
