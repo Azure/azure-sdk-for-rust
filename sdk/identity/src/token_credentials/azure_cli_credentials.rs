@@ -102,9 +102,14 @@ struct CliTokenResponse {
     pub access_token: Secret,
     #[cfg(feature = "old_azure_cli")]
     #[serde(rename = "expiresOn", with = "az_cli_date_format")]
-    pub expires_on: OffsetDateTime,
+    /// The token's expiry time formatted in the local timezone.
+    /// Unfortunately, this requires additional timezone dependencies.
+    /// See https://github.com/Azure/azure-cli/issues/19700 for details.
+    pub local_expires_on: OffsetDateTime,
     #[serde(rename = "expires_on")]
-    pub expires_on_timestamp: Option<i64>,
+    /// The token's expiry time in seconds since the epoch, a unix timestamp.
+    /// Available in Azure CLI 2.54.0 or newer
+    pub expires_on: Option<i64>,
     pub subscription: String,
     pub tenant: String,
     #[allow(unused)]
@@ -114,7 +119,7 @@ struct CliTokenResponse {
 
 impl CliTokenResponse {
     pub fn expires_on(&self) -> azure_core::Result<OffsetDateTime> {
-        match self.expires_on_timestamp {
+        match self.expires_on {
             Some(timestamp) => Ok(OffsetDateTime::from_unix_timestamp(timestamp)
                 .with_context(ErrorKind::DataConversion, || {
                     format!("unable to parse expires_on '{timestamp}'")
@@ -122,7 +127,7 @@ impl CliTokenResponse {
             None => {
                 #[cfg(feature = "old_azure_cli")]
                 {
-                    Ok(self.expires_on)
+                    Ok(self.local_expires_on)
                 }
                 #[cfg(not(feature = "old_azure_cli"))]
                 {
