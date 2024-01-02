@@ -29,6 +29,7 @@ operation! {
     ?parallelize_cross_partition_query: ParallelizeCrossPartition,
     ?query_cross_partition: QueryCrossPartition,
     ?partition_range_id: PartitionRangeId,
+    ?continuation: Continuation,
     #[skip]
     partition_key_serialized: String
 }
@@ -85,9 +86,8 @@ impl QueryDocumentsBuilder {
                     );
                 }
 
-                if let Some(ref c) = continuation {
-                    request.insert_headers(c);
-                }
+                let continuation = continuation.or(this.continuation);
+                request.insert_headers(&continuation);
 
                 let response = this
                     .client

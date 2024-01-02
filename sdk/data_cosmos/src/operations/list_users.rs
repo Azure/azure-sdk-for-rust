@@ -15,7 +15,8 @@ operation! {
     ListUsers,
     client: DatabaseClient,
     ?max_item_count: MaxItemCount,
-    ?consistency_level: ConsistencyLevel
+    ?consistency_level: ConsistencyLevel,
+    ?continuation: Continuation,
 }
 
 impl ListUsersBuilder {
@@ -34,9 +35,8 @@ impl ListUsersBuilder {
                 }
                 request.insert_headers(&this.max_item_count.unwrap_or_default());
 
-                if let Some(ref c) = continuation {
-                    request.insert_headers(c);
-                }
+                let continuation = continuation.or(this.continuation);
+                request.insert_headers(&continuation);
 
                 let response = this
                     .client

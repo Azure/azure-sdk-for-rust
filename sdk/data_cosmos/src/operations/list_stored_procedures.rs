@@ -14,7 +14,8 @@ operation! {
     ListStoredProcedures,
     client: CollectionClient,
     ?max_item_count: MaxItemCount,
-    ?consistency_level: ConsistencyLevel
+    ?consistency_level: ConsistencyLevel,
+    ?continuation: Continuation,
 }
 
 impl ListStoredProceduresBuilder {
@@ -37,6 +38,7 @@ impl ListStoredProceduresBuilder {
                 }
                 request.insert_headers(&this.max_item_count.unwrap_or_default());
 
+                let continuation = continuation.or(this.continuation);
                 request.insert_headers(&continuation);
 
                 let response = this

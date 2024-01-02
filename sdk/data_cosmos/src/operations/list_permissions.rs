@@ -10,7 +10,8 @@ operation! {
     ListPermissions,
     client: UserClient,
     ?max_item_count: MaxItemCount,
-    ?consistency_level: ConsistencyLevel
+    ?consistency_level: ConsistencyLevel,
+    ?continuation: Continuation,
 }
 
 impl ListPermissionsBuilder {
@@ -33,6 +34,7 @@ impl ListPermissionsBuilder {
                 }
                 request.insert_headers(&this.max_item_count.unwrap_or_default());
 
+                let continuation = continuation.or(this.continuation);
                 request.insert_headers(&continuation);
 
                 let response = this
