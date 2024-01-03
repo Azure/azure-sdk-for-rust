@@ -1,4 +1,5 @@
 use azure_storage_datalake::Properties;
+use futures::StreamExt;
 use std::{assert_eq, assert_ne};
 
 mod setup;
@@ -32,7 +33,10 @@ async fn file_create_delete() -> azure_core::Result<()> {
 
     file_client.create().await?;
 
-    file_client.delete().await?;
+    let mut stream = file_client.delete().into_stream();
+    while let Some(result) = stream.next().await {
+        result?;
+    }
 
     file_system_client.delete().await?;
 
