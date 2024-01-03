@@ -6,7 +6,7 @@ use azure_core::{
 };
 use std::sync::Arc;
 
-const IOTHUB_TOKEN_SCOPE: &[&str] = &["https://iothubs.azure.net"];
+const IOTHUB_TOKEN_SCOPE: &[&str] = &["https://iothubs.azure.net/.default"];
 
 #[derive(Debug, Clone)]
 pub struct AuthorizationPolicy {
