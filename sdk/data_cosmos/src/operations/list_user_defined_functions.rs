@@ -18,7 +18,8 @@ operation! {
     client: CollectionClient,
     ?if_match_condition: IfMatchCondition,
     ?max_item_count: MaxItemCount,
-    ?consistency_level: ConsistencyLevel
+    ?consistency_level: ConsistencyLevel,
+    ?continuation: Continuation,
 }
 
 impl ListUserDefinedFunctionsBuilder {
@@ -42,6 +43,7 @@ impl ListUserDefinedFunctionsBuilder {
                 }
                 request.insert_headers(&this.max_item_count.unwrap_or_default());
 
+                let continuation = continuation.or(this.continuation);
                 request.insert_headers(&continuation);
 
                 let response = this

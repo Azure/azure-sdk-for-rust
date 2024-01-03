@@ -19,7 +19,8 @@ operation! {
     ?a_im: ChangeFeed,
     ?if_match_condition: IfMatchCondition,
     ?consistency_level: ConsistencyLevel,
-    ?partition_range_id: PartitionRangeId
+    ?partition_range_id: PartitionRangeId,
+    ?continuation: Continuation,
 }
 
 impl ListDocumentsBuilder {
@@ -47,6 +48,8 @@ impl ListDocumentsBuilder {
                 req.insert_headers(&this.max_item_count.unwrap_or_default());
                 req.insert_headers(&this.a_im.unwrap_or_default());
                 req.insert_headers(&this.partition_range_id);
+
+                let continuation = continuation.or(this.continuation);
                 req.insert_headers(&continuation);
 
                 let response = this
