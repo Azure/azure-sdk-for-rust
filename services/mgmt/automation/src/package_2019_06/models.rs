@@ -372,12 +372,6 @@ pub struct AutomationAccount {
     #[doc = "Gets or sets the etag of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
-    #[doc = "Identity for the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<Identity>,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
 }
 impl AutomationAccount {
     pub fn new() -> Self {
@@ -396,9 +390,6 @@ pub struct AutomationAccountCreateOrUpdateParameters {
     #[doc = "Gets or sets the location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[doc = "Identity for the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<Identity>,
     #[doc = "Gets or sets the tags attached to the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -414,15 +405,6 @@ pub struct AutomationAccountCreateOrUpdateProperties {
     #[doc = "The account SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
-    #[doc = "The encryption settings for automation account"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub encryption: Option<EncryptionProperties>,
-    #[doc = "Indicates whether traffic on the non-ARM endpoint (Webhook/Agent) is allowed from the public internet"]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
-    pub public_network_access: Option<bool>,
-    #[doc = "Indicates whether requests using non-AAD authentication are blocked"]
-    #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
-    pub disable_local_auth: Option<bool>,
 }
 impl AutomationAccountCreateOrUpdateProperties {
     pub fn new() -> Self {
@@ -475,26 +457,6 @@ pub struct AutomationAccountProperties {
     #[doc = "Gets or sets the description."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    #[doc = "The encryption settings for automation account"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub encryption: Option<EncryptionProperties>,
-    #[doc = "List of Automation operations supported by the Automation resource provider."]
-    #[serde(
-        rename = "privateEndpointConnections",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub private_endpoint_connections: Vec<PrivateEndpointConnection>,
-    #[doc = "Indicates whether traffic on the non-ARM endpoint (Webhook/Agent) is allowed from the public internet"]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
-    pub public_network_access: Option<bool>,
-    #[doc = "Indicates whether requests using non-AAD authentication are blocked"]
-    #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
-    pub disable_local_auth: Option<bool>,
-    #[doc = "URL of automation hybrid service which is used for hybrid worker on-boarding."]
-    #[serde(rename = "automationHybridServiceUrl", default, skip_serializing_if = "Option::is_none")]
-    pub automation_hybrid_service_url: Option<String>,
 }
 impl AutomationAccountProperties {
     pub fn new() -> Self {
@@ -555,9 +517,6 @@ pub struct AutomationAccountUpdateParameters {
     #[doc = "Gets or sets the location of the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    #[doc = "Identity for the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<Identity>,
     #[doc = "Gets or sets the tags attached to the resource."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<serde_json::Value>,
@@ -573,15 +532,6 @@ pub struct AutomationAccountUpdateProperties {
     #[doc = "The account SKU."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sku: Option<Sku>,
-    #[doc = "The encryption settings for automation account"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub encryption: Option<EncryptionProperties>,
-    #[doc = "Indicates whether traffic on the non-ARM endpoint (Webhook/Agent) is allowed from the public internet"]
-    #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
-    pub public_network_access: Option<bool>,
-    #[doc = "Indicates whether requests using non-AAD authentication are blocked"]
-    #[serde(rename = "disableLocalAuth", default, skip_serializing_if = "Option::is_none")]
-    pub disable_local_auth: Option<bool>,
 }
 impl AutomationAccountUpdateProperties {
     pub fn new() -> Self {
@@ -1204,67 +1154,6 @@ pub struct CredentialUpdateProperties {
     pub description: Option<String>,
 }
 impl CredentialUpdateProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Definition of the deleted automation account type."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct DeletedAutomationAccount {
-    #[doc = "Definition of the deleted automation account properties."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<DeletedAutomationAccountProperties>,
-    #[doc = "The resource id."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[doc = "Gets or sets name of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[doc = "The resource type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
-    #[doc = "Gets or sets the location of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-}
-impl DeletedAutomationAccount {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The response model for the list deleted automation account."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct DeletedAutomationAccountListResult {
-    #[doc = "Gets or sets the list of deleted automation accounts."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<DeletedAutomationAccount>,
-}
-impl DeletedAutomationAccountListResult {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Definition of the deleted automation account properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct DeletedAutomationAccountProperties {
-    #[doc = "Gets or sets the Automation Account Resource Id."]
-    #[serde(rename = "automationAccountResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub automation_account_resource_id: Option<String>,
-    #[doc = "Gets or sets the Automation Account Id."]
-    #[serde(rename = "automationAccountId", default, skip_serializing_if = "Option::is_none")]
-    pub automation_account_id: Option<String>,
-    #[doc = "Gets or sets the location of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    #[doc = "Gets the deletion time."]
-    #[serde(rename = "deletionTime", default, with = "azure_core::date::rfc3339::option")]
-    pub deletion_time: Option<time::OffsetDateTime>,
-}
-impl DeletedAutomationAccountProperties {
     pub fn new() -> Self {
         Self::default()
     }
@@ -2173,47 +2062,6 @@ impl DscReportResourceNavigation {
         Self::default()
     }
 }
-#[doc = "The encryption settings for automation account"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct EncryptionProperties {
-    #[doc = "Settings concerning key vault encryption for a configuration store."]
-    #[serde(rename = "keyVaultProperties", default, skip_serializing_if = "Option::is_none")]
-    pub key_vault_properties: Option<KeyVaultProperties>,
-    #[doc = "Encryption Key Source"]
-    #[serde(rename = "keySource", default, skip_serializing_if = "Option::is_none")]
-    pub key_source: Option<encryption_properties::KeySource>,
-    #[doc = "User identity used for CMK."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub identity: Option<encryption_properties::Identity>,
-}
-impl EncryptionProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod encryption_properties {
-    use super::*;
-    #[doc = "Encryption Key Source"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum KeySource {
-        #[serde(rename = "Microsoft.Automation")]
-        MicrosoftAutomation,
-        #[serde(rename = "Microsoft.Keyvault")]
-        MicrosoftKeyvault,
-    }
-    #[doc = "User identity used for CMK."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-    pub struct Identity {
-        #[doc = "The user identity used for CMK. It will be an ARM resource id in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
-        #[serde(rename = "userAssignedIdentity", default, skip_serializing_if = "Option::is_none")]
-        pub user_assigned_identity: Option<serde_json::Value>,
-    }
-    impl Identity {
-        pub fn new() -> Self {
-            Self::default()
-        }
-    }
-}
 #[doc = "Error response of an operation failure"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ErrorResponse {
@@ -2257,63 +2105,25 @@ impl FieldDefinition {
         }
     }
 }
-#[doc = "Graphical Runbook Content"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct GraphicalRunbookContent {
-    #[doc = "Raw Graphical Runbook content"]
-    #[serde(rename = "rawContent", default, skip_serializing_if = "Option::is_none")]
-    pub raw_content: Option<RawGraphicalRunbookContent>,
-    #[doc = "Graphical Runbook content as JSON"]
-    #[serde(rename = "graphRunbookJson", default, skip_serializing_if = "Option::is_none")]
-    pub graph_runbook_json: Option<String>,
-}
-impl GraphicalRunbookContent {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub type GroupIdsProperty = Vec<String>;
 #[doc = "Definition of hybrid runbook worker."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridRunbookWorker {
-    #[serde(flatten)]
-    pub resource: Resource,
-    #[doc = "Definition of hybrid runbook worker property."]
+    #[doc = "Gets or sets the worker machine name."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<HybridRunbookWorkerProperties>,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
+    pub name: Option<String>,
+    #[doc = "Gets or sets the assigned machine IP address."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ip: Option<String>,
+    #[doc = "Gets or sets the registration time of the worker machine."]
+    #[serde(rename = "registrationTime", default, with = "azure_core::date::rfc3339::option")]
+    pub registration_time: Option<time::OffsetDateTime>,
+    #[doc = "Last Heartbeat from the Worker"]
+    #[serde(rename = "lastSeenDateTime", default, with = "azure_core::date::rfc3339::option")]
+    pub last_seen_date_time: Option<time::OffsetDateTime>,
 }
 impl HybridRunbookWorker {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "The parameters supplied to the create or update hybrid runbook worker operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct HybridRunbookWorkerCreateOrUpdateParameters {
-    #[doc = "Azure Resource Manager Id for a virtual machine."]
-    #[serde(rename = "vmResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub vm_resource_id: Option<String>,
-}
-impl HybridRunbookWorkerCreateOrUpdateParameters {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "The parameters supplied to the create hybrid runbook worker operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct HybridRunbookWorkerCreateParameters {
-    #[doc = "The parameters supplied to the create or update hybrid runbook worker operation."]
-    pub properties: HybridRunbookWorkerCreateOrUpdateParameters,
-    #[doc = "Gets or sets the name of the resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-impl HybridRunbookWorkerCreateParameters {
-    pub fn new(properties: HybridRunbookWorkerCreateOrUpdateParameters) -> Self {
-        Self { properties, name: None }
     }
 }
 #[doc = "Definition of hybrid runbook worker group."]
@@ -2325,9 +2135,6 @@ pub struct HybridRunbookWorkerGroup {
     #[doc = "Gets or sets the name of the group."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    #[doc = "The type of the resource."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<String>,
     #[doc = "Gets or sets the list of hybrid runbook workers."]
     #[serde(
         rename = "hybridRunbookWorkers",
@@ -2335,16 +2142,13 @@ pub struct HybridRunbookWorkerGroup {
         deserialize_with = "azure_core::util::deserialize_null_as_default",
         skip_serializing_if = "Vec::is_empty"
     )]
-    pub hybrid_runbook_workers: Vec<HybridRunbookWorkerLegacy>,
+    pub hybrid_runbook_workers: Vec<HybridRunbookWorker>,
     #[doc = "Definition of RunAs credential to use for hybrid worker."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub credential: Option<RunAsCredentialAssociationProperty>,
     #[doc = "Type of the HybridWorkerGroup."]
     #[serde(rename = "groupType", default, skip_serializing_if = "Option::is_none")]
     pub group_type: Option<hybrid_runbook_worker_group::GroupType>,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
 }
 impl HybridRunbookWorkerGroup {
     pub fn new() -> Self {
@@ -2391,18 +2195,6 @@ pub mod hybrid_runbook_worker_group {
         }
     }
 }
-#[doc = "The parameters supplied to the create or update hybrid runbook worker group operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct HybridRunbookWorkerGroupCreateOrUpdateParameters {
-    #[doc = "Definition of RunAs credential to use for hybrid worker."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub credential: Option<RunAsCredentialAssociationProperty>,
-}
-impl HybridRunbookWorkerGroupCreateOrUpdateParameters {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Parameters supplied to the update operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HybridRunbookWorkerGroupUpdateParameters {
@@ -2438,164 +2230,6 @@ impl azure_core::Continuable for HybridRunbookWorkerGroupsListResult {
 impl HybridRunbookWorkerGroupsListResult {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Definition of hybrid runbook worker Legacy."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct HybridRunbookWorkerLegacy {
-    #[doc = "Gets or sets the worker machine name."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    #[doc = "Gets or sets the assigned machine IP address."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub ip: Option<String>,
-    #[doc = "Gets or sets the registration time of the worker machine."]
-    #[serde(rename = "registrationTime", default, with = "azure_core::date::rfc3339::option")]
-    pub registration_time: Option<time::OffsetDateTime>,
-    #[doc = "Last Heartbeat from the Worker"]
-    #[serde(rename = "lastSeenDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_seen_date_time: Option<time::OffsetDateTime>,
-}
-impl HybridRunbookWorkerLegacy {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Parameters supplied to move hybrid worker operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct HybridRunbookWorkerMoveParameters {
-    #[doc = "Gets or sets the target hybrid runbook worker group."]
-    #[serde(rename = "hybridRunbookWorkerGroupName", default, skip_serializing_if = "Option::is_none")]
-    pub hybrid_runbook_worker_group_name: Option<String>,
-}
-impl HybridRunbookWorkerMoveParameters {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Definition of hybrid runbook worker property."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct HybridRunbookWorkerProperties {
-    #[doc = "Gets or sets the assigned machine IP address."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub ip: Option<String>,
-    #[doc = "Gets or sets the registration time of the worker machine."]
-    #[serde(rename = "registeredDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub registered_date_time: Option<time::OffsetDateTime>,
-    #[doc = "Last Heartbeat from the Worker"]
-    #[serde(rename = "lastSeenDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub last_seen_date_time: Option<time::OffsetDateTime>,
-    #[doc = "Azure Resource Manager Id for a virtual machine."]
-    #[serde(rename = "vmResourceId", default, skip_serializing_if = "Option::is_none")]
-    pub vm_resource_id: Option<String>,
-    #[doc = "Type of the HybridWorker."]
-    #[serde(rename = "workerType", default, skip_serializing_if = "Option::is_none")]
-    pub worker_type: Option<hybrid_runbook_worker_properties::WorkerType>,
-    #[doc = "Name of the HybridWorker."]
-    #[serde(rename = "workerName", default, skip_serializing_if = "Option::is_none")]
-    pub worker_name: Option<String>,
-}
-impl HybridRunbookWorkerProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod hybrid_runbook_worker_properties {
-    use super::*;
-    #[doc = "Type of the HybridWorker."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "WorkerType")]
-    pub enum WorkerType {
-        HybridV1,
-        HybridV2,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for WorkerType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for WorkerType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for WorkerType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::HybridV1 => serializer.serialize_unit_variant("WorkerType", 0u32, "HybridV1"),
-                Self::HybridV2 => serializer.serialize_unit_variant("WorkerType", 1u32, "HybridV2"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
-#[doc = "The response model for the list hybrid runbook workers."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct HybridRunbookWorkersListResult {
-    #[doc = "Gets or sets a list of hybrid runbook workers."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<HybridRunbookWorker>,
-    #[doc = "Gets or sets the next link."]
-    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
-    pub next_link: Option<String>,
-}
-impl azure_core::Continuable for HybridRunbookWorkersListResult {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        self.next_link.clone().filter(|value| !value.is_empty())
-    }
-}
-impl HybridRunbookWorkersListResult {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Identity for the resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct Identity {
-    #[doc = "The principal ID of resource identity."]
-    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
-    pub principal_id: Option<String>,
-    #[doc = "The tenant ID of resource."]
-    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
-    pub tenant_id: Option<String>,
-    #[doc = "The identity type."]
-    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
-    pub type_: Option<identity::Type>,
-    #[doc = "The list of user identities associated with the resource. The user identity dictionary key references will be ARM resource ids in the form: '/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ManagedIdentity/userAssignedIdentities/{identityName}'."]
-    #[serde(rename = "userAssignedIdentities", default, skip_serializing_if = "Option::is_none")]
-    pub user_assigned_identities: Option<serde_json::Value>,
-}
-impl Identity {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod identity {
-    use super::*;
-    #[doc = "The identity type."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    pub enum Type {
-        SystemAssigned,
-        UserAssigned,
-        #[serde(rename = "SystemAssigned, UserAssigned")]
-        SystemAssignedUserAssigned,
-        None,
     }
 }
 #[doc = "Definition of the job."]
@@ -3264,24 +2898,6 @@ impl KeyListResult {
         Self::default()
     }
 }
-#[doc = "Settings concerning key vault encryption for a configuration store."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct KeyVaultProperties {
-    #[doc = "The URI of the key vault key used to encrypt data."]
-    #[serde(rename = "keyvaultUri", default, skip_serializing_if = "Option::is_none")]
-    pub keyvault_uri: Option<String>,
-    #[doc = "The name of key used to encrypt data."]
-    #[serde(rename = "keyName", default, skip_serializing_if = "Option::is_none")]
-    pub key_name: Option<String>,
-    #[doc = "The key version of the key used to encrypt data."]
-    #[serde(rename = "keyVersion", default, skip_serializing_if = "Option::is_none")]
-    pub key_version: Option<String>,
-}
-impl KeyVaultProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Definition of the linked workspace."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct LinkedWorkspace {
@@ -3678,146 +3294,6 @@ impl OperationListResult {
         Self::default()
     }
 }
-#[doc = "A private endpoint connection"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PrivateEndpointConnection {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[doc = "Properties of a private endpoint connection."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PrivateEndpointConnectionProperties>,
-}
-impl PrivateEndpointConnection {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "A list of private endpoint connections"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PrivateEndpointConnectionListResult {
-    #[doc = "Array of private endpoint connections"]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<PrivateEndpointConnection>,
-}
-impl azure_core::Continuable for PrivateEndpointConnectionListResult {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        None
-    }
-}
-impl PrivateEndpointConnectionListResult {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Properties of a private endpoint connection."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PrivateEndpointConnectionProperties {
-    #[doc = "Private endpoint which the connection belongs to."]
-    #[serde(rename = "privateEndpoint", default, skip_serializing_if = "Option::is_none")]
-    pub private_endpoint: Option<PrivateEndpointProperty>,
-    #[doc = "Gets the groupIds."]
-    #[serde(rename = "groupIds", default, skip_serializing_if = "Option::is_none")]
-    pub group_ids: Option<GroupIdsProperty>,
-    #[doc = "Connection State of the Private Endpoint Connection."]
-    #[serde(rename = "privateLinkServiceConnectionState", default, skip_serializing_if = "Option::is_none")]
-    pub private_link_service_connection_state: Option<PrivateLinkServiceConnectionStateProperty>,
-}
-impl PrivateEndpointConnectionProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Private endpoint which the connection belongs to."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PrivateEndpointProperty {
-    #[doc = "Resource id of the private endpoint."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-}
-impl PrivateEndpointProperty {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "A private link resource"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PrivateLinkResource {
-    #[serde(flatten)]
-    pub proxy_resource: ProxyResource,
-    #[doc = "Properties of a private link resource."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<PrivateLinkResourceProperties>,
-}
-impl PrivateLinkResource {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "A list of private link resources"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PrivateLinkResourceListResult {
-    #[doc = "Array of private link resources"]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub value: Vec<PrivateLinkResource>,
-}
-impl azure_core::Continuable for PrivateLinkResourceListResult {
-    type Continuation = String;
-    fn continuation(&self) -> Option<Self::Continuation> {
-        None
-    }
-}
-impl PrivateLinkResourceListResult {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Properties of a private link resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PrivateLinkResourceProperties {
-    #[doc = "The private link resource group id."]
-    #[serde(rename = "groupId", default, skip_serializing_if = "Option::is_none")]
-    pub group_id: Option<String>,
-    #[doc = "The private link resource required member names."]
-    #[serde(
-        rename = "requiredMembers",
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
-    pub required_members: Vec<String>,
-}
-impl PrivateLinkResourceProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Connection State of the Private Endpoint Connection."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct PrivateLinkServiceConnectionStateProperty {
-    #[doc = "The private link service connection status."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[doc = "The private link service connection description."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[doc = "Any action that is required beyond basic workflow (approve/ reject/ disconnect)"]
-    #[serde(rename = "actionsRequired", default, skip_serializing_if = "Option::is_none")]
-    pub actions_required: Option<String>,
-}
-impl PrivateLinkServiceConnectionStateProperty {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "ARM proxy resource."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ProxyResource {
@@ -3865,64 +3341,6 @@ pub struct PythonPackageUpdateParameters {
 impl PythonPackageUpdateParameters {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Raw Graphical Runbook content"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct RawGraphicalRunbookContent {
-    #[doc = "Schema version of the serializer."]
-    #[serde(rename = "schemaVersion", default, skip_serializing_if = "Option::is_none")]
-    pub schema_version: Option<String>,
-    #[doc = "Serialized Graphical runbook"]
-    #[serde(rename = "runbookDefinition", default, skip_serializing_if = "Option::is_none")]
-    pub runbook_definition: Option<String>,
-    #[doc = "Runbook Type"]
-    #[serde(rename = "runbookType", default, skip_serializing_if = "Option::is_none")]
-    pub runbook_type: Option<raw_graphical_runbook_content::RunbookType>,
-}
-impl RawGraphicalRunbookContent {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod raw_graphical_runbook_content {
-    use super::*;
-    #[doc = "Runbook Type"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "RunbookType")]
-    pub enum RunbookType {
-        GraphPowerShell,
-        GraphPowerShellWorkflow,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for RunbookType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for RunbookType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for RunbookType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::GraphPowerShell => serializer.serialize_unit_variant("RunbookType", 0u32, "GraphPowerShell"),
-                Self::GraphPowerShellWorkflow => serializer.serialize_unit_variant("RunbookType", 1u32, "GraphPowerShellWorkflow"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
     }
 }
 #[doc = "The core properties of ARM resources"]
@@ -6803,118 +6221,6 @@ pub struct SoftwareUpdateConfigurationTasks {
 impl SoftwareUpdateConfigurationTasks {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-#[doc = "Metadata pertaining to creation and last modification of the resource."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct SystemData {
-    #[doc = "The identity that created the resource."]
-    #[serde(rename = "createdBy", default, skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[doc = "The type of identity that created the resource."]
-    #[serde(rename = "createdByType", default, skip_serializing_if = "Option::is_none")]
-    pub created_by_type: Option<system_data::CreatedByType>,
-    #[doc = "The timestamp of resource creation (UTC)."]
-    #[serde(rename = "createdAt", default, with = "azure_core::date::rfc3339::option")]
-    pub created_at: Option<time::OffsetDateTime>,
-    #[doc = "The identity that last modified the resource."]
-    #[serde(rename = "lastModifiedBy", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by: Option<String>,
-    #[doc = "The type of identity that last modified the resource."]
-    #[serde(rename = "lastModifiedByType", default, skip_serializing_if = "Option::is_none")]
-    pub last_modified_by_type: Option<system_data::LastModifiedByType>,
-    #[doc = "The timestamp of resource last modification (UTC)"]
-    #[serde(rename = "lastModifiedAt", default, with = "azure_core::date::rfc3339::option")]
-    pub last_modified_at: Option<time::OffsetDateTime>,
-}
-impl SystemData {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-pub mod system_data {
-    use super::*;
-    #[doc = "The type of identity that created the resource."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "CreatedByType")]
-    pub enum CreatedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for CreatedByType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for CreatedByType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for CreatedByType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::User => serializer.serialize_unit_variant("CreatedByType", 0u32, "User"),
-                Self::Application => serializer.serialize_unit_variant("CreatedByType", 1u32, "Application"),
-                Self::ManagedIdentity => serializer.serialize_unit_variant("CreatedByType", 2u32, "ManagedIdentity"),
-                Self::Key => serializer.serialize_unit_variant("CreatedByType", 3u32, "Key"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "The type of identity that last modified the resource."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "LastModifiedByType")]
-    pub enum LastModifiedByType {
-        User,
-        Application,
-        ManagedIdentity,
-        Key,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for LastModifiedByType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for LastModifiedByType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for LastModifiedByType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::User => serializer.serialize_unit_variant("LastModifiedByType", 0u32, "User"),
-                Self::Application => serializer.serialize_unit_variant("LastModifiedByType", 1u32, "Application"),
-                Self::ManagedIdentity => serializer.serialize_unit_variant("LastModifiedByType", 2u32, "ManagedIdentity"),
-                Self::Key => serializer.serialize_unit_variant("LastModifiedByType", 3u32, "Key"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
     }
 }
 #[doc = "Task properties of the software update configuration."]
