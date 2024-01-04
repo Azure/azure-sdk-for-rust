@@ -262,6 +262,7 @@ members = [
   "svc/containerregistry",
   "svc/datalakeanalytics",
   "svc/devcenter",
+  "svc/developersigning",
   "svc/deviceprovisioningservices",
   "svc/deviceupdate",
   "svc/digitaltwins",

@@ -77,9 +77,9 @@ impl MetadataValue {
 #[doc = "The result data of a query."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Metric {
-    #[doc = "the metric Id."]
+    #[doc = "The metric Id."]
     pub id: String,
-    #[doc = "the resource type of the metric resource."]
+    #[doc = "The resource type of the metric resource."]
     #[serde(rename = "type")]
     pub type_: String,
     #[doc = "The localizable string class."]
@@ -95,7 +95,7 @@ pub struct Metric {
     pub error_message: Option<String>,
     #[doc = "The unit of the metric."]
     pub unit: Unit,
-    #[doc = "the time series returned when a data query is performed."]
+    #[doc = "The time series returned when a data query is performed."]
     pub timeseries: Vec<TimeSeriesElement>,
 }
 impl Metric {
@@ -181,7 +181,7 @@ impl ResourceIdList {
 #[doc = "A time series result type. The discriminator value is always TimeSeries in this case."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct TimeSeriesElement {
-    #[doc = "the metadata values returned if $filter was specified in the call."]
+    #[doc = "The metadata values returned if $filter was specified in the call."]
     #[serde(
         default,
         deserialize_with = "azure_core::util::deserialize_null_as_default",
