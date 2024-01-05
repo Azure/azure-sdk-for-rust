@@ -35,7 +35,7 @@ for i in ${SERVICES}; do
            fi
            ;;
        all | mgmt )
-           if [[ ${i} == "azure_mgmt_" ]]; then
+           if [[ ${i} =~ "azure_mgmt_" ]]; then
                cargo +nightly docs-rs -p ${i} --manifest-path services/Cargo.toml
            fi
            ;;
