@@ -32,7 +32,12 @@ default = ["enable_reqwest", "hmac_rust"]
 hmac_rust = ["azure_core/hmac_rust"]
 hmac_openssl = ["azure_core/hmac_openssl"]
 enable_reqwest = ["azure_core/enable_reqwest"]
-enable_request_rustls = ["azure_core/enable_reqwest_rustls"]
+enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 
 [package.metadata.docs.rs]
-features = ["enable_reqwest", "enable_reqwest_rustls", "hmac_rust", "hmac_openssl"]
+features = [
+  "enable_reqwest",
+  "enable_reqwest_rustls",
+  "hmac_rust",
+  "hmac_openssl",
+]
