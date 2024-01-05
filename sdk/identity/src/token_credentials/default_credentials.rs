@@ -92,33 +92,23 @@ pub enum DefaultAzureCredentialEnum {
 impl TokenCredential for DefaultAzureCredentialEnum {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         match self {
-            DefaultAzureCredentialEnum::Environment(credential) => {
-                credential.get_token(scopes).await.context(
-                    ErrorKind::Credential,
-                    "error getting environment credential",
-                )
-            }
+            DefaultAzureCredentialEnum::Environment(credential) => credential
+                .get_token(scopes)
+                .await
+                .context(ErrorKind::Credential, "environment credential"),
             DefaultAzureCredentialEnum::ManagedIdentity(credential) => {
                 // IMSD timeout is only limited to 1 second when used in DefaultAzureCredential
                 credential
                     .get_token(scopes)
                     .timeout(Duration::from_secs(1))
                     .await
-                    .context(
-                        ErrorKind::Credential,
-                        "getting managed identity credential timed out",
-                    )?
-                    .context(
-                        ErrorKind::Credential,
-                        "error getting managed identity credential",
-                    )
+                    .context(ErrorKind::Credential, "IMDS timeout")?
+                    .context(ErrorKind::Credential, "IMDS")
             }
-            DefaultAzureCredentialEnum::AzureCli(credential) => {
-                credential.get_token(scopes).await.context(
-                    ErrorKind::Credential,
-                    "error getting token credential from Azure CLI",
-                )
-            }
+            DefaultAzureCredentialEnum::AzureCli(credential) => credential
+                .get_token(scopes)
+                .await
+                .context(ErrorKind::Credential, "az-cli"),
         }
     }
 
@@ -205,11 +195,28 @@ impl TokenCredential for DefaultAzureCredential {
 }
 
 fn format_aggregate_error(errors: &[Error]) -> String {
+    use std::error::Error;
+    errors
+        .iter()
+        .map(|e| {
+            let mut current: Option<&dyn Error> = Some(e);
+            let mut stack = vec![];
+            while let Some(err) = current.take() {
+                stack.push(err.to_string());
+                current = err.source();
+            }
+            stack.join(" - ")
+        })
+        .collect::<Vec<String>>()
+        .join("\n")
+
+    /*
     errors
         .iter()
         .map(ToString::to_string)
         .collect::<Vec<String>>()
         .join("\n")
+         */
 }
 
 #[cfg(test)]
