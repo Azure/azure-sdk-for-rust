@@ -1,6 +1,6 @@
 [package]
 name = "azure_storage_blobs"
-version = "0.18.0"
+version = "0.19.0"
 description = "Azure Blob Storage crate from the Azure SDK for Rust"
 readme = "README.md"
 authors = ["Microsoft Corp."]
@@ -13,9 +13,9 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.18", features = ["xml"] }
-azure_storage = { path = "../storage", version = "0.18", default-features = false }
-azure_svc_blobstorage = {path="../../services/svc/blobstorage", version = "0.18", default-features=false, features=["default_tag"]}
+azure_core = { path = "../core", version = "0.19", features = ["xml"] }
+azure_storage = { path = "../storage", version = "0.19", default-features = false }
+azure_svc_blobstorage = {path="../../services/svc/blobstorage", version = "0.19", default-features=false, features=["default_tag"]}
 bytes = "1.0"
 time = "0.3.10"
 futures = "0.3"
@@ -36,7 +36,7 @@ mock_transport = { path = "../../eng/test/mock_transport" }
 md5 = "0.7"
 async-trait = "0.1"
 clap = { version = "4.0", features = ["derive", "env"] }
-azure_core = {path = "../core", version = "0.18", features = ["tokio-fs"]}
+azure_core = {path = "../core", version = "0.19", features = ["tokio-fs"]}
 
 [features]
 default = ["enable_reqwest", "hmac_rust"]
