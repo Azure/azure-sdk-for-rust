@@ -228,7 +228,7 @@ pub mod metrics_batch {
                 self.endtime = Some(endtime.into());
                 self
             }
-            #[doc = "The interval (i.e. timegrain) of the query.\n*Examples: PT15M, PT1H, P1D*"]
+            #[doc = "The interval (i.e. timegrain) of the query in ISO 8601 duration format. Defaults to PT1M. Special case for 'FULL' value that returns single datapoint for entire time span requested.\n*Examples: PT15M, PT1H, P1D, FULL*"]
             pub fn interval(mut self, interval: impl Into<String>) -> Self {
                 self.interval = Some(interval.into());
                 self

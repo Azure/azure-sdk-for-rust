@@ -1,3 +1,6 @@
 [tags]
 # package-2018-07-15-preview SchemaNotFound ValidationStatus
-deny = ["package-2018-07-15-preview"]
+deny = [
+    "package-2018-07-15-preview",
+    "package-preview-2023-07",
+]

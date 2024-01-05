@@ -3,4 +3,5 @@ deny = [
     # error[E0428]: the name `IpTag` is defined multiple times
     "package-2023-09-preview",
     "package-2023-11-preview",
+    "package-2023-12-preview",
 ]

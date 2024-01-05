@@ -6663,24 +6663,6 @@ pub mod user_session_properties {
         }
     }
 }
-#[doc = "Object containing the definition for properties to be used in the sessionHostUpdate validation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct ValidateSessionHostUpdateRequestBody {
-    #[doc = "Represents a SessionHostConfiguration definition."]
-    #[serde(rename = "sessionHostConfiguration", default, skip_serializing_if = "Option::is_none")]
-    pub session_host_configuration: Option<SessionHostConfiguration>,
-    #[doc = "Represents a SessionHostManagement definition."]
-    #[serde(rename = "sessionHostManagement", default, skip_serializing_if = "Option::is_none")]
-    pub session_host_management: Option<SessionHostManagement>,
-    #[doc = "The timestamp that the update validation is scheduled for. If none is provided, the update will be executed immediately"]
-    #[serde(rename = "scheduledDateTime", default, with = "azure_core::date::rfc3339::option")]
-    pub scheduled_date_time: Option<time::OffsetDateTime>,
-}
-impl ValidateSessionHostUpdateRequestBody {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "Represents a Workspace definition."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Workspace {
