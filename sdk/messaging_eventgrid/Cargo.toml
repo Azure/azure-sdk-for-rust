@@ -24,7 +24,7 @@ tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 [features]
 default = ["enable_reqwest"]
 enable_reqwest = ["azure_core/enable_reqwest"]
-enable_request_rustls = ["azure_core/enable_reqwest_rustls"]
+enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 
 [package.metadata.docs.rs]
 features = ["enable_reqwest", "enable_reqwest_rustls"]
