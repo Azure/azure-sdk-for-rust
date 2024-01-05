@@ -11,3 +11,9 @@ boxed = [
     ["../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2023-09-01/publicIpAddress.json", "PublicIPAddress" , "properties"],
     ["../../../azure-rest-api-specs/specification/network/resource-manager/Microsoft.Network/stable/2023-09-01/publicIpAddress.json", "PublicIPAddressPropertiesFormat", "ipConfiguration"],
 ]
+
+[tags]
+limit = 1
+deny = [
+    "profile-hybrid-2020-09-01",
+]
