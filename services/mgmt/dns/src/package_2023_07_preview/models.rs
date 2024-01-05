@@ -435,6 +435,9 @@ pub struct RecordSetProperties {
     #[doc = "A reference to a another resource"]
     #[serde(rename = "targetResource", default, skip_serializing_if = "Option::is_none")]
     pub target_resource: Option<SubResource>,
+    #[doc = "A reference to a another resource"]
+    #[serde(rename = "trafficManagementProfile", default, skip_serializing_if = "Option::is_none")]
+    pub traffic_management_profile: Option<SubResource>,
     #[doc = "The list of A records in the record set."]
     #[serde(
         rename = "ARecords",

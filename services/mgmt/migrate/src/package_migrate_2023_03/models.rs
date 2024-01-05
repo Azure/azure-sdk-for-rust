@@ -8420,6 +8420,13 @@ pub struct SqlAssessmentV2SummaryProperties {
     #[doc = "Number of sql instances part of the assessment."]
     #[serde(rename = "numberOfSqlInstances", default, skip_serializing_if = "Option::is_none")]
     pub number_of_sql_instances: Option<i32>,
+    #[doc = "Number of successfully discovered sql instances part of the assessment."]
+    #[serde(
+        rename = "numberOfSuccessfullyDiscoveredSqlInstances",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub number_of_successfully_discovered_sql_instances: Option<i32>,
     #[doc = "Number of sql databases part of the assessment."]
     #[serde(rename = "numberOfSqlDatabases", default, skip_serializing_if = "Option::is_none")]
     pub number_of_sql_databases: Option<i32>,

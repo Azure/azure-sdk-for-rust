@@ -1,5 +1,6 @@
 [tags]
 deny = [
    # https://github.com/Azure/azure-sdk-for-rust/issues/1179
-  "package-2022-11-01-preview"
+  "package-2022-11-01-preview",
+  "package-preview-2023-10"
 ]

@@ -535,27 +535,6 @@ pub mod backup_short_term_retention_policy_properties {
         }
     }
 }
-#[doc = "Properties of a long term retention policy"]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct BaseLongTermRetentionPolicyProperties {
-    #[doc = "The weekly retention policy for an LTR backup in an ISO 8601 format."]
-    #[serde(rename = "weeklyRetention", default, skip_serializing_if = "Option::is_none")]
-    pub weekly_retention: Option<String>,
-    #[doc = "The monthly retention policy for an LTR backup in an ISO 8601 format."]
-    #[serde(rename = "monthlyRetention", default, skip_serializing_if = "Option::is_none")]
-    pub monthly_retention: Option<String>,
-    #[doc = "The yearly retention policy for an LTR backup in an ISO 8601 format."]
-    #[serde(rename = "yearlyRetention", default, skip_serializing_if = "Option::is_none")]
-    pub yearly_retention: Option<String>,
-    #[doc = "The week of year to take the yearly backup in an ISO 8601 format."]
-    #[serde(rename = "weekOfYear", default, skip_serializing_if = "Option::is_none")]
-    pub week_of_year: Option<i32>,
-}
-impl BaseLongTermRetentionPolicyProperties {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
 #[doc = "SQL Vulnerability Assessment baseline Details"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Baseline {
@@ -5617,6 +5596,12 @@ pub struct ErrorResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorDetail>,
 }
+impl azure_core::Continuable for ErrorResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
 impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
@@ -9204,7 +9189,7 @@ pub struct LongTermRetentionPolicy {
     pub proxy_resource: ProxyResource,
     #[doc = "Properties of a long term retention policy"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub properties: Option<BaseLongTermRetentionPolicyProperties>,
+    pub properties: Option<LongTermRetentionPolicyProperties>,
 }
 impl LongTermRetentionPolicy {
     pub fn new() -> Self {
@@ -9234,6 +9219,73 @@ impl azure_core::Continuable for LongTermRetentionPolicyListResult {
 impl LongTermRetentionPolicyListResult {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Properties of a long term retention policy"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct LongTermRetentionPolicyProperties {
+    #[doc = "The setting whether to make LTR backups immutable"]
+    #[serde(rename = "makeBackupsImmutable", default, skip_serializing_if = "Option::is_none")]
+    pub make_backups_immutable: Option<bool>,
+    #[doc = "The BackupStorageAccessTier for the LTR backups"]
+    #[serde(rename = "backupStorageAccessTier", default, skip_serializing_if = "Option::is_none")]
+    pub backup_storage_access_tier: Option<long_term_retention_policy_properties::BackupStorageAccessTier>,
+    #[doc = "The weekly retention policy for an LTR backup in an ISO 8601 format."]
+    #[serde(rename = "weeklyRetention", default, skip_serializing_if = "Option::is_none")]
+    pub weekly_retention: Option<String>,
+    #[doc = "The monthly retention policy for an LTR backup in an ISO 8601 format."]
+    #[serde(rename = "monthlyRetention", default, skip_serializing_if = "Option::is_none")]
+    pub monthly_retention: Option<String>,
+    #[doc = "The yearly retention policy for an LTR backup in an ISO 8601 format."]
+    #[serde(rename = "yearlyRetention", default, skip_serializing_if = "Option::is_none")]
+    pub yearly_retention: Option<String>,
+    #[doc = "The week of year to take the yearly backup in an ISO 8601 format."]
+    #[serde(rename = "weekOfYear", default, skip_serializing_if = "Option::is_none")]
+    pub week_of_year: Option<i32>,
+}
+impl LongTermRetentionPolicyProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod long_term_retention_policy_properties {
+    use super::*;
+    #[doc = "The BackupStorageAccessTier for the LTR backups"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "BackupStorageAccessTier")]
+    pub enum BackupStorageAccessTier {
+        Hot,
+        Archive,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for BackupStorageAccessTier {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for BackupStorageAccessTier {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for BackupStorageAccessTier {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Hot => serializer.serialize_unit_variant("BackupStorageAccessTier", 0u32, "Hot"),
+                Self::Archive => serializer.serialize_unit_variant("BackupStorageAccessTier", 1u32, "Archive"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
     }
 }
 #[doc = "The maintenance configuration capability"]
@@ -17194,9 +17246,9 @@ pub struct ServerProperties {
         skip_serializing_if = "Vec::is_empty"
     )]
     pub private_endpoint_connections: Vec<ServerPrivateEndpointConnection>,
-    #[doc = "Minimal TLS version. Allowed values: 'None', '1.0', '1.1', '1.2'"]
+    #[doc = "Minimal TLS version. Allowed values: 'None', 1.0', '1.1', '1.2', '1.3'"]
     #[serde(rename = "minimalTlsVersion", default, skip_serializing_if = "Option::is_none")]
-    pub minimal_tls_version: Option<String>,
+    pub minimal_tls_version: Option<server_properties::MinimalTlsVersion>,
     #[doc = "Whether or not public endpoint access is allowed for this server.  Value is optional but if passed in, must be 'Enabled' or 'Disabled' or 'SecuredByPerimeter'"]
     #[serde(rename = "publicNetworkAccess", default, skip_serializing_if = "Option::is_none")]
     pub public_network_access: Option<server_properties::PublicNetworkAccess>,
@@ -17232,6 +17284,53 @@ impl ServerProperties {
 }
 pub mod server_properties {
     use super::*;
+    #[doc = "Minimal TLS version. Allowed values: 'None', 1.0', '1.1', '1.2', '1.3'"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "MinimalTlsVersion")]
+    pub enum MinimalTlsVersion {
+        None,
+        #[serde(rename = "1.0")]
+        N1_0,
+        #[serde(rename = "1.1")]
+        N1_1,
+        #[serde(rename = "1.2")]
+        N1_2,
+        #[serde(rename = "1.3")]
+        N1_3,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for MinimalTlsVersion {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for MinimalTlsVersion {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for MinimalTlsVersion {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::None => serializer.serialize_unit_variant("MinimalTlsVersion", 0u32, "None"),
+                Self::N1_0 => serializer.serialize_unit_variant("MinimalTlsVersion", 1u32, "1.0"),
+                Self::N1_1 => serializer.serialize_unit_variant("MinimalTlsVersion", 2u32, "1.1"),
+                Self::N1_2 => serializer.serialize_unit_variant("MinimalTlsVersion", 3u32, "1.2"),
+                Self::N1_3 => serializer.serialize_unit_variant("MinimalTlsVersion", 4u32, "1.3"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
     #[doc = "Whether or not public endpoint access is allowed for this server.  Value is optional but if passed in, must be 'Enabled' or 'Disabled' or 'SecuredByPerimeter'"]
     #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
     #[serde(remote = "PublicNetworkAccess")]

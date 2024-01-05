@@ -7,10 +7,10 @@
 #![allow(rustdoc::bare_urls)]
 #![allow(rustdoc::invalid_html_tags)]
 #![allow(rustdoc::broken_intra_doc_links)]
-#[cfg(feature = "package-2023-05")]
-pub mod package_2023_05;
 #[cfg(feature = "package-2023-11-15")]
 pub mod package_2023_11_15;
+#[cfg(feature = "package-2024-01")]
+pub mod package_2024_01;
 #[cfg(feature = "package-composite-v1")]
 pub mod package_composite_v1;
 #[cfg(feature = "package-composite-v2")]

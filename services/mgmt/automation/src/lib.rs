@@ -7,10 +7,8 @@
 #![allow(rustdoc::bare_urls)]
 #![allow(rustdoc::invalid_html_tags)]
 #![allow(rustdoc::broken_intra_doc_links)]
-#[cfg(feature = "package-2022-01-31")]
-pub mod package_2022_01_31;
-#[cfg(feature = "package-2022-02-22")]
-pub mod package_2022_02_22;
+#[cfg(feature = "package-2019-06")]
+pub mod package_2019_06;
 #[cfg(feature = "package-2022-08-08")]
 pub mod package_2022_08_08;
 #[cfg(feature = "package-2023-05-15-preview")]

@@ -1,0 +1,11 @@
+[tags]
+deny = [
+    "package-2015-10",
+    "package-2017-05-preview",
+    "package-2018-01-preview",
+    "package-2018-06-preview",
+    "package-2020-01-13-preview",
+    "package-2021-06-22",
+    "package-2022-01-31",
+    "package-2022-02-22",
+]
