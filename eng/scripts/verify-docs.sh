@@ -9,24 +9,6 @@ BUILD=${1:-all}
 
 cd $(dirname ${BASH_SOURCE[0]})/../../
 
-case ${BUILD} in
-   all)
-	   echo building all docs
-	   ;;
-   sdk)
-	   echo building sdk docs
-	   ;;
-   svc)
-	   echo building svc docs
-	   ;;
-   mgmt)
-	   echo building mgmt docs
-	   ;;
-   *) echo ""
-
-esac
-
-
 SDK=$(cargo metadata --format-version=1 --no-deps | jq -r -c '.packages | .[] | select(.publish == null) | .name')
 SERVICES=$(cd services; cargo metadata --format-version=1 --no-deps | jq -r -c '.packages | .[] | select(.publish == null) | .name')
 
