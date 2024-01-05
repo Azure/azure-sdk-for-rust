@@ -209,14 +209,6 @@ fn format_aggregate_error(errors: &[Error]) -> String {
         })
         .collect::<Vec<String>>()
         .join("\n")
-
-    /*
-    errors
-        .iter()
-        .map(ToString::to_string)
-        .collect::<Vec<String>>()
-        .join("\n")
-         */
 }
 
 #[cfg(test)]
