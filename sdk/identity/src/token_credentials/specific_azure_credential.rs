@@ -1,3 +1,6 @@
+use super::options;
+use std::sync::Arc;
+
 #[cfg(feature = "client_certificate")]
 use crate::ClientCertificateCredential;
 use crate::{
@@ -22,6 +25,33 @@ pub mod azure_credential_types {
     pub const WORKLOAD_IDENTITY: &str = "workloadidentity";
     #[cfg(feature = "client_certificate")]
     pub const CLIENT_CERTIFICATE: &str = "clientcertificate";
+}
+
+/// Creates a `SpecificAzureCredential` if `AZURE_CREDENTIAL_TYPE` environment variable is set.
+/// Otherwise, creates a `DefaultAzureCredential`.
+pub fn create_credential() -> azure_core::Result<Arc<dyn TokenCredential>> {
+    create_credential_with_options(options::TokenCredentialOptions::default())
+}
+
+fn create_credential_with_options(
+    options: TokenCredentialOptions,
+) -> azure_core::Result<Arc<dyn TokenCredential>> {
+    let env = options.env();
+    match env.var(AZURE_CREDENTIAL_TYPE) {
+        Ok(_) => SpecificAzureCredential::create(options)
+            .map(|cred| Arc::new(cred) as Arc<dyn TokenCredential>),
+        Err(_) => crate::DefaultAzureCredentialBuilder::default()
+            .with_options(options)
+            .build()
+            .map(|cred| Arc::new(cred) as Arc<dyn TokenCredential>),
+    }
+}
+
+/// Creates a new `SpecificAzureCredential` with the default options.
+pub fn create_specific_credential() -> azure_core::Result<Arc<dyn TokenCredential>> {
+    Ok(Arc::new(SpecificAzureCredential::create(
+        TokenCredentialOptions::default(),
+    )?))
 }
 
 #[derive(Debug)]
