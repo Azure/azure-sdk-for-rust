@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use crate::{
     timeout::TimeoutExt, token_credentials::cache::TokenCache, AppServiceManagedIdentityCredential,
@@ -103,20 +103,25 @@ impl DefaultAzureCredentialBuilder {
     fn create_sources(
         &self,
         included: &Vec<DefaultAzureCredentialType>,
-    ) -> Vec<DefaultAzureCredentialEnum> {
+    ) -> azure_core::Result<Vec<DefaultAzureCredentialEnum>> {
         let mut sources = Vec::<DefaultAzureCredentialEnum>::with_capacity(included.len());
+        let mut errors = Vec::new();
         for source in included {
             match source {
                 DefaultAzureCredentialType::Environment => {
-                    if let Ok(credential) = EnvironmentCredential::create(self.options.clone()) {
-                        sources.push(DefaultAzureCredentialEnum::Environment(credential));
+                    match EnvironmentCredential::create(self.options.clone()) {
+                        Ok(credential) => {
+                            sources.push(DefaultAzureCredentialEnum::Environment(credential))
+                        }
+                        Err(error) => errors.push(error),
                     }
                 }
                 DefaultAzureCredentialType::AppService => {
-                    if let Ok(credential) =
-                        AppServiceManagedIdentityCredential::create(self.options.clone())
-                    {
-                        sources.push(DefaultAzureCredentialEnum::AppService(credential));
+                    match AppServiceManagedIdentityCredential::create(self.options.clone()) {
+                        Ok(credential) => {
+                            sources.push(DefaultAzureCredentialEnum::AppService(credential))
+                        }
+                        Err(error) => errors.push(error),
                     }
                 }
                 DefaultAzureCredentialType::VirtualMachine => {
@@ -131,14 +136,22 @@ impl DefaultAzureCredentialBuilder {
                 }
             }
         }
-        sources
+        if sources.is_empty() {
+            return Err(Error::with_message(ErrorKind::Credential, || {
+                format!(
+                    "No credential sources were available to be used for authentication.\n{}",
+                    format_aggregate_error(&errors)
+                )
+            }));
+        }
+        Ok(sources)
     }
 
     /// Create a `DefaultAzureCredential` from this builder.
-    pub fn build(&self) -> DefaultAzureCredential {
+    pub fn build(&self) -> azure_core::Result<DefaultAzureCredential> {
         let included = self.included();
-        let sources = self.create_sources(&included);
-        DefaultAzureCredential::with_sources(sources)
+        let sources = self.create_sources(&included)?;
+        Ok(DefaultAzureCredential::with_sources(sources))
     }
 }
 
@@ -262,15 +275,11 @@ impl DefaultAzureCredential {
     }
 }
 
-impl Default for DefaultAzureCredential {
-    fn default() -> Self {
-        DefaultAzureCredentialBuilder::new().build()
-    }
-}
-
-/// Returns a new `DefaultAzureCredential`.
-pub fn new_credential() -> std::sync::Arc<dyn TokenCredential> {
-    std::sync::Arc::new(DefaultAzureCredential::default())
+/// Creates a new `DefaultAzureCredential` with the default options.
+pub fn create_default_credential() -> azure_core::Result<Arc<dyn TokenCredential>> {
+    DefaultAzureCredentialBuilder::default()
+        .build()
+        .map(|cred| Arc::new(cred) as Arc<dyn TokenCredential>)
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
