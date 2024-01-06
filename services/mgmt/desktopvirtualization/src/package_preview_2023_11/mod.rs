@@ -186,9 +186,6 @@ impl Client {
     pub fn user_sessions_client(&self) -> user_sessions::Client {
         user_sessions::Client(self.clone())
     }
-    pub fn validate_session_host_update_client(&self) -> validate_session_host_update::Client {
-        validate_session_host_update::Client(self.clone())
-    }
     pub fn workspaces_client(&self) -> workspaces::Client {
         workspaces::Client(self.clone())
     }
@@ -8462,150 +8459,6 @@ pub mod session_host_managements {
         }
     }
 }
-pub mod validate_session_host_update {
-    use super::models;
-    #[cfg(not(target_arch = "wasm32"))]
-    use futures::future::BoxFuture;
-    #[cfg(target_arch = "wasm32")]
-    use futures::future::LocalBoxFuture as BoxFuture;
-    pub struct Client(pub(crate) super::Client);
-    impl Client {
-        #[doc = "Validates a session host update operation for validation errors. When Session Host Configuration and Session Host Management values are not provided the ones saved in the Host Pool will be used."]
-        #[doc = ""]
-        #[doc = "Arguments:"]
-        #[doc = "* `subscription_id`: The ID of the target subscription."]
-        #[doc = "* `resource_group_name`: The name of the resource group. The name is case insensitive."]
-        #[doc = "* `host_pool_name`: The name of the host pool within the specified resource group"]
-        pub fn post(
-            &self,
-            subscription_id: impl Into<String>,
-            resource_group_name: impl Into<String>,
-            host_pool_name: impl Into<String>,
-        ) -> post::RequestBuilder {
-            post::RequestBuilder {
-                client: self.0.clone(),
-                subscription_id: subscription_id.into(),
-                resource_group_name: resource_group_name.into(),
-                host_pool_name: host_pool_name.into(),
-                validate_session_host_update_request_body: None,
-            }
-        }
-    }
-    pub mod post {
-        use super::models;
-        #[cfg(not(target_arch = "wasm32"))]
-        use futures::future::BoxFuture;
-        #[cfg(target_arch = "wasm32")]
-        use futures::future::LocalBoxFuture as BoxFuture;
-        #[derive(Debug)]
-        pub struct Response(azure_core::Response);
-        impl Response {
-            pub fn into_raw_response(self) -> azure_core::Response {
-                self.0
-            }
-            pub fn as_raw_response(&self) -> &azure_core::Response {
-                &self.0
-            }
-            pub fn headers(&self) -> Headers {
-                Headers(self.0.headers())
-            }
-        }
-        impl From<Response> for azure_core::Response {
-            fn from(rsp: Response) -> Self {
-                rsp.into_raw_response()
-            }
-        }
-        impl AsRef<azure_core::Response> for Response {
-            fn as_ref(&self) -> &azure_core::Response {
-                self.as_raw_response()
-            }
-        }
-        pub struct Headers<'a>(&'a azure_core::headers::Headers);
-        impl<'a> Headers<'a> {
-            #[doc = "The URL of the resource used to check the status of the asynchronous operation."]
-            pub fn location(&self) -> azure_core::Result<&str> {
-                self.0.get_str(&azure_core::headers::HeaderName::from_static("location"))
-            }
-            #[doc = "The URL of the resource used to check the status of the asynchronous operation."]
-            pub fn azure_async_operation(&self) -> azure_core::Result<&str> {
-                self.0
-                    .get_str(&azure_core::headers::HeaderName::from_static("azure-asyncoperation"))
-            }
-            #[doc = "Suggested delay to check the status of the asynchronous operation. The value is an integer that represents the seconds."]
-            pub fn retry_after(&self) -> azure_core::Result<i32> {
-                self.0.get_as(&azure_core::headers::HeaderName::from_static("retry-after"))
-            }
-        }
-        #[derive(Clone)]
-        #[doc = r" `RequestBuilder` provides a mechanism for setting optional parameters on a request."]
-        #[doc = r""]
-        #[doc = r" Each `RequestBuilder` parameter method call returns `Self`, so setting of multiple"]
-        #[doc = r" parameters can be chained."]
-        #[doc = r""]
-        #[doc = r" This `RequestBuilder` implements a Long Running Operation"]
-        #[doc = r" (LRO)."]
-        #[doc = r""]
-        #[doc = r" To finalize and submit the request, invoke `.await`, which"]
-        #[doc = r" which will convert the `RequestBuilder` into a future"]
-        #[doc = r" executes the request and polls the service until the"]
-        #[doc = r" operation completes."]
-        #[doc = r""]
-        #[doc = r" In order to execute the request without polling the service"]
-        #[doc = r" until the operation completes, use"]
-        #[doc = r" [`RequestBuilder::send()`], which will return a lower-level"]
-        #[doc = r" [`Response`] value."]
-        pub struct RequestBuilder {
-            pub(crate) client: super::super::Client,
-            pub(crate) subscription_id: String,
-            pub(crate) resource_group_name: String,
-            pub(crate) host_pool_name: String,
-            pub(crate) validate_session_host_update_request_body: Option<models::ValidateSessionHostUpdateRequestBody>,
-        }
-        impl RequestBuilder {
-            #[doc = "Object containing the definition for properties to be used in the sessionHostUpdate validation."]
-            pub fn validate_session_host_update_request_body(
-                mut self,
-                validate_session_host_update_request_body: impl Into<models::ValidateSessionHostUpdateRequestBody>,
-            ) -> Self {
-                self.validate_session_host_update_request_body = Some(validate_session_host_update_request_body.into());
-                self
-            }
-            #[doc = "Returns a future that sends the request and returns a [`Response`] object that provides low-level access to full response details."]
-            #[doc = ""]
-            #[doc = "You should typically use `.await` (which implicitly calls `IntoFuture::into_future()`) to finalize and send requests rather than `send()`."]
-            #[doc = "However, this function can provide more flexibility when required."]
-            pub fn send(self) -> BoxFuture<'static, azure_core::Result<Response>> {
-                Box::pin({
-                    let this = self.clone();
-                    async move {
-                        let url = this.url()?;
-                        let mut req = azure_core::Request::new(url, azure_core::Method::Post);
-                        let bearer_token = this.client.bearer_token().await?;
-                        req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
-                        let req_body =
-                            if let Some(validate_session_host_update_request_body) = &this.validate_session_host_update_request_body {
-                                req.insert_header("content-type", "application/json");
-                                azure_core::to_json(validate_session_host_update_request_body)?
-                            } else {
-                                azure_core::EMPTY_BODY
-                            };
-                        req.set_body(req_body);
-                        Ok(Response(this.client.send(&mut req).await?))
-                    }
-                })
-            }
-            fn url(&self) -> azure_core::Result<azure_core::Url> {
-                let mut url = azure_core :: Url :: parse (& format ! ("{}/subscriptions/{}/resourceGroups/{}/providers/Microsoft.DesktopVirtualization/hostPools/{}/sessionHostManagements/default/validateSessionHostUpdate" , self . client . endpoint () , & self . subscription_id , & self . resource_group_name , & self . host_pool_name)) ? ;
-                let has_api_version_already = url.query_pairs().any(|(k, _)| k == azure_core::query_param::API_VERSION);
-                if !has_api_version_already {
-                    url.query_pairs_mut()
-                        .append_pair(azure_core::query_param::API_VERSION, "2023-11-01-preview");
-                }
-                Ok(url)
-            }
-        }
-    }
-}
 pub mod initiate_session_host_update {
     use super::models;
     #[cfg(not(target_arch = "wasm32"))]
@@ -9517,7 +9370,7 @@ pub mod session_host_configurations {
                     let this = self.clone();
                     let response = this.send().await?;
                     let headers = response.as_raw_response().headers();
-                    let location = get_location(headers, FinalState::Location)?;
+                    let location = get_location(headers, FinalState::AzureAsyncOperation)?;
                     if let Some(url) = location {
                         loop {
                             let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);

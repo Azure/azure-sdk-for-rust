@@ -83,6 +83,71 @@ impl AadSolutionProperties {
         Self::default()
     }
 }
+#[doc = "Configuration payload for PR Annotations."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ActionableRemediation {
+    #[doc = "ActionableRemediation Setting.\r\nNone - the setting was never set.\r\nEnabled - ActionableRemediation is enabled.\r\nDisabled - ActionableRemediation is disabled."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<ActionableRemediationState>,
+    #[doc = "Gets or sets list of categories and severity levels."]
+    #[serde(
+        rename = "categoryConfigurations",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub category_configurations: Vec<CategoryConfiguration>,
+    #[doc = "Repository branch configuration for PR Annotations."]
+    #[serde(rename = "branchConfiguration", default, skip_serializing_if = "Option::is_none")]
+    pub branch_configuration: Option<TargetBranchConfiguration>,
+    #[doc = "Update Settings.\r\n\r\nEnabled - Resource should inherit configurations from parent.\r\nDisabled - Resource should not inherit configurations from parent."]
+    #[serde(rename = "inheritFromParentState", default, skip_serializing_if = "Option::is_none")]
+    pub inherit_from_parent_state: Option<InheritFromParentState>,
+}
+impl ActionableRemediation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "ActionableRemediation Setting.\r\nNone - the setting was never set.\r\nEnabled - ActionableRemediation is enabled.\r\nDisabled - ActionableRemediation is disabled."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ActionableRemediationState")]
+pub enum ActionableRemediationState {
+    None,
+    Disabled,
+    Enabled,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ActionableRemediationState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ActionableRemediationState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ActionableRemediationState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::None => serializer.serialize_unit_variant("ActionableRemediationState", 0u32, "None"),
+            Self::Disabled => serializer.serialize_unit_variant("ActionableRemediationState", 1u32, "Disabled"),
+            Self::Enabled => serializer.serialize_unit_variant("ActionableRemediationState", 2u32, "Enabled"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "Number of active connections is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ActiveConnectionsNotInAllowedRange {
@@ -967,6 +1032,169 @@ impl AmqpD2cMessagesNotInAllowedRange {
         }
     }
 }
+#[doc = "Configuration of PR Annotations on default branch.\r\n\r\nEnabled - PR Annotations are enabled on the resource's default branch.\r\nDisabled - PR Annotations are disabled on the resource's default branch."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "AnnotateDefaultBranchState")]
+pub enum AnnotateDefaultBranchState {
+    Disabled,
+    Enabled,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for AnnotateDefaultBranchState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for AnnotateDefaultBranchState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for AnnotateDefaultBranchState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Disabled => serializer.serialize_unit_variant("AnnotateDefaultBranchState", 0u32, "Disabled"),
+            Self::Enabled => serializer.serialize_unit_variant("AnnotateDefaultBranchState", 1u32, "Enabled"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "An API collection as represented by Microsoft Defender for APIs."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiCollection {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Describes the properties of an API collection."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ApiCollectionProperties>,
+}
+impl ApiCollection {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Page of a list of API collections as represented by Microsoft Defender for APIs."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiCollectionList {
+    #[doc = "API collections in this page."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<ApiCollection>,
+    #[doc = "The URI to fetch the next page."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ApiCollectionList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl ApiCollectionList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes the properties of an API collection."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ApiCollectionProperties {
+    #[doc = "Gets the provisioning state of the API collection."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<api_collection_properties::ProvisioningState>,
+    #[doc = "The display name of the API collection."]
+    #[serde(rename = "displayName", default, skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    #[doc = "The resource Id of the resource from where this API collection was discovered."]
+    #[serde(rename = "discoveredVia", default, skip_serializing_if = "Option::is_none")]
+    pub discovered_via: Option<String>,
+    #[doc = "The base URI for this API collection. All endpoints of this API collection extend this base URI."]
+    #[serde(rename = "baseUrl", default, skip_serializing_if = "Option::is_none")]
+    pub base_url: Option<String>,
+    #[doc = "The number of API endpoints discovered in this API collection."]
+    #[serde(rename = "numberOfApiEndpoints", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_api_endpoints: Option<i64>,
+    #[doc = "The number of API endpoints in this API collection that have not received any API traffic in the last 30 days."]
+    #[serde(rename = "numberOfInactiveApiEndpoints", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_inactive_api_endpoints: Option<i64>,
+    #[doc = "The number of API endpoints in this API collection that are unauthenticated."]
+    #[serde(rename = "numberOfUnauthenticatedApiEndpoints", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_unauthenticated_api_endpoints: Option<i64>,
+    #[doc = "The number of API endpoints in this API collection for which API traffic from the internet was observed."]
+    #[serde(rename = "numberOfExternalApiEndpoints", default, skip_serializing_if = "Option::is_none")]
+    pub number_of_external_api_endpoints: Option<i64>,
+    #[doc = "The number of API endpoints in this API collection which are exposing sensitive data in their requests and/or responses."]
+    #[serde(
+        rename = "numberOfApiEndpointsWithSensitiveDataExposed",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub number_of_api_endpoints_with_sensitive_data_exposed: Option<i64>,
+    #[doc = "The highest priority sensitivity label from Microsoft Purview in this API collection."]
+    #[serde(rename = "sensitivityLabel", default, skip_serializing_if = "Option::is_none")]
+    pub sensitivity_label: Option<String>,
+}
+impl ApiCollectionProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod api_collection_properties {
+    use super::*;
+    #[doc = "Gets the provisioning state of the API collection."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "ProvisioningState")]
+    pub enum ProvisioningState {
+        Succeeded,
+        Failed,
+        Canceled,
+        InProgress,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for ProvisioningState {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for ProvisioningState {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for ProvisioningState {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Succeeded"),
+                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Failed"),
+                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Canceled"),
+                Self::InProgress => serializer.serialize_unit_variant("ProvisioningState", 3u32, "InProgress"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "Security Application over a given scope"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Application {
@@ -1386,6 +1614,57 @@ pub enum AuthenticationDetailsPropertiesUnion {
     AwsCreds(AwsCredsAuthenticationDetailsProperties),
     #[serde(rename = "gcpCredentials")]
     GcpCredentials(GcpCredentialsDetailsProperties),
+}
+#[doc = "Authorization payload."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Authorization {
+    #[doc = "Gets or sets one-time OAuth code to exchange for refresh and access tokens.\r\n\r\nOnly used during PUT/PATCH operations. The secret is cleared during GET."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+}
+impl Authorization {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "AutoDiscovery states."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "AutoDiscovery")]
+pub enum AutoDiscovery {
+    Disabled,
+    Enabled,
+    NotApplicable,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for AutoDiscovery {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for AutoDiscovery {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for AutoDiscovery {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Disabled => serializer.serialize_unit_variant("AutoDiscovery", 0u32, "Disabled"),
+            Self::Enabled => serializer.serialize_unit_variant("AutoDiscovery", 1u32, "Enabled"),
+            Self::NotApplicable => serializer.serialize_unit_variant("AutoDiscovery", 2u32, "NotApplicable"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
 }
 #[doc = "Auto provisioning setting"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -1911,16 +2190,34 @@ impl AwsCredsAuthenticationDetailsProperties {
         }
     }
 }
-#[doc = "The aws connector environment data"]
+#[doc = "The AWS connector environment data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AwsEnvironmentData {
-    #[doc = "The awsOrganization data "]
+    #[doc = "The AWS organization data"]
     #[serde(rename = "organizationalData", default, skip_serializing_if = "Option::is_none")]
     pub organizational_data: Option<AwsOrganizationalDataUnion>,
+    #[doc = "list of regions to scan"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub regions: Vec<String>,
+    #[doc = "The AWS account name"]
+    #[serde(rename = "accountName", default, skip_serializing_if = "Option::is_none")]
+    pub account_name: Option<String>,
+    #[doc = "Scan interval in hours (value should be between 1-hour to 24-hours)"]
+    #[serde(rename = "scanInterval", default, skip_serializing_if = "Option::is_none")]
+    pub scan_interval: Option<i64>,
 }
 impl AwsEnvironmentData {
     pub fn new() -> Self {
-        Self { organizational_data: None }
+        Self {
+            organizational_data: None,
+            regions: Vec::new(),
+            account_name: None,
+            scan_interval: None,
+        }
     }
 }
 #[doc = "The multi cloud account's membership type in the organization"]
@@ -1930,7 +2227,7 @@ pub enum AwsOrganizationalDataUnion {
     Organization(AwsOrganizationalDataMaster),
     Member(AwsOrganizationalDataMember),
 }
-#[doc = "The awsOrganization data for the master account"]
+#[doc = "The AWS organization data for the master account"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AwsOrganizationalDataMaster {
     #[doc = "If the multi cloud account is of membership type organization, this will be the name of the onboarding stackset"]
@@ -1953,7 +2250,7 @@ impl AwsOrganizationalDataMaster {
         }
     }
 }
-#[doc = "The awsOrganization data for the member account"]
+#[doc = "The AWS organization data for the member account"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AwsOrganizationalDataMember {
     #[doc = "If the multi cloud account is not of membership type organization, this will be the ID of the account's parent"]
@@ -1963,6 +2260,255 @@ pub struct AwsOrganizationalDataMember {
 impl AwsOrganizationalDataMember {
     pub fn new() -> Self {
         Self { parent_hierarchy_id: None }
+    }
+}
+#[doc = "Azure DevOps Organization resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureDevOpsOrg {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "Azure DevOps Organization properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AzureDevOpsOrgProperties>,
+}
+impl AzureDevOpsOrg {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List of RP resources which supports pagination."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureDevOpsOrgListResponse {
+    #[doc = "Gets or sets list of resources."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<AzureDevOpsOrg>,
+    #[doc = "Gets or sets next link to scroll over the results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AzureDevOpsOrgListResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl AzureDevOpsOrgListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Azure DevOps Organization properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureDevOpsOrgProperties {
+    #[doc = "Gets or sets resource status message."]
+    #[serde(rename = "provisioningStatusMessage", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_status_message: Option<String>,
+    #[doc = "Gets or sets time when resource was last checked."]
+    #[serde(rename = "provisioningStatusUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
+    pub provisioning_status_update_time_utc: Option<time::OffsetDateTime>,
+    #[doc = "The provisioning state of the resource.\r\n\r\nPending - Provisioning pending.\r\nFailed - Provisioning failed.\r\nSucceeded - Successful provisioning.\r\nCanceled - Provisioning canceled.\r\nPendingDeletion - Deletion pending.\r\nDeletionSuccess - Deletion successful.\r\nDeletionFailure - Deletion failure."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<DevOpsProvisioningState>,
+    #[doc = "Details about resource onboarding status across all connectors.\r\n\r\nOnboardedByOtherConnector - this resource has already been onboarded to another connector. This is only applicable to top-level resources.\r\nOnboarded - this resource has already been onboarded by the specified connector.\r\nNotOnboarded - this resource has not been onboarded to any connector.\r\nNotApplicable - the onboarding state is not applicable to the current endpoint."]
+    #[serde(rename = "onboardingState", default, skip_serializing_if = "Option::is_none")]
+    pub onboarding_state: Option<OnboardingState>,
+    #[doc = "Configuration payload for PR Annotations."]
+    #[serde(rename = "actionableRemediation", default, skip_serializing_if = "Option::is_none")]
+    pub actionable_remediation: Option<ActionableRemediation>,
+}
+impl AzureDevOpsOrgProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "AzureDevOps Org Inventory Configuration."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureDevOpsOrganizationConfiguration {
+    #[doc = "AutoDiscovery states."]
+    #[serde(rename = "autoDiscovery", default, skip_serializing_if = "Option::is_none")]
+    pub auto_discovery: Option<AutoDiscovery>,
+    #[doc = "AzureDevOps Project Inventory Configuration.\r\nDictionary of AzureDevOps project name to desired project configuration.\r\nIf AutoDiscovery is Enabled, this field should be empty or null."]
+    #[serde(rename = "projectConfigs", default, skip_serializing_if = "Option::is_none")]
+    pub project_configs: Option<serde_json::Value>,
+}
+impl AzureDevOpsOrganizationConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Azure DevOps Project resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureDevOpsProject {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "Azure DevOps Project properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AzureDevOpsProjectProperties>,
+}
+impl AzureDevOpsProject {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "AzureDevOps Project Inventory Configuration."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureDevOpsProjectConfiguration {
+    #[doc = "AutoDiscovery states."]
+    #[serde(rename = "autoDiscovery", default, skip_serializing_if = "Option::is_none")]
+    pub auto_discovery: Option<AutoDiscovery>,
+    #[doc = "AzureDevOps Repository Inventory Configuration.\r\nDictionary of AzureDevOps repository name to desired repository configuration.\r\nIf AutoDiscovery is Enabled, this field should be null or empty."]
+    #[serde(rename = "repositoryConfigs", default, skip_serializing_if = "Option::is_none")]
+    pub repository_configs: Option<serde_json::Value>,
+}
+impl AzureDevOpsProjectConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List of RP resources which supports pagination."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureDevOpsProjectListResponse {
+    #[doc = "Gets or sets list of resources."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<AzureDevOpsProject>,
+    #[doc = "Gets or sets next link to scroll over the results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AzureDevOpsProjectListResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl AzureDevOpsProjectListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Azure DevOps Project properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureDevOpsProjectProperties {
+    #[doc = "Gets or sets resource status message."]
+    #[serde(rename = "provisioningStatusMessage", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_status_message: Option<String>,
+    #[doc = "Gets or sets time when resource was last checked."]
+    #[serde(rename = "provisioningStatusUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
+    pub provisioning_status_update_time_utc: Option<time::OffsetDateTime>,
+    #[doc = "The provisioning state of the resource.\r\n\r\nPending - Provisioning pending.\r\nFailed - Provisioning failed.\r\nSucceeded - Successful provisioning.\r\nCanceled - Provisioning canceled.\r\nPendingDeletion - Deletion pending.\r\nDeletionSuccess - Deletion successful.\r\nDeletionFailure - Deletion failure."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<DevOpsProvisioningState>,
+    #[doc = "Gets or sets parent Azure DevOps Organization name."]
+    #[serde(rename = "parentOrgName", default, skip_serializing_if = "Option::is_none")]
+    pub parent_org_name: Option<String>,
+    #[doc = "Gets or sets Azure DevOps Project id."]
+    #[serde(rename = "projectId", default, skip_serializing_if = "Option::is_none")]
+    pub project_id: Option<String>,
+    #[doc = "Details about resource onboarding status across all connectors.\r\n\r\nOnboardedByOtherConnector - this resource has already been onboarded to another connector. This is only applicable to top-level resources.\r\nOnboarded - this resource has already been onboarded by the specified connector.\r\nNotOnboarded - this resource has not been onboarded to any connector.\r\nNotApplicable - the onboarding state is not applicable to the current endpoint."]
+    #[serde(rename = "onboardingState", default, skip_serializing_if = "Option::is_none")]
+    pub onboarding_state: Option<OnboardingState>,
+    #[doc = "Configuration payload for PR Annotations."]
+    #[serde(rename = "actionableRemediation", default, skip_serializing_if = "Option::is_none")]
+    pub actionable_remediation: Option<ActionableRemediation>,
+}
+impl AzureDevOpsProjectProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Azure DevOps Repository resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureDevOpsRepository {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "Azure DevOps Repository properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<AzureDevOpsRepositoryProperties>,
+}
+impl AzureDevOpsRepository {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List of RP resources which supports pagination."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureDevOpsRepositoryListResponse {
+    #[doc = "Gets or sets list of resources."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<AzureDevOpsRepository>,
+    #[doc = "Gets or sets next link to scroll over the results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for AzureDevOpsRepositoryListResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl AzureDevOpsRepositoryListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Azure DevOps Repository properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureDevOpsRepositoryProperties {
+    #[doc = "Gets or sets resource status message."]
+    #[serde(rename = "provisioningStatusMessage", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_status_message: Option<String>,
+    #[doc = "Gets or sets time when resource was last checked."]
+    #[serde(rename = "provisioningStatusUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
+    pub provisioning_status_update_time_utc: Option<time::OffsetDateTime>,
+    #[doc = "The provisioning state of the resource.\r\n\r\nPending - Provisioning pending.\r\nFailed - Provisioning failed.\r\nSucceeded - Successful provisioning.\r\nCanceled - Provisioning canceled.\r\nPendingDeletion - Deletion pending.\r\nDeletionSuccess - Deletion successful.\r\nDeletionFailure - Deletion failure."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<DevOpsProvisioningState>,
+    #[doc = "Gets or sets parent Azure DevOps Organization name."]
+    #[serde(rename = "parentOrgName", default, skip_serializing_if = "Option::is_none")]
+    pub parent_org_name: Option<String>,
+    #[doc = "Gets or sets parent Azure DevOps Project name."]
+    #[serde(rename = "parentProjectName", default, skip_serializing_if = "Option::is_none")]
+    pub parent_project_name: Option<String>,
+    #[doc = "Gets or sets Azure DevOps Repository id."]
+    #[serde(rename = "repoId", default, skip_serializing_if = "Option::is_none")]
+    pub repo_id: Option<String>,
+    #[doc = "Gets or sets Azure DevOps Repository url."]
+    #[serde(rename = "repoUrl", default, skip_serializing_if = "Option::is_none")]
+    pub repo_url: Option<String>,
+    #[doc = "Gets or sets Azure DevOps repository visibility, whether it is public or private etc."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub visibility: Option<String>,
+    #[doc = "Details about resource onboarding status across all connectors.\r\n\r\nOnboardedByOtherConnector - this resource has already been onboarded to another connector. This is only applicable to top-level resources.\r\nOnboarded - this resource has already been onboarded by the specified connector.\r\nNotOnboarded - this resource has not been onboarded to any connector.\r\nNotApplicable - the onboarding state is not applicable to the current endpoint."]
+    #[serde(rename = "onboardingState", default, skip_serializing_if = "Option::is_none")]
+    pub onboarding_state: Option<OnboardingState>,
+    #[doc = "Configuration payload for PR Annotations."]
+    #[serde(rename = "actionableRemediation", default, skip_serializing_if = "Option::is_none")]
+    pub actionable_remediation: Option<ActionableRemediation>,
+}
+impl AzureDevOpsRepositoryProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The AzureDevOps scope connector's environment data"]
@@ -1998,6 +2544,23 @@ impl AzureResourceLink {
     }
 }
 pub type AzureResourceLinks = Vec<AzureResourceLink>;
+#[doc = "A vulnerability assessments setting on Azure servers in the defined scope."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct AzureServersSetting {
+    #[serde(flatten)]
+    pub server_vulnerability_assessments_setting: ServerVulnerabilityAssessmentsSetting,
+    #[doc = "Describes the vulnerability assessments setting properties on Azure servers in the defined scope."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<ServerVulnerabilityAssessmentsAzureSettingProperties>,
+}
+impl AzureServersSetting {
+    pub fn new(server_vulnerability_assessments_setting: ServerVulnerabilityAssessmentsSetting) -> Self {
+        Self {
+            server_vulnerability_assessments_setting,
+            properties: None,
+        }
+    }
+}
 #[doc = "Describes an Azure resource with location"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct AzureTrackedResourceLocation {
@@ -2006,6 +2569,18 @@ pub struct AzureTrackedResourceLocation {
     pub location: Option<String>,
 }
 impl AzureTrackedResourceLocation {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Base Resource Inventory configuration changes."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BaseResourceConfiguration {
+    #[doc = "Onboarding states."]
+    #[serde(rename = "desiredOnboardingState", default, skip_serializing_if = "Option::is_none")]
+    pub desired_onboarding_state: Option<DesiredOnboardingState>,
+}
+impl BaseResourceConfiguration {
     pub fn new() -> Self {
         Self::default()
     }
@@ -2072,6 +2647,24 @@ pub struct BenchmarkReference {
     pub reference: Option<String>,
 }
 impl BenchmarkReference {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Pre-configured sensitive information type"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct BuiltInInfoType {
+    #[doc = "Display name of the info type"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Id of the info type"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Category of the built-in info type"]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+}
+impl BuiltInInfoType {
     pub fn new() -> Self {
         Self::default()
     }
@@ -2151,6 +2744,21 @@ pub struct Cvss {
     pub base: Option<f64>,
 }
 impl Cvss {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Severity level per category configuration for PR Annotations."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct CategoryConfiguration {
+    #[doc = "Gets or sets minimum severity level for a given category."]
+    #[serde(rename = "minimumSeverityLevel", default, skip_serializing_if = "Option::is_none")]
+    pub minimum_severity_level: Option<String>,
+    #[doc = "Rule categories.\r\nCode - code scanning results.\r\nArtifact scanning results.\r\nDependencies scanning results.\r\nIaC results.\r\nSecrets scanning results.\r\nContainer scanning results."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<RuleCategory>,
+}
+impl CategoryConfiguration {
     pub fn new() -> Self {
         Self::default()
     }
@@ -2792,6 +3400,41 @@ impl DataExportSettings {
         Self { setting, properties: None }
     }
 }
+#[doc = "The Defender for Storage resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DefenderForStorageSetting {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Defender for Storage resource properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DefenderForStorageSettingProperties>,
+}
+impl DefenderForStorageSetting {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Defender for Storage resource properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DefenderForStorageSettingProperties {
+    #[doc = "Indicates whether Defender for Storage is enabled on this storage account."]
+    #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_enabled: Option<bool>,
+    #[doc = "Properties of Malware Scanning."]
+    #[serde(rename = "malwareScanning", default, skip_serializing_if = "Option::is_none")]
+    pub malware_scanning: Option<MalwareScanningProperties>,
+    #[doc = "Properties of Sensitive Data Discovery."]
+    #[serde(rename = "sensitiveDataDiscovery", default, skip_serializing_if = "Option::is_none")]
+    pub sensitive_data_discovery: Option<SensitiveDataDiscoveryProperties>,
+    #[doc = "Indicates whether the settings defined for this storage account should override the settings defined for the subscription."]
+    #[serde(rename = "overrideSubscriptionLevelSettings", default, skip_serializing_if = "Option::is_none")]
+    pub override_subscription_level_settings: Option<bool>,
+}
+impl DefenderForStorageSettingProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "A custom alert rule that checks if a value (depends on the custom alert type) is denied."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DenylistCustomAlertRule {
@@ -2806,6 +3449,164 @@ impl DenylistCustomAlertRule {
         Self {
             list_custom_alert_rule,
             denylist_values,
+        }
+    }
+}
+#[doc = "Onboarding states."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "DesiredOnboardingState")]
+pub enum DesiredOnboardingState {
+    Disabled,
+    Enabled,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for DesiredOnboardingState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for DesiredOnboardingState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for DesiredOnboardingState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Disabled => serializer.serialize_unit_variant("DesiredOnboardingState", 0u32, "Disabled"),
+            Self::Enabled => serializer.serialize_unit_variant("DesiredOnboardingState", 1u32, "Enabled"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "DevOps Configuration resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DevOpsConfiguration {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "DevOps Configuration properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<DevOpsConfigurationProperties>,
+}
+impl DevOpsConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List of RP resources which supports pagination."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DevOpsConfigurationListResponse {
+    #[doc = "Gets or sets list of resources."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<DevOpsConfiguration>,
+    #[doc = "Gets or sets next link to scroll over the results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for DevOpsConfigurationListResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl DevOpsConfigurationListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "DevOps Configuration properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct DevOpsConfigurationProperties {
+    #[doc = "Gets or sets resource status message."]
+    #[serde(rename = "provisioningStatusMessage", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_status_message: Option<String>,
+    #[doc = "Gets or sets time when resource was last checked."]
+    #[serde(rename = "provisioningStatusUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
+    pub provisioning_status_update_time_utc: Option<time::OffsetDateTime>,
+    #[doc = "The provisioning state of the resource.\r\n\r\nPending - Provisioning pending.\r\nFailed - Provisioning failed.\r\nSucceeded - Successful provisioning.\r\nCanceled - Provisioning canceled.\r\nPendingDeletion - Deletion pending.\r\nDeletionSuccess - Deletion successful.\r\nDeletionFailure - Deletion failure."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<DevOpsProvisioningState>,
+    #[doc = "Authorization payload."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub authorization: Option<Authorization>,
+    #[doc = "AutoDiscovery states."]
+    #[serde(rename = "autoDiscovery", default, skip_serializing_if = "Option::is_none")]
+    pub auto_discovery: Option<AutoDiscovery>,
+    #[doc = "List of top-level inventory to select when AutoDiscovery is disabled.\r\nThis field is ignored when AutoDiscovery is enabled."]
+    #[serde(
+        rename = "topLevelInventoryList",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub top_level_inventory_list: Vec<String>,
+}
+impl DevOpsConfigurationProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The provisioning state of the resource.\r\n\r\nPending - Provisioning pending.\r\nFailed - Provisioning failed.\r\nSucceeded - Successful provisioning.\r\nCanceled - Provisioning canceled.\r\nPendingDeletion - Deletion pending.\r\nDeletionSuccess - Deletion successful.\r\nDeletionFailure - Deletion failure."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "DevOpsProvisioningState")]
+pub enum DevOpsProvisioningState {
+    Succeeded,
+    Failed,
+    Canceled,
+    Pending,
+    PendingDeletion,
+    DeletionSuccess,
+    DeletionFailure,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for DevOpsProvisioningState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for DevOpsProvisioningState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for DevOpsProvisioningState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Succeeded => serializer.serialize_unit_variant("DevOpsProvisioningState", 0u32, "Succeeded"),
+            Self::Failed => serializer.serialize_unit_variant("DevOpsProvisioningState", 1u32, "Failed"),
+            Self::Canceled => serializer.serialize_unit_variant("DevOpsProvisioningState", 2u32, "Canceled"),
+            Self::Pending => serializer.serialize_unit_variant("DevOpsProvisioningState", 3u32, "Pending"),
+            Self::PendingDeletion => serializer.serialize_unit_variant("DevOpsProvisioningState", 4u32, "PendingDeletion"),
+            Self::DeletionSuccess => serializer.serialize_unit_variant("DevOpsProvisioningState", 5u32, "DeletionSuccess"),
+            Self::DeletionFailure => serializer.serialize_unit_variant("DevOpsProvisioningState", 6u32, "DeletionFailure"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }
@@ -3067,6 +3868,7 @@ pub enum EnvironmentDataUnion {
     AzureDevOpsScope(AzureDevOpsScopeEnvironmentData),
     GcpProject(GcpProjectEnvironmentData),
     GithubScope(GithubScopeEnvironmentData),
+    GitlabScope(GitlabScopeEnvironmentData),
 }
 #[doc = "The resource management error additional info."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -3079,6 +3881,57 @@ pub struct ErrorAdditionalInfo {
     pub info: Option<serde_json::Value>,
 }
 impl ErrorAdditionalInfo {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The error detail."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ErrorDetail {
+    #[doc = "The error code."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[doc = "The error message."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[doc = "The error target."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[doc = "The error details."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub details: Vec<ErrorDetail>,
+    #[doc = "The error additional info."]
+    #[serde(
+        rename = "additionalInfo",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub additional_info: Vec<ErrorAdditionalInfo>,
+}
+impl ErrorDetail {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Common error response for all Azure Resource Manager APIs to return error details for failed operations. (This also follows the OData error response format.)."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ErrorResponse {
+    #[doc = "The error detail."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+}
+impl azure_core::Continuable for ErrorResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        None
+    }
+}
+impl ErrorResponse {
     pub fn new() -> Self {
         Self::default()
     }
@@ -3432,6 +4285,9 @@ pub struct GcpOrganizationalDataOrganization {
     #[doc = "The GCP workload identity provider id which represents the permissions required to auto provision security connectors"]
     #[serde(rename = "workloadIdentityProviderId", default, skip_serializing_if = "Option::is_none")]
     pub workload_identity_provider_id: Option<String>,
+    #[doc = "GCP organization name"]
+    #[serde(rename = "organizationName", default, skip_serializing_if = "Option::is_none")]
+    pub organization_name: Option<String>,
 }
 impl GcpOrganizationalDataOrganization {
     pub fn new() -> Self {
@@ -3439,6 +4295,7 @@ impl GcpOrganizationalDataOrganization {
             excluded_project_numbers: Vec::new(),
             service_account_email_address: None,
             workload_identity_provider_id: None,
+            organization_name: None,
         }
     }
 }
@@ -3454,6 +4311,9 @@ pub struct GcpProjectDetails {
     #[doc = "The GCP workload identity federation pool id"]
     #[serde(rename = "workloadIdentityPoolId", default, skip_serializing_if = "Option::is_none")]
     pub workload_identity_pool_id: Option<String>,
+    #[doc = "GCP project name"]
+    #[serde(rename = "projectName", default, skip_serializing_if = "Option::is_none")]
+    pub project_name: Option<String>,
 }
 impl GcpProjectDetails {
     pub fn new() -> Self {
@@ -3469,19 +4329,449 @@ pub struct GcpProjectEnvironmentData {
     #[doc = "The details about the project represented by the security connector"]
     #[serde(rename = "projectDetails", default, skip_serializing_if = "Option::is_none")]
     pub project_details: Option<GcpProjectDetails>,
+    #[doc = "Scan interval in hours (value should be between 1-hour to 24-hours)"]
+    #[serde(rename = "scanInterval", default, skip_serializing_if = "Option::is_none")]
+    pub scan_interval: Option<i64>,
 }
 impl GcpProjectEnvironmentData {
     pub fn new() -> Self {
         Self {
             organizational_data: None,
             project_details: None,
+            scan_interval: None,
         }
+    }
+}
+#[doc = "A list with a single sensitivity settings resource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GetSensitivitySettingsListResponse {
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<GetSensitivitySettingsResponse>,
+}
+impl GetSensitivitySettingsListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Data sensitivity settings for sensitive data discovery"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GetSensitivitySettingsResponse {
+    #[doc = "The ID of the sensitivity settings"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The type of the sensitivity settings"]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    #[doc = "The name of the sensitivity settings"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The sensitivity settings properties"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<get_sensitivity_settings_response::Properties>,
+}
+impl GetSensitivitySettingsResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod get_sensitivity_settings_response {
+    use super::*;
+    #[doc = "The sensitivity settings properties"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Properties {
+        #[doc = "List of selected sensitive info types' IDs."]
+        #[serde(rename = "sensitiveInfoTypesIds", default, skip_serializing_if = "Option::is_none")]
+        pub sensitive_info_types_ids: Option<SensitiveInfoTypesIds>,
+        #[doc = "The order of the sensitivity threshold label. Any label at or above this order will be considered sensitive. If set to -1, sensitivity by labels is turned off"]
+        #[serde(rename = "sensitivityThresholdLabelOrder", default, skip_serializing_if = "Option::is_none")]
+        pub sensitivity_threshold_label_order: Option<f64>,
+        #[doc = "The id of the sensitivity threshold label. Any label at or above this rank will be considered sensitive."]
+        #[serde(rename = "sensitivityThresholdLabelId", default, skip_serializing_if = "Option::is_none")]
+        pub sensitivity_threshold_label_id: Option<String>,
+        #[doc = "Microsoft information protection built-in and custom information types, labels, and integration status."]
+        #[serde(rename = "mipInformation", default, skip_serializing_if = "Option::is_none")]
+        pub mip_information: Option<properties::MipInformation>,
+    }
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod properties {
+        use super::*;
+        #[doc = "Microsoft information protection built-in and custom information types, labels, and integration status."]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct MipInformation {
+            #[doc = "Microsoft information protection integration status"]
+            #[serde(rename = "mipIntegrationStatus", default, skip_serializing_if = "Option::is_none")]
+            pub mip_integration_status: Option<MipIntegrationStatus>,
+            #[doc = "List of Microsoft information protection sensitivity labels"]
+            #[serde(default, skip_serializing_if = "Option::is_none")]
+            pub labels: Option<Labels>,
+            #[doc = "List of custom user-defined information types"]
+            #[serde(
+                rename = "customInfoTypes",
+                default,
+                deserialize_with = "azure_core::util::deserialize_null_as_default",
+                skip_serializing_if = "Vec::is_empty"
+            )]
+            pub custom_info_types: Vec<InfoType>,
+            #[doc = "List of pre-configured sensitive information types"]
+            #[serde(
+                rename = "builtInInfoTypes",
+                default,
+                deserialize_with = "azure_core::util::deserialize_null_as_default",
+                skip_serializing_if = "Vec::is_empty"
+            )]
+            pub built_in_info_types: Vec<BuiltInInfoType>,
+        }
+        impl MipInformation {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
+    }
+}
+#[doc = "GitHub Owner resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GitHubOwner {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "GitHub Owner properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GitHubOwnerProperties>,
+}
+impl GitHubOwner {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "GitHub Owner Inventory Configuration."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GitHubOwnerConfiguration {
+    #[doc = "AutoDiscovery states."]
+    #[serde(rename = "autoDiscovery", default, skip_serializing_if = "Option::is_none")]
+    pub auto_discovery: Option<AutoDiscovery>,
+    #[doc = "GitHub Repository Inventory Configuration.\r\nDictionary of GitHub repository name to desired repository configuration.\r\nIf AutoDiscovery is Enabled, this field should be null or empty."]
+    #[serde(rename = "repositoryConfigs", default, skip_serializing_if = "Option::is_none")]
+    pub repository_configs: Option<serde_json::Value>,
+}
+impl GitHubOwnerConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List of RP resources which supports pagination."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GitHubOwnerListResponse {
+    #[doc = "Gets or sets list of resources."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<GitHubOwner>,
+    #[doc = "Gets or sets next link to scroll over the results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for GitHubOwnerListResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl GitHubOwnerListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "GitHub Owner properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GitHubOwnerProperties {
+    #[doc = "Gets or sets resource status message."]
+    #[serde(rename = "provisioningStatusMessage", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_status_message: Option<String>,
+    #[doc = "Gets or sets time when resource was last checked."]
+    #[serde(rename = "provisioningStatusUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
+    pub provisioning_status_update_time_utc: Option<time::OffsetDateTime>,
+    #[doc = "The provisioning state of the resource.\r\n\r\nPending - Provisioning pending.\r\nFailed - Provisioning failed.\r\nSucceeded - Successful provisioning.\r\nCanceled - Provisioning canceled.\r\nPendingDeletion - Deletion pending.\r\nDeletionSuccess - Deletion successful.\r\nDeletionFailure - Deletion failure."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<DevOpsProvisioningState>,
+    #[doc = "Gets or sets GitHub Owner url."]
+    #[serde(rename = "ownerUrl", default, skip_serializing_if = "Option::is_none")]
+    pub owner_url: Option<String>,
+    #[doc = "Gets or sets internal GitHub id."]
+    #[serde(rename = "gitHubInternalId", default, skip_serializing_if = "Option::is_none")]
+    pub git_hub_internal_id: Option<String>,
+    #[doc = "Details about resource onboarding status across all connectors.\r\n\r\nOnboardedByOtherConnector - this resource has already been onboarded to another connector. This is only applicable to top-level resources.\r\nOnboarded - this resource has already been onboarded by the specified connector.\r\nNotOnboarded - this resource has not been onboarded to any connector.\r\nNotApplicable - the onboarding state is not applicable to the current endpoint."]
+    #[serde(rename = "onboardingState", default, skip_serializing_if = "Option::is_none")]
+    pub onboarding_state: Option<OnboardingState>,
+}
+impl GitHubOwnerProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "GitHub Repository resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GitHubRepository {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "GitHub Repository properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GitHubRepositoryProperties>,
+}
+impl GitHubRepository {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List of RP resources which supports pagination."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GitHubRepositoryListResponse {
+    #[doc = "Gets or sets list of resources."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<GitHubRepository>,
+    #[doc = "Gets or sets next link to scroll over the results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for GitHubRepositoryListResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl GitHubRepositoryListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "GitHub Repository properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GitHubRepositoryProperties {
+    #[doc = "Gets or sets resource status message."]
+    #[serde(rename = "provisioningStatusMessage", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_status_message: Option<String>,
+    #[doc = "Gets or sets time when resource was last checked."]
+    #[serde(rename = "provisioningStatusUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
+    pub provisioning_status_update_time_utc: Option<time::OffsetDateTime>,
+    #[doc = "The provisioning state of the resource.\r\n\r\nPending - Provisioning pending.\r\nFailed - Provisioning failed.\r\nSucceeded - Successful provisioning.\r\nCanceled - Provisioning canceled.\r\nPendingDeletion - Deletion pending.\r\nDeletionSuccess - Deletion successful.\r\nDeletionFailure - Deletion failure."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<DevOpsProvisioningState>,
+    #[doc = "Gets or sets GitHub Repository id.\r\n\r\nThis is a numeric id defined by Github.\r\nEg: \"123456\"."]
+    #[serde(rename = "repoId", default, skip_serializing_if = "Option::is_none")]
+    pub repo_id: Option<String>,
+    #[doc = "Gets or sets GitHub Repository name.\r\nEg: \"new-repo-1\"."]
+    #[serde(rename = "repoName", default, skip_serializing_if = "Option::is_none")]
+    pub repo_name: Option<String>,
+    #[doc = "Gets or sets GitHub Full Name.\r\nRepository name, prefixed with Owner name.\r\nEg: \"my-org/new-repo-1\"."]
+    #[serde(rename = "repoFullName", default, skip_serializing_if = "Option::is_none")]
+    pub repo_full_name: Option<String>,
+    #[doc = "Details about resource onboarding status across all connectors.\r\n\r\nOnboardedByOtherConnector - this resource has already been onboarded to another connector. This is only applicable to top-level resources.\r\nOnboarded - this resource has already been onboarded by the specified connector.\r\nNotOnboarded - this resource has not been onboarded to any connector.\r\nNotApplicable - the onboarding state is not applicable to the current endpoint."]
+    #[serde(rename = "onboardingState", default, skip_serializing_if = "Option::is_none")]
+    pub onboarding_state: Option<OnboardingState>,
+    #[doc = "Gets or sets GitHub Repository url."]
+    #[serde(rename = "repoUrl", default, skip_serializing_if = "Option::is_none")]
+    pub repo_url: Option<String>,
+    #[doc = "Gets or sets parent GitHub Owner name."]
+    #[serde(rename = "parentOwnerName", default, skip_serializing_if = "Option::is_none")]
+    pub parent_owner_name: Option<String>,
+}
+impl GitHubRepositoryProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "GitLab Group resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GitLabGroup {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "GitLab Group properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GitLabGroupProperties>,
+}
+impl GitLabGroup {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "GitLab Group Inventory Configuration."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GitLabGroupConfiguration {
+    #[doc = "AutoDiscovery states."]
+    #[serde(rename = "autoDiscovery", default, skip_serializing_if = "Option::is_none")]
+    pub auto_discovery: Option<AutoDiscovery>,
+    #[doc = "GitLab Project Inventory Configuration.\r\nDictionary of GitLab fully-qualified project name to desired project configuration.\r\nIf AutoDiscovery is Enabled, this field should be null or empty."]
+    #[serde(rename = "projectConfigs", default, skip_serializing_if = "Option::is_none")]
+    pub project_configs: Option<serde_json::Value>,
+}
+impl GitLabGroupConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List of RP resources which supports pagination."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GitLabGroupListResponse {
+    #[doc = "Gets or sets list of resources."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<GitLabGroup>,
+    #[doc = "Gets or sets next link to scroll over the results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for GitLabGroupListResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl GitLabGroupListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "GitLab Group properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GitLabGroupProperties {
+    #[doc = "Gets or sets resource status message."]
+    #[serde(rename = "provisioningStatusMessage", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_status_message: Option<String>,
+    #[doc = "Gets or sets time when resource was last checked."]
+    #[serde(rename = "provisioningStatusUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
+    pub provisioning_status_update_time_utc: Option<time::OffsetDateTime>,
+    #[doc = "The provisioning state of the resource.\r\n\r\nPending - Provisioning pending.\r\nFailed - Provisioning failed.\r\nSucceeded - Successful provisioning.\r\nCanceled - Provisioning canceled.\r\nPendingDeletion - Deletion pending.\r\nDeletionSuccess - Deletion successful.\r\nDeletionFailure - Deletion failure."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<DevOpsProvisioningState>,
+    #[doc = "Gets or sets the fully-qualified name of the Group object.\r\n\r\nThis contains the entire namespace hierarchy where namespaces are separated by the '$' character."]
+    #[serde(rename = "fullyQualifiedName", default, skip_serializing_if = "Option::is_none")]
+    pub fully_qualified_name: Option<String>,
+    #[doc = "Gets or sets the human readable fully-qualified name of the Group object.\r\n\r\nThis contains the entire namespace hierarchy as seen on GitLab UI where namespaces are separated by the '/' character."]
+    #[serde(rename = "fullyQualifiedFriendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub fully_qualified_friendly_name: Option<String>,
+    #[doc = "Gets or sets the url of the GitLab Group."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[doc = "Details about resource onboarding status across all connectors.\r\n\r\nOnboardedByOtherConnector - this resource has already been onboarded to another connector. This is only applicable to top-level resources.\r\nOnboarded - this resource has already been onboarded by the specified connector.\r\nNotOnboarded - this resource has not been onboarded to any connector.\r\nNotApplicable - the onboarding state is not applicable to the current endpoint."]
+    #[serde(rename = "onboardingState", default, skip_serializing_if = "Option::is_none")]
+    pub onboarding_state: Option<OnboardingState>,
+}
+impl GitLabGroupProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "GitLab Project resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GitLabProject {
+    #[serde(flatten)]
+    pub proxy_resource: ProxyResource,
+    #[doc = "Metadata pertaining to creation and last modification of the resource."]
+    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
+    pub system_data: Option<SystemData>,
+    #[doc = "GitLab Project properties."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<GitLabProjectProperties>,
+}
+impl GitLabProject {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List of RP resources which supports pagination."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GitLabProjectListResponse {
+    #[doc = "Gets or sets list of resources."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<GitLabProject>,
+    #[doc = "Gets or sets next link to scroll over the results."]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for GitLabProjectListResponse {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl GitLabProjectListResponse {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "GitLab Project properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct GitLabProjectProperties {
+    #[doc = "Gets or sets resource status message."]
+    #[serde(rename = "provisioningStatusMessage", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_status_message: Option<String>,
+    #[doc = "Gets or sets time when resource was last checked."]
+    #[serde(rename = "provisioningStatusUpdateTimeUtc", default, with = "azure_core::date::rfc3339::option")]
+    pub provisioning_status_update_time_utc: Option<time::OffsetDateTime>,
+    #[doc = "The provisioning state of the resource.\r\n\r\nPending - Provisioning pending.\r\nFailed - Provisioning failed.\r\nSucceeded - Successful provisioning.\r\nCanceled - Provisioning canceled.\r\nPendingDeletion - Deletion pending.\r\nDeletionSuccess - Deletion successful.\r\nDeletionFailure - Deletion failure."]
+    #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
+    pub provisioning_state: Option<DevOpsProvisioningState>,
+    #[doc = "Gets or sets the fully-qualified name of the project object.\r\n\r\nThis contains the entire hierarchy where entities are separated by the '$' character."]
+    #[serde(rename = "fullyQualifiedName", default, skip_serializing_if = "Option::is_none")]
+    pub fully_qualified_name: Option<String>,
+    #[doc = "Gets or sets the human readable fully-qualified name of the Project object.\r\n\r\nThis contains the entire namespace hierarchy as seen on GitLab UI where entities are separated by the '/' character."]
+    #[serde(rename = "fullyQualifiedFriendlyName", default, skip_serializing_if = "Option::is_none")]
+    pub fully_qualified_friendly_name: Option<String>,
+    #[doc = "Gets or sets the fully-qualified name of the project's parent group object.\r\n\r\nThis contains the entire hierarchy where namespaces are separated by the '$' character."]
+    #[serde(rename = "fullyQualifiedParentGroupName", default, skip_serializing_if = "Option::is_none")]
+    pub fully_qualified_parent_group_name: Option<String>,
+    #[doc = "Gets or sets the url of the GitLab Project."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[doc = "Details about resource onboarding status across all connectors.\r\n\r\nOnboardedByOtherConnector - this resource has already been onboarded to another connector. This is only applicable to top-level resources.\r\nOnboarded - this resource has already been onboarded by the specified connector.\r\nNotOnboarded - this resource has not been onboarded to any connector.\r\nNotApplicable - the onboarding state is not applicable to the current endpoint."]
+    #[serde(rename = "onboardingState", default, skip_serializing_if = "Option::is_none")]
+    pub onboarding_state: Option<OnboardingState>,
+}
+impl GitLabProjectProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "The github scope connector's environment data"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GithubScopeEnvironmentData {}
 impl GithubScopeEnvironmentData {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+#[doc = "The GitLab scope connector's environment data"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct GitlabScopeEnvironmentData {}
+impl GitlabScopeEnvironmentData {
     pub fn new() -> Self {
         Self {}
     }
@@ -3888,6 +5178,92 @@ pub mod governance_rule_properties {
     }
 }
 pub type GroupResourceId = String;
+#[doc = "The health report resource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct HealthReport {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Describes properties of the health report"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub properties: Option<HealthReportProperties>,
+}
+impl HealthReport {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Describes properties of the health report"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct HealthReportProperties {
+    #[doc = "The resource details of the health report"]
+    #[serde(rename = "resourceDetails", default, skip_serializing_if = "Option::is_none")]
+    pub resource_details: Option<ResourceDetailsUnion>,
+    #[doc = "The environment details of the resource"]
+    #[serde(rename = "environmentDetails", default, skip_serializing_if = "Option::is_none")]
+    pub environment_details: Option<EnvironmentDetails>,
+    #[doc = "The classification of the health report"]
+    #[serde(rename = "healthDataClassification", default, skip_serializing_if = "Option::is_none")]
+    pub health_data_classification: Option<HealthDataClassification>,
+    #[doc = "The status of the health report"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<Status>,
+    #[doc = "The affected defenders plans by unhealthy report"]
+    #[serde(
+        rename = "affectedDefendersPlans",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub affected_defenders_plans: Vec<String>,
+    #[doc = "The affected defenders sub plans by unhealthy report"]
+    #[serde(
+        rename = "affectedDefendersSubPlans",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub affected_defenders_sub_plans: Vec<String>,
+    #[doc = "Additional data for the given health report, this field can include more details on the resource and the health scenario."]
+    #[serde(rename = "reportAdditionalData", default, skip_serializing_if = "Option::is_none")]
+    pub report_additional_data: Option<serde_json::Value>,
+    #[doc = "A collection of the issues in the report"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub issues: Vec<Issue>,
+}
+impl HealthReportProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Page of health reports list"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct HealthReportsList {
+    #[doc = "Collection of health reports in this page"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<HealthReport>,
+    #[doc = "The URI to fetch the next page"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for HealthReportsList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl HealthReportsList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "Number of cloud to device messages (HTTP protocol) is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct HttpC2dMessagesNotInAllowedRange {
@@ -4040,6 +5416,50 @@ pub mod hybrid_compute_settings_properties {
         }
     }
 }
+#[doc = "Identity for the resource."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Identity {
+    #[doc = "The principal ID of resource identity."]
+    #[serde(rename = "principalId", default, skip_serializing_if = "Option::is_none")]
+    pub principal_id: Option<String>,
+    #[doc = "The tenant ID of resource."]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[doc = "The identity type."]
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<identity::Type>,
+}
+impl Identity {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod identity {
+    use super::*;
+    #[doc = "The identity type."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    pub enum Type {
+        SystemAssigned,
+    }
+}
+#[doc = "Custom user-defined information type"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct InfoType {
+    #[doc = "Display name of the info type"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Id of the info type"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Description of the info type"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+}
+impl InfoType {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The information type keyword."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct InformationProtectionKeyword {
@@ -4153,6 +5573,43 @@ pub struct InformationType {
 impl InformationType {
     pub fn new() -> Self {
         Self::default()
+    }
+}
+#[doc = "Update Settings.\r\n\r\nEnabled - Resource should inherit configurations from parent.\r\nDisabled - Resource should not inherit configurations from parent."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "InheritFromParentState")]
+pub enum InheritFromParentState {
+    Disabled,
+    Enabled,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for InheritFromParentState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for InheritFromParentState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for InheritFromParentState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Disabled => serializer.serialize_unit_variant("InheritFromParentState", 0u32, "Disabled"),
+            Self::Enabled => serializer.serialize_unit_variant("InheritFromParentState", 1u32, "Enabled"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "Security Solution Aggregated Alert information"]
@@ -5211,6 +6668,25 @@ impl Kind {
         Self::default()
     }
 }
+#[doc = "Microsoft information protection sensitivity label"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Label {
+    #[doc = "The display name of the label"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "The ID of the label"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Labels are ordered by sensitivity level. The higher the order of the label, the more sensitive it is."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub order: Option<f64>,
+}
+impl Label {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub type Labels = Vec<Label>;
 #[doc = "A List custom alert rule."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ListCustomAlertRule {
@@ -5319,6 +6795,24 @@ impl LogAnalyticsIdentifier {
         }
     }
 }
+#[doc = "Properties of Malware Scanning."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct MalwareScanningProperties {
+    #[doc = "Properties of On Upload malware scanning."]
+    #[serde(rename = "onUpload", default, skip_serializing_if = "Option::is_none")]
+    pub on_upload: Option<OnUploadProperties>,
+    #[doc = "Optional. Resource id of an Event Grid Topic to send scan results to."]
+    #[serde(rename = "scanResultsEventGridTopicResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub scan_results_event_grid_topic_resource_id: Option<String>,
+    #[doc = "A status describing the success/failure of the enablement/disablement operation."]
+    #[serde(rename = "operationStatus", default, skip_serializing_if = "Option::is_none")]
+    pub operation_status: Option<OperationStatus>,
+}
+impl MalwareScanningProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "The resource of the configuration or data needed to onboard the machine to MDE"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MdeOnboardingData {
@@ -5364,6 +6858,50 @@ impl MdeOnboardingDataProperties {
         Self::default()
     }
 }
+#[doc = "Microsoft information protection integration status"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "MipIntegrationStatus")]
+pub enum MipIntegrationStatus {
+    Ok,
+    #[serde(rename = "noConsent")]
+    NoConsent,
+    #[serde(rename = "noAutoLabelingRules")]
+    NoAutoLabelingRules,
+    #[serde(rename = "noMipLabels")]
+    NoMipLabels,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for MipIntegrationStatus {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for MipIntegrationStatus {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for MipIntegrationStatus {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Ok => serializer.serialize_unit_variant("MipIntegrationStatus", 0u32, "Ok"),
+            Self::NoConsent => serializer.serialize_unit_variant("MipIntegrationStatus", 1u32, "noConsent"),
+            Self::NoAutoLabelingRules => serializer.serialize_unit_variant("MipIntegrationStatus", 2u32, "noAutoLabelingRules"),
+            Self::NoMipLabels => serializer.serialize_unit_variant("MipIntegrationStatus", 3u32, "noMipLabels"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "Number of cloud to device messages (MQTT protocol) is not in allowed range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct MqttC2dMessagesNotInAllowedRange {
@@ -5400,6 +6938,62 @@ impl MqttD2cMessagesNotInAllowedRange {
     pub fn new(time_window_custom_alert_rule: TimeWindowCustomAlertRule) -> Self {
         Self {
             time_window_custom_alert_rule,
+        }
+    }
+}
+#[doc = "Properties of On Upload malware scanning."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct OnUploadProperties {
+    #[doc = "Indicates whether On Upload malware scanning should be enabled."]
+    #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_enabled: Option<bool>,
+    #[doc = "Defines the max GB to be scanned per Month. Set to -1 if no capping is needed."]
+    #[serde(rename = "capGBPerMonth", default, skip_serializing_if = "Option::is_none")]
+    pub cap_gb_per_month: Option<i32>,
+}
+impl OnUploadProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "Details about resource onboarding status across all connectors.\r\n\r\nOnboardedByOtherConnector - this resource has already been onboarded to another connector. This is only applicable to top-level resources.\r\nOnboarded - this resource has already been onboarded by the specified connector.\r\nNotOnboarded - this resource has not been onboarded to any connector.\r\nNotApplicable - the onboarding state is not applicable to the current endpoint."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "OnboardingState")]
+pub enum OnboardingState {
+    NotApplicable,
+    OnboardedByOtherConnector,
+    Onboarded,
+    NotOnboarded,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for OnboardingState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for OnboardingState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for OnboardingState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::NotApplicable => serializer.serialize_unit_variant("OnboardingState", 0u32, "NotApplicable"),
+            Self::OnboardedByOtherConnector => serializer.serialize_unit_variant("OnboardingState", 1u32, "OnboardedByOtherConnector"),
+            Self::Onboarded => serializer.serialize_unit_variant("OnboardingState", 2u32, "Onboarded"),
+            Self::NotOnboarded => serializer.serialize_unit_variant("OnboardingState", 3u32, "NotOnboarded"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }
@@ -5521,12 +7115,12 @@ pub mod operation_result {
         }
     }
 }
-#[doc = "A status describing the success/failure of the extension's enablement/disablement operation."]
+#[doc = "A status describing the success/failure of the enablement/disablement operation."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct OperationStatus {
     #[doc = "The operation status code."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub code: Option<operation_status::Code>,
+    pub code: Option<String>,
     #[doc = "Additional information regarding the success/failure of the operation."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -5536,43 +7130,48 @@ impl OperationStatus {
         Self::default()
     }
 }
-pub mod operation_status {
-    use super::*;
-    #[doc = "The operation status code."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Code")]
-    pub enum Code {
-        Succeeded,
-        Failed,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for Code {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for Code {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for Code {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Succeeded => serializer.serialize_unit_variant("Code", 0u32, "Succeeded"),
-                Self::Failed => serializer.serialize_unit_variant("Code", 1u32, "Failed"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
+#[doc = "The current status of an async operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct OperationStatusResult {
+    #[doc = "Fully qualified ID for the async operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "Name of the async operation."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[doc = "Operation status."]
+    pub status: String,
+    #[doc = "Percent of the operation that is complete."]
+    #[serde(rename = "percentComplete", default, skip_serializing_if = "Option::is_none")]
+    pub percent_complete: Option<f64>,
+    #[doc = "The start time of the operation."]
+    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
+    pub start_time: Option<time::OffsetDateTime>,
+    #[doc = "The end time of the operation."]
+    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
+    pub end_time: Option<time::OffsetDateTime>,
+    #[doc = "The operations list."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub operations: Vec<OperationStatusResult>,
+    #[doc = "The error detail."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<ErrorDetail>,
+}
+impl OperationStatusResult {
+    pub fn new(status: String) -> Self {
+        Self {
+            id: None,
+            name: None,
+            status,
+            percent_complete: None,
+            start_time: None,
+            end_time: None,
+            operations: Vec::new(),
+            error: None,
         }
     }
 }
@@ -5814,6 +7413,17 @@ pub struct ProtectionMode {
     pub executable: Option<EnforcementMode>,
 }
 impl ProtectionMode {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The resource model definition for a Azure Resource Manager proxy resource. It will not have tags and a location"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ProxyResource {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+impl ProxyResource {
     pub fn new() -> Self {
         Self::default()
     }
@@ -6536,6 +8146,51 @@ pub mod rule {
                 Self::Outbound => serializer.serialize_unit_variant("Direction", 1u32, "Outbound"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
+        }
+    }
+}
+#[doc = "Rule categories.\r\nCode - code scanning results.\r\nArtifact scanning results.\r\nDependencies scanning results.\r\nIaC results.\r\nSecrets scanning results.\r\nContainer scanning results."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "RuleCategory")]
+pub enum RuleCategory {
+    Code,
+    Artifacts,
+    Dependencies,
+    Secrets,
+    IaC,
+    Containers,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for RuleCategory {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for RuleCategory {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for RuleCategory {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Code => serializer.serialize_unit_variant("RuleCategory", 0u32, "Code"),
+            Self::Artifacts => serializer.serialize_unit_variant("RuleCategory", 1u32, "Artifacts"),
+            Self::Dependencies => serializer.serialize_unit_variant("RuleCategory", 2u32, "Dependencies"),
+            Self::Secrets => serializer.serialize_unit_variant("RuleCategory", 3u32, "Secrets"),
+            Self::IaC => serializer.serialize_unit_variant("RuleCategory", 4u32, "IaC"),
+            Self::Containers => serializer.serialize_unit_variant("RuleCategory", 5u32, "Containers"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }
@@ -7772,6 +9427,7 @@ pub mod security_connector_properties {
         Gcp,
         Github,
         AzureDevOps,
+        GitLab,
         #[serde(skip_deserializing)]
         UnknownValue(String),
     }
@@ -7802,6 +9458,7 @@ pub mod security_connector_properties {
                 Self::Gcp => serializer.serialize_unit_variant("EnvironmentName", 2u32, "GCP"),
                 Self::Github => serializer.serialize_unit_variant("EnvironmentName", 3u32, "Github"),
                 Self::AzureDevOps => serializer.serialize_unit_variant("EnvironmentName", 4u32, "AzureDevOps"),
+                Self::GitLab => serializer.serialize_unit_variant("EnvironmentName", 5u32, "GitLab"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }
@@ -8082,6 +9739,31 @@ impl Serialize for SecurityContactRole {
             Self::Contributor => serializer.serialize_unit_variant("SecurityContactRole", 3u32, "Contributor"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
+    }
+}
+#[doc = "Security operator under a given subscription and pricing"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SecurityOperator {
+    #[serde(flatten)]
+    pub resource: Resource,
+    #[doc = "Identity for the resource."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub identity: Option<Identity>,
+}
+impl SecurityOperator {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "List of SecurityOperator response."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SecurityOperatorList {
+    #[doc = "List of SecurityOperator configurations"]
+    pub value: Vec<SecurityOperator>,
+}
+impl SecurityOperatorList {
+    pub fn new(value: Vec<SecurityOperator>) -> Self {
+        Self { value }
     }
 }
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
@@ -8384,6 +10066,22 @@ impl SecurityTaskProperties {
         Self::default()
     }
 }
+#[doc = "Properties of Sensitive Data Discovery."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SensitiveDataDiscoveryProperties {
+    #[doc = "Indicates whether Sensitive Data Discovery should be enabled."]
+    #[serde(rename = "isEnabled", default, skip_serializing_if = "Option::is_none")]
+    pub is_enabled: Option<bool>,
+    #[doc = "A status describing the success/failure of the enablement/disablement operation."]
+    #[serde(rename = "operationStatus", default, skip_serializing_if = "Option::is_none")]
+    pub operation_status: Option<OperationStatus>,
+}
+impl SensitiveDataDiscoveryProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub type SensitiveInfoTypesIds = Vec<String>;
 #[doc = "The sensitivity label."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct SensitivityLabel {
@@ -8458,6 +10156,56 @@ pub mod server_vulnerability_assessment_properties {
         Deprovisioning,
     }
 }
+#[doc = "Describes the vulnerability assessments setting properties on Azure servers in the defined scope."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerVulnerabilityAssessmentsAzureSettingProperties {
+    #[doc = "The selected vulnerability assessments provider on Azure servers in the defined scope."]
+    #[serde(rename = "selectedProvider")]
+    pub selected_provider: server_vulnerability_assessments_azure_setting_properties::SelectedProvider,
+}
+impl ServerVulnerabilityAssessmentsAzureSettingProperties {
+    pub fn new(selected_provider: server_vulnerability_assessments_azure_setting_properties::SelectedProvider) -> Self {
+        Self { selected_provider }
+    }
+}
+pub mod server_vulnerability_assessments_azure_setting_properties {
+    use super::*;
+    #[doc = "The selected vulnerability assessments provider on Azure servers in the defined scope."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "SelectedProvider")]
+    pub enum SelectedProvider {
+        MdeTvm,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for SelectedProvider {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for SelectedProvider {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for SelectedProvider {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::MdeTvm => serializer.serialize_unit_variant("SelectedProvider", 0u32, "MdeTvm"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
 #[doc = "List of server vulnerability assessments"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ServerVulnerabilityAssessmentsList {
@@ -8469,6 +10217,87 @@ pub struct ServerVulnerabilityAssessmentsList {
     pub value: Vec<ServerVulnerabilityAssessment>,
 }
 impl ServerVulnerabilityAssessmentsList {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A base vulnerability assessments setting on servers in the defined scope."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct ServerVulnerabilityAssessmentsSetting {
+    #[serde(flatten)]
+    pub resource: Resource,
+}
+impl ServerVulnerabilityAssessmentsSetting {
+    pub fn new() -> Self {
+        Self {
+            resource: Resource::default(),
+        }
+    }
+}
+#[doc = "The kind of the server vulnerability assessments setting"]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind")]
+pub enum ServerVulnerabilityAssessmentsSettingUnion {
+    AzureServersSetting(AzureServersSetting),
+}
+#[doc = "The kind of the server vulnerability assessments setting"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ServerVulnerabilityAssessmentsSettingKind")]
+pub enum ServerVulnerabilityAssessmentsSettingKind {
+    AzureServersSetting,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ServerVulnerabilityAssessmentsSettingKind {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ServerVulnerabilityAssessmentsSettingKind {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ServerVulnerabilityAssessmentsSettingKind {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::AzureServersSetting => {
+                serializer.serialize_unit_variant("ServerVulnerabilityAssessmentsSettingKind", 0u32, "AzureServersSetting")
+            }
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "A page of a server vulnerability assessments settings list"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ServerVulnerabilityAssessmentsSettingsList {
+    #[doc = "A collection of server vulnerability assessments settings in this page"]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub value: Vec<ServerVulnerabilityAssessmentsSettingUnion>,
+    #[doc = "The URI to fetch the next page"]
+    #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
+    pub next_link: Option<String>,
+}
+impl azure_core::Continuable for ServerVulnerabilityAssessmentsSettingsList {
+    type Continuation = String;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.next_link.clone().filter(|value| !value.is_empty())
+    }
+}
+impl ServerVulnerabilityAssessmentsSettingsList {
     pub fn new() -> Self {
         Self::default()
     }
@@ -8874,6 +10703,26 @@ impl TagsResource {
         Self::default()
     }
 }
+#[doc = "Repository branch configuration for PR Annotations."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct TargetBranchConfiguration {
+    #[doc = "Gets or sets branches that should have annotations."]
+    #[serde(
+        rename = "branchNames",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub branch_names: Vec<String>,
+    #[doc = "Configuration of PR Annotations on default branch.\r\n\r\nEnabled - PR Annotations are enabled on the resource's default branch.\r\nDisabled - PR Annotations are disabled on the resource's default branch."]
+    #[serde(rename = "annotateDefaultBranch", default, skip_serializing_if = "Option::is_none")]
+    pub annotate_default_branch: Option<AnnotateDefaultBranchState>,
+}
+impl TargetBranchConfiguration {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
 #[doc = "A custom alert rule that checks if a value (depends on the custom alert type) is within the given range."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ThresholdCustomAlertRule {
@@ -9103,6 +10952,28 @@ impl UpdateIotSecuritySolutionData {
         Self::default()
     }
 }
+#[doc = "Request to update data sensitivity settings for sensitive data discovery"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct UpdateSensitivitySettingsRequest {
+    #[doc = "List of selected sensitive info types' IDs."]
+    #[serde(rename = "sensitiveInfoTypesIds")]
+    pub sensitive_info_types_ids: SensitiveInfoTypesIds,
+    #[doc = "The order of the sensitivity threshold label. Any label at or above this order will be considered sensitive. If set to -1, sensitivity by labels is turned off"]
+    #[serde(rename = "sensitivityThresholdLabelOrder", default, skip_serializing_if = "Option::is_none")]
+    pub sensitivity_threshold_label_order: Option<f64>,
+    #[doc = "The id of the sensitivity threshold label. Any label at or above this rank will be considered sensitive."]
+    #[serde(rename = "sensitivityThresholdLabelId", default, skip_serializing_if = "Option::is_none")]
+    pub sensitivity_threshold_label_id: Option<String>,
+}
+impl UpdateSensitivitySettingsRequest {
+    pub fn new(sensitive_info_types_ids: SensitiveInfoTypesIds) -> Self {
+        Self {
+            sensitive_info_types_ids,
+            sensitivity_threshold_label_order: None,
+            sensitivity_threshold_label_id: None,
+        }
+    }
+}
 #[doc = "Properties of the IoT Security solution's user defined resources."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct UserDefinedResourcesProperties {
@@ -9281,6 +11152,7 @@ pub enum CloudOfferingUnion {
     CspmMonitorAws(CspmMonitorAwsOffering),
     CspmMonitorAzureDevOps(CspmMonitorAzureDevOpsOffering),
     CspmMonitorGcp(CspmMonitorGcpOffering),
+    CspmMonitorGitLab(CspmMonitorGitLabOffering),
     CspmMonitorGithub(CspmMonitorGithubOffering),
     DefenderCspmAws(DefenderCspmAwsOffering),
     DefenderCspmGcp(DefenderCspmGcpOffering),
@@ -9289,6 +11161,7 @@ pub enum CloudOfferingUnion {
     DefenderForContainersGcp(DefenderForContainersGcpOffering),
     DefenderForDatabasesGcp(DefenderForDatabasesGcpOffering),
     DefenderForDevOpsAzureDevOps(DefenderForDevOpsAzureDevOpsOffering),
+    DefenderForDevOpsGitLab(DefenderForDevOpsGitLabOffering),
     DefenderForDevOpsGithub(DefenderForDevOpsGithubOffering),
     DefenderForServersAws(DefenderForServersAwsOffering),
     DefenderForServersGcp(DefenderForServersGcpOffering),
@@ -9370,6 +11243,17 @@ pub mod cspm_monitor_gcp_offering {
         pub fn new() -> Self {
             Self::default()
         }
+    }
+}
+#[doc = "The CSPM (Cloud security posture management) monitoring for gitlab offering"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CspmMonitorGitLabOffering {
+    #[serde(flatten)]
+    pub cloud_offering: CloudOffering,
+}
+impl CspmMonitorGitLabOffering {
+    pub fn new(cloud_offering: CloudOffering) -> Self {
+        Self { cloud_offering }
     }
 }
 #[doc = "The CSPM monitoring for github offering"]
@@ -9658,7 +11542,7 @@ impl CustomAssessmentAutomationsListResult {
         Self::default()
     }
 }
-#[doc = "The CSPM P1 for Aws offering"]
+#[doc = "The CSPM P1 for AWS offering"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DefenderCspmAwsOffering {
     #[serde(flatten)]
@@ -9666,12 +11550,32 @@ pub struct DefenderCspmAwsOffering {
     #[doc = "The Microsoft Defender for Server VM scanning configuration"]
     #[serde(rename = "vmScanners", default, skip_serializing_if = "Option::is_none")]
     pub vm_scanners: Option<defender_cspm_aws_offering::VmScanners>,
+    #[doc = "The Microsoft Defender Data Sensitivity discovery configuration"]
+    #[serde(rename = "dataSensitivityDiscovery", default, skip_serializing_if = "Option::is_none")]
+    pub data_sensitivity_discovery: Option<defender_cspm_aws_offering::DataSensitivityDiscovery>,
+    #[doc = "The databases DSPM configuration"]
+    #[serde(rename = "databasesDspm", default, skip_serializing_if = "Option::is_none")]
+    pub databases_dspm: Option<defender_cspm_aws_offering::DatabasesDspm>,
+    #[doc = "Defenders CSPM Cloud infrastructure entitlement management (CIEM) offering configurations"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ciem: Option<defender_cspm_aws_offering::Ciem>,
+    #[doc = "The Microsoft Defender container image assessment configuration"]
+    #[serde(rename = "mdcContainersImageAssessment", default, skip_serializing_if = "Option::is_none")]
+    pub mdc_containers_image_assessment: Option<defender_cspm_aws_offering::MdcContainersImageAssessment>,
+    #[doc = "The Microsoft Defender container agentless discovery K8s configuration"]
+    #[serde(rename = "mdcContainersAgentlessDiscoveryK8s", default, skip_serializing_if = "Option::is_none")]
+    pub mdc_containers_agentless_discovery_k8s: Option<defender_cspm_aws_offering::MdcContainersAgentlessDiscoveryK8s>,
 }
 impl DefenderCspmAwsOffering {
     pub fn new(cloud_offering: CloudOffering) -> Self {
         Self {
             cloud_offering,
             vm_scanners: None,
+            data_sensitivity_discovery: None,
+            databases_dspm: None,
+            ciem: None,
+            mdc_containers_image_assessment: None,
+            mdc_containers_agentless_discovery_k8s: None,
         }
     }
 }
@@ -9700,7 +11604,7 @@ pub mod defender_cspm_aws_offering {
             #[doc = "The cloud role ARN in AWS for this feature"]
             #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
             pub cloud_role_arn: Option<String>,
-            #[doc = "The scanning mode for the vm scan."]
+            #[doc = "The scanning mode for the VM scan."]
             #[serde(rename = "scanningMode", default, skip_serializing_if = "Option::is_none")]
             pub scanning_mode: Option<configuration::ScanningMode>,
             #[doc = "VM tags that indicates that VM should not be scanned"]
@@ -9714,7 +11618,7 @@ pub mod defender_cspm_aws_offering {
         }
         pub mod configuration {
             use super::*;
-            #[doc = "The scanning mode for the vm scan."]
+            #[doc = "The scanning mode for the VM scan."]
             #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
             #[serde(remote = "ScanningMode")]
             pub enum ScanningMode {
@@ -9751,16 +11655,289 @@ pub mod defender_cspm_aws_offering {
             }
         }
     }
+    #[doc = "The Microsoft Defender Data Sensitivity discovery configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct DataSensitivityDiscovery {
+        #[doc = "Is Microsoft Defender Data Sensitivity discovery enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "The cloud role ARN in AWS for this feature"]
+        #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
+        pub cloud_role_arn: Option<String>,
+    }
+    impl DataSensitivityDiscovery {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    #[doc = "The databases DSPM configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct DatabasesDspm {
+        #[doc = "Is databases DSPM protection enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "The cloud role ARN in AWS for this feature"]
+        #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
+        pub cloud_role_arn: Option<String>,
+    }
+    impl DatabasesDspm {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    #[doc = "Defenders CSPM Cloud infrastructure entitlement management (CIEM) offering configurations"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Ciem {
+        #[doc = "Defender CSPM CIEM discovery configuration"]
+        #[serde(rename = "ciemDiscovery", default, skip_serializing_if = "Option::is_none")]
+        pub ciem_discovery: Option<ciem::CiemDiscovery>,
+        #[doc = "Defender CSPM CIEM AWS OIDC (open id connect) configuration"]
+        #[serde(rename = "ciemOidc", default, skip_serializing_if = "Option::is_none")]
+        pub ciem_oidc: Option<ciem::CiemOidc>,
+    }
+    impl Ciem {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod ciem {
+        use super::*;
+        #[doc = "Defender CSPM CIEM discovery configuration"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct CiemDiscovery {
+            #[doc = "The cloud role ARN in AWS for CIEM discovery"]
+            #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
+            pub cloud_role_arn: Option<String>,
+        }
+        impl CiemDiscovery {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
+        #[doc = "Defender CSPM CIEM AWS OIDC (open id connect) configuration"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct CiemOidc {
+            #[doc = "The cloud role ARN in AWS for CIEM oidc connection"]
+            #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
+            pub cloud_role_arn: Option<String>,
+            #[doc = "the azure active directory app name used of authenticating against AWS"]
+            #[serde(rename = "azureActiveDirectoryAppName", default, skip_serializing_if = "Option::is_none")]
+            pub azure_active_directory_app_name: Option<String>,
+        }
+        impl CiemOidc {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
+    }
+    #[doc = "The Microsoft Defender container image assessment configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct MdcContainersImageAssessment {
+        #[doc = "Is Microsoft Defender container image assessment enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "The cloud role ARN in AWS for this feature"]
+        #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
+        pub cloud_role_arn: Option<String>,
+    }
+    impl MdcContainersImageAssessment {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    #[doc = "The Microsoft Defender container agentless discovery K8s configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct MdcContainersAgentlessDiscoveryK8s {
+        #[doc = "Is Microsoft Defender container agentless discovery K8s enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "The cloud role ARN in AWS for this feature"]
+        #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
+        pub cloud_role_arn: Option<String>,
+    }
+    impl MdcContainersAgentlessDiscoveryK8s {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[doc = "The CSPM P1 for GCP offering"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DefenderCspmGcpOffering {
     #[serde(flatten)]
     pub cloud_offering: CloudOffering,
+    #[doc = "GCP Defenders CSPM Cloud infrastructure entitlement management (CIEM) discovery offering configurations"]
+    #[serde(rename = "ciemDiscovery", default, skip_serializing_if = "Option::is_none")]
+    pub ciem_discovery: Option<defender_cspm_gcp_offering::CiemDiscovery>,
+    #[doc = "The Microsoft Defender for Server VM scanning configuration"]
+    #[serde(rename = "vmScanners", default, skip_serializing_if = "Option::is_none")]
+    pub vm_scanners: Option<defender_cspm_gcp_offering::VmScanners>,
+    #[doc = "The Microsoft Defender Data Sensitivity discovery configuration"]
+    #[serde(rename = "dataSensitivityDiscovery", default, skip_serializing_if = "Option::is_none")]
+    pub data_sensitivity_discovery: Option<defender_cspm_gcp_offering::DataSensitivityDiscovery>,
+    #[doc = "The Microsoft Defender Container image assessment configuration"]
+    #[serde(rename = "mdcContainersImageAssessment", default, skip_serializing_if = "Option::is_none")]
+    pub mdc_containers_image_assessment: Option<defender_cspm_gcp_offering::MdcContainersImageAssessment>,
+    #[doc = "The Microsoft Defender Container agentless discovery configuration"]
+    #[serde(rename = "mdcContainersAgentlessDiscoveryK8s", default, skip_serializing_if = "Option::is_none")]
+    pub mdc_containers_agentless_discovery_k8s: Option<defender_cspm_gcp_offering::MdcContainersAgentlessDiscoveryK8s>,
 }
 impl DefenderCspmGcpOffering {
     pub fn new(cloud_offering: CloudOffering) -> Self {
-        Self { cloud_offering }
+        Self {
+            cloud_offering,
+            ciem_discovery: None,
+            vm_scanners: None,
+            data_sensitivity_discovery: None,
+            mdc_containers_image_assessment: None,
+            mdc_containers_agentless_discovery_k8s: None,
+        }
+    }
+}
+pub mod defender_cspm_gcp_offering {
+    use super::*;
+    #[doc = "GCP Defenders CSPM Cloud infrastructure entitlement management (CIEM) discovery offering configurations"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct CiemDiscovery {
+        #[doc = "The GCP workload identity provider id for CIEM discovery offering"]
+        #[serde(rename = "workloadIdentityProviderId", default, skip_serializing_if = "Option::is_none")]
+        pub workload_identity_provider_id: Option<String>,
+        #[doc = "The service account email address in GCP for CIEM discovery offering"]
+        #[serde(rename = "serviceAccountEmailAddress", default, skip_serializing_if = "Option::is_none")]
+        pub service_account_email_address: Option<String>,
+        #[doc = "the azure active directory app name used of authenticating against GCP workload identity federation"]
+        #[serde(rename = "azureActiveDirectoryAppName", default, skip_serializing_if = "Option::is_none")]
+        pub azure_active_directory_app_name: Option<String>,
+    }
+    impl CiemDiscovery {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    #[doc = "The Microsoft Defender for Server VM scanning configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct VmScanners {
+        #[doc = "Is Microsoft Defender for Server VM scanning enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "configuration for Microsoft Defender for Server VM scanning"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub configuration: Option<vm_scanners::Configuration>,
+    }
+    impl VmScanners {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod vm_scanners {
+        use super::*;
+        #[doc = "configuration for Microsoft Defender for Server VM scanning"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct Configuration {
+            #[doc = "The scanning mode for the VM scan."]
+            #[serde(rename = "scanningMode", default, skip_serializing_if = "Option::is_none")]
+            pub scanning_mode: Option<configuration::ScanningMode>,
+            #[doc = "VM tags that indicates that VM should not be scanned"]
+            #[serde(rename = "exclusionTags", default, skip_serializing_if = "Option::is_none")]
+            pub exclusion_tags: Option<serde_json::Value>,
+        }
+        impl Configuration {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
+        pub mod configuration {
+            use super::*;
+            #[doc = "The scanning mode for the VM scan."]
+            #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+            #[serde(remote = "ScanningMode")]
+            pub enum ScanningMode {
+                Default,
+                #[serde(skip_deserializing)]
+                UnknownValue(String),
+            }
+            impl FromStr for ScanningMode {
+                type Err = value::Error;
+                fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                    Self::deserialize(s.into_deserializer())
+                }
+            }
+            impl<'de> Deserialize<'de> for ScanningMode {
+                fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+                where
+                    D: Deserializer<'de>,
+                {
+                    let s = String::deserialize(deserializer)?;
+                    let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                    Ok(deserialized)
+                }
+            }
+            impl Serialize for ScanningMode {
+                fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+                where
+                    S: Serializer,
+                {
+                    match self {
+                        Self::Default => serializer.serialize_unit_variant("ScanningMode", 0u32, "Default"),
+                        Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                    }
+                }
+            }
+        }
+    }
+    #[doc = "The Microsoft Defender Data Sensitivity discovery configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct DataSensitivityDiscovery {
+        #[doc = "Is Microsoft Defender Data Sensitivity discovery enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "The workload identity provider id in GCP for this feature"]
+        #[serde(rename = "workloadIdentityProviderId", default, skip_serializing_if = "Option::is_none")]
+        pub workload_identity_provider_id: Option<String>,
+        #[doc = "The service account email address in GCP for this feature"]
+        #[serde(rename = "serviceAccountEmailAddress", default, skip_serializing_if = "Option::is_none")]
+        pub service_account_email_address: Option<String>,
+    }
+    impl DataSensitivityDiscovery {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    #[doc = "The Microsoft Defender Container image assessment configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct MdcContainersImageAssessment {
+        #[doc = "Is Microsoft Defender container image assessment enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "The workload identity provider id in GCP for this feature"]
+        #[serde(rename = "workloadIdentityProviderId", default, skip_serializing_if = "Option::is_none")]
+        pub workload_identity_provider_id: Option<String>,
+        #[doc = "The service account email address in GCP for this feature"]
+        #[serde(rename = "serviceAccountEmailAddress", default, skip_serializing_if = "Option::is_none")]
+        pub service_account_email_address: Option<String>,
+    }
+    impl MdcContainersImageAssessment {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    #[doc = "The Microsoft Defender Container agentless discovery configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct MdcContainersAgentlessDiscoveryK8s {
+        #[doc = "Is Microsoft Defender container agentless discovery enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "The workload identity provider id in GCP for this feature"]
+        #[serde(rename = "workloadIdentityProviderId", default, skip_serializing_if = "Option::is_none")]
+        pub workload_identity_provider_id: Option<String>,
+        #[doc = "The service account email address in GCP for this feature"]
+        #[serde(rename = "serviceAccountEmailAddress", default, skip_serializing_if = "Option::is_none")]
+        pub service_account_email_address: Option<String>,
+    }
+    impl MdcContainersAgentlessDiscoveryK8s {
+        pub fn new() -> Self {
+            Self::default()
+        }
     }
 }
 #[doc = "The Defender for Databases AWS offering"]
@@ -9774,6 +11951,9 @@ pub struct DefenderFoDatabasesAwsOffering {
     #[doc = "The RDS configuration"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rds: Option<defender_fo_databases_aws_offering::Rds>,
+    #[doc = "The databases data security posture management (DSPM) configuration"]
+    #[serde(rename = "databasesDspm", default, skip_serializing_if = "Option::is_none")]
+    pub databases_dspm: Option<defender_fo_databases_aws_offering::DatabasesDspm>,
 }
 impl DefenderFoDatabasesAwsOffering {
     pub fn new(cloud_offering: CloudOffering) -> Self {
@@ -9781,6 +11961,7 @@ impl DefenderFoDatabasesAwsOffering {
             cloud_offering,
             arc_auto_provisioning: None,
             rds: None,
+            databases_dspm: None,
         }
     }
 }
@@ -9795,10 +11976,31 @@ pub mod defender_fo_databases_aws_offering {
         #[doc = "The cloud role ARN in AWS for this feature"]
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
+        #[doc = "Configuration for servers Arc auto provisioning"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub configuration: Option<arc_auto_provisioning::Configuration>,
     }
     impl ArcAutoProvisioning {
         pub fn new() -> Self {
             Self::default()
+        }
+    }
+    pub mod arc_auto_provisioning {
+        use super::*;
+        #[doc = "Configuration for servers Arc auto provisioning"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct Configuration {
+            #[doc = "Optional http proxy endpoint to use for the Arc agent"]
+            #[serde(default, skip_serializing_if = "Option::is_none")]
+            pub proxy: Option<String>,
+            #[doc = "Optional Arc private link scope resource id to link the Arc agent"]
+            #[serde(rename = "privateLinkScope", default, skip_serializing_if = "Option::is_none")]
+            pub private_link_scope: Option<String>,
+        }
+        impl Configuration {
+            pub fn new() -> Self {
+                Self::default()
+            }
         }
     }
     #[doc = "The RDS configuration"]
@@ -9812,6 +12014,21 @@ pub mod defender_fo_databases_aws_offering {
         pub cloud_role_arn: Option<String>,
     }
     impl Rds {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    #[doc = "The databases data security posture management (DSPM) configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct DatabasesDspm {
+        #[doc = "Is databases data security posture management (DSPM) protection enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "The cloud role ARN in AWS for this feature"]
+        #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
+        pub cloud_role_arn: Option<String>,
+    }
+    impl DatabasesDspm {
         pub fn new() -> Self {
             Self::default()
         }
@@ -9856,6 +12073,12 @@ pub struct DefenderForContainersAwsOffering {
     #[doc = "The externalId used by the data reader to prevent the confused deputy attack"]
     #[serde(rename = "scubaExternalId", default, skip_serializing_if = "Option::is_none")]
     pub scuba_external_id: Option<String>,
+    #[doc = "The Microsoft Defender container image assessment configuration"]
+    #[serde(rename = "mdcContainersImageAssessment", default, skip_serializing_if = "Option::is_none")]
+    pub mdc_containers_image_assessment: Option<defender_for_containers_aws_offering::MdcContainersImageAssessment>,
+    #[doc = "The Microsoft Defender container agentless discovery K8s configuration"]
+    #[serde(rename = "mdcContainersAgentlessDiscoveryK8s", default, skip_serializing_if = "Option::is_none")]
+    pub mdc_containers_agentless_discovery_k8s: Option<defender_for_containers_aws_offering::MdcContainersAgentlessDiscoveryK8s>,
 }
 impl DefenderForContainersAwsOffering {
     pub fn new(cloud_offering: CloudOffering) -> Self {
@@ -9871,6 +12094,8 @@ impl DefenderForContainersAwsOffering {
             auto_provisioning: None,
             kube_audit_retention_time: None,
             scuba_external_id: None,
+            mdc_containers_image_assessment: None,
+            mdc_containers_agentless_discovery_k8s: None,
         }
     }
 }
@@ -9948,6 +12173,36 @@ pub mod defender_for_containers_aws_offering {
             Self::default()
         }
     }
+    #[doc = "The Microsoft Defender container image assessment configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct MdcContainersImageAssessment {
+        #[doc = "Is Microsoft Defender container image assessment enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "The cloud role ARN in AWS for this feature"]
+        #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
+        pub cloud_role_arn: Option<String>,
+    }
+    impl MdcContainersImageAssessment {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    #[doc = "The Microsoft Defender container agentless discovery K8s configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct MdcContainersAgentlessDiscoveryK8s {
+        #[doc = "Is Microsoft Defender container agentless discovery K8s enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "The cloud role ARN in AWS for this feature"]
+        #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
+        pub cloud_role_arn: Option<String>,
+    }
+    impl MdcContainersAgentlessDiscoveryK8s {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
 }
 #[doc = "The containers GCP offering"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -9969,6 +12224,12 @@ pub struct DefenderForContainersGcpOffering {
     #[doc = "Is Policy Kubernetes agent auto provisioning enabled"]
     #[serde(rename = "policyAgentAutoProvisioningFlag", default, skip_serializing_if = "Option::is_none")]
     pub policy_agent_auto_provisioning_flag: Option<bool>,
+    #[doc = "The Microsoft Defender Container image assessment configuration"]
+    #[serde(rename = "mdcContainersImageAssessment", default, skip_serializing_if = "Option::is_none")]
+    pub mdc_containers_image_assessment: Option<defender_for_containers_gcp_offering::MdcContainersImageAssessment>,
+    #[doc = "The Microsoft Defender Container agentless discovery configuration"]
+    #[serde(rename = "mdcContainersAgentlessDiscoveryK8s", default, skip_serializing_if = "Option::is_none")]
+    pub mdc_containers_agentless_discovery_k8s: Option<defender_for_containers_gcp_offering::MdcContainersAgentlessDiscoveryK8s>,
 }
 impl DefenderForContainersGcpOffering {
     pub fn new(cloud_offering: CloudOffering) -> Self {
@@ -9979,6 +12240,8 @@ impl DefenderForContainersGcpOffering {
             audit_logs_auto_provisioning_flag: None,
             defender_agent_auto_provisioning_flag: None,
             policy_agent_auto_provisioning_flag: None,
+            mdc_containers_image_assessment: None,
+            mdc_containers_agentless_discovery_k8s: None,
         }
     }
 }
@@ -10010,6 +12273,42 @@ pub mod defender_for_containers_gcp_offering {
         pub workload_identity_provider_id: Option<String>,
     }
     impl DataPipelineNativeCloudConnection {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    #[doc = "The Microsoft Defender Container image assessment configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct MdcContainersImageAssessment {
+        #[doc = "Is Microsoft Defender container image assessment enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "The workload identity provider id in GCP for this feature"]
+        #[serde(rename = "workloadIdentityProviderId", default, skip_serializing_if = "Option::is_none")]
+        pub workload_identity_provider_id: Option<String>,
+        #[doc = "The service account email address in GCP for this feature"]
+        #[serde(rename = "serviceAccountEmailAddress", default, skip_serializing_if = "Option::is_none")]
+        pub service_account_email_address: Option<String>,
+    }
+    impl MdcContainersImageAssessment {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    #[doc = "The Microsoft Defender Container agentless discovery configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct MdcContainersAgentlessDiscoveryK8s {
+        #[doc = "Is Microsoft Defender container agentless discovery enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "The workload identity provider id in GCP for this feature"]
+        #[serde(rename = "workloadIdentityProviderId", default, skip_serializing_if = "Option::is_none")]
+        pub workload_identity_provider_id: Option<String>,
+        #[doc = "The service account email address in GCP for this feature"]
+        #[serde(rename = "serviceAccountEmailAddress", default, skip_serializing_if = "Option::is_none")]
+        pub service_account_email_address: Option<String>,
+    }
+    impl MdcContainersAgentlessDiscoveryK8s {
         pub fn new() -> Self {
             Self::default()
         }
@@ -10048,10 +12347,31 @@ pub mod defender_for_databases_gcp_offering {
         #[doc = "Is arc auto provisioning enabled"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub enabled: Option<bool>,
+        #[doc = "Configuration for servers Arc auto provisioning"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub configuration: Option<arc_auto_provisioning::Configuration>,
     }
     impl ArcAutoProvisioning {
         pub fn new() -> Self {
             Self::default()
+        }
+    }
+    pub mod arc_auto_provisioning {
+        use super::*;
+        #[doc = "Configuration for servers Arc auto provisioning"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct Configuration {
+            #[doc = "Optional http proxy endpoint to use for the Arc agent"]
+            #[serde(default, skip_serializing_if = "Option::is_none")]
+            pub proxy: Option<String>,
+            #[doc = "Optional Arc private link scope resource id to link the Arc agent"]
+            #[serde(rename = "privateLinkScope", default, skip_serializing_if = "Option::is_none")]
+            pub private_link_scope: Option<String>,
+        }
+        impl Configuration {
+            pub fn new() -> Self {
+                Self::default()
+            }
         }
     }
     #[doc = "The native cloud connection configuration"]
@@ -10077,6 +12397,17 @@ pub struct DefenderForDevOpsAzureDevOpsOffering {
     pub cloud_offering: CloudOffering,
 }
 impl DefenderForDevOpsAzureDevOpsOffering {
+    pub fn new(cloud_offering: CloudOffering) -> Self {
+        Self { cloud_offering }
+    }
+}
+#[doc = "The Defender for DevOps for Gitlab offering"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DefenderForDevOpsGitLabOffering {
+    #[serde(flatten)]
+    pub cloud_offering: CloudOffering,
+}
+impl DefenderForDevOpsGitLabOffering {
     pub fn new(cloud_offering: CloudOffering) -> Self {
         Self { cloud_offering }
     }
@@ -10152,10 +12483,31 @@ pub mod defender_for_servers_aws_offering {
         #[doc = "The cloud role ARN in AWS for this feature"]
         #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
         pub cloud_role_arn: Option<String>,
+        #[doc = "Configuration for servers Arc auto provisioning"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub configuration: Option<arc_auto_provisioning::Configuration>,
     }
     impl ArcAutoProvisioning {
         pub fn new() -> Self {
             Self::default()
+        }
+    }
+    pub mod arc_auto_provisioning {
+        use super::*;
+        #[doc = "Configuration for servers Arc auto provisioning"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct Configuration {
+            #[doc = "Optional HTTP proxy endpoint to use for the Arc agent"]
+            #[serde(default, skip_serializing_if = "Option::is_none")]
+            pub proxy: Option<String>,
+            #[doc = "Optional Arc private link scope resource id to link the Arc agent"]
+            #[serde(rename = "privateLinkScope", default, skip_serializing_if = "Option::is_none")]
+            pub private_link_scope: Option<String>,
+        }
+        impl Configuration {
+            pub fn new() -> Self {
+                Self::default()
+            }
         }
     }
     #[doc = "The Vulnerability Assessment autoprovisioning configuration"]
@@ -10319,7 +12671,7 @@ pub mod defender_for_servers_aws_offering {
             #[doc = "The cloud role ARN in AWS for this feature"]
             #[serde(rename = "cloudRoleArn", default, skip_serializing_if = "Option::is_none")]
             pub cloud_role_arn: Option<String>,
-            #[doc = "The scanning mode for the vm scan."]
+            #[doc = "The scanning mode for the VM scan."]
             #[serde(rename = "scanningMode", default, skip_serializing_if = "Option::is_none")]
             pub scanning_mode: Option<configuration::ScanningMode>,
             #[doc = "VM tags that indicates that VM should not be scanned"]
@@ -10333,7 +12685,7 @@ pub mod defender_for_servers_aws_offering {
         }
         pub mod configuration {
             use super::*;
-            #[doc = "The scanning mode for the vm scan."]
+            #[doc = "The scanning mode for the VM scan."]
             #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
             #[serde(remote = "ScanningMode")]
             pub enum ScanningMode {
@@ -10391,6 +12743,9 @@ pub struct DefenderForServersGcpOffering {
     #[doc = "configuration for the servers offering subPlan"]
     #[serde(rename = "subPlan", default, skip_serializing_if = "Option::is_none")]
     pub sub_plan: Option<defender_for_servers_gcp_offering::SubPlan>,
+    #[doc = "The Microsoft Defender for Server VM scanning configuration"]
+    #[serde(rename = "vmScanners", default, skip_serializing_if = "Option::is_none")]
+    pub vm_scanners: Option<defender_for_servers_gcp_offering::VmScanners>,
 }
 impl DefenderForServersGcpOffering {
     pub fn new(cloud_offering: CloudOffering) -> Self {
@@ -10401,6 +12756,7 @@ impl DefenderForServersGcpOffering {
             va_auto_provisioning: None,
             mde_auto_provisioning: None,
             sub_plan: None,
+            vm_scanners: None,
         }
     }
 }
@@ -10427,10 +12783,31 @@ pub mod defender_for_servers_gcp_offering {
         #[doc = "Is arc auto provisioning enabled"]
         #[serde(default, skip_serializing_if = "Option::is_none")]
         pub enabled: Option<bool>,
+        #[doc = "Configuration for servers Arc auto provisioning"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub configuration: Option<arc_auto_provisioning::Configuration>,
     }
     impl ArcAutoProvisioning {
         pub fn new() -> Self {
             Self::default()
+        }
+    }
+    pub mod arc_auto_provisioning {
+        use super::*;
+        #[doc = "Configuration for servers Arc auto provisioning"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct Configuration {
+            #[doc = "Optional HTTP proxy endpoint to use for the Arc agent"]
+            #[serde(default, skip_serializing_if = "Option::is_none")]
+            pub proxy: Option<String>,
+            #[doc = "Optional Arc private link scope resource id to link the Arc agent"]
+            #[serde(rename = "privateLinkScope", default, skip_serializing_if = "Option::is_none")]
+            pub private_link_scope: Option<String>,
+        }
+        impl Configuration {
+            pub fn new() -> Self {
+                Self::default()
+            }
         }
     }
     #[doc = "The Vulnerability Assessment autoprovisioning configuration"]
@@ -10571,6 +12948,119 @@ pub mod defender_for_servers_gcp_offering {
             }
         }
     }
+    #[doc = "The Microsoft Defender for Server VM scanning configuration"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct VmScanners {
+        #[doc = "Is Microsoft Defender for Server VM scanning enabled"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub enabled: Option<bool>,
+        #[doc = "configuration for Microsoft Defender for Server VM scanning"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub configuration: Option<vm_scanners::Configuration>,
+    }
+    impl VmScanners {
+        pub fn new() -> Self {
+            Self::default()
+        }
+    }
+    pub mod vm_scanners {
+        use super::*;
+        #[doc = "configuration for Microsoft Defender for Server VM scanning"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+        pub struct Configuration {
+            #[doc = "The scanning mode for the VM scan."]
+            #[serde(rename = "scanningMode", default, skip_serializing_if = "Option::is_none")]
+            pub scanning_mode: Option<configuration::ScanningMode>,
+            #[doc = "VM tags that indicate that VM should not be scanned"]
+            #[serde(rename = "exclusionTags", default, skip_serializing_if = "Option::is_none")]
+            pub exclusion_tags: Option<serde_json::Value>,
+        }
+        impl Configuration {
+            pub fn new() -> Self {
+                Self::default()
+            }
+        }
+        pub mod configuration {
+            use super::*;
+            #[doc = "The scanning mode for the VM scan."]
+            #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+            #[serde(remote = "ScanningMode")]
+            pub enum ScanningMode {
+                Default,
+                #[serde(skip_deserializing)]
+                UnknownValue(String),
+            }
+            impl FromStr for ScanningMode {
+                type Err = value::Error;
+                fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                    Self::deserialize(s.into_deserializer())
+                }
+            }
+            impl<'de> Deserialize<'de> for ScanningMode {
+                fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+                where
+                    D: Deserializer<'de>,
+                {
+                    let s = String::deserialize(deserializer)?;
+                    let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                    Ok(deserialized)
+                }
+            }
+            impl Serialize for ScanningMode {
+                fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+                where
+                    S: Serializer,
+                {
+                    match self {
+                        Self::Default => serializer.serialize_unit_variant("ScanningMode", 0u32, "Default"),
+                        Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                    }
+                }
+            }
+        }
+    }
+}
+#[doc = "The environment details of the resource"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct EnvironmentDetails {
+    #[doc = "The native resource id of the resource (in case of Azure - the resource Id, in case of MC - the native resource id)"]
+    #[serde(rename = "nativeResourceId", default, skip_serializing_if = "Option::is_none")]
+    pub native_resource_id: Option<String>,
+    #[doc = "The hierarchy id of the connector (in case of Azure - the subscription Id, in case of MC - the hierarchyId id)"]
+    #[serde(rename = "environmentHierarchyId", default, skip_serializing_if = "Option::is_none")]
+    pub environment_hierarchy_id: Option<String>,
+    #[doc = "The organizational hierarchy id of the connector (in case of Azure - the subscription Id, in case of MC - the organizational hierarchyId id)"]
+    #[serde(rename = "organizationalHierarchyId", default, skip_serializing_if = "Option::is_none")]
+    pub organizational_hierarchy_id: Option<String>,
+    #[doc = "The subscription Id"]
+    #[serde(rename = "subscriptionId", default, skip_serializing_if = "Option::is_none")]
+    pub subscription_id: Option<String>,
+    #[doc = "The tenant Id"]
+    #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+impl EnvironmentDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The classification of the health report"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct HealthDataClassification {
+    #[doc = "The component describes the name of the agent/service that scans the issue"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub component: Option<String>,
+    #[doc = "The scenario describes the health scenario issue of the component"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scenario: Option<String>,
+    #[doc = "The resource scope of the health report"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<String>,
+}
+impl HealthDataClassification {
+    pub fn new() -> Self {
+        Self::default()
+    }
 }
 #[doc = "The information protection for AWS offering"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -10601,6 +13091,109 @@ pub mod information_protection_aws_offering {
     impl InformationProtection {
         pub fn new() -> Self {
             Self::default()
+        }
+    }
+}
+#[doc = "The issue that caused the resource to by unhealthy"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Issue {
+    #[doc = "The unique issue key"]
+    #[serde(rename = "issueKey")]
+    pub issue_key: String,
+    #[doc = "The issue name"]
+    #[serde(rename = "issueName", default, skip_serializing_if = "Option::is_none")]
+    pub issue_name: Option<String>,
+    #[doc = "The affected security values that MDC offers that will be affected by the issue, for example: recommendations, alerts, etc"]
+    #[serde(
+        rename = "securityValues",
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub security_values: Vec<String>,
+    #[doc = "The issue description"]
+    #[serde(rename = "issueDescription", default, skip_serializing_if = "Option::is_none")]
+    pub issue_description: Option<String>,
+    #[doc = "Human readable description of what you should do to mitigate this health issue"]
+    #[serde(rename = "remediationSteps", default, skip_serializing_if = "Option::is_none")]
+    pub remediation_steps: Option<String>,
+    #[doc = "The remediation script to solve this issue"]
+    #[serde(rename = "remediationScript", default, skip_serializing_if = "Option::is_none")]
+    pub remediation_script: Option<String>,
+    #[doc = "Additional data for the given issue. The additional data depends on the issue type"]
+    #[serde(rename = "issueAdditionalData", default, skip_serializing_if = "Option::is_none")]
+    pub issue_additional_data: Option<serde_json::Value>,
+}
+impl Issue {
+    pub fn new(issue_key: String) -> Self {
+        Self {
+            issue_key,
+            issue_name: None,
+            security_values: Vec::new(),
+            issue_description: None,
+            remediation_steps: None,
+            remediation_script: None,
+            issue_additional_data: None,
+        }
+    }
+}
+#[doc = "The resource details of the health report"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct ResourceDetails {
+    #[doc = "The status of the health report"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<resource_details::Source>,
+    #[doc = "The azure id of the resource"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[doc = "The id of the connector"]
+    #[serde(rename = "connectorId", default, skip_serializing_if = "Option::is_none")]
+    pub connector_id: Option<String>,
+}
+impl ResourceDetails {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod resource_details {
+    use super::*;
+    #[doc = "The status of the health report"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Source")]
+    pub enum Source {
+        Aws,
+        Gcp,
+        Azure,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Source {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Source {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Source {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Aws => serializer.serialize_unit_variant("Source", 0u32, "Aws"),
+                Self::Gcp => serializer.serialize_unit_variant("Source", 1u32, "Gcp"),
+                Self::Azure => serializer.serialize_unit_variant("Source", 2u32, "Azure"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
         }
     }
 }
@@ -10742,6 +13335,72 @@ pub mod security_solutions_reference_data_properties {
                 Self::Ngfw => serializer.serialize_unit_variant("SecurityFamily", 1u32, "Ngfw"),
                 Self::SaasWaf => serializer.serialize_unit_variant("SecurityFamily", 2u32, "SaasWaf"),
                 Self::Va => serializer.serialize_unit_variant("SecurityFamily", 3u32, "Va"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "The status of the health report"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct Status {
+    #[doc = "The status of the health report"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<status::Code>,
+    #[doc = "The reason of the given status"]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    #[doc = "The date of when the resource was scanned in the last time"]
+    #[serde(rename = "lastScannedDate", default, with = "azure_core::date::rfc3339::option")]
+    pub last_scanned_date: Option<time::OffsetDateTime>,
+    #[doc = "The date of when the status of the health report was changed in the last time"]
+    #[serde(rename = "statusChangeDate", default, with = "azure_core::date::rfc3339::option")]
+    pub status_change_date: Option<time::OffsetDateTime>,
+    #[doc = "The date of when the resource of the health report was scanned in the first time"]
+    #[serde(rename = "firstEvaluationDate", default, with = "azure_core::date::rfc3339::option")]
+    pub first_evaluation_date: Option<time::OffsetDateTime>,
+}
+impl Status {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+pub mod status {
+    use super::*;
+    #[doc = "The status of the health report"]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "Code")]
+    pub enum Code {
+        Healthy,
+        NotHealthy,
+        NotApplicable,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for Code {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for Code {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for Code {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Healthy => serializer.serialize_unit_variant("Code", 0u32, "Healthy"),
+                Self::NotHealthy => serializer.serialize_unit_variant("Code", 1u32, "NotHealthy"),
+                Self::NotApplicable => serializer.serialize_unit_variant("Code", 2u32, "NotApplicable"),
                 Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
             }
         }

@@ -19,7 +19,8 @@ operation! {
     ?max_item_count: MaxItemCount,
     ?a_im: ChangeFeed,
     ?if_match_condition: IfMatchCondition,
-    ?consistency_level: ConsistencyLevel
+    ?consistency_level: ConsistencyLevel,
+    ?continuation: Continuation,
 }
 
 impl ListAttachmentsBuilder {
@@ -49,6 +50,7 @@ impl ListAttachmentsBuilder {
                     &mut request,
                 );
 
+                let continuation = continuation.or(this.continuation);
                 request.insert_headers(&continuation);
 
                 let response = this

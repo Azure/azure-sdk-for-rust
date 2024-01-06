@@ -59,7 +59,7 @@ impl Debug for Secret {
 }
 
 /// Represents an Azure service bearer access token with expiry information.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AccessToken {
     /// Get the access token value.
     pub token: Secret,

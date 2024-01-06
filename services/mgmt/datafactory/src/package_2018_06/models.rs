@@ -7141,6 +7141,8 @@ pub enum DatasetUnion {
     SalesforceMarketingCloudObject(SalesforceMarketingCloudObjectDataset),
     SalesforceObject(SalesforceObjectDataset),
     SalesforceServiceCloudObject(SalesforceServiceCloudObjectDataset),
+    SalesforceServiceCloudV2Object(SalesforceServiceCloudV2ObjectDataset),
+    SalesforceV2Object(SalesforceV2ObjectDataset),
     SapBwCube(SapBwCubeDataset),
     SapCloudForCustomerResource(SapCloudForCustomerResourceDataset),
     SapEccResource(SapEccResourceDataset),
@@ -7158,6 +7160,7 @@ pub enum DatasetUnion {
     SybaseTable(SybaseTableDataset),
     TeradataTable(TeradataTableDataset),
     VerticaTable(VerticaTableDataset),
+    WarehouseTable(WarehouseTableDataset),
     WebTable(WebTableDataset),
     XeroObject(XeroObjectDataset),
     Xml(XmlDataset),
@@ -14211,6 +14214,8 @@ pub enum LinkedServiceUnion {
     Salesforce(SalesforceLinkedService),
     SalesforceMarketingCloud(SalesforceMarketingCloudLinkedService),
     SalesforceServiceCloud(SalesforceServiceCloudLinkedService),
+    SalesforceServiceCloudV2(SalesforceServiceCloudV2LinkedService),
+    SalesforceV2(SalesforceV2LinkedService),
     #[serde(rename = "SapBW")]
     SapBw(SapBwLinkedService),
     SapCloudForCustomer(SapCloudForCustomerLinkedService),
@@ -14233,6 +14238,7 @@ pub enum LinkedServiceUnion {
     Teradata(TeradataLinkedService),
     Twilio(TwilioLinkedService),
     Vertica(VerticaLinkedService),
+    Warehouse(WarehouseLinkedService),
     Web(WebLinkedService),
     Xero(XeroLinkedService),
     Zendesk(ZendeskLinkedService),
@@ -15459,12 +15465,27 @@ impl MariaDbLinkedService {
 #[doc = "MariaDB server linked service properties."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MariaDbLinkedServiceTypeProperties {
+    #[doc = "The version of the MariaDB driver. Type: string. V1 or empty for legacy driver, V2 for new driver. V1 can support connection string and property bag, V2 can only support connection string."]
+    #[serde(rename = "driverVersion", default, skip_serializing_if = "Option::is_none")]
+    pub driver_version: Option<serde_json::Value>,
     #[doc = "An ODBC connection string. Type: string, SecureString or AzureKeyVaultSecretReference."]
     #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
     pub connection_string: Option<serde_json::Value>,
+    #[doc = "Server name for connection. Type: string."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub server: Option<serde_json::Value>,
+    #[doc = "The port for the connection. Type: integer."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<serde_json::Value>,
+    #[doc = "Username for authentication. Type: string."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub username: Option<serde_json::Value>,
+    #[doc = "Database name for connection. Type: string."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub database: Option<serde_json::Value>,
     #[doc = "Azure Key Vault secret reference."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub pwd: Option<AzureKeyVaultSecretReference>,
+    pub password: Option<AzureKeyVaultSecretReference>,
     #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string."]
     #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
     pub encrypted_credential: Option<String>,
@@ -16164,11 +16185,32 @@ impl MySqlLinkedService {
     }
 }
 #[doc = "MySQL linked service properties."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct MySqlLinkedServiceTypeProperties {
+    #[doc = "The version of the MySQL driver. Type: string. V1 or empty for legacy driver, V2 for new driver. V1 can support connection string and property bag, V2 can only support connection string."]
+    #[serde(rename = "driverVersion", default, skip_serializing_if = "Option::is_none")]
+    pub driver_version: Option<serde_json::Value>,
     #[doc = "The connection string. Type: string, SecureString or AzureKeyVaultSecretReference."]
-    #[serde(rename = "connectionString")]
-    pub connection_string: serde_json::Value,
+    #[serde(rename = "connectionString", default, skip_serializing_if = "Option::is_none")]
+    pub connection_string: Option<serde_json::Value>,
+    #[doc = "Server name for connection. Type: string."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub server: Option<serde_json::Value>,
+    #[doc = "The port for the connection. Type: integer."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<serde_json::Value>,
+    #[doc = "Username for authentication. Type: string."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub username: Option<serde_json::Value>,
+    #[doc = "Database name for connection. Type: string."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub database: Option<serde_json::Value>,
+    #[doc = "SSL mode for connection. Type: integer. 0: disable, 1: prefer, 2: require, 3: verify-ca, 4: verify-full."]
+    #[serde(rename = "sslMode", default, skip_serializing_if = "Option::is_none")]
+    pub ssl_mode: Option<serde_json::Value>,
+    #[doc = "Use system trust store for connection. Type: integer. 0: enable, 1: disable."]
+    #[serde(rename = "useSystemTrustStore", default, skip_serializing_if = "Option::is_none")]
+    pub use_system_trust_store: Option<serde_json::Value>,
     #[doc = "Azure Key Vault secret reference."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub password: Option<AzureKeyVaultSecretReference>,
@@ -16177,12 +16219,8 @@ pub struct MySqlLinkedServiceTypeProperties {
     pub encrypted_credential: Option<String>,
 }
 impl MySqlLinkedServiceTypeProperties {
-    pub fn new(connection_string: serde_json::Value) -> Self {
-        Self {
-            connection_string,
-            password: None,
-            encrypted_credential: None,
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "A copy activity source for MySQL databases."]
@@ -20617,6 +20655,169 @@ impl SalesforceServiceCloudSource {
         }
     }
 }
+#[doc = "Linked service for Salesforce Service Cloud V2."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SalesforceServiceCloudV2LinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Salesforce Service Cloud V2 linked service properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: SalesforceServiceCloudV2LinkedServiceTypeProperties,
+}
+impl SalesforceServiceCloudV2LinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: SalesforceServiceCloudV2LinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Salesforce Service Cloud V2 linked service properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SalesforceServiceCloudV2LinkedServiceTypeProperties {
+    #[doc = "The URL of Salesforce Service Cloud instance. For example, 'https://[domain].my.salesforce.com'. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "environmentUrl", default, skip_serializing_if = "Option::is_none")]
+    pub environment_url: Option<serde_json::Value>,
+    #[doc = "The client Id for OAuth 2.0 Client Credentials Flow authentication of the Salesforce instance. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
+    pub client_secret: Option<SecretBaseUnion>,
+    #[doc = "The Salesforce API version used in ADF. The version must be larger than or equal to 47.0 which is required by Salesforce BULK API 2.0. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "apiVersion", default, skip_serializing_if = "Option::is_none")]
+    pub api_version: Option<serde_json::Value>,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<String>,
+}
+impl SalesforceServiceCloudV2LinkedServiceTypeProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The Salesforce Service Cloud V2 object dataset."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SalesforceServiceCloudV2ObjectDataset {
+    #[serde(flatten)]
+    pub dataset: Dataset,
+    #[doc = "Salesforce Service Cloud V2 object dataset properties."]
+    #[serde(rename = "typeProperties", default, skip_serializing_if = "Option::is_none")]
+    pub type_properties: Option<SalesforceServiceCloudV2ObjectDatasetTypeProperties>,
+}
+impl SalesforceServiceCloudV2ObjectDataset {
+    pub fn new(dataset: Dataset) -> Self {
+        Self {
+            dataset,
+            type_properties: None,
+        }
+    }
+}
+#[doc = "Salesforce Service Cloud V2 object dataset properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SalesforceServiceCloudV2ObjectDatasetTypeProperties {
+    #[doc = "The Salesforce Service Cloud V2 object API name. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "objectApiName", default, skip_serializing_if = "Option::is_none")]
+    pub object_api_name: Option<serde_json::Value>,
+    #[doc = "The Salesforce Service Cloud V2 reportId. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "reportId", default, skip_serializing_if = "Option::is_none")]
+    pub report_id: Option<serde_json::Value>,
+}
+impl SalesforceServiceCloudV2ObjectDatasetTypeProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A copy activity Salesforce Service Cloud V2 sink."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SalesforceServiceCloudV2Sink {
+    #[serde(flatten)]
+    pub copy_sink: CopySink,
+    #[doc = "The write behavior for the operation. Default is Insert."]
+    #[serde(rename = "writeBehavior", default, skip_serializing_if = "Option::is_none")]
+    pub write_behavior: Option<salesforce_service_cloud_v2_sink::WriteBehavior>,
+    #[doc = "The name of the external ID field for upsert operation. Default value is 'Id' column. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "externalIdFieldName", default, skip_serializing_if = "Option::is_none")]
+    pub external_id_field_name: Option<serde_json::Value>,
+    #[doc = "The flag indicating whether or not to ignore null values from input dataset (except key fields) during write operation. Default value is false. If set it to true, it means ADF will leave the data in the destination object unchanged when doing upsert/update operation and insert defined default value when doing insert operation, versus ADF will update the data in the destination object to NULL when doing upsert/update operation and insert NULL value when doing insert operation. Type: boolean (or Expression with resultType boolean)."]
+    #[serde(rename = "ignoreNullValues", default, skip_serializing_if = "Option::is_none")]
+    pub ignore_null_values: Option<serde_json::Value>,
+}
+impl SalesforceServiceCloudV2Sink {
+    pub fn new(copy_sink: CopySink) -> Self {
+        Self {
+            copy_sink,
+            write_behavior: None,
+            external_id_field_name: None,
+            ignore_null_values: None,
+        }
+    }
+}
+pub mod salesforce_service_cloud_v2_sink {
+    use super::*;
+    #[doc = "The write behavior for the operation. Default is Insert."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "WriteBehavior")]
+    pub enum WriteBehavior {
+        Insert,
+        Upsert,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for WriteBehavior {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for WriteBehavior {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for WriteBehavior {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Insert => serializer.serialize_unit_variant("WriteBehavior", 0u32, "Insert"),
+                Self::Upsert => serializer.serialize_unit_variant("WriteBehavior", 1u32, "Upsert"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "A copy activity Salesforce Service Cloud V2 source."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SalesforceServiceCloudV2Source {
+    #[serde(flatten)]
+    pub copy_source: CopySource,
+    #[doc = "Database query. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "SOQLQuery", default, skip_serializing_if = "Option::is_none")]
+    pub soql_query: Option<serde_json::Value>,
+    #[doc = "The read behavior for the operation. Default is query. Allowed values: query/queryAll. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "readBehavior", default, skip_serializing_if = "Option::is_none")]
+    pub read_behavior: Option<serde_json::Value>,
+    #[doc = "Specifies the additional columns to be added to source data. Type: array of objects(AdditionalColumns) (or Expression with resultType array of objects)."]
+    #[serde(rename = "additionalColumns", default, skip_serializing_if = "Option::is_none")]
+    pub additional_columns: Option<serde_json::Value>,
+}
+impl SalesforceServiceCloudV2Source {
+    pub fn new(copy_source: CopySource) -> Self {
+        Self {
+            copy_source,
+            soql_query: None,
+            read_behavior: None,
+            additional_columns: None,
+        }
+    }
+}
 #[doc = "A copy activity Salesforce sink."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SalesforceSink {
@@ -20736,6 +20937,204 @@ impl Serialize for SalesforceSourceReadBehavior {
         match self {
             Self::Query => serializer.serialize_unit_variant("SalesforceSourceReadBehavior", 0u32, "Query"),
             Self::QueryAll => serializer.serialize_unit_variant("SalesforceSourceReadBehavior", 1u32, "QueryAll"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Linked service for Salesforce V2."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SalesforceV2LinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Salesforce V2 linked service properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: SalesforceV2LinkedServiceTypeProperties,
+}
+impl SalesforceV2LinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: SalesforceV2LinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Salesforce V2 linked service properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SalesforceV2LinkedServiceTypeProperties {
+    #[doc = "The URL of Salesforce instance. For example, 'https://[domain].my.salesforce.com'. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "environmentUrl", default, skip_serializing_if = "Option::is_none")]
+    pub environment_url: Option<serde_json::Value>,
+    #[doc = "The client Id for OAuth 2.0 Client Credentials Flow authentication of the Salesforce instance. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "clientId", default, skip_serializing_if = "Option::is_none")]
+    pub client_id: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "clientSecret", default, skip_serializing_if = "Option::is_none")]
+    pub client_secret: Option<SecretBaseUnion>,
+    #[doc = "The Salesforce API version used in ADF. The version must be larger than or equal to 47.0 which is required by Salesforce BULK API 2.0. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "apiVersion", default, skip_serializing_if = "Option::is_none")]
+    pub api_version: Option<serde_json::Value>,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<String>,
+}
+impl SalesforceV2LinkedServiceTypeProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The Salesforce V2 object dataset."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SalesforceV2ObjectDataset {
+    #[serde(flatten)]
+    pub dataset: Dataset,
+    #[doc = "Salesforce V2 object dataset properties."]
+    #[serde(rename = "typeProperties", default, skip_serializing_if = "Option::is_none")]
+    pub type_properties: Option<SalesforceV2ObjectDatasetTypeProperties>,
+}
+impl SalesforceV2ObjectDataset {
+    pub fn new(dataset: Dataset) -> Self {
+        Self {
+            dataset,
+            type_properties: None,
+        }
+    }
+}
+#[doc = "Salesforce V2 object dataset properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct SalesforceV2ObjectDatasetTypeProperties {
+    #[doc = "The Salesforce V2 object API name. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "objectApiName", default, skip_serializing_if = "Option::is_none")]
+    pub object_api_name: Option<serde_json::Value>,
+    #[doc = "The Salesforce V2 report Id. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "reportId", default, skip_serializing_if = "Option::is_none")]
+    pub report_id: Option<serde_json::Value>,
+}
+impl SalesforceV2ObjectDatasetTypeProperties {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "A copy activity Salesforce V2 sink."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SalesforceV2Sink {
+    #[serde(flatten)]
+    pub copy_sink: CopySink,
+    #[doc = "The write behavior for the operation. Default is Insert."]
+    #[serde(rename = "writeBehavior", default, skip_serializing_if = "Option::is_none")]
+    pub write_behavior: Option<salesforce_v2_sink::WriteBehavior>,
+    #[doc = "The name of the external ID field for upsert operation. Default value is 'Id' column. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "externalIdFieldName", default, skip_serializing_if = "Option::is_none")]
+    pub external_id_field_name: Option<serde_json::Value>,
+    #[doc = "The flag indicating whether or not to ignore null values from input dataset (except key fields) during write operation. Default value is false. If set it to true, it means ADF will leave the data in the destination object unchanged when doing upsert/update operation and insert defined default value when doing insert operation, versus ADF will update the data in the destination object to NULL when doing upsert/update operation and insert NULL value when doing insert operation. Type: boolean (or Expression with resultType boolean)."]
+    #[serde(rename = "ignoreNullValues", default, skip_serializing_if = "Option::is_none")]
+    pub ignore_null_values: Option<serde_json::Value>,
+}
+impl SalesforceV2Sink {
+    pub fn new(copy_sink: CopySink) -> Self {
+        Self {
+            copy_sink,
+            write_behavior: None,
+            external_id_field_name: None,
+            ignore_null_values: None,
+        }
+    }
+}
+pub mod salesforce_v2_sink {
+    use super::*;
+    #[doc = "The write behavior for the operation. Default is Insert."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+    #[serde(remote = "WriteBehavior")]
+    pub enum WriteBehavior {
+        Insert,
+        Upsert,
+        #[serde(skip_deserializing)]
+        UnknownValue(String),
+    }
+    impl FromStr for WriteBehavior {
+        type Err = value::Error;
+        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+            Self::deserialize(s.into_deserializer())
+        }
+    }
+    impl<'de> Deserialize<'de> for WriteBehavior {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let s = String::deserialize(deserializer)?;
+            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+            Ok(deserialized)
+        }
+    }
+    impl Serialize for WriteBehavior {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            match self {
+                Self::Insert => serializer.serialize_unit_variant("WriteBehavior", 0u32, "Insert"),
+                Self::Upsert => serializer.serialize_unit_variant("WriteBehavior", 1u32, "Upsert"),
+                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+            }
+        }
+    }
+}
+#[doc = "A copy activity Salesforce V2 source."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SalesforceV2Source {
+    #[serde(flatten)]
+    pub tabular_source: TabularSource,
+    #[doc = "Database query. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "SOQLQuery", default, skip_serializing_if = "Option::is_none")]
+    pub soql_query: Option<serde_json::Value>,
+    #[doc = "The read behavior for the operation. Default is query. Allowed values: query/queryAll. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "readBehavior", default, skip_serializing_if = "Option::is_none")]
+    pub read_behavior: Option<serde_json::Value>,
+}
+impl SalesforceV2Source {
+    pub fn new(tabular_source: TabularSource) -> Self {
+        Self {
+            tabular_source,
+            soql_query: None,
+            read_behavior: None,
+        }
+    }
+}
+#[doc = "The Salesforce read behavior for the operation"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "SalesforceV2SourceReadBehavior")]
+pub enum SalesforceV2SourceReadBehavior {
+    #[serde(rename = "query")]
+    Query,
+    #[serde(rename = "queryAll")]
+    QueryAll,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for SalesforceV2SourceReadBehavior {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for SalesforceV2SourceReadBehavior {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for SalesforceV2SourceReadBehavior {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Query => serializer.serialize_unit_variant("SalesforceV2SourceReadBehavior", 0u32, "query"),
+            Self::QueryAll => serializer.serialize_unit_variant("SalesforceV2SourceReadBehavior", 1u32, "queryAll"),
             Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
@@ -24749,6 +25148,13 @@ pub struct StoreWriteSettings {
     #[doc = "The type of copy behavior for copy sink."]
     #[serde(rename = "copyBehavior", default, skip_serializing_if = "Option::is_none")]
     pub copy_behavior: Option<serde_json::Value>,
+    #[doc = "Specify the custom metadata to be added to sink data. Type: array of objects (or Expression with resultType array of objects)."]
+    #[serde(
+        default,
+        deserialize_with = "azure_core::util::deserialize_null_as_default",
+        skip_serializing_if = "Vec::is_empty"
+    )]
+    pub metadata: Vec<MetadataItem>,
 }
 impl StoreWriteSettings {
     pub fn new() -> Self {
@@ -24756,6 +25162,7 @@ impl StoreWriteSettings {
             max_concurrent_connections: None,
             disable_metrics_collection: None,
             copy_behavior: None,
+            metadata: Vec::new(),
         }
     }
 }
@@ -26790,6 +27197,170 @@ pub struct WaitActivityTypeProperties {
 impl WaitActivityTypeProperties {
     pub fn new(wait_time_in_seconds: serde_json::Value) -> Self {
         Self { wait_time_in_seconds }
+    }
+}
+#[doc = "Microsoft Fabric Warehouse linked service."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WarehouseLinkedService {
+    #[serde(flatten)]
+    pub linked_service: LinkedService,
+    #[doc = "Microsoft Fabric Warehouse linked service properties."]
+    #[serde(rename = "typeProperties")]
+    pub type_properties: WarehouseLinkedServiceTypeProperties,
+}
+impl WarehouseLinkedService {
+    pub fn new(linked_service: LinkedService, type_properties: WarehouseLinkedServiceTypeProperties) -> Self {
+        Self {
+            linked_service,
+            type_properties,
+        }
+    }
+}
+#[doc = "Microsoft Fabric Warehouse linked service properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WarehouseLinkedServiceTypeProperties {
+    #[doc = "The ID of Microsoft Fabric Warehouse artifact. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "artifactId")]
+    pub artifact_id: serde_json::Value,
+    #[doc = "The endpoint of Microsoft Fabric Warehouse server. Type: string (or Expression with resultType string)."]
+    pub endpoint: serde_json::Value,
+    #[doc = "The ID of Microsoft Fabric workspace. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "workspaceId", default, skip_serializing_if = "Option::is_none")]
+    pub workspace_id: Option<serde_json::Value>,
+    #[doc = "The ID of the application used to authenticate against Microsoft Fabric Warehouse. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "servicePrincipalId", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_id: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "servicePrincipalKey", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_key: Option<SecretBaseUnion>,
+    #[doc = "The name or ID of the tenant to which the service principal belongs. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant: Option<serde_json::Value>,
+    #[doc = "The encrypted credential used for authentication. Credentials are encrypted using the integration runtime credential manager. Type: string."]
+    #[serde(rename = "encryptedCredential", default, skip_serializing_if = "Option::is_none")]
+    pub encrypted_credential: Option<String>,
+    #[doc = "The service principal credential type to use in Server-To-Server authentication. 'ServicePrincipalKey' for key/secret, 'ServicePrincipalCert' for certificate. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "servicePrincipalCredentialType", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential_type: Option<serde_json::Value>,
+    #[doc = "The base definition of a secret type."]
+    #[serde(rename = "servicePrincipalCredential", default, skip_serializing_if = "Option::is_none")]
+    pub service_principal_credential: Option<SecretBaseUnion>,
+}
+impl WarehouseLinkedServiceTypeProperties {
+    pub fn new(artifact_id: serde_json::Value, endpoint: serde_json::Value) -> Self {
+        Self {
+            artifact_id,
+            endpoint,
+            workspace_id: None,
+            service_principal_id: None,
+            service_principal_key: None,
+            tenant: None,
+            encrypted_credential: None,
+            service_principal_credential_type: None,
+            service_principal_credential: None,
+        }
+    }
+}
+#[doc = "A copy activity Microsoft Fabric Warehouse sink."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WarehouseSink {
+    #[serde(flatten)]
+    pub copy_sink: CopySink,
+    #[doc = "SQL pre-copy script. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "preCopyScript", default, skip_serializing_if = "Option::is_none")]
+    pub pre_copy_script: Option<serde_json::Value>,
+    #[doc = "Indicates to use Copy Command to copy data into SQL Data Warehouse. Type: boolean (or Expression with resultType boolean)."]
+    #[serde(rename = "allowCopyCommand", default, skip_serializing_if = "Option::is_none")]
+    pub allow_copy_command: Option<serde_json::Value>,
+    #[doc = "DW Copy Command settings."]
+    #[serde(rename = "copyCommandSettings", default, skip_serializing_if = "Option::is_none")]
+    pub copy_command_settings: Option<DwCopyCommandSettings>,
+    #[doc = "The option to handle sink table, such as autoCreate. For now only 'autoCreate' value is supported. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "tableOption", default, skip_serializing_if = "Option::is_none")]
+    pub table_option: Option<serde_json::Value>,
+    #[doc = "Write behavior when copying data into azure Microsoft Fabric Data Warehouse. Type: DWWriteBehaviorEnum (or Expression with resultType DWWriteBehaviorEnum)"]
+    #[serde(rename = "writeBehavior", default, skip_serializing_if = "Option::is_none")]
+    pub write_behavior: Option<serde_json::Value>,
+}
+impl WarehouseSink {
+    pub fn new(copy_sink: CopySink) -> Self {
+        Self {
+            copy_sink,
+            pre_copy_script: None,
+            allow_copy_command: None,
+            copy_command_settings: None,
+            table_option: None,
+            write_behavior: None,
+        }
+    }
+}
+#[doc = "A copy activity Microsoft Fabric Warehouse source."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WarehouseSource {
+    #[serde(flatten)]
+    pub tabular_source: TabularSource,
+    #[doc = "Microsoft Fabric Warehouse reader query. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "sqlReaderQuery", default, skip_serializing_if = "Option::is_none")]
+    pub sql_reader_query: Option<serde_json::Value>,
+    #[doc = "Name of the stored procedure for a Microsoft Fabric Warehouse source. This cannot be used at the same time as SqlReaderQuery. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "sqlReaderStoredProcedureName", default, skip_serializing_if = "Option::is_none")]
+    pub sql_reader_stored_procedure_name: Option<serde_json::Value>,
+    #[doc = "Value and type setting for stored procedure parameters. Example: \"{Parameter1: {value: \"1\", type: \"int\"}}\". Type: object (or Expression with resultType object), itemType: StoredProcedureParameter."]
+    #[serde(rename = "storedProcedureParameters", default, skip_serializing_if = "Option::is_none")]
+    pub stored_procedure_parameters: Option<serde_json::Value>,
+    #[doc = "Specifies the transaction locking behavior for the Microsoft Fabric Warehouse source. Allowed values: ReadCommitted/ReadUncommitted/RepeatableRead/Serializable/Snapshot. The default value is ReadCommitted. Type: string (or Expression with resultType string)."]
+    #[serde(rename = "isolationLevel", default, skip_serializing_if = "Option::is_none")]
+    pub isolation_level: Option<serde_json::Value>,
+    #[doc = "The partition mechanism that will be used for Sql read in parallel. Possible values include: \"None\", \"PhysicalPartitionsOfTable\", \"DynamicRange\"."]
+    #[serde(rename = "partitionOption", default, skip_serializing_if = "Option::is_none")]
+    pub partition_option: Option<serde_json::Value>,
+    #[doc = "The settings that will be leveraged for Sql source partitioning."]
+    #[serde(rename = "partitionSettings", default, skip_serializing_if = "Option::is_none")]
+    pub partition_settings: Option<SqlPartitionSettings>,
+}
+impl WarehouseSource {
+    pub fn new(tabular_source: TabularSource) -> Self {
+        Self {
+            tabular_source,
+            sql_reader_query: None,
+            sql_reader_stored_procedure_name: None,
+            stored_procedure_parameters: None,
+            isolation_level: None,
+            partition_option: None,
+            partition_settings: None,
+        }
+    }
+}
+#[doc = "Microsoft Fabric Warehouse dataset."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct WarehouseTableDataset {
+    #[serde(flatten)]
+    pub dataset: Dataset,
+    #[doc = "Microsoft Fabric Warehouse dataset properties."]
+    #[serde(rename = "typeProperties", default, skip_serializing_if = "Option::is_none")]
+    pub type_properties: Option<WarehouseTableDatasetTypeProperties>,
+}
+impl WarehouseTableDataset {
+    pub fn new(dataset: Dataset) -> Self {
+        Self {
+            dataset,
+            type_properties: None,
+        }
+    }
+}
+#[doc = "Microsoft Fabric Warehouse dataset properties."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct WarehouseTableDatasetTypeProperties {
+    #[doc = "The schema name of the Microsoft Fabric Warehouse. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schema: Option<serde_json::Value>,
+    #[doc = "The table name of the Microsoft Fabric Warehouse. Type: string (or Expression with resultType string)."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub table: Option<serde_json::Value>,
+}
+impl WarehouseTableDatasetTypeProperties {
+    pub fn new() -> Self {
+        Self::default()
     }
 }
 #[doc = "Web activity."]

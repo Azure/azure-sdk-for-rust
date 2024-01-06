@@ -1,6 +1,6 @@
 use crate::clients::PathClient;
 use crate::request_options::*;
-use azure_core::{prelude::*, Request};
+use azure_core::{prelude::*, Pageable, Request};
 use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::headers::CommonStorageResponseHeaders;
 use std::convert::TryInto;
@@ -15,27 +15,29 @@ operation! {
 }
 
 impl<C: PathClient + 'static> DeletePathBuilder<C> {
-    pub fn into_future(self) -> DeletePath {
-        Box::pin(async move {
-            let mut url = self.client.url()?;
+    pub fn into_stream(self) -> Pageable<DeletePathResponse, azure_core::error::Error> {
+        let make_request = move |continuation: Option<NextMarker>| {
+            let this = self.clone();
+            let mut ctx = self.context.clone();
 
-            if let Some(continuation) = self.continuation {
-                continuation.append_to_url_query_as_continuation(&mut url);
-            };
-            self.recursive.append_to_url_query(&mut url);
+            async move {
+                let mut url = this.client.url()?;
 
-            let mut request = Request::new(url, azure_core::Method::Delete);
+                let continuation = continuation.or_else(|| this.continuation.clone());
+                if let Some(continuation) = continuation {
+                    continuation.append_to_url_query_as_continuation(&mut url);
+                };
+                this.recursive.append_to_url_query(&mut url);
 
-            request.insert_headers(&self.if_match_condition);
-            request.insert_headers(&self.if_modified_since);
+                let mut request = Request::new(url, azure_core::Method::Delete);
 
-            let response = self
-                .client
-                .send(&mut self.context.clone(), &mut request)
-                .await?;
-
-            DeletePathResponse::try_from(response).await
-        })
+                request.insert_headers(&this.if_match_condition);
+                request.insert_headers(&this.if_modified_since);
+                let response = this.client.send(&mut ctx, &mut request).await?;
+                DeletePathResponse::try_from(response).await
+            }
+        };
+        Pageable::new(make_request)
     }
 }
 
@@ -53,5 +55,12 @@ impl DeletePathResponse {
             common_storage_response_headers: (&headers).try_into()?,
             continuation: NextMarker::from_header_optional(&headers)?,
         })
+    }
+}
+
+impl Continuable for DeletePathResponse {
+    type Continuation = NextMarker;
+    fn continuation(&self) -> Option<Self::Continuation> {
+        self.continuation.clone()
     }
 }

@@ -229,6 +229,10 @@ impl TokenCredential for DefaultAzureCredentialEnum {
                     "error getting token credential from Azure CLI",
                 )
             }
+            DefaultAzureCredentialEnum::AzureCli(credential) => credential
+                .get_token(scopes)
+                .await
+                .context(ErrorKind::Credential, "az-cli"),
         }
     }
 
@@ -322,9 +326,18 @@ impl TokenCredential for DefaultAzureCredential {
 }
 
 fn format_aggregate_error(errors: &[Error]) -> String {
+    use std::error::Error;
     errors
         .iter()
-        .map(ToString::to_string)
+        .map(|e| {
+            let mut current: Option<&dyn Error> = Some(e);
+            let mut stack = vec![];
+            while let Some(err) = current.take() {
+                stack.push(err.to_string());
+                current = err.source();
+            }
+            stack.join(" - ")
+        })
         .collect::<Vec<String>>()
         .join("\n")
 }

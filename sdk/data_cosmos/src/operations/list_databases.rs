@@ -11,7 +11,8 @@ operation! {
     ListDatabases,
     client: CosmosClient,
     ?max_item_count: MaxItemCount,
-    ?consistency_level: ConsistencyLevel
+    ?consistency_level: ConsistencyLevel,
+    ?continuation: Continuation,
 }
 
 impl ListDatabasesBuilder {
@@ -25,6 +26,9 @@ impl ListDatabasesBuilder {
                     request.insert_headers(cl);
                 }
                 request.insert_headers(&this.max_item_count.unwrap_or_default());
+                request.insert_headers(&continuation);
+
+                let continuation = continuation.or(this.continuation);
                 request.insert_headers(&continuation);
 
                 let response = this

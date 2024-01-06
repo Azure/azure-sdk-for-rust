@@ -3,7 +3,7 @@
 use serde::de::{value, Deserializer, IntoDeserializer};
 use serde::{Deserialize, Serialize, Serializer};
 use std::str::FromStr;
-#[doc = "Azure Large Instance info on Azure (ARM properties and AzureLargeInstance properties)"]
+#[doc = "Azure Large Instance info on Azure (ARM properties and AzureLargeInstance\nproperties)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureLargeInstance {
     #[serde(flatten)]
@@ -20,17 +20,93 @@ impl AzureLargeInstance {
         }
     }
 }
-#[doc = "The response from the List Azure Large Instances operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[doc = "Enum of two possible values to determine if the ALI instance restart operation should forcefully terminate and halt any existing processes that may be running on the server or not."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "AzureLargeInstanceForcePowerState")]
+pub enum AzureLargeInstanceForcePowerState {
+    #[serde(rename = "active")]
+    Active,
+    #[serde(rename = "inactive")]
+    Inactive,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for AzureLargeInstanceForcePowerState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for AzureLargeInstanceForcePowerState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for AzureLargeInstanceForcePowerState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Active => serializer.serialize_unit_variant("AzureLargeInstanceForcePowerState", 0u32, "active"),
+            Self::Inactive => serializer.serialize_unit_variant("AzureLargeInstanceForcePowerState", 1u32, "inactive"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "Enum of the hardware options (vendor and/or their product name) for an Azure Large Instance"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "AzureLargeInstanceHardwareTypeNamesEnum")]
+pub enum AzureLargeInstanceHardwareTypeNamesEnum {
+    #[serde(rename = "Cisco_UCS")]
+    CiscoUcs,
+    #[serde(rename = "HPE")]
+    Hpe,
+    #[serde(rename = "SDFLEX")]
+    Sdflex,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for AzureLargeInstanceHardwareTypeNamesEnum {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for AzureLargeInstanceHardwareTypeNamesEnum {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for AzureLargeInstanceHardwareTypeNamesEnum {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::CiscoUcs => serializer.serialize_unit_variant("AzureLargeInstanceHardwareTypeNamesEnum", 0u32, "Cisco_UCS"),
+            Self::Hpe => serializer.serialize_unit_variant("AzureLargeInstanceHardwareTypeNamesEnum", 1u32, "HPE"),
+            Self::Sdflex => serializer.serialize_unit_variant("AzureLargeInstanceHardwareTypeNamesEnum", 2u32, "SDFLEX"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "The response of a AzureLargeInstance list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureLargeInstanceListResult {
-    #[doc = "The list of Azure Large Instances."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[doc = "The AzureLargeInstance items on this page"]
     pub value: Vec<AzureLargeInstance>,
-    #[doc = "The URL to get the next set of Azure Large Instances."]
+    #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -41,8 +117,59 @@ impl azure_core::Continuable for AzureLargeInstanceListResult {
     }
 }
 impl AzureLargeInstanceListResult {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(value: Vec<AzureLargeInstance>) -> Self {
+        Self { value, next_link: None }
+    }
+}
+#[doc = "Power states that an Azure Large Instance can be in"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "AzureLargeInstancePowerStateEnum")]
+pub enum AzureLargeInstancePowerStateEnum {
+    #[serde(rename = "starting")]
+    Starting,
+    #[serde(rename = "started")]
+    Started,
+    #[serde(rename = "stopping")]
+    Stopping,
+    #[serde(rename = "stopped")]
+    Stopped,
+    #[serde(rename = "restarting")]
+    Restarting,
+    #[serde(rename = "unknown")]
+    Unknown,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for AzureLargeInstancePowerStateEnum {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for AzureLargeInstancePowerStateEnum {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for AzureLargeInstancePowerStateEnum {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Starting => serializer.serialize_unit_variant("AzureLargeInstancePowerStateEnum", 0u32, "starting"),
+            Self::Started => serializer.serialize_unit_variant("AzureLargeInstancePowerStateEnum", 1u32, "started"),
+            Self::Stopping => serializer.serialize_unit_variant("AzureLargeInstancePowerStateEnum", 2u32, "stopping"),
+            Self::Stopped => serializer.serialize_unit_variant("AzureLargeInstancePowerStateEnum", 3u32, "stopped"),
+            Self::Restarting => serializer.serialize_unit_variant("AzureLargeInstancePowerStateEnum", 4u32, "restarting"),
+            Self::Unknown => serializer.serialize_unit_variant("AzureLargeInstancePowerStateEnum", 5u32, "unknown"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
     }
 }
 #[doc = "Describes the properties of an Azure Large Instance."]
@@ -63,131 +190,212 @@ pub struct AzureLargeInstanceProperties {
     #[doc = "Specifies the Azure Large Instance unique ID."]
     #[serde(rename = "azureLargeInstanceId", default, skip_serializing_if = "Option::is_none")]
     pub azure_large_instance_id: Option<String>,
-    #[doc = "Resource power state"]
+    #[doc = "Power states that an Azure Large Instance can be in"]
     #[serde(rename = "powerState", default, skip_serializing_if = "Option::is_none")]
-    pub power_state: Option<azure_large_instance_properties::PowerState>,
+    pub power_state: Option<AzureLargeInstancePowerStateEnum>,
     #[doc = "Resource proximity placement group"]
     #[serde(rename = "proximityPlacementGroup", default, skip_serializing_if = "Option::is_none")]
     pub proximity_placement_group: Option<String>,
     #[doc = "Hardware revision of an Azure Large Instance"]
     #[serde(rename = "hwRevision", default, skip_serializing_if = "Option::is_none")]
     pub hw_revision: Option<String>,
-    #[doc = "ARM ID of another AzureLargeInstance that will share a network with this AzureLargeInstance"]
+    #[doc = "ARM ID of another AzureLargeInstance that will share a network with this\nAzureLargeInstance"]
     #[serde(rename = "partnerNodeId", default, skip_serializing_if = "Option::is_none")]
     pub partner_node_id: Option<String>,
-    #[doc = "State of provisioning of the AzureLargeInstance"]
+    #[doc = "Provisioning states that an Azure Large Instance can be in"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<azure_large_instance_properties::ProvisioningState>,
+    pub provisioning_state: Option<AzureLargeInstanceProvisioningStatesEnum>,
 }
 impl AzureLargeInstanceProperties {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub mod azure_large_instance_properties {
-    use super::*;
-    #[doc = "Resource power state"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "PowerState")]
-    pub enum PowerState {
-        #[serde(rename = "starting")]
-        Starting,
-        #[serde(rename = "started")]
-        Started,
-        #[serde(rename = "stopping")]
-        Stopping,
-        #[serde(rename = "stopped")]
-        Stopped,
-        #[serde(rename = "restarting")]
-        Restarting,
-        #[serde(rename = "unknown")]
-        Unknown,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
+#[doc = "Provisioning states that an Azure Large Instance can be in"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "AzureLargeInstanceProvisioningStatesEnum")]
+pub enum AzureLargeInstanceProvisioningStatesEnum {
+    Accepted,
+    Creating,
+    Updating,
+    Failed,
+    Succeeded,
+    Deleting,
+    Migrating,
+    Canceled,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for AzureLargeInstanceProvisioningStatesEnum {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
     }
-    impl FromStr for PowerState {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
+}
+impl<'de> Deserialize<'de> for AzureLargeInstanceProvisioningStatesEnum {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
     }
-    impl<'de> Deserialize<'de> for PowerState {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for PowerState {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Starting => serializer.serialize_unit_variant("PowerState", 0u32, "starting"),
-                Self::Started => serializer.serialize_unit_variant("PowerState", 1u32, "started"),
-                Self::Stopping => serializer.serialize_unit_variant("PowerState", 2u32, "stopping"),
-                Self::Stopped => serializer.serialize_unit_variant("PowerState", 3u32, "stopped"),
-                Self::Restarting => serializer.serialize_unit_variant("PowerState", 4u32, "restarting"),
-                Self::Unknown => serializer.serialize_unit_variant("PowerState", 5u32, "unknown"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "State of provisioning of the AzureLargeInstance"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ProvisioningState")]
-    pub enum ProvisioningState {
-        Accepted,
-        Creating,
-        Updating,
-        Failed,
-        Succeeded,
-        Deleting,
-        Migrating,
-        Canceled,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ProvisioningState {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ProvisioningState {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ProvisioningState {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Accepted => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Accepted"),
-                Self::Creating => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Creating"),
-                Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Updating"),
-                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Failed"),
-                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Succeeded"),
-                Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 5u32, "Deleting"),
-                Self::Migrating => serializer.serialize_unit_variant("ProvisioningState", 6u32, "Migrating"),
-                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 7u32, "Canceled"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
+}
+impl Serialize for AzureLargeInstanceProvisioningStatesEnum {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Accepted => serializer.serialize_unit_variant("AzureLargeInstanceProvisioningStatesEnum", 0u32, "Accepted"),
+            Self::Creating => serializer.serialize_unit_variant("AzureLargeInstanceProvisioningStatesEnum", 1u32, "Creating"),
+            Self::Updating => serializer.serialize_unit_variant("AzureLargeInstanceProvisioningStatesEnum", 2u32, "Updating"),
+            Self::Failed => serializer.serialize_unit_variant("AzureLargeInstanceProvisioningStatesEnum", 3u32, "Failed"),
+            Self::Succeeded => serializer.serialize_unit_variant("AzureLargeInstanceProvisioningStatesEnum", 4u32, "Succeeded"),
+            Self::Deleting => serializer.serialize_unit_variant("AzureLargeInstanceProvisioningStatesEnum", 5u32, "Deleting"),
+            Self::Migrating => serializer.serialize_unit_variant("AzureLargeInstanceProvisioningStatesEnum", 6u32, "Migrating"),
+            Self::Canceled => serializer.serialize_unit_variant("AzureLargeInstanceProvisioningStatesEnum", 7u32, "Canceled"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }
-#[doc = "AzureLargeStorageInstance info on Azure (ARM properties and AzureLargeStorageInstance properties)"]
+#[doc = "Enum of available model types (each of which have their own storage / memory sizes) for an Azure Large Instance type. See https://docs.microsoft.com/azure/sap/large-instances/hana-available-skus"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "AzureLargeInstanceSizeNamesEnum")]
+pub enum AzureLargeInstanceSizeNamesEnum {
+    S72m,
+    S144m,
+    S72,
+    S144,
+    S192,
+    S192m,
+    S192xm,
+    S96,
+    S112,
+    S224,
+    S224m,
+    S224om,
+    S224oo,
+    S224oom,
+    S224ooo,
+    S224se,
+    S384,
+    S384m,
+    S384xm,
+    S384xxm,
+    S448,
+    S448m,
+    S448om,
+    S448oo,
+    S448oom,
+    S448ooo,
+    S448se,
+    S576m,
+    S576xm,
+    S672,
+    S672m,
+    S672om,
+    S672oo,
+    S672oom,
+    S672ooo,
+    S768,
+    S768m,
+    S768xm,
+    S896,
+    S896m,
+    S896om,
+    S896oo,
+    S896oom,
+    S896ooo,
+    S960m,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for AzureLargeInstanceSizeNamesEnum {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for AzureLargeInstanceSizeNamesEnum {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for AzureLargeInstanceSizeNamesEnum {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::S72m => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 0u32, "S72m"),
+            Self::S144m => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 1u32, "S144m"),
+            Self::S72 => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 2u32, "S72"),
+            Self::S144 => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 3u32, "S144"),
+            Self::S192 => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 4u32, "S192"),
+            Self::S192m => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 5u32, "S192m"),
+            Self::S192xm => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 6u32, "S192xm"),
+            Self::S96 => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 7u32, "S96"),
+            Self::S112 => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 8u32, "S112"),
+            Self::S224 => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 9u32, "S224"),
+            Self::S224m => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 10u32, "S224m"),
+            Self::S224om => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 11u32, "S224om"),
+            Self::S224oo => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 12u32, "S224oo"),
+            Self::S224oom => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 13u32, "S224oom"),
+            Self::S224ooo => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 14u32, "S224ooo"),
+            Self::S224se => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 15u32, "S224se"),
+            Self::S384 => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 16u32, "S384"),
+            Self::S384m => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 17u32, "S384m"),
+            Self::S384xm => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 18u32, "S384xm"),
+            Self::S384xxm => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 19u32, "S384xxm"),
+            Self::S448 => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 20u32, "S448"),
+            Self::S448m => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 21u32, "S448m"),
+            Self::S448om => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 22u32, "S448om"),
+            Self::S448oo => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 23u32, "S448oo"),
+            Self::S448oom => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 24u32, "S448oom"),
+            Self::S448ooo => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 25u32, "S448ooo"),
+            Self::S448se => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 26u32, "S448se"),
+            Self::S576m => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 27u32, "S576m"),
+            Self::S576xm => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 28u32, "S576xm"),
+            Self::S672 => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 29u32, "S672"),
+            Self::S672m => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 30u32, "S672m"),
+            Self::S672om => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 31u32, "S672om"),
+            Self::S672oo => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 32u32, "S672oo"),
+            Self::S672oom => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 33u32, "S672oom"),
+            Self::S672ooo => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 34u32, "S672ooo"),
+            Self::S768 => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 35u32, "S768"),
+            Self::S768m => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 36u32, "S768m"),
+            Self::S768xm => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 37u32, "S768xm"),
+            Self::S896 => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 38u32, "S896"),
+            Self::S896m => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 39u32, "S896m"),
+            Self::S896om => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 40u32, "S896om"),
+            Self::S896oo => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 41u32, "S896oo"),
+            Self::S896oom => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 42u32, "S896oom"),
+            Self::S896ooo => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 43u32, "S896ooo"),
+            Self::S960m => serializer.serialize_unit_variant("AzureLargeInstanceSizeNamesEnum", 44u32, "S960m"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
+#[doc = "The type used for updating tags in AzureLargeInstance resources."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureLargeInstanceTagsUpdate {
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl AzureLargeInstanceTagsUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "AzureLargeStorageInstance info on Azure (ARM properties and\nAzureLargeStorageInstance properties)"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureLargeStorageInstance {
     #[serde(flatten)]
@@ -195,30 +403,21 @@ pub struct AzureLargeStorageInstance {
     #[doc = "Describes the properties of an AzureLargeStorageInstance."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub properties: Option<AzureLargeStorageInstanceProperties>,
-    #[doc = "Metadata pertaining to creation and last modification of the resource."]
-    #[serde(rename = "systemData", default, skip_serializing_if = "Option::is_none")]
-    pub system_data: Option<SystemData>,
 }
 impl AzureLargeStorageInstance {
     pub fn new(tracked_resource: TrackedResource) -> Self {
         Self {
             tracked_resource,
             properties: None,
-            system_data: None,
         }
     }
 }
-#[doc = "The response from the Get AzureLargeStorageInstances operation."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+#[doc = "The response of a AzureLargeStorageInstance list operation."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AzureLargeStorageInstanceListResult {
-    #[doc = "The list of AzureLargeStorage instances."]
-    #[serde(
-        default,
-        deserialize_with = "azure_core::util::deserialize_null_as_default",
-        skip_serializing_if = "Vec::is_empty"
-    )]
+    #[doc = "The AzureLargeStorageInstance items on this page"]
     pub value: Vec<AzureLargeStorageInstance>,
-    #[doc = "The URL to get the next set of AzureLargeStorage instances."]
+    #[doc = "The link to the next page of items"]
     #[serde(rename = "nextLink", default, skip_serializing_if = "Option::is_none")]
     pub next_link: Option<String>,
 }
@@ -229,8 +428,8 @@ impl azure_core::Continuable for AzureLargeStorageInstanceListResult {
     }
 }
 impl AzureLargeStorageInstanceListResult {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new(value: Vec<AzureLargeStorageInstance>) -> Self {
+        Self { value, next_link: None }
     }
 }
 #[doc = "Describes the properties of an AzureLargeStorageInstance."]
@@ -252,6 +451,59 @@ impl AzureLargeStorageInstanceProperties {
         Self::default()
     }
 }
+#[doc = "The type used for updating tags in AzureLargeStorageInstance resources."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct AzureLargeStorageInstanceTagsUpdate {
+    #[doc = "Resource tags."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<serde_json::Value>,
+}
+impl AzureLargeStorageInstanceTagsUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "The type of identity that created the resource: User, Application, ManagedIdentity"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "CreatedByType")]
+pub enum CreatedByType {
+    User,
+    Application,
+    ManagedIdentity,
+    Key,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for CreatedByType {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for CreatedByType {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for CreatedByType {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::User => serializer.serialize_unit_variant("CreatedByType", 0u32, "User"),
+            Self::Application => serializer.serialize_unit_variant("CreatedByType", 1u32, "Application"),
+            Self::ManagedIdentity => serializer.serialize_unit_variant("CreatedByType", 2u32, "ManagedIdentity"),
+            Self::Key => serializer.serialize_unit_variant("CreatedByType", 3u32, "Key"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "Specifies the disk information fo the Azure Large Instance"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Disk {
@@ -261,7 +513,7 @@ pub struct Disk {
     #[doc = "Specifies the size of an empty data disk in gigabytes."]
     #[serde(rename = "diskSizeGB", default, skip_serializing_if = "Option::is_none")]
     pub disk_size_gb: Option<i32>,
-    #[doc = "Specifies the logical unit number of the data disk. This value is used to identify data disks within the VM and therefore must be unique for each data disk attached to a VM."]
+    #[doc = "Specifies the logical unit number of the data disk. This value is used to\nidentify data disks within the VM and therefore must be unique for each data\ndisk attached to a VM."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lun: Option<i32>,
 }
@@ -336,241 +588,31 @@ impl ErrorResponse {
         Self::default()
     }
 }
-#[doc = "The active state empowers the server with the ability to forcefully terminate and halt any existing processes that may be running on the server"]
+#[doc = "The active state empowers the server with the ability to forcefully terminate\nand halt any existing processes that may be running on the server"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct ForceState {
-    #[doc = "Whether to force restart by shutting all processes."]
+    #[doc = "Enum of two possible values to determine if the ALI instance restart operation should forcefully terminate and halt any existing processes that may be running on the server or not."]
     #[serde(rename = "forceState", default, skip_serializing_if = "Option::is_none")]
-    pub force_state: Option<force_state::ForceState>,
+    pub force_state: Option<AzureLargeInstanceForcePowerState>,
 }
 impl ForceState {
     pub fn new() -> Self {
         Self::default()
     }
 }
-pub mod force_state {
-    use super::*;
-    #[doc = "Whether to force restart by shutting all processes."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ForceState")]
-    pub enum ForceState {
-        #[serde(rename = "active")]
-        Active,
-        #[serde(rename = "inactive")]
-        Inactive,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ForceState {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ForceState {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ForceState {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Active => serializer.serialize_unit_variant("ForceState", 0u32, "active"),
-                Self::Inactive => serializer.serialize_unit_variant("ForceState", 1u32, "inactive"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-}
 #[doc = "Specifies the hardware settings for the Azure Large Instance."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct HardwareProfile {
-    #[doc = "Name of the hardware type (vendor and/or their product name)"]
+    #[doc = "Enum of the hardware options (vendor and/or their product name) for an Azure Large Instance"]
     #[serde(rename = "hardwareType", default, skip_serializing_if = "Option::is_none")]
-    pub hardware_type: Option<hardware_profile::HardwareType>,
-    #[doc = "Specifies the Azure Large Instance SKU."]
+    pub hardware_type: Option<AzureLargeInstanceHardwareTypeNamesEnum>,
+    #[doc = "Enum of available model types (each of which have their own storage / memory sizes) for an Azure Large Instance type. See https://docs.microsoft.com/azure/sap/large-instances/hana-available-skus"]
     #[serde(rename = "azureLargeInstanceSize", default, skip_serializing_if = "Option::is_none")]
-    pub azure_large_instance_size: Option<hardware_profile::AzureLargeInstanceSize>,
+    pub azure_large_instance_size: Option<AzureLargeInstanceSizeNamesEnum>,
 }
 impl HardwareProfile {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-pub mod hardware_profile {
-    use super::*;
-    #[doc = "Name of the hardware type (vendor and/or their product name)"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "HardwareType")]
-    pub enum HardwareType {
-        #[serde(rename = "Cisco_UCS")]
-        CiscoUcs,
-        #[serde(rename = "HPE")]
-        Hpe,
-        #[serde(rename = "SDFLEX")]
-        Sdflex,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for HardwareType {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for HardwareType {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for HardwareType {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::CiscoUcs => serializer.serialize_unit_variant("HardwareType", 0u32, "Cisco_UCS"),
-                Self::Hpe => serializer.serialize_unit_variant("HardwareType", 1u32, "HPE"),
-                Self::Sdflex => serializer.serialize_unit_variant("HardwareType", 2u32, "SDFLEX"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
-    }
-    #[doc = "Specifies the Azure Large Instance SKU."]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "AzureLargeInstanceSize")]
-    pub enum AzureLargeInstanceSize {
-        S72m,
-        S144m,
-        S72,
-        S144,
-        S192,
-        S192m,
-        S192xm,
-        S96,
-        S112,
-        S224,
-        S224m,
-        S224om,
-        S224oo,
-        S224oom,
-        S224ooo,
-        S224se,
-        S384,
-        S384m,
-        S384xm,
-        S384xxm,
-        S448,
-        S448m,
-        S448om,
-        S448oo,
-        S448oom,
-        S448ooo,
-        S448se,
-        S576m,
-        S576xm,
-        S672,
-        S672m,
-        S672om,
-        S672oo,
-        S672oom,
-        S672ooo,
-        S768,
-        S768m,
-        S768xm,
-        S896,
-        S896m,
-        S896om,
-        S896oo,
-        S896oom,
-        S896ooo,
-        S960m,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for AzureLargeInstanceSize {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for AzureLargeInstanceSize {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for AzureLargeInstanceSize {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::S72m => serializer.serialize_unit_variant("AzureLargeInstanceSize", 0u32, "S72m"),
-                Self::S144m => serializer.serialize_unit_variant("AzureLargeInstanceSize", 1u32, "S144m"),
-                Self::S72 => serializer.serialize_unit_variant("AzureLargeInstanceSize", 2u32, "S72"),
-                Self::S144 => serializer.serialize_unit_variant("AzureLargeInstanceSize", 3u32, "S144"),
-                Self::S192 => serializer.serialize_unit_variant("AzureLargeInstanceSize", 4u32, "S192"),
-                Self::S192m => serializer.serialize_unit_variant("AzureLargeInstanceSize", 5u32, "S192m"),
-                Self::S192xm => serializer.serialize_unit_variant("AzureLargeInstanceSize", 6u32, "S192xm"),
-                Self::S96 => serializer.serialize_unit_variant("AzureLargeInstanceSize", 7u32, "S96"),
-                Self::S112 => serializer.serialize_unit_variant("AzureLargeInstanceSize", 8u32, "S112"),
-                Self::S224 => serializer.serialize_unit_variant("AzureLargeInstanceSize", 9u32, "S224"),
-                Self::S224m => serializer.serialize_unit_variant("AzureLargeInstanceSize", 10u32, "S224m"),
-                Self::S224om => serializer.serialize_unit_variant("AzureLargeInstanceSize", 11u32, "S224om"),
-                Self::S224oo => serializer.serialize_unit_variant("AzureLargeInstanceSize", 12u32, "S224oo"),
-                Self::S224oom => serializer.serialize_unit_variant("AzureLargeInstanceSize", 13u32, "S224oom"),
-                Self::S224ooo => serializer.serialize_unit_variant("AzureLargeInstanceSize", 14u32, "S224ooo"),
-                Self::S224se => serializer.serialize_unit_variant("AzureLargeInstanceSize", 15u32, "S224se"),
-                Self::S384 => serializer.serialize_unit_variant("AzureLargeInstanceSize", 16u32, "S384"),
-                Self::S384m => serializer.serialize_unit_variant("AzureLargeInstanceSize", 17u32, "S384m"),
-                Self::S384xm => serializer.serialize_unit_variant("AzureLargeInstanceSize", 18u32, "S384xm"),
-                Self::S384xxm => serializer.serialize_unit_variant("AzureLargeInstanceSize", 19u32, "S384xxm"),
-                Self::S448 => serializer.serialize_unit_variant("AzureLargeInstanceSize", 20u32, "S448"),
-                Self::S448m => serializer.serialize_unit_variant("AzureLargeInstanceSize", 21u32, "S448m"),
-                Self::S448om => serializer.serialize_unit_variant("AzureLargeInstanceSize", 22u32, "S448om"),
-                Self::S448oo => serializer.serialize_unit_variant("AzureLargeInstanceSize", 23u32, "S448oo"),
-                Self::S448oom => serializer.serialize_unit_variant("AzureLargeInstanceSize", 24u32, "S448oom"),
-                Self::S448ooo => serializer.serialize_unit_variant("AzureLargeInstanceSize", 25u32, "S448ooo"),
-                Self::S448se => serializer.serialize_unit_variant("AzureLargeInstanceSize", 26u32, "S448se"),
-                Self::S576m => serializer.serialize_unit_variant("AzureLargeInstanceSize", 27u32, "S576m"),
-                Self::S576xm => serializer.serialize_unit_variant("AzureLargeInstanceSize", 28u32, "S576xm"),
-                Self::S672 => serializer.serialize_unit_variant("AzureLargeInstanceSize", 29u32, "S672"),
-                Self::S672m => serializer.serialize_unit_variant("AzureLargeInstanceSize", 30u32, "S672m"),
-                Self::S672om => serializer.serialize_unit_variant("AzureLargeInstanceSize", 31u32, "S672om"),
-                Self::S672oo => serializer.serialize_unit_variant("AzureLargeInstanceSize", 32u32, "S672oo"),
-                Self::S672oom => serializer.serialize_unit_variant("AzureLargeInstanceSize", 33u32, "S672oom"),
-                Self::S672ooo => serializer.serialize_unit_variant("AzureLargeInstanceSize", 34u32, "S672ooo"),
-                Self::S768 => serializer.serialize_unit_variant("AzureLargeInstanceSize", 35u32, "S768"),
-                Self::S768m => serializer.serialize_unit_variant("AzureLargeInstanceSize", 36u32, "S768m"),
-                Self::S768xm => serializer.serialize_unit_variant("AzureLargeInstanceSize", 37u32, "S768xm"),
-                Self::S896 => serializer.serialize_unit_variant("AzureLargeInstanceSize", 38u32, "S896"),
-                Self::S896m => serializer.serialize_unit_variant("AzureLargeInstanceSize", 39u32, "S896m"),
-                Self::S896om => serializer.serialize_unit_variant("AzureLargeInstanceSize", 40u32, "S896om"),
-                Self::S896oo => serializer.serialize_unit_variant("AzureLargeInstanceSize", 41u32, "S896oo"),
-                Self::S896oom => serializer.serialize_unit_variant("AzureLargeInstanceSize", 42u32, "S896oom"),
-                Self::S896ooo => serializer.serialize_unit_variant("AzureLargeInstanceSize", 43u32, "S896ooo"),
-                Self::S960m => serializer.serialize_unit_variant("AzureLargeInstanceSize", 44u32, "S960m"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
     }
 }
 #[doc = "Specifies the IP address of the network interface."]
@@ -601,27 +643,6 @@ pub struct NetworkProfile {
     pub circuit_id: Option<String>,
 }
 impl NetworkProfile {
-    pub fn new() -> Self {
-        Self::default()
-    }
-}
-#[doc = "Specifies the operating system settings for the Azure Large Instance."]
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
-pub struct OsProfile {
-    #[doc = "Specifies the host OS name of the Azure Large Instance."]
-    #[serde(rename = "computerName", default, skip_serializing_if = "Option::is_none")]
-    pub computer_name: Option<String>,
-    #[doc = "This property allows you to specify the type of the OS."]
-    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
-    pub os_type: Option<String>,
-    #[doc = "Specifies version of operating system."]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-    #[doc = "Specifies the SSH public key used to access the operating system."]
-    #[serde(rename = "sshPublicKey", default, skip_serializing_if = "Option::is_none")]
-    pub ssh_public_key: Option<String>,
-}
-impl OsProfile {
     pub fn new() -> Self {
         Self::default()
     }
@@ -825,6 +846,76 @@ impl OperationStatusResult {
         }
     }
 }
+#[doc = "Specifies the operating system settings for the Azure Large Instance."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+pub struct OsProfile {
+    #[doc = "Specifies the host OS name of the Azure Large Instance."]
+    #[serde(rename = "computerName", default, skip_serializing_if = "Option::is_none")]
+    pub computer_name: Option<String>,
+    #[doc = "This property allows you to specify the type of the OS."]
+    #[serde(rename = "osType", default, skip_serializing_if = "Option::is_none")]
+    pub os_type: Option<String>,
+    #[doc = "Specifies version of operating system."]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[doc = "Specifies the SSH public key used to access the operating system."]
+    #[serde(rename = "sshPublicKey", default, skip_serializing_if = "Option::is_none")]
+    pub ssh_public_key: Option<String>,
+}
+impl OsProfile {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+#[doc = "An enum of possible operation states for an AzureLargeStorageInstances"]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "ProvisioningState")]
+pub enum ProvisioningState {
+    Accepted,
+    Creating,
+    Updating,
+    Failed,
+    Succeeded,
+    Deleting,
+    Canceled,
+    Migrating,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for ProvisioningState {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for ProvisioningState {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for ProvisioningState {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Accepted => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Accepted"),
+            Self::Creating => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Creating"),
+            Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Updating"),
+            Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Failed"),
+            Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Succeeded"),
+            Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 5u32, "Deleting"),
+            Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 6u32, "Canceled"),
+            Self::Migrating => serializer.serialize_unit_variant("ProvisioningState", 7u32, "Migrating"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        }
+    }
+}
 #[doc = "Common fields that are returned in the response for all Azure Resource Manager resources"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct Resource {
@@ -867,7 +958,7 @@ pub struct StorageProfile {
     #[doc = "IP Address to connect to storage."]
     #[serde(rename = "nfsIpAddress", default, skip_serializing_if = "Option::is_none")]
     pub nfs_ip_address: Option<String>,
-    #[doc = "Specifies information about the operating system disk used by Azure Large Instance."]
+    #[doc = "Specifies information about the operating system disk used by Azure Large\nInstance."]
     #[serde(
         rename = "osDisks",
         default,
@@ -884,9 +975,9 @@ impl StorageProfile {
 #[doc = "described the storage properties of the azure large storage instance"]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct StorageProperties {
-    #[doc = "State of provisioning of the AzureLargeStorageInstance"]
+    #[doc = "An enum of possible operation states for an AzureLargeStorageInstances"]
     #[serde(rename = "provisioningState", default, skip_serializing_if = "Option::is_none")]
-    pub provisioning_state: Option<storage_properties::ProvisioningState>,
+    pub provisioning_state: Option<ProvisioningState>,
     #[doc = "the offering type for which the resource is getting provisioned"]
     #[serde(rename = "offeringType", default, skip_serializing_if = "Option::is_none")]
     pub offering_type: Option<String>,
@@ -896,9 +987,9 @@ pub struct StorageProperties {
     #[doc = "the kind of storage instance"]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub generation: Option<String>,
-    #[doc = "the hardware type of the storage instance"]
+    #[doc = "Enum of the hardware options (vendor and/or their product name) for an Azure Large Instance"]
     #[serde(rename = "hardwareType", default, skip_serializing_if = "Option::is_none")]
-    pub hardware_type: Option<String>,
+    pub hardware_type: Option<AzureLargeInstanceHardwareTypeNamesEnum>,
     #[doc = "the workload for which the resource is getting provisioned"]
     #[serde(rename = "workloadType", default, skip_serializing_if = "Option::is_none")]
     pub workload_type: Option<String>,
@@ -909,58 +1000,6 @@ pub struct StorageProperties {
 impl StorageProperties {
     pub fn new() -> Self {
         Self::default()
-    }
-}
-pub mod storage_properties {
-    use super::*;
-    #[doc = "State of provisioning of the AzureLargeStorageInstance"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "ProvisioningState")]
-    pub enum ProvisioningState {
-        Accepted,
-        Creating,
-        Updating,
-        Failed,
-        Succeeded,
-        Deleting,
-        Canceled,
-        Migrating,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
-    }
-    impl FromStr for ProvisioningState {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
-        }
-    }
-    impl<'de> Deserialize<'de> for ProvisioningState {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
-        }
-    }
-    impl Serialize for ProvisioningState {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Accepted => serializer.serialize_unit_variant("ProvisioningState", 0u32, "Accepted"),
-                Self::Creating => serializer.serialize_unit_variant("ProvisioningState", 1u32, "Creating"),
-                Self::Updating => serializer.serialize_unit_variant("ProvisioningState", 2u32, "Updating"),
-                Self::Failed => serializer.serialize_unit_variant("ProvisioningState", 3u32, "Failed"),
-                Self::Succeeded => serializer.serialize_unit_variant("ProvisioningState", 4u32, "Succeeded"),
-                Self::Deleting => serializer.serialize_unit_variant("ProvisioningState", 5u32, "Deleting"),
-                Self::Canceled => serializer.serialize_unit_variant("ProvisioningState", 6u32, "Canceled"),
-                Self::Migrating => serializer.serialize_unit_variant("ProvisioningState", 7u32, "Migrating"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
-            }
-        }
     }
 }
 #[doc = "Tags field of the AzureLargeInstance instance."]
@@ -992,6 +1031,42 @@ impl TrackedResource {
             resource: Resource::default(),
             tags: None,
             location,
+        }
+    }
+}
+#[doc = "Azure Large Instance api versions."]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(remote = "Versions")]
+pub enum Versions {
+    #[serde(rename = "2023-07-20-preview")]
+    N2023_07_20_preview,
+    #[serde(skip_deserializing)]
+    UnknownValue(String),
+}
+impl FromStr for Versions {
+    type Err = value::Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        Self::deserialize(s.into_deserializer())
+    }
+}
+impl<'de> Deserialize<'de> for Versions {
+    fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+        Ok(deserialized)
+    }
+}
+impl Serialize for Versions {
+    fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::N2023_07_20_preview => serializer.serialize_unit_variant("Versions", 0u32, "2023-07-20-preview"),
+            Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
         }
     }
 }

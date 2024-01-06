@@ -1,0 +1,6 @@
+[tags]
+# defines `SystemData` multiple times
+deny = [
+    "package-2022-08-preview",
+    "package-2023-12-preview",
+]

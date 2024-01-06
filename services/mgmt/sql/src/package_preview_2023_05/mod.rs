@@ -31843,7 +31843,7 @@ pub mod long_term_retention_policies {
                 subscription_id: subscription_id.into(),
             }
         }
-        #[doc = "Sets a database's long term retention policy."]
+        #[doc = "Set or update a database's long term retention policy."]
         #[doc = ""]
         #[doc = "Arguments:"]
         #[doc = "* `resource_group_name`: The name of the resource group that contains the resource. You can obtain this value from the Azure Resource Manager API or the portal."]

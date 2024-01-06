@@ -5,10 +5,15 @@
 # package-2021-09 has two different AzureResource
 # https://github.com/Azure/azure-rest-api-specs/issues/17289
 deny = [
-    "package-composite-v1",
-    "package-2023-04",
-    "package-2023-01",
-    "package-2022-10",
-    "package-2022-06",
+    "package-2021-07",
     "package-2021-09",
+    "package-2022-06",
+    "package-2022-10",
+    "package-2023-01",
+    "package-2023-04",
+    "package-2023-10",
+    "package-composite-v1",
+    "package-preview-2022-08",
+    "package-preview-2023-03",
+    "package-preview-2023-04",
 ]

@@ -3332,7 +3332,7 @@ pub mod job_configuration {
         }
     }
 }
-#[doc = "Container Apps Jobs execution."]
+#[doc = "Container Apps Job execution."]
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
 pub struct JobExecution {
     #[doc = "Job execution Name."]
@@ -3341,21 +3341,12 @@ pub struct JobExecution {
     #[doc = "Job execution Id."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    #[doc = "Job Type."]
+    #[doc = "Job execution type"]
     #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
     pub type_: Option<String>,
-    #[doc = "Current running State of the job"]
+    #[doc = "Container Apps Job execution specific properties."]
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<job_execution::Status>,
-    #[doc = "Job execution start time."]
-    #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
-    pub start_time: Option<time::OffsetDateTime>,
-    #[doc = "Job execution end time."]
-    #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
-    pub end_time: Option<time::OffsetDateTime>,
-    #[doc = "Job's execution template, containing container configuration for a job's execution"]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub template: Option<JobExecutionTemplate>,
+    pub properties: Option<job_execution::Properties>,
 }
 impl JobExecution {
     pub fn new() -> Self {
@@ -3364,50 +3355,74 @@ impl JobExecution {
 }
 pub mod job_execution {
     use super::*;
-    #[doc = "Current running State of the job"]
-    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
-    #[serde(remote = "Status")]
-    pub enum Status {
-        Running,
-        Processing,
-        Stopped,
-        Degraded,
-        Failed,
-        Unknown,
-        Succeeded,
-        #[serde(skip_deserializing)]
-        UnknownValue(String),
+    #[doc = "Container Apps Job execution specific properties."]
+    #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, Default)]
+    pub struct Properties {
+        #[doc = "Current running State of the job"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub status: Option<properties::Status>,
+        #[doc = "Job execution start time."]
+        #[serde(rename = "startTime", default, with = "azure_core::date::rfc3339::option")]
+        pub start_time: Option<time::OffsetDateTime>,
+        #[doc = "Job execution end time."]
+        #[serde(rename = "endTime", default, with = "azure_core::date::rfc3339::option")]
+        pub end_time: Option<time::OffsetDateTime>,
+        #[doc = "Job's execution template, containing container configuration for a job's execution"]
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub template: Option<JobExecutionTemplate>,
     }
-    impl FromStr for Status {
-        type Err = value::Error;
-        fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-            Self::deserialize(s.into_deserializer())
+    impl Properties {
+        pub fn new() -> Self {
+            Self::default()
         }
     }
-    impl<'de> Deserialize<'de> for Status {
-        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            let s = String::deserialize(deserializer)?;
-            let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
-            Ok(deserialized)
+    pub mod properties {
+        use super::*;
+        #[doc = "Current running State of the job"]
+        #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+        #[serde(remote = "Status")]
+        pub enum Status {
+            Running,
+            Processing,
+            Stopped,
+            Degraded,
+            Failed,
+            Unknown,
+            Succeeded,
+            #[serde(skip_deserializing)]
+            UnknownValue(String),
         }
-    }
-    impl Serialize for Status {
-        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            match self {
-                Self::Running => serializer.serialize_unit_variant("Status", 0u32, "Running"),
-                Self::Processing => serializer.serialize_unit_variant("Status", 1u32, "Processing"),
-                Self::Stopped => serializer.serialize_unit_variant("Status", 2u32, "Stopped"),
-                Self::Degraded => serializer.serialize_unit_variant("Status", 3u32, "Degraded"),
-                Self::Failed => serializer.serialize_unit_variant("Status", 4u32, "Failed"),
-                Self::Unknown => serializer.serialize_unit_variant("Status", 5u32, "Unknown"),
-                Self::Succeeded => serializer.serialize_unit_variant("Status", 6u32, "Succeeded"),
-                Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+        impl FromStr for Status {
+            type Err = value::Error;
+            fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+                Self::deserialize(s.into_deserializer())
+            }
+        }
+        impl<'de> Deserialize<'de> for Status {
+            fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+            where
+                D: Deserializer<'de>,
+            {
+                let s = String::deserialize(deserializer)?;
+                let deserialized = Self::from_str(&s).unwrap_or(Self::UnknownValue(s));
+                Ok(deserialized)
+            }
+        }
+        impl Serialize for Status {
+            fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+            where
+                S: Serializer,
+            {
+                match self {
+                    Self::Running => serializer.serialize_unit_variant("Status", 0u32, "Running"),
+                    Self::Processing => serializer.serialize_unit_variant("Status", 1u32, "Processing"),
+                    Self::Stopped => serializer.serialize_unit_variant("Status", 2u32, "Stopped"),
+                    Self::Degraded => serializer.serialize_unit_variant("Status", 3u32, "Degraded"),
+                    Self::Failed => serializer.serialize_unit_variant("Status", 4u32, "Failed"),
+                    Self::Unknown => serializer.serialize_unit_variant("Status", 5u32, "Unknown"),
+                    Self::Succeeded => serializer.serialize_unit_variant("Status", 6u32, "Succeeded"),
+                    Self::UnknownValue(s) => serializer.serialize_str(s.as_str()),
+                }
             }
         }
     }

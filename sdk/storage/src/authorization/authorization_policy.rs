@@ -8,7 +8,7 @@ use azure_core::{
 };
 use std::{borrow::Cow, ops::Deref, sync::Arc};
 
-const STORAGE_TOKEN_SCOPE: &str = "https://storage.azure.com/";
+const STORAGE_TOKEN_SCOPE: &str = "https://storage.azure.com/.default";
 
 #[derive(Debug, Clone)]
 pub struct AuthorizationPolicy {
