@@ -1,7 +1,7 @@
 //! Azure Identity crate for the unofficial Microsoft Azure SDK for Rust. This crate is part of a collection of crates: for more information please refer to [https://github.com/azure/azure-sdk-for-rust](https://github.com/azure/azure-sdk-for-rust).
 //!
 //! This crate provides several implementations of the [azure_core::auth::TokenCredential](https://docs.rs/azure_core/latest/azure_core/auth/trait.TokenCredential.html) trait.
-//! It is recommended to use `azure_identity::new_credential()`, which will create an instance of `DefaultAzureCredential`. It will in turn attempt to create and use several credential types. If you want to use a specific credential type, the `AZURE_CREDENTIAL_TYPE` environment variable may be set to a value from `azure_credential_types`, such as `azurecli` or `virtualmachine`.
+//! It is recommended to start with `azure_identity::create_credential()?`, which will create an instance of `DefaultAzureCredential` by default. If you want to use a specific credential type, the `AZURE_CREDENTIAL_TYPE` environment variable may be set to a value from `azure_credential_types`, such as `azurecli` or `virtualmachine`.
 //!
 //! ```no_run
 //!#[tokio::main]
@@ -9,7 +9,7 @@
 //!    let subscription_id =
 //!        std::env::var("AZURE_SUBSCRIPTION_ID").expect("AZURE_SUBSCRIPTION_ID required");
 //!
-//!    let credential = azure_identity::new_credential();
+//!    let credential = azure_identity::create_credential()?;
 //!
 //!    // Let's enumerate the Azure storage accounts in the subscription using the REST API directly.
 //!    // This is just an example. It is easier to use the Azure SDK for Rust crates.

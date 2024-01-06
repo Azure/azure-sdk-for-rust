@@ -9,7 +9,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("Missing DEVICE_UPDATE_INSTANCE_ID environment variable.");
     let import_json = env::var("IMPORT_VALUE").expect("Missing IMPORT_VALUE environment variable.");
 
-    let credential = azure_identity::new_credential();
+    let credential = azure_identity::create_credential()?;
     let client = DeviceUpdateClient::new(&device_update_url, credential)?;
 
     let import_update_response = client.import_update(&instance_id, import_json).await?;

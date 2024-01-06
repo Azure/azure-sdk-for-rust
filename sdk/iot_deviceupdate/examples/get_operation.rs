@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let operation_id = env::var("DEVICE_UPDATE_OPERATION_ID")
         .expect("Missing DEVICE_UPDATE_OPERATION_ID environment variable.");
 
-    let credential = azure_identity::new_credential();
+    let credential = azure_identity::create_credential()?;
     let client = DeviceUpdateClient::new(&device_update_url, credential)?;
 
     let get_operation_response = client.get_operation(&instance_id, &operation_id).await?;

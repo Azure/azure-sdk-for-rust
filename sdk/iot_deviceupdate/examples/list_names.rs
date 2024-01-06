@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let provider = env::var("DEVICE_UPDATE_PROVIDER")
         .expect("Missing DEVICE_UPDATE_PROVIDER environment variable.");
 
-    let credential = azure_identity::new_credential();
+    let credential = azure_identity::create_credential()?;
     let client = DeviceUpdateClient::new(&device_update_url, credential)?;
 
     let list_names_response = client.list_names(&instance_id, &provider).await?;

@@ -9,7 +9,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let secret_value =
         env::var("SECRET_VALUE").expect("Missing SECRET_VALUE environment variable.");
 
-    let credential = azure_identity::new_credential();
+    let credential = azure_identity::create_credential()?;
 
     let client = SecretClient::new(&keyvault_url, credential)?;
 

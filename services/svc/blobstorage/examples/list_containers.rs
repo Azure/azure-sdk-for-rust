@@ -18,7 +18,7 @@ async fn main() -> azure_core::Result<()> {
 
     let endpoint = Url::parse(&format!("https://{account_name}.blob.core.windows.net"))?;
     let scopes = &["https://storage.azure.com/.default"];
-    let credential = azure_identity::new_credential();
+    let credential = azure_identity::create_credential()?;
     let client = Client::builder(credential).endpoint(endpoint).scopes(scopes).build()?;
 
     let mut pages = client.service_client().list_containers_segment().maxresults(1).into_stream();

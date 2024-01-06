@@ -18,7 +18,7 @@ async fn main() -> azure_core::Result<()> {
         .nth(3)
         .expect("please specify the blob name as third command line parameter");
 
-    let default_creds = azure_identity::new_credential();
+    let default_creds = azure_identity::create_credential()?;
     let credentials = StorageCredentials::token_credential(default_creds);
     let blob_client = BlobServiceClient::new(account, credentials)
         .container_client(&container)

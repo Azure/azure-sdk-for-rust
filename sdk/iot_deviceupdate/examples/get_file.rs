@@ -16,7 +16,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let file_id = env::var("DEVICE_UPDATE_FILE_ID")
         .expect("Missing DEVICE_UPDATE_FILE_ID environment variable.");
 
-    let credential = azure_identity::new_credential();
+    let credential = azure_identity::create_credential()?;
     let client = DeviceUpdateClient::new(&device_update_url, credential)?;
 
     let get_file_response = client

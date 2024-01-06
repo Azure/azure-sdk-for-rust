@@ -23,7 +23,7 @@ async fn main() -> azure_core::Result<()> {
     env_logger::init();
     let args = Args::parse();
 
-    let default_creds = azure_identity::new_credential();
+    let default_creds = azure_identity::create_credential()?;
     let credentials = StorageCredentials::token_credential(default_creds);
     let client = BlobServiceClient::new(&args.account, credentials);
 
