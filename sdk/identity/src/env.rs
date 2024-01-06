@@ -5,7 +5,7 @@ use azure_core::{
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
-pub enum Env {
+pub(crate) enum Env {
     Process(ProcessEnv),
     Mem(MemEnv),
 }
@@ -39,7 +39,7 @@ impl From<MemEnv> for Env {
 
 /// The standard environment that gets variables from the process.
 #[derive(Debug, Clone, Default)]
-pub struct ProcessEnv;
+pub(crate) struct ProcessEnv;
 
 impl ProcessEnv {
     fn var(&self, key: &str) -> azure_core::Result<String> {
@@ -51,7 +51,7 @@ impl ProcessEnv {
 
 /// An environment that stores and gets variables in memory.
 #[derive(Debug, Clone, Default)]
-pub struct MemEnv {
+pub(crate) struct MemEnv {
     vars: HashMap<String, String>,
 }
 

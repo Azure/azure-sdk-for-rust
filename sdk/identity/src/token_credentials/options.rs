@@ -15,7 +15,7 @@ pub struct TokenCredentialOptions {
 }
 
 /// The default token credential options.
-/// The authority host is taken from the `AZURE_AUTHORITY_HOST` environment variable if set.
+/// The authority host is taken from the `AZURE_AUTHORITY_HOST` environment variable if set and a valid URL.
 /// If not, the default authority host is `https://login.microsoftonline.com` for the Azure public cloud.
 impl Default for TokenCredentialOptions {
     fn default() -> Self {
@@ -34,8 +34,8 @@ impl Default for TokenCredentialOptions {
 }
 
 impl TokenCredentialOptions {
-    /// Create a new `TokenCredentialsOptions`. `default()` may also be used.
-    pub fn new(
+    #[cfg(test)]
+    pub(crate) fn new(
         env: Env,
         http_client: Arc<dyn azure_core::HttpClient>,
         authority_host: Url,
@@ -61,7 +61,7 @@ impl TokenCredentialOptions {
         self.http_client.clone()
     }
 
-    pub fn env(&self) -> &Env {
+    pub(crate) fn env(&self) -> &Env {
         &self.env
     }
 }
