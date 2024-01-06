@@ -33,7 +33,8 @@ pub struct WorkloadIdentityCredential {
 impl WorkloadIdentityCredential {
     /// Create a new `WorkloadIdentityCredential`
     pub fn new<T>(
-        options: impl Into<TokenCredentialOptions>,
+        http_client: Arc<dyn HttpClient>,
+        authority_host: Url,
         tenant_id: String,
         client_id: String,
         token: T,
@@ -41,10 +42,9 @@ impl WorkloadIdentityCredential {
     where
         T: Into<Secret>,
     {
-        let options = options.into();
         Self {
-            http_client: options.http_client().clone(),
-            authority_host: options.authority_host().clone(),
+            http_client,
+            authority_host,
             tenant_id,
             client_id,
             token: token.into(),
@@ -56,6 +56,8 @@ impl WorkloadIdentityCredential {
         options: impl Into<TokenCredentialOptions>,
     ) -> azure_core::Result<WorkloadIdentityCredential> {
         let options = options.into();
+        let http_client = options.http_client();
+        let authority_host = options.authority_host()?;
         let env = options.env();
         let tenant_id =
             env.var(AZURE_TENANT_ID_ENV_KEY)
@@ -79,7 +81,11 @@ impl WorkloadIdentityCredential {
             .map_kind(ErrorKind::Credential)
         {
             return Ok(WorkloadIdentityCredential::new(
-                options, tenant_id, client_id, token,
+                http_client,
+                authority_host,
+                tenant_id,
+                client_id,
+                token,
             ));
         }
 
@@ -97,7 +103,11 @@ impl WorkloadIdentityCredential {
                 },
             )?;
             return Ok(WorkloadIdentityCredential::new(
-                options, tenant_id, client_id, token,
+                http_client,
+                authority_host,
+                tenant_id,
+                client_id,
+                token,
             ));
         }
 

@@ -1,9 +1,10 @@
 use crate::env::Env;
-use azure_core::authority_hosts::AZURE_PUBLIC_CLOUD;
+use azure_core::error::{ErrorKind, ResultExt};
 use std::sync::Arc;
 use url::Url;
 
 const AZURE_AUTHORITY_HOST_ENV_KEY: &str = "AZURE_AUTHORITY_HOST";
+const AZURE_PUBLIC_CLOUD: &str = "https://login.microsoftonline.com";
 
 /// Provides options to configure how the Identity library makes authentication
 /// requests to Azure Active Directory.
@@ -11,7 +12,7 @@ const AZURE_AUTHORITY_HOST_ENV_KEY: &str = "AZURE_AUTHORITY_HOST";
 pub struct TokenCredentialOptions {
     env: Env,
     http_client: Arc<dyn azure_core::HttpClient>,
-    authority_host: Url,
+    authority_host: String,
 }
 
 /// The default token credential options.
@@ -22,8 +23,6 @@ impl Default for TokenCredentialOptions {
         let env = Env::default();
         let authority_host = env
             .var(AZURE_AUTHORITY_HOST_ENV_KEY)
-            .map(|s| Url::parse(&s))
-            .unwrap_or_else(|_| Ok(AZURE_PUBLIC_CLOUD.to_owned()))
             .unwrap_or_else(|_| AZURE_PUBLIC_CLOUD.to_owned());
         Self {
             env: Env::default(),
@@ -35,26 +34,24 @@ impl Default for TokenCredentialOptions {
 
 impl TokenCredentialOptions {
     #[cfg(test)]
-    pub(crate) fn new(
-        env: Env,
-        http_client: Arc<dyn azure_core::HttpClient>,
-        authority_host: Url,
-    ) -> Self {
+    pub(crate) fn new(env: Env, http_client: Arc<dyn azure_core::HttpClient>) -> Self {
         Self {
             env,
             http_client,
-            authority_host,
+            authority_host: AZURE_PUBLIC_CLOUD.to_owned(),
         }
     }
     /// Set the authority host for authentication requests.
-    pub fn set_authority_host(&mut self, authority_host: Url) {
+    pub fn set_authority_host(&mut self, authority_host: String) {
         self.authority_host = authority_host;
     }
 
     /// The authority host to use for authentication requests.  The default is
     /// `https://login.microsoftonline.com`.
-    pub fn authority_host(&self) -> &Url {
-        &self.authority_host
+    pub fn authority_host(&self) -> azure_core::Result<Url> {
+        Url::parse(&self.authority_host).with_context(ErrorKind::DataConversion, || {
+            format!("invalid authority host URL {}", &self.authority_host)
+        })
     }
 
     pub fn http_client(&self) -> Arc<dyn azure_core::HttpClient> {

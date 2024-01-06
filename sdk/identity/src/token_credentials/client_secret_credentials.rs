@@ -41,15 +41,15 @@ pub struct ClientSecretCredential {
 impl ClientSecretCredential {
     /// Create a new `ClientSecretCredential`
     pub fn new(
-        options: impl Into<TokenCredentialOptions>,
+        http_client: Arc<dyn HttpClient>,
+        authority_host: Url,
         tenant_id: String,
         client_id: String,
         client_secret: String,
     ) -> ClientSecretCredential {
-        let options = options.into();
         ClientSecretCredential {
-            http_client: options.http_client().clone(),
-            authority_host: options.authority_host().clone(),
+            http_client,
+            authority_host,
             tenant_id,
             client_id: oauth2::ClientId::new(client_id),
             client_secret: Some(oauth2::ClientSecret::new(client_secret)),
@@ -109,6 +109,8 @@ impl ClientSecretCredential {
         options: impl Into<TokenCredentialOptions>,
     ) -> azure_core::Result<ClientSecretCredential> {
         let options = options.into();
+        let http_client = options.http_client();
+        let authority_host = options.authority_host()?;
         let env = options.env();
         let tenant_id =
             env.var(AZURE_TENANT_ID_ENV_KEY)
@@ -136,7 +138,8 @@ impl ClientSecretCredential {
                 })?;
 
         Ok(ClientSecretCredential::new(
-            options,
+            http_client,
+            authority_host,
             tenant_id,
             client_id,
             client_secret,
