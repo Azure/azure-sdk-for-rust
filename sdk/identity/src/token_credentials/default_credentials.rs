@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::{
     timeout::TimeoutExt, token_credentials::cache::TokenCache, AppServiceManagedIdentityCredential,
-    AzureCliCredential, EnvironmentCredential, SpecificAzureCredential, TokenCredentialOptions,
+    AzureCliCredential, EnvironmentCredential, TokenCredentialOptions,
     VirtualMachineManagedIdentityCredential,
 };
 use azure_core::{
@@ -13,7 +13,6 @@ use azure_core::{
 /// Provides a mechanism of selectively disabling credentials used for a `DefaultAzureCredential` instance
 pub struct DefaultAzureCredentialBuilder {
     options: TokenCredentialOptions,
-    include_specific_credential: bool,
     include_environment_credential: bool,
     include_app_service_managed_identity_credential: bool,
     include_virtual_machine_managed_identity_credential: bool,
@@ -24,7 +23,6 @@ impl Default for DefaultAzureCredentialBuilder {
     fn default() -> Self {
         Self {
             options: TokenCredentialOptions::default(),
-            include_specific_credential: true,
             include_environment_credential: true,
             include_app_service_managed_identity_credential: true,
             // Unable to quickly detect if running in Azure VM, so it is disabled by default.
@@ -42,12 +40,6 @@ impl DefaultAzureCredentialBuilder {
 
     pub fn with_options(&mut self, options: impl Into<TokenCredentialOptions>) -> &mut Self {
         self.options = options.into();
-        self
-    }
-
-    /// Exclude specific credential
-    pub fn exclude_specific_credential(&mut self) -> &mut Self {
-        self.include_specific_credential = false;
         self
     }
 
@@ -91,9 +83,6 @@ impl DefaultAzureCredentialBuilder {
     /// Get a list of the credential types to include.
     fn included(&self) -> Vec<DefaultAzureCredentialType> {
         let mut sources = Vec::new();
-        if self.include_specific_credential {
-            sources.push(DefaultAzureCredentialType::Specific);
-        }
         if self.include_environment_credential {
             sources.push(DefaultAzureCredentialType::Environment);
         }
@@ -115,18 +104,9 @@ impl DefaultAzureCredentialBuilder {
         &self,
         included: &Vec<DefaultAzureCredentialType>,
     ) -> Vec<DefaultAzureCredentialEnum> {
-        // If specific credential is included, try to create it.
-        // Use only the specific credential if it is created successfully.
-        if self.include_specific_credential {
-            if let Ok(credential) = SpecificAzureCredential::create(self.options.clone()) {
-                return vec![DefaultAzureCredentialEnum::Specific(credential)];
-            }
-        }
-
         let mut sources = Vec::<DefaultAzureCredentialEnum>::with_capacity(included.len());
         for source in included {
             match source {
-                DefaultAzureCredentialType::Specific => {}
                 DefaultAzureCredentialType::Environment => {
                     if let Ok(credential) = EnvironmentCredential::create(self.options.clone()) {
                         sources.push(DefaultAzureCredentialEnum::Environment(credential));
@@ -165,7 +145,6 @@ impl DefaultAzureCredentialBuilder {
 /// Types that may be enabled for use by `DefaultAzureCredential`.
 #[derive(Debug, PartialEq)]
 enum DefaultAzureCredentialType {
-    Specific,
     Environment,
     AppService,
     VirtualMachine,
@@ -175,8 +154,6 @@ enum DefaultAzureCredentialType {
 /// Types of `TokenCredential` supported by `DefaultAzureCredential`
 #[derive(Debug)]
 pub enum DefaultAzureCredentialEnum {
-    /// A `TokenCredential` instance specified with an `AZURE_CREDENTIAL_TYPE` environment variable.
-    Specific(SpecificAzureCredential),
     /// `TokenCredential` from environment variable.
     Environment(EnvironmentCredential),
     /// `TokenCredential` from managed identity that has been assigned to an App Service.
@@ -192,10 +169,6 @@ pub enum DefaultAzureCredentialEnum {
 impl TokenCredential for DefaultAzureCredentialEnum {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         match self {
-            DefaultAzureCredentialEnum::Specific(credential) => credential
-                .get_token(scopes)
-                .await
-                .context(ErrorKind::Credential, "error getting specific credential"),
             DefaultAzureCredentialEnum::Environment(credential) => {
                 credential.get_token(scopes).await.context(
                     ErrorKind::Credential,
@@ -229,17 +202,12 @@ impl TokenCredential for DefaultAzureCredentialEnum {
                     "error getting token credential from Azure CLI",
                 )
             }
-            DefaultAzureCredentialEnum::AzureCli(credential) => credential
-                .get_token(scopes)
-                .await
-                .context(ErrorKind::Credential, "az-cli"),
         }
     }
 
     /// Clear the credential's cache.
     async fn clear_cache(&self) -> azure_core::Result<()> {
         match self {
-            DefaultAzureCredentialEnum::Specific(credential) => credential.clear_cache().await,
             DefaultAzureCredentialEnum::Environment(credential) => credential.clear_cache().await,
             DefaultAzureCredentialEnum::AppService(credential) => credential.clear_cache().await,
             DefaultAzureCredentialEnum::VirtualMachine(credential) => {
@@ -345,12 +313,10 @@ fn format_aggregate_error(errors: &[Error]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{test_options, EnvironmentCredentialEnum, SpecificAzureCredentialEnum};
 
     #[test]
     fn test_builder_included_credential_flags() {
         let builder = DefaultAzureCredentialBuilder::new();
-        assert!(builder.include_specific_credential);
         assert!(builder.include_azure_cli_credential);
         assert!(builder.include_environment_credential);
         assert!(builder.include_app_service_managed_identity_credential);
@@ -358,7 +324,6 @@ mod tests {
 
         let mut builder = DefaultAzureCredentialBuilder::new();
         builder.exclude_azure_cli_credential();
-        assert!(builder.include_specific_credential);
         assert!(!builder.include_azure_cli_credential);
         assert!(builder.include_environment_credential);
         assert!(builder.include_app_service_managed_identity_credential);
@@ -366,7 +331,6 @@ mod tests {
 
         let mut builder = DefaultAzureCredentialBuilder::new();
         builder.exclude_environment_credential();
-        assert!(builder.include_specific_credential);
         assert!(builder.include_azure_cli_credential);
         assert!(!builder.include_environment_credential);
         assert!(builder.include_app_service_managed_identity_credential);
@@ -374,7 +338,6 @@ mod tests {
 
         let mut builder = DefaultAzureCredentialBuilder::new();
         builder.exclude_managed_identity_credential();
-        assert!(builder.include_specific_credential);
         assert!(builder.include_azure_cli_credential);
         assert!(builder.include_environment_credential);
         assert!(!builder.include_app_service_managed_identity_credential);
@@ -388,7 +351,6 @@ mod tests {
         assert_eq!(
             builder.included(),
             vec![
-                DefaultAzureCredentialType::Specific,
                 DefaultAzureCredentialType::Environment,
                 DefaultAzureCredentialType::AppService,
                 DefaultAzureCredentialType::AzureCli,
@@ -404,7 +366,6 @@ mod tests {
         assert_eq!(
             builder.included(),
             vec![
-                DefaultAzureCredentialType::Specific,
                 DefaultAzureCredentialType::Environment,
                 DefaultAzureCredentialType::AppService,
                 DefaultAzureCredentialType::VirtualMachine,
@@ -421,7 +382,6 @@ mod tests {
         assert_eq!(
             builder.included(),
             vec![
-                DefaultAzureCredentialType::Specific,
                 DefaultAzureCredentialType::AppService,
                 DefaultAzureCredentialType::AzureCli,
             ]
@@ -436,7 +396,6 @@ mod tests {
         assert_eq!(
             builder.included(),
             vec![
-                DefaultAzureCredentialType::Specific,
                 DefaultAzureCredentialType::Environment,
                 DefaultAzureCredentialType::AppService,
             ]
@@ -451,50 +410,9 @@ mod tests {
         assert_eq!(
             builder.included(),
             vec![
-                DefaultAzureCredentialType::Specific,
                 DefaultAzureCredentialType::Environment,
                 DefaultAzureCredentialType::AzureCli,
             ]
         );
-    }
-
-    /// test excluding specific credential
-    #[test]
-    fn test_exclude_specific_credential() {
-        let mut builder = DefaultAzureCredentialBuilder::new();
-        builder.exclude_specific_credential();
-        assert_eq!(
-            builder.included(),
-            vec![
-                DefaultAzureCredentialType::Environment,
-                DefaultAzureCredentialType::AppService,
-                DefaultAzureCredentialType::AzureCli,
-            ]
-        );
-    }
-
-    #[test]
-    fn test_specific_environment_credential() {
-        let credential = DefaultAzureCredentialBuilder::new()
-            .with_options(test_options(
-                &[
-                    ("AZURE_CREDENTIAL_TYPE", "environment"),
-                    ("AZURE_TENANT_ID", "1"),
-                    ("AZURE_CLIENT_ID", "2"),
-                    ("AZURE_CLIENT_SECRET", "3"),
-                ][..],
-            ))
-            .build();
-        assert_eq!(credential.sources.len(), 1);
-        match &credential.sources[0] {
-            DefaultAzureCredentialEnum::Specific(credential) => match credential.source() {
-                SpecificAzureCredentialEnum::Environment(credential) => match credential.source() {
-                    EnvironmentCredentialEnum::ClientSecret(_) => {}
-                    _ => panic!("expect client secret credential"),
-                },
-                _ => panic!("expected environment credential"),
-            },
-            _ => panic!("expected specific credential"),
-        }
     }
 }
