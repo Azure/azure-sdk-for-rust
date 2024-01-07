@@ -16,9 +16,8 @@ pub(crate) const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSI
 ///
 /// ```no_run
 /// use azure_iot_deviceupdate::DeviceUpdateClient;
-/// use azure_identity::DefaultAzureCredential;
-/// let creds = std::sync::Arc::new(DefaultAzureCredential::default());
-/// let client = DeviceUpdateClient::new("contoso.api.adu.microsoft.com", creds).unwrap();
+/// let credential = azure_identity::create_credential().unwrap();
+/// let client = DeviceUpdateClient::new("contoso.api.adu.microsoft.com", credential).unwrap();
 /// ```
 
 #[derive(Clone)]
@@ -35,9 +34,8 @@ impl DeviceUpdateClient {
     ///
     /// ```no_run
     /// use azure_iot_deviceupdate::DeviceUpdateClient;
-    /// use azure_identity::DefaultAzureCredential;
-    /// let creds = std::sync::Arc::new(DefaultAzureCredential::default());
-    /// let client = DeviceUpdateClient::new("contoso.api.adu.microsoft.com", creds).unwrap();
+    /// let credential = azure_identity::create_credential().unwrap();
+    /// let client = DeviceUpdateClient::new("contoso.api.adu.microsoft.com", credential).unwrap();
     /// ```
     pub fn new(
         device_update_url: &str,

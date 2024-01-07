@@ -19,9 +19,8 @@ const API_VERSION_PARAM: &str = "api-version";
 ///
 /// ```no_run
 /// use azure_security_keyvault::KeyvaultClient;
-/// use azure_identity::DefaultAzureCredential;
-/// let creds = DefaultAzureCredential::default();
-/// let client = KeyvaultClient::new(&"https://test-key-vault.vault.azure.net", std::sync::Arc::new(creds)).unwrap();
+/// let credential = azure_identity::create_credential().unwrap();
+/// let client = KeyvaultClient::new(&"https://test-key-vault.vault.azure.net", credential).unwrap();
 /// ```
 #[derive(Clone)]
 pub struct KeyvaultClient {
@@ -44,10 +43,8 @@ impl KeyvaultClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
-    /// use std::sync::Arc;
-    /// let creds = Arc::new(DefaultAzureCredential::default());
-    /// let client = KeyvaultClient::new("test-key-vault.vault.azure.net", creds).unwrap();
+    /// let credential = azure_identity::create_credential().unwrap();
+    /// let client = KeyvaultClient::new("test-key-vault.vault.azure.net", credential).unwrap();
     /// ```
     pub fn new(
         vault_url: &str,

@@ -12,10 +12,10 @@ use std::env::var;
 use url::Url;
 
 async fn get_certficate(vault_name: &str, certificate_name: &str) -> azure_core::Result<Secret> {
-    let creds = DefaultAzureCredential::default();
+    let credential = azure_identity::create_credential()?;
     let client = KeyvaultClient::new(
         format!("https://{}.vault.azure.net", vault_name).as_str(),
-        std::sync::Arc::new(creds),
+        credential,
     )?
     .certificate_client();
     let response = client.get(certificate_name).await?;
