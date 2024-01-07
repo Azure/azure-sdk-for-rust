@@ -27,8 +27,8 @@ pub mod azure_credential_types {
     pub const CLIENT_CERTIFICATE: &str = "clientcertificate";
 }
 
-/// Creates a `SpecificAzureCredential` if `AZURE_CREDENTIAL_TYPE` environment variable is set.
-/// Otherwise, creates a `DefaultAzureCredential`.
+/// Creates a `DefaultAzureCredential` by default with default options.
+/// If `AZURE_CREDENTIAL_TYPE` environment variable is set, it creates a `SpecificAzureCredential` with default options.
 pub fn create_credential() -> azure_core::Result<Arc<dyn TokenCredential>> {
     create_credential_with_options(options::TokenCredentialOptions::default())
 }
