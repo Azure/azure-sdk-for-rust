@@ -6,7 +6,6 @@
 ///
 /// Ref: <https://learn.microsoft.com/en-us/rest/api/azureresourcegraph/resourcegraph(2021-03-01)/resources/resources?tabs=HTTP>
 ///
-use azure_identity::DefaultAzureCredential;
 use azure_mgmt_resourcegraph::{
     models::{QueryRequest, QueryRequestOptions},
     Client,
