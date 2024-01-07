@@ -14,10 +14,18 @@ pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
     // `hyper` library that causes the `reqwest` client to hang in some cases.
     //
     // See <https://github.com/hyperium/hyper/issues/2312> for more details.
+    #[cfg(not(target_arch = "wasm32"))]
     let client = ::reqwest::ClientBuilder::new()
         .pool_max_idle_per_host(0)
         .build()
         .expect("failed to build `reqwest` client");
+
+    // `reqwest` does not implement `pool_max_idle_per_host()` on WASM.
+    #[cfg(target_arch = "wasm32")]
+    let client = ::reqwest::ClientBuilder::new()
+        .build()
+        .expect("failed to build `reqwest` client");
+
     Arc::new(client)
 }
 
