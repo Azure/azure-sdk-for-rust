@@ -25,6 +25,7 @@ async-trait = "0.1"
 openssl = { version = "0.10.46",  optional=true }
 uuid = { version = "1.0",  features = ["v4"] }
 pin-project = "1.0"
+async-process = "2.0"
 
 [target.'cfg(unix)'.dependencies]
 tz-rs = { version = "0.6", optional = true }

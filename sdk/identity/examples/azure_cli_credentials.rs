@@ -5,7 +5,7 @@ use url::Url;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    let sub_id = AzureCliCredential::get_subscription()?;
+    let sub_id = AzureCliCredential::get_subscription().await?;
     println!("Azure cli subscription: {sub_id}");
 
     let creds = AzureCliCredential::new();
