@@ -19,10 +19,10 @@ pub enum CloudLocation {
 impl CloudLocation {
     pub fn account(&self) -> &str {
         match self {
-            CloudLocation::Public { account, .. } => account,
-            CloudLocation::China { account, .. } => account,
+            CloudLocation::Public { account, .. }
+            | CloudLocation::China { account, .. }
+            | CloudLocation::Custom { account, .. } => account,
             CloudLocation::Emulator { .. } => EMULATOR_ACCOUNT,
-            CloudLocation::Custom { account, .. } => account,
         }
     }
 
