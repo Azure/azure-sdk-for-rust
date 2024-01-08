@@ -68,5 +68,5 @@ where
     S: AsRef<[u8]>,
     T: DeserializeOwned,
 {
-    serde_json::from_slice(body.as_ref()).map_err(|e| e.into())
+    serde_json::from_slice(body.as_ref()).map_err(Into::into)
 }
