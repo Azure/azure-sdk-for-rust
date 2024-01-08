@@ -52,6 +52,31 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: eng/scripts/sdk_tests.sh ${{ matrix.build }}
 
+  test-docs-sdk:
+    name: SDK docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/install@cargo-docs-rs
+      - run: eng/scripts/verify-docs.sh sdk
+  test-docs-svc:
+    name: SDK docs - svc
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/install@cargo-docs-rs
+      - run: eng/scripts/verify-docs.sh svc
+  test-docs-mgmt:
+    name: SDK docs - mgmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/install@cargo-docs-rs
+      - run: eng/scripts/verify-docs.sh mgmt
+
   test-wasm:
     name: WASM Tests
     runs-on: ubuntu-20.04
