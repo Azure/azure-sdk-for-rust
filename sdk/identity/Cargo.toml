@@ -35,7 +35,7 @@ tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 env_logger = "0.10"
 serde_test = "1"
 azure_security_keyvault = { path = "../security_keyvault", default-features = false }
-serial_test = "2.0"
+serial_test = "3.0"
 
 [features]
 default = ["development", "enable_reqwest", "old_azure_cli"]
