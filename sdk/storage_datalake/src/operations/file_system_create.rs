@@ -30,7 +30,7 @@ impl CreateFileSystemBuilder {
                 .send(&mut self.context.clone(), &mut request)
                 .await?;
 
-            CreateFileSystemResponse::try_from(response).await
+            CreateFileSystemResponse::try_from(response)
         })
     }
 }
@@ -44,7 +44,7 @@ pub struct CreateFileSystemResponse {
 }
 
 impl CreateFileSystemResponse {
-    pub async fn try_from(response: Response) -> azure_core::Result<Self> {
+    pub fn try_from(response: Response) -> azure_core::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

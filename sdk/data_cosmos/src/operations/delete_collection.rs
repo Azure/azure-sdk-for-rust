@@ -28,7 +28,7 @@ impl DeleteCollectionBuilder {
                 )
                 .await?;
 
-            DeleteCollectionResponse::try_from(response).await
+            DeleteCollectionResponse::try_from(response)
         })
     }
 }
@@ -62,7 +62,7 @@ pub struct DeleteCollectionResponse {
 }
 
 impl DeleteCollectionResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
+    pub fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

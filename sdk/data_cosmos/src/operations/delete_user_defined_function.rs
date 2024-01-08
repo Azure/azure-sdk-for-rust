@@ -32,7 +32,7 @@ impl DeleteUserDefinedFunctionBuilder {
                 )
                 .await?;
 
-            DeleteUserDefinedFunctionResponse::try_from(response).await
+            DeleteUserDefinedFunctionResponse::try_from(response)
         })
     }
 }
@@ -66,7 +66,7 @@ pub struct DeleteUserDefinedFunctionResponse {
 }
 
 impl DeleteUserDefinedFunctionResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
+    pub fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

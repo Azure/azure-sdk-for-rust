@@ -23,7 +23,7 @@ impl DeleteDatabaseBuilder {
                 .cosmos_client()
                 .send(request, self.context.clone(), ResourceType::Databases)
                 .await?;
-            DeleteDatabaseResponse::try_from(response).await
+            DeleteDatabaseResponse::try_from(response)
         })
     }
 }
@@ -38,7 +38,7 @@ pub struct DeleteDatabaseResponse {
 }
 
 impl DeleteDatabaseResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
+    pub fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
 
         let charge = request_charge_from_headers(headers)?;

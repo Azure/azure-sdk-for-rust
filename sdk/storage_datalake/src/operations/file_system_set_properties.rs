@@ -32,7 +32,7 @@ impl SetFileSystemPropertiesBuilder {
                 .send(&mut self.context.clone(), &mut request)
                 .await?;
 
-            SetFileSystemPropertiesResponse::try_from(response).await
+            SetFileSystemPropertiesResponse::try_from(response)
         })
     }
 }
@@ -45,7 +45,7 @@ pub struct SetFileSystemPropertiesResponse {
 }
 
 impl SetFileSystemPropertiesResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
+    pub fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(SetFileSystemPropertiesResponse {

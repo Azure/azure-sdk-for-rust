@@ -34,7 +34,7 @@ impl<C: PathClient + 'static> DeletePathBuilder<C> {
                 request.insert_headers(&this.if_match_condition);
                 request.insert_headers(&this.if_modified_since);
                 let response = this.client.send(&mut ctx, &mut request).await?;
-                DeletePathResponse::try_from(response).await
+                DeletePathResponse::try_from(response)
             }
         };
         Pageable::new(make_request)
@@ -48,7 +48,7 @@ pub struct DeletePathResponse {
 }
 
 impl DeletePathResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
+    pub fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

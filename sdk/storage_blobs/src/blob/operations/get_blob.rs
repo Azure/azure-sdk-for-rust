@@ -55,7 +55,7 @@ impl GetBlobBuilder {
 
                 let response = this.client.send(&mut ctx, &mut request).await?;
 
-                GetBlobResponse::try_from(this, response).await
+                GetBlobResponse::try_from(this, response)
             }
         };
         Pageable::new(make_request)
@@ -73,10 +73,7 @@ pub struct GetBlobResponse {
 }
 
 impl GetBlobResponse {
-    async fn try_from(
-        request: GetBlobBuilder,
-        response: AzureResponse,
-    ) -> azure_core::Result<Self> {
+    fn try_from(request: GetBlobBuilder, response: AzureResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
 
         let request_id = request_id_from_headers(headers)?;
