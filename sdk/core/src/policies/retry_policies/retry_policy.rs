@@ -23,7 +23,7 @@ type DateTimeFn = fn() -> OffsetDateTime;
 /// Get the duration to delay between retry attempts, provided by the headers from the response.
 ///
 /// This function checks for retry-after headers in the following order, following the
-/// JS Azure SDK implementation: https://github.com/Azure/azure-sdk-for-js/blob/17de1a2b7f3ad61f34ff62876eced7d077c10d4b/sdk/core/core-rest-pipeline/src/retryStrategies/throttlingRetryStrategy.ts#L35
+/// JS Azure SDK implementation: <https://github.com/Azure/azure-sdk-for-js/blob/17de1a2b7f3ad61f34ff62876eced7d077c10d4b/sdk/core/core-rest-pipeline/src/retryStrategies/throttlingRetryStrategy.ts#L35>
 /// * `retry-after-ms`
 /// * `x-ms-retry-after-ms`
 /// * `Retry-After`
@@ -76,9 +76,9 @@ pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
     async fn wait(&self, _error: &Error, retry_count: u32, retry_after: Option<Duration>) {
         let policy_sleep_duration = self.sleep_duration(retry_count);
         // If the server provided a retry-after header, use the max of that and the policy sleep duration
-        let sleep_duration = retry_after
-            .map(|retry_after| std::cmp::max(retry_after, policy_sleep_duration))
-            .unwrap_or(policy_sleep_duration);
+        let sleep_duration = retry_after.map_or(policy_sleep_duration, |retry_after| {
+            std::cmp::max(retry_after, policy_sleep_duration)
+        });
         sleep(sleep_duration).await;
     }
 }

@@ -102,7 +102,7 @@ impl ListTriggersResponse {
         let response: Response = body.json().await?;
 
         Ok(Self {
-            rid: response.rid.to_owned(),
+            rid: response.rid.clone(),
             triggers: response.triggers,
             content_location: content_location_from_headers(&headers)?,
             server: server_from_headers(&headers)?,

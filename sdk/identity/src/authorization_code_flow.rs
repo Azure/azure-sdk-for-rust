@@ -46,7 +46,7 @@ pub fn start(
     // Create a PKCE code verifier and SHA-256 encode it as a code challenge.
     let (pkce_code_challenge, pkce_code_verifier) = oauth2::PkceCodeChallenge::new_random_sha256();
 
-    let scopes = scopes.iter().map(|s| Scope::new(s.to_string()));
+    let scopes = scopes.iter().map(ToString::to_string).map(Scope::new);
 
     // Generate the authorization URL to which we'll redirect the user.
     let (authorize_url, csrf_state) = client
