@@ -19,7 +19,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let credential = Arc::new(AzureCliCredential::new());
     let subscription_id = AzureCliCredential::get_subscription().await?;
-    let tenant_id = AzureCliCredential::get_tenant()?;
+    let tenant_id = AzureCliCredential::get_tenant().await?;
     let client = Client::builder(credential).build()?;
 
     let sku = Sku::new(Family::A, Name::Standard);

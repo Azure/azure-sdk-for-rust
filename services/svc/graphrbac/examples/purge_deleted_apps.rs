@@ -13,7 +13,7 @@ use std::{env::args, sync::Arc};
 async fn main() -> azure_core::Result<()> {
     let filter = args().nth(1).expect("missing filter");
     let credential = Arc::new(AzureCliCredential::new());
-    let tenant_id = AzureCliCredential::get_tenant()?;
+    let tenant_id = AzureCliCredential::get_tenant().await?;
 
     let client = ClientBuilder::new(credential).build()?.deleted_applications_client();
 
