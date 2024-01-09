@@ -1,7 +1,7 @@
+#[cfg(not(target_arch = "wasm32"))]
+use crate::AzureCliCredential;
 use crate::{
-    timeout::TimeoutExt,
-    token_credentials::cache::TokenCache,
-    {AzureCliCredential, ImdsManagedIdentityCredential},
+    timeout::TimeoutExt, token_credentials::cache::TokenCache, ImdsManagedIdentityCredential,
 };
 use azure_core::{
     auth::{AccessToken, TokenCredential},
@@ -14,6 +14,7 @@ use std::time::Duration;
 pub struct DefaultAzureCredentialBuilder {
     include_environment_credential: bool,
     include_managed_identity_credential: bool,
+    #[cfg(not(target_arch = "wasm32"))]
     include_azure_cli_credential: bool,
 }
 
@@ -22,6 +23,7 @@ impl Default for DefaultAzureCredentialBuilder {
         Self {
             include_environment_credential: true,
             include_managed_identity_credential: true,
+            #[cfg(not(target_arch = "wasm32"))]
             include_azure_cli_credential: true,
         }
     }
@@ -46,6 +48,7 @@ impl DefaultAzureCredentialBuilder {
     }
 
     /// Exclude using credentials from the cli
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn exclude_azure_cli_credential(&mut self) -> &mut Self {
         self.include_azure_cli_credential = false;
         self
@@ -53,25 +56,34 @@ impl DefaultAzureCredentialBuilder {
 
     /// Create a `DefaultAzureCredential` from this builder.
     pub fn build(&self) -> DefaultAzureCredential {
-        let source_count = usize::from(self.include_azure_cli_credential)
-            + usize::from(self.include_azure_cli_credential)
-            + usize::from(self.include_managed_identity_credential);
-        let mut sources = Vec::<DefaultAzureCredentialEnum>::with_capacity(source_count);
-        if self.include_environment_credential {
+        let DefaultAzureCredentialBuilder {
+            include_environment_credential,
+            include_managed_identity_credential,
+            #[cfg(not(target_arch = "wasm32"))]
+            include_azure_cli_credential,
+        } = self;
+
+        let mut sources = Vec::new();
+        if *include_environment_credential {
             sources.push(DefaultAzureCredentialEnum::Environment(
                 super::EnvironmentCredential::default(),
             ));
         }
-        if self.include_managed_identity_credential {
+        if *include_managed_identity_credential {
             sources.push(DefaultAzureCredentialEnum::ManagedIdentity(
                 ImdsManagedIdentityCredential::default(),
             ));
         }
-        if self.include_azure_cli_credential {
-            sources.push(DefaultAzureCredentialEnum::AzureCli(
-                AzureCliCredential::new(),
-            ));
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            if *include_azure_cli_credential {
+                sources.push(DefaultAzureCredentialEnum::AzureCli(
+                    AzureCliCredential::new(),
+                ));
+            }
         }
+
+        sources.shrink_to_fit();
         DefaultAzureCredential::with_sources(sources)
     }
 }
@@ -83,6 +95,7 @@ pub enum DefaultAzureCredentialEnum {
     Environment(super::EnvironmentCredential),
     /// `TokenCredential` from managed identity that has been assigned in this deployment environment.
     ManagedIdentity(ImdsManagedIdentityCredential),
+    #[cfg(not(target_arch = "wasm32"))]
     /// `TokenCredential` from Azure CLI.
     AzureCli(AzureCliCredential),
 }
@@ -105,6 +118,7 @@ impl TokenCredential for DefaultAzureCredentialEnum {
                     .context(ErrorKind::Credential, "IMDS timeout")?
                     .context(ErrorKind::Credential, "IMDS")
             }
+            #[cfg(not(target_arch = "wasm32"))]
             DefaultAzureCredentialEnum::AzureCli(credential) => credential
                 .get_token(scopes)
                 .await
@@ -119,6 +133,7 @@ impl TokenCredential for DefaultAzureCredentialEnum {
             DefaultAzureCredentialEnum::ManagedIdentity(credential) => {
                 credential.clear_cache().await
             }
+            #[cfg(not(target_arch = "wasm32"))]
             DefaultAzureCredentialEnum::AzureCli(credential) => credential.clear_cache().await,
         }
     }
@@ -219,24 +234,30 @@ mod tests {
     #[test]
     fn test_builder_included_credential_flags() {
         let builder = DefaultAzureCredentialBuilder::new();
+        #[cfg(not(target_arch = "wasm32"))]
         assert!(builder.include_azure_cli_credential);
         assert!(builder.include_environment_credential);
         assert!(builder.include_managed_identity_credential);
 
-        let mut builder = DefaultAzureCredentialBuilder::new();
-        builder.exclude_azure_cli_credential();
-        assert!(!builder.include_azure_cli_credential);
-        assert!(builder.include_environment_credential);
-        assert!(builder.include_managed_identity_credential);
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let mut builder = DefaultAzureCredentialBuilder::new();
+            builder.exclude_azure_cli_credential();
+            assert!(!builder.include_azure_cli_credential);
+            assert!(builder.include_environment_credential);
+            assert!(builder.include_managed_identity_credential);
+        }
 
         let mut builder = DefaultAzureCredentialBuilder::new();
         builder.exclude_environment_credential();
+        #[cfg(not(target_arch = "wasm32"))]
         assert!(builder.include_azure_cli_credential);
         assert!(!builder.include_environment_credential);
         assert!(builder.include_managed_identity_credential);
 
         let mut builder = DefaultAzureCredentialBuilder::new();
         builder.exclude_managed_identity_credential();
+        #[cfg(not(target_arch = "wasm32"))]
         assert!(builder.include_azure_cli_credential);
         assert!(builder.include_environment_credential);
         assert!(!builder.include_managed_identity_credential);
@@ -261,6 +282,8 @@ mod tests {
             credential,
             DefaultAzureCredentialEnum::Environment(_)
         ));
+
+        #[cfg(not(target_arch = "wasm32"))]
         assert!(contains_credential!(
             credential,
             DefaultAzureCredentialEnum::AzureCli(_)
