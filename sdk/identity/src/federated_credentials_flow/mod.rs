@@ -80,12 +80,12 @@ pub async fn perform(
     let rsp = http_client.execute_request(&req).await?;
     let rsp_status = rsp.status();
     debug!("rsp_status == {:?}", rsp_status);
-    if !rsp_status.is_success() {
+    if rsp_status.is_success() {
+        rsp.json().await
+    } else {
         let rsp_body = rsp.into_body().collect().await?;
         let text = std::str::from_utf8(&rsp_body)?;
         error!("rsp_body == {:?}", text);
         Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error())
-    } else {
-        rsp.json().await
     }
 }
