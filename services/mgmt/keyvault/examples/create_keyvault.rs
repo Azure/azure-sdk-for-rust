@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let object_id = args().nth(4).expect("please specify object id");
 
     let credential = Arc::new(AzureCliCredential::new());
-    let subscription_id = AzureCliCredential::get_subscription()?;
+    let subscription_id = AzureCliCredential::get_subscription().await?;
     let tenant_id = AzureCliCredential::get_tenant()?;
     let client = Client::builder(credential).build()?;
 

@@ -9,7 +9,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let webapp_name = std::env::args().nth(2).expect("please specify webapp name");
 
     let credential = Arc::new(AzureCliCredential::new());
-    let subscription_id = AzureCliCredential::get_subscription()?;
+    let subscription_id = AzureCliCredential::get_subscription().await?;
     let client = azure_mgmt_web::Client::builder(credential).build()?;
 
     let config = client
