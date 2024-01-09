@@ -195,7 +195,7 @@ impl BlobSharedAccessSignature {
                     key.signed_version.to_string(),
                     String::new(), // SIGNED AUTHORIZED_OID
                     String::new(), // SIGNED UNAUTHORIZED_OID
-                    String::new(),  // SIGNED CORRELATION ID
+                    String::new(), // SIGNED CORRELATION ID
                 ];
 
                 content.extend(user_delegated);
