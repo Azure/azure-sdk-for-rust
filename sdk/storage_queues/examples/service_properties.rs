@@ -21,7 +21,7 @@ async fn main() -> azure_core::Result<()> {
         allowed_origins: "http://www.contoso.com,http://www.fabrikam.com".to_owned(),
         allowed_methods: "GET,PUT".to_owned(),
         allowed_headers: "x-ms-meta-abc,x-ms-meta-data*,x-ms-meta-target*,x-ms-meta-xyz".to_owned(),
-        exposed_headers: "".to_owned(),
+        exposed_headers: String::new(),
         max_age_in_seconds: 50000,
     }]);
 
