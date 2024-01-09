@@ -35,7 +35,7 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
                 .send(&mut self.context.clone(), &mut request)
                 .await?;
 
-            HeadPathResponse::try_from(response).await
+            HeadPathResponse::try_from(response)
         })
     }
 }
@@ -52,7 +52,7 @@ pub struct HeadPathResponse {
 }
 
 impl HeadPathResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
+    pub fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
 
         Ok(Self {

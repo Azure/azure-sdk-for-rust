@@ -28,7 +28,7 @@ impl GetFileSystemPropertiesBuilder {
                 .send(&mut self.context.clone(), &mut request)
                 .await?;
 
-            GetFileSystemPropertiesResponse::try_from(response).await
+            GetFileSystemPropertiesResponse::try_from(response)
         })
     }
 }
@@ -43,7 +43,7 @@ pub struct GetFileSystemPropertiesResponse {
 }
 
 impl GetFileSystemPropertiesResponse {
-    pub async fn try_from(response: Response) -> azure_core::Result<Self> {
+    pub fn try_from(response: Response) -> azure_core::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(GetFileSystemPropertiesResponse {

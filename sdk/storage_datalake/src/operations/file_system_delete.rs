@@ -25,7 +25,7 @@ impl DeleteFileSystemBuilder {
                 .send(&mut self.context.clone(), &mut request)
                 .await?;
 
-            DeleteFileSystemResponse::try_from(response).await
+            DeleteFileSystemResponse::try_from(response)
         })
     }
 }
@@ -36,7 +36,7 @@ pub struct DeleteFileSystemResponse {
 }
 
 impl DeleteFileSystemResponse {
-    pub async fn try_from(response: Response) -> azure_core::Result<Self> {
+    pub fn try_from(response: Response) -> azure_core::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {

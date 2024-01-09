@@ -58,7 +58,7 @@ impl<C: PathClient + 'static> PatchPathBuilder<C> {
                 .send(&mut self.context.clone(), &mut request)
                 .await?;
 
-            PatchPathResponse::try_from(response).await
+            PatchPathResponse::try_from(response)
         })
     }
 }
@@ -72,7 +72,7 @@ pub struct PatchPathResponse {
 }
 
 impl PatchPathResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
+    pub fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         let etag = match etag_from_headers(&headers) {

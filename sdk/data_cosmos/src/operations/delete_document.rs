@@ -45,7 +45,7 @@ impl DeleteDocumentBuilder {
                 )
                 .await?;
 
-            DeleteDocumentResponse::try_from(response).await
+            DeleteDocumentResponse::try_from(response)
         })
     }
 }
@@ -58,7 +58,7 @@ pub struct DeleteDocumentResponse {
 }
 
 impl DeleteDocumentResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
+    pub fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         let charge = request_charge_from_headers(&headers)?;

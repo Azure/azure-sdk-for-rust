@@ -31,7 +31,7 @@ impl DeleteStoredProcedureBuilder {
                 )
                 .await?;
 
-            DeleteStoredProcedureResponse::try_from(response).await
+            DeleteStoredProcedureResponse::try_from(response)
         })
     }
 }
@@ -47,7 +47,7 @@ pub struct DeleteStoredProcedureResponse {
 }
 
 impl DeleteStoredProcedureResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
+    pub fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
 
         Ok(Self {
