@@ -130,7 +130,7 @@ impl CollectedResponse {
     }
 
     #[cfg(feature = "xml")]
-    pub async fn xml<T>(&self) -> crate::Result<T>
+    pub fn xml<T>(&self) -> crate::Result<T>
     where
         T: DeserializeOwned,
     {

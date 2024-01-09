@@ -29,7 +29,7 @@ impl TokenCache {
     ) -> azure_core::Result<AccessToken> {
         // if the current cached token for this resource is good, return it.
         let token_cache = self.0.read().await;
-        let scopes = scopes.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        let scopes = scopes.iter().map(ToString::to_string).collect::<Vec<_>>();
         if let Some(token) = token_cache.get(&scopes) {
             if !is_expired(token) {
                 log::trace!("returning cached token");

@@ -42,7 +42,7 @@ impl<C: PathClient + 'static> PutPathBuilder<C> {
                 .send(&mut self.context.clone(), &mut request)
                 .await?;
 
-            PutPathResponse::try_from(response).await
+            PutPathResponse::try_from(response)
         })
     }
 }
@@ -56,7 +56,7 @@ pub struct PutPathResponse {
 }
 
 impl PutPathResponse {
-    pub async fn try_from(response: Response) -> azure_core::Result<Self> {
+    pub fn try_from(response: Response) -> azure_core::Result<Self> {
         let (_status_code, headers, _pinned_stream) = response.deconstruct();
 
         Ok(Self {
