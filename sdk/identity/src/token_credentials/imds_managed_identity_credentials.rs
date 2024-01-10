@@ -140,7 +140,7 @@ where
     OffsetDateTime::from_unix_timestamp(as_i64).map_err(de::Error::custom)
 }
 
-/// Convert a AADv2 scope to an AADv1 resource
+/// Convert a `AADv2` scope to an `AADv1` resource
 ///
 /// Directly based on the `azure-sdk-for-python` implementation:
 /// ref: <https://github.com/Azure/azure-sdk-for-python/blob/d6aeefef46c94b056419613f1a5cc9eaa3af0d22/sdk/identity/azure-identity/azure/identity/_internal/__init__.py#L22>

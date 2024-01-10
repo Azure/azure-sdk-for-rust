@@ -6,8 +6,10 @@
 //! * Managed identity
 //! * Client secret
 mod app_service_managed_identity_credential;
+#[cfg(not(target_arch = "wasm32"))]
 mod azure_cli_credentials;
 #[cfg(feature = "azureauth-cli")]
+#[cfg(not(target_arch = "wasm32"))]
 mod azureauth_cli_credentials;
 mod cache;
 #[cfg(feature = "client_certificate")]
@@ -22,8 +24,10 @@ mod virtual_machine_managed_identity_credential;
 mod workload_identity_credentials;
 
 pub use app_service_managed_identity_credential::*;
+#[cfg(not(target_arch = "wasm32"))]
 pub use azure_cli_credentials::*;
 #[cfg(feature = "azureauth-cli")]
+#[cfg(not(target_arch = "wasm32"))]
 pub use azureauth_cli_credentials::*;
 #[cfg(feature = "client_certificate")]
 pub use client_certificate_credentials::*;

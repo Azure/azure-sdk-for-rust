@@ -86,7 +86,7 @@ impl ClientSecretCredential {
         )
         .set_auth_type(AuthType::RequestBody);
 
-        let scopes = scopes.iter().map(|x| Scope::new(x.to_string()));
+        let scopes = scopes.iter().map(ToString::to_string).map(Scope::new);
         let oauth_http_client = Oauth2HttpClient::new(self.http_client.clone());
         let token_result = client
             .exchange_client_credentials()

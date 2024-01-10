@@ -38,7 +38,7 @@ impl DeleteAttachmentBuilder {
                 )
                 .await?;
 
-            DeleteAttachmentResponse::try_from(response).await
+            DeleteAttachmentResponse::try_from(response)
         })
     }
 }
@@ -70,7 +70,7 @@ pub struct DeleteAttachmentResponse {
 }
 
 impl DeleteAttachmentResponse {
-    pub async fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
+    pub fn try_from(response: HttpResponse) -> azure_core::Result<Self> {
         let headers = response.headers();
 
         Ok(Self {

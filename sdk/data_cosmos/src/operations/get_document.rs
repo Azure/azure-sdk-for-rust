@@ -109,12 +109,12 @@ where
             status_code == StatusCode::Ok || status_code == StatusCode::NotModified;
 
         if has_been_found {
-            Ok(GetDocumentResponse::Found(
-                FoundDocumentResponse::try_from(&headers, body).await?,
-            ))
+            Ok(GetDocumentResponse::Found(FoundDocumentResponse::try_from(
+                &headers, body,
+            )?))
         } else {
             Ok(GetDocumentResponse::NotFound(
-                NotFoundDocumentResponse::try_from(&headers).await?,
+                NotFoundDocumentResponse::try_from(&headers)?,
             ))
         }
     }
@@ -151,7 +151,7 @@ impl<T> FoundDocumentResponse<T>
 where
     T: DeserializeOwned,
 {
-    async fn try_from(headers: &Headers, body: bytes::Bytes) -> azure_core::Result<Self> {
+    fn try_from(headers: &Headers, body: bytes::Bytes) -> azure_core::Result<Self> {
         Ok(Self {
             document: from_json(&body)?,
             content_location: content_location_from_headers(headers)?,
@@ -203,7 +203,7 @@ pub struct NotFoundDocumentResponse {
 }
 
 impl NotFoundDocumentResponse {
-    async fn try_from(headers: &Headers) -> azure_core::Result<Self> {
+    fn try_from(headers: &Headers) -> azure_core::Result<Self> {
         Ok(Self {
             content_location: content_location_from_headers(headers)?,
             last_state_change: last_state_change_from_headers(headers)?,

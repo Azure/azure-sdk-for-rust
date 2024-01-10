@@ -2,8 +2,8 @@
 /// This example overrides the version header in the request.
 ///
 /// For more information see:
-/// - `Pipeline`: https://docs.rs/azure_core/latest/azure_core/struct.Pipeline.html
-/// - `Policy`: https://docs.rs/azure_core/latest/azure_core/trait.Policy.html
+/// - `Pipeline`: <https://docs.rs/azure_core/latest/azure_core/struct.Pipeline.html>
+/// - `Policy`: <https://docs.rs/azure_core/latest/azure_core/trait.Policy.html>
 
 #[macro_use]
 extern crate log;
