@@ -206,7 +206,7 @@ impl TokenCredential for SpecificAzureCredential {
 #[cfg(test)]
 pub fn test_options(env_vars: &[(&str, &str)]) -> TokenCredentialOptions {
     let env = crate::env::Env::from(env_vars);
-    let http_client = azure_core::new_noop_client();
+    let http_client = azure_core::new_http_client();
     TokenCredentialOptions::new(env, http_client)
 }
 

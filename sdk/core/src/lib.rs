@@ -55,10 +55,7 @@ pub use error::{Error, Result};
 #[doc(inline)]
 pub use headers::Header;
 pub use http_client::{from_json, new_http_client, to_json, HttpClient};
-#[cfg(any(
-    feature = "noop_client",
-    not(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))
-))]
+#[cfg(not(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")))]
 pub use http_client::{new_noop_client, NoopClient};
 pub use models::*;
 pub use options::*;

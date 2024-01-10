@@ -1,15 +1,9 @@
-#[cfg(any(
-    feature = "noop_client",
-    not(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))
-))]
+#[cfg(not(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")))]
 mod noop;
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 mod reqwest;
 
-#[cfg(any(
-    feature = "noop_client",
-    not(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))
-))]
+#[cfg(not(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")))]
 pub use self::noop::{new_noop_client, NoopClient};
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 use self::reqwest::new_reqwest_client;
