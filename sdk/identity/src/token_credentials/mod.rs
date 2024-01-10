@@ -34,7 +34,7 @@ pub use client_certificate_credentials::*;
 pub use client_secret_credentials::*;
 pub use default_credentials::*;
 pub use environment_credentials::*;
-pub use imds_managed_identity_credentials::*;
+pub(crate) use imds_managed_identity_credentials::*;
 pub use options::*;
 pub use specific_azure_credential::*;
 pub use virtual_machine_managed_identity_credential::*;
