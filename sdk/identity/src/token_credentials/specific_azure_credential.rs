@@ -1,23 +1,24 @@
 use super::options;
-use std::sync::Arc;
-
+#[cfg(not(target_arch = "wasm32"))]
+use crate::AzureCliCredential;
 #[cfg(feature = "client_certificate")]
 use crate::ClientCertificateCredential;
 use crate::{
-    AppServiceManagedIdentityCredential, AzureCliCredential, ClientSecretCredential,
-    EnvironmentCredential, TokenCredentialOptions, VirtualMachineManagedIdentityCredential,
-    WorkloadIdentityCredential,
+    AppServiceManagedIdentityCredential, ClientSecretCredential, EnvironmentCredential,
+    TokenCredentialOptions, VirtualMachineManagedIdentityCredential, WorkloadIdentityCredential,
 };
 use azure_core::{
     auth::{AccessToken, TokenCredential},
     error::{ErrorKind, ResultExt},
     Error,
 };
+use std::sync::Arc;
 
 pub const AZURE_CREDENTIAL_TYPE: &str = "AZURE_CREDENTIAL_TYPE";
 
 pub mod azure_credential_types {
     pub const ENVIRONMENT: &str = "environment";
+    #[cfg(not(target_arch = "wasm32"))]
     pub const AZURE_CLI: &str = "azurecli";
     pub const VIRTUAL_MACHINE: &str = "virtualmachine";
     pub const APP_SERVICE: &str = "appservice";
@@ -57,6 +58,7 @@ pub fn create_specific_credential() -> azure_core::Result<Arc<dyn TokenCredentia
 #[derive(Debug)]
 pub enum SpecificAzureCredentialEnum {
     Environment(EnvironmentCredential),
+    #[cfg(not(target_arch = "wasm32"))]
     AzureCli(AzureCliCredential),
     VirtualMachine(VirtualMachineManagedIdentityCredential),
     AppService(AppServiceManagedIdentityCredential),
@@ -74,6 +76,7 @@ impl TokenCredential for SpecificAzureCredentialEnum {
             SpecificAzureCredentialEnum::Environment(credential) => {
                 credential.get_token(scopes).await
             }
+            #[cfg(not(target_arch = "wasm32"))]
             SpecificAzureCredentialEnum::AzureCli(credential) => credential.get_token(scopes).await,
             SpecificAzureCredentialEnum::VirtualMachine(credential) => {
                 credential.get_token(scopes).await
@@ -97,6 +100,7 @@ impl TokenCredential for SpecificAzureCredentialEnum {
     async fn clear_cache(&self) -> azure_core::Result<()> {
         match self {
             SpecificAzureCredentialEnum::Environment(credential) => credential.clear_cache().await,
+            #[cfg(not(target_arch = "wasm32"))]
             SpecificAzureCredentialEnum::AzureCli(credential) => credential.clear_cache().await,
             SpecificAzureCredentialEnum::VirtualMachine(credential) => {
                 credential.clear_cache().await
@@ -145,6 +149,7 @@ impl SpecificAzureCredential {
             azure_credential_types::VIRTUAL_MACHINE => SpecificAzureCredentialEnum::VirtualMachine(
                 VirtualMachineManagedIdentityCredential::new(options),
             ),
+            #[cfg(not(target_arch = "wasm32"))]
             azure_credential_types::AZURE_CLI => AzureCliCredential::create()
                 .map(SpecificAzureCredentialEnum::AzureCli)
                 .with_context(ErrorKind::Credential, || {
@@ -238,6 +243,7 @@ mod tests {
 
     /// test AZURE_CREDENTIAL_TYPE of "azurecli"
     #[test]
+    #[cfg(not(target_arch = "wasm32"))]
     fn test_azure_cli() -> azure_core::Result<()> {
         let credential = SpecificAzureCredential::create(test_options(
             &[("AZURE_CREDENTIAL_TYPE", "azurecli")][..],

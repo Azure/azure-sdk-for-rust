@@ -133,6 +133,7 @@ impl DefaultAzureCredentialBuilder {
                         VirtualMachineManagedIdentityCredential::new(self.options.clone()),
                     ));
                 }
+                #[cfg(not(target_arch = "wasm32"))]
                 DefaultAzureCredentialType::AzureCli => {
                     if let Ok(credential) = AzureCliCredential::create() {
                         sources.push(DefaultAzureCredentialEnum::AzureCli(credential));
@@ -165,6 +166,7 @@ enum DefaultAzureCredentialType {
     Environment,
     AppService,
     VirtualMachine,
+    #[cfg(not(target_arch = "wasm32"))]
     AzureCli,
 }
 
