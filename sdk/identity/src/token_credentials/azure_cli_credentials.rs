@@ -295,7 +295,7 @@ mod tests {
         Ok(())
     }
 
-    /// Test from_json for CliTokenResponse for old Azure CLI
+    /// Test `from_json` for `CliTokenResponse` for old Azure CLI
     #[test]
     fn read_old_cli_token_response() -> azure_core::Result<()> {
         let json = br#"
@@ -315,7 +315,7 @@ mod tests {
         Ok(())
     }
 
-    /// Test from_json for CliTokenResponse for current Azure CLI
+    /// Test `from_json` for `CliTokenResponse` for current Azure CLI
     #[test]
     fn read_cli_token_response() -> azure_core::Result<()> {
         let json = br#"
