@@ -1,10 +1,10 @@
+use async_process::Command;
 use azure_core::{
     auth::{AccessToken, TokenCredential, TokenResponse},
     error::{Error, ErrorKind, ResultExt},
 };
 use oauth2::ClientId;
 use serde::Deserialize;
-use std::process::Command;
 use std::str;
 use time::OffsetDateTime;
 
@@ -98,7 +98,7 @@ impl AzureauthCliCredential {
         self
     }
 
-    fn get_access_token(&self, resource: &str) -> azure_core::Result<CliTokenResponse> {
+    async fn get_access_token(&self, resource: &str) -> azure_core::Result<CliTokenResponse> {
         // try using azureauth.exe first, such that azureauth through WSL is
         // used first if possible.
         let (cmd_name, use_windows_features) = if Command::new("azureauth.exe")
@@ -160,7 +160,7 @@ impl AzureauthCliCredential {
             };
         }
 
-        let result = cmd.output();
+        let result = cmd.output().await;
 
         let output = result.map_err(|e| match e.kind() {
             std::io::ErrorKind::NotFound => {
@@ -187,7 +187,7 @@ impl AzureauthCliCredential {
     }
 
     /// Clear the azureauth cache as well as the internal cache
-    fn clear_cache(&self) -> azure_core::Result<CliTokenResponse> {
+    async fn clear_cache(&self) -> azure_core::Result<CliTokenResponse> {
         let resources = { self.cache.read().await.keys().cloned().collect::<Vec<_>>() };
 
         // try using azureauth.exe first, such that azureauth through WSL is
@@ -250,7 +250,7 @@ impl AzureauthCliCredential {
                 };
             }
 
-            let result = cmd.output();
+            let result = cmd.output().await;
 
             let output = result.map_err(|e| match e.kind() {
                 std::io::ErrorKind::NotFound => {

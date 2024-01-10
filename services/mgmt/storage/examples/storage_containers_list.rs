@@ -14,7 +14,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
     let credential = Arc::new(AzureCliCredential::new());
-    let subscription_id = AzureCliCredential::get_subscription()?;
+    let subscription_id = AzureCliCredential::get_subscription().await?;
     let client = azure_mgmt_storage::Client::builder(credential).build()?;
 
     let group = std::env::args().nth(1).expect("please specify resource group");

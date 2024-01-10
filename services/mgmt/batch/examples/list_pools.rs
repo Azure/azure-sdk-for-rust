@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let account_name = std::env::args().nth(2).expect("please specify batch account");
 
     let credential = Arc::new(AzureCliCredential::new());
-    let subscription_id = AzureCliCredential::get_subscription()?;
+    let subscription_id = AzureCliCredential::get_subscription().await?;
     let client = azure_mgmt_batch::Client::builder(credential).build()?;
 
     let mut pools = client

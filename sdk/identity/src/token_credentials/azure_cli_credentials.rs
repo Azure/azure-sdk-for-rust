@@ -1,11 +1,12 @@
 use crate::token_credentials::cache::TokenCache;
+use async_process::Command;
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
     from_json,
 };
 use serde::Deserialize;
-use std::{process::Command, str};
+use std::str;
 use time::OffsetDateTime;
 
 #[cfg(feature = "old_azure_cli")]
@@ -162,7 +163,7 @@ impl AzureCliCredential {
     }
 
     /// Get an access token for an optional resource
-    fn get_access_token(scopes: Option<&[&str]>) -> azure_core::Result<CliTokenResponse> {
+    async fn get_access_token(scopes: Option<&[&str]>) -> azure_core::Result<CliTokenResponse> {
         // on window az is a cmd and it should be called like this
         // see https://doc.rust-lang.org/nightly/std/process/struct.Command.html
         let program = if cfg!(target_os = "windows") {
@@ -192,7 +193,7 @@ impl AzureCliCredential {
             args.join(" "),
         );
 
-        match Command::new(program).args(args).output() {
+        match Command::new(program).args(args).output().await {
             Ok(az_output) if az_output.status.success() => {
                 let output = str::from_utf8(&az_output.stdout)?;
 
@@ -217,19 +218,19 @@ impl AzureCliCredential {
     }
 
     /// Returns the current subscription ID from the Azure CLI.
-    pub fn get_subscription() -> azure_core::Result<String> {
-        let tr = Self::get_access_token(None)?;
+    pub async fn get_subscription() -> azure_core::Result<String> {
+        let tr = Self::get_access_token(None).await?;
         Ok(tr.subscription)
     }
 
     /// Returns the current tenant ID from the Azure CLI.
-    pub fn get_tenant() -> azure_core::Result<String> {
-        let tr = Self::get_access_token(None)?;
+    pub async fn get_tenant() -> azure_core::Result<String> {
+        let tr = Self::get_access_token(None).await?;
         Ok(tr.tenant)
     }
 
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
-        let tr = Self::get_access_token(Some(scopes))?;
+        let tr = Self::get_access_token(Some(scopes)).await?;
         let expires_on = tr.expires_on()?;
         Ok(AccessToken::new(tr.access_token, expires_on))
     }
