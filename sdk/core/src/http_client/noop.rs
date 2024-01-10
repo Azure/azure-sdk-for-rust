@@ -1,9 +1,9 @@
 use async_trait::async_trait;
 
 #[derive(Debug)]
-pub struct NoopClient;
+struct NoopClient;
 
-pub fn new_noop_client() -> std::sync::Arc<dyn crate::HttpClient> {
+pub(crate) fn new_noop_client() -> std::sync::Arc<dyn crate::HttpClient> {
     std::sync::Arc::new(NoopClient)
 }
 

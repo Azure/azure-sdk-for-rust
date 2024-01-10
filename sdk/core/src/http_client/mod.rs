@@ -4,7 +4,7 @@ mod noop;
 mod reqwest;
 
 #[cfg(not(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")))]
-pub use self::noop::{new_noop_client, NoopClient};
+use self::noop::new_noop_client;
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 use self::reqwest::new_reqwest_client;
 use crate::error::ErrorKind;
@@ -21,7 +21,7 @@ pub fn new_http_client() -> Arc<dyn HttpClient> {
     }
     #[cfg(not(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls")))]
     {
-        Arc::new(NoopClient)
+        new_noop_client()
     }
 }
 
