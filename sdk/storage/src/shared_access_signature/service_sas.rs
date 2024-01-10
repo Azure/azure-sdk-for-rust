@@ -193,9 +193,9 @@ impl BlobSharedAccessSignature {
                     format_date(key.signed_expiry),
                     key.signed_service.to_string(),
                     key.signed_version.to_string(),
-                    "".to_string(), // SIGNED AUTHORIZED_OID
-                    "".to_string(), // SIGNED UNAUTHORIZED_OID
-                    "".to_owned(),  // SIGNED CORRELATION ID
+                    String::new(), // SIGNED AUTHORIZED_OID
+                    String::new(), // SIGNED UNAUTHORIZED_OID
+                    String::new(), // SIGNED CORRELATION ID
                 ];
 
                 content.extend(user_delegated);
