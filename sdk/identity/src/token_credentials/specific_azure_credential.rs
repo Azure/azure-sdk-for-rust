@@ -129,7 +129,7 @@ impl SpecificAzureCredential {
         let credential_type = env.var(AZURE_CREDENTIAL_TYPE)?;
         let source: SpecificAzureCredentialEnum =
             // case insensitive and allow spaces
-            match credential_type.replace(" ", "").to_lowercase().as_str() {
+            match credential_type.replace(' ', "").to_lowercase().as_str() {
                 azure_credential_types::ENVIRONMENT => EnvironmentCredential::create(options)
                     .map(SpecificAzureCredentialEnum::Environment)
                     .with_context(ErrorKind::Credential, || {
