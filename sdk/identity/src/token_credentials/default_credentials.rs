@@ -170,16 +170,9 @@ enum DefaultAzureCredentialType {
     AzureCli,
 }
 
-/// Alias of DefaultAzureCredentialKind for backwards compatibility.
-#[deprecated(
-    since = "0.19.0",
-    note = "Please use DefaultAzureCredentialKind instead"
-)]
-pub type DefaultAzureCredentialEnum = DefaultAzureCredentialKind;
-
 /// Types of `TokenCredential` supported by `DefaultAzureCredential`
 #[derive(Debug)]
-pub enum DefaultAzureCredentialKind {
+pub(crate) enum DefaultAzureCredentialKind {
     /// `TokenCredential` from environment variable.
     Environment(EnvironmentCredential),
     /// `TokenCredential` from managed identity that has been assigned to an App Service.
@@ -261,10 +254,14 @@ pub struct DefaultAzureCredential {
 }
 
 impl DefaultAzureCredential {
+    pub fn create(options: TokenCredentialOptions) -> azure_core::Result<DefaultAzureCredential> {
+        DefaultAzureCredentialBuilder::default()
+            .with_options(options)
+            .build()
+    }
+
     /// Creates a `DefaultAzureCredential` with specified sources.
-    ///
-    /// These sources will be tried in the order provided in the `TokenCredential` authentication flow.
-    pub fn with_sources(sources: Vec<DefaultAzureCredentialKind>) -> Self {
+    fn with_sources(sources: Vec<DefaultAzureCredentialKind>) -> Self {
         DefaultAzureCredential {
             sources,
             cache: TokenCache::new(),
