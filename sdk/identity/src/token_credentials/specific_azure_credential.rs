@@ -222,7 +222,7 @@ pub fn test_options(env_vars: &[(&str, &str)]) -> TokenCredentialOptions {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::EnvironmentCredentialEnum;
+    use crate::EnvironmentCredentialKind;
 
     /// test AZURE_CREDENTIAL_TYPE of "environment"
     #[test]
@@ -237,7 +237,7 @@ mod tests {
         ))?;
         match credential.source() {
             SpecificAzureCredentialEnum::Environment(credential) => match credential.source() {
-                EnvironmentCredentialEnum::ClientSecret(_) => {}
+                EnvironmentCredentialKind::ClientSecret(_) => {}
                 _ => panic!("expect client secret credential"),
             },
             _ => panic!("expected environment credential"),

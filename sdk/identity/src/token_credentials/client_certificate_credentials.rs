@@ -35,7 +35,7 @@ pub struct ClientCertificateCredentialOptions {
     send_certificate_chain: bool,
 }
 
-// alias of CertificateCredentialOptions for backwards compatibility
+/// Alias of CertificateCredentialOptions for backwards compatibility.
 #[deprecated(
     since = "0.19.0",
     note = "Please use ClientCertificateCredentialOptions instead"

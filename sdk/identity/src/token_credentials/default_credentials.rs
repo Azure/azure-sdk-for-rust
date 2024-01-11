@@ -107,15 +107,15 @@ impl DefaultAzureCredentialBuilder {
     fn create_sources(
         &self,
         included: &Vec<DefaultAzureCredentialType>,
-    ) -> azure_core::Result<Vec<DefaultAzureCredentialEnum>> {
-        let mut sources = Vec::<DefaultAzureCredentialEnum>::with_capacity(included.len());
+    ) -> azure_core::Result<Vec<DefaultAzureCredentialKind>> {
+        let mut sources = Vec::<DefaultAzureCredentialKind>::with_capacity(included.len());
         let mut errors = Vec::new();
         for source in included {
             match source {
                 DefaultAzureCredentialType::Environment => {
                     match EnvironmentCredential::create(self.options.clone()) {
                         Ok(credential) => {
-                            sources.push(DefaultAzureCredentialEnum::Environment(credential))
+                            sources.push(DefaultAzureCredentialKind::Environment(credential))
                         }
                         Err(error) => errors.push(error),
                     }
@@ -123,20 +123,20 @@ impl DefaultAzureCredentialBuilder {
                 DefaultAzureCredentialType::AppService => {
                     match AppServiceManagedIdentityCredential::create(self.options.clone()) {
                         Ok(credential) => {
-                            sources.push(DefaultAzureCredentialEnum::AppService(credential))
+                            sources.push(DefaultAzureCredentialKind::AppService(credential))
                         }
                         Err(error) => errors.push(error),
                     }
                 }
                 DefaultAzureCredentialType::VirtualMachine => {
-                    sources.push(DefaultAzureCredentialEnum::VirtualMachine(
+                    sources.push(DefaultAzureCredentialKind::VirtualMachine(
                         VirtualMachineManagedIdentityCredential::new(self.options.clone()),
                     ));
                 }
                 #[cfg(not(target_arch = "wasm32"))]
                 DefaultAzureCredentialType::AzureCli => {
                     if let Ok(credential) = AzureCliCredential::create() {
-                        sources.push(DefaultAzureCredentialEnum::AzureCli(credential));
+                        sources.push(DefaultAzureCredentialKind::AzureCli(credential));
                     }
                 }
             }
@@ -170,9 +170,16 @@ enum DefaultAzureCredentialType {
     AzureCli,
 }
 
+/// Alias of DefaultAzureCredentialKind for backwards compatibility.
+#[deprecated(
+    since = "0.19.0",
+    note = "Please use DefaultAzureCredentialKind instead"
+)]
+pub type DefaultAzureCredentialEnum = DefaultAzureCredentialKind;
+
 /// Types of `TokenCredential` supported by `DefaultAzureCredential`
 #[derive(Debug)]
-pub enum DefaultAzureCredentialEnum {
+pub enum DefaultAzureCredentialKind {
     /// `TokenCredential` from environment variable.
     Environment(EnvironmentCredential),
     /// `TokenCredential` from managed identity that has been assigned to an App Service.
@@ -186,22 +193,22 @@ pub enum DefaultAzureCredentialEnum {
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl TokenCredential for DefaultAzureCredentialEnum {
+impl TokenCredential for DefaultAzureCredentialKind {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         match self {
-            DefaultAzureCredentialEnum::Environment(credential) => {
+            DefaultAzureCredentialKind::Environment(credential) => {
                 credential.get_token(scopes).await.context(
                     ErrorKind::Credential,
                     "error getting environment credential",
                 )
             }
-            DefaultAzureCredentialEnum::AppService(credential) => {
+            DefaultAzureCredentialKind::AppService(credential) => {
                 credential.get_token(scopes).await.context(
                     ErrorKind::Credential,
                     "error getting managed identity credential for App Service",
                 )
             }
-            DefaultAzureCredentialEnum::VirtualMachine(credential) => {
+            DefaultAzureCredentialKind::VirtualMachine(credential) => {
                 // IMSD timeout is only limited to 1 second when used in DefaultAzureCredential
                 credential
                     .get_token(scopes)
@@ -217,7 +224,7 @@ impl TokenCredential for DefaultAzureCredentialEnum {
                     )
             }
             #[cfg(not(target_arch = "wasm32"))]
-            DefaultAzureCredentialEnum::AzureCli(credential) => {
+            DefaultAzureCredentialKind::AzureCli(credential) => {
                 credential.get_token(scopes).await.context(
                     ErrorKind::Credential,
                     "error getting token credential from Azure CLI",
@@ -229,13 +236,13 @@ impl TokenCredential for DefaultAzureCredentialEnum {
     /// Clear the credential's cache.
     async fn clear_cache(&self) -> azure_core::Result<()> {
         match self {
-            DefaultAzureCredentialEnum::Environment(credential) => credential.clear_cache().await,
-            DefaultAzureCredentialEnum::AppService(credential) => credential.clear_cache().await,
-            DefaultAzureCredentialEnum::VirtualMachine(credential) => {
+            DefaultAzureCredentialKind::Environment(credential) => credential.clear_cache().await,
+            DefaultAzureCredentialKind::AppService(credential) => credential.clear_cache().await,
+            DefaultAzureCredentialKind::VirtualMachine(credential) => {
                 credential.clear_cache().await
             }
             #[cfg(not(target_arch = "wasm32"))]
-            DefaultAzureCredentialEnum::AzureCli(credential) => credential.clear_cache().await,
+            DefaultAzureCredentialKind::AzureCli(credential) => credential.clear_cache().await,
         }
     }
 }
@@ -249,7 +256,7 @@ impl TokenCredential for DefaultAzureCredentialEnum {
 /// Consult the documentation of these credential types for more information on how they attempt authentication.
 #[derive(Debug)]
 pub struct DefaultAzureCredential {
-    sources: Vec<DefaultAzureCredentialEnum>,
+    sources: Vec<DefaultAzureCredentialKind>,
     cache: TokenCache,
 }
 
@@ -257,7 +264,7 @@ impl DefaultAzureCredential {
     /// Creates a `DefaultAzureCredential` with specified sources.
     ///
     /// These sources will be tried in the order provided in the `TokenCredential` authentication flow.
-    pub fn with_sources(sources: Vec<DefaultAzureCredentialEnum>) -> Self {
+    pub fn with_sources(sources: Vec<DefaultAzureCredentialKind>) -> Self {
         DefaultAzureCredential {
             sources,
             cache: TokenCache::new(),
