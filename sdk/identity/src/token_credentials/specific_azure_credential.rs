@@ -14,9 +14,9 @@ use azure_core::{
 };
 use std::sync::Arc;
 
-pub const AZURE_CREDENTIAL_TYPE: &str = "AZURE_CREDENTIAL_TYPE";
+pub const AZURE_CREDENTIAL_KIND: &str = "AZURE_CREDENTIAL_KIND";
 
-pub mod azure_credential_types {
+pub mod azure_credential_kinds {
     pub const ENVIRONMENT: &str = "environment";
     #[cfg(not(target_arch = "wasm32"))]
     pub const AZURE_CLI: &str = "azurecli";
@@ -29,7 +29,7 @@ pub mod azure_credential_types {
 }
 
 /// Creates a `DefaultAzureCredential` by default with default options.
-/// If `AZURE_CREDENTIAL_TYPE` environment variable is set, it creates a `SpecificAzureCredential` with default options.
+/// If `AZURE_CREDENTIAL_KIND` environment variable is set, it creates a `SpecificAzureCredential` with default options.
 pub fn create_credential() -> azure_core::Result<Arc<dyn TokenCredential>> {
     create_credential_with_options(options::TokenCredentialOptions::default())
 }
@@ -38,7 +38,7 @@ fn create_credential_with_options(
     options: TokenCredentialOptions,
 ) -> azure_core::Result<Arc<dyn TokenCredential>> {
     let env = options.env();
-    match env.var(AZURE_CREDENTIAL_TYPE) {
+    match env.var(AZURE_CREDENTIAL_KIND) {
         Ok(_) => SpecificAzureCredential::create(options)
             .map(|cred| Arc::new(cred) as Arc<dyn TokenCredential>),
         Err(_) => crate::DefaultAzureCredentialBuilder::default()
@@ -56,7 +56,7 @@ pub fn create_specific_credential() -> azure_core::Result<Arc<dyn TokenCredentia
 }
 
 #[derive(Debug)]
-pub enum SpecificAzureCredentialEnum {
+pub(crate) enum SpecificAzureCredentialKind {
     Environment(EnvironmentCredential),
     #[cfg(not(target_arch = "wasm32"))]
     AzureCli(AzureCliCredential),
@@ -70,28 +70,28 @@ pub enum SpecificAzureCredentialEnum {
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
-impl TokenCredential for SpecificAzureCredentialEnum {
+impl TokenCredential for SpecificAzureCredentialKind {
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         match self {
-            SpecificAzureCredentialEnum::Environment(credential) => {
+            SpecificAzureCredentialKind::Environment(credential) => {
                 credential.get_token(scopes).await
             }
             #[cfg(not(target_arch = "wasm32"))]
-            SpecificAzureCredentialEnum::AzureCli(credential) => credential.get_token(scopes).await,
-            SpecificAzureCredentialEnum::VirtualMachine(credential) => {
+            SpecificAzureCredentialKind::AzureCli(credential) => credential.get_token(scopes).await,
+            SpecificAzureCredentialKind::VirtualMachine(credential) => {
                 credential.get_token(scopes).await
             }
-            SpecificAzureCredentialEnum::AppService(credential) => {
+            SpecificAzureCredentialKind::AppService(credential) => {
                 credential.get_token(scopes).await
             }
-            SpecificAzureCredentialEnum::ClientSecret(credential) => {
+            SpecificAzureCredentialKind::ClientSecret(credential) => {
                 credential.get_token(scopes).await
             }
-            SpecificAzureCredentialEnum::WorkloadIdentity(credential) => {
+            SpecificAzureCredentialKind::WorkloadIdentity(credential) => {
                 credential.get_token(scopes).await
             }
             #[cfg(feature = "client_certificate")]
-            SpecificAzureCredentialEnum::ClientCertificate(credential) => {
+            SpecificAzureCredentialKind::ClientCertificate(credential) => {
                 credential.get_token(scopes).await
             }
         }
@@ -99,19 +99,19 @@ impl TokenCredential for SpecificAzureCredentialEnum {
 
     async fn clear_cache(&self) -> azure_core::Result<()> {
         match self {
-            SpecificAzureCredentialEnum::Environment(credential) => credential.clear_cache().await,
+            SpecificAzureCredentialKind::Environment(credential) => credential.clear_cache().await,
             #[cfg(not(target_arch = "wasm32"))]
-            SpecificAzureCredentialEnum::AzureCli(credential) => credential.clear_cache().await,
-            SpecificAzureCredentialEnum::VirtualMachine(credential) => {
+            SpecificAzureCredentialKind::AzureCli(credential) => credential.clear_cache().await,
+            SpecificAzureCredentialKind::VirtualMachine(credential) => {
                 credential.clear_cache().await
             }
-            SpecificAzureCredentialEnum::AppService(credential) => credential.clear_cache().await,
-            SpecificAzureCredentialEnum::ClientSecret(credential) => credential.clear_cache().await,
-            SpecificAzureCredentialEnum::WorkloadIdentity(credential) => {
+            SpecificAzureCredentialKind::AppService(credential) => credential.clear_cache().await,
+            SpecificAzureCredentialKind::ClientSecret(credential) => credential.clear_cache().await,
+            SpecificAzureCredentialKind::WorkloadIdentity(credential) => {
                 credential.clear_cache().await
             }
             #[cfg(feature = "client_certificate")]
-            SpecificAzureCredentialEnum::ClientCertificate(credential) => {
+            SpecificAzureCredentialKind::ClientCertificate(credential) => {
                 credential.clear_cache().await
             }
         }
@@ -120,74 +120,74 @@ impl TokenCredential for SpecificAzureCredentialEnum {
 
 #[derive(Debug)]
 pub struct SpecificAzureCredential {
-    source: SpecificAzureCredentialEnum,
+    source: SpecificAzureCredentialKind,
 }
 
 impl SpecificAzureCredential {
     pub fn create(options: TokenCredentialOptions) -> azure_core::Result<SpecificAzureCredential> {
         let env = options.env();
-        let credential_type = env.var(AZURE_CREDENTIAL_TYPE)?;
-        let source: SpecificAzureCredentialEnum =
+        let credential_type = env.var(AZURE_CREDENTIAL_KIND)?;
+        let source: SpecificAzureCredentialKind =
             // case insensitive and allow spaces
             match credential_type.replace(' ', "").to_lowercase().as_str() {
-                azure_credential_types::ENVIRONMENT => EnvironmentCredential::create(options)
-                    .map(SpecificAzureCredentialEnum::Environment)
+                azure_credential_kinds::ENVIRONMENT => EnvironmentCredential::create(options)
+                    .map(SpecificAzureCredentialKind::Environment)
                     .with_context(ErrorKind::Credential, || {
                         format!(
-                            "unable to create AZURE_CREDENTIAL_TYPE of {}",
-                            azure_credential_types::ENVIRONMENT
+                            "unable to create AZURE_CREDENTIAL_KIND of {}",
+                            azure_credential_kinds::ENVIRONMENT
                         )
                     })?,
-                azure_credential_types::APP_SERVICE => {
+                azure_credential_kinds::APP_SERVICE => {
                     AppServiceManagedIdentityCredential::create(options)
-                        .map(SpecificAzureCredentialEnum::AppService)
+                        .map(SpecificAzureCredentialKind::AppService)
                         .with_context(ErrorKind::Credential, || {
                             format!(
-                                "unable to create AZURE_CREDENTIAL_TYPE of {}",
-                                azure_credential_types::APP_SERVICE
+                                "unable to create AZURE_CREDENTIAL_KIND of {}",
+                                azure_credential_kinds::APP_SERVICE
                             )
                         })?
                 }
-                azure_credential_types::VIRTUAL_MACHINE => {
-                    SpecificAzureCredentialEnum::VirtualMachine(
+                azure_credential_kinds::VIRTUAL_MACHINE => {
+                    SpecificAzureCredentialKind::VirtualMachine(
                         VirtualMachineManagedIdentityCredential::new(options),
                     )
                 }
                 #[cfg(not(target_arch = "wasm32"))]
-                azure_credential_types::AZURE_CLI => AzureCliCredential::create()
-                    .map(SpecificAzureCredentialEnum::AzureCli)
+                azure_credential_kinds::AZURE_CLI => AzureCliCredential::create()
+                    .map(SpecificAzureCredentialKind::AzureCli)
                     .with_context(ErrorKind::Credential, || {
                         format!(
-                            "unable to create AZURE_CREDENTIAL_TYPE of {}",
-                            azure_credential_types::AZURE_CLI
+                            "unable to create AZURE_CREDENTIAL_KIND of {}",
+                            azure_credential_kinds::AZURE_CLI
                         )
                     })?,
-                azure_credential_types::CLIENT_SECRET => ClientSecretCredential::create(options)
-                    .map(SpecificAzureCredentialEnum::ClientSecret)?,
-                azure_credential_types::WORKLOAD_IDENTITY => {
+                azure_credential_kinds::CLIENT_SECRET => ClientSecretCredential::create(options)
+                    .map(SpecificAzureCredentialKind::ClientSecret)?,
+                azure_credential_kinds::WORKLOAD_IDENTITY => {
                     WorkloadIdentityCredential::create(options)
-                        .map(SpecificAzureCredentialEnum::WorkloadIdentity)
+                        .map(SpecificAzureCredentialKind::WorkloadIdentity)
                         .with_context(ErrorKind::Credential, || {
                             format!(
-                                "unable to create AZURE_CREDENTIAL_TYPE of {}",
-                                azure_credential_types::WORKLOAD_IDENTITY
+                                "unable to create AZURE_CREDENTIAL_KIND of {}",
+                                azure_credential_kinds::WORKLOAD_IDENTITY
                             )
                         })?
                 }
                 #[cfg(feature = "client_certificate")]
-                azure_credential_types::CLIENT_CERTIFICATE => {
+                azure_credential_kinds::CLIENT_CERTIFICATE => {
                     ClientCertificateCredential::create(options)
-                        .map(SpecificAzureCredentialEnum::ClientCertificate)
+                        .map(SpecificAzureCredentialKind::ClientCertificate)
                         .with_context(ErrorKind::Credential, || {
                             format!(
-                                "unable to create AZURE_CREDENTIAL_TYPE of {}",
-                                azure_credential_types::CLIENT_CERTIFICATE
+                                "unable to create AZURE_CREDENTIAL_KIND of {}",
+                                azure_credential_kinds::CLIENT_CERTIFICATE
                             )
                         })?
                 }
                 _ => {
                     return Err(Error::with_message(ErrorKind::Credential, || {
-                        format!("unknown AZURE_CREDENTIAL_TYPE of {}", credential_type)
+                        format!("unknown AZURE_CREDENTIAL_KIND of {}", credential_type)
                     }))
                 }
             };
@@ -195,7 +195,7 @@ impl SpecificAzureCredential {
     }
 
     #[cfg(test)]
-    pub(crate) fn source(&self) -> &SpecificAzureCredentialEnum {
+    pub(crate) fn source(&self) -> &SpecificAzureCredentialKind {
         &self.source
     }
 }
@@ -224,19 +224,19 @@ mod tests {
     use super::*;
     use crate::EnvironmentCredentialKind;
 
-    /// test AZURE_CREDENTIAL_TYPE of "environment"
+    /// test AZURE_CREDENTIAL_KIND of "environment"
     #[test]
     fn test_environment() -> azure_core::Result<()> {
         let credential = SpecificAzureCredential::create(test_options(
             &[
-                ("AZURE_CREDENTIAL_TYPE", "environment"),
+                ("AZURE_CREDENTIAL_KIND", "environment"),
                 ("AZURE_TENANT_ID", "1"),
                 ("AZURE_CLIENT_ID", "2"),
                 ("AZURE_CLIENT_SECRET", "3"),
             ][..],
         ))?;
         match credential.source() {
-            SpecificAzureCredentialEnum::Environment(credential) => match credential.source() {
+            SpecificAzureCredentialKind::Environment(credential) => match credential.source() {
                 EnvironmentCredentialKind::ClientSecret(_) => {}
                 _ => panic!("expect client secret credential"),
             },
@@ -245,15 +245,15 @@ mod tests {
         Ok(())
     }
 
-    /// test AZURE_CREDENTIAL_TYPE of "azurecli"
+    /// test AZURE_CREDENTIAL_KIND of "azurecli"
     #[test]
     #[cfg(not(target_arch = "wasm32"))]
     fn test_azure_cli() -> azure_core::Result<()> {
         let credential = SpecificAzureCredential::create(test_options(
-            &[("AZURE_CREDENTIAL_TYPE", "azurecli")][..],
+            &[("AZURE_CREDENTIAL_KIND", "azurecli")][..],
         ))?;
         match credential.source() {
-            SpecificAzureCredentialEnum::AzureCli(_) => {}
+            SpecificAzureCredentialKind::AzureCli(_) => {}
             _ => panic!("expected azure cli credential"),
         }
         Ok(())
@@ -264,75 +264,75 @@ mod tests {
     #[cfg(not(target_arch = "wasm32"))]
     fn test_azure_cli_naming() -> azure_core::Result<()> {
         let credential = SpecificAzureCredential::create(test_options(
-            &[("AZURE_CREDENTIAL_TYPE", "Azure CLI")][..],
+            &[("AZURE_CREDENTIAL_KIND", "Azure CLI")][..],
         ))?;
         match credential.source() {
-            SpecificAzureCredentialEnum::AzureCli(_) => {}
+            SpecificAzureCredentialKind::AzureCli(_) => {}
             _ => panic!("expected azure cli credential"),
         }
         Ok(())
     }
 
-    /// test AZURE_CREDENTIAL_TYPE of "virtualmachine"
+    /// test AZURE_CREDENTIAL_KIND of "virtualmachine"
     #[test]
     fn test_virtual_machine() -> azure_core::Result<()> {
         let credential = SpecificAzureCredential::create(test_options(
-            &[("AZURE_CREDENTIAL_TYPE", "virtualmachine")][..],
+            &[("AZURE_CREDENTIAL_KIND", "virtualmachine")][..],
         ))?;
         match credential.source() {
-            SpecificAzureCredentialEnum::VirtualMachine(_) => {}
+            SpecificAzureCredentialKind::VirtualMachine(_) => {}
             _ => panic!("expected virtual machine credential"),
         }
         Ok(())
     }
 
-    /// test AZURE_CREDENTIAL_TYPE of "appservice"
+    /// test AZURE_CREDENTIAL_KIND of "appservice"
     #[test]
     fn test_app_service() -> azure_core::Result<()> {
         let credential = SpecificAzureCredential::create(test_options(
             &[
-                ("AZURE_CREDENTIAL_TYPE", "appservice"),
+                ("AZURE_CREDENTIAL_KIND", "appservice"),
                 ("IDENTITY_ENDPOINT", "https://identityendpoint/token"),
             ][..],
         ))?;
         match credential.source() {
-            SpecificAzureCredentialEnum::AppService(_) => {}
+            SpecificAzureCredentialKind::AppService(_) => {}
             _ => panic!("expected app service credential"),
         }
         Ok(())
     }
 
-    /// test AZURE_CREDENTIAL_TYPE of "clientsecret"
+    /// test AZURE_CREDENTIAL_KIND of "clientsecret"
     #[test]
     fn test_client_secret() -> azure_core::Result<()> {
         let credential = SpecificAzureCredential::create(test_options(
             &[
-                ("AZURE_CREDENTIAL_TYPE", "clientsecret"),
+                ("AZURE_CREDENTIAL_KIND", "clientsecret"),
                 ("AZURE_TENANT_ID", "1"),
                 ("AZURE_CLIENT_ID", "2"),
                 ("AZURE_CLIENT_SECRET", "3"),
             ][..],
         ))?;
         match credential.source() {
-            SpecificAzureCredentialEnum::ClientSecret(_) => {}
+            SpecificAzureCredentialKind::ClientSecret(_) => {}
             _ => panic!("expected client secret credential"),
         }
         Ok(())
     }
 
-    /// test AZURE_CREDENTIAL_TYPE of "workloadidentity"
+    /// test AZURE_CREDENTIAL_KIND of "workloadidentity"
     #[test]
     fn test_workload_identity() -> azure_core::Result<()> {
         let credential = SpecificAzureCredential::create(test_options(
             &[
-                ("AZURE_CREDENTIAL_TYPE", "workloadidentity"),
+                ("AZURE_CREDENTIAL_KIND", "workloadidentity"),
                 ("AZURE_TENANT_ID", "1"),
                 ("AZURE_CLIENT_ID", "2"),
                 ("AZURE_FEDERATED_TOKEN", "3"),
             ][..],
         ))?;
         match credential.source() {
-            SpecificAzureCredentialEnum::WorkloadIdentity(_) => {}
+            SpecificAzureCredentialKind::WorkloadIdentity(_) => {}
             _ => panic!("expected workload identity credential"),
         }
         Ok(())
