@@ -26,8 +26,7 @@ impl Default for DefaultAzureCredentialBuilder {
             options: TokenCredentialOptions::default(),
             include_environment_credential: true,
             include_app_service_managed_identity_credential: true,
-            // Unable to quickly detect if running in Azure VM, so it is disabled by default.
-            include_virtual_machine_managed_identity_credential: false,
+            include_virtual_machine_managed_identity_credential: true,
             #[cfg(not(target_arch = "wasm32"))]
             include_azure_cli_credential: true,
         }
@@ -45,7 +44,7 @@ impl DefaultAzureCredentialBuilder {
         self
     }
 
-    /// Exclude using credentials from the environment
+    /// Exclude using any environment credential
     pub fn exclude_environment_credential(&mut self) -> &mut Self {
         self.include_environment_credential = false;
         self
@@ -65,18 +64,18 @@ impl DefaultAzureCredentialBuilder {
     }
 
     /// Include using virtual machine managed identity credential
-    pub fn include_virtual_machine_managed_identity_credentials(&mut self) -> &mut Self {
+    pub fn include_virtual_machine_managed_identity_credential(&mut self) -> &mut Self {
         self.include_virtual_machine_managed_identity_credential = true;
         self
     }
 
     /// Include using app service managed identity credential
-    pub fn include_app_service_managed_identity_credentials(&mut self) -> &mut Self {
+    pub fn include_app_service_managed_identity_credential(&mut self) -> &mut Self {
         self.include_app_service_managed_identity_credential = true;
         self
     }
 
-    /// Exclude using credentials from the cli
+    /// Exclude using credential from the cli
     #[cfg(not(target_arch = "wasm32"))]
     pub fn exclude_azure_cli_credential(&mut self) -> &mut Self {
         self.include_azure_cli_credential = false;
@@ -343,7 +342,7 @@ mod tests {
         assert!(builder.include_azure_cli_credential);
         assert!(builder.include_environment_credential);
         assert!(builder.include_app_service_managed_identity_credential);
-        assert!(!builder.include_virtual_machine_managed_identity_credential);
+        assert!(builder.include_virtual_machine_managed_identity_credential);
 
         #[cfg(not(target_arch = "wasm32"))]
         {
@@ -352,7 +351,7 @@ mod tests {
             assert!(!builder.include_azure_cli_credential);
             assert!(builder.include_environment_credential);
             assert!(builder.include_app_service_managed_identity_credential);
-            assert!(!builder.include_virtual_machine_managed_identity_credential);
+            assert!(builder.include_virtual_machine_managed_identity_credential);
         }
 
         let mut builder = DefaultAzureCredentialBuilder::new();
@@ -361,7 +360,7 @@ mod tests {
         assert!(builder.include_azure_cli_credential);
         assert!(!builder.include_environment_credential);
         assert!(builder.include_app_service_managed_identity_credential);
-        assert!(!builder.include_virtual_machine_managed_identity_credential);
+        assert!(builder.include_virtual_machine_managed_identity_credential);
 
         let mut builder = DefaultAzureCredentialBuilder::new();
         builder.exclude_managed_identity_credential();
@@ -381,22 +380,22 @@ mod tests {
             vec![
                 DefaultAzureCredentialType::Environment,
                 DefaultAzureCredentialType::AppService,
+                DefaultAzureCredentialType::VirtualMachine,
                 DefaultAzureCredentialType::AzureCli,
             ]
         );
     }
 
-    /// test including virtual machine managed identity credential
+    /// test excluding virtual machine managed identity credential
     #[test]
-    fn test_include_virtual_machine_managed_identity_credential() {
+    fn test_exclude_virtual_machine_managed_identity_credential() {
         let mut builder = DefaultAzureCredentialBuilder::new();
-        builder.include_virtual_machine_managed_identity_credentials();
+        builder.exclude_virtual_machine_managed_identity_credential();
         assert_eq!(
             builder.included(),
             vec![
                 DefaultAzureCredentialType::Environment,
                 DefaultAzureCredentialType::AppService,
-                DefaultAzureCredentialType::VirtualMachine,
                 DefaultAzureCredentialType::AzureCli,
             ]
         );
@@ -411,6 +410,7 @@ mod tests {
             builder.included(),
             vec![
                 DefaultAzureCredentialType::AppService,
+                DefaultAzureCredentialType::VirtualMachine,
                 DefaultAzureCredentialType::AzureCli,
             ]
         );
@@ -427,11 +427,12 @@ mod tests {
             vec![
                 DefaultAzureCredentialType::Environment,
                 DefaultAzureCredentialType::AppService,
+                DefaultAzureCredentialType::VirtualMachine,
             ]
         );
     }
 
-    /// test exluding managed identity credentials
+    /// test exluding managed identity credential
     #[test]
     fn test_exclude_managed_identity_credential() {
         let mut builder = DefaultAzureCredentialBuilder::new();
