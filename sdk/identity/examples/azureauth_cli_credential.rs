@@ -8,7 +8,6 @@ use url::Url;
 struct Args {
     tenant_id: String,
     client_id: String,
-    scopes: Vec<String>,
 }
 
 #[tokio::main]
@@ -16,7 +15,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let Args {
         tenant_id,
         client_id,
-        scopes,
     } = Args::parse();
 
     let creds = AzureauthCliCredential::new(tenant_id, client_id);
