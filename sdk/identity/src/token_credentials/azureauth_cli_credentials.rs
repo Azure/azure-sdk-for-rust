@@ -107,8 +107,13 @@ impl AzureauthCliCredential {
     async fn get_access_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         // try using azureauth.exe first, such that azureauth through WSL is
         // used first if possible.
-        let (cmd_name, use_windows_features) = if Command::new("azureauth.exe")
-            .arg("--version")
+        #[cfg(target_os = "windows")]
+        let which = "where";
+        #[cfg(not(target_os = "windows"))]
+        let which = "which";
+
+        let (cmd_name, use_windows_features) = if Command::new(which)
+            .arg("azureauth.exe")
             .output()
             .await
             .map(|x| x.status.success())
@@ -148,8 +153,6 @@ impl AzureauthCliCredential {
                 cmd.args(["--mode", mode]);
             }
         }
-
-        println!("Running azureauth with options: {:#?}", cmd);
 
         let result = cmd.output().await;
 
