@@ -26,15 +26,14 @@ impl SecretClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     /// use std::sync::Arc;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let mut client = KeyvaultClient::new(
     ///     &"KEYVAULT_URL",
-    ///     Arc::new(creds),
+    ///     credential,
     ///     ).unwrap().secret_client();
     ///     let secret = client.get("SECRET_NAME").await.unwrap();
     ///     dbg!(&secret);
@@ -55,15 +54,14 @@ impl SecretClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     /// use std::sync::Arc;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let mut client = KeyvaultClient::new(
     ///     &"KEYVAULT_URL",
-    ///     Arc::new(creds),
+    ///     credential,
     ///     ).unwrap().secret_client();
     ///     client.set("SECRET_NAME", "NEW_VALUE").await.unwrap();
     /// }
@@ -84,15 +82,14 @@ impl SecretClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     /// use std::sync::Arc;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let client = KeyvaultClient::new(
     ///     &"KEYVAULT_URL",
-    ///     Arc::new(creds),
+    ///     credential,
     ///     ).unwrap().secret_client();
     ///     client.update("SECRET_NAME").enabled(false).await.unwrap();
     /// }
@@ -112,16 +109,14 @@ impl SecretClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use futures::StreamExt;
     /// use tokio::runtime::Runtime;
-    /// use std::sync::Arc;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let client = KeyvaultClient::new(
     ///     &"KEYVAULT_URL",
-    ///     Arc::new(creds),
+    ///     credential,
     ///     ).unwrap().secret_client();
     ///     let secret_versions = client.get_versions("SECRET_NAME").into_stream().next().await.unwrap();
     ///     dbg!(&secret_versions);
@@ -143,15 +138,13 @@ impl SecretClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
-    /// use std::sync::Arc;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let client = KeyvaultClient::new(
     ///     &"KEYVAULT_URL",
-    ///     Arc::new(creds),
+    ///     credential,
     ///     ).unwrap().secret_client();
     ///     client.backup("SECRET_NAME").await.unwrap();
     /// }
@@ -171,15 +164,13 @@ impl SecretClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
-    /// use std::sync::Arc;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let client = KeyvaultClient::new(
     ///     &"KEYVAULT_URL",
-    ///     Arc::new(creds),
+    ///     credential,
     ///     ).unwrap().secret_client();
     ///     client.delete("SECRET_NAME").await.unwrap();
     /// }
@@ -197,15 +188,14 @@ impl SecretClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     /// use futures::stream::StreamExt;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let mut client = KeyvaultClient::new(
     ///     &"KEYVAULT_URL",
-    ///     std::sync::Arc::new(creds),
+    ///     credential,
     ///     ).unwrap().secret_client();
     ///     let secrets = client.list_secrets().into_stream().next().await;
     ///     dbg!(&secrets);
@@ -224,14 +214,13 @@ impl SecretClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let mut client = KeyvaultClient::new(
     ///     &"KEYVAULT_URL",
-    ///     std::sync::Arc::new(creds),
+    ///     credential,
     ///     ).unwrap().secret_client();
     ///     client.restore_secret("KUF6dXJlS2V5VmF1bHRTZWNyZXRCYWNrdXBWMS5taW").await.unwrap();
     /// }
