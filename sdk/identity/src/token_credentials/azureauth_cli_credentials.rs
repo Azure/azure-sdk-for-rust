@@ -1,7 +1,9 @@
+use crate::token_credentials::cache::TokenCache;
 use async_process::Command;
 use azure_core::{
-    auth::{AccessToken, TokenCredential, TokenResponse},
+    auth::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
+    from_json,
 };
 use oauth2::ClientId;
 use serde::Deserialize;
@@ -38,9 +40,12 @@ mod unix_date_string {
 
 #[derive(Debug, Clone, Deserialize)]
 struct CliTokenResponse {
-    pub token: AccessToken,
-    #[serde(with = "unix_date_string")]
-    pub expiration_date: OffsetDateTime,
+    pub user: String,
+    pub display_name: String,
+    #[serde(rename = "token")]
+    pub access_token: Secret,
+    #[serde(with = "unix_date_string", rename = "expiration_date")]
+    pub expires_on: OffsetDateTime,
 }
 
 /// Authentication Mode
@@ -55,10 +60,11 @@ pub enum AzureauthCliMode {
     Web,
 }
 
+#[derive(Debug)]
 /// Enables authentication to Azure Active Directory using Azure CLI to obtain an access token.
 pub struct AzureauthCliCredential {
     tenant_id: String,
-    client_id: ClientId,
+    client_id: String,
     modes: Vec<AzureauthCliMode>,
     prompt_hint: Option<String>,
     cache: TokenCache,
@@ -69,14 +75,14 @@ impl AzureauthCliCredential {
     pub fn new<T, C>(tenant_id: T, client_id: C) -> Self
     where
         T: Into<String>,
-        C: Into<ClientId>,
+        C: Into<String>,
     {
         Self {
             tenant_id: tenant_id.into(),
             client_id: client_id.into(),
             modes: Vec::new(),
             prompt_hint: None,
-            cache: TokenCache,
+            cache: TokenCache::new(),
         }
     }
 
@@ -98,12 +104,18 @@ impl AzureauthCliCredential {
         self
     }
 
-    async fn get_access_token(&self, resource: &str) -> azure_core::Result<CliTokenResponse> {
+    async fn get_access_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         // try using azureauth.exe first, such that azureauth through WSL is
         // used first if possible.
-        let (cmd_name, use_windows_features) = if Command::new("azureauth.exe")
-            .arg("--version")
+        #[cfg(target_os = "windows")]
+        let which = "where";
+        #[cfg(not(target_os = "windows"))]
+        let which = "which";
+
+        let (cmd_name, use_windows_features) = if Command::new(which)
+            .arg("azureauth.exe")
             .output()
+            .await
             .map(|x| x.status.success())
             .unwrap_or(false)
         {
@@ -112,21 +124,9 @@ impl AzureauthCliCredential {
             ("azureauth", false)
         };
 
-        let mut resource = resource.to_owned();
-        if !resource.ends_with("/.default") {
-            if resource.ends_with('/') {
-                resource.push_str(".default");
-            } else {
-                resource.push_str("/.default");
-            }
-        }
-
         let mut cmd = Command::new(cmd_name);
         cmd.args([
             "aad",
-            "--scope",
-            &resource,
-            resource,
             "--client",
             self.client_id.as_str(),
             "--tenant",
@@ -135,29 +135,23 @@ impl AzureauthCliCredential {
             "json",
         ]);
 
+        for scope in scopes {
+            cmd.args(["--scope", scope]);
+        }
+
         if let Some(prompt_hint) = &self.prompt_hint {
             cmd.args(["--prompt-hint", prompt_hint]);
         }
 
         for mode in &self.modes {
-            match mode {
-                AzureauthCliMode::All => {
-                    cmd.args(["--mode", "all"]);
-                }
-                AzureauthCliMode::IntegratedWindowsAuth => {
-                    if use_windows_features {
-                        cmd.args(["--mode", "iwa"]);
-                    }
-                }
-                AzureauthCliMode::Broker => {
-                    if use_windows_features {
-                        cmd.args(["--mode", "broker"]);
-                    }
-                }
-                AzureauthCliMode::Web => {
-                    cmd.args(["--mode", "web"]);
-                }
-            };
+            if let Some(mode) = match mode {
+                AzureauthCliMode::All => Some("all"),
+                AzureauthCliMode::IntegratedWindowsAuth => use_windows_features.then_some("iwa"),
+                AzureauthCliMode::Broker => use_windows_features.then_some("broker"),
+                AzureauthCliMode::Web => Some("web"),
+            } {
+                cmd.args(["--mode", mode]);
+            }
         }
 
         let result = cmd.output().await;
@@ -179,111 +173,25 @@ impl AzureauthCliCredential {
         }
 
         let token_response: CliTokenResponse = from_json(output.stdout)?;
-
-        Ok(TokenResponse::new(
-            token_response.token,
-            token_response.expiration_date,
-        ))
-    }
-
-    /// Clear the azureauth cache as well as the internal cache
-    async fn clear_cache(&self) -> azure_core::Result<CliTokenResponse> {
-        let resources = { self.cache.read().await.keys().cloned().collect::<Vec<_>>() };
-
-        // try using azureauth.exe first, such that azureauth through WSL is
-        // used first if possible.
-        let (cmd_name) = if Command::new("azureauth.exe")
-            .arg("--version")
-            .output()
-            .map(|x| x.status.success())
-            .unwrap_or(false)
-        {
-            "azureauth.exe"
-        } else {
-            "azureauth"
-        };
-
-        for resource in resources {
-            let mut resource = resource.to_owned();
-            if !resource.ends_with("/.default") {
-                if resource.ends_with('/') {
-                    resource.push_str(".default");
-                } else {
-                    resource.push_str("/.default");
-                }
-            }
-
-            let mut cmd = Command::new(cmd_name);
-            cmd.args([
-                "aad",
-                "--scope",
-                &resource,
-                "--client",
-                self.client_id.as_str(),
-                "--tenant",
-                self.tenant_id.as_str(),
-                "--clear",
-            ]);
-
-            if let Some(prompt_hint) = &self.prompt_hint {
-                cmd.args(["--prompt-hint", prompt_hint]);
-            }
-
-            for mode in &self.modes {
-                match mode {
-                    AzureauthCliMode::All => {
-                        cmd.args(["--mode", "all"]);
-                    }
-                    AzureauthCliMode::IntegratedWindowsAuth => {
-                        if use_windows_features {
-                            cmd.args(["--mode", "iwa"]);
-                        }
-                    }
-                    AzureauthCliMode::Broker => {
-                        if use_windows_features {
-                            cmd.args(["--mode", "broker"]);
-                        }
-                    }
-                    AzureauthCliMode::Web => {
-                        cmd.args(["--mode", "web"]);
-                    }
-                };
-            }
-
-            let result = cmd.output().await;
-
-            let output = result.map_err(|e| match e.kind() {
-                std::io::ErrorKind::NotFound => {
-                    Error::message(ErrorKind::Other, "azureauth CLI not installed")
-                }
-                error_kind => Error::with_message(ErrorKind::Other, || {
-                    format!("Unknown error of kind: {error_kind:?}")
-                }),
-            })?;
-
-            if !output.status.success() {
-                let output = String::from_utf8_lossy(&output.stderr);
-                return Err(Error::with_message(ErrorKind::Credential, || {
-                    format!("'azureauth' command failed: {output}")
-                }));
-            }
-        }
-
-        self.cache.clear().await?;
-
-        Ok(())
+        Ok(AccessToken {
+            token: token_response.access_token,
+            expires_on: token_response.expires_on,
+        })
     }
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait::async_trait)]
 impl TokenCredential for AzureauthCliCredential {
-    async fn get_token(&self, resource: &str) -> azure_core::Result<TokenResponse> {
+    async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         self.cache
-            .get_token(resource, self.get_access_token(resource))
+            .get_token(scopes, self.get_access_token(scopes))
             .await
     }
-    async fn clear_cache(&self) -> azure_core::Result<TokenResponse> {
+
+    async fn clear_cache(&self) -> azure_core::Result<()> {
+        // Clear internal cache only as there is no guarantee that the underlying MSAL caches will be cleared through azureauth.
+        // But clearing internally will force a new call to azureauth which handles refreshing the MSAL cache and always returns a valid token.
         self.cache.clear().await
     }
 }
@@ -302,9 +210,9 @@ mod tests {
         }"#;
 
         let response: CliTokenResponse = from_json(src)?;
-        assert_eq!(response.token.secret(), "security token here");
+        assert_eq!(response.access_token.secret(), "security token here");
         assert_eq!(
-            response.expiration_date,
+            response.expires_on,
             OffsetDateTime::from_unix_timestamp(1700166595).expect("known valid date")
         );
 

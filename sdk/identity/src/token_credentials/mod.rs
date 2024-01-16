@@ -7,7 +7,7 @@
 //! * Client secret
 #[cfg(not(target_arch = "wasm32"))]
 mod azure_cli_credentials;
-#[cfg(feature = "azureauth-cli")]
+#[cfg(feature = "azureauth_cli")]
 #[cfg(not(target_arch = "wasm32"))]
 mod azureauth_cli_credentials;
 mod cache;
@@ -21,7 +21,7 @@ mod workload_identity_credentials;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub use azure_cli_credentials::*;
-#[cfg(feature = "azureauth-cli")]
+#[cfg(feature = "azureauth_cli")]
 #[cfg(not(target_arch = "wasm32"))]
 pub use azureauth_cli_credentials::*;
 #[cfg(feature = "client_certificate")]
