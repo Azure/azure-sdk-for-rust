@@ -16,6 +16,7 @@ use azure_core::{
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use time::OffsetDateTime;
+use tracing::warn;
 
 operation! {
     #[stream]

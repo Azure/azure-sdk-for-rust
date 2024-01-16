@@ -3,6 +3,7 @@ use azure_core::auth::AccessToken;
 use futures::Future;
 use std::{collections::HashMap, time::Duration};
 use time::OffsetDateTime;
+use tracing::trace;
 
 fn is_expired(token: &AccessToken) -> bool {
     token.expires_on < OffsetDateTime::now_utc() + Duration::from_secs(20)
@@ -32,7 +33,7 @@ impl TokenCache {
         let scopes = scopes.iter().map(ToString::to_string).collect::<Vec<_>>();
         if let Some(token) = token_cache.get(&scopes) {
             if !is_expired(token) {
-                log::trace!("returning cached token");
+                trace!("returning cached token");
                 return Ok(token.clone());
             }
         }
@@ -45,12 +46,12 @@ impl TokenCache {
         // waiting on the write lock
         if let Some(token) = token_cache.get(&scopes) {
             if !is_expired(token) {
-                log::trace!("returning token that was updated while waiting on write lock");
+                trace!("returning token that was updated while waiting on write lock");
                 return Ok(token.clone());
             }
         }
 
-        log::trace!("falling back to callback");
+        trace!("falling back to callback");
         let token = callback.await?;
 
         // NOTE: we do not check to see if the token is expired here, as at

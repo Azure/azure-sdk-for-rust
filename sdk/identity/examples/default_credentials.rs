@@ -5,7 +5,7 @@ use url::Url;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    env_logger::init();
+    tracing_subscriber::fmt().init();
 
     let sub_id = var("AZURE_SUBSCRIPTION_ID")?;
     let creds = DefaultAzureCredentialBuilder::new()

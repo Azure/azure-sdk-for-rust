@@ -1,11 +1,13 @@
-use crate::resources::permission::AuthorizationToken;
-use crate::resources::ResourceType;
-use azure_core::headers::{HeaderValue, AUTHORIZATION, MS_DATE, VERSION};
-use azure_core::hmac::hmac_sha256;
-use azure_core::{date, Context, Policy, PolicyResult, Request, Url};
-use std::borrow::Cow;
-use std::sync::Arc;
+use crate::{resources::permission::AuthorizationToken, resources::ResourceType};
+use azure_core::{
+    date,
+    headers::{HeaderValue, AUTHORIZATION, MS_DATE, VERSION},
+    hmac::hmac_sha256,
+    Context, Policy, PolicyResult, Request, Url,
+};
+use std::{borrow::Cow, sync::Arc};
 use time::OffsetDateTime;
+use tracing::trace;
 use url::form_urlencoded;
 
 const AZURE_VERSION: &str = "2018-12-31";

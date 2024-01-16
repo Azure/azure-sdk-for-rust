@@ -1,7 +1,7 @@
 use azure_storage_blobs::container::PublicAccess;
 use bytes::Bytes;
 use futures::StreamExt;
-use log::trace;
+use tracing::trace;
 
 mod setup;
 

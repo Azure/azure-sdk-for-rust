@@ -24,7 +24,7 @@ azure_core = { path = "../core", version = "0.19", default-features = false }
 azure_identity = { path = "../identity", default-features = false }
 async-trait = "0.1"
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
-env_logger = "0.10"
+tracing-subscriber = "0.3"
 
 [features]
 default = ["enable_reqwest"]

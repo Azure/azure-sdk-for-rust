@@ -5,7 +5,7 @@ use std::{env, sync::Arc};
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    env_logger::init();
+    tracing_subscriber::fmt().init();
 
     let keyvault_url =
         env::var("KEYVAULT_URL").expect("Missing KEYVAULT_URL environment variable.");

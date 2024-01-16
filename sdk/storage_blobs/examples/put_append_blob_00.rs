@@ -1,13 +1,11 @@
-#[macro_use]
-extern crate log;
-
 use azure_core::prelude::*;
 use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
+use tracing::trace;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    env_logger::init();
+    tracing_subscriber::fmt().init();
 
     // First we retrieve the account name and access key from environment variables.
     let account =

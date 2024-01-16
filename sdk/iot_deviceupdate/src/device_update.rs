@@ -4,12 +4,11 @@ use azure_core::{
     sleep,
 };
 use getset::Getters;
-use log::debug;
 use serde::Deserialize;
 use serde_json::{Map, Value};
-use std::fmt::Debug;
-use std::time::Duration;
+use std::{fmt::Debug, time::Duration};
 use time::OffsetDateTime;
+use tracing::debug;
 
 #[derive(Debug, Deserialize, Getters)]
 #[getset(get = "pub")]

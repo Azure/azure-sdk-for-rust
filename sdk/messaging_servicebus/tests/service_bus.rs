@@ -1,5 +1,4 @@
 #![cfg(all(test, feature = "test_e2e"))] // to run this, do: `cargo test --features test_e2e`
-extern crate log;
 
 use azure_messaging_servicebus::service_bus::QueueClient;
 use std::time::Duration;

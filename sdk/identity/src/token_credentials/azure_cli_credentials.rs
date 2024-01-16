@@ -8,6 +8,7 @@ use azure_core::{
 use serde::Deserialize;
 use std::str;
 use time::OffsetDateTime;
+use tracing::trace;
 
 #[cfg(feature = "old_azure_cli")]
 mod az_cli_date_format {
@@ -188,7 +189,7 @@ impl AzureCliCredential {
             args.push(scopes);
         }
 
-        log::trace!(
+        trace!(
             "fetching credential via Azure CLI: {program} {}",
             args.join(" "),
         );

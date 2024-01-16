@@ -1,8 +1,10 @@
-use crate::policies::{Policy, PolicyResult};
-use crate::TransportOptions;
-use crate::{Context, Request};
+use crate::{
+    policies::{Policy, PolicyResult},
+    Context, Request, TransportOptions,
+};
 use async_trait::async_trait;
 use std::sync::Arc;
+use tracing::debug;
 
 #[derive(Debug, Clone)]
 pub struct TransportPolicy {
@@ -27,7 +29,7 @@ impl Policy for TransportPolicy {
         // there must be no more policies
         assert_eq!(0, next.len());
 
-        log::debug!("the following request will be passed to the transport policy: {request:#?}");
+        debug!("the following request will be passed to the transport policy: {request:#?}");
         let response = { self.transport_options.send(ctx, request) };
 
         response.await

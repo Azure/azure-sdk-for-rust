@@ -1,4 +1,5 @@
 use azure_core::error::{Error, ErrorKind};
+use tracing::{debug, trace};
 
 /// A resource quota for the given resource kind
 ///

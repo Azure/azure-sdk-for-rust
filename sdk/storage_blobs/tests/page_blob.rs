@@ -1,10 +1,9 @@
 #![cfg(all(test, feature = "test_e2e"))]
-#[macro_use]
-extern crate log;
 use azure_core::prelude::*;
 use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::StreamExt;
+use tracing::trace;
 
 #[tokio::test]
 async fn put_page_blob() {

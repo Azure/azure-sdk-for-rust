@@ -3,7 +3,7 @@ use azure_storage_blobs::prelude::*;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    env_logger::init();
+    tracing_subscriber::fmt().init();
     // First we retrieve the account name and access key from environment variables.
     let account =
         std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");

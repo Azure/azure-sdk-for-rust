@@ -1,15 +1,15 @@
-use crate::date;
-use crate::error::{Error, ErrorKind, HttpError, ResultExt};
-use crate::headers::{Headers, RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS};
-use crate::policies::{Policy, PolicyResult, Request};
-use crate::sleep::sleep;
-use crate::{Context, StatusCode};
-
+use crate::{
+    date,
+    error::{Error, ErrorKind, HttpError, ResultExt},
+    headers::{Headers, RETRY_AFTER, RETRY_AFTER_MS, X_MS_RETRY_AFTER_MS},
+    policies::{Policy, PolicyResult, Request},
+    sleep::sleep,
+    Context, StatusCode,
+};
 use async_trait::async_trait;
+use std::{sync::Arc, time::Duration};
 use time::OffsetDateTime;
-
-use std::sync::Arc;
-use std::time::Duration;
+use tracing::{debug, trace};
 
 /// Attempts to parse the supplied string as an HTTP date, of the form defined by RFC 1123 (e.g. `Fri, 01 Jan 2021 00:00:00 GMT`).
 /// Returns `None` if the string is not a valid HTTP date.
@@ -122,7 +122,7 @@ where
             let start = start.get_or_insert_with(OffsetDateTime::now_utc);
             let (last_error, retry_after) = match result {
                 Ok(response) if response.status().is_success() => {
-                    log::trace!(
+                    trace!(
                         "Successful response. Request={:?} response={:?}",
                         request,
                         response
@@ -151,7 +151,7 @@ where
                     );
 
                     if !RETRY_STATUSES.contains(&status) {
-                        log::debug!(
+                        debug!(
                             "server returned error status which will not be retried: {}",
                             status
                         );
@@ -165,7 +165,7 @@ where
                         );
                         return Err(error);
                     }
-                    log::debug!(
+                    debug!(
                         "server returned error status which requires retry: {}",
                         status
                     );
@@ -173,7 +173,7 @@ where
                 }
                 Err(error) => {
                     if error.kind() == &ErrorKind::Io {
-                        log::debug!(
+                        debug!(
                             "io error occurred when making request which will be retried: {}",
                             error
                         );

@@ -3,6 +3,7 @@ use azure_core::{
     auth::Secret,
     error::{Error, ErrorKind},
 };
+use tracing::warn;
 
 // Key names.
 pub const ACCOUNT_KEY_KEY_NAME: &str = "AccountKey";
@@ -188,7 +189,7 @@ impl<'a> ConnectionString<'a> {
                 ..
             } => {
                 if self.account_key.is_some() {
-                    log::warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
+                    warn!("Both account key and SAS defined in connection string. Using only the provided SAS.");
                 }
                 StorageCredentials::sas_token(*sas_token)
             }

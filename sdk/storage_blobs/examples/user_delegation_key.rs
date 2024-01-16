@@ -22,7 +22,7 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    env_logger::init();
+    tracing_subscriber::fmt().init();
     let args = Args::parse();
 
     let default_creds: Arc<dyn TokenCredential> = Arc::new(DefaultAzureCredential::default());

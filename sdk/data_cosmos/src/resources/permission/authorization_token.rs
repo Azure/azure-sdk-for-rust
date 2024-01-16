@@ -1,7 +1,7 @@
 use super::PermissionToken;
 use azure_core::auth::{Secret, TokenCredential};
-use std::fmt;
-use std::sync::Arc;
+use std::{fmt, sync::Arc};
+use tracing::trace;
 
 /// Authorization tokens for accessing Cosmos.
 ///

@@ -1,31 +1,32 @@
 use azure_data_cosmos::resources::collection::*;
 use futures::StreamExt;
+use tracing::{debug, info};
 
 mod setup_mock;
 
 #[tokio::test]
 async fn collection_operations() -> azure_core::Result<()> {
-    env_logger::init();
+    tracing_subscriber::fmt().init();
 
     let client = setup_mock::initialize("collection_operations")?;
     let database_name = "test-collection-operations";
 
-    log::info!("Creating a database with name '{}'...", database_name);
+    info!("Creating a database with name '{}'...", database_name);
     client.create_database(database_name).await?;
-    log::info!("Successfully created a database");
+    info!("Successfully created a database");
 
     // create collection!
     let database = client.database_client(database_name);
 
     let collection_name = "sample_collection";
-    log::info!("Creating a collection with name '{}'...", collection_name);
+    info!("Creating a collection with name '{}'...", collection_name);
 
     let create_collection_response = database.create_collection(collection_name, "/id").await?;
 
     assert_eq!(create_collection_response.collection.id, collection_name);
 
-    log::info!("Successfully created a collection");
-    log::debug!(
+    info!("Successfully created a collection");
+    debug!(
         "The create_collection response: {:#?}",
         create_collection_response
     );
@@ -37,8 +38,8 @@ async fn collection_operations() -> azure_core::Result<()> {
 
     assert_eq!(get_collection.collection.id, collection_name);
 
-    log::info!("Successfully got a collection");
-    log::debug!("The get_collection response: {:#?}", get_collection);
+    info!("Successfully got a collection");
+    debug!("The get_collection response: {:#?}", get_collection);
 
     let collections = database
         .list_collections()
@@ -99,8 +100,8 @@ async fn collection_operations() -> azure_core::Result<()> {
         "/\"excludeme\"/?"
     );
 
-    log::info!("Successfully replaced collection");
-    log::debug!(
+    info!("Successfully replaced collection");
+    debug!(
         "The replace_collection response: {:#?}",
         replace_collection_response
     );
@@ -108,15 +109,15 @@ async fn collection_operations() -> azure_core::Result<()> {
     // delete collection!
     let delete_collection_response = collection.delete_collection().await?;
 
-    log::info!("Successfully deleted collection");
-    log::debug!(
+    info!("Successfully deleted collection");
+    debug!(
         "The delete_collection response: {:#?}",
         delete_collection_response
     );
 
     // delete database
     database.delete_database().await?;
-    log::info!("Successfully deleted database");
+    info!("Successfully deleted database");
 
     Ok(())
 }

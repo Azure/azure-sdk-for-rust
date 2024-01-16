@@ -5,10 +5,11 @@ use crate::{
 use async_trait::async_trait;
 use futures::TryStreamExt;
 use std::{collections::HashMap, str::FromStr, sync::Arc};
+use tracing::{debug, warn};
 
 /// Construct a new `HttpClient` with the `reqwest` backend.
 pub fn new_reqwest_client() -> Arc<dyn HttpClient> {
-    log::debug!("instantiating an http client using the reqwest backend");
+    debug!("instantiating an http client using the reqwest backend");
 
     // set `pool_max_idle_per_host` to `0` to avoid an issue in the underlying
     // `hyper` library that causes the `reqwest` client to hang in some cases.
@@ -53,7 +54,7 @@ impl HttpClient for ::reqwest::Client {
         }
         .context(ErrorKind::Other, "failed to build `reqwest` request")?;
 
-        log::debug!("performing request {method} '{url}' with `reqwest`");
+        debug!("performing request {method} '{url}' with `reqwest`");
         let rsp = self
             .execute(reqwest_request)
             .await
@@ -89,7 +90,7 @@ fn to_headers(map: &::reqwest::header::HeaderMap) -> crate::headers::Headers {
                     crate::headers::HeaderValue::from(value.to_owned()),
                 ))
             } else {
-                log::warn!("header value for `{key}` is not utf8");
+                warn!("header value for `{key}` is not utf8");
                 None
             }
         })

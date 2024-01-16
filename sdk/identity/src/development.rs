@@ -6,12 +6,12 @@ use azure_core::{
     error::{Error, ErrorKind},
     Url,
 };
-use log::debug;
 use oauth2::{AuthorizationCode, CsrfToken};
 use std::{
     io::{BufRead, BufReader, Write},
     net::TcpListener,
 };
+use tracing::debug;
 
 /// A very naive implementation of a redirect server.
 ///

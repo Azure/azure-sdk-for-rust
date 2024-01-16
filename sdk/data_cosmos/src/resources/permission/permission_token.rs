@@ -1,5 +1,6 @@
 use super::AuthorizationToken;
 use azure_core::{auth::Secret, base64};
+use tracing::trace;
 
 const PERMISSION_TYPE_PREFIX: &str = "type=";
 const VERSION_PREFIX: &str = "ver=";
