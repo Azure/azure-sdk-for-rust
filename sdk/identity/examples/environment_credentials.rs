@@ -6,7 +6,7 @@ use url::Url;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let sub_id = var("AZURE_SUBSCRIPTION_ID")?;
-    let creds = EnvironmentCredential::default();
+    let creds = EnvironmentCredential::create(TokenCredentialOptions::default())?;
     let res = creds
         .get_token(&["https://management.azure.com/.default"])
         .await?;

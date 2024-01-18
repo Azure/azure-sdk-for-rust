@@ -26,15 +26,13 @@ impl CertificateClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
-    /// use std::sync::Arc;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let mut client = KeyvaultClient::new(
     ///         &"KEYVAULT_URL",
-    ///         Arc::new(creds),
+    ///         credential,
     ///     ).unwrap().certificate_client();
     ///     let certificate = client.get("NAME").await.unwrap();
     ///     dbg!(&certificate);
@@ -55,16 +53,14 @@ impl CertificateClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
     /// use futures::StreamExt;
-    /// use std::sync::Arc;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let mut client = KeyvaultClient::new(
     ///         &"KEYVAULT_URL",
-    ///         Arc::new(creds),
+    ///         credential,
     ///     ).unwrap().certificate_client();
     ///     let certificate_versions = client.get_versions("NAME").into_stream().next().await.unwrap();
     ///     dbg!(&certificate_versions);
@@ -85,15 +81,13 @@ impl CertificateClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
-    /// use std::sync::Arc;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let mut client = KeyvaultClient::new(
     ///         &"KEYVAULT_URL",
-    ///         Arc::new(creds),
+    ///         credential,
     ///     ).unwrap().certificate_client();
     ///     let certificate = client.get_operation("NAME").await.unwrap();
     ///     dbg!(&certificate);
@@ -116,15 +110,13 @@ impl CertificateClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
-    /// use std::sync::Arc;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let mut client = KeyvaultClient::new(
     ///         &"KEYVAULT_URL",
-    ///         Arc::new(creds),
+    ///         credential,
     ///     ).unwrap().certificate_client();
     ///     let certificate = client.create("NAME", "SUBJECT", "ISSUER").await.unwrap();
     ///     dbg!(&certificate);
@@ -154,15 +146,13 @@ impl CertificateClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
-    /// use std::sync::Arc;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let mut client = KeyvaultClient::new(
     ///         &"KEYVAULT_URL",
-    ///         Arc::new(creds),
+    ///         credential,
     ///     ).unwrap().certificate_client();
     ///     let certificate = client.merge("NAME", vec![String::from("X5C")]).await.unwrap();
     ///     dbg!(&certificate);
@@ -187,15 +177,13 @@ impl CertificateClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
-    /// use std::sync::Arc;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let mut client = KeyvaultClient::new(
     ///         &"KEYVAULT_URL",
-    ///         Arc::new(creds),
+    ///         credential,
     ///     ).unwrap().certificate_client();
     ///     let certificate = client.import("NAME", "VALUE").pwd("pwd").await.unwrap();
     ///     dbg!(&certificate);
@@ -225,15 +213,13 @@ impl CertificateClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
-    /// use std::sync::Arc;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let mut client = KeyvaultClient::new(
     ///         &"KEYVAULT_URL",
-    ///         Arc::new(creds),
+    ///         credential,
     ///     ).unwrap().certificate_client();
     ///     client.backup("NAME").await.unwrap();
     /// }
@@ -257,15 +243,13 @@ impl CertificateClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
-    /// use std::sync::Arc;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let mut client = KeyvaultClient::new(
     ///         &"KEYVAULT_URL",
-    ///         Arc::new(creds),
+    ///         credential,
     ///     ).unwrap().certificate_client();
     ///     client.delete("NAME").await.unwrap();
     /// }
@@ -289,15 +273,13 @@ impl CertificateClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
-    /// use std::sync::Arc;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let mut client = KeyvaultClient::new(
     ///         &"KEYVAULT_URL",
-    ///         Arc::new(creds),
+    ///         credential,
     ///     ).unwrap().certificate_client();
     ///     client.delete_operation("NAME").await.unwrap();
     /// }
@@ -315,16 +297,14 @@ impl CertificateClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use futures::StreamExt;
     /// use tokio::runtime::Runtime;
-    /// use std::sync::Arc;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let mut client = KeyvaultClient::new(
     ///          &"KEYVAULT_URL",
-    ///          Arc::new(creds),
+    ///          credential,
     ///     ).unwrap().certificate_client();
     ///     let certificates = client.list_certificates().into_stream().next().await.unwrap();
     ///     dbg!(&certificates);
@@ -343,15 +323,13 @@ impl CertificateClient {
     ///
     /// ```no_run
     /// use azure_security_keyvault::KeyvaultClient;
-    /// use azure_identity::DefaultAzureCredential;
     /// use tokio::runtime::Runtime;
-    /// use std::sync::Arc;
     ///
     /// async fn example() {
-    ///     let creds = DefaultAzureCredential::default();
+    ///     let credential = azure_identity::create_credential().unwrap();
     ///     let mut client = KeyvaultClient::new(
     ///         &"KEYVAULT_URL",
-    ///         Arc::new(creds),
+    ///         credential,
     ///     ).unwrap().certificate_client();
     ///     client.restore_certificate("KUF6dXJlS2V5VmF1bHRTZWNyZXRCYWNrdXBWMS5taW").await.unwrap();
     /// }

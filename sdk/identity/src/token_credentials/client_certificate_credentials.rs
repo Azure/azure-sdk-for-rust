@@ -1,10 +1,9 @@
-use crate::token_credentials::cache::TokenCache;
+use crate::{token_credentials::cache::TokenCache, TokenCredentialOptions};
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
-    authority_hosts::AZURE_PUBLIC_CLOUD,
     base64, content_type,
-    error::{Error, ErrorKind},
-    headers, new_http_client, HttpClient, Method, Request,
+    error::{Error, ErrorKind, ResultExt},
+    headers, HttpClient, Method, Request,
 };
 use openssl::{
     error::ErrorStack,
@@ -22,40 +21,62 @@ use url::{form_urlencoded, Url};
 /// Refresh time to use in seconds
 const DEFAULT_REFRESH_TIME: i64 = 300;
 
+const AZURE_TENANT_ID_ENV_KEY: &str = "AZURE_TENANT_ID";
+const AZURE_CLIENT_ID_ENV_KEY: &str = "AZURE_CLIENT_ID";
+const AZURE_CLIENT_CERTIFICATE_PATH_ENV_KEY: &str = "AZURE_CLIENT_CERTIFICATE_PATH";
+const AZURE_CLIENT_CERTIFICATE_PASSWORD_ENV_KEY: &str = "AZURE_CLIENT_CERTIFICATE_PASSWORD";
+const AZURE_CLIENT_SEND_CERTIFICATE_CHAIN_ENV_KEY: &str = "AZURE_CLIENT_SEND_CERTIFICATE_CHAIN";
+
 /// Provides options to configure how the Identity library makes authentication
 /// requests to Azure Active Directory.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct CertificateCredentialOptions {
-    authority_host: Url,
+#[derive(Clone, Debug)]
+pub struct ClientCertificateCredentialOptions {
+    options: TokenCredentialOptions,
     send_certificate_chain: bool,
 }
 
-impl Default for CertificateCredentialOptions {
-    fn default() -> Self {
+/// Alias of CertificateCredentialOptions for backwards compatibility.
+#[deprecated(
+    since = "0.19.0",
+    note = "Please use ClientCertificateCredentialOptions instead"
+)]
+pub type CertificateCredentialOptions = ClientCertificateCredentialOptions;
+
+impl From<TokenCredentialOptions> for ClientCertificateCredentialOptions {
+    fn from(options: TokenCredentialOptions) -> Self {
+        let env = options.env();
+        let send_certificate_chain = env
+            .var(AZURE_CLIENT_SEND_CERTIFICATE_CHAIN_ENV_KEY)
+            .map(|s| s == "1" || s.to_lowercase() == "true")
+            .unwrap_or(false);
         Self {
-            authority_host: AZURE_PUBLIC_CLOUD.to_owned(),
-            send_certificate_chain: false,
+            options,
+            send_certificate_chain,
         }
     }
 }
 
-impl CertificateCredentialOptions {
+impl Default for ClientCertificateCredentialOptions {
+    fn default() -> Self {
+        Self::from(TokenCredentialOptions::default())
+    }
+}
+
+impl ClientCertificateCredentialOptions {
     /// Create a new `TokenCredentialsOptions`. default() may also be used.
-    pub fn new(authority_host: Url, send_certificate_chain: bool) -> Self {
+    pub fn new(options: impl Into<TokenCredentialOptions>, send_certificate_chain: bool) -> Self {
         Self {
-            authority_host,
+            options: options.into(),
             send_certificate_chain,
         }
     }
-    /// Set the authority host for authentication requests.
-    pub fn set_authority_host(&mut self, authority_host: Url) {
-        self.authority_host = authority_host;
+
+    pub fn options(&self) -> &TokenCredentialOptions {
+        &self.options
     }
 
-    /// The authority host to use for authentication requests.  The default is
-    /// <https://login.microsoftonline.com>.
-    pub fn authority_host(&self) -> &Url {
-        &self.authority_host
+    pub fn options_mut(&mut self) -> &mut TokenCredentialOptions {
+        &mut self.options
     }
 
     /// Enable/disable sending the certificate chain
@@ -82,7 +103,8 @@ pub struct ClientCertificateCredential {
     client_certificate: Secret,
     client_certificate_pass: Secret,
     http_client: Arc<dyn HttpClient>,
-    options: CertificateCredentialOptions,
+    authority_host: Url,
+    send_certificate_chain: bool,
     cache: TokenCache,
 }
 
@@ -93,25 +115,23 @@ impl ClientCertificateCredential {
         client_id: String,
         client_certificate: C,
         client_certificate_pass: P,
-        options: CertificateCredentialOptions,
+        options: impl Into<ClientCertificateCredentialOptions>,
     ) -> ClientCertificateCredential
     where
         C: Into<Secret>,
         P: Into<Secret>,
     {
+        let options = options.into();
         ClientCertificateCredential {
             tenant_id,
             client_id,
             client_certificate: client_certificate.into(),
             client_certificate_pass: client_certificate_pass.into(),
-            http_client: new_http_client(),
-            options,
+            http_client: options.options().http_client().clone(),
+            authority_host: options.options().authority_host().clone(),
+            send_certificate_chain: options.send_certificate_chain(),
             cache: TokenCache::new(),
         }
-    }
-
-    fn options(&self) -> &CertificateCredentialOptions {
-        &self.options
     }
 
     fn sign(jwt: &str, pkey: &PKey<Private>) -> Result<Vec<u8>, ErrorStack> {
@@ -145,10 +165,8 @@ impl ClientCertificateCredential {
             ));
         };
 
-        let options = self.options();
-
-        let url = options
-            .authority_host()
+        let url = self
+            .authority_host
             .join(&format!("{}/oauth2/v2.0/token", self.tenant_id))?;
 
         let certificate = base64::decode(self.client_certificate.secret())
@@ -181,7 +199,7 @@ impl ClientCertificateCredential {
         let expiry_time = current_time + DEFAULT_REFRESH_TIME;
         let x5t = base64::encode(thumbprint);
 
-        let header = match options.send_certificate_chain {
+        let header = match self.send_certificate_chain {
             true => {
                 let base_signature = get_encoded_cert(cert)?;
                 let x5c = match pkcs12_certificate.ca {
@@ -248,6 +266,61 @@ impl ClientCertificateCredential {
         Ok(AccessToken::new(
             response.access_token,
             OffsetDateTime::now_utc() + Duration::from_secs(response.expires_in),
+        ))
+    }
+
+    pub fn create(
+        options: impl Into<ClientCertificateCredentialOptions>,
+    ) -> azure_core::Result<Self> {
+        let options = options.into();
+        let env = options.options().env();
+        let tenant_id =
+            env.var(AZURE_TENANT_ID_ENV_KEY)
+                .with_context(ErrorKind::Credential, || {
+                    format!(
+                        "client certificate credential requires {} environment variable",
+                        AZURE_TENANT_ID_ENV_KEY
+                    )
+                })?;
+        let client_id =
+            env.var(AZURE_CLIENT_ID_ENV_KEY)
+                .with_context(ErrorKind::Credential, || {
+                    format!(
+                        "client certificate credential requires {} environment variable",
+                        AZURE_CLIENT_ID_ENV_KEY
+                    )
+                })?;
+        let client_certificate_path = env
+            .var(AZURE_CLIENT_CERTIFICATE_PATH_ENV_KEY)
+            .with_context(ErrorKind::Credential, || {
+                format!(
+                    "client certificate credential requires {} environment variable",
+                    AZURE_CLIENT_CERTIFICATE_PATH_ENV_KEY
+                )
+            })?;
+        let client_certificate_password = env
+            .var(AZURE_CLIENT_CERTIFICATE_PASSWORD_ENV_KEY)
+            .with_context(ErrorKind::Credential, || {
+                format!(
+                    "client certificate credential requires {} environment variable",
+                    AZURE_CLIENT_CERTIFICATE_PASSWORD_ENV_KEY
+                )
+            })?;
+
+        let client_certificate = std::fs::read_to_string(client_certificate_path.clone())
+            .with_context(ErrorKind::Credential, || {
+                format!(
+                    "failed to read client certificate from file {}",
+                    client_certificate_path.as_str()
+                )
+            })?;
+
+        Ok(ClientCertificateCredential::new(
+            tenant_id,
+            client_id,
+            client_certificate,
+            client_certificate_password,
+            options,
         ))
     }
 }

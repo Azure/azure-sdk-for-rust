@@ -100,11 +100,9 @@ impl StorageCredentials {
     /// `azure_identity`.
     ///
     /// ```
-    /// use azure_identity::DefaultAzureCredential;
     /// use azure_storage::prelude::*;
-    /// use std::sync::Arc;
-    /// let token_credential = Arc::new(DefaultAzureCredential::default());
-    /// let storage_credentials = StorageCredentials::token_credential(token_credential);
+    /// let credential = azure_identity::create_credential().unwrap();
+    /// let storage_credentials = StorageCredentials::token_credential(credential);
     /// ```
     ///
     /// ref: <https://docs.microsoft.com/rest/api/storageservices/authorize-with-azure-active-directory>

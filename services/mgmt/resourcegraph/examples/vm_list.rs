@@ -6,17 +6,15 @@
 ///
 /// Ref: <https://learn.microsoft.com/en-us/rest/api/azureresourcegraph/resourcegraph(2021-03-01)/resources/resources?tabs=HTTP>
 ///
-use azure_identity::DefaultAzureCredential;
 use azure_mgmt_resourcegraph::{
     models::{QueryRequest, QueryRequestOptions},
     Client,
 };
-use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    let azure_creds = Arc::new(DefaultAzureCredential::default());
-    let client = Client::builder(azure_creds).build()?;
+    let credential = azure_identity::create_credential()?;
+    let client = Client::builder(credential).build()?;
 
     // query 10 records at a time
     let options = Some(QueryRequestOptions {

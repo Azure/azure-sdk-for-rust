@@ -1,8 +1,10 @@
-use crate::token_credentials::cache::TokenCache;
+use crate::{token_credentials::cache::TokenCache, TokenCredentialOptions};
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
-    error::{Error, ErrorKind, ResultExt},
-    from_json, HttpClient, Method, Request, StatusCode, Url,
+    error::{Error, ErrorKind},
+    from_json,
+    headers::HeaderName,
+    HttpClient, Method, Request, StatusCode, Url,
 };
 use serde::{
     de::{self, Deserializer},
@@ -11,9 +13,16 @@ use serde::{
 use std::{str, sync::Arc};
 use time::OffsetDateTime;
 
-const MSI_ENDPOINT_ENV_KEY: &str = "IDENTITY_ENDPOINT";
-const MSI_SECRET_ENV_KEY: &str = "IDENTITY_HEADER";
-const MSI_API_VERSION: &str = "2019-08-01";
+#[derive(Debug)]
+pub(crate) enum ImdsId {
+    SystemAssigned,
+    #[allow(dead_code)]
+    ClientId(String),
+    #[allow(dead_code)]
+    ObjectId(String),
+    #[allow(dead_code)]
+    MsiResId(String),
+}
 
 /// Attempts authentication using a managed identity that has been assigned to the deployment environment.
 ///
@@ -21,106 +30,62 @@ const MSI_API_VERSION: &str = "2019-08-01";
 ///
 /// Built up from docs at [https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol](https://docs.microsoft.com/azure/app-service/overview-managed-identity#using-the-rest-protocol)
 #[derive(Debug)]
-pub struct ImdsManagedIdentityCredential {
+pub(crate) struct ImdsManagedIdentityCredential {
     http_client: Arc<dyn HttpClient>,
-    object_id: Option<String>,
-    client_id: Option<String>,
-    msi_res_id: Option<String>,
+    endpoint: Url,
+    api_version: String,
+    secret_header: HeaderName,
+    secret_env: String,
+    id: ImdsId,
     cache: TokenCache,
 }
 
-impl Default for ImdsManagedIdentityCredential {
-    /// Creates an instance of the `TransportOptions` using the default `HttpClient`.
-    fn default() -> Self {
-        Self::new(azure_core::new_http_client())
-    }
-}
-
 impl ImdsManagedIdentityCredential {
-    /// Creates a new `ImdsManagedIdentityCredential` using the given `HttpClient`.
-    pub fn new(http_client: Arc<dyn HttpClient>) -> Self {
+    pub fn new(
+        options: impl Into<TokenCredentialOptions>,
+        endpoint: Url,
+        api_version: &str,
+        secret_header: HeaderName,
+        secret_env: &str,
+        id: ImdsId,
+    ) -> Self {
+        let options = options.into();
         Self {
-            http_client,
-            object_id: None,
-            client_id: None,
-            msi_res_id: None,
+            http_client: options.http_client(),
+            endpoint,
+            api_version: api_version.to_owned(),
+            secret_header: secret_header.to_owned(),
+            secret_env: secret_env.to_owned(),
+            id,
             cache: TokenCache::new(),
         }
-    }
-
-    /// Specifies the object id associated with a user assigned managed service identity resource that should be used to retrieve the access token.
-    ///
-    /// The values of `client_id` and `msi_res_id` are discarded, as only one id parameter may be set when getting a token.
-    #[must_use]
-    pub fn with_object_id<A>(mut self, object_id: A) -> Self
-    where
-        A: Into<String>,
-    {
-        self.object_id = Some(object_id.into());
-        self.client_id = None;
-        self.msi_res_id = None;
-        self
-    }
-
-    /// Specifies the application id (client id) associated with a user assigned managed service identity resource that should be used to retrieve the access token.
-    ///
-    /// The values of `object_id` and `msi_res_id` are discarded, as only one id parameter may be set when getting a token.
-    #[must_use]
-    pub fn with_client_id<A>(mut self, client_id: A) -> Self
-    where
-        A: Into<String>,
-    {
-        self.client_id = Some(client_id.into());
-        self.object_id = None;
-        self.msi_res_id = None;
-        self
-    }
-
-    /// Specifies the ARM resource id of the user assigned managed service identity resource that should be used to retrieve the access token.
-    ///
-    /// The values of `object_id` and `client_id` are discarded, as only one id parameter may be set when getting a token.
-    #[must_use]
-    pub fn with_identity<A>(mut self, msi_res_id: A) -> Self
-    where
-        A: Into<String>,
-    {
-        self.msi_res_id = Some(msi_res_id.into());
-        self.object_id = None;
-        self.client_id = None;
-        self
     }
 
     async fn get_token(&self, scopes: &[&str]) -> azure_core::Result<AccessToken> {
         let resource = scopes_to_resource(scopes)?;
 
-        let msi_endpoint = std::env::var(MSI_ENDPOINT_ENV_KEY)
-            .unwrap_or_else(|_| "http://169.254.169.254/metadata/identity/oauth2/token".to_owned());
+        let mut query_items = vec![
+            ("api-version", self.api_version.as_str()),
+            ("resource", resource),
+        ];
 
-        let mut query_items = vec![("api-version", MSI_API_VERSION), ("resource", &resource)];
-
-        match (
-            self.object_id.as_ref(),
-            self.client_id.as_ref(),
-            self.msi_res_id.as_ref(),
-        ) {
-            (Some(object_id), None, None) => query_items.push(("object_id", object_id)),
-            (None, Some(client_id), None) => query_items.push(("client_id", client_id)),
-            (None, None, Some(msi_res_id)) => query_items.push(("msi_res_id", msi_res_id)),
-            _ => (),
+        match self.id {
+            ImdsId::SystemAssigned => (),
+            ImdsId::ClientId(ref client_id) => query_items.push(("client_id", client_id)),
+            ImdsId::ObjectId(ref object_id) => query_items.push(("object_id", object_id)),
+            ImdsId::MsiResId(ref msi_res_id) => query_items.push(("msi_res_id", msi_res_id)),
         }
 
-        let url = Url::parse_with_params(&msi_endpoint, &query_items).context(
-            ErrorKind::DataConversion,
-            "error parsing url for MSI endpoint",
-        )?;
+        let mut url = self.endpoint.clone();
+        url.query_pairs_mut().extend_pairs(query_items);
 
         let mut req = Request::new(url, Method::Get);
 
         req.insert_header("metadata", "true");
 
-        let msi_secret = std::env::var(MSI_SECRET_ENV_KEY);
+        let msi_secret = std::env::var(&self.secret_env);
         if let Ok(val) = msi_secret {
-            req.insert_header("x-identity-header", val);
+            req.insert_header(self.secret_header.clone(), val);
         };
 
         let rsp = self.http_client.execute_request(&req).await?;
