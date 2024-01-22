@@ -1,10 +1,8 @@
-#[macro_use]
-extern crate log;
-
 use azure_storage::prelude::*;
 use azure_storage_queues::prelude::*;
 use std::time::Duration;
 use time::OffsetDateTime;
+use tracing::trace;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {

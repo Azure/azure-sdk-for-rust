@@ -40,9 +40,9 @@ use azure_core::{
     error::{ErrorKind, ResultExt},
     headers, HttpClient, Method, Request, Url,
 };
-use log::{debug, error};
 use login_response::LoginResponse;
 use std::sync::Arc;
+use tracing::{debug, error};
 use url::form_urlencoded;
 
 /// Perform the client credentials flow

@@ -1,11 +1,11 @@
 use azure_core::error::{ErrorKind, ResultExt};
 use azure_storage::StorageCredentials;
 use azure_storage_blobs::prelude::BlobServiceClient;
-use log::trace;
+use tracing::trace;
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    env_logger::init();
+    tracing_subscriber::fmt().init();
     // First we retrieve the account name, container and blob name from command line args
 
     let account = std::env::args()

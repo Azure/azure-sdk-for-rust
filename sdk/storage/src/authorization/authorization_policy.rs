@@ -7,6 +7,7 @@ use azure_core::{
     Context, Method, Policy, PolicyResult, Request, Url,
 };
 use std::{borrow::Cow, ops::Deref, sync::Arc};
+use tracing::trace;
 
 const STORAGE_TOKEN_SCOPE: &str = "https://storage.azure.com/.default";
 

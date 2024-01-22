@@ -3,7 +3,7 @@ use std::error::Error;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error + Send + Sync>> {
-    env_logger::init();
+    tracing_subscriber::fmt().init();
 
     let iot_hub_connection_string = std::env::var("IOTHUB_CONNECTION_STRING")
         .expect("Set env variable IOTHUB_CONNECTION_STRING first!");

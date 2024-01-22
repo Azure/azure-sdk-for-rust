@@ -19,8 +19,6 @@ Please use these crates for additional functionality:
 #![allow(clippy::new_without_default)]
 
 #[macro_use]
-extern crate log;
-#[macro_use]
 extern crate serde_derive;
 #[macro_use]
 extern crate azure_core;

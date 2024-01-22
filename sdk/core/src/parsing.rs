@@ -49,7 +49,7 @@ pub fn from_azure_time(s: &str) -> crate::Result<time::OffsetDateTime> {
     if let Ok(dt) = date::parse_rfc1123(s) {
         Ok(dt)
     } else {
-        log::warn!("Received an invalid date: {}, returning now()", s);
+        tracing::warn!("Received an invalid date: {}, returning now()", s);
         Ok(time::OffsetDateTime::now_utc())
     }
 }

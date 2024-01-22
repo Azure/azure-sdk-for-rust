@@ -4,13 +4,13 @@ use crate::{
     setters,
 };
 use futures::{task::Poll, Future};
-use log::debug;
 use std::{cmp::min, io::SeekFrom, pin::Pin, sync::Arc, task::Context};
 use tokio::{
     fs::File,
     io::{AsyncReadExt, AsyncSeekExt, Take},
     sync::Mutex,
 };
+use tracing::debug;
 
 #[derive(Debug)]
 pub struct FileStreamBuilder {

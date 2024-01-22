@@ -4,16 +4,17 @@
 /// For more information see:
 /// - `Pipeline`: <https://docs.rs/azure_core/latest/azure_core/struct.Pipeline.html>
 /// - `Policy`: <https://docs.rs/azure_core/latest/azure_core/trait.Policy.html>
-
-#[macro_use]
-extern crate log;
 use async_trait::async_trait;
-use azure_core::error::{ErrorKind, ResultExt};
-use azure_core::{headers::HeaderValue, ClientOptions, Context, Policy, PolicyResult, Request};
+use azure_core::{
+    error::{ErrorKind, ResultExt},
+    headers::HeaderValue,
+    ClientOptions, Context, Policy, PolicyResult, Request,
+};
 use azure_storage::prelude::*;
 use azure_storage_blobs::prelude::*;
 use futures::StreamExt;
 use std::sync::Arc;
+use tracing::trace;
 
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct VersionHeaderOverridePolicy {}

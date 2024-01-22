@@ -16,7 +16,7 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    env_logger::init();
+    tracing_subscriber::fmt().init();
     // First we retrieve the account name and access key from environment variables, and
     // create an authorization token.
     let args = Args::parse();

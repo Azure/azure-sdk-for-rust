@@ -19,7 +19,7 @@ struct MyEntity {
 
 #[tokio::main]
 async fn main() -> azure_core::Result<()> {
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"));
+    tracing_subscriber::fmt().init();
 
     // First we retrieve the account name and access key from environment variables.
     let account =
@@ -63,8 +63,6 @@ async fn main() -> azure_core::Result<()> {
 
 */
 
-#[macro_use]
-extern crate log;
 #[macro_use]
 extern crate azure_core;
 

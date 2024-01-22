@@ -1,5 +1,8 @@
-use azure_core::error::{Error, ErrorKind};
-use azure_core::parsing::FromStringOptional;
+use azure_core::{
+    error::{Error, ErrorKind},
+    parsing::FromStringOptional,
+};
+use tracing::trace;
 use xml::Element;
 use xml::Xml::{CharacterNode, ElementNode};
 

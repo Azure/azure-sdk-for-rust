@@ -25,7 +25,7 @@ async fn get_certficate(vault_name: &str, certificate_name: &str) -> azure_core:
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
+    tracing_subscriber::fmt().init();
 
     let client_id = var("CLIENT_ID").expect("Missing CLIENT_ID environment variable.");
     let tenant_id = var("TENANT_ID").expect("Missing TENANT_ID environment variable.");

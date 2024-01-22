@@ -87,8 +87,6 @@ async fn main() -> azure_core::Result<()> {
 #![deny(missing_docs)]
 #![recursion_limit = "256"]
 #[macro_use]
-extern crate log;
-#[macro_use]
 extern crate serde;
 #[macro_use]
 extern crate azure_core;

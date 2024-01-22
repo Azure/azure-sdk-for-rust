@@ -19,7 +19,7 @@ azure_svc_blobstorage = {path="../../services/svc/blobstorage", version = "0.19"
 bytes = "1.0"
 time = "0.3.10"
 futures = "0.3"
-log = "0.4"
+tracing = "0.1.40"
 md5 = {version="0.7", optional=true}
 RustyXML = "0.3"
 serde = { version = "1.0" }
@@ -30,7 +30,7 @@ url = "2.2"
 
 [dev-dependencies]
 tokio = {version = "1.0", features = ["macros", "rt-multi-thread", "io-util"]}
-env_logger = "0.10"
+tracing-subscriber = "0.3"
 azure_identity = { path = "../identity", default-features = false }
 mock_transport = { path = "../../eng/test/mock_transport" }
 md5 = "0.7"
