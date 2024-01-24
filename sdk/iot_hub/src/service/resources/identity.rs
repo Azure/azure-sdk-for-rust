@@ -35,6 +35,7 @@ pub struct DeviceCapabilities {
 
 /// Representation of a symmetric key for authentication.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct SymmetricKey {
     /// The primary key.
     pub primary_key: Option<String>,
