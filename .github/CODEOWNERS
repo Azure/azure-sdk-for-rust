@@ -1,0 +1,34 @@
+# Instructions for CODEOWNERS file format and automatic build failure notifications:
+# https://github.com/Azure/azure-sdk/blob/main/docs/policies/opensource.md#codeowners
+
+###########
+# SDK
+###########
+
+# Catch all for non-code project files and unowned files | folders
+/**                      @heaths @RickWinter
+/sdk/                    @heaths @RickWinter
+
+# AzureSDKOwners: @heaths
+# ServiceLabel: %Azure.Core
+# PRLabel: %Azure.Core
+/sdk/core/               @heaths @RickWinter @JeffreyRichter
+
+# AzureSDKOwners: @heaths
+# ServiceLabel: %Azure.Identity
+# PRLabel: %Azure.Identity
+/sdk/identity/           @heaths @RickWinter @JeffreyRichter
+
+###########
+# Client SDKs
+###########
+
+# AzureSDKOwners: @heaths
+# ServiceLabel: %Storage
+# PRLabel: %Storage
+/sdk/storage/           @heaths @RickWinter @JeffreyRichter
+
+###########
+# Eng Sys
+###########
+/eng/                    @weshaggard @heaths @RickWinter
