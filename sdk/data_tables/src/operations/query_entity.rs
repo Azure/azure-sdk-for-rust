@@ -3,11 +3,10 @@ use azure_core::{
     error::{Error, ErrorKind},
     headers::*,
     prelude::*,
-    AppendToUrlQuery, CollectedResponse, Method, Pageable,
+    CollectedResponse, Method, Pageable,
 };
 use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::convert::{TryFrom, TryInto};
 
 operation! {
     #[stream]

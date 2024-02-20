@@ -1,8 +1,4 @@
-use crate::{
-    blob::operations::*,
-    options::{BA512Range, Snapshot, Tags},
-    prelude::*,
-};
+use crate::{blob::operations::*, prelude::*};
 use azure_core::{
     error::{Error, ErrorKind},
     headers::Headers,
@@ -11,10 +7,7 @@ use azure_core::{
 };
 use azure_storage::{
     prelude::*,
-    shared_access_signature::{
-        service_sas::{BlobSharedAccessSignature, BlobSignedResource, UserDeligationKey},
-        SasToken,
-    },
+    shared_access_signature::service_sas::{BlobSharedAccessSignature, UserDeligationKey},
     StorageCredentialsInner,
 };
 use futures::StreamExt;

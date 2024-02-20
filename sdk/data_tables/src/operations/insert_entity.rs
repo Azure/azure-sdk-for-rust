@@ -1,12 +1,6 @@
 use crate::{operations::*, prelude::*};
-use azure_core::{
-    error::{Error, ErrorKind},
-    headers::*,
-    prelude::*,
-    Body, CollectedResponse, Context, Method,
-};
-use serde::de::DeserializeOwned;
-use std::{convert::TryInto, marker::PhantomData};
+use azure_core::{headers::*, prelude::*, Body, Method};
+use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
 pub struct InsertEntityBuilder<T> {

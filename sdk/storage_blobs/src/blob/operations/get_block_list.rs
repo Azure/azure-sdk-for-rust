@@ -1,7 +1,4 @@
-use crate::{
-    blob::{BlockListType, BlockWithSizeList},
-    prelude::*,
-};
+use crate::{blob::BlockWithSizeList, prelude::*};
 use azure_core::{headers::*, prelude::*, RequestId};
 use std::str::from_utf8;
 use time::OffsetDateTime;

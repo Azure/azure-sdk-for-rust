@@ -2,7 +2,7 @@ use crate::prelude::*;
 use azure_core::{headers::*, AppendToUrlQuery, Context, Etag, Method, Response};
 use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use std::{convert::TryInto, marker::PhantomData};
+use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
 pub struct GetEntityBuilder<T> {

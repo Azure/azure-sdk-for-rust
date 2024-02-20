@@ -3,7 +3,6 @@ use crate::{ErrorKind, Result, ResultExt};
 use camino::Utf8Path;
 use proc_macro2::{Ident, TokenStream};
 use quote::{quote, ToTokens};
-use std::convert::{TryFrom, TryInto};
 
 pub fn create(tags: &[&Tag], default_tag: &Tag, path: &Utf8Path, print_writing_file: bool) -> Result<()> {
     write_file(path, &create_body(tags, default_tag)?.into_token_stream(), print_writing_file)

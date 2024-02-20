@@ -5,7 +5,7 @@ use azure_core::{
     error::{Error, ErrorKind},
     headers::*,
     prelude::*,
-    Body, Context, Method, Pipeline, Request, Response, Url,
+    Body, Method, Pipeline, Request, Response, Url,
 };
 use std::sync::Arc;
 use time::OffsetDateTime;

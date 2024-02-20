@@ -1,4 +1,4 @@
-use crate::{blob::Blob, prelude::*};
+use crate::prelude::*;
 use azure_core::{
     error::Error,
     headers::{date_from_headers, request_id_from_headers, Headers},
@@ -366,7 +366,7 @@ mod tests {
                         <LeaseState>available</LeaseState>
                         <ServerEncrypted>true</ServerEncrypted>
                         <ResourceType>file</ResourceType>
-                        <NotRealProperty>notRealValue</NotRealProperty> 
+                        <NotRealProperty>notRealValue</NotRealProperty>
                     </Properties>
                 </Blob>
             </Blobs>

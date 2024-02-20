@@ -2,7 +2,7 @@ use crate::{clients::PathClient, request_options::*, Properties};
 use azure_core::{
     headers::{etag_from_headers, last_modified_from_headers},
     prelude::*,
-    AppendToUrlQuery, Request, Response,
+    Request, Response,
 };
 use azure_storage::headers::CommonStorageResponseHeaders;
 use time::OffsetDateTime;

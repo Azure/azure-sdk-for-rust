@@ -4,11 +4,7 @@ use azure_core::{
     xml::to_xml,
 };
 use bytes::{Bytes, BytesMut};
-use std::{
-    collections::HashMap,
-    iter::{Extend, IntoIterator},
-    str::FromStr,
-};
+use std::{collections::HashMap, str::FromStr};
 use url::form_urlencoded;
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Default, Serialize)]

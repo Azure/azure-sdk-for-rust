@@ -1,5 +1,5 @@
 use crate::{operations::*, prelude::*};
-use azure_core::{headers::*, prelude::*, Body, CollectedResponse, Method};
+use azure_core::{headers::*, prelude::*, Body, Method};
 
 operation! {
     InsertOrReplaceOrMergeEntity,

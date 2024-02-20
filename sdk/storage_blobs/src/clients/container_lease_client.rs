@@ -1,5 +1,5 @@
 use crate::{container::operations::*, prelude::*};
-use azure_core::{headers::Headers, prelude::*, Body, Context, Method, Request, Response, Url};
+use azure_core::{headers::Headers, prelude::*, Body, Method, Request, Response, Url};
 
 #[derive(Debug, Clone)]
 pub struct ContainerLeaseClient {

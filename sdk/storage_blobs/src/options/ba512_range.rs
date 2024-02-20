@@ -3,7 +3,7 @@ use azure_core::{
     headers::{self, Header},
     prelude::Range,
 };
-use std::{convert::TryFrom, fmt, str::FromStr};
+use std::{fmt, str::FromStr};
 
 /// A 512 byte aligned byte range
 ///

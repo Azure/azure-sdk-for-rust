@@ -1,7 +1,7 @@
 use crate::{
     operations::*, PopReceipt, PopReceiptClient, QueueServiceClient, QueueStoredAccessPolicy,
 };
-use azure_core::{prelude::*, Context, Request, Response, Url};
+use azure_core::{prelude::*, Request, Response, Url};
 use std::fmt::Debug;
 
 #[derive(Debug, Clone)]

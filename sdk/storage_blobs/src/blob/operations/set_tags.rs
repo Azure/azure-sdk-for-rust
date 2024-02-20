@@ -4,7 +4,6 @@ use azure_core::{
     headers::{date_from_headers, request_id_from_headers, Headers},
     Method, RequestId,
 };
-use std::convert::{TryFrom, TryInto};
 use time::OffsetDateTime;
 
 operation! {

@@ -6,6 +6,7 @@ use autorust_openapi::StatusCode;
 use heck::ToPascalCase;
 use http_types::StatusCode as HttpStatusCode;
 use proc_macro2::Ident;
+use std::convert::TryFrom;
 
 fn try_from_u16(status_code: u16) -> Result<HttpStatusCode> {
     HttpStatusCode::try_from(status_code)
