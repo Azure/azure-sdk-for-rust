@@ -13,7 +13,7 @@ use tracing::trace;
 #[cfg(feature = "old_azure_cli")]
 mod az_cli_date_format {
     use azure_core::error::{ErrorKind, ResultExt};
-    use serde::{self, Deserialize, Deserializer};
+    use serde::{Deserialize, Deserializer};
     use time::format_description::FormatItem;
     use time::macros::format_description;
     #[cfg(not(unix))]

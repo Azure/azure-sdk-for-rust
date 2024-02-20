@@ -1,7 +1,6 @@
 use crate::{
     request::Body,
     seekable_stream::{SeekableStream, DEFAULT_BUFFER_SIZE},
-    setters,
 };
 use futures::{task::Poll, Future};
 use std::{cmp::min, io::SeekFrom, pin::Pin, sync::Arc, task::Context};
