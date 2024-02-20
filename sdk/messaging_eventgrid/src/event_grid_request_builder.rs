@@ -4,7 +4,6 @@ use http::{
     request::Builder,
     Method, Request,
 };
-use std::convert::TryFrom;
 
 pub struct EventGridRequestBuilder {
     builder: Builder,

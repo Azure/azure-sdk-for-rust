@@ -1,6 +1,5 @@
 use crate::error::{Error, ErrorKind, ResultExt};
 use crate::headers::{self, AsHeaders, HeaderName, HeaderValue};
-use std::convert::From;
 use std::fmt;
 use std::ops::{Range as StdRange, RangeFrom};
 use std::str::FromStr;

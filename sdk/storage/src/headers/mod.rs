@@ -5,7 +5,6 @@ use azure_core::headers::{
     server_from_headers, version_from_headers, HeaderName, Headers, CONTENT_MD5,
 };
 use azure_core::RequestId;
-use std::convert::TryFrom;
 use time::OffsetDateTime;
 
 #[derive(Debug, Clone)]

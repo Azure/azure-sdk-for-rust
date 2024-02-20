@@ -1,6 +1,5 @@
 use crate::clients::ServiceType;
 use azure_core::Url;
-use std::convert::TryFrom;
 
 /// The cloud with which you want to interact.
 // TODO: Other govt clouds?

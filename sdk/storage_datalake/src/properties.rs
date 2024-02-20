@@ -5,7 +5,6 @@ use azure_core::{
 };
 use std::borrow::Cow;
 use std::collections::BTreeMap;
-use std::convert::TryFrom;
 use std::str::FromStr;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -1,5 +1,5 @@
 use crate::error::{ErrorKind, ResultExt};
-use serde::{self, de, Deserialize, Deserializer, Serializer};
+use serde::{de, Deserialize, Deserializer, Serializer};
 use time::{
     format_description::well_known::{
         iso8601::{Config, EncodedConfig, TimePrecision},

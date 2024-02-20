@@ -6,7 +6,6 @@ use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use azure_core::{prelude::*, StatusCode};
 use serde::Serialize;
-use std::convert::TryFrom;
 use time::OffsetDateTime;
 
 use azure_core::Response as HttpResponse;
