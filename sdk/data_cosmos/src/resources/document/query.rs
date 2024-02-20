@@ -70,7 +70,6 @@ impl Param {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde_json;
 
     #[test]
     fn tst_query() -> azure_core::Result<()> {

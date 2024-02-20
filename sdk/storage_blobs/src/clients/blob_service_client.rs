@@ -267,7 +267,7 @@ impl BlobServiceClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_storage::{StorageCredentials, StorageCredentialsInner};
+    use azure_storage::StorageCredentialsInner;
     use std::ops::Deref;
 
     #[tokio::test]

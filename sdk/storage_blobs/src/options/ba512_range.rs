@@ -118,7 +118,6 @@ impl<'a> From<&'a BA512Range> for Range {
 #[cfg(test)]
 mod test {
     use super::*;
-    use azure_core::error::ErrorKind;
 
     #[test]
     fn test_512range_parse() {

@@ -245,7 +245,6 @@ fn string_to_sign(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core::{date, Url};
 
     #[test]
     fn string_to_sign_00() {
