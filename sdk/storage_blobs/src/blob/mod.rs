@@ -25,7 +25,7 @@ use azure_core::{
     Etag, LeaseDuration, LeaseState, LeaseStatus,
 };
 use azure_storage::{ConsistencyCRC64, ConsistencyMD5, CopyId, CopyProgress};
-use serde::{self, Deserialize, Deserializer};
+use serde::{Deserialize, Deserializer};
 use serde_json::Value;
 use std::collections::HashMap;
 use time::OffsetDateTime;

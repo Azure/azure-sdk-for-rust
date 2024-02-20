@@ -1,5 +1,5 @@
 use crate::{clients::PathClient, request_options::*, Properties};
-use azure_core::{prelude::*, AppendToUrlQuery, Request};
+use azure_core::{prelude::*, Request};
 
 operation! {
     RenamePath<C: PathClient + 'static>,

@@ -1,4 +1,3 @@
-use super::CreateStoredProcedureResponse;
 use crate::prelude::*;
 
 operation! {

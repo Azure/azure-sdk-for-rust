@@ -216,7 +216,6 @@ impl ContainerClient {
 #[cfg(feature = "test_integration")]
 mod integration_tests {
     use super::*;
-    use crate::clients::ClientBuilder;
     use futures::StreamExt;
 
     fn get_emulator_client(container_name: &str) -> ContainerClient {

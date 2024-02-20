@@ -1,4 +1,4 @@
-use crate::{headers::from_headers::*, prelude::*, resources::UserDefinedFunction, ResourceQuota};
+use crate::{headers::from_headers::*, prelude::*, ResourceQuota};
 use azure_core::{
     headers::{etag_from_headers, session_token_from_headers},
     Response as HttpResponse,

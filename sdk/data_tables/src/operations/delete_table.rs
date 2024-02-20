@@ -5,7 +5,6 @@ use azure_core::{
     Method, Response,
 };
 use azure_storage::headers::CommonStorageResponseHeaders;
-use std::convert::{TryFrom, TryInto};
 
 operation! {
     DeleteTable,

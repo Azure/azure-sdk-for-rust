@@ -1,7 +1,6 @@
 use crate::{QueueServiceClient, QueueServiceProperties};
 use azure_core::{headers::Headers, Method, Response as AzureResponse};
 use azure_storage::headers::CommonStorageResponseHeaders;
-use std::convert::TryInto;
 
 operation! {
     GetQueueServiceProperties,

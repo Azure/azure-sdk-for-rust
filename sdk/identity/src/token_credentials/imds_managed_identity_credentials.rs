@@ -180,7 +180,6 @@ struct MsiTokenResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use azure_core::from_json;
     use time::macros::datetime;
 
     #[derive(Debug, Deserialize)]

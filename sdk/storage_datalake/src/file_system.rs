@@ -1,7 +1,6 @@
 use azure_core::{from_json, Etag};
 use bytes::Bytes;
-use serde::{self, Deserialize, Deserializer};
-use std::convert::TryFrom;
+use serde::{Deserialize, Deserializer};
 use time::OffsetDateTime;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,9 +1,8 @@
 use crate::clients::PathClient;
 use crate::request_options::*;
+use azure_core::Response as HttpResponse;
 use azure_core::{prelude::*, Pageable, Request};
-use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::headers::CommonStorageResponseHeaders;
-use std::convert::TryInto;
 
 operation! {
     DeletePath<C: PathClient + 'static>,

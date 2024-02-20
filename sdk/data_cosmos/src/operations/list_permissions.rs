@@ -1,4 +1,4 @@
-use crate::{headers::from_headers::*, prelude::*, resources::Permission, resources::ResourceType};
+use crate::{headers::from_headers::*, prelude::*};
 use azure_core::{
     headers::{continuation_token_from_headers_optional, session_token_from_headers},
     prelude::*,

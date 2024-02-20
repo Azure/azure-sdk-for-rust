@@ -1,5 +1,4 @@
 use crate::{AppendToUrlQuery, Url};
-use std::convert::TryFrom;
 use std::num::NonZeroU32;
 
 // This type forbids zero as value.

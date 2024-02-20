@@ -1,10 +1,7 @@
 use crate::prelude::*;
-use azure_core::{
-    error::Error, headers::*, prelude::*, AppendToUrlQuery, CollectedResponse, Method, Pageable,
-};
+use azure_core::{error::Error, headers::*, prelude::*, CollectedResponse, Method, Pageable};
 use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::{Deserialize, Serialize};
-use std::convert::{TryFrom, TryInto};
 
 operation! {
     #[stream]

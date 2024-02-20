@@ -1,5 +1,5 @@
 use crate::date::{parse_rfc1123, to_rfc1123};
-use serde::{self, de, Deserialize, Deserializer, Serializer};
+use serde::{de, Deserialize, Deserializer, Serializer};
 use time::OffsetDateTime;
 
 pub fn deserialize<'de, D>(deserializer: D) -> Result<OffsetDateTime, D::Error>

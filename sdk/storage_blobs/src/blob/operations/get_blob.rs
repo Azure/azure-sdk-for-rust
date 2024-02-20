@@ -1,4 +1,4 @@
-use crate::{blob::Blob, prelude::*};
+use crate::prelude::*;
 use azure_core::{
     error::Error, headers::*, prelude::*, Pageable, RequestId, Response as AzureResponse,
     ResponseBody,

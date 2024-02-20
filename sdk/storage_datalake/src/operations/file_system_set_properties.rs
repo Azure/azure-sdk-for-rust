@@ -5,7 +5,6 @@ use azure_core::{
     Etag, Request, Response as HttpResponse,
 };
 use azure_storage::headers::CommonStorageResponseHeaders;
-use std::convert::TryInto;
 use time::OffsetDateTime;
 
 operation! {

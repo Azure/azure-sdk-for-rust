@@ -6,7 +6,6 @@ use azure_core::{headers::*, prelude::*, RequestId, Url};
 use azure_storage::{
     copy_id_from_headers, headers::content_md5_from_headers_optional, ConsistencyMD5, CopyId,
 };
-use std::convert::{TryFrom, TryInto};
 use time::OffsetDateTime;
 
 operation! {

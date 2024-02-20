@@ -1,8 +1,7 @@
-use crate::{prelude::*, PopReceipt};
+use crate::prelude::*;
 use azure_core::{headers::Headers, prelude::*, xml::read_xml, Method, Response as AzureResponse};
 use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::Deserialize;
-use std::convert::TryInto;
 use time::OffsetDateTime;
 
 operation! {

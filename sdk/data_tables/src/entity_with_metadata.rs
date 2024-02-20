@@ -1,7 +1,6 @@
 use crate::EntityMetadata;
 use azure_core::CollectedResponse;
 use serde::de::DeserializeOwned;
-use std::convert::TryFrom;
 
 #[derive(Debug, Clone)]
 pub struct EntityWithMetadata<E: DeserializeOwned> {

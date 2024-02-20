@@ -1,7 +1,6 @@
 use crate::{clients::QueueClient, QueueStoredAccessPolicy};
 use azure_core::{headers::Headers, Method, Response as AzureResponse};
 use azure_storage::{headers::CommonStorageResponseHeaders, StoredAccessPolicyList};
-use std::convert::TryInto;
 
 operation! {
     GetQueueACL,

@@ -2,7 +2,6 @@ use crate::prelude::*;
 use azure_core::{headers::*, prelude::*, to_json, Method, Response};
 use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::Serialize;
-use std::convert::TryInto;
 
 operation! {
     CreateTable,

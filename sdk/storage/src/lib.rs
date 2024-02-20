@@ -62,7 +62,7 @@ mod consistency {
     };
     use bytes::Bytes;
     use serde::{Deserialize, Deserializer};
-    use std::{convert::TryInto, str::FromStr};
+    use std::str::FromStr;
 
     #[derive(Debug, Clone, PartialEq, Eq)]
     pub struct ConsistencyCRC64(Bytes);

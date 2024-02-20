@@ -3,9 +3,8 @@ use crate::{
     file_system::{Path, PathList},
     request_options::*,
 };
-use azure_core::{error::Error, prelude::*, AppendToUrlQuery, Pageable, Request, Response};
+use azure_core::{error::Error, prelude::*, Pageable, Request, Response};
 use azure_storage::headers::CommonStorageResponseHeaders;
-use std::convert::TryInto;
 
 operation! {
     #[stream]

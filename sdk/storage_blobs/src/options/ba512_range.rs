@@ -3,7 +3,7 @@ use azure_core::{
     headers::{self, Header},
     prelude::Range,
 };
-use std::{convert::TryFrom, fmt, str::FromStr};
+use std::{fmt, str::FromStr};
 
 /// A 512 byte aligned byte range
 ///
@@ -118,7 +118,6 @@ impl<'a> From<&'a BA512Range> for Range {
 #[cfg(test)]
 mod test {
     use super::*;
-    use azure_core::error::ErrorKind;
 
     #[test]
     fn test_512range_parse() {

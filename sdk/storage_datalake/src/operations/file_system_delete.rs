@@ -1,7 +1,6 @@
 use crate::clients::FileSystemClient;
 use azure_core::{prelude::*, Request, Response};
 use azure_storage::headers::CommonStorageResponseHeaders;
-use std::convert::TryInto;
 
 operation! {
     DeleteFileSystem,
