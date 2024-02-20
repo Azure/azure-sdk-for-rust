@@ -6,7 +6,6 @@ use azure_core::{
     Method, Response as AzureResponse,
 };
 use azure_storage::headers::CommonStorageResponseHeaders;
-use std::convert::TryInto;
 
 operation! {
     GetQueueMetadata,

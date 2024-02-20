@@ -1,6 +1,5 @@
 use crate::{operations::*, prelude::*};
 use azure_core::{headers::*, prelude::*, Body, CollectedResponse, Method};
-use std::convert::TryInto;
 
 operation! {
     InsertOrReplaceOrMergeEntity,

@@ -1,7 +1,4 @@
-use crate::{
-    headers::from_headers::*, prelude::*, resources::document::IndexingDirective,
-    resources::Attachment, ResourceQuota,
-};
+use crate::{headers::from_headers::*, prelude::*, ResourceQuota};
 use azure_core::{
     headers::{content_type_from_headers, etag_from_headers, session_token_from_headers},
     prelude::*,

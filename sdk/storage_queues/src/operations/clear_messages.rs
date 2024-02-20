@@ -1,6 +1,5 @@
 use azure_core::{error::Error, headers::Headers, Method, Response as AzureResponse};
 use azure_storage::headers::CommonStorageResponseHeaders;
-use std::convert::TryInto;
 
 use crate::QueueClient;
 

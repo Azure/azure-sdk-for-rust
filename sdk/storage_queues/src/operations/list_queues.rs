@@ -4,7 +4,6 @@ use azure_core::{
 };
 use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::{Deserialize, Serialize};
-use std::convert::TryInto;
 
 operation! {
     #[stream]

@@ -7,7 +7,6 @@ use azure_core::{
 };
 use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::Deserialize;
-use std::convert::TryInto;
 use time::OffsetDateTime;
 
 operation! {

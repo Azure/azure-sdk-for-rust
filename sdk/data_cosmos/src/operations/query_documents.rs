@@ -1,9 +1,4 @@
-use crate::{
-    headers::from_headers::*,
-    prelude::*,
-    resources::{document::Query, ResourceType},
-    ResourceQuota,
-};
+use crate::{headers::from_headers::*, prelude::*, ResourceQuota};
 use azure_core::{
     from_json, headers,
     headers::{

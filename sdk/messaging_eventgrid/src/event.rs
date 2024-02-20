@@ -1,4 +1,4 @@
-use serde::{self, Serialize};
+use serde::Serialize;
 use time::OffsetDateTime;
 use uuid::Uuid;
 
@@ -64,7 +64,7 @@ where
 mod tests {
     use super::*;
     use azure_core::to_json;
-    use serde::{self, Serialize};
+    use serde::Serialize;
     use time::macros::datetime;
 
     #[derive(Serialize)]

@@ -1,7 +1,6 @@
 use crate::cosmos_entity::{add_as_partition_key_header_serialized, serialize_partition_key};
 use crate::headers::from_headers::*;
 use crate::prelude::*;
-use crate::resources::document::DocumentAttributes;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers};
 use azure_core::{prelude::*, StatusCode};

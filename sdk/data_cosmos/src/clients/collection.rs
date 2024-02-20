@@ -1,4 +1,3 @@
-use super::{DatabaseClient, UserDefinedFunctionClient};
 use crate::clients::*;
 use crate::operations::*;
 use crate::resources::collection::PartitionKey;

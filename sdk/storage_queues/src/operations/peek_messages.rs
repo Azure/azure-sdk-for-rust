@@ -2,7 +2,6 @@ use crate::prelude::*;
 use azure_core::{headers::Headers, prelude::*, Method, Response as AzureResponse};
 use azure_storage::headers::CommonStorageResponseHeaders;
 use serde::{Deserialize, Serialize};
-use std::convert::TryInto;
 use time::OffsetDateTime;
 
 operation! {

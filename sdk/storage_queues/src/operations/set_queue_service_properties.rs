@@ -3,7 +3,6 @@ use azure_core::{
     error::Error, headers::Headers, xml::to_xml_with_root, Method, Response as AzureResponse,
 };
 use azure_storage::headers::CommonStorageResponseHeaders;
-use std::convert::TryInto;
 
 operation! {
     SetQueueServiceProperties,

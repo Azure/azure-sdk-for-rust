@@ -2,7 +2,6 @@ use std::marker::PhantomData;
 
 use crate::headers::from_headers::*;
 use crate::prelude::*;
-use crate::resources::Document;
 use crate::ResourceQuota;
 use azure_core::headers::{etag_from_headers, session_token_from_headers, Headers};
 use azure_core::{from_json, prelude::*, StatusCode};

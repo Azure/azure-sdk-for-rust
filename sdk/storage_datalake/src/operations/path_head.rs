@@ -1,9 +1,8 @@
 use crate::{clients::PathClient, request_options::*, Properties};
 use azure_core::headers::{self, etag_from_headers, last_modified_from_headers};
+use azure_core::Response as HttpResponse;
 use azure_core::{prelude::*, Request};
-use azure_core::{AppendToUrlQuery, Response as HttpResponse};
 use azure_storage::headers::CommonStorageResponseHeaders;
-use std::convert::TryInto;
 use time::OffsetDateTime;
 
 operation! {

@@ -2,7 +2,6 @@ use crate::{
     cosmos_entity::{add_as_partition_key_header_serialized, serialize_partition_key},
     headers::from_headers::*,
     prelude::*,
-    resources::document::DocumentAttributes,
     ResourceQuota,
 };
 use azure_core::{

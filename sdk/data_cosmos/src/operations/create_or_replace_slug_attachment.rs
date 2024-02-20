@@ -1,4 +1,4 @@
-use crate::{headers::from_headers::*, prelude::*, resources::Attachment, ResourceQuota};
+use crate::{headers::from_headers::*, prelude::*, ResourceQuota};
 use azure_core::{
     content_type,
     headers::{

@@ -1,6 +1,4 @@
-use crate::{
-    headers::from_headers::*, prelude::*, resources::document::DocumentAttributes, ResourceQuota,
-};
+use crate::{headers::from_headers::*, prelude::*, ResourceQuota};
 use azure_core::{headers::session_token_from_headers, Response as HttpResponse, SessionToken};
 use serde::Serialize;
 use serde_json::Value;

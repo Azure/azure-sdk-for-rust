@@ -1,7 +1,4 @@
-use crate::{
-    headers::from_headers::*, prelude::*, resources::ResourceType, resources::StoredProcedure,
-    ResourceQuota,
-};
+use crate::{headers::from_headers::*, prelude::*, ResourceQuota};
 use azure_core::{
     headers::{continuation_token_from_headers_optional, session_token_from_headers},
     prelude::*,
