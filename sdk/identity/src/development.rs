@@ -21,7 +21,7 @@ use tracing::debug;
 /// This implementation should only be used for testing.
 pub fn naive_redirect_server(
     auth_obj: &AuthorizationCodeFlow,
-    port: u32,
+    port: u16,
 ) -> azure_core::Result<AuthorizationCode> {
     let listener = TcpListener::bind(format!("127.0.0.1:{port}")).unwrap();
 
