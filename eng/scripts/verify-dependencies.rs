@@ -37,19 +37,58 @@ fn main() {
         std::fs::read_to_string(package_manifest_path).expect("read package manifest");
     let package_manifest: TomlManifest =
         toml::from_str(&package_manifest_content).expect("deserialize package manifest");
-    let Some(dependencies) = package_manifest.dependencies else {
-        eprintln!("No package dependencies");
-        return;
-    };
 
-    let mut dependencies: Vec<String> = dependencies
+    // Collect all package dependencies including in platform targets.
+    let mut all_dependencies = vec![
+        (
+            "dependencies".to_string(),
+            package_manifest.dependencies.as_ref(),
+        ),
+        (
+            "dev-dependencies".to_string(),
+            package_manifest.dev_dependencies(),
+        ),
+        (
+            "build-dependencies".to_string(),
+            package_manifest.build_dependencies(),
+        ),
+    ];
+    if let Some(targets) = package_manifest.target.as_ref() {
+        for (target, platform) in targets {
+            all_dependencies.push((
+                format!("target.'{}'.dependencies", target),
+                platform.dependencies.as_ref(),
+            ));
+            all_dependencies.push((
+                format!("target.'{}'.dev-dependencies", target),
+                platform.dev_dependencies(),
+            ));
+            all_dependencies.push((
+                format!("target.'{}'.build-dependencies", target),
+                platform.build_dependencies(),
+            ));
+        }
+    }
+
+    let mut dependencies: Vec<Package> = all_dependencies
         .into_iter()
-        .filter_map(|v| match v.1 {
+        .filter_map(|v| {
+            if let Some(dependencies) = v.1 {
+                return Some((v.0, dependencies));
+            }
+            None
+        })
+        .flat_map(|v| std::iter::repeat(v.0).zip(v.1.into_iter()))
+        .filter_map(|v| match v.1 .1 {
             InheritableDependency::Value(dep) => match dep {
-                TomlDependency::Simple(_) => Some(v.0.to_string()),
-                TomlDependency::Detailed(details) if details.path.is_none() => {
-                    Some(v.0.to_string())
-                }
+                TomlDependency::Simple(_) => Some(Package {
+                    section: v.0,
+                    name: v.1 .0.to_string(),
+                }),
+                TomlDependency::Detailed(details) if details.path.is_none() => Some(Package {
+                    section: v.0,
+                    name: v.1 .0.to_string(),
+                }),
                 _ => None,
             },
             InheritableDependency::Inherit(_) => None,
@@ -59,12 +98,19 @@ fn main() {
     if !dependencies.is_empty() {
         dependencies.sort();
         println!(
-            "The following dependencies do not inherit from workspace {}:\n",
+            "The following dependencies do not inherit from workspace `{}`:\n",
             workspace_manifest_path.display()
         );
-        println!("* {}\n", dependencies.join("\n* "));
+        println!(
+            "* {}\n",
+            dependencies
+                .into_iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<String>>()
+                .join("\n* ")
+        );
         println!("Add dependencies to workspace and change the package dependency to `{{ workspace = true }}`.");
-        println!("See https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#inheriting-a-dependency-from-a-workspace for more information.");
+        println!("See <https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html#inheriting-a-dependency-from-a-workspace> for more information.");
 
         std::process::exit(1);
     }
@@ -141,3 +187,14 @@ struct CargoManifest {
     pub workspace_root: Option<String>,
 }
 
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+struct Package {
+    name: String,
+    section: String,
+}
+
+impl std::fmt::Display for Package {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} ({})", self.name, self.section)
+    }
+}
