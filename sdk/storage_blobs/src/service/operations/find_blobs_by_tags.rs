@@ -1,7 +1,7 @@
 use crate::prelude::BlobServiceClient;
 use azure_core::{prelude::*, Response as HttpResponse};
 use azure_storage::headers::CommonStorageResponseHeaders;
-use std::str::FromStr;
+use url::Url;
 
 operation! {
     #[stream]
@@ -26,7 +26,7 @@ impl FindBlobsByTagsBuilder {
                 }
                 url.query_pairs_mut().append_pair("where", &this.expression);
 
-                let url = make_url_compatible_with_api(url)?;
+                make_url_compatible_with_api(&mut url);
 
                 let mut request = BlobServiceClient::finalize_request(
                     url,
@@ -45,10 +45,10 @@ impl FindBlobsByTagsBuilder {
 }
 
 /// ` AND ` in the spec can be converted to `+AND+`, however, azure rest api won't accept it unless we do a `%20AND%20`
-fn make_url_compatible_with_api(url: url::Url) -> azure_core::Result<url::Url> {
-    let url = url.as_str();
+fn make_url_compatible_with_api(url: &mut Url) {
+    let compatible_query = url.query().map(|q| q.replace("+", "%20"));
 
-    url::Url::from_str(&url.replace("+", "%20")).map_err(|e| e.into())
+    url.set_query(compatible_query.as_deref());
 }
 
 pub type FindBlobsByTags = azure_core::Pageable<FindBlobsByTagsResponse, azure_core::error::Error>;
@@ -134,6 +134,7 @@ mod tests {
     use azure_core::xml::read_xml;
     use azure_storage::StorageCredentials;
     use futures::StreamExt;
+    use std::str::FromStr;
 
     #[test]
     fn parse_body() -> azure_core::Result<()> {
@@ -198,5 +199,14 @@ mod tests {
             .await
             .unwrap()
             .unwrap();
+    }
+
+    #[test]
+    fn test_make_url_compatible() {
+        let mut url = Url::from_str("https://test.blob.core.windows.net/?comp=blobs&where=%40container%3D%27valid-container-name%27+AND+tagis%3D%27a%27").unwrap();
+
+        make_url_compatible_with_api(&mut url);
+
+        assert_eq!("https://test.blob.core.windows.net/?comp=blobs&where=%40container%3D%27valid-container-name%27%20AND%20tagis%3D%27a%27", url.as_str() );
     }
 }
