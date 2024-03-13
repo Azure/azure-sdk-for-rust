@@ -42,3 +42,7 @@ default_tag = ["package-2016-11"]
 "package-preview-2019-11" = []
 "package-2016-11" = []
 "package-2015-10-preview" = []
+
+[lints]
+workspace = true
+

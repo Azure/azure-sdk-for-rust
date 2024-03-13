@@ -44,3 +44,7 @@ default_tag = ["package-managedapplications-2021-07"]
 "package-managedapplications-2020-08" = []
 "package-managedapplications-2019-07" = []
 "package-managedapplications-2018-09" = []
+
+[lints]
+workspace = true
+

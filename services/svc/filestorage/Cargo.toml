@@ -44,3 +44,7 @@ default_tag = ["package-2024-02"]
 "package-2023-01" = []
 "package-2022-11" = []
 "package-2021-12" = []
+
+[lints]
+workspace = true
+

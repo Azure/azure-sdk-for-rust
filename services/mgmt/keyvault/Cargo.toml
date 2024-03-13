@@ -44,3 +44,7 @@ default_tag = ["profile-hybrid-2020-09-01"]
 "package-preview-2021-11" = []
 "package-preview-2021-06" = []
 "package-preview-2021-04-full" = []
+
+[lints]
+workspace = true
+

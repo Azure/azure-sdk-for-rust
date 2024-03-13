@@ -44,3 +44,7 @@ default_tag = ["8_1"]
 "8_0" = []
 "7_2" = []
 "7_1" = []
+
+[lints]
+workspace = true
+

@@ -43,3 +43,7 @@ default_tag = ["package-2021-06"]
 "package-2021-04" = []
 "package-2020-10" = []
 "package-2020-06" = []
+
+[lints]
+workspace = true
+

@@ -44,3 +44,7 @@ default_tag = ["package-composite-v2"]
 "package-kusto-pool-2021-04-preview" = []
 "package-composite-v2" = []
 "package-composite-v1" = []
+
+[lints]
+workspace = true
+

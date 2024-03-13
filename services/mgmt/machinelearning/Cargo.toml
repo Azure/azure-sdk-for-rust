@@ -44,3 +44,7 @@ default_tag = ["package-workspaces-2019-10"]
 "package-webservices-2017-01" = []
 "package-webservices-2016-05-preview" = []
 "package-commitmentPlans-2016-05-preview" = []
+
+[lints]
+workspace = true
+

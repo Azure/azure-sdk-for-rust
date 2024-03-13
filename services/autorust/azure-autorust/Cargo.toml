@@ -9,3 +9,7 @@ publish = false
 autorust_codegen = { path = "../codegen" }
 clap = { version = "4.0", features = ["derive"] }
 rayon = "1.8"
+
+[lints]
+workspace = true
+

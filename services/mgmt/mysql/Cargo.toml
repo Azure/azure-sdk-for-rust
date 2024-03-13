@@ -44,3 +44,7 @@ default_tag = ["package-flexibleserver-2023-06-30-privatelink"]
 "package-flexibleserver-2023-06-30" = []
 "package-flexibleserver-2023-06-01-preview-new" = []
 "package-flexibleserver-2023-06-01-preview" = []
+
+[lints]
+workspace = true
+

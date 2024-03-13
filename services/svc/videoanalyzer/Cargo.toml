@@ -41,3 +41,7 @@ enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 default_tag = ["package-preview-1_1_0"]
 "package-preview-1_1_0" = []
 "package-ava-edge-1-0-0-preview" = []
+
+[lints]
+workspace = true
+

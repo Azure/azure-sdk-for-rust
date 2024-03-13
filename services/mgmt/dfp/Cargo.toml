@@ -40,3 +40,7 @@ enable_reqwest = ["azure_core/enable_reqwest"]
 enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 default_tag = ["package-2021-02-01-preview"]
 "package-2021-02-01-preview" = []
+
+[lints]
+workspace = true
+

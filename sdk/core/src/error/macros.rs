@@ -66,6 +66,7 @@ macro_rules! ensure_ne {
 mod tests {
     use super::super::*;
 
+    #[allow(dead_code)]
     #[derive(Debug, PartialEq, Copy, Clone)]
     struct OperationError;
 
