@@ -5,6 +5,7 @@ use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "snake_case")]
+#[allow(dead_code)]
 struct SampleEntity {
     pub something: String,
 }

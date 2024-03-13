@@ -292,3 +292,6 @@ members = [
 ]
 
 resolver = "2"
+
+[workspace.lints.clippy]
+empty-docs = "allow"
