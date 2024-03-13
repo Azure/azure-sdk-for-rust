@@ -41,3 +41,7 @@ enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 default_tag = ["package-2018-11-preview"]
 "package-2018-11-preview" = []
 "package-2017-11-preview" = []
+
+[lints]
+workspace = true
+

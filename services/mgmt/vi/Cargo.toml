@@ -44,3 +44,7 @@ default_tag = ["package-2024-01"]
 "package-2022-07-20-preview" = []
 "package-2022-04-13-preview" = []
 "package-2021-11-10-preview" = []
+
+[lints]
+workspace = true
+

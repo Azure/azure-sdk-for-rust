@@ -44,3 +44,7 @@ default_tag = ["package-dotnet-sdk"]
 "package-composite-v1" = []
 "package-2024-01" = []
 "package-2023-11-15" = []
+
+[lints]
+workspace = true
+

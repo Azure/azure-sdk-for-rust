@@ -44,3 +44,7 @@ default_tag = ["package-resources-2021-04"]
 "package-policy-2021-06" = []
 "package-locks-2020-05" = []
 "package-features-2021-07" = []
+
+[lints]
+workspace = true
+

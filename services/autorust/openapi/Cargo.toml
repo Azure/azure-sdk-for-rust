@@ -21,3 +21,8 @@ thiserror = "1.0"
 assert-json-diff = "2.0"
 serde_yaml = "0.9"
 camino = "1.1"
+
+
+[lints]
+workspace = true
+

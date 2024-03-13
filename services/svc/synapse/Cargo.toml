@@ -44,3 +44,7 @@ default_tag = ["package-vnet-2020-12-01"]
 "package-vnet-2019-06-01-preview" = []
 "package-spark-2020-12-01" = []
 "package-spark-2019-11-01-preview" = []
+
+[lints]
+workspace = true
+

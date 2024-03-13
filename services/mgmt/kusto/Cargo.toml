@@ -44,3 +44,7 @@ default_tag = ["schema-2019-09-07"]
 "schema-2019-01-21" = []
 "schema-2018-09-07-preview" = []
 "schema-2017-09-07-privatepreview" = []
+
+[lints]
+workspace = true
+

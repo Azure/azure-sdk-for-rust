@@ -44,3 +44,7 @@ default_tag = ["package-netapp-2023-07-01"]
 "package-netapp-2023-05-01" = []
 "package-netapp-2022-11-01-preview" = []
 "package-netapp-2022-11-01" = []
+
+[lints]
+workspace = true
+

@@ -44,3 +44,7 @@ default_tag = ["package-7_4"]
 "package-preview-7_3-preview" = []
 "package-7_4" = []
 "package-7_3" = []
+
+[lints]
+workspace = true
+

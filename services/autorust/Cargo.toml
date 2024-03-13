@@ -6,3 +6,8 @@ members = [
 ]
 
 resolver = "2"
+
+
+[lints]
+workspace = true
+

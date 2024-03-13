@@ -42,3 +42,7 @@ default_tag = ["package-2017-08-beta"]
 "package-2017-08-beta" = []
 "package-2017-07" = []
 "package-2016-05" = []
+
+[lints]
+workspace = true
+

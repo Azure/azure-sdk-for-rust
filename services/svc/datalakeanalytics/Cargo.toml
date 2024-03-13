@@ -44,3 +44,7 @@ default_tag = ["package-job-2016-11"]
 "package-job-2016-03-preview" = []
 "package-job-2015-11-preview" = []
 "package-catalog-2016-11" = []
+
+[lints]
+workspace = true
+

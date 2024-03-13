@@ -41,3 +41,8 @@ enable_reqwest_rustls = ["azure_core/enable_reqwest_rustls"]
 without_tag_import = []
 default_tag = ["2023-06-15-preview"]
 "2023-06-15-preview" = []
+
+
+[lints]
+workspace = true
+
