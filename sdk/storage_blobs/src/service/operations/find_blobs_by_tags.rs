@@ -57,7 +57,7 @@ pub type FindBlobsByTags = azure_core::Pageable<FindBlobsByTagsResponse, azure_c
 pub struct FindBlobsByTagsResponse {
     pub blobs: Vec<Blob>,
     pub delimiter: Option<String>,
-    next_marker: Option<NextMarker>,
+    pub next_marker: Option<NextMarker>,
     pub r#where: Option<String>,
     pub common: CommonStorageResponseHeaders,
 }
