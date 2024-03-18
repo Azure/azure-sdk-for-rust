@@ -8,21 +8,20 @@ operation! {
     FindBlobsByTags,
     client: BlobServiceClient,
     expression: String,
-    ?next_marker: NextMarker,
-    ?max_results: MaxResults,
     ?marker: NextMarker,
+    ?max_results: MaxResults,
 }
 
 impl FindBlobsByTagsBuilder {
     pub fn into_stream(self) -> FindBlobsByTags {
-        let make_request = move |next_marker: Option<NextMarker>| {
+        let make_request = move |continuation: Option<NextMarker>| {
             let this = self.clone();
             let mut ctx = self.context.clone();
             async move {
                 let mut url = this.client.url()?;
 
                 url.query_pairs_mut().append_pair("comp", "blobs");
-                if let Some(next_marker) = next_marker.or(this.marker) {
+                if let Some(next_marker) = continuation.or(this.marker) {
                     next_marker.append_to_url_query(&mut url);
                 }
                 url.query_pairs_mut().append_pair("where", &this.expression);
