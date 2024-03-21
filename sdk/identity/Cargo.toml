@@ -33,7 +33,7 @@ async-process = "2.0"
 tz-rs = { version = "0.6", optional = true }
 
 [dev-dependencies]
-reqwest = { version = "0.11", features = ["json"], default-features = false }
+reqwest = { version = "0.12", features = ["json"], default-features = false }
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 tracing-subscriber = "0.3"
 serde_test = "1"
