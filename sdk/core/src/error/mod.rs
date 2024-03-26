@@ -41,8 +41,12 @@ impl ErrorKind {
         Self::HttpResponse { status, error_code }
     }
 
-    pub fn http_response_from_body(status: StatusCode, body: &[u8]) -> Self {
-        let error_code = http_error::get_error_code_from_body(body);
+    pub fn http_response_from_body(
+        status: StatusCode,
+        body: &[u8],
+        content_type: Option<&str>,
+    ) -> Self {
+        let (error_code, _) = http_error::get_error_code_message_from_body(body, content_type);
         Self::HttpResponse { status, error_code }
     }
 }
@@ -469,7 +473,7 @@ mod tests {
 
     #[test]
     fn matching_against_http_error() {
-        let kind = ErrorKind::http_response_from_body(StatusCode::ImATeapot, b"{}");
+        let kind = ErrorKind::http_response_from_body(StatusCode::ImATeapot, b"{}", None);
 
         assert!(matches!(
             kind,
@@ -482,6 +486,7 @@ mod tests {
         let kind = ErrorKind::http_response_from_body(
             StatusCode::ImATeapot,
             br#"{"error": {"code":"teepot"}}"#,
+            None,
         );
 
         assert!(matches!(
