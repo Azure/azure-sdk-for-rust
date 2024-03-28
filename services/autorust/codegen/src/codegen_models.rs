@@ -15,13 +15,15 @@ use serde_json::Value;
 use spec::{get_schema_schema_references, openapi, RefKey};
 use std::{
     cmp::Reverse,
-    collections::{BinaryHeap, HashMap, HashSet},
+    collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet},
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct PropertyGen {
     name: String,
     schema: SchemaGen,
+    /// Optional ref key for the allOf parent
+    all_of_ref_key: Option<RefKey>,
 }
 
 impl PropertyGen {
@@ -44,9 +46,13 @@ impl PropertyGen {
     pub fn discriminator(&self) -> Option<&str> {
         self.schema.discriminator()
     }
+
+    pub fn all_of_ref_key(&self) -> Option<&RefKey> {
+        self.all_of_ref_key.as_ref()
+    }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SchemaGen {
     ref_key: Option<RefKey>,
     schema: Schema,
@@ -57,6 +63,10 @@ pub struct SchemaGen {
     // resolved
     properties: Vec<PropertyGen>,
     all_of: Vec<SchemaGen>,
+    required: Vec<String>,
+    discriminator_children: BTreeSet<RefKey>,
+    // if this schema is a child of a discriminator, this will be set to the parent, second value in tuple is the discriminator property name
+    discriminator_parent: Option<(RefKey, String)>,
 }
 
 #[derive(Clone)]
@@ -78,11 +88,14 @@ impl EnumValue {
 impl SchemaGen {
     fn new(ref_key: Option<RefKey>, schema: Schema, doc_file: Utf8PathBuf) -> Self {
         Self {
+            required: schema.clone().required,
             ref_key,
             schema,
             doc_file,
             properties: Vec::new(),
             all_of: Vec::new(),
+            discriminator_children: BTreeSet::new(),
+            discriminator_parent: None,
         }
     }
 
@@ -153,12 +166,14 @@ impl SchemaGen {
         Ok(type_name)
     }
 
+    /// All the required properties for this schema
     fn required(&self) -> HashSet<&str> {
-        self.schema.required.iter().map(String::as_str).collect()
+        self.required.iter().map(String::as_str).collect()
     }
 
+    /// If this schema has any required fields
     fn has_required(&self) -> bool {
-        !self.schema.required.is_empty()
+        !self.required.is_empty()
     }
 
     fn all_of(&self) -> Vec<&SchemaGen> {
@@ -167,11 +182,10 @@ impl SchemaGen {
 
     /// Get the number of fields in the struct, excluding the discriminator.
     fn len_fields(&self) -> usize {
-        let mut len = self.all_of().len() + self.properties.len();
-        if self.discriminator().is_some() {
-            len = len.saturating_sub(1);
+        match self.discriminator() {
+            Some(_) => self.properties.len().saturating_sub(1),
+            None => self.properties.len(),
         }
-        len
     }
 
     /// If the struct has any fields, excluding the discriminator.
@@ -206,15 +220,20 @@ impl SchemaGen {
         self.schema.common.default.as_ref().and_then(|v| v.as_str())
     }
 
-    /// If the type should implement Default
+    /// If the type should implement [Default]
     fn implement_default(&self) -> bool {
         if self.has_required() {
-            return false;
-        }
-        for schema in self.all_of() {
-            if !schema.implement_default() {
-                return false;
+            if self.required().len() == 1 {
+                // if there is only one required field, we may be able to implement default dependent on discriminators
+                if self.discriminator_parent().is_some() {
+                    // if this is a child of a discriminator, we can implement default
+                    return self.required().contains(&self.discriminator_parent().as_ref().unwrap().1.as_str());
+                } else if self.discriminator().is_some() {
+                    // if this is a discriminator, we can implement default for the base class
+                    return self.required().contains(&self.discriminator().unwrap());
+                }
             }
+            return false;
         }
         true
     }
@@ -225,6 +244,10 @@ impl SchemaGen {
 
     fn discriminator_value(&self) -> Option<&str> {
         self.schema.x_ms_discriminator_value.as_deref()
+    }
+
+    fn discriminator_parent(&self) -> &Option<(RefKey, String)> {
+        &self.discriminator_parent
     }
 }
 
@@ -285,6 +308,7 @@ fn resolve_schema_property(
     Ok(PropertyGen {
         name: property_name,
         schema,
+        all_of_ref_key: None,
     })
 }
 
@@ -298,6 +322,7 @@ fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen,
             Ok(PropertyGen {
                 name: property.name.clone(),
                 schema,
+                all_of_ref_key: None,
             })
         })
         .collect::<Result<_>>()?;
@@ -322,6 +347,118 @@ fn resolve_all_of(all_schemas: &IndexMap<RefKey, SchemaGen>, schema: &SchemaGen,
     schema.properties = properties;
     schema.all_of = all_of.into_iter().flatten().collect();
     Ok(schema)
+}
+
+/// Flattens/merges the subschemas from `allOf` references into this schema
+fn flatten_all_of(schema: &SchemaGen, depth: usize) -> Result<SchemaGen> {
+    // recursively apply to all properties, so this vec of schemas has all the properties we need from children
+    let flattened_schemas: Vec<_> = schema
+        .all_of
+        .iter()
+        .map(|schema| flatten_all_of(schema, depth + 1))
+        .collect::<Result<_>>()?;
+
+    let mut all_properties = IndexMap::new();
+    for property in schema.properties.clone() {
+        let property = if depth != 0 {
+            // as it is a nested property, add an `allof` ref to this schema's ref key - that way we can refer to the original version of a reference where required
+            let mut property = property.clone();
+            property.all_of_ref_key = schema.ref_key.clone();
+            property
+        } else {
+            property
+        };
+        all_properties.insert(property.name.clone(), property);
+    }
+
+    for flattened_schema in flattened_schemas.clone() {
+        for property in flattened_schema.properties {
+            let _x = all_properties.insert(property.name.clone(), property);
+            // if let Some(x) = x {
+            //     println!("{:?}", schema.ref_key);
+            //     println!("inner all of: {:?}", flattened_schema.ref_key);
+            //     println!("property already in schema - so a duplicate: {}", x.name)
+            // }
+        }
+    }
+
+    // The required properties on a child schema include all of those of the parent schema, so we need to merge them all together
+    let mut all_required: HashSet<String> = schema.required.clone().into_iter().collect();
+    for schema in flattened_schemas {
+        for required in schema.required {
+            all_required.insert(required);
+        }
+    }
+
+    let mut schema: SchemaGen = schema.clone();
+    schema.properties = all_properties.into_iter().map(|(_, property)| property).collect();
+    schema.required = all_required.into_iter().collect();
+    Ok(schema)
+}
+
+/// Apply a flattening of properties of allOf schemas into inherited schemas
+fn flatten_all_all_of(schemas: &IndexMap<RefKey, SchemaGen>) -> Result<IndexMap<RefKey, SchemaGen>> {
+    schemas.iter().try_fold(IndexMap::new(), |mut flattened, (ref_key, schema)| {
+        let schema = flatten_all_of(schema, 0)?;
+        flattened.insert(ref_key.clone(), schema);
+        Ok(flattened)
+    })
+}
+
+/// For a given schema, if this schema has a discriminator property, find all the schemas that are children of it - also return the child schemas so we can add a backwards reference
+fn resolve_discriminators(
+    all_schemas: &IndexMap<RefKey, SchemaGen>,
+    ref_key: &RefKey,
+    schema: &SchemaGen,
+) -> (SchemaGen, BTreeSet<RefKey>) {
+    // No need to do anything if there is no discriminator
+    if schema.discriminator().is_none() {
+        return (schema.clone(), BTreeSet::new());
+    }
+
+    // if a class is a discriminator, it should know the child classes - so we resolve them here
+    let mut discriminator_children: BTreeSet<RefKey> = BTreeSet::new();
+    for (child_ref_key, child_schema) in all_schemas {
+        if child_schema.discriminator_value().is_some() && UnionCode::breadth_first_search_all_of(ref_key, child_schema) {
+            discriminator_children.insert(child_ref_key.clone());
+        }
+    }
+
+    let mut new_schema = schema.clone();
+    new_schema.discriminator_children = discriminator_children.clone();
+
+    (new_schema, discriminator_children)
+}
+
+fn resolve_all_discriminators(schemas: &IndexMap<RefKey, SchemaGen>) -> Result<IndexMap<RefKey, SchemaGen>> {
+    let mut resolved: IndexMap<RefKey, SchemaGen> = IndexMap::new();
+    let mut children_map: HashMap<(RefKey, String), BTreeSet<RefKey>> = HashMap::new();
+
+    for (ref_key, schema) in schemas {
+        let (schema, children) = resolve_discriminators(schemas, ref_key, schema);
+        if let Some(discriminator) = schema.discriminator() {
+            children_map.insert((ref_key.clone(), discriminator.to_string()), children);
+        }
+        resolved.insert(ref_key.clone(), schema);
+    }
+
+    // add backwards references in children to the parents - add some validation that this is done at most once
+    for (ref_key, children) in children_map {
+        for child_of_ref_key in children {
+            let child_schema = resolved
+                .get_mut(&child_of_ref_key)
+                .expect("We should expect that the child schema is in the resolved map - otherwise we have a bug in the codegen");
+
+            if child_schema.discriminator_parent.is_some() {
+                return Err(Error::with_message(ErrorKind::CodeGen, || {
+                    format!("child schema has more than one parent: {:?}", child_of_ref_key)
+                }));
+            }
+            child_schema.discriminator_parent = Some(ref_key.clone());
+        }
+    }
+
+    Ok(resolved)
 }
 
 fn all_schemas(spec: &Spec) -> Result<IndexMap<RefKey, SchemaGen>> {
@@ -382,14 +519,15 @@ fn add_schema_gen(all_schemas: &mut IndexMap<RefKey, SchemaGen>, resolved_schema
     }
 }
 
-pub fn all_schemas_resolved(spec: &Spec) -> Result<Vec<(RefKey, SchemaGen)>> {
+pub fn all_schemas_resolved(spec: &Spec) -> Result<BTreeMap<RefKey, SchemaGen>> {
     let schemas = all_schemas(spec)?;
     let schemas = resolve_all_schema_properties(&schemas, spec)?;
     let schemas = resolve_all_all_of(&schemas, spec)?;
-    // sort schemas by name
-    let mut schemas: Vec<_> = schemas.into_iter().collect();
-    schemas.sort_by(|a, b| a.0.name.cmp(&b.0.name));
-    Ok(schemas)
+    let schemas = flatten_all_all_of(&schemas)?;
+    let schemas = resolve_all_discriminators(&schemas)?;
+
+    // Sort the IndexMap and return a BTreeMap
+    Ok(schemas.into_iter().collect())
 }
 
 pub enum ModelCode {
@@ -474,7 +612,7 @@ pub fn create_models(cg: &mut CodeGen) -> Result<ModelsCode> {
     let all_schemas = &all_schemas_resolved(&cg.spec)?;
 
     // add union types
-    for (_ref_key, schema) in all_schemas {
+    for schema in all_schemas.values() {
         if schema.discriminator().is_some() {
             let name = schema.name()?.to_camel_case_id();
             cg.add_union_type(name);
@@ -522,8 +660,8 @@ pub fn create_models(cg: &mut CodeGen) -> Result<ModelsCode> {
                 models.push(ModelCode::Union(UnionCode::from_schema(
                     cg,
                     tag,
+                    &schema,
                     schema_name,
-                    ref_key,
                     all_schemas,
                     tag_property_description,
                 )?));
@@ -581,26 +719,33 @@ impl UnionCode {
     fn from_schema(
         cg: &CodeGen,
         tag: &str,
+        schema: &SchemaGen,
         schema_name: &str,
-        ref_key: &RefKey,
-        all_schemas: &Vec<(RefKey, SchemaGen)>,
+        all_schemas: &BTreeMap<RefKey, SchemaGen>,
         description: Option<String>,
     ) -> Result<Self> {
-        let mut values = Vec::new();
-        for (child_ref_key, child_schema) in all_schemas {
-            if let Some(tag) = child_schema.discriminator_value() {
-                if Self::breadth_first_search_all_of(ref_key, child_schema) {
-                    let name = tag.to_camel_case_ident()?;
-                    let mut type_name = TypeNameCode::from(child_ref_key.name.to_camel_case_ident()?);
-                    cg.set_if_union_type(&mut type_name);
-                    values.push(UnionValueCode {
-                        tag: tag.to_string(),
-                        name,
-                        type_name,
-                    });
-                }
-            }
-        }
+        let child_schemas = schema.discriminator_children.clone();
+
+        let values: Vec<UnionValueCode> = child_schemas
+            .iter()
+            .map(|child_ref_key| {
+                let child_schema = all_schemas
+                    .get(child_ref_key)
+                    .ok_or_else(|| Error::message(ErrorKind::CodeGen, "ref key not found"))?;
+                let tag = child_schema
+                    .discriminator_value()
+                    .expect("discriminator value not found - when it should exist");
+                let name = tag.to_camel_case_ident()?;
+                let mut type_name = TypeNameCode::from(child_ref_key.name.to_camel_case_ident()?);
+                cg.set_if_union_type(&mut type_name);
+                Ok(UnionValueCode {
+                    tag: tag.to_string(),
+                    name,
+                    type_name,
+                })
+            })
+            .collect::<Result<Vec<UnionValueCode>>>()?;
+
         let mut name = TypeNameCode::from(schema_name.to_camel_case_ident()?);
         name.union(true);
         Ok(Self {
@@ -976,32 +1121,17 @@ fn create_struct(
     // println!("struct: {} {:?}", struct_name_code, pageable);
     needs_boxing.insert(struct_name.to_camel_case_ident()?.to_string());
 
-    for base_schema in schema.all_of() {
-        // skip empty base types
-        if !base_schema.has_fields() {
-            continue;
-        }
-        let schema_name = base_schema.name()?;
-        let mut type_name = TypeNameCode::from(schema_name.to_camel_case_ident()?);
-        type_name.union(false);
-        let field_name = schema_name.to_snake_case_ident()?;
-        props.push(StructPropCode {
-            doc_comments: Vec::new(),
-            serde: SerdeCode::flatten(),
-            field_name: field_name.clone(),
-            field_type: type_name.clone(),
-        });
-        if base_schema.implement_default() {
-            new_fn_body.extend(quote! { #field_name: #type_name::default(), });
-        } else {
-            new_fn_params.push(quote! { #field_name: #type_name });
-            new_fn_body.extend(quote! { #field_name, });
-        }
-    }
-
     let mut field_names = HashMap::new();
 
-    for property in schema.properties() {
+    let properties = if let Some((_ref_key, property_to_remove)) = schema.discriminator_parent() {
+        let mut properties = schema.properties();
+        properties.retain(|property| property.name() != property_to_remove);
+        properties
+    } else {
+        schema.properties()
+    };
+
+    for property in properties {
         let property_name = if let Some(xml_name) = property.xml_name() {
             xml_name
         } else {
@@ -1019,14 +1149,7 @@ fn create_struct(
         let NamedTypeCode {
             mut type_name,
             code: field_code,
-        } = create_struct_field_code(
-            cg,
-            &ns.clone(),
-            &property.schema,
-            property_name,
-            lowercase_workaround,
-            needs_boxing.clone(),
-        )?;
+        } = create_struct_field_code(cg, &ns.clone(), property, property_name, lowercase_workaround, needs_boxing.clone())?;
         mod_code.extend(field_code.into_token_stream());
         let mut doc_comments = Vec::new();
         // uncomment the next two lines to help identify entries that need boxed
@@ -1399,48 +1522,55 @@ impl ToTokens for XmlWrappedCode {
 fn create_struct_field_code(
     cg: &CodeGen,
     namespace: &Ident,
-    property: &SchemaGen,
+    property: &PropertyGen,
     property_name: &str,
     lowercase_workaround: bool,
     needs_boxing: HashSet<String>,
 ) -> Result<NamedTypeCode> {
-    match &property.ref_key {
+    match &property.schema().ref_key {
         Some(ref_key) => {
             let mut type_name = TypeNameCode::from(ref_key.name.to_camel_case_ident()?);
             cg.set_if_union_type(&mut type_name);
             Ok(NamedTypeCode { type_name, code: None })
         }
         None => {
-            if property.is_local_enum() {
-                create_enum(Some(namespace), property, property_name, lowercase_workaround)
-            } else if property.is_local_struct() {
-                let id = property_name.to_camel_case_ident()?;
-                let type_name = TypeNameCode::from(vec![namespace.clone(), id]);
-                let code = create_struct(cg, property, property_name, None, needs_boxing)?;
-                Ok(NamedTypeCode {
-                    type_name,
-                    code: Some(TypeCode::Struct(code)),
-                })
-            } else if property.xml_wrapped() {
-                let id = property_name.to_camel_case_ident()?;
-                let struct_name = property
-                    .xml_name()
-                    .map(|name| name.to_camel_case_ident())
-                    .transpose()?
-                    .unwrap_or_else(|| id.clone());
-                let code = XmlWrappedCode {
-                    struct_name: struct_name.clone(),
-                    type_name: property.type_name(cg)?,
-                };
-                Ok(NamedTypeCode {
-                    type_name: TypeNameCode::from(vec![namespace.clone(), struct_name]),
-                    code: Some(TypeCode::XmlWrapped(code)),
-                })
+            if property.all_of_ref_key().is_some() && property.schema().is_local_enum() {
+                let namespace = property.all_of_ref_key().unwrap().name.to_snake_case_ident()?;
+                let type_name = TypeNameCode::from(vec![namespace, property_name.to_camel_case_ident()?]);
+                Ok(NamedTypeCode { type_name, code: None })
             } else {
-                Ok(NamedTypeCode {
-                    type_name: property.type_name(cg)?,
-                    code: None,
-                })
+                let property = property.schema();
+                if property.is_local_enum() {
+                    create_enum(Some(namespace), property, property_name, lowercase_workaround)
+                } else if property.is_local_struct() {
+                    let id = property_name.to_camel_case_ident()?;
+                    let type_name = TypeNameCode::from(vec![namespace.clone(), id]);
+                    let code = create_struct(cg, property, property_name, None, needs_boxing)?;
+                    Ok(NamedTypeCode {
+                        type_name,
+                        code: Some(TypeCode::Struct(code)),
+                    })
+                } else if property.xml_wrapped() {
+                    let id = property_name.to_camel_case_ident()?;
+                    let struct_name = property
+                        .xml_name()
+                        .map(|name| name.to_camel_case_ident())
+                        .transpose()?
+                        .unwrap_or_else(|| id.clone());
+                    let code = XmlWrappedCode {
+                        struct_name: struct_name.clone(),
+                        type_name: property.type_name(cg)?,
+                    };
+                    Ok(NamedTypeCode {
+                        type_name: TypeNameCode::from(vec![namespace.clone(), struct_name]),
+                        code: Some(TypeCode::XmlWrapped(code)),
+                    })
+                } else {
+                    Ok(NamedTypeCode {
+                        type_name: property.type_name(cg)?,
+                        code: None,
+                    })
+                }
             }
         }
     }
