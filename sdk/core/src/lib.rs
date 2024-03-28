@@ -42,7 +42,6 @@ pub mod util;
 
 use uuid::Uuid;
 
-#[cfg(feature = "xml")]
 pub mod xml;
 
 pub mod tokio;
