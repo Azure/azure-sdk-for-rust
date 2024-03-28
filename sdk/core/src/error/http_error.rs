@@ -136,11 +136,10 @@ impl ErrorBody {
     ///
     /// The nested errors fields take precedence over those in the root of the structure
     fn into_code_message(self) -> (Option<String>, Option<String>) {
-        let (nested_code, nested_message) = if let Some(nested_error) = self.error {
-            (nested_error.code, nested_error.message)
-        } else {
-            (None, None)
-        };
+        let (nested_code, nested_message) = self
+            .error
+            .map(|nested_error| (nested_error.code, nested_error.message))
+            .unwrap_or((None, None));
         (nested_code.or(self.code), nested_message.or(self.message))
     }
 }
@@ -163,9 +162,7 @@ pub(crate) fn get_error_code_message_from_body(
             from_json(body).ok()
         };
 
-    if let Some(err_body) = err_body {
-        err_body.into_code_message()
-    } else {
-        (None, None)
-    }
+    err_body
+        .map(ErrorBody::into_code_message)
+        .unwrap_or((None, None))
 }
