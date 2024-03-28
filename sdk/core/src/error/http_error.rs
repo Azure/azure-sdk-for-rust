@@ -114,14 +114,20 @@ fn get_error_code_from_header(headers: &Headers) -> Option<String> {
 
 #[derive(Deserialize)]
 struct NestedError {
+    #[serde(alias = "Message")]
     message: Option<String>,
+    #[serde(alias = "Code")]
     code: Option<String>,
 }
 
+/// Error from a response body, aliases are set because XML responses follow different case-ing
 #[derive(Deserialize)]
 struct ErrorBody {
+    #[serde(alias = "Error")]
     error: Option<NestedError>,
+    #[serde(alias = "Message")]
     message: Option<String>,
+    #[serde(alias = "Code")]
     code: Option<String>,
 }
 
