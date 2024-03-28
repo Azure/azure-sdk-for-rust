@@ -7,7 +7,7 @@ mod reqwest;
 use self::noop::new_noop_client;
 #[cfg(any(feature = "enable_reqwest", feature = "enable_reqwest_rustls"))]
 use self::reqwest::new_reqwest_client;
-use crate::error::ErrorKind;
+use crate::{error::ErrorKind, headers};
 use async_trait::async_trait;
 use bytes::Bytes;
 use serde::{de::DeserializeOwned, Serialize};
@@ -49,7 +49,12 @@ pub trait HttpClient: Send + Sync + std::fmt::Debug {
         if status.is_success() {
             Ok(crate::CollectedResponse::new(status, headers, body))
         } else {
-            Err(ErrorKind::http_response_from_body(status, &body).into_error())
+            Err(ErrorKind::http_response_from_body(
+                status,
+                &body,
+                headers.get_optional_str(&headers::CONTENT_TYPE),
+            )
+            .into_error())
         }
     }
 }
