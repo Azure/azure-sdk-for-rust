@@ -434,7 +434,7 @@ fn idents_to_type_path(idents: Vec<Ident>) -> TypePath {
 }
 
 fn optional_idents_to_type_path(idents: Vec<Option<&Ident>>) -> TypePath {
-    let idents: Vec<Ident> = idents.into_iter().filter_map(|id| id.map(Ident::clone)).collect();
+    let idents: Vec<Ident> = idents.into_iter().filter_map(|id| id.cloned()).collect();
     idents_to_type_path(idents)
 }
 

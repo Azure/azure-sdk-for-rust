@@ -4,6 +4,7 @@ use serde::Deserialize;
 
 mod setup_mock;
 
+#[allow(dead_code)]
 #[tokio::test]
 async fn query_operations() -> azure_core::Result<()> {
     #[derive(Deserialize, Debug)]
