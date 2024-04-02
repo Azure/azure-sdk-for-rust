@@ -87,11 +87,6 @@ pub async fn perform(
         let rsp_body = rsp_body.collect().await?;
         let text = std::str::from_utf8(&rsp_body)?;
         error!("rsp_body == {:?}", text);
-        Err(ErrorKind::http_response_from_body(
-            rsp_status,
-            &rsp_body,
-            rsp_headers.get_optional_str(&headers::CONTENT_TYPE),
-        )
-        .into_error())
+        Err(ErrorKind::http_response_from_parts(rsp_status, &rsp_headers, &rsp_body).into_error())
     }
 }

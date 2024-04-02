@@ -3,7 +3,7 @@ use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind},
     from_json,
-    headers::{self, HeaderName},
+    headers::HeaderName,
     HttpClient, Method, Request, StatusCode, Url,
 };
 use serde::{
@@ -108,10 +108,10 @@ impl ImdsManagedIdentityCredential {
                     ))
                 }
                 rsp_status => {
-                    return Err(ErrorKind::http_response_from_body(
+                    return Err(ErrorKind::http_response_from_parts(
                         rsp_status,
+                        &rsp_headers,
                         &rsp_body,
-                        rsp_headers.get_optional_str(&headers::CONTENT_TYPE),
                     )
                     .into_error())
                 }

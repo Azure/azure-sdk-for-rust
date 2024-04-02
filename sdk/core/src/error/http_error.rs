@@ -107,7 +107,7 @@ impl ErrorDetails {
 /// Gets the error code if it's present in the headers
 ///
 /// For more info, see [here](https://github.com/microsoft/api-guidelines/blob/vNext/azure/Guidelines.md#handling-errors)
-fn get_error_code_from_header(headers: &Headers) -> Option<String> {
+pub(crate) fn get_error_code_from_header(headers: &Headers) -> Option<String> {
     headers.get_optional_string(&headers::ERROR_CODE)
 }
 
