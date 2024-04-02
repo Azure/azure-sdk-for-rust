@@ -1,7 +1,6 @@
 use crate::{
     content_type, from_json,
     headers::{self, Headers},
-    xml::read_xml,
     Response, StatusCode,
 };
 use bytes::Bytes;
@@ -145,7 +144,7 @@ impl ErrorBody {
 }
 
 /// Gets the error code and message from the body based on the specified content_type
-///
+/// Support for xml decoding is dependent on the 'xml' feature flag
 ///
 /// Assumes JSON if unspecified/inconclusive to maintain old behaviour
 /// [#1275](https://github.com/Azure/azure-sdk-for-rust/issues/1275)
@@ -154,13 +153,22 @@ pub(crate) fn get_error_code_message_from_body(
     body: &[u8],
     content_type: Option<&str>,
 ) -> (Option<String>, Option<String>) {
-    let err_body: Option<ErrorBody> =
-        if content_type.is_some_and(|ctype| ctype == content_type::APPLICATION_XML.as_str()) {
-            read_xml(body).ok()
-        } else {
-            // keep old default of assuming JSON
-            from_json(body).ok()
-        };
+    let err_body: Option<ErrorBody> = if content_type
+        .is_some_and(|ctype| ctype == content_type::APPLICATION_XML.as_str())
+    {
+        #[cfg(feature = "xml")]
+        {
+            crate::xml::read_xml(body).ok()
+        }
+        #[cfg(not(feature = "xml"))]
+        {
+            tracing::warn!("encountered XML response but the 'xml' feature flag was not specified");
+            None
+        }
+    } else {
+        // keep old default of assuming JSON
+        from_json(body).ok()
+    };
 
     err_body
         .map(ErrorBody::into_code_message)
