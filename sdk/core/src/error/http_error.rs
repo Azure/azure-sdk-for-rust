@@ -11,7 +11,7 @@ use serde::Deserialize;
 pub struct HttpError {
     status: StatusCode,
     details: ErrorDetails,
-    headers: Headers,
+    headers: impl Into<std::collections::HashMap<String, String>>,
     body: Bytes,
 }
 
