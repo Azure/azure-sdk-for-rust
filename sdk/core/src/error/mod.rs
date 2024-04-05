@@ -511,7 +511,7 @@ mod tests {
         ));
 
         let mut headers = Headers::new();
-        headers.insert(headers::ERROR_CODE, "teepot");
+        headers.insert(headers::ERROR_CODE, "teapot");
         let kind = ErrorKind::http_response_from_parts(StatusCode::ImATeapot, &headers, br#"{}"#);
 
         assert!(matches!(
@@ -520,7 +520,7 @@ mod tests {
                 status: StatusCode::ImATeapot,
                 error_code
             }
-            if error_code.as_deref() == Some("teepot")
+            if error_code.as_deref() == Some("teapot")
         ));
     }
 
