@@ -44,8 +44,8 @@ impl ErrorKind {
         Self::HttpResponse { status, error_code }
     }
 
-    /// Constructs a [ErrorKind::HttpResponse] with given status code, the error code is taken from
-    /// the header [headers::ERROR_CODE] if present, otherwise the body is checked
+    /// Constructs an [`ErrorKind::HttpResponse`] with given status code. The error code is taken from
+    /// the header [`headers::ERROR_CODE`] if present; otherwise, it is taken from the body.
     pub fn http_response_from_parts(status: StatusCode, headers: &Headers, body: &[u8]) -> Self {
         if let Some(header_err_code) = get_error_code_from_header(headers) {
             Self::HttpResponse {
