@@ -47,6 +47,9 @@ impl TopicClient {
         P: Into<String>,
         K: Into<Secret>,
     {
+        // NOTE: This is to account for the azure_core::auth::hmac_sha256 assumption
+        // that the key needs to be base64 decoded.
+        let signing_key = azure_core::base64::encode(signing_key.into().secret());
         Ok(Self {
             http_client,
             namespace: namespace.into(),
