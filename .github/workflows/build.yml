@@ -152,4 +152,4 @@ jobs:
     steps:
       - name: Verify dependencies
         run: |
-          find sdk/ -maxdepth 3 -type f -name Cargo.toml -exec bash -c 'eng/scripts/verify-dependencies.rs {}' \;
+          find ${{ github.workspace }}/sdk/ -maxdepth 3 -type f -name Cargo.toml -exec bash -c 'eng/scripts/verify-dependencies.rs {}' \;
