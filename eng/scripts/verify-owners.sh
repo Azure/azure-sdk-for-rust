@@ -10,9 +10,8 @@ cd $(dirname ${BASH_SOURCE[0]})/../../
 
 OWNER=github:azure:azure-sdk-publish-rust
 SDK=$(cargo metadata --format-version=1 --no-deps | jq -r -c '.packages | .[] | select(.publish == null) | .name')
-SERVICES=$(cd services; cargo metadata --format-version=1 --no-deps | jq -r -c '.packages | .[] | select(.publish == null) | .name')
 
-for i in ${SDK} ${SERVICES}; do
+for i in ${SDK}; do
    if ! cargo owner -q --list $i 2>/dev/null | grep -qi ${OWNER}; then
        echo SDK publish team is missing on crates.io for $i
        echo "cargo owner --add ${OWNER} $i"

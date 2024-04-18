@@ -13,7 +13,7 @@ categories = ["api-bindings"]
 edition = "2021"
 
 [dependencies]
-azure_core = { path = "../core", version = "0.19" }
+azure_core = { workspace = true }
 async-lock = "3.0"
 oauth2 = { version = "4.0.0", default-features = false }
 url = "2.2"
@@ -37,7 +37,6 @@ reqwest = { version = "0.12", features = ["json"], default-features = false }
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 tracing-subscriber = "0.3"
 serde_test = "1"
-azure_security_keyvault = { path = "../security_keyvault", default-features = false }
 serial_test = "3.0"
 clap = { version = "4.4.16", features = ["derive"] }
 
@@ -67,10 +66,6 @@ features = [
   "azureauth_cli",
   "old_azure_cli",
 ]
-
-[[example]]
-name = "client_certificate_credentials"
-required-features = ["client_certificate"]
 
 [[example]]
 name = "azureauth_cli_credential"

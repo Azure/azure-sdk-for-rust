@@ -1,10 +1,12 @@
-target/
-Cargo.lock
-*.rs.bk
 .vscode/
 !.vscode/extensions.json
 !.vscode/settings.json
-sample/
+target/
+Cargo.lock
+.env
+
+.idea/
+*.rs.bk
 /.project
 \#*\#
 \.#*
@@ -13,5 +15,3 @@ sample/
 *.swp
 *.swo
 *.vim
-.idea/
-.env

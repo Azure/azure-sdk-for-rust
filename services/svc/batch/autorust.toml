@@ -1,2 +1,0 @@
-[properties]
-fix_case = ["BatchServiceClient", "BatchService"]

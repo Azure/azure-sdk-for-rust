@@ -1,11 +1,11 @@
 [package]
 name = "mock_transport"
 version = "0.1.0"
-edition = "2021"
+edition.workspace = true
 publish = false
 
 [dependencies]
-azure_core = { path = "../../../sdk/core" }
+azure_core = { workspace = true }
 log = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

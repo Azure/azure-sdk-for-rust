@@ -1,8 +1,21 @@
 [workspace]
 members = [
+  "eng/test/mock_transport",
   "sdk/*",
-  "./eng/test/mock_transport"
 ]
 resolver = "2"
+
+[workspace.package]
+authors = [
+    "Microsoft",
+]
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/azure/azure-sdk-for-rust"
+rust-version = "1.76"
+
+[workspace.dependencies]
+azure_core = { version = "0.19.0", path = "sdk/core" }
+azure_identity = { version = "0.19.0", path = "sdk/identity" }
 
 [workspace.lints]

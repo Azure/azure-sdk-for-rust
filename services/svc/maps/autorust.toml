@@ -1,9 +1,0 @@
-[tags]
-deny = [
-    # global responses https://github.com/Azure/azure-sdk-for-rust/issues/502
-    "package-preview-2.0", 
-    "package-1.0-preview",
-
-    # invalid value: string "200AsyncV2", expected length 3
-    "package-stable-2023-07-01",
-]
