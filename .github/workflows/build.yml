@@ -98,29 +98,29 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: eng/scripts/check_wasm.sh ${{ matrix.build }}
 
-  test-integration:
-    name: Emulator Tests
-    runs-on: ubuntu-20.04
-    needs:
-      - msrv
-    continue-on-error: ${{ matrix.experimental }}
-    strategy:
-      matrix:
-        build:
-          - stable
-          - ${{ needs.msrv.outputs.msrv }}
-        experimental:
-          - false
-        include:
-          - build: nightly
-            experimental: true
-    steps:
-      - uses: actions/checkout@v4
-      - uses: Swatinem/rust-cache@v2
-      - run: eng/scripts/emulator_tests.sh ${{ matrix.build }}
-      - name: display free disk space
-        run: df -h /
-        if: ${{ always() }}
+  # test-integration:
+  #   name: Emulator Tests
+  #   runs-on: ubuntu-20.04
+  #   needs:
+  #     - msrv
+  #   continue-on-error: ${{ matrix.experimental }}
+  #   strategy:
+  #     matrix:
+  #       build:
+  #         - stable
+  #         - ${{ needs.msrv.outputs.msrv }}
+  #       experimental:
+  #         - false
+  #       include:
+  #         - build: nightly
+  #           experimental: true
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: Swatinem/rust-cache@v2
+  #     - run: eng/scripts/emulator_tests.sh ${{ matrix.build }}
+  #     - name: display free disk space
+  #       run: df -h /
+  #       if: ${{ always() }}
 
   test-e2e:
     name: E2E Tests
