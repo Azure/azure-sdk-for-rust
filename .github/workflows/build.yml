@@ -150,6 +150,8 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
       - name: Verify dependencies
         run: |
-          find ${{ github.workspace }}/sdk/ -maxdepth 3 -type f -name Cargo.toml -exec bash -c 'eng/scripts/verify-dependencies.rs {}' \;
+          find sdk/ -maxdepth 3 -type f -name Cargo.toml -exec bash -c 'eng/scripts/verify-dependencies.rs {}' \;
