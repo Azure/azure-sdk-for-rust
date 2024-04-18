@@ -145,3 +145,11 @@ jobs:
       - name: display free disk space
         run: df -h /
         if: ${{ always() }}
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify dependencies
+        run: |
+          find sdk/ -maxdepth 3 -type f -name Cargo.toml -exec bash -c 'eng/scripts/verify-dependencies.rs {}' \;
