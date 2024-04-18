@@ -1,6 +1,0 @@
-[tags]
-deny = [
-    # mixing versions
-    "package-composite-v1",
-    "package-composite-v2",
-]

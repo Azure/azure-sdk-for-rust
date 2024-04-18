@@ -1,5 +1,0 @@
-[tags]
-# duplicate operationIds
-# https://github.com/Azure/azure-rest-api-specs/issues/20067
-deny = ["package-preview-2022-02"]
-limit = 1

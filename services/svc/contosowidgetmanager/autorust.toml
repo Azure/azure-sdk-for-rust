@@ -1,5 +1,0 @@
-[tags]
-deny = [
-    # TODO: tries to impl Continuable over serde_json::Value
-    "package-2022-11-01-preview"
-]

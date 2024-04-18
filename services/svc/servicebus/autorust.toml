@@ -1,5 +1,0 @@
-[tags]
-deny = [
-    # TODO: 'Error: Error { context: Custom(Custom { kind: DataConversion, error: Error("invalid value: string \"ServiceBusManagementErrorResponse\", expected length 3", line: 1995, column: 39) }) }'
-    "package-2021-05"
-]

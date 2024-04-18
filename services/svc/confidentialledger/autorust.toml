@@ -1,7 +1,0 @@
-[tags]
-# Configuration section missing
-# https://github.com/Azure/azure-rest-api-specs/pull/19379
-deny=[
-    "package-2022-20-04-preview-ledger", 
-    "package-2022-20-04-preview-identity"
-]
