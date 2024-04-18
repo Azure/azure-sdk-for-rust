@@ -3,8 +3,5 @@
 set -eux -o pipefail
 cd $(dirname ${BASH_SOURCE[0]})/../../
 
-for crate in sdk/*;  do
-  if [ -d "$crate" ]; then
-    (cd "$crate"; cargo readme > README.md)
-  fi
-done
+# TODO: restore from history: https://github.com/Azure/azure-sdk-for-rust/issues/1643
+exit 0
