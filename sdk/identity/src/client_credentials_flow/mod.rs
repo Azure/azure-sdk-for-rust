@@ -76,10 +76,12 @@ pub async fn perform(
     );
     req.set_body(encoded);
     let rsp = http_client.execute_request(&req).await?;
-    let rsp_status = rsp.status();
-    let rsp_body = rsp.into_body().collect().await?;
+    let (rsp_status, rsp_headers, rsp_body) = rsp.deconstruct();
+    let rsp_body = rsp_body.collect().await?;
     if !rsp_status.is_success() {
-        return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
+        return Err(
+            ErrorKind::http_response_from_parts(rsp_status, &rsp_headers, &rsp_body).into_error(),
+        );
     }
     from_json(&rsp_body)
 }

@@ -3,7 +3,10 @@ use std::borrow::Cow;
 use std::fmt::{Debug, Display};
 mod http_error;
 mod macros;
+use crate::headers::{self, Headers};
 pub use http_error::HttpError;
+
+use self::http_error::get_error_code_from_header;
 
 /// A convenience alias for `Result` where the error type is hard coded to `Error`
 pub type Result<T> = std::result::Result<T, Error>;
@@ -41,9 +44,21 @@ impl ErrorKind {
         Self::HttpResponse { status, error_code }
     }
 
-    pub fn http_response_from_body(status: StatusCode, body: &[u8]) -> Self {
-        let error_code = http_error::get_error_code_from_body(body);
-        Self::HttpResponse { status, error_code }
+    /// Constructs an [`ErrorKind::HttpResponse`] with given status code. The error code is taken from
+    /// the header [`headers::ERROR_CODE`] if present; otherwise, it is taken from the body.
+    pub fn http_response_from_parts(status: StatusCode, headers: &Headers, body: &[u8]) -> Self {
+        if let Some(header_err_code) = get_error_code_from_header(headers) {
+            Self::HttpResponse {
+                status,
+                error_code: Some(header_err_code),
+            }
+        } else {
+            let (error_code, _) = http_error::get_error_code_message_from_body(
+                body,
+                headers.get_optional_str(&headers::CONTENT_TYPE),
+            );
+            Self::HttpResponse { status, error_code }
+        }
     }
 }
 
@@ -469,7 +484,8 @@ mod tests {
 
     #[test]
     fn matching_against_http_error() {
-        let kind = ErrorKind::http_response_from_body(StatusCode::ImATeapot, b"{}");
+        let kind =
+            ErrorKind::http_response_from_parts(StatusCode::ImATeapot, &Headers::new(), b"{}");
 
         assert!(matches!(
             kind,
@@ -479,8 +495,9 @@ mod tests {
             }
         ));
 
-        let kind = ErrorKind::http_response_from_body(
+        let kind = ErrorKind::http_response_from_parts(
             StatusCode::ImATeapot,
+            &Headers::new(),
             br#"{"error": {"code":"teepot"}}"#,
         );
 
@@ -491,6 +508,19 @@ mod tests {
                 error_code
             }
             if error_code.as_deref() == Some("teepot")
+        ));
+
+        let mut headers = Headers::new();
+        headers.insert(headers::ERROR_CODE, "teapot");
+        let kind = ErrorKind::http_response_from_parts(StatusCode::ImATeapot, &headers, br#"{}"#);
+
+        assert!(matches!(
+            kind,
+            ErrorKind::HttpResponse {
+                status: StatusCode::ImATeapot,
+                error_code
+            }
+            if error_code.as_deref() == Some("teapot")
         ));
     }
 

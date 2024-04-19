@@ -50,9 +50,11 @@ pub async fn exchange(
     if rsp_status.is_success() {
         rsp.json().await.map_kind(ErrorKind::Credential)
     } else {
-        let rsp_body = rsp.into_body().collect().await?;
-        let token_error: RefreshTokenError = from_json(&rsp_body)
-            .map_err(|_| ErrorKind::http_response_from_body(rsp_status, &rsp_body))?;
+        let (rsp_status, rsp_headers, rsp_body) = rsp.deconstruct();
+        let rsp_body = rsp_body.collect().await?;
+        let token_error: RefreshTokenError = from_json(&rsp_body).map_err(|_| {
+            ErrorKind::http_response_from_parts(rsp_status, &rsp_headers, &rsp_body)
+        })?;
         Err(Error::new(ErrorKind::Credential, token_error))
     }
 }
