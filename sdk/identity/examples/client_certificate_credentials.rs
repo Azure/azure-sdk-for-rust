@@ -5,7 +5,7 @@
 /// the authentication will fail.
 use azure_core::auth::{Secret, TokenCredential};
 use azure_identity::{
-    ClientCertificateCredential, ClientCertificateCredentialOptions, DefaultAzureCredential,
+    ClientCertificateCredential, ClientCertificateCredentialOptions,
 };
 use azure_security_keyvault::KeyvaultClient;
 use std::env::var;

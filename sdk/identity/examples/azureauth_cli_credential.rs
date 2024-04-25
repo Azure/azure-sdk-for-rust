@@ -2,7 +2,6 @@ use azure_core::auth::TokenCredential;
 use azure_identity::AzureauthCliCredential;
 use clap::Parser;
 use std::error::Error;
-use url::Url;
 
 #[derive(Debug, Parser)]
 struct Args {
