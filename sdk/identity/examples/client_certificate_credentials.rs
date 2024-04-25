@@ -44,7 +44,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let creds =
         ClientCertificateCredential::new(tenant_id, client_id, cert, String::new(), options);
 
-    let res = creds
+    let res = creds?
         .get_token(&["https://management.azure.com/.default"])
         .await?;
     // Let's enumerate the Azure SQL Databases instances
