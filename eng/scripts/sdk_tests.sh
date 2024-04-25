@@ -12,4 +12,6 @@ rustup update --no-self-update ${BUILD}
 export RUSTFLAGS="-Dwarnings"
 cargo +${BUILD} check -p azure_core --no-default-features
 cargo +${BUILD} check --all --features azurite_workaround
+cargo +${BUILD} check --all --all-targets --all-features
 cargo +${BUILD} test --all --features hmac_rust
+cargo +${BUILD} test --all --all-targets --all-features
