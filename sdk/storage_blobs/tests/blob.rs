@@ -1,7 +1,4 @@
 #![cfg(all(test, feature = "test_e2e", feature = "md5"))]
-#[macro_use]
-extern crate log;
-
 use azure_core::{date, Url};
 use azure_storage::prelude::*;
 use azure_storage_blobs::container::operations::ListBlobsResponse;
@@ -12,6 +9,7 @@ use std::ops::{Add, Deref};
 use std::time::Duration;
 use time::OffsetDateTime;
 use uuid::Uuid;
+use tracing::trace;
 
 #[tokio::test]
 async fn content_headers() -> azure_core::Result<()> {
