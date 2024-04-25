@@ -8,8 +8,8 @@ use futures::StreamExt;
 use std::ops::{Add, Deref};
 use std::time::Duration;
 use time::OffsetDateTime;
-use uuid::Uuid;
 use tracing::trace;
+use uuid::Uuid;
 
 #[tokio::test]
 async fn content_headers() -> azure_core::Result<()> {
