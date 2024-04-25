@@ -258,8 +258,9 @@ impl ClientCertificateCredential {
         let rsp_status = rsp.status();
 
         if !rsp_status.is_success() {
-            let rsp_body = rsp.into_body().collect().await?;
-            return Err(ErrorKind::http_response_from_body(rsp_status, &rsp_body).into_error());
+            let (rsp_status, rsp_headers, rsp_body) = rsp.deconstruct();
+            let rsp_body = rsp_body.collect().await?;
+            return Err(ErrorKind::http_response_from_parts(rsp_status, &rsp_headers, &rsp_body).into_error());
         }
 
         let response: AadTokenResponse = rsp.json().await?;
