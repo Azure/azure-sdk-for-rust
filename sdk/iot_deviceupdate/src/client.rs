@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 pub(crate) const API_VERSION: &str = "2022-10-01";
 pub(crate) const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSION);
+pub(crate) const ENDPOINT: &str = "https://api.adu.microsoft.com/.default";
 
 /// Client for Device Update operations - import, list and delete updates
 ///
@@ -54,7 +55,7 @@ impl DeviceUpdateClient {
 
     async fn get_token(&self) -> azure_core::Result<AccessToken> {
         self.token_credential
-            .get_token(&["https://api.adu.microsoft.com/.default"])
+            .get_token(&[ENDPOINT])
             .await
             .context(ErrorKind::Credential, "get token failed")
     }
