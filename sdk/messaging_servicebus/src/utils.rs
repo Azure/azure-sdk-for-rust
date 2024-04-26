@@ -7,7 +7,7 @@ use std::time::Duration;
 pub fn craft_peek_lock_url(
     namespace: &str,
     queue_or_topic: &str,
-    lock_expiry: Option<Duration>,
+    timeout: Option<Duration>,
     subscription: Option<&str>,
 ) -> Result<Url, Error> {
     let url_path = get_head_url(namespace, queue_or_topic, subscription);
@@ -17,7 +17,7 @@ pub fn craft_peek_lock_url(
     )?;
 
     // add timeout, if given
-    if let Some(t) = lock_expiry {
+    if let Some(t) = timeout {
         url.query_pairs_mut()
             .append_pair("timeout", &t.as_secs().to_string());
     };

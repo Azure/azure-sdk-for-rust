@@ -115,13 +115,16 @@ impl SubscriptionReceiver {
 
     /// Non-destructively read a message
     ///
+    /// * `timeout` : Sets the maximum duration for the HTTP connection when receiving a message.
+    /// If no message is received within this time, an empty 204 HTTP response will be returned.
+    ///
     /// Note: This function does not return the delete location
     /// of the message, so, after reading, you will lose
     /// "track" of it until the lock expiry runs out and
     /// the message can be consumed by others. If you want to keep
     /// track of this message (i.e., have the possibility of deletion),
     /// use `peek_lock_message2`.
-    pub async fn peek_lock_message(&self, lock_expiry: Option<Duration>) -> Result<String, Error> {
+    pub async fn peek_lock_message(&self, timeout: Option<Duration>) -> Result<String, Error> {
         body_bytes_to_utf8(
             peek_lock_message(
                 &self.topic_client.http_client,
@@ -129,7 +132,7 @@ impl SubscriptionReceiver {
                 &self.topic_client.topic,
                 &self.topic_client.policy_name,
                 &self.topic_client.signing_key,
-                lock_expiry,
+                timeout,
                 Some(&self.subscription),
             )
             .await?
@@ -138,6 +141,9 @@ impl SubscriptionReceiver {
     }
 
     /// Non-destructively read a message but track it
+    ///
+    /// * `timeout` : Sets the maximum duration for the HTTP connection when receiving a message.
+    /// If no message is received within this time, an empty 204 HTTP response will be returned.
     ///
     /// Note: This function returns a `PeekLockResponse`
     /// that contains a helper `delete_message` function.
