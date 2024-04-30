@@ -1,5 +1,4 @@
 use crate::token_credentials::cache::TokenCache;
-use async_process::Command;
 use azure_core::{
     auth::{AccessToken, Secret, TokenCredential},
     error::{Error, ErrorKind, ResultExt},
@@ -9,6 +8,7 @@ use oauth2::ClientId;
 use serde::Deserialize;
 use std::str;
 use time::OffsetDateTime;
+use tokio::process::Command;
 
 mod unix_date_string {
     use azure_core::error::{Error, ErrorKind};
