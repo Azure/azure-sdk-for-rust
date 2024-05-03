@@ -166,16 +166,16 @@ mod tests {
     fn can_extract_endpoint() -> azure_core::Result<()> {
         let url = "https://myadu.api.adu.microsoft.com";
         let suffix = extract_endpoint(&Url::parse(url)?)?;
-        assert_eq!(suffix, "https://api.adu.microsoft.com");
+        assert_eq!(suffix, "https://api.adu.microsoft.com/.default");
 
         let suffix = extract_endpoint(&Url::parse("https://myadu.mycustom.api.adu.server.net")?)?;
-        assert_eq!(suffix, "https://mycustom.api.adu.server.net");
+        assert_eq!(suffix, "https://mycustom.api.adu.server.net/.default");
 
         let suffix = extract_endpoint(&Url::parse("https://myadu.internal")?)?;
-        assert_eq!(suffix, "https://internal");
+        assert_eq!(suffix, "https://internal/.default");
 
         let suffix = extract_endpoint(&Url::parse("some-scheme://myadu.api.adu.microsoft.com")?)?;
-        assert_eq!(suffix, "some-scheme://api.adu.microsoft.com");
+        assert_eq!(suffix, "some-scheme://api.adu.microsoft.com/.default");
         Ok(())
     }
 
