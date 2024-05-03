@@ -9,7 +9,6 @@ use std::sync::Arc;
 
 pub(crate) const API_VERSION: &str = "2022-10-01";
 pub(crate) const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSION);
-pub(crate) const ENDPOINT: &str = "https://api.adu.microsoft.com/.default";
 
 /// Client for Device Update operations - import, list and delete updates
 ///
@@ -24,6 +23,7 @@ pub(crate) const ENDPOINT: &str = "https://api.adu.microsoft.com/.default";
 #[derive(Clone)]
 pub struct DeviceUpdateClient {
     pub(crate) device_update_url: Url,
+    pub(crate) endpoint: String,
     pub(crate) token_credential: Arc<dyn TokenCredential>,
 }
 
@@ -46,8 +46,11 @@ impl DeviceUpdateClient {
                 format!("failed to parse update url: {device_update_url}")
             })?;
 
+        let endpoint = extract_endpoint(&device_update_url)?;
+
         let client = DeviceUpdateClient {
             device_update_url,
+            endpoint,
             token_credential,
         };
         Ok(client)
@@ -55,7 +58,7 @@ impl DeviceUpdateClient {
 
     async fn get_token(&self) -> azure_core::Result<AccessToken> {
         self.token_credential
-            .get_token(&[ENDPOINT])
+            .get_token(&[&self.endpoint])
             .await
             .context(ErrorKind::Credential, "get token failed")
     }
@@ -131,5 +134,56 @@ impl DeviceUpdateClient {
             format!("failed to read response body text. uri: {uri}")
         })?;
         Ok(body)
+    }
+}
+
+/// Helper to get vault endpoint with a scheme and a trailing slash
+/// ex. `https://vault.azure.net/` where the full client url is `https://myvault.vault.azure.net`
+fn extract_endpoint(url: &Url) -> azure_core::Result<String> {
+    let endpoint = url
+        .host_str()
+        .ok_or_else(|| {
+            Error::with_message(ErrorKind::DataConversion, || {
+                format!("could not get device update domain. url: {url}")
+            })
+        })?
+        .split_once('.')
+        .ok_or_else(|| {
+            Error::with_message(ErrorKind::DataConversion, || {
+                format!("could not parse device update domain. url: {url}")
+            })
+        })?
+        .1;
+
+    Ok(format!("{}://{}{}", url.scheme(), endpoint, azure_core::auth::DEFAULT_SCOPE_SUFFIX))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn can_extract_endpoint() -> azure_core::Result<()> {
+        let url = "https://myadu.api.adu.microsoft.com";
+        let suffix = extract_endpoint(&Url::parse(url)?)?;
+        assert_eq!(suffix, "https://api.adu.microsoft.com");
+
+        let suffix = extract_endpoint(&Url::parse("https://myadu.mycustom.api.adu.server.net")?)?;
+        assert_eq!(suffix, "https://mycustom.api.adu.server.net");
+
+        let suffix = extract_endpoint(&Url::parse("https://myadu.internal")?)?;
+        assert_eq!(suffix, "https://internal");
+
+        let suffix = extract_endpoint(&Url::parse("some-scheme://myadu.api.adu.microsoft.com")?)?;
+        assert_eq!(suffix, "some-scheme://api.adu.microsoft.com");
+        Ok(())
+    }
+
+    #[test]
+    fn can_not_extract_endpoint() -> azure_core::Result<()> {
+        let url = "https://shouldfail";
+        let suffix = extract_endpoint(&Url::parse(url)?);
+        assert_eq!(suffix.unwrap_err().kind(), &ErrorKind::DataConversion);
+        Ok(())
     }
 }
