@@ -61,3 +61,62 @@ async fn put_append_blob() {
     assert_eq!(resp.metadata.get("second"), Some(Bytes::from("something")));
     assert_eq!(resp.metadata.get("not_found"), None);
 }
+
+#[tokio::test]
+async fn put_append_blob_if_match() {
+    let account =
+        std::env::var("STORAGE_ACCOUNT").expect("Set env variable STORAGE_ACCOUNT first!");
+    let access_key =
+        std::env::var("STORAGE_ACCESS_KEY").expect("Set env variable STORAGE_ACCESS_KEY first!");
+
+    let blob_name: &'static str = "create_once.txt";
+    let container_name: &'static str = "rust-if-match";
+
+    let storage_credentials = StorageCredentials::access_key(account.clone(), access_key);
+    let blob_service = BlobServiceClient::new(account, storage_credentials);
+    let container = blob_service.container_client(container_name);
+    let blob = container.blob_client(blob_name);
+
+    if !blob_service
+        .list_containers()
+        .into_stream()
+        .next()
+        .await
+        .unwrap()
+        .unwrap()
+        .containers
+        .iter()
+        .any(|x| x.name == container_name)
+    {
+        container
+            .create()
+            .public_access(PublicAccess::None)
+            .await
+            .unwrap();
+    }
+
+    let _ = blob.delete().await;
+
+    blob.put_append_blob()
+        .content_type("text/plain")
+        .if_match(IfMatchCondition::NotMatch("*".into()))
+        .await
+        .unwrap();
+
+    trace!("created {:?}", blob_name);
+
+    let result = blob
+        .put_append_blob()
+        .content_type("text/plain")
+        .if_match(IfMatchCondition::NotMatch("*".into()))
+        .await
+        .unwrap_err();
+
+    assert_eq!(
+        result.kind(),
+        &azure_core::error::ErrorKind::HttpResponse {
+            status: azure_core::StatusCode::Conflict,
+            error_code: Some("BlobAlreadyExists".into())
+        }
+    );
+}
