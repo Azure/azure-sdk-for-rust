@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use azure_core::{error::HttpError, Pageable, Url};
 
-use crate::{units::*, BlobContainerClient};
+use crate::{units::*, BlobClientOptions, BlobContainerClient};
 
 pub struct BlobServiceClient<T>
 where
@@ -15,6 +15,10 @@ where
 pub struct ContainerItem {}
 
 impl<T: AccountStructure> BlobServiceClient<T> {
+    pub fn new(endpoint: Url, options: &BlobClientOptions) -> BlobServiceClient<Unset> {
+        todo!()
+    }
+
     pub fn endpoint(&self) -> &Url {
         &self.endpoint
     }

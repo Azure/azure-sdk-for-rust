@@ -2,7 +2,7 @@ use std::marker::PhantomData;
 
 use azure_core::{Response, Url};
 
-use crate::units::*;
+use crate::{units::*, BlobClientOptions};
 
 pub struct BlobClient<T, U>
 where
@@ -39,6 +39,10 @@ impl<T: AccountStructure> BlobClient<T, Unset> {
 }
 
 impl<T: AccountStructure, U: BlobKind> BlobClient<T, U> {
+    pub fn new(endpoint: Url, options: &BlobClientOptions) -> BlobClient<Unset, Unset> {
+        todo!()
+    }
+
     pub fn endpoint(&self) -> &Url {
         &self.endpoint
     }
