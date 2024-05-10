@@ -1,0 +1,20 @@
+[package]
+name = "azure_storage_blobs"
+version = "0.1.0"
+description = "Rust wrappers around Microsoft Azure REST APIs - Azure Blob Storage helper crate"
+readme = "README.md"
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage = "https://github.com/azure/azure-sdk-for-rust"
+documentation = "https://docs.rs/azure_blobs"
+keywords = ["sdk", "azure", "rest", "iot", "cloud"]
+categories = ["api-bindings"]
+edition.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+azure_core = { workspace = true }
+
+[lints]
