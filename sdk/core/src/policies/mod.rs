@@ -1,11 +1,13 @@
 mod custom_headers_policy;
 mod retry_policies;
+mod storage_bearer_token;
 mod telemetry_policy;
 mod timeout_policy;
 mod transport;
 
 pub use custom_headers_policy::{CustomHeaders, CustomHeadersPolicy};
 pub use retry_policies::*;
+pub use storage_bearer_token::*;
 pub use telemetry_policy::*;
 pub use timeout_policy::*;
 pub use transport::*;
