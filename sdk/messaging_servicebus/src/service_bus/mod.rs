@@ -139,10 +139,10 @@ async fn peek_lock_message(
     queue_or_topic: &str,
     policy_name: &str,
     signing_key: &Secret,
-    lock_expiry: Option<Duration>,
+    timeout: Option<Duration>,
     subscription: Option<&str>,
 ) -> azure_core::Result<CollectedResponse> {
-    let url = craft_peek_lock_url(namespace, queue_or_topic, lock_expiry, subscription)?;
+    let url = craft_peek_lock_url(namespace, queue_or_topic, timeout, subscription)?;
 
     let req = finalize_request(url.as_ref(), Method::Post, None, policy_name, signing_key)?;
 
@@ -162,10 +162,10 @@ async fn peek_lock_message2(
     queue_or_topic: &str,
     policy_name: &str,
     signing_key: &Secret,
-    lock_expiry: Option<Duration>,
+    timeout: Option<Duration>,
     subscription: Option<&str>,
 ) -> azure_core::Result<PeekLockResponse> {
-    let url = craft_peek_lock_url(namespace, queue_or_topic, lock_expiry, subscription)?;
+    let url = craft_peek_lock_url(namespace, queue_or_topic, timeout, subscription)?;
 
     let req = finalize_request(url.as_ref(), Method::Post, None, policy_name, signing_key)?;
 
