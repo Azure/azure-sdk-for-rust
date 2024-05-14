@@ -7,7 +7,7 @@ use const_format::formatcp;
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
 
-pub(crate) const API_VERSION: &str = "2021-06-01-preview";
+pub(crate) const API_VERSION: &str = "2022-10-01";
 pub(crate) const API_VERSION_PARAM: &str = formatcp!("api-version={}", API_VERSION);
 
 /// Client for Device Update operations - import, list and delete updates
@@ -45,6 +45,7 @@ impl DeviceUpdateClient {
             .with_context(ErrorKind::DataConversion, || {
                 format!("failed to parse update url: {device_update_url}")
             })?;
+
         let endpoint = extract_endpoint(&device_update_url)?;
 
         let client = DeviceUpdateClient {
@@ -153,7 +154,8 @@ fn extract_endpoint(url: &Url) -> azure_core::Result<String> {
             })
         })?
         .1;
-    Ok(format!("{}://{}", url.scheme(), endpoint))
+
+    Ok(format!("{}://{}{}", url.scheme(), endpoint, azure_core::auth::DEFAULT_SCOPE_SUFFIX))
 }
 
 #[cfg(test)]
@@ -164,16 +166,16 @@ mod tests {
     fn can_extract_endpoint() -> azure_core::Result<()> {
         let url = "https://myadu.api.adu.microsoft.com";
         let suffix = extract_endpoint(&Url::parse(url)?)?;
-        assert_eq!(suffix, "https://api.adu.microsoft.com");
+        assert_eq!(suffix, "https://api.adu.microsoft.com/.default");
 
         let suffix = extract_endpoint(&Url::parse("https://myadu.mycustom.api.adu.server.net")?)?;
-        assert_eq!(suffix, "https://mycustom.api.adu.server.net");
+        assert_eq!(suffix, "https://mycustom.api.adu.server.net/.default");
 
         let suffix = extract_endpoint(&Url::parse("https://myadu.internal")?)?;
-        assert_eq!(suffix, "https://internal");
+        assert_eq!(suffix, "https://internal/.default");
 
         let suffix = extract_endpoint(&Url::parse("some-scheme://myadu.api.adu.microsoft.com")?)?;
-        assert_eq!(suffix, "some-scheme://api.adu.microsoft.com");
+        assert_eq!(suffix, "some-scheme://api.adu.microsoft.com/.default");
         Ok(())
     }
 

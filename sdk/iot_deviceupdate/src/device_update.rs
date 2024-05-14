@@ -166,17 +166,16 @@ pub struct UpdateList {
 
 impl DeviceUpdateClient {
     /// Import new update version.
-    /// `POST https://{endpoint}/deviceupdate/{instanceId}/updates?action=import&api-version=2021-06-01-preview`
+    /// `POST https://{endpoint}/deviceUpdate/{instanceId}/updates:import?api-version=2022-10-01`
     pub async fn import_update(
         &self,
         instance_id: &str,
         import_json: String,
     ) -> azure_core::Result<UpdateOperation> {
         let mut uri = self.device_update_url.clone();
-        let path = format!("deviceupdate/{instance_id}/updates");
+        let path = format!("deviceupdate/{instance_id}/updates:import");
         uri.set_path(&path);
         uri.set_query(Some(API_VERSION_PARAM));
-        uri.query_pairs_mut().append_pair("action", "import");
 
         debug!("Import request: {}", &uri);
         let resp_body = self.post(uri.to_string(), Some(import_json)).await?;
@@ -215,7 +214,7 @@ impl DeviceUpdateClient {
     }
 
     /// Delete a specific update version.
-    /// `DELETE https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}?api-version=2021-06-01-preview`
+    /// `DELETE https://{endpoint}/deviceUpdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}?api-version=2022-10-01`
     pub async fn delete_update(
         &self,
         instance_id: &str,
@@ -232,7 +231,7 @@ impl DeviceUpdateClient {
     }
 
     /// Get a specific update file from the version.
-    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}/files/{fileId}?api-version=2021-06-01-previe`
+    /// `GET https://{endpoint}/deviceUpdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}/files/{fileId}?api-version=2022-10-01`
     pub async fn get_file(
         &self,
         instance_id: &str,
@@ -250,7 +249,7 @@ impl DeviceUpdateClient {
     }
 
     /// Retrieve operation status.
-    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates/operations/{operationId}?api-version=2021-06-01-preview`
+    /// `GET https://{endpoint}/deviceUpdate/{instanceId}/updates/operations/{operationId}?api-version=2022-10-01`
     pub async fn get_operation(
         &self,
         instance_id: &str,
@@ -265,7 +264,7 @@ impl DeviceUpdateClient {
     }
 
     /// Get a specific update version.
-    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}?api-version=2021-06-01-preview`
+    /// `GET https://{endpoint}/deviceUpdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}?api-version=2022-10-01`
     pub async fn get_update(
         &self,
         instance_id: &str,
@@ -282,7 +281,7 @@ impl DeviceUpdateClient {
     }
 
     /// Get a list of all update file identifiers for the specified version.
-    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}/files?api-version=2021-06-01-preview`
+    /// `GET https://{endpoint}/deviceUpdate/{instanceId}/updates/providers/{provider}/names/{name}/versions/{version}/files?api-version=2022-10-01`
     pub async fn list_files(
         &self,
         instance_id: &str,
@@ -317,7 +316,7 @@ impl DeviceUpdateClient {
     }
 
     /// Get a list of all update names that match the specified provider.
-    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names?api-version=2021-06-01-preview`
+    /// `GET https://{endpoint}/deviceUpdate/{instanceId}/updates/providers/{provider}/names?api-version=2022-10-01`
     pub async fn list_names(
         &self,
         instance_id: &str,
@@ -351,7 +350,7 @@ impl DeviceUpdateClient {
 
     /// Get a list of all import update operations.
     /// Completed operations are kept for 7 days before auto-deleted. Delete operations are not returned by this API version.
-    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates/operations?$filter={$filter}&$top={$top}&api-version=2021-06-01-preview`
+    /// `GET https://{endpoint}/deviceUpdate/{instanceId}/updates/operations?filter={filter}&top={top}&api-version=2022-10-01`
     pub async fn list_operations(
         &self,
         instance_id: &str,
@@ -392,7 +391,7 @@ impl DeviceUpdateClient {
     }
 
     /// Get a list of all update providers that have been imported to Device Update for `IoT` Hub.
-    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers?api-version=2021-06-01-preview`
+    /// `GET https://{endpoint}/deviceUpdate/{instanceId}/updates/providers?api-version=2022-10-01`
     pub async fn list_providers(&self, instance_id: &str) -> azure_core::Result<Vec<String>> {
         let mut uri = self.device_update_url.clone();
         let path = format!("deviceupdate/{instance_id}/updates/providers");
@@ -421,7 +420,7 @@ impl DeviceUpdateClient {
     }
 
     /// Get a list of all updates that have been imported to Device Update for `IoT` Hub.
-    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates?api-version=2021-06-01-preview&$search={$search}&$filter={$filter}`
+    /// `GET https://{endpoint}/deviceUpdate/{instanceId}/updates?api-version=2022-10-01&search={search}&filter={filter}`
     pub async fn list_updates(
         &self,
         instance_id: &str,
@@ -463,7 +462,7 @@ impl DeviceUpdateClient {
     }
 
     /// Get a list of all update versions that match the specified provider and name.
-    /// `GET https://{endpoint}/deviceupdate/{instanceId}/updates/providers/{provider}/names/{name}/versions?api-version=2021-06-01-preview&$filter={$filter}`
+    /// `GET https://{endpoint}/deviceUpdate/{instanceId}/updates/providers/{provider}/names/{name}/versions?api-version=2022-10-01&filter={filter}`
     pub async fn list_versions(
         &self,
         instance_id: &str,
@@ -516,7 +515,7 @@ mod tests {
     async fn can_import_update() -> azure_core::Result<()> {
         let mut server = Server::new_async().await;
         let _m = server
-            .mock("POST", "/deviceupdate/test-instance/updates")
+            .mock("POST", "/deviceupdate/test-instance/updates:import")
             .match_query(Matcher::UrlEncoded(
                 "api-version".into(),
                 API_VERSION.into(),
@@ -533,7 +532,7 @@ mod tests {
                     "lastActionDateTime":"1999-09-10T03:05:07.3845533+01:00",
                     "etag": "\"some_tag\"",
                     "operationId": "some_op_id",
-                    "resourceLocation": "/deviceupdate/instance/updates/providers/xxx/names/yyy/versions/x.y.z?api-version=2021-06-01-preview",
+                    "resourceLocation": "/deviceupdate/instance/updates/providers/xxx/names/yyy/versions/x.y.z?api-version=2022-10-01",
                     "status": "Succeeded",
                     "traceId": "zzzzzzzzzzzzzzzz",
                     "updateId": {
