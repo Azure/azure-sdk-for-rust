@@ -33,6 +33,7 @@ impl Policy for BearerTokenCredentialPolicy {
             .await?;
         let token = access_token.token.secret();
         request.insert_header("authorization", format!("Bearer {token}"));
+        debug!("the following request will be passed to the transport policy: {request:#?}");
 
         next[0].send(ctx, request, &next[1..]).await
     }

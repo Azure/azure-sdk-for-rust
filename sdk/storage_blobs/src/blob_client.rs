@@ -1,63 +1,66 @@
-use std::marker::PhantomData;
+use azure_core::{
+    auth::TokenCredential, policies::BearerTokenCredentialPolicy, Context, Method, Policy, Request,
+    Url,
+};
+use azure_identity::create_credential;
+use std::sync::Arc;
 
-use azure_core::{Response, Url};
-
-use crate::{units::*, BlobClientOptions};
-
-pub struct BlobClient<T, U>
-where
-    T: AccountStructure,
-    U: BlobKind,
-{
-    account_structure: PhantomData<T>,
-    blob_type: PhantomData<U>,
-    endpoint: Url,
+pub struct BlobClient<'a> {
+    account_name: &'a str,
+    credential: Arc<dyn TokenCredential>,
+    container_name: &'a str,
+    blob_name: &'a str,
+    pipeline: BearerTokenCredentialPolicy,
 }
 
-impl<U: BlobKind> BlobClient<Unset, U> {
-    pub fn using_flat_namespace(&self) -> BlobClient<Flat, U> {
-        todo!()
+impl BlobClient<'_> {
+    pub fn new(
+        account_name: &str,
+        credential: &str,
+        container_name: &str,
+        blob_name: &str,
+    ) -> Self {
+        // Create Respective Authentication Pipeline
+
+        // In this case, we determine it's Oauth
+        println!("Auth type chosen, Oauth, {}", credential);
+        let credential = create_credential().expect("Failed for some reason?");
+        Self {
+            account_name: account_name,
+            credential: credential.clone(), // Unsure if clone is the correct move here
+            container_name: container_name,
+            blob_name: blob_name,
+            pipeline: BearerTokenCredentialPolicy::new(credential),
+        }
     }
 
-    pub fn using_hierarchichal_namespace(&self) -> BlobClient<Hierarchichal, U> {
-        todo!()
-    }
-}
+    pub async fn download_blob(&self) {
+        // Build the things needed for the downlaod request
 
-impl<T: AccountStructure> BlobClient<T, Unset> {
-    pub fn as_block_blob(&self) -> BlobClient<T, Block> {
-        todo!()
-    }
+        // Would probably have a sophisticated blob url builder
+        let blob_url = "https://".to_owned()
+            + self.account_name
+            + ".blob.core.windows.net/"
+            + self.container_name
+            + "/"
+            + self.blob_name;
+        let blob_url = Url::parse(&blob_url).expect("Failed to parse URL for some reason");
 
-    pub fn as_page_blob(&self) -> BlobClient<T, Page> {
-        todo!()
-    }
+        // Build the download request itself
+        let mut request = Request::new(blob_url, Method::Get);
 
-    pub fn as_append_blob(&self) -> BlobClient<T, Append> {
-        todo!()
-    }
-}
+        // Cast our custom policy to regular policy?
+        let copied_policy = vec![Arc::new(self.pipeline.clone()) as Arc<dyn Policy>];
 
-impl<T: AccountStructure, U: BlobKind> BlobClient<T, U> {
-    pub fn new(endpoint: Url, options: &BlobClientOptions) -> BlobClient<Unset, Unset> {
-        todo!()
-    }
+        // Send the request
+        let response = self
+            .pipeline
+            .send(&(Context::new()), &mut request, &copied_policy)
+            .await;
+        println!("Response headers: {:?}", response);
 
-    pub fn endpoint(&self) -> &Url {
-        &self.endpoint
-    }
-
-    pub fn download(&self) -> Response {
-        todo!()
-    }
-}
-
-impl<T: AccountStructure> BlobClient<T, Block> {
-    pub fn put_block(&self) -> Response {
-        todo!()
-    }
-
-    pub fn put_block_list(&self) -> Response {
-        todo!()
+        // Look at request body
+        let response_body = response.unwrap().into_body().collect_string().await;
+        println!("Response body: {:?}", response_body);
     }
 }

@@ -16,5 +16,6 @@ edition.workspace = true
 
 [dependencies]
 azure_core = { workspace = true }
+azure_identity = { workspace = true }
 
 [lints]

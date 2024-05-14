@@ -26,7 +26,7 @@ mod models;
 mod options;
 mod pageable;
 mod pipeline;
-mod policies;
+pub mod policies;
 mod request;
 mod response;
 mod seekable_stream;
