@@ -17,5 +17,6 @@ edition.workspace = true
 [dependencies]
 azure_core = { workspace = true }
 azure_identity = { workspace = true }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 
 [lints]
