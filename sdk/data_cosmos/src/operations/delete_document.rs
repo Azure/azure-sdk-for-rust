@@ -17,7 +17,7 @@ operation! {
 impl DeleteDocumentBuilder {
     pub fn into_future(self) -> DeleteDocument {
         Box::pin(async move {
-            let mut request = self.client.document_request(azure_core::Method::Delete);
+            let mut request = self.client.document_request(azure_core::Method::DELETE);
 
             request.insert_headers(&self.if_match_condition);
             request.insert_headers(&self.if_modified_since);

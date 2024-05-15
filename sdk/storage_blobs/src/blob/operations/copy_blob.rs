@@ -49,7 +49,7 @@ impl CopyBlobBuilder {
             );
 
             let mut request =
-                BlobClient::finalize_request(url, azure_core::Method::Put, headers, None)?;
+                BlobClient::finalize_request(url, azure_core::Method::PUT, headers, None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

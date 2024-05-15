@@ -37,7 +37,7 @@ impl ListPathsBuilder {
                     this.continuation.append_to_url_query(&mut url);
                 };
 
-                let mut request = Request::new(url, azure_core::Method::Get);
+                let mut request = Request::new(url, azure_core::Method::GET);
 
                 let response = this.client.send(&mut ctx.clone(), &mut request).await?;
 

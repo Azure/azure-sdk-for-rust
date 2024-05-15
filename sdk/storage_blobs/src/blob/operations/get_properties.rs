@@ -26,7 +26,7 @@ impl GetPropertiesBuilder {
             headers.add(self.if_tags);
 
             let mut request =
-                BlobClient::finalize_request(url, azure_core::Method::Head, headers, None)?;
+                BlobClient::finalize_request(url, azure_core::Method::HEAD, headers, None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
             // TODO: Fix this

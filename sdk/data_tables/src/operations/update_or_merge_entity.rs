@@ -21,8 +21,8 @@ impl UpdateOrMergeEntityBuilder {
             let mut request = EntityClient::finalize_request(
                 url,
                 match self.operation {
-                    UpdateOperation::Merge => Method::Merge,
-                    UpdateOperation::Update => Method::Put,
+                    UpdateOperation::Merge => "MERGE".parse().unwrap(),
+                    UpdateOperation::Update => Method::PUT,
                 },
                 headers,
                 Some(self.body),

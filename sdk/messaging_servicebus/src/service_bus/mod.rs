@@ -94,7 +94,7 @@ async fn send_message(
 
     let req = finalize_request(
         &url,
-        Method::Post,
+        Method::POST,
         Some(msg.to_string()),
         policy_name,
         signing_key,
@@ -117,7 +117,7 @@ async fn receive_and_delete_message(
     subscription: Option<&str>,
 ) -> azure_core::Result<CollectedResponse> {
     let url = get_head_url(namespace, queue_or_topic, subscription);
-    let req = finalize_request(&url, Method::Delete, None, policy_name, signing_key)?;
+    let req = finalize_request(&url, Method::DELETE, None, policy_name, signing_key)?;
 
     http_client
         .as_ref()
@@ -144,7 +144,7 @@ async fn peek_lock_message(
 ) -> azure_core::Result<CollectedResponse> {
     let url = craft_peek_lock_url(namespace, queue_or_topic, timeout, subscription)?;
 
-    let req = finalize_request(url.as_ref(), Method::Post, None, policy_name, signing_key)?;
+    let req = finalize_request(url.as_ref(), Method::POST, None, policy_name, signing_key)?;
 
     http_client
         .as_ref()
@@ -167,7 +167,7 @@ async fn peek_lock_message2(
 ) -> azure_core::Result<PeekLockResponse> {
     let url = craft_peek_lock_url(namespace, queue_or_topic, timeout, subscription)?;
 
-    let req = finalize_request(url.as_ref(), Method::Post, None, policy_name, signing_key)?;
+    let req = finalize_request(url.as_ref(), Method::POST, None, policy_name, signing_key)?;
 
     let res = http_client.execute_request(&req).await?;
 
@@ -231,7 +231,7 @@ impl PeekLockResponse {
     pub async fn delete_message(&self) -> azure_core::Result<CollectedResponse> {
         let req = finalize_request(
             &self.lock_location.clone(),
-            Method::Delete,
+            Method::DELETE,
             None,
             &self.policy_name,
             &self.signing_key,
@@ -247,7 +247,7 @@ impl PeekLockResponse {
     pub async fn unlock_message(&self) -> Result<(), Error> {
         let req = finalize_request(
             &self.lock_location.clone(),
-            Method::Put,
+            Method::PUT,
             None,
             &self.policy_name,
             &self.signing_key,
@@ -264,7 +264,7 @@ impl PeekLockResponse {
     pub async fn renew_message_lock(&self) -> Result<(), Error> {
         let req = finalize_request(
             &self.lock_location.clone(),
-            Method::Post,
+            Method::POST,
             None,
             &self.policy_name,
             &self.signing_key,

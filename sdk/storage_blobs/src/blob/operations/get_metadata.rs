@@ -26,7 +26,7 @@ impl GetMetadataBuilder {
             headers.add(self.if_match);
             headers.add(self.if_tags);
 
-            let mut request = BlobClient::finalize_request(url, Method::Get, headers, None)?;
+            let mut request = BlobClient::finalize_request(url, Method::GET, headers, None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

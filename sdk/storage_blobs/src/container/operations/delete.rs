@@ -20,7 +20,7 @@ impl DeleteBuilder {
             headers.add(self.if_modified_since);
 
             let mut request =
-                ContainerClient::finalize_request(url, Method::Delete, headers, None)?;
+                ContainerClient::finalize_request(url, Method::DELETE, headers, None)?;
 
             let _response = self.client.send(&mut self.context, &mut request).await?;
 

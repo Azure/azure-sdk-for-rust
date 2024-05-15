@@ -14,7 +14,7 @@ operation! {
 impl PatchDocumentBuilder {
     pub fn into_future(self) -> PatchDocument {
         Box::pin(async move {
-            let mut request = self.client.document_request(azure_core::Method::Patch);
+            let mut request = self.client.document_request(azure_core::Method::PATCH);
 
             crate::cosmos_entity::add_as_partition_key_header_serialized(
                 self.client.partition_key_serialized(),

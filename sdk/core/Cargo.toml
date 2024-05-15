@@ -19,7 +19,7 @@ base64 = "0.22"
 bytes = "1.0"
 dyn-clone = "1.0"
 futures = "0.3"
-http-types = { version = "2.12", default-features = false }
+http = "1.1"
 tracing = "0.1.40"
 rand = "0.8"
 reqwest = { version = "0.12.0", features = [

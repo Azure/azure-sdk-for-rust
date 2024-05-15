@@ -28,7 +28,7 @@ impl<C: PathClient + 'static> DeletePathBuilder<C> {
                 };
                 this.recursive.append_to_url_query(&mut url);
 
-                let mut request = Request::new(url, azure_core::Method::Delete);
+                let mut request = Request::new(url, azure_core::Method::DELETE);
 
                 request.insert_headers(&this.if_match_condition);
                 request.insert_headers(&this.if_modified_since);

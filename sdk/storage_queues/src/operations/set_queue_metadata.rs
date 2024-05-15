@@ -20,7 +20,7 @@ impl SetQueueMetadataBuilder {
                 headers.add(m);
             }
 
-            let mut request = QueueClient::finalize_request(url, Method::Put, headers, None)?;
+            let mut request = QueueClient::finalize_request(url, Method::PUT, headers, None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

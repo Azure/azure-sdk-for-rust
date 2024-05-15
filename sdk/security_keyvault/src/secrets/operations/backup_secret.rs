@@ -15,7 +15,7 @@ impl BackupSecretBuilder {
             uri.set_path(&format!("secrets/{}/backup", self.name));
 
             let headers = Headers::new();
-            let mut request = KeyvaultClient::finalize_request(uri, Method::Post, headers, None);
+            let mut request = KeyvaultClient::finalize_request(uri, Method::POST, headers, None);
 
             self.client
                 .keyvault_client

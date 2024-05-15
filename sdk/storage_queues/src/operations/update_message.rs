@@ -30,7 +30,7 @@ impl UpdateMessageBuilder {
 
             let mut request = PopReceiptClient::finalize_request(
                 url,
-                Method::Put,
+                Method::PUT,
                 Headers::new(),
                 Some(message.into()),
             )?;

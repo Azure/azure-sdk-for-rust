@@ -53,7 +53,7 @@ impl<T: DeserializeOwned + Send> ExecuteStoredProcedureBuilder<T> {
         Box::pin(async move {
             let mut request = self
                 .client
-                .stored_procedure_request(azure_core::Method::Post);
+                .stored_procedure_request(azure_core::Method::POST);
 
             if let Some(pk) = self.partition_key.as_ref() {
                 crate::cosmos_entity::add_as_partition_key_header_serialized(pk, &mut request);

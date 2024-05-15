@@ -23,7 +23,7 @@ impl<C: PathClient + 'static> HeadPathBuilder<C> {
             self.action.append_to_url_query(&mut url);
             self.upn.append_to_url_query(&mut url);
 
-            let mut request = Request::new(url, azure_core::Method::Head);
+            let mut request = Request::new(url, azure_core::Method::HEAD);
 
             request.insert_headers(&self.if_match_condition);
             request.insert_headers(&self.if_modified_since);

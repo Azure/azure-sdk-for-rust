@@ -48,7 +48,7 @@ impl Policy for AuthorizationPolicy {
                         let auth = generate_authorization(
                             request.headers(),
                             request.url(),
-                            *request.method(),
+                            request.method().clone(),
                             account,
                             key,
                             *ctx.get()
@@ -253,7 +253,7 @@ mod tests {
             assert_eq!(sig_header_count, 1);
 
             Ok(Response::new(
-                azure_core::StatusCode::Accepted,
+                azure_core::StatusCode::ACCEPTED,
                 Headers::new(),
                 Box::pin(BytesStream::new(vec![])),
             ))
@@ -267,7 +267,7 @@ mod tests {
         let ctx = Context::default();
         let storage_credentials = StorageCredentials::sas_token(SAMPLE_SAS_TOKEN).unwrap();
         let auth_policy = AuthorizationPolicy::new(storage_credentials);
-        let mut request = Request::new(Url::parse("https://example.com").unwrap(), Method::Get);
+        let mut request = Request::new(Url::parse("https://example.com").unwrap(), Method::GET);
 
         let assert_sig_header_unique_mock_policy = Arc::new(AssertSigHeaderUniqueMockPolicy);
 
@@ -282,7 +282,7 @@ mod tests {
         let ctx = Context::default();
         let storage_credentials = StorageCredentials::sas_token(SAMPLE_SAS_TOKEN).unwrap();
         let auth_policy = AuthorizationPolicy::new(storage_credentials);
-        let mut request = Request::new(Url::parse("https://example.com").unwrap(), Method::Get);
+        let mut request = Request::new(Url::parse("https://example.com").unwrap(), Method::GET);
 
         let assert_sig_header_unique_mock_policy = Arc::new(AssertSigHeaderUniqueMockPolicy);
 

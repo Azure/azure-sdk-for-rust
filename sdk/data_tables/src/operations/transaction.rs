@@ -30,7 +30,7 @@ impl TransactionBuilder {
             .pop()
             .push(self.client.table_client().table_name());
 
-        let mut request = Request::new(url, Method::Post);
+        let mut request = Request::new(url, Method::POST);
         request.insert_header(ACCEPT, "application/json;odata=fullmetadata");
         request.insert_headers(&ContentType::APPLICATION_JSON);
         request.set_json(&entity)?;
@@ -50,7 +50,7 @@ impl TransactionBuilder {
         entity: E,
         match_condition: Option<IfMatchCondition>,
     ) -> azure_core::Result<Self> {
-        self.entity_operation(row_key, entity, Method::Put, match_condition)
+        self.entity_operation(row_key, entity, Method::PUT, match_condition)
     }
 
     /// Replaces an existing entity or inserts a new entity if it does not exist
@@ -63,7 +63,7 @@ impl TransactionBuilder {
         row_key: RK,
         entity: E,
     ) -> azure_core::Result<Self> {
-        self.entity_operation(row_key, entity, Method::Put, None)
+        self.entity_operation(row_key, entity, Method::PUT, None)
     }
 
     /// Update an existing entity by updating the entity's properties. This
@@ -77,7 +77,7 @@ impl TransactionBuilder {
         entity: E,
         match_condition: Option<IfMatchCondition>,
     ) -> azure_core::Result<Self> {
-        self.entity_operation(row_key, entity, Method::Merge, match_condition)
+        self.entity_operation(row_key, entity, "MERGE".parse().unwrap(), match_condition)
     }
 
     /// Update an existing entity or inserts a new entity if it does not exist
@@ -90,7 +90,7 @@ impl TransactionBuilder {
         row_key: RK,
         entity: E,
     ) -> azure_core::Result<Self> {
-        self.entity_operation(row_key, entity, Method::Merge, None)
+        self.entity_operation(row_key, entity, "MERGE".parse().unwrap(), None)
     }
 
     /// Delete an existing entity in a table.
@@ -104,7 +104,7 @@ impl TransactionBuilder {
         let entity_client = self.client.entity_client(row_key);
         let url = entity_client.url()?;
 
-        let mut request = Request::new(url, Method::Delete);
+        let mut request = Request::new(url, Method::DELETE);
         request.insert_header(ACCEPT, "application/json;odata=minimalmetadata");
 
         let match_condition = match_condition.unwrap_or(IfMatchCondition::Any);
@@ -137,7 +137,7 @@ impl TransactionBuilder {
             );
 
             let mut request =
-                PartitionKeyClient::finalize_request(url, Method::Post, headers, request_body)?;
+                PartitionKeyClient::finalize_request(url, Method::POST, headers, request_body)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 
@@ -178,7 +178,7 @@ pub struct OperationResponse {
 impl Default for OperationResponse {
     fn default() -> Self {
         Self {
-            status_code: StatusCode::Ok,
+            status_code: StatusCode::OK,
             location: None,
             data_service_id: None,
             etag: None,

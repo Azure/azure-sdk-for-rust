@@ -56,7 +56,7 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                                 let location = get_location(headers, FinalState::#final_state)?;
                                 if let Some(url) = location {
                                     loop {
-                                        let mut req = azure_core::Request::new(url.clone(), azure_core::Method::Get);
+                                        let mut req = azure_core::Request::new(url.clone(), azure_core::Method::GET);
                                         let bearer_token = self.client.bearer_token().await?;
                                         req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                         let response = self.client.send(&mut req).await?;
@@ -69,7 +69,7 @@ impl ToTokens for RequestBuilderIntoFutureCode {
                                         log::trace!("current provisioning_state: {provisioning_state:?}");
                                         match provisioning_state {
                                             LroStatus::Succeeded => {
-                                                let mut req = azure_core::Request::new(self.url()?, azure_core::Method::Get);
+                                                let mut req = azure_core::Request::new(self.url()?, azure_core::Method::GET);
                                                 let bearer_token = self.client.bearer_token().await?;
                                                 req.insert_header(azure_core::headers::AUTHORIZATION, format!("Bearer {}", bearer_token.secret()));
                                                 let response = self.client.send(&mut req).await?;

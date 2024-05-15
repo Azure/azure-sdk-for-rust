@@ -24,7 +24,7 @@ impl<C: PathClient + 'static> RenamePathBuilder<C> {
             };
             self.mode.append_to_url_query(&mut url);
 
-            let mut request = Request::new(url, azure_core::Method::Put);
+            let mut request = Request::new(url, azure_core::Method::PUT);
 
             request.insert_headers(&self.properties);
             request.insert_headers(&self.if_match_condition);

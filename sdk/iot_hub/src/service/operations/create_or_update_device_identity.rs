@@ -45,7 +45,7 @@ impl CreateOrUpdateDeviceIdentityBuilder {
                 self.client.iot_hub_name, self.device_id, API_VERSION
             );
 
-            let mut request = self.client.finalize_request(&uri, Method::Put)?;
+            let mut request = self.client.finalize_request(&uri, Method::PUT)?;
 
             if self.operation == IdentityOperation::Update {
                 match &self.etag {

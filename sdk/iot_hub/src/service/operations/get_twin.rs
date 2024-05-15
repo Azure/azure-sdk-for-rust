@@ -25,7 +25,7 @@ impl GetTwinBuilder {
                 )
             };
 
-            let mut request = self.client.finalize_request(&uri, Method::Get)?;
+            let mut request = self.client.finalize_request(&uri, Method::GET)?;
             request.set_body(azure_core::EMPTY_BODY);
 
             let response = self.client.send(&self.context, &mut request).await?;

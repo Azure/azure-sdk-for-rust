@@ -31,7 +31,7 @@ impl QueryBuilder {
 
             let query_body = QueryBody { query: self.query };
 
-            let mut request = self.client.finalize_request(&uri, Method::Post)?;
+            let mut request = self.client.finalize_request(&uri, Method::POST)?;
             request.add_optional_header(&self.continuation);
             request.add_mandatory_header(&self.max_item_count.unwrap_or_default());
             request.set_json(&query_body)?;

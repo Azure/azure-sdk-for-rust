@@ -23,7 +23,7 @@ impl DeleteTableBuilder {
             let mut headers = Headers::new();
             headers.insert(ACCEPT, "application/json");
 
-            let mut request = TableClient::finalize_request(url, Method::Delete, headers, None)?;
+            let mut request = TableClient::finalize_request(url, Method::DELETE, headers, None)?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
 

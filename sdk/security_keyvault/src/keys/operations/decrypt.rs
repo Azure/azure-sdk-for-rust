@@ -59,7 +59,7 @@ impl DecryptBuilder {
             let headers = Headers::new();
             let mut request = KeyvaultClient::finalize_request(
                 uri,
-                Method::Post,
+                Method::POST,
                 headers,
                 Some(Value::Object(request_body).to_string().into()),
             );

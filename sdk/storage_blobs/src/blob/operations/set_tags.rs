@@ -27,7 +27,7 @@ impl SetTagsBuilder {
             let body = self.tags.to_xml()?;
 
             let mut request =
-                BlobClient::finalize_request(url, Method::Put, headers, Some(body.into()))?;
+                BlobClient::finalize_request(url, Method::PUT, headers, Some(body.into()))?;
 
             let response = self.client.send(&mut self.context, &mut request).await?;
             response.headers().try_into()

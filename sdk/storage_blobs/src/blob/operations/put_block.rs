@@ -25,7 +25,7 @@ impl PutBlockBuilder {
 
             let mut request = BlobClient::finalize_request(
                 url,
-                azure_core::Method::Put,
+                azure_core::Method::PUT,
                 headers,
                 Some(self.body),
             )?;

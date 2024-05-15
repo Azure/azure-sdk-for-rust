@@ -213,16 +213,16 @@ fn string_to_sign(
 
     format!(
         "{}\n{}\n{}\n{}\n\n",
-        match *http_method {
-            azure_core::Method::Get => "get",
-            azure_core::Method::Put => "put",
-            azure_core::Method::Post => "post",
-            azure_core::Method::Delete => "delete",
-            azure_core::Method::Head => "head",
-            azure_core::Method::Trace => "trace",
-            azure_core::Method::Options => "options",
-            azure_core::Method::Connect => "connect",
-            azure_core::Method::Patch => "patch",
+        match http_method {
+            &azure_core::Method::GET => "get",
+            &azure_core::Method::PUT => "put",
+            &azure_core::Method::POST => "post",
+            &azure_core::Method::DELETE => "delete",
+            &azure_core::Method::HEAD => "head",
+            &azure_core::Method::TRACE => "trace",
+            &azure_core::Method::OPTIONS => "options",
+            &azure_core::Method::CONNECT => "connect",
+            &azure_core::Method::PATCH => "patch",
             _ => "extension",
         },
         match rt {
@@ -251,7 +251,7 @@ mod tests {
         let time = date::parse_rfc3339("1900-01-01T01:00:00.000000000+00:00").unwrap();
 
         let ret = string_to_sign(
-            &azure_core::Method::Get,
+            &azure_core::Method::GET,
             &ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
             time,
@@ -280,7 +280,7 @@ mon, 01 jan 1900 01:00:00 gmt
 
         let ret = generate_authorization(
             &auth_token,
-            &azure_core::Method::Get,
+            &azure_core::Method::GET,
             &url,
             &ResourceType::Databases,
             "dbs/MyDatabase/colls/MyCollection",
@@ -308,7 +308,7 @@ mon, 01 jan 1900 01:00:00 gmt
 
         let ret = generate_authorization(
             &auth_token,
-            &azure_core::Method::Get,
+            &azure_core::Method::GET,
             &url,
             &ResourceType::Databases,
             "dbs/ToDoList",
@@ -332,7 +332,7 @@ mon, 01 jan 1900 01:00:00 gmt
     fn generate_resource_link_00() {
         let request = Request::new(
             Url::parse("https://.documents.azure.com/dbs/second").unwrap(),
-            azure_core::Method::Get,
+            azure_core::Method::GET,
         );
         assert_eq!(&generate_resource_link(&request), "dbs/second");
     }
@@ -341,7 +341,7 @@ mon, 01 jan 1900 01:00:00 gmt
     fn generate_resource_link_01() {
         let request = Request::new(
             Url::parse("https://.documents.azure.com/dbs").unwrap(),
-            azure_core::Method::Get,
+            azure_core::Method::GET,
         );
         assert_eq!(&generate_resource_link(&request), "");
     }
@@ -350,7 +350,7 @@ mon, 01 jan 1900 01:00:00 gmt
     fn generate_resource_link_02() {
         let request = Request::new(
             Url::parse("https://.documents.azure.com/colls/second/third").unwrap(),
-            azure_core::Method::Get,
+            azure_core::Method::GET,
         );
         assert_eq!(&generate_resource_link(&request), "colls/second/third");
     }
@@ -359,7 +359,7 @@ mon, 01 jan 1900 01:00:00 gmt
     fn generate_resource_link_03() {
         let request = Request::new(
             Url::parse("https://.documents.azure.com/dbs/test_db/colls").unwrap(),
-            azure_core::Method::Get,
+            azure_core::Method::GET,
         );
         assert_eq!(&generate_resource_link(&request), "dbs/test_db");
     }

@@ -31,7 +31,7 @@ impl InvokeMethodBuilder {
                 ),
             };
 
-            let mut request = self.client.finalize_request(&uri, Method::Post)?;
+            let mut request = self.client.finalize_request(&uri, Method::POST)?;
             let method = InvokeMethodBody {
                 connect_timeout_in_seconds: self.connect_time_out.unwrap_or(15),
                 method_name: &self.method_name,

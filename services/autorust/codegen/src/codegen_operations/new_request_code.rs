@@ -37,12 +37,12 @@ impl ToTokens for AuthCode {
 
 fn verb_to_tokens(verb: &WebVerb) -> TokenStream {
     match verb {
-        WebVerb::Get => quote! { azure_core::Method::Get },
-        WebVerb::Post => quote! { azure_core::Method::Post },
-        WebVerb::Put => quote! { azure_core::Method::Put },
-        WebVerb::Patch => quote! { azure_core::Method::Patch },
-        WebVerb::Delete => quote! { azure_core::Method::Delete },
-        WebVerb::Options => quote! { azure_core::Method::Option },
-        WebVerb::Head => quote! { azure_core::Method::Head },
+        WebVerb::Get => quote! { azure_core::Method::GET },
+        WebVerb::Post => quote! { azure_core::Method::POST },
+        WebVerb::Put => quote! { azure_core::Method::PUT },
+        WebVerb::Patch => quote! { azure_core::Method::PATCH },
+        WebVerb::Delete => quote! { azure_core::Method::DELETE },
+        WebVerb::Options => quote! { azure_core::Method::OPTION },
+        WebVerb::Head => quote! { azure_core::Method::HEAD },
     }
 }

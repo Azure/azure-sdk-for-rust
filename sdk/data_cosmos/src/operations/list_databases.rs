@@ -21,7 +21,7 @@ impl ListDatabasesBuilder {
             let this = self.clone();
             let ctx = self.context.clone();
             async move {
-                let mut request = this.client.request("dbs", azure_core::Method::Get);
+                let mut request = this.client.request("dbs", azure_core::Method::GET);
                 if let Some(cl) = &this.consistency_level {
                     request.insert_headers(cl);
                 }

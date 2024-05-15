@@ -12,7 +12,7 @@ impl ReplaceStoredProcedureBuilder {
         Box::pin(async move {
             let mut req = self
                 .client
-                .stored_procedure_request(azure_core::Method::Put);
+                .stored_procedure_request(azure_core::Method::PUT);
 
             if let Some(cl) = &self.consistency_level {
                 req.insert_headers(cl);

@@ -37,7 +37,7 @@ pub async fn exchange(
         "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
     ))?;
 
-    let mut req = Request::new(url, Method::Post);
+    let mut req = Request::new(url, Method::POST);
     req.insert_header(
         headers::CONTENT_TYPE,
         content_type::APPLICATION_X_WWW_FORM_URLENCODED,

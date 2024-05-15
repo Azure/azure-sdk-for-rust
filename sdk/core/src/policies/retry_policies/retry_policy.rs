@@ -87,12 +87,12 @@ pub trait RetryPolicy: std::fmt::Debug + Send + Sync {
 ///
 /// On all other 4xx and 5xx status codes no retry is attempted.
 const RETRY_STATUSES: &[StatusCode] = &[
-    StatusCode::RequestTimeout,
-    StatusCode::TooManyRequests,
-    StatusCode::InternalServerError,
-    StatusCode::BadGateway,
-    StatusCode::ServiceUnavailable,
-    StatusCode::GatewayTimeout,
+    StatusCode::REQUEST_TIMEOUT,
+    StatusCode::TOO_MANY_REQUESTS,
+    StatusCode::INTERNAL_SERVER_ERROR,
+    StatusCode::BAD_GATEWAY,
+    StatusCode::SERVICE_UNAVAILABLE,
+    StatusCode::GATEWAY_TIMEOUT,
 ];
 
 #[cfg_attr(target_arch = "wasm32", async_trait::async_trait(?Send))]
@@ -137,7 +137,7 @@ where
                     // use any "retry-after" headers returned by the server to determine how long to wait before retrying.
                     // https://learn.microsoft.com/en-us/azure/architecture/best-practices/retry-service-specific#retry-usage-guidance
                     let retry_after = match status {
-                        StatusCode::TooManyRequests | StatusCode::ServiceUnavailable => {
+                        StatusCode::TOO_MANY_REQUESTS | StatusCode::SERVICE_UNAVAILABLE => {
                             get_retry_after(response.headers(), OffsetDateTime::now_utc)
                         }
                         _ => None,

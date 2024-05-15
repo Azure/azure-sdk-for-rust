@@ -18,9 +18,9 @@ impl CreateOrReplaceAttachmentBuilder {
     pub fn into_future(self) -> CreateOrReplaceAttachment {
         Box::pin(async move {
             let mut req = if self.is_create {
-                self.client.attachments_request(azure_core::Method::Post)
+                self.client.attachments_request(azure_core::Method::POST)
             } else {
-                self.client.attachment_request(azure_core::Method::Put)
+                self.client.attachment_request(azure_core::Method::PUT)
             };
 
             if let Some(cl) = &self.consistency_level {

@@ -31,7 +31,7 @@ impl CreateBuilder {
                 headers.insert(name, value);
             }
 
-            let mut request = ContainerClient::finalize_request(url, Method::Put, headers, None)?;
+            let mut request = ContainerClient::finalize_request(url, Method::PUT, headers, None)?;
 
             let _response = self.client.send(&mut self.context, &mut request).await?;
 

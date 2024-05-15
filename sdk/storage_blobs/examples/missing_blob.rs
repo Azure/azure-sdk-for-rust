@@ -26,7 +26,7 @@ async fn main() -> azure_core::Result<()> {
     let result = blob_client.get_properties().await;
     let error = result.expect_err("get_properties on missing blob should fail");
     if let ErrorKind::HttpResponse {
-        status: StatusCode::NotFound,
+        status: StatusCode::NOT_FOUND,
         ..
     } = error.kind()
     {

@@ -19,8 +19,8 @@ impl InsertOrReplaceOrMergeEntityBuilder {
             let mut request = EntityClient::finalize_request(
                 url,
                 match self.operation {
-                    InsertOperation::InsertOrMerge => Method::Merge,
-                    InsertOperation::InsertOrReplace => Method::Put,
+                    InsertOperation::InsertOrMerge => "MERGE".parse().unwrap(),
+                    InsertOperation::InsertOrReplace => Method::PUT,
                 },
                 headers,
                 Some(self.body),

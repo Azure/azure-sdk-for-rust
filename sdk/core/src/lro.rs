@@ -86,14 +86,14 @@ pub mod body_content {
         S: Serialize,
     {
         match status_code {
-            StatusCode::Accepted => Ok(LroStatus::InProgress),
-            StatusCode::Created => {
+            StatusCode::ACCEPTED => Ok(LroStatus::InProgress),
+            StatusCode::CREATED => {
                 Ok(get_provisioning_state_from_body(body).unwrap_or(LroStatus::InProgress))
             }
-            StatusCode::Ok => {
+            StatusCode::OK => {
                 Ok(get_provisioning_state_from_body(body).unwrap_or(LroStatus::Succeeded))
             }
-            StatusCode::NoContent => Ok(LroStatus::Succeeded),
+            StatusCode::NO_CONTENT => Ok(LroStatus::Succeeded),
             _ => Err(crate::error::Error::from(
                 crate::error::ErrorKind::HttpResponse {
                     status: status_code,

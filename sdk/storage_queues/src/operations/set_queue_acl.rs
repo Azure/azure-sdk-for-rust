@@ -25,7 +25,7 @@ impl SetQueueACLBuilder {
 
             let mut request = QueueClient::finalize_request(
                 url,
-                Method::Put,
+                Method::PUT,
                 Headers::new(),
                 Some(xml_body.into()),
             )?;
