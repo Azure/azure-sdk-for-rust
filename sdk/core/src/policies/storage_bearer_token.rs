@@ -8,29 +8,27 @@ use std::sync::Arc;
 use tracing::debug;
 
 #[derive(Debug, Clone)]
-pub struct BearerTokenCredentialPolicy {
+pub struct BearerTokenCredentialPolicy<'a> {
     credential: Arc<dyn TokenCredential>,
+    scopes: &'a [&'a str],
 }
 
-impl BearerTokenCredentialPolicy {
-    pub fn new(credential: Arc<dyn TokenCredential>) -> Self {
-        Self { credential }
+impl<'a> BearerTokenCredentialPolicy<'a> {
+    pub fn new(credential: Arc<dyn TokenCredential>, scopes: &'a [&'a str]) -> Self {
+        Self { credential, scopes }
     }
 }
 
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
-impl Policy for BearerTokenCredentialPolicy {
+impl Policy for BearerTokenCredentialPolicy<'_> {
     async fn send(
         &self,
         ctx: &Context,
         request: &mut Request,
         next: &[Arc<dyn Policy>],
     ) -> PolicyResult {
-        let access_token = self
-            .credential
-            .get_token(&["https://storage.azure.com/.default"])
-            .await?;
+        let access_token = self.credential.get_token(self.scopes).await?;
         let token = access_token.token.secret();
 
         request.insert_header("authorization", format!("Bearer {token}"));

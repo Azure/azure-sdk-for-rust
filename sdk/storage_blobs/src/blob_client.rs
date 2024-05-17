@@ -26,7 +26,10 @@ impl BlobClient {
         // In this case, we determine it's Oauth
         println!("Auth type chosen, Oauth, {}", credential);
         let credential = create_credential().expect("Failed for some reason?");
-        let oauth_token_policy = BearerTokenCredentialPolicy::new(credential.clone());
+        let oauth_token_policy = BearerTokenCredentialPolicy::new(
+            credential.clone(),
+            &["https://storage.azure.com/.default"],
+        );
 
         // Build the runner pipeline
         let runner_pipeline = Pipeline::new(
