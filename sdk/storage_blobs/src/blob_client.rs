@@ -10,7 +10,7 @@ pub struct BlobClient {
     credential: Arc<dyn TokenCredential>,
     container_name: String,
     blob_name: String,
-    pipeline: BearerTokenCredentialPolicy,
+    pipeline: Pipeline,
 }
 
 impl BlobClient {
@@ -19,27 +19,31 @@ impl BlobClient {
         credential: String,
         container_name: String,
         blob_name: String,
+        // add a url member here :)
     ) -> Self {
         // Create Respective Authentication Pipeline
 
         // In this case, we determine it's Oauth
         println!("Auth type chosen, Oauth, {}", credential);
         let credential = create_credential().expect("Failed for some reason?");
+        let oauth_token_policy = BearerTokenCredentialPolicy::new(credential.clone());
+
+        // Build the runner pipeline
         let runner_pipeline = Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
             ClientOptions::default(),
-            Vec::new(),
+            vec![Arc::new(oauth_token_policy) as Arc<dyn Policy>],
             Vec::new(),
         );
-        let oauth_token_pipeline =
-            BearerTokenCredentialPolicy::new(credential.clone(), runner_pipeline);
+
+        // Build our BlobClient
         Self {
             account_name: account_name,
             credential: credential.clone(), // Unsure if clone is the correct move here
             container_name: container_name,
             blob_name: blob_name,
-            pipeline: oauth_token_pipeline,
+            pipeline: runner_pipeline,
         }
     }
 
@@ -58,11 +62,11 @@ impl BlobClient {
         // Build the download request itself
         let mut request = Request::new(blob_url, Method::Get);
 
+        // Insert a x-ms-version or else Storage will kick us back
+        request.insert_header("x-ms-version", "2023-11-03");
+
         // Send the request
-        let response = self
-            .pipeline
-            .send(&(Context::new()), &mut request, &[])
-            .await;
+        let response = self.pipeline.send(&(Context::new()), &mut request).await;
         println!("Response headers: {:?}", response);
 
         // Look at request body
@@ -87,11 +91,11 @@ impl BlobClient {
         // Build the get properties request itself
         let mut request = Request::new(blob_url, Method::Head);
 
+        // Insert a x-ms-version or else Storage will kick us back
+        request.insert_header("x-ms-version", "2023-11-03");
+
         // Send the request
-        let response = self
-            .pipeline
-            .send(&(Context::new()), &mut request, &[])
-            .await;
+        let response = self.pipeline.send(&(Context::new()), &mut request).await;
         println!("Response headers: {:?}", response);
 
         response.unwrap()
