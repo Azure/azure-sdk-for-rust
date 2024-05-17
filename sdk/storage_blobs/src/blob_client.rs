@@ -10,6 +10,7 @@ pub struct BlobClient {
     credential: Arc<dyn TokenCredential>,
     container_name: String,
     blob_name: String,
+    url: Url,
     pipeline: Pipeline,
 }
 
@@ -19,11 +20,10 @@ impl BlobClient {
         credential: String,
         container_name: String,
         blob_name: String,
-        // add a url member here :)
     ) -> Self {
         // Create Respective Authentication Pipeline
 
-        // In this case, we determine it's Oauth
+        // OAuth Pipeline Policy
         println!("Auth type chosen, Oauth, {}", credential);
         let credential = create_credential().expect("Failed for some reason?");
         let oauth_token_policy = BearerTokenCredentialPolicy::new(
@@ -31,7 +31,7 @@ impl BlobClient {
             &["https://storage.azure.com/.default"],
         );
 
-        // Build the runner pipeline
+        // Runner Pipeline
         let runner_pipeline = Pipeline::new(
             option_env!("CARGO_PKG_NAME"),
             option_env!("CARGO_PKG_VERSION"),
@@ -40,33 +40,35 @@ impl BlobClient {
             Vec::new(),
         );
 
+        // Build URL from Input (No validation atm)
+        let blob_url = "https://".to_owned()
+            + &account_name
+            + ".blob.core.windows.net/"
+            + &container_name
+            + "/"
+            + &blob_name;
+
         // Build our BlobClient
         Self {
             account_name: account_name,
             credential: credential.clone(), // Unsure if clone is the correct move here
             container_name: container_name,
             blob_name: blob_name,
+            url: Url::parse(&blob_url).expect("Something went wrong with URL parsing!"),
             pipeline: runner_pipeline,
         }
     }
 
-    pub async fn download_blob(&self) -> String {
-        // Build the things needed for the download request
-
-        // Would probably have a sophisticated blob url builder
-        let blob_url = "https://".to_owned()
-            + &(self.account_name)
-            + ".blob.core.windows.net/"
-            + &(self.container_name)
-            + "/"
-            + &(self.blob_name);
-        let blob_url = Url::parse(&blob_url).expect("Failed to parse URL for some reason");
-
-        // Build the download request itself
-        let mut request = Request::new(blob_url, Method::Get);
-
-        // Insert a x-ms-version or else Storage will kick us back
+    // For now, this will handle the x-ms-version issue
+    fn finalize_request(mut request: Request) -> Request {
         request.insert_header("x-ms-version", "2023-11-03");
+        request
+    }
+
+    pub async fn download_blob(&self) -> String {
+        // Build the download request itself
+        let mut request = Request::new(self.url.to_owned(), Method::Get); // This is technically cloning
+        request = BlobClient::finalize_request(request);
 
         // Send the request
         let response = self.pipeline.send(&(Context::new()), &mut request).await;
@@ -76,31 +78,20 @@ impl BlobClient {
         let response_body = response.unwrap().into_body().collect_string().await;
         println!("Response body: {:?}", response_body);
 
+        // Return the body
         response_body.unwrap()
     }
 
     pub async fn get_blob_properties(&self) -> Response {
-        // Build the things needed for the get properties request
-
-        // Would probably have a sophisticated blob url builder
-        let blob_url = "https://".to_owned()
-            + &(self.account_name)
-            + ".blob.core.windows.net/"
-            + &(self.container_name)
-            + "/"
-            + &(self.blob_name);
-        let blob_url = Url::parse(&blob_url).expect("Failed to parse URL for some reason");
-
         // Build the get properties request itself
-        let mut request = Request::new(blob_url, Method::Head);
-
-        // Insert a x-ms-version or else Storage will kick us back
-        request.insert_header("x-ms-version", "2023-11-03");
+        let mut request = Request::new(self.url.to_owned(), Method::Head); // This is technically cloning
+        request = BlobClient::finalize_request(request);
 
         // Send the request
         let response = self.pipeline.send(&(Context::new()), &mut request).await;
         println!("Response headers: {:?}", response);
 
+        // Return the response headers
         response.unwrap()
     }
 }
@@ -135,7 +126,7 @@ mod tests {
             "hello.txt".to_string(),
         );
 
-        // Get resopnse
+        // Get response
         let ret = my_blob_client.get_blob_properties().await;
         let (status_code, headers, response_body) = ret.deconstruct();
 
