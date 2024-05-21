@@ -11,7 +11,7 @@ use once_cell::sync::Lazy;
 use proc_macro2::{Ident, TokenStream};
 use quote::ToTokens;
 use regex::Regex;
-use std::{collections::HashSet, convert::TryFrom};
+use std::{collections::HashSet, convert::TryFrom, fmt};
 use syn::{
     punctuated::Punctuated,
     token::{Gt, Impl, Lt},
@@ -343,9 +343,9 @@ impl TypeNameCode {
     }
 }
 
-impl ToString for TypeNameCode {
-    fn to_string(&self) -> String {
-        self.to_type().into_token_stream().to_string()
+impl fmt::Display for TypeNameCode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.to_type().into_token_stream().to_string().as_str())
     }
 }
 
