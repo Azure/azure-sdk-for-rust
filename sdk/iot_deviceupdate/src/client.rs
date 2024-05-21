@@ -155,7 +155,12 @@ fn extract_endpoint(url: &Url) -> azure_core::Result<String> {
         })?
         .1;
 
-    Ok(format!("{}://{}{}", url.scheme(), endpoint, azure_core::auth::DEFAULT_SCOPE_SUFFIX))
+    Ok(format!(
+        "{}://{}{}",
+        url.scheme(),
+        endpoint,
+        azure_core::auth::DEFAULT_SCOPE_SUFFIX
+    ))
 }
 
 #[cfg(test)]
