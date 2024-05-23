@@ -11,7 +11,8 @@ operation! {
     ?content_disposition: BlobContentDisposition,
     ?metadata: Metadata,
     ?tags: Tags,
-    ?lease_id: LeaseId
+    ?lease_id: LeaseId,
+    ?if_match: IfMatchCondition
 }
 
 impl PutAppendBlobBuilder {
@@ -26,6 +27,7 @@ impl PutAppendBlobBuilder {
             headers.add(self.content_language);
             headers.add(self.content_disposition);
             headers.add(self.tags);
+            headers.add(self.if_match);
             if let Some(metadata) = &self.metadata {
                 for m in metadata.iter() {
                     headers.add(m);
