@@ -5176,10 +5176,7 @@ pub mod directory {
                         }
                         req.insert_header("x-ms-file-rename-source", &this.x_ms_file_rename_source);
                         if let Some(x_ms_file_rename_replace_if_exists) = &this.x_ms_file_rename_replace_if_exists {
-                            req.insert_header(
-                                "x-ms-file-rename-replace-if-exists",
-                                x_ms_file_rename_replace_if_exists.to_string(),
-                            );
+                            req.insert_header("x-ms-file-rename-replace-if-exists", x_ms_file_rename_replace_if_exists.to_string());
                         }
                         if let Some(x_ms_file_rename_ignore_readonly) = &this.x_ms_file_rename_ignore_readonly {
                             req.insert_header("x-ms-file-rename-ignore-readonly", x_ms_file_rename_ignore_readonly.to_string());
@@ -9520,10 +9517,7 @@ pub mod file {
                         }
                         req.insert_header("x-ms-file-rename-source", &this.x_ms_file_rename_source);
                         if let Some(x_ms_file_rename_replace_if_exists) = &this.x_ms_file_rename_replace_if_exists {
-                            req.insert_header(
-                                "x-ms-file-rename-replace-if-exists",
-                                x_ms_file_rename_replace_if_exists.to_string(),
-                            );
+                            req.insert_header("x-ms-file-rename-replace-if-exists", x_ms_file_rename_replace_if_exists.to_string());
                         }
                         if let Some(x_ms_file_rename_ignore_readonly) = &this.x_ms_file_rename_ignore_readonly {
                             req.insert_header("x-ms-file-rename-ignore-readonly", x_ms_file_rename_ignore_readonly.to_string());
