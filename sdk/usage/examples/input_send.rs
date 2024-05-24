@@ -1,13 +1,15 @@
 use azure_usage::prelude::*;
 use clap::Parser;
-use uuid::Uuid;
 
 #[derive(Debug, Parser)]
 struct Args {
-    /// Cosmos primary key name
+    /// Cloud suffix
+    #[clap(env = "USAGE_ACCOUNT_CLOUD")]
+    cloud_suffix: String,
+    /// Usage account name
     #[clap(env = "USAGE_ACCOUNT_NAME")]
     account_name: String,
-    /// The cosmos account your're using
+    /// Usage account location
     #[clap(env = "USAGE_ACCOUNT_LOCATION")]
     account_location: String,
 }
@@ -17,7 +19,7 @@ async fn main() -> azure_core::Result<()> {
     // Let's get the usage account name and location from env variables.
     let args = Args::parse();
 
-    let client = UsageClient::new(args.account_name, args.account_location);
+    let client = UsageClient::new(args.cloud_suffix, args.account_name, args.account_location);
 
     Ok(())
 }

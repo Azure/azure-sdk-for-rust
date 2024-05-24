@@ -18,3 +18,5 @@ extern crate azure_core;
 pub mod prelude;
 
 mod clients;
+mod models;
+mod operations;
