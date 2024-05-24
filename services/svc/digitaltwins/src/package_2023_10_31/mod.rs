@@ -328,7 +328,7 @@ pub mod digital_twin_models {
                                         .append_pair("includeModelDefinition", &include_model_definition.to_string());
                                 }
                                 if let Some(max_items_per_page) = &this.max_items_per_page {
-                                    req.insert_header("max-items-per-page", &max_items_per_page.to_string());
+                                    req.insert_header("max-items-per-page", max_items_per_page.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -921,7 +921,7 @@ pub mod query {
                         req.insert_header("content-type", "application/json");
                         let req_body = azure_core::to_json(&this.query_specification)?;
                         if let Some(max_items_per_page) = &this.max_items_per_page {
-                            req.insert_header("max-items-per-page", &max_items_per_page.to_string());
+                            req.insert_header("max-items-per-page", max_items_per_page.to_string());
                         }
                         req.set_body(req_body);
                         Ok(Response(this.client.send(&mut req).await?))
@@ -3107,7 +3107,7 @@ pub mod event_routes {
                                     req.insert_header("tracestate", tracestate);
                                 }
                                 if let Some(max_items_per_page) = &this.max_items_per_page {
-                                    req.insert_header("max-items-per-page", &max_items_per_page.to_string());
+                                    req.insert_header("max-items-per-page", max_items_per_page.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -3622,7 +3622,7 @@ pub mod import_jobs {
                                     req.insert_header("tracestate", tracestate);
                                 }
                                 if let Some(max_items_per_page) = &this.max_items_per_page {
-                                    req.insert_header("max-items-per-page", &max_items_per_page.to_string());
+                                    req.insert_header("max-items-per-page", max_items_per_page.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);
@@ -4241,7 +4241,7 @@ pub mod delete_jobs {
                                     req.insert_header("tracestate", tracestate);
                                 }
                                 if let Some(max_items_per_page) = &this.max_items_per_page {
-                                    req.insert_header("max-items-per-page", &max_items_per_page.to_string());
+                                    req.insert_header("max-items-per-page", max_items_per_page.to_string());
                                 }
                                 let req_body = azure_core::EMPTY_BODY;
                                 req.set_body(req_body);

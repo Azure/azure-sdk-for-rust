@@ -94,7 +94,7 @@ impl ToTokens for SetRequestParamsCode {
                     } else {
                         tokens.extend(quote! {
                             if let Some(#param_name_var) = &this.#param_name_var {
-                                req.insert_header(#header_name, &#param_name_var.to_string());
+                                req.insert_header(#header_name, #param_name_var.to_string());
                             }
                         });
                     }
